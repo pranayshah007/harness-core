@@ -15,7 +15,9 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sApplyBaseStepInfo.K8sApplyBaseStepInfoKeys;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
@@ -65,6 +67,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
 
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private CDStepHelper cdStepHelper;
+  @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -135,13 +138,17 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             K8sApplyBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
     boolean skipRendering = CDStepHelper.getParameterFieldBooleanValue(
         k8sApplyStepParameters.getSkipRendering(), K8sApplyBaseStepInfoKeys.skipRendering, stepElementParameters);
-
+    String k8sCommandFlag = null;
     final String accountId = AmbianceUtils.getAccountId(ambiance);
+    if (cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_K8_COMMAND_FLAGS)) {
+      k8sCommandFlag = k8sApplyStepParameters.getCommandFlags().getValue();
+    }
     K8sApplyRequest k8sApplyRequest =
         K8sApplyRequest.builder()
             .skipDryRun(skipDryRun)
             .releaseName(releaseName)
             .commandName(K8S_APPLY_COMMAND_NAME)
+            .k8sCommandFlags(k8sCommandFlag)
             .taskType(K8sTaskType.APPLY)
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .valuesYamlList(k8sStepHelper.renderValues(k8sManifestOutcome, ambiance, manifestOverrideContents))

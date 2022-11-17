@@ -21,6 +21,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.HelmCommandFlagType;
+import io.harness.cdng.manifest.yaml.K8sCommandFlagType;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -204,5 +205,19 @@ public class ServiceResource {
       }
     }
     return ResponseDTO.newResponse(helmCmdFlags);
+  }
+
+  @GET
+  @Path("k8sCmdFlags")
+  @ApiOperation(value = "Get Command flags for K8s", nickname = "k8sCmdFlags")
+  public ResponseDTO<Set<K8sCommandFlagType>> getK8sCommandFlags(
+      @QueryParam("serviceSpecType") @NotNull String serviceSpecType) {
+    Set<K8sCommandFlagType> k8sCmdFlags = new HashSet<>();
+    for (K8sCommandFlagType k8sCommandFlagType : K8sCommandFlagType.values()) {
+      if (k8sCommandFlagType.getServiceSpecTypes().contains(serviceSpecType)) {
+        k8sCmdFlags.add(k8sCommandFlagType);
+      }
+    }
+    return ResponseDTO.newResponse(k8sCmdFlags);
   }
 }

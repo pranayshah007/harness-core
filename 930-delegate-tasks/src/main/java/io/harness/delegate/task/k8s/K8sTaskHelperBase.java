@@ -866,14 +866,15 @@ public class K8sTaskHelperBase {
   }
 
   public boolean applyManifests(Kubectl client, List<KubernetesResource> resources,
-      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean denoteOverallSuccess)
-      throws Exception {
-    return applyManifests(client, resources, k8sDelegateTaskParams, executionLogCallback, denoteOverallSuccess, false);
+      K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean denoteOverallSuccess,
+      String commandFlags) throws Exception {
+    return applyManifests(
+        client, resources, k8sDelegateTaskParams, executionLogCallback, denoteOverallSuccess, false, commandFlags);
   }
 
   public boolean applyManifests(Kubectl client, List<KubernetesResource> resources,
       K8sDelegateTaskParams k8sDelegateTaskParams, LogCallback executionLogCallback, boolean denoteOverallSuccess,
-      boolean isErrorFrameworkEnabled) throws Exception {
+      boolean isErrorFrameworkEnabled, String commandFlags) throws Exception {
     FileIo.writeUtf8StringToFile(
         k8sDelegateTaskParams.getWorkingDirectory() + "/manifests.yaml", ManifestHelper.toYaml(resources));
 
@@ -885,7 +886,8 @@ public class K8sTaskHelperBase {
             .map(resource -> resource.getMetadataAnnotationValue(KUBERNETES_CHANGE_CAUSE_ANNOTATION))
             .noneMatch(Objects::nonNull);
 
-    final ApplyCommand applyCommand = overriddenClient.apply().filename("manifests.yaml").record(recordCommand);
+    final ApplyCommand applyCommand =
+        overriddenClient.apply().filename("manifests.yaml").record(recordCommand).commandFlags(commandFlags);
     ProcessResponse response = runK8sExecutable(k8sDelegateTaskParams, executionLogCallback, applyCommand);
     ProcessResult result = response.getProcessResult();
     if (result.getExitValue() != 0) {

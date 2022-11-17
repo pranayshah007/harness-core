@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -54,22 +55,26 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(CDP)
 public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
   @InjectMocks private K8sApplyStep k8sApplyStep;
+  private static final String COMMAND_FLAG = "--server-side";
+  @Mock private CDFeatureFlagHelper cdFeatureFlagHelper;
 
   @Test
   @Owner(developers = ABOSII)
   @Category(UnitTests.class)
   public void testExecuteTask() {
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
     K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
     stepParameters.setSkipDryRun(ParameterField.createValueField(true));
     stepParameters.setSkipSteadyStateCheck(ParameterField.createValueField(true));
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setCommandFlags(ParameterField.createValueField(COMMAND_FLAG));
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.createValueField("30m")).build();
-
     K8sApplyRequest request = executeTask(stepElementParameters, K8sApplyRequest.class);
     assertThat(request.getAccountId()).isEqualTo(accountId);
     assertThat(request.getFilePaths()).containsExactlyInAnyOrder("file1.yaml", "file2.yaml");
@@ -77,6 +82,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isTrue();
     assertThat(request.isSkipSteadyStateCheck()).isTrue();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(30);
+    assertThat(request.getK8sCommandFlags()).isEqualTo(COMMAND_FLAG);
 
     ArgumentCaptor<String> releaseNameCaptor = ArgumentCaptor.forClass(String.class);
     verify(k8sStepHelper, times(1)).publishReleaseNameStepDetails(eq(ambiance), releaseNameCaptor.capture());
@@ -91,7 +97,8 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     stepParameters.setSkipDryRun(ParameterField.ofNull());
     stepParameters.setSkipSteadyStateCheck(ParameterField.ofNull());
     stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
-
+    stepParameters.setCommandFlags(ParameterField.ofNull());
+    when(cdFeatureFlagHelper.isEnabled(any(), any())).thenReturn(true);
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.ofNull()).build();
 
@@ -99,6 +106,7 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     assertThat(request.isSkipDryRun()).isFalse();
     assertThat(request.isSkipSteadyStateCheck()).isFalse();
     assertThat(request.getTimeoutIntervalInMin()).isEqualTo(CDStepHelper.getTimeoutInMin(stepElementParameters));
+    assertThat(request.getK8sCommandFlags()).isEqualTo(null);
   }
 
   @Test

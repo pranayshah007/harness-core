@@ -97,7 +97,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   public void testRollbackSuccess() throws Exception {
     doReturn(true)
         .when(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
     K8sTaskExecutionResponse response = k8sRollingDeployRollbackTaskHandler.executeTaskInternal(
         k8sRollingDeployRollbackTaskParameters, k8sDelegateTaskParams);
 
@@ -106,7 +106,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
     verify(k8sRollingRollbackBaseHandler)
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
@@ -128,7 +128,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler, never())
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
     verify(k8sRollingRollbackBaseHandler, never())
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler, never()).postProcess(rollbackHandlerConfig, releaseName);
@@ -157,7 +157,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
   public void testRollbackRollbackFailed() throws Exception {
     doReturn(false)
         .when(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
 
     K8sTaskExecutionResponse response = k8sRollingDeployRollbackTaskHandler.executeTaskInternal(
         k8sRollingDeployRollbackTaskParameters, k8sDelegateTaskParams);
@@ -167,7 +167,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
     assertThat(rollbackHandlerConfig.getClient()).isNotNull();
     verify(k8sRollingRollbackBaseHandler).init(rollbackHandlerConfig, releaseName, logCallback);
     verify(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
     verify(k8sRollingRollbackBaseHandler, never())
         .steadyStateCheck(rollbackHandlerConfig, k8sDelegateTaskParams, timeoutIntervalInMin, logCallback);
     verify(k8sRollingRollbackBaseHandler, never()).postProcess(rollbackHandlerConfig, releaseName);
@@ -190,7 +190,7 @@ public class K8sRollingDeployRollbackTaskHandlerTest extends WingsBaseTest {
 
     doReturn(true)
         .when(k8sRollingRollbackBaseHandler)
-        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false);
+        .rollback(rollbackHandlerConfig, k8sDelegateTaskParams, releaseNumber, logCallback, emptySet(), false, null);
 
     doThrow(thrownException).when(k8sRollingRollbackBaseHandler).postProcess(rollbackHandlerConfig, releaseName);
 

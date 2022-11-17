@@ -1867,6 +1867,8 @@
 80310:software.wings.helpers.ext.azure.devops.AzureDevopsProjects
 80311:io.harness.artifactory.ArtifactoryImagePath
 80312:io.harness.ngtriggers.WebhookSecretData
+80313:io.harness.k8s.K8sSubCommandType
+80314:io.harness.k8s.K8sCliCommandType
 81001:io.harness.ami.AMITagsResponse
 83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
 83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
@@ -2358,6 +2360,7 @@
 600004:io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO
 600005:io.harness.ng.core.dto.secrets.WinRmAuthDTO
 600010:io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse
+601234:io.harness.delegate.task.k8s.K8sCommandFlag
 643283:io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigDTO
 643284:io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigUpdateDTO
 643285:io.harness.delegate.beans.connector.awskmsconnector.AwsKmsValidationParams

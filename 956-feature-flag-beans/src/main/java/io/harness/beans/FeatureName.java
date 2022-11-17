@@ -515,7 +515,8 @@ public enum FeatureName {
       HarnessTeam.CDP),
   DISABLE_WINRM_COMMAND_ENCODING_NG(
       "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  NG_K8_COMMAND_FLAGS("Added Support for adding Command flags to commands", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {

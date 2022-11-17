@@ -43,6 +43,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sBGDeployRequest;
 import io.harness.delegate.task.k8s.K8sBGDeployResponse;
+import io.harness.delegate.task.k8s.K8sCommandFlag;
 import io.harness.delegate.task.k8s.K8sDeployRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskHelperBase;
@@ -51,6 +52,9 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.KubernetesTaskException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.k8s.K8sCliCommandType;
+import io.harness.k8s.K8sCommandFlagsUtils;
+import io.harness.k8s.K8sSubCommandType;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.exception.KubernetesExceptionExplanation;
 import io.harness.k8s.exception.KubernetesExceptionHints;
@@ -81,6 +85,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -144,8 +149,17 @@ public class K8sBGRequestHandler extends K8sRequestHandler {
     currentRelease.setManagedWorkload(managedWorkload.getResourceId().cloneInternal());
 
     shouldSaveReleaseHistory = true;
+    // Apply Command Flag
+    K8sCommandFlag k8sCommandFlag = k8sBGDeployRequest.getK8sCommandFlag();
+    Map<K8sSubCommandType, String> commandFlagValueMap = null;
+    if (k8sCommandFlag != null) {
+      commandFlagValueMap = k8sCommandFlag.getValueMap();
+    }
+    String commandFlags =
+        K8sCommandFlagsUtils.applyK8sCommandFlags(K8sCliCommandType.APPLY.name(), commandFlagValueMap);
     k8sTaskHelperBase.applyManifests(client, resources, k8sDelegateTaskParams,
-        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true);
+        k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, Apply, true, commandUnitsProgress), true, true,
+        commandFlags);
 
     k8sTaskHelperBase.saveReleaseHistoryInConfigMap(
         kubernetesConfig, k8sBGDeployRequest.getReleaseName(), releaseHistory.getAsYaml());
