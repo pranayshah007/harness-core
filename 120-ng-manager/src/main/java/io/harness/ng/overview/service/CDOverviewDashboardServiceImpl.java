@@ -1938,7 +1938,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return instanceGroupedByArtifactList;
   }
 
-  private List<InstanceGroupedByServiceList.InstanceGroupedByService> groupedByServices(
+  public static List<InstanceGroupedByServiceList.InstanceGroupedByService> groupedByServices(
       Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>>
           serviceBuildInfraMap,
       Map<String, String> serviceIdToServiceNameMap, Map<String, String> buildIdToArtifactPathMap) {

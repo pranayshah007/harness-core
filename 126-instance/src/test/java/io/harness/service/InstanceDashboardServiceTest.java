@@ -21,6 +21,7 @@ import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDTOsByBuildId;
@@ -74,12 +75,12 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
   }
 
   private Instance createDummyInstanceV2(
-      String buildId, String lastPipelineExecutionId, String envId, String infraIdentifier) {
+      String buildId, String lastPipelineExecutionId, String envId, String infraIdentifier, String serviceId) {
     return Instance.builder()
         .accountIdentifier(ACCOUNT_IDENTIFIER)
         .orgIdentifier(ORG_IDENTIFIER)
         .projectIdentifier(PROJECT_IDENTIFIER)
-        .serviceIdentifier(SERVICE_IDENTIFIER)
+        .serviceIdentifier(serviceId)
         .envIdentifier(envId)
         .lastPipelineExecutionId(lastPipelineExecutionId)
         .infraIdentifier(infraIdentifier)
@@ -262,7 +263,8 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
       }
       mock.get(buildId).get(lastPipelineExecutionId).get(envId).put(infraIdentifier, count);
       for (int i = 0; i < count; i++) {
-        instanceRepository.save(createDummyInstanceV2(buildId, lastPipelineExecutionId, envId, infraIdentifier));
+        instanceRepository.save(
+            createDummyInstanceV2(buildId, lastPipelineExecutionId, envId, infraIdentifier, "svc1"));
       }
     });
 
@@ -279,6 +281,65 @@ public class InstanceDashboardServiceTest extends InstancesTestBase {
       final int expectedCount = mock.getOrDefault(buildId, new HashMap<>())
                                     .getOrDefault(lastPipelineExecutionId, new HashMap<>())
                                     .getOrDefault(envId, new HashMap<>())
+                                    .getOrDefault(infraIdentifier, 0);
+      assertThat(count).isEqualTo(expectedCount);
+    });
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getActiveServiceInstanceInfoWithoutEnvWithServiceDetails() {
+    Map<String, Map<String, Map<String, Map<String, Integer>>>> mock = new HashMap<>();
+
+    ActiveServiceInstanceInfoWithoutEnvWithServiceDetails instance1 =
+        new ActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+            "svc1", "svc1", "infra1", "infraN1", "1", "a", "1", "1", "abc", 1);
+    ActiveServiceInstanceInfoWithoutEnvWithServiceDetails instance2 =
+        new ActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+            "svc2", "svc2", "infra2", "infraN2", "2", "b", "2", "2", "abc", 2);
+    ActiveServiceInstanceInfoWithoutEnvWithServiceDetails instance3 =
+        new ActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+            "svc3", "svc3", "infra2", "infraN2", "2", "b", "2", "1", null, 3);
+
+    List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails> mockList =
+        Arrays.asList(instance1, instance2, instance3);
+
+    mockList.forEach(mockListItem -> {
+      final String serviceId = mockListItem.getServiceIdentifier();
+      final String buildId = mockListItem.getTag();
+      final Integer count = mockListItem.getCount();
+      final String lastPipelineExecutionId = mockListItem.getLastPipelineExecutionId();
+      final String infraIdentifier = mockListItem.getInfraIdentifier();
+      if (!mock.containsKey(serviceId)) {
+        mock.put(serviceId, new HashMap<>());
+      }
+      if (!mock.get(serviceId).containsKey(buildId)) {
+        mock.get(serviceId).put(buildId, new HashMap<>());
+      }
+      if (!mock.get(serviceId).get(buildId).containsKey(lastPipelineExecutionId)) {
+        mock.get(serviceId).get(buildId).put(lastPipelineExecutionId, new HashMap<>());
+      }
+      mock.get(serviceId).get(buildId).get(lastPipelineExecutionId).put(infraIdentifier, count);
+      for (int i = 0; i < count; i++) {
+        instanceRepository.save(
+            createDummyInstanceV2(buildId, lastPipelineExecutionId, "Env1", infraIdentifier, serviceId));
+      }
+    });
+
+    List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails> buildPipelineEnvInfraInstanceCounts =
+        instanceDashboardService.getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
+            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "Env1");
+    assertThat(buildPipelineEnvInfraInstanceCounts.size()).isGreaterThan(0);
+    buildPipelineEnvInfraInstanceCounts.forEach(buildPipelineEnvInfraInstanceCount -> {
+      final String serviceId = buildPipelineEnvInfraInstanceCount.getServiceIdentifier();
+      final String buildId = buildPipelineEnvInfraInstanceCount.getTag();
+      final int count = buildPipelineEnvInfraInstanceCount.getCount();
+      final String lastPipelineExecutionId = buildPipelineEnvInfraInstanceCount.getLastPipelineExecutionId();
+      final String infraIdentifier = buildPipelineEnvInfraInstanceCount.getInfraIdentifier();
+      final int expectedCount = mock.getOrDefault(serviceId, new HashMap<>())
+                                    .getOrDefault(buildId, new HashMap<>())
+                                    .getOrDefault(lastPipelineExecutionId, new HashMap<>())
                                     .getOrDefault(infraIdentifier, 0);
       assertThat(count).isEqualTo(expectedCount);
     });
