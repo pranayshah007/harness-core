@@ -247,11 +247,11 @@ public class InfrastructureValidator {
       throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
     }
 
-    if (null == infrastructure.getOrganization()) {
+    if (!hasValueOrExpression(infrastructure.getOrganization())) {
       throw new InvalidArgumentsException(Pair.of("Organization", "cannot be empty"));
     }
 
-    if (null == infrastructure.getSpace()) {
+    if (!hasValueOrExpression(infrastructure.getSpace())) {
       throw new InvalidArgumentsException(Pair.of("Space", "cannot be empty"));
     }
   }

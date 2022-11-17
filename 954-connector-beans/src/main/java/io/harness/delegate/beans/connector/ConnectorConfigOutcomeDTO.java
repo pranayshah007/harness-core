@@ -18,6 +18,7 @@ import io.harness.delegate.beans.connector.k8Connector.outcome.KubernetesCluster
 import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitConfigOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.github.outcome.GithubConnectorOutcomeDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.outcome.GitlabConnectorOutcomeDTO;
+import io.harness.delegate.beans.connector.tasconnector.outcome.TasConnectorOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -34,7 +35,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = AzureConnectorOutcomeDTO.class, name = "AzureOutcome"),
       @JsonSubTypes.Type(value = GitConfigOutcomeDTO.class, name = "GitOutcome"),
       @JsonSubTypes.Type(value = GithubConnectorOutcomeDTO.class, name = "GithubOutcome"),
-      @JsonSubTypes.Type(value = GitlabConnectorOutcomeDTO.class, name = "GitlabOutcome")
+      @JsonSubTypes.Type(value = GitlabConnectorOutcomeDTO.class, name = "GitlabOutcome"),
+      @JsonSubTypes.Type(value = TasConnectorOutcomeDTO.class, name = "TasConnectorOutcome")
 })
 @OwnedBy(DX)
 @Schema(
