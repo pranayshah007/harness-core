@@ -9,12 +9,10 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,9 +30,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AwsCloudProviderBasicConfig")
 @RecasterAlias("io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig")
 public class AwsCloudProviderBasicConfig implements CloudProviderSpec {
-  @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connectorRef;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> connectorRef;
 
-  @YamlSchemaTypes({expression}) @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> region;
+  @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> region;
 
   @Override
   @JsonIgnore
