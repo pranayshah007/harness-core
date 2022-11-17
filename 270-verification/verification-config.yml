@@ -28,6 +28,9 @@ scheduler:
   instanceId: verification
   tablePrefix: quartz_verification
   threadCount: 25
+  batchTriggerAcquisitionMaxCount: ${BATCH_TRIGGER_MAX_COUNT:-1}
+  misfireThreshold: ${MISFIRE_THRESHOLD:-60000}
+  maxMisfiresToHandleAtATime: ${MAX_MISFIRES_AT_A_TIME:-20}
 
 dataStorageMode: MONGO
 

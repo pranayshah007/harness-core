@@ -69,6 +69,9 @@ cg:
     threadCount: 25
     clustered: true #backgroundScheduler
     #mongoUri: mongodb://localhost:27017/background_scheduler
+    batchTriggerAcquisitionMaxCount: ${BATCH_TRIGGER_MAX_COUNT:-1}
+    misfireThreshold: ${MISFIRE_THRESHOLD:-60000}
+    maxMisfiresToHandleAtATime: ${MAX_MISFIRES_AT_A_TIME:-20}
 
   serviceScheduler:
     #schedulerName: automation_service_scheduler
@@ -79,6 +82,9 @@ cg:
     threadCount: 25
     enabled: false
     #mongoUri: mongodb://localhost:27017/service_scheduler
+    batchTriggerAcquisitionMaxCount: ${BATCH_TRIGGER_MAX_COUNT:-1}
+    misfireThreshold: ${MISFIRE_THRESHOLD:-60000}
+    maxMisfiresToHandleAtATime: ${MAX_MISFIRES_AT_A_TIME:-20}
 
   enableIterators: false
   trialRegistrationAllowed: false

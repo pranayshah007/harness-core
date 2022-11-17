@@ -7,6 +7,8 @@
 
 package io.harness.scheduler;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SchedulerConfig {
@@ -117,14 +119,14 @@ public class SchedulerConfig {
   }
 
   public String getBatchTriggerAcquisitionMaxCount() {
-    return batchTriggerAcquisitionMaxCount;
+    return isEmpty(batchTriggerAcquisitionMaxCount) ? "1" : batchTriggerAcquisitionMaxCount;
   }
 
   public String getMisfireThreshold() {
-    return misfireThreshold;
+    return isEmpty(misfireThreshold) ? "60000" : misfireThreshold;
   }
 
   public String getMaxMisfiresToHandleAtATime() {
-    return maxMisfiresToHandleAtATime;
+    return isEmpty(maxMisfiresToHandleAtATime) ? "20" : maxMisfiresToHandleAtATime;
   }
 }

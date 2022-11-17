@@ -155,7 +155,8 @@ public class HQuartzScheduler implements PersistentScheduler, MaintenanceListene
     props.setProperty(
         "org.quartz.scheduler.batchTriggerAcquisitionMaxCount", schedulerConfig.getBatchTriggerAcquisitionMaxCount());
     props.setProperty("org.quartz.jobStore.misfireThreshold", schedulerConfig.getMisfireThreshold());
-    props.setProperty("org.quartz.jobStore.maxMisfiresToHandleAtATime", schedulerConfig.getMisfireThreshold());
+    props.setProperty(
+        "org.quartz.jobStore.maxMisfiresToHandleAtATime", schedulerConfig.getMaxMisfiresToHandleAtATime());
 
     return props;
   }
