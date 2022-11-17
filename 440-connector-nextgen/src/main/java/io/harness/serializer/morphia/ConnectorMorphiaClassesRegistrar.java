@@ -106,6 +106,7 @@ import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePassw
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
+import io.harness.connector.entities.embedded.tasconnector.TasConfig;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
@@ -117,6 +118,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(Connector.class);
+    set.add(TasConfig.class);
     set.add(KubernetesClusterConfig.class);
     set.add(GitConfig.class);
     set.add(VaultConnector.class);

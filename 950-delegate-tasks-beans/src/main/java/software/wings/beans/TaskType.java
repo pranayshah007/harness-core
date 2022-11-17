@@ -392,7 +392,6 @@ public enum TaskType {
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
-  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
   FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
   AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
@@ -400,7 +399,8 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V2(TaskGroup.TERRAFORM_NG, "Terraform Task NG V2"),
   ELASTIGROUP_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Command Task"),
   ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
-  TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task");
+  TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task"),
+  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
