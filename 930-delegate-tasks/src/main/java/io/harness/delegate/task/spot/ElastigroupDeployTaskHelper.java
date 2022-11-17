@@ -36,6 +36,7 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
+import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
@@ -54,13 +55,13 @@ public class ElastigroupDeployTaskHelper {
   @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   @Inject private TimeLimiter timeLimiter;
 
-  public void scaleElastigroup(ElastiGroup elastiGroup, String spotInstToken, String spotInstAccountId,
+  public void scaleElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
       int steadyStateTimeOut, ILogStreamingTaskClient logStreamingTaskClient, String scaleCommandUnit,
       String waitCommandUnit, CommandUnitsProgress commandUnitsProgress) throws Exception {
     final LogCallback scaleLogCallback = getLogCallback(logStreamingTaskClient, scaleCommandUnit, commandUnitsProgress);
     final LogCallback waitLogCallback = getLogCallback(logStreamingTaskClient, waitCommandUnit, commandUnitsProgress);
 
-    if (elastiGroup == null) {
+    if (elastigroup == null || isEmpty(elastigroup.getId())) {
       scaleLogCallback.saveExecutionLog(
           "No Elastigroup eligible for scaling", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       waitLogCallback.saveExecutionLog(
@@ -68,13 +69,13 @@ public class ElastigroupDeployTaskHelper {
       return;
     }
 
-    updateElastigroup(spotInstToken, spotInstAccountId, elastiGroup, scaleLogCallback);
-    waitForSteadyState(elastiGroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
+    updateElastigroup(spotInstToken, spotInstAccountId, elastigroup, scaleLogCallback);
+    waitForSteadyState(elastigroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
   }
 
   public List<String> getAllEc2InstanceIdsOfElastigroup(
       String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup) throws Exception {
-    if (elastigroup == null) {
+    if (elastigroup == null || isEmpty(elastigroup.getId())) {
       return emptyList();
     }
 
@@ -159,7 +160,7 @@ public class ElastigroupDeployTaskHelper {
     }
   }
 
-  boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup,
+  private boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup,
       LogCallback logCallback, int targetInstances) throws Exception {
     List<ElastiGroupInstanceHealth> instanceHealths = spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
         spotInstToken, spotInstAccountId, elastigroup.getId());
@@ -227,7 +228,7 @@ public class ElastigroupDeployTaskHelper {
     final LogCallback logCallback =
         getLogCallback(logStreamingTaskClient, DELETE_NEW_ELASTI_GROUP, commandUnitsProgress);
 
-    if (elastigroup == null) {
+    if (elastigroup == null || isEmpty(elastigroup.getId())) {
       logCallback.saveExecutionLog("No Elastigroup eligible for deletion.", INFO, SUCCESS);
       return;
     }
@@ -239,5 +240,22 @@ public class ElastigroupDeployTaskHelper {
     logCallback.saveExecutionLog(
         format("Elastigroup: [%s], Id: [%s] deleted successfully", elastigroup.getName(), elastigroup.getId()), INFO,
         SUCCESS);
+  }
+
+  public void renameElastigroup(ElastiGroup elastigroup, String newName, String spotInstAccountId, String spotInstToken,
+      ILogStreamingTaskClient logStreamingTaskClient, String commandUnit, CommandUnitsProgress commandUnitsProgress)
+      throws Exception {
+    final LogCallback logCallback = getLogCallback(logStreamingTaskClient, commandUnit, commandUnitsProgress);
+
+    if (elastigroup == null || isEmpty(elastigroup.getId())) {
+      logCallback.saveExecutionLog("No Elastigroup found for renaming", INFO, SUCCESS);
+      return;
+    }
+
+    logCallback.saveExecutionLog(format(
+        "Renaming old Elastigroup: [%s], Id: [%s] to name: [%s]", elastigroup.getId(), elastigroup.getName(), newName));
+    spotInstHelperServiceDelegate.updateElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId(),
+        ElastiGroupRenameRequest.builder().name(newName).build());
+    logCallback.saveExecutionLog("Successfully renamed Elastigroup", INFO, SUCCESS);
   }
 }

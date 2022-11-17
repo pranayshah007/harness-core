@@ -10,6 +10,7 @@ package io.harness.delegate.task.spot;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.RENAME_OLD_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
@@ -86,9 +87,14 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
   }
 
   private DelegateResponseData executeBlueGreenRollback(
-      ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
-    //    scaleOld();
-    //    renameOld();
+      ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    SpotConfig spotConfig =
+        ngConfigMapper.mapSpotConfigWithDecryption(parameters.getSpotConnector(), parameters.getEncryptionDetails());
+    String spotInstAccountId = spotConfig.getCredential().getSpotAccountId();
+    String spotInstToken = spotConfig.getCredential().getAppTokenId();
+    int timeoutInMinutes = parameters.getTimeout() > 0 ? parameters.getTimeout() : STEADY_STATE_TIME_OUT_IN_MINUTES;
+
+    restoreOld(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
     //    restoreListeners();
     //    downscaleNew();
     //    renameNew();
@@ -99,6 +105,16 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
         .errorMessage(getErrorMessage(CommandExecutionStatus.SUCCESS))
         //        .ec2InstanceIdsExisting(olderElastigroupInstanceIds)
         .build();
+  }
+
+  private void restoreOld(ElastigroupRollbackTaskParameters parameters, String spotInstAccountId, String spotInstToken,
+      int timeoutInMinutes, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    taskHelper.scaleElastigroup(parameters.getOldElastigroup(), spotInstToken, spotInstAccountId, timeoutInMinutes,
+        getLogStreamingTaskClient(), UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
+        commandUnitsProgress);
+
+    taskHelper.renameElastigroup(parameters.getOldElastigroup(), parameters.getElastigroupNamePrefix(),
+        spotInstAccountId, spotInstToken, getLogStreamingTaskClient(), RENAME_OLD_COMMAND_UNIT, commandUnitsProgress);
   }
 
   private ElastigroupRollbackTaskResponse executeBasicAndCanaryRollback(

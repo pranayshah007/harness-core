@@ -38,6 +38,7 @@ public class ElastigroupRollbackTaskParameters implements TaskParameters, Execut
   List<EncryptedDataDetail> encryptionDetails;
   int timeout;
   boolean isBlueGreen;
+  private String elastigroupNamePrefix;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
