@@ -109,7 +109,7 @@ public class ElastigroupCommandTaskNGHelper {
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
 
   public String generateFinalJson(
-      ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) {
+      ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) throws Exception {
     Map<String, Object> jsonConfigMap =
         getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
@@ -170,7 +170,7 @@ public class ElastigroupCommandTaskNGHelper {
     }
   }
 
-  Map<String, Object> getJsonConfigMapFromElastigroupJson(String elastigroupJson) {
+  Map<String, Object> getJsonConfigMapFromElastigroupJson(String elastigroupJson) throws Exception {
     Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
     Gson gson = new Gson();
 
