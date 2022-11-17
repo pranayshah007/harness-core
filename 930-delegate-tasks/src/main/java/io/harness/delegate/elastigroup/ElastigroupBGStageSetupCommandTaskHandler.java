@@ -7,7 +7,14 @@
 
 package io.harness.delegate.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -32,22 +39,16 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.google.inject.Inject;
 import java.util.List;
 import java.util.Optional;
-
-import static com.google.api.client.util.Lists.newArrayList;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static software.wings.beans.LogHelper.color;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -72,72 +73,81 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
     try {
-
-      elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(), ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsEncryptedDetails());
-      AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig((AwsConnectorDTO) elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(), ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsRegion());
+      elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
+          elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
+          ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsEncryptedDetails());
+      AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig(
+          (AwsConnectorDTO) elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
+          ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsRegion());
 
       List<LoadBalancerDetailsForBGDeployment> lbDetailList =
-              elastigroupCommandTaskNGHelper.fetchAllLoadBalancerDetails(elastigroupSetupCommandRequest, awsInternalConfig, deployLogCallback);
+          elastigroupCommandTaskNGHelper.fetchAllLoadBalancerDetails(
+              elastigroupSetupCommandRequest, awsInternalConfig, deployLogCallback);
 
       // Generate STAGE elastiGroup name
       String stageElastiGroupName =
-              format("%s__%s", elastigroupSetupCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
+          format("%s__%s", elastigroupSetupCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
 
       // Update lbDetails with fetched details, as they have more data field in
       elastigroupSetupCommandRequest.setAwsLoadBalancerConfigs(lbDetailList);
 
       // Generate final json by substituting name, capacity and LBConfig
-      String finalJson = elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
+      String finalJson =
+          elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
 
       SpotInstConfig spotInstConfig = elastigroupSetupCommandRequest.getSpotInstConfig();
       elastigroupCommandTaskNGHelper.decryptSpotInstConfig(spotInstConfig);
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
-              (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
+          (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-              ? spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue().toString()
-              : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
+          ? spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue().toString()
+          : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
       String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
       // Check if existing elastigroup with exists with same stage name
       deployLogCallback.saveExecutionLog(format("Querying to find Elastigroup with name: [%s]", stageElastiGroupName));
-      Optional<ElastiGroup> stageOptionalElastiGroup =
-              spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiTokenRef, spotInstAccountId, stageElastiGroupName);
+      Optional<ElastiGroup> stageOptionalElastiGroup = spotInstHelperServiceDelegate.getElastiGroupByName(
+          spotInstApiTokenRef, spotInstAccountId, stageElastiGroupName);
       ElastiGroup stageElastiGroup;
       if (stageOptionalElastiGroup.isPresent()) {
         stageElastiGroup = stageOptionalElastiGroup.get();
         deployLogCallback.saveExecutionLog(
-                format("Found stage Elastigroup with id: [%s]. Deleting it. ", stageElastiGroup.getId()));
-        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, stageElastiGroup.getId());
+            format("Found stage Elastigroup with id: [%s]. Deleting it. ", stageElastiGroup.getId()));
+        spotInstHelperServiceDelegate.deleteElastiGroup(
+            spotInstApiTokenRef, spotInstAccountId, stageElastiGroup.getId());
       }
 
       // Create new elastiGroup
       deployLogCallback.saveExecutionLog(
-              format("Sending request to create new Elastigroup with name: [%s]", stageElastiGroupName));
-      stageElastiGroup = spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
+          format("Sending request to create new Elastigroup with name: [%s]", stageElastiGroupName));
+      stageElastiGroup =
+          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
       String stageElastiGroupId = stageElastiGroup.getId();
       deployLogCallback.saveExecutionLog(
-              format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId));
+          format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId));
 
       // Prod ELasti Groups
       String prodElastiGroupName = elastigroupSetupCommandRequest.getElastigroupNamePrefix();
-      deployLogCallback.saveExecutionLog(format("Querying Spotinst for Elastigroup with name: [%s]", prodElastiGroupName));
-      Optional<ElastiGroup> prodOptionalElastiGroup =
-              spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiTokenRef, spotInstAccountId, prodElastiGroupName);
+      deployLogCallback.saveExecutionLog(
+          format("Querying Spotinst for Elastigroup with name: [%s]", prodElastiGroupName));
+      Optional<ElastiGroup> prodOptionalElastiGroup = spotInstHelperServiceDelegate.getElastiGroupByName(
+          spotInstApiTokenRef, spotInstAccountId, prodElastiGroupName);
       List<ElastiGroup> prodElastiGroupList;
       if (prodOptionalElastiGroup.isPresent()) {
         ElastiGroup prodElastiGroup = prodOptionalElastiGroup.get();
         deployLogCallback.saveExecutionLog(format("Found existing Prod Elastigroup with name: [%s] and id: [%s]",
-                prodElastiGroup.getName(), prodElastiGroup.getId()));
+            prodElastiGroup.getName(), prodElastiGroup.getId()));
         prodElastiGroupList = singletonList(prodElastiGroup);
       } else {
         prodElastiGroupList = emptyList();
       }
 
-      deployLogCallback.saveExecutionLog(color(format("Completed Blue green setup for Spotinst"), LogColor.Green, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      deployLogCallback.saveExecutionLog(
+          color(format("Completed Blue green setup for Spotinst"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
+          CommandExecutionStatus.SUCCESS);
 
       ElastigroupSetupResult elastigroupSetupResult =
-              ElastigroupSetupResult.builder()
+          ElastigroupSetupResult.builder()
               .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
               .newElastiGroup(stageElastiGroup)
               .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
@@ -149,7 +159,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
               .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
               .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
               .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
-                      .loadBalancerDetailsForBGDeployments(lbDetailList)
+              .loadBalancerDetailsForBGDeployments(lbDetailList)
               .build();
 
       return ElastigroupSetupResponse.builder()

@@ -38,5 +38,5 @@ public interface ElbV2Client {
       AwsInternalConfig awsConfig, DescribeLoadBalancersRequest describeLoadBalancersRequest, String region);
 
   DescribeTargetGroupsResponse describeTargetGroups(
-          AwsInternalConfig awsConfig, DescribeTargetGroupsRequest describeTargetGroupsRequest, String region);
+      AwsInternalConfig awsConfig, DescribeTargetGroupsRequest describeTargetGroupsRequest, String region);
 }

@@ -68,7 +68,7 @@ public class ElbV2ClientImpl extends AwsClientHelper implements ElbV2Client {
 
   @Override
   public DescribeTargetGroupsResponse describeTargetGroups(
-          AwsInternalConfig awsConfig, DescribeTargetGroupsRequest describeTargetGroupsRequest, String region) {
+      AwsInternalConfig awsConfig, DescribeTargetGroupsRequest describeTargetGroupsRequest, String region) {
     try (ElasticLoadBalancingV2Client elbClient = (ElasticLoadBalancingV2Client) getClient(awsConfig, region)) {
       super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
       return elbClient.describeTargetGroups(describeTargetGroupsRequest);
