@@ -32,7 +32,7 @@ public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOu
   private Integer currentRunningInstanceCount;
   private ResizeStrategy resizeStrategy;
   private boolean isBlueGreen;
-  private ElastiGroup newElastiGroupOriginalConfig;
-  private ElastiGroup oldElastiGroupOriginalConfig;
-  private String elastiGroupNamePrefix;
+  private ElastiGroup newElastigroupOriginalConfig;
+  private ElastiGroup oldElastigroupOriginalConfig;
+  private String elastigroupNamePrefix;
 }

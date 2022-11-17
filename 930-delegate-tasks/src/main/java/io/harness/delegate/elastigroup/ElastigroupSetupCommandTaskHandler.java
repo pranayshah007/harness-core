@@ -80,7 +80,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue().toString()
+          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
       String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
       List<ElastiGroup> elastiGroups = elastigroupCommandTaskNGHelper.listAllElastiGroups(
@@ -143,8 +143,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       }
       //------------
 
-      deployLogCallback.saveExecutionLog(color(format("%n Setup Successful."), LogColor.Green, LogWeight.Bold),
-          LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      deployLogCallback.saveExecutionLog(
+          color("Setup Successful.", LogColor.Green, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       ElastigroupSetupResult elastigroupSetupResult =
           ElastigroupSetupResult.builder()
@@ -168,8 +168,9 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
 
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      deployLogCallback.saveExecutionLog(color(format("%n Deployment Failed."), LogColor.Red, LogWeight.Bold),
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      deployLogCallback.saveExecutionLog(sanitizedException.getMessage());
+      deployLogCallback.saveExecutionLog(
+          color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);
     }
   }
