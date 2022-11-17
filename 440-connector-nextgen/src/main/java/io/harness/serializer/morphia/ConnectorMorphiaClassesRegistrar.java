@@ -102,6 +102,7 @@ import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.pdcconnector.PhysicalDataCenterConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.spotconnector.SpotConfig;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
@@ -117,6 +118,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(Connector.class);
+    set.add(TasConfig.class);
     set.add(KubernetesClusterConfig.class);
     set.add(GitConfig.class);
     set.add(VaultConnector.class);
@@ -231,5 +233,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     h.put("connector.entities.embedded.azurerepoconnector.AzureRepoUsernameToken", AzureRepoUsernameToken.class);
     h.put("connector.entities.embedded.azureartifacts.AzureRepoHttpAuthentication", AzureArtifactsAuthentication.class);
     h.put("connector.entities.embedded.azureartifacts.AzureRepoUsernameToken", AzureArtifactsTokenCredentials.class);
+    h.put("connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication",
+        ServiceNowUserNamePasswordAuthentication.class);
   }
 }

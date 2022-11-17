@@ -29,6 +29,7 @@ import io.harness.ngtriggers.beans.source.webhook.v2.github.action.GithubPRActio
 import io.harness.ngtriggers.beans.source.webhook.v2.github.event.GithubTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.action.GitlabPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event.GitlabTriggerEvent;
+import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.security.annotations.PublicApi;
 
@@ -244,7 +245,7 @@ public interface NGTriggerWebhookConfigResource {
       })
   @Path("/custom")
   @ApiOperation(value = "accept custom webhook event", nickname = "customWebhookEndpoint")
-  @PublicApi
+  @PipelineServiceAuthIfHasApiKey
   ResponseDTO<String>
   processWebhookEvent(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
@@ -263,7 +264,7 @@ public interface NGTriggerWebhookConfigResource {
       })
   @Path("/custom/v2")
   @ApiOperation(value = "accept custom webhook event V2", nickname = "customWebhookEndpointV2")
-  @PublicApi
+  @PipelineServiceAuthIfHasApiKey
   ResponseDTO<NGProcessWebhookResponseDTO>
   processWebhookEventV2(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,

@@ -444,21 +444,28 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams) {
-    SimpleServiceLevelObjective serviceLevelObjective =
-        (SimpleServiceLevelObjective) getEntity(projectParams, identifier);
+    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (Objects.isNull(serviceLevelObjective)) {
       throw new NotFoundException("SLO with identifier " + identifier + " not found.");
     }
-    List<String> sliIds =
-        serviceLevelIndicatorService.getEntities(projectParams, serviceLevelObjective.getServiceLevelIndicators())
-            .stream()
-            .map(ServiceLevelIndicator::getUuid)
-            .collect(Collectors.toList());
-    List<String> verificationTaskIds =
-        verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
+    if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
+      List<String> sliIds = serviceLevelIndicatorService
+                                .getEntities(projectParams, simpleServiceLevelObjective.getServiceLevelIndicators())
+                                .stream()
+                                .map(ServiceLevelIndicator::getUuid)
+                                .collect(Collectors.toList());
+      List<String> verificationTaskIds =
+          verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
 
-    return cvngLogService.getCVNGLogs(
-        projectParams.getAccountIdentifier(), verificationTaskIds, sliLogsFilter, pageParams);
+      return cvngLogService.getCVNGLogs(
+          projectParams.getAccountIdentifier(), verificationTaskIds, sliLogsFilter, pageParams);
+    } else {
+      String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+          projectParams.getAccountIdentifier(), serviceLevelObjective.getUuid());
+      return cvngLogService.getCVNGLogs(projectParams.getAccountIdentifier(),
+          Collections.singletonList(verificationTaskId), sliLogsFilter, pageParams);
+    }
   }
 
   @Override
