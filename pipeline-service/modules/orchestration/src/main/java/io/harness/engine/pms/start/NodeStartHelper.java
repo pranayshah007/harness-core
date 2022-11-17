@@ -163,8 +163,10 @@ public class NodeStartHelper {
           pmsEngineExpressionService.resolve(ambiance, planNode.getStepInputs(), planNode.getExpressionMode());
       PmsStepParameters parameterInputs =
           PmsStepParameters.parse(OrchestrationMapBackwardCompatibilityUtils.extractToOrchestrationMap(resolvedInputs));
-      pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
+      pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, ambiance.getPlanExecutionId(), parameterInputs);
       log.info("Resolved step Inputs");
+    } else {
+      pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, ambiance.getPlanExecutionId(), null);
     }
   }
 
