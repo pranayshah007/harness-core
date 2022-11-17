@@ -24,7 +24,5 @@ public class DelegateServiceModule extends AbstractModule {
   }
 
   @Override
-  protected void configure() {
-    install(new DelegateServiceClassicGrpcServerModule(config));
-  }
+  protected void configure() {}
 }
