@@ -536,7 +536,7 @@ public class ElastigroupCommandTaskNGHelper {
         .build();
   }
 
-  List<software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener> getElbListenersForLoadBalancer(
+  List<Listener> getElbListenersForLoadBalancer(
       String loadBalancerName, AwsInternalConfig awsInternalConfig, String region) {
     DescribeLoadBalancersRequest describeLoadBalancersRequest =
         DescribeLoadBalancersRequest.builder().names(loadBalancerName).build();

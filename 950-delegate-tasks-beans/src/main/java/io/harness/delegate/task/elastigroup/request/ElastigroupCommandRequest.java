@@ -9,6 +9,10 @@ package io.harness.delegate.task.elastigroup.request;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCapabilityHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -30,6 +34,8 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
   CommandUnitsProgress getCommandUnitsProgress();
   Integer getTimeoutIntervalInMin();
   SpotInstConfig getSpotInstConfig();
+  ConnectorInfoDTO getConnectorInfoDTO();
+  List<EncryptedDataDetail> getAwsEncryptedDetails();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -42,6 +48,16 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
 
     SpotConnectorDTO spotConnectorDTO = spotInstConfig.getSpotConnectorDTO();
     capabilities.addAll(SpotCapabilityHelper.fetchRequiredExecutionCapabilities(spotConnectorDTO, maskingEvaluator));
+
+    if (getConnectorInfoDTO() != null) {
+      ConnectorConfigDTO connectorConfigDTO = getConnectorInfoDTO().getConnectorConfig();
+      if (connectorConfigDTO instanceof AwsConnectorDTO) {
+        AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorConfigDTO;
+        capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+            getAwsEncryptedDetails(), maskingEvaluator));
+        capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
+      }
+    }
     return capabilities;
   }
 }
