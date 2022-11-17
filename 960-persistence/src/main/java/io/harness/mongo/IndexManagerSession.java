@@ -193,11 +193,11 @@ public class IndexManagerSession {
         processedCollections.add(collection.getName());
 
         if (entity.noClassnameStored() && !Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error(
+          log.warn(
               "No class store collection {} with not final class {}", collection.getName(), mc.getClazz().getName());
         }
         if (!entity.noClassnameStored() && Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
+          log.warn("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
         }
 
         processor.process(mc, collection);
