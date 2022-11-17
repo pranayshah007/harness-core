@@ -9,12 +9,10 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -33,30 +31,15 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("AwsLoadBalancerConfigYaml")
 @RecasterAlias("io.harness.cdng.elastigroup.AwsLoadBalancerConfigYaml")
 public class AwsLoadBalancerConfigYaml implements LoadBalancerSpec {
-  @NotEmpty
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> loadBalancer;
+  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> loadBalancer;
 
-  @NotEmpty
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> prodListenerPort;
+  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerPort;
 
-  @NotEmpty
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> prodListenerRuleArn;
+  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> prodListenerRuleArn;
 
-  @NotEmpty
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> stageListenerPort;
+  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerPort;
 
-  @NotEmpty
-  @YamlSchemaTypes({expression})
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  ParameterField<String> stageListenerRuleArn;
+  @NotEmpty @ApiModelProperty(dataType = STRING_CLASSPATH) ParameterField<String> stageListenerRuleArn;
 
   @Override
   @JsonIgnore
