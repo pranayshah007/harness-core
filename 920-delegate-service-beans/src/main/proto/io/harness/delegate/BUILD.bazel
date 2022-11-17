@@ -6,7 +6,6 @@ proto_library(
     name = "920_delegate_service_beans_proto",
     srcs = [
         "delegate_service.proto",
-        "delegate_task.proto",
         "progress.proto",
         "task.proto",
     ],
