@@ -1931,7 +1931,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
-    kryo.register(AzureMachineImageDelegateRequest.class, 55426);
-    kryo.register(AzureMachineImageDelegateResponse.class, 55427);
+    kryo.register(AzureMachineImageDelegateRequest.class, 55438);
+    kryo.register(AzureMachineImageDelegateResponse.class, 55439);
   }
 }

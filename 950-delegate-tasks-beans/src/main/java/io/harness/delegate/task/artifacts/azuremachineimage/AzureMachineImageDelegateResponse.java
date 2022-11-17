@@ -11,14 +11,12 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class AzureMachineImageDelegateResponse extends ArtifactDelegateResponse {
-  String name;
-  String subscriptionId;
+  String version;
 
   @Builder
   public AzureMachineImageDelegateResponse(
-      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String name, String subscriptionId) {
+      ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType, String name) {
     super(buildDetails, sourceType);
-    this.name = name;
-    this.subscriptionId = subscriptionId;
+    this.version = name;
   }
 }

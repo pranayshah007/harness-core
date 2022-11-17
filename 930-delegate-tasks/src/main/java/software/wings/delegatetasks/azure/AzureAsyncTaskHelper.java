@@ -70,6 +70,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.beans.AzureImageVersion;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -459,10 +460,45 @@ public class AzureAsyncTaskHelper {
       throw NestedExceptionUtils.hintWithExplanationException(
           "Please check tagRegex field in ACR artifact configuration.",
           String.format(
-              "Could not find any tags that match regex [%s] for ACR repository [%s] for subscription [%s] in registry [%s].",
+              "Could not find any versions that match regex [%s] for ACR repository [%s] for subscription [%s] in registry [%s].",
               tagRegex, repository, subscription, registry),
           new AzureContainerRegistryException(
               String.format("Could not find an artifact tag that matches tagRegex '%s'", tagRegex)));
+    }
+    return builds.get(0);
+  }
+  public BuildDetailsInternal getLastSuccessfulBuildFromRegexMachineImage(AzureConfig azureConfig,
+      String subscriptionId, String resourceGroupName, String galleryName, String imageDefinition,
+      String versionRegex) {
+    log.info(
+        format("Fetching image version from subscription %s resourceGroupName %s and galleryName %s based on regex %s",
+            subscriptionId, resourceGroupName, galleryName, versionRegex));
+    try {
+      Pattern.compile(versionRegex);
+    } catch (PatternSyntaxException e) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check tagRegex field in Azure Machine Image artifact configuration.",
+          String.format("TagRegex field contains an invalid regex value '%s'.", versionRegex),
+          new AzureContainerRegistryException(e.getMessage()));
+    }
+
+    List<BuildDetailsInternal> builds =
+        listImageDefinitionVersions(azureConfig, subscriptionId, resourceGroupName, galleryName, imageDefinition);
+
+    builds = builds.stream()
+                 .filter(build -> new RegexFunctor().match(versionRegex, build.getNumber()))
+                 .sorted(new BuildDetailsInternalComparatorDescending())
+                 .collect(Collectors.toList());
+
+    if (builds.isEmpty()) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check tagRegex field in Azure Machine Image artifact configuration.",
+          String.format(
+              "Could not find any tags that match regex [%s] for azure machine image resourceGroupName [%s] for subscription [%s] in resourceGroupName [%s].",
+              versionRegex, resourceGroupName, subscriptionId, resourceGroupName),
+          new AzureContainerRegistryException(
+              String.format("Could not find an artifact tag that matches tagRegex '%s'", versionRegex)));
+      // TODO: exception change
     }
     return builds.get(0);
   }
@@ -492,6 +528,27 @@ public class AzureAsyncTaskHelper {
             tag, repository, subscription, registry),
         new AzureContainerRegistryException(
             String.format("Found multiple artifact tags '%s', but expected only one.", tag)));
+  }
+  public BuildDetailsInternal verifyBuildNumberMachineImage(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String galleryName, String imageDefinition, String version) {
+    log.info(
+        format("Verifying image version from subscription %s resourceGroupName %s and galleryName %s based on regex %s",
+            subscriptionId, resourceGroupName, galleryName, version));
+    List<BuildDetailsInternal> builds =
+        listImageDefinitionVersions(azureConfig, subscriptionId, resourceGroupName, galleryName, imageDefinition);
+
+    builds = builds.stream().filter(build -> build.getNumber().equals(version)).collect(Collectors.toList());
+
+    if (builds.isEmpty()) {
+      throw NestedExceptionUtils.hintWithExplanationException(
+          "Please check tag field in Azure Machine Image artifact configuration.",
+          String.format(
+              "Could not find any version that match version [%s] for azure machine image resourceGroupName [%s] for subscription [%s] in resourceGroupName [%s].",
+              version, resourceGroupName, subscriptionId, resourceGroupName),
+          new AzureContainerRegistryException(String.format("Artifact tag '%s' not found.", version)));
+    } else {
+      return builds.get(0);
+    }
   }
 
   private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
@@ -741,5 +798,22 @@ public class AzureAsyncTaskHelper {
             .build();
     log.info(format("Retrieved %d locations", azureLocationsResponse.getLocations().size()));
     return azureLocationsResponse;
+  }
+  public List<BuildDetailsInternal> listImageDefinitionVersions(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String galleryName, String imageDefinition) {
+    List<AzureImageVersion> tags = azureComputeClient.listImageDefinitionVersions(
+        azureConfig, subscriptionId, resourceGroupName, galleryName, imageDefinition);
+    return tags.stream()
+        .map(tag -> {
+          Map<String, String> metadata = new HashMap<>();
+          metadata.put(ArtifactMetadataKeys.TAG, tag.getName());
+          return BuildDetailsInternal.builder()
+              .number(tag.getName())
+              .metadata(metadata)
+              .uiDisplayName(format("%s %s", TAG_LABEL, tag))
+              .build();
+        })
+        .collect(Collectors.toList());
+    // Only fetch successful Azure Image versions
   }
 }

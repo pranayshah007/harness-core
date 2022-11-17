@@ -1,11 +1,9 @@
 package io.harness.cdng.artifact.resources.AzureMachineImage.service;
 
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.AzureMachineImage.dtos.AzureMachineImageResourceGroupDto;
-
-import java.util.List;
+import io.harness.cdng.artifact.resources.AzureMachineImage.dtos.AzureBuildsDTO;
 
 public interface AzureMachineImageResourceService {
-  List<AzureMachineImageResourceGroupDto> listResourceGroups(IdentifierRef AzureMachineImageConnectorRef,
-      String subscriptionId, String orgIdentifier, String projectIdentifier);
+  AzureBuildsDTO getBuilds(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+      String subscriptionId, String resourceGroup, String galleryName, String imageDefinition);
 }

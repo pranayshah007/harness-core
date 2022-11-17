@@ -9,7 +9,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.artifact.resources.AzureMachineImage.dtos.AzureMachineImageResourceGroupDto;
+import io.harness.cdng.artifact.resources.AzureMachineImage.dtos.AzureBuildsDTO;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -73,20 +73,21 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
   }
 
   @Override
-  public List<AzureMachineImageResourceGroupDto> listResourceGroups(IdentifierRef AzureMachineImageConnectorRef,
-      String subscriptionId, String orgIdentifier, String projectIdentifier) {
+  public AzureBuildsDTO getBuilds(IdentifierRef AzureMachineImageConnectorRef, String orgIdentifier,
+      String projectIdentifier, String subscriptionId, String resourceGroup, String galleryName,
+      String imageDefinition) {
     AzureConnectorDTO connector = getConnector(AzureMachineImageConnectorRef);
     BaseNGAccess baseNGAccess =
         getBaseNGAccess(AzureMachineImageConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     AzureMachineImageDelegateRequest azureMachineImageDelegateRequest =
-        ArtifactDelegateRequestUtils.getAzureMachineImageResourceGroupsDelegateRequest(
-            subscriptionId, connector, encryptionDetails, ArtifactSourceType.AZURE_MACHINE_IMAGE);
+        ArtifactDelegateRequestUtils.getAzureMachineImageResourceGroupsDelegateRequest(connector, encryptionDetails,
+            ArtifactSourceType.AZURE_MACHINE_IMAGE, subscriptionId, resourceGroup, galleryName, imageDefinition);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
           executeSyncTask(azureMachineImageDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,
               "Azure Machine Image get resource group task failure due to error");
-      return getResourceGroups(artifactTaskExecutionResponse);
+      return getAzureMachineImageResponseDTO(artifactTaskExecutionResponse);
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
           String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
@@ -94,6 +95,20 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
     } catch (ExplanationException e) {
       throw new HintException(HintException.HINT_GCP_ACCESS_DENIED, new InvalidRequestException(e.getMessage(), USER));
     }
+  }
+  private AzureBuildsDTO getAzureMachineImageResponseDTO(ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
+    List<AzureMachineImageDelegateResponse> azureMachineImageDelegateResponses =
+        artifactTaskExecutionResponse.getArtifactDelegateResponses()
+            .stream()
+            .map(delegateResponse -> (AzureMachineImageDelegateResponse) delegateResponse)
+            .collect(Collectors.toList());
+    return toAzureMachineImageResponse(azureMachineImageDelegateResponses);
+  }
+  public static AzureBuildsDTO toAzureMachineImageResponse(
+      List<AzureMachineImageDelegateResponse> azureMachineImageDelegateResponses) {
+    return AzureBuildsDTO.builder()
+        .versions(azureMachineImageDelegateResponses.stream().map(a -> a.getVersion()).collect(Collectors.toList()))
+        .build();
   }
   private ArtifactTaskExecutionResponse executeSyncTask(
       AzureMachineImageDelegateRequest azureMachineImageDelegateRequest, ArtifactTaskType taskType,
@@ -158,23 +173,6 @@ public class AzureMachineImageResourceServiceImpl implements AzureMachineImageRe
   }
   private boolean isAAzureMachineImageConnector(@Valid @NotNull ConnectorResponseDTO connectorResponseDTO) {
     return ConnectorType.AZURE == (connectorResponseDTO.getConnector().getConnectorType());
-  }
-  private List<AzureMachineImageResourceGroupDto> getResourceGroups(
-      ArtifactTaskExecutionResponse artifactTaskExecutionResponse) {
-    List<AzureMachineImageDelegateResponse> azureMachineImageDelegateResponses =
-        artifactTaskExecutionResponse.getArtifactDelegateResponses()
-            .stream()
-            .map(delegateResponse -> (AzureMachineImageDelegateResponse) delegateResponse)
-            .collect(Collectors.toList());
-    List<AzureMachineImageResourceGroupDto> resourceGroupDtos =
-        azureMachineImageDelegateResponses.stream()
-            .map(response
-                -> AzureMachineImageResourceGroupDto.builder()
-                       .name(response.getName())
-                       .subscriptionId(response.getSubscriptionId())
-                       .build())
-            .collect(Collectors.toList());
-    return resourceGroupDtos;
   }
   private DelegateResponseData getResponseData(
       BaseNGAccess ngAccess, AzureMachineImageDelegateRequest delegateRequest, ArtifactTaskType artifactTaskType) {

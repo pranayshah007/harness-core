@@ -1776,8 +1776,6 @@
 55419:io.harness.delegate.task.azure.appservice.webapp.ng.exception.AzureWebAppRollbackExceptionData
 55420:io.harness.delegate.task.artifacts.gar.GarDelegateRequest
 55421:io.harness.delegate.task.artifacts.gar.GarDelegateResponse
-55426:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest
-55427:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse
 55422:io.harness.delegate.task.azure.artifact.AwsS3AzureArtifactRequestDetails
 55423:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskParameters
 55424:io.harness.delegate.task.azure.arm.AzureFetchArmPreDeploymentDataTaskResponse
@@ -1791,6 +1789,8 @@
 55435:io.harness.delegate.beans.executioncapability.SshConnectivityExecutionCapability
 55436:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGRequest
 55437:io.harness.delegate.task.customdeployment.FetchInstanceScriptTaskNGResponse
+55438:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateRequest
+55439:io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse
 55470:io.harness.delegate.task.ssh.artifact.CustomArtifactDelegateConfig
 55499:io.harness.beans.SerializationFormat
 55501:io.harness.delegate.beans.instancesync.info.PdcServerInstanceInfo

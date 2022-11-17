@@ -14,6 +14,7 @@ import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.validation.OneOfField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
@@ -40,18 +41,39 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(AZURE_MACHINE_IMAGE_NAME)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("AzureMachineImageConfig")
+@OneOfField(fields = {"version", "versionRegex"})
 @RecasterAlias("io.harness.cdng.artifact.bean.yaml.AzureMachineImageConfig")
 public class AzureMachineImageConfig implements ArtifactConfig, Visitable, WithConnectorRef {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
-  @NotNull
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> subscriptionId;
+
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH, allowableValues = "IMAGE_GALLERY")
   @Wither
   ParameterField<String> imageType;
-  @NotNull ImageDefinition imageDefinition;
+
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> subscriptionId;
+
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> resourceGroup;
+
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> imageGallery;
+
+  @NotNull
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> imageDefinition;
+
+  /**
+   * Version refers to exact Version number.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> version;
+  /**
+   * Version regex is used to get latest build from builds matching regex.
+   */
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> versionRegex;
+
   @Override
   public ArtifactSourceType getSourceType() {
     return ArtifactSourceType.AZURE_MACHINE_IMAGE;
@@ -61,8 +83,9 @@ public class AzureMachineImageConfig implements ArtifactConfig, Visitable, WithC
 
   @Override
   public String getUniqueHash() {
-    List<String> valuesList = Arrays.asList(connectorRef.getValue(), imageDefinition.name.getValue(),
-        imageDefinition.computeGallery.getValue(), imageDefinition.resourceGroup.getValue(), subscriptionId.getValue());
+    List<String> valuesList = Arrays.asList(connectorRef.getValue(), imageGallery.getValue(), resourceGroup.getValue(),
+        imageDefinition.getValue(), subscriptionId.getValue());
+
     return ArtifactUtils.generateUniqueHashFromStringList(valuesList);
   }
 

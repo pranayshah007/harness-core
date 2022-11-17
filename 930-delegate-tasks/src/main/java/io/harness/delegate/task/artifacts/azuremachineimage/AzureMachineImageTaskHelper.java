@@ -33,9 +33,13 @@ public class AzureMachineImageTaskHelper {
     ArtifactTaskResponse artifactTaskResponse;
     try {
       switch (artifactTaskParameters.getArtifactTaskType()) {
-        case GET_RESOURCE_GROUPS:
+        case GET_BUILDS:
           saveLogs(executionLogCallback, "Fetching Artifact details");
-          artifactTaskResponse = getSuccessTaskResponse(azureMachineImageTaskHandler.getResourceGroups(attributes));
+          artifactTaskResponse = getSuccessTaskResponse(azureMachineImageTaskHandler.getBuilds(attributes));
+          break;
+        case GET_LAST_SUCCESSFUL_BUILD:
+          saveLogs(executionLogCallback, "Fetching Artifact details");
+          artifactTaskResponse = getSuccessTaskResponse(azureMachineImageTaskHandler.getLastSuccesfulBuild(attributes));
           break;
         default:
           saveLogs(executionLogCallback,

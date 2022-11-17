@@ -18,6 +18,7 @@ import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AmazonS3ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AzureArtifactsConfig;
+import io.harness.cdng.artifact.bean.yaml.AzureMachineImageConfig;
 import io.harness.cdng.artifact.bean.yaml.CustomArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig;
@@ -35,6 +36,7 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.AzureMachineImageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.CustomArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
@@ -53,6 +55,7 @@ import io.harness.delegate.task.artifacts.artifactory.ArtifactoryArtifactDelegat
 import io.harness.delegate.task.artifacts.artifactory.ArtifactoryGenericArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.azureartifacts.AzureArtifactsDelegateResponse;
+import io.harness.delegate.task.artifacts.azuremachineimage.AzureMachineImageDelegateResponse;
 import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
@@ -182,6 +185,12 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
         return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
+      case AZURE_MACHINE_IMAGE:
+        AzureMachineImageConfig azureMachineImageConfig = (AzureMachineImageConfig) artifactConfig;
+        AzureMachineImageDelegateResponse azureMachineImageDelegateResponse =
+            (AzureMachineImageDelegateResponse) artifactDelegateResponse;
+        return getAzureMachineImageArtifactOutcome(
+            azureMachineImageConfig, azureMachineImageDelegateResponse, useDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -222,6 +231,25 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(amiArtifactConfig.getIdentifier())
         .primaryArtifact(amiArtifactConfig.isPrimaryArtifact())
         .versionRegex(amiArtifactConfig.getVersionRegex().getValue())
+        .build();
+  }
+  private static AzureMachineImageArtifactOutcome getAzureMachineImageArtifactOutcome(
+      AzureMachineImageConfig azureMachineImageConfig,
+      AzureMachineImageDelegateResponse azureMachineImageDelegateResponse, boolean useDelegateResponse) {
+    if (azureMachineImageDelegateResponse == null) {
+      return null;
+    }
+    return AzureMachineImageArtifactOutcome.builder()
+        .version(useDelegateResponse ? azureMachineImageDelegateResponse.getVersion()
+                                     : (azureMachineImageDelegateResponse.getVersion() != null
+                                             ? azureMachineImageDelegateResponse.getVersion()
+                                             : null))
+        .subscriptionId(azureMachineImageConfig.getSubscriptionId().getValue())
+        .resourceGroup(azureMachineImageConfig.getResourceGroup().getValue())
+        .imageGallery(azureMachineImageConfig.getImageGallery().getValue())
+        .imageDefinition(azureMachineImageConfig.getImageDefinition().getValue())
+        .imageType(azureMachineImageConfig.getImageType().getValue())
+        .connectorRef(azureMachineImageConfig.getConnectorRef().getValue())
         .build();
   }
 

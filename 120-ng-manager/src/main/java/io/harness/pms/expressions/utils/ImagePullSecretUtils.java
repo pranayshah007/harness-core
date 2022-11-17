@@ -23,6 +23,7 @@ import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.AzureMachineImageArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.artifact.outcome.GarArtifactOutcome;
@@ -162,6 +163,10 @@ public class ImagePullSecretUtils {
       case ArtifactSourceConstants.AMI_ARTIFACTS_NAME:
         getImageDetailsForAMI((AMIArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
         break;
+      case ArtifactSourceConstants.AZURE_MACHINE_IMAGE_NAME:
+        getImageDetailsForAzureMachineImage(
+            (AzureMachineImageArtifactOutcome) artifactOutcome, imageDetailsBuilder, ambiance);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactOutcome.getArtifactType()));
@@ -199,6 +204,52 @@ public class ImagePullSecretUtils {
       imageDetailsBuilder.username(credentials.getAccessKey());
 
       imageDetailsBuilder.password(getPasswordExpression(passwordRef, ambiance));
+    }
+  }
+  private void getImageDetailsForAzureMachineImage(
+      AzureMachineImageArtifactOutcome artifactOutcome, ImageDetailsBuilder imageDetailsBuilder, Ambiance ambiance) {
+    try {
+      String connectorRef = artifactOutcome.getConnectorRef();
+      ConnectorInfoDTO connectorDTO = getConnector(connectorRef, ambiance);
+      AzureConnectorDTO connectorConfig = (AzureConnectorDTO) connectorDTO.getConnectorConfig();
+      imageDetailsBuilder.registryUrl(""); // TODO
+      if (connectorConfig.getCredential() != null
+          && connectorConfig.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+        AzureManualDetailsDTO config = (AzureManualDetailsDTO) connectorConfig.getCredential().getConfig();
+        if (config.getAuthDTO().getAzureSecretType() == AzureSecretType.SECRET_KEY) {
+          log.info("Generating image pull credentials for SP with secret");
+          imageDetailsBuilder.username(config.getClientId());
+          imageDetailsBuilder.password(getPasswordExpression(
+              ((AzureClientSecretKeyDTO) config.getAuthDTO().getCredentials()).getSecretKey().toSecretRefStringValue(),
+              ambiance));
+        } else {
+          log.info(format(
+              "Generating image pull credentials for SP with certificate. Fetching access token for clientId: %s",
+              ((AzureManualDetailsDTO) connectorConfig.getCredential().getConfig()).getClientId()));
+          // TODO
+        }
+      } else if (connectorConfig.getCredential() != null
+          && connectorConfig.getCredential().getAzureCredentialType() == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+        AzureInheritFromDelegateDetailsDTO config =
+            (AzureInheritFromDelegateDetailsDTO) connectorConfig.getCredential().getConfig();
+        if (config.getAuthDTO() instanceof AzureMSIAuthUADTO) {
+          log.info(
+              format("Generating image pull credentials for User-Assigned MSI. Fetching access token for clientId: %s",
+                  ((AzureMSIAuthUADTO) config.getAuthDTO()).getCredentials().getClientId()));
+        } else {
+          log.info("Generating image pull credentials for System-Assigned MSI");
+        }
+        // TODO
+      } else {
+        if (connectorConfig.getCredential() == null) {
+          throw new Exception(format("Connector credentials are missing. Can not generate Image details."));
+        }
+
+        throw new Exception(
+            format("AzureCredentialType [%s] is invalid", connectorConfig.getCredential().getAzureCredentialType()));
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e.getMessage(), e);
     }
   }
 

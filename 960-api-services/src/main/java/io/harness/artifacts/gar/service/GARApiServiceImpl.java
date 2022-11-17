@@ -136,7 +136,7 @@ public class GARApiServiceImpl implements GarApiService {
     }
   }
 
-  private List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
+  public List<BuildDetailsInternal> paginate(GarInternalConfig garinternalConfig, GarRestClient garRestClient,
       String versionRegex, int maxNumberOfBuilds) throws WingsException, IOException {
     List<BuildDetailsInternal> details = new ArrayList<>();
 

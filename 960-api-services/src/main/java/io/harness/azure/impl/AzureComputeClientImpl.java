@@ -55,6 +55,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.AzureImageGallery;
+import software.wings.beans.AzureImageVersion;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
@@ -706,5 +707,27 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     } else if (AzureHostConnectionType.HOSTNAME.equals(hostConnectionType)) {
       builder.address(virtualMachine.name());
     }
+  }
+
+  @Override
+  public List<AzureImageVersion> listImageDefinitionVersions(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String galleryName, String imageDefinition) {
+    //    encryptionService.decrypt(azureConfig, encryptionDetails, false);
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    // Only fetch successful Azure Image versions
+    return azure.galleryImageVersions()
+        .listByGalleryImage(resourceGroupName, galleryName, imageDefinition)
+        .stream()
+        .filter(id -> "Succeeded".equals(id.provisioningState()))
+        .map(id
+            -> AzureImageVersion.builder()
+                   .name(id.name())
+                   .imageDefinitionName(imageDefinition)
+                   .location(id.location())
+                   .subscriptionId(subscriptionId)
+                   .resourceGroupName(resourceGroupName)
+                   .galleryName(galleryName)
+                   .build())
+        .collect(Collectors.toList());
   }
 }

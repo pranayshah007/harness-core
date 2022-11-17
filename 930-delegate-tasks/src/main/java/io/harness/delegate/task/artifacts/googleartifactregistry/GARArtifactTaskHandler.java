@@ -133,6 +133,7 @@ public class GARArtifactTaskHandler extends DelegateArtifactTaskHandler<GarDeleg
           garDelegateRequest.getEncryptedDataDetails());
     }
   }
+
   boolean isRegex(GarDelegateRequest artifactDelegateRequest) {
     return StringUtils.isBlank(artifactDelegateRequest.getVersion());
   }

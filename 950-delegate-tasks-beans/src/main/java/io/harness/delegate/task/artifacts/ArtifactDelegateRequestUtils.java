@@ -388,4 +388,18 @@ public class ArtifactDelegateRequestUtils {
         .sourceType(artifactSourceType)
         .build();
   }
+
+  public static AzureMachineImageDelegateRequest getAzureMachineImageResourceGroupsDelegateRequest(
+      AzureConnectorDTO connector, List<EncryptedDataDetail> encryptionDetails, ArtifactSourceType azureMachineImage,
+      String subscriptionId, String resourceGroup, String galleryName, String imageDefinition) {
+    return AzureMachineImageDelegateRequest.builder()
+        .sourceType(ArtifactSourceType.AZURE_MACHINE_IMAGE)
+        .subscriptionId(subscriptionId)
+        .azureConnectorDTO(connector)
+        .encryptedDataDetails(encryptionDetails)
+        .resourceGroup(resourceGroup)
+        .galleryName(galleryName)
+        .imageDefinition(imageDefinition)
+        .build();
+  }
 }

@@ -28,6 +28,11 @@ public class AzureMachineImageDelegateRequest implements ArtifactSourceDelegateR
   List<EncryptedDataDetail> encryptedDataDetails;
   String subscriptionId;
   ArtifactSourceType sourceType;
+  String resourceGroup;
+  String galleryName;
+  String imageDefinition;
+  String version;
+  String versionRegex;
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     List<ExecutionCapability> capabilities =
