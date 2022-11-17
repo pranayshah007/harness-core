@@ -561,6 +561,12 @@ io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
 io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig
+io.harness.cdng.manifest.yaml.kinds.TasManifest
+io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome
+io.harness.cdng.manifest.yaml.VarsManifestOutcome
+io.harness.cdng.manifest.yaml.TasManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.VarsManifest
+io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
 io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.cdng.environment.filters.TagsFilter
 io.harness.cdng.environment.filters.FilterYaml
