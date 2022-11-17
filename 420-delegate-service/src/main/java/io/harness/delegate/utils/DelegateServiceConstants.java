@@ -18,5 +18,8 @@ import java.time.Duration;
 @OwnedBy(DEL)
 public interface DelegateServiceConstants {
   String STREAM_DELEGATE = "/stream/delegate/";
+
   Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(10);
+
+  Duration HEARTBEAT_EXPIRY_TIME_FIVE_MINS = ofMinutes(5);
 }

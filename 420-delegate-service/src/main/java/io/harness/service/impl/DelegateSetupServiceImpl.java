@@ -10,13 +10,13 @@ package io.harness.service.impl;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
 import static io.harness.filter.FilterType.DELEGATEPROFILE;
 import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_CONNECTED;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_DISCONNECTED;
 import static io.harness.service.impl.DelegateConnectivityStatus.GROUP_STATUS_PARTIALLY_CONNECTED;
 
-import static java.time.Duration.ofMinutes;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -59,7 +59,6 @@ import software.wings.service.impl.DelegateConnectionDao;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -93,7 +92,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
-  private static final Duration HEARTBEAT_EXPIRY_TIME = ofMinutes(5);
   // grpc heartbeat thread is scheduled at 5 mins, hence we are allowing a gap of 15 mins
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
@@ -427,7 +425,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         groupDelegates.stream()
             .map(delegate -> {
               boolean isDelegateConnected =
-                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis();
+                  delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis();
               countOfDelegatesConnected.addAndGet(isDelegateConnected ? 1 : 0);
 
               String delegateTokenName = delegate.getDelegateTokenName();
@@ -554,12 +552,13 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
     if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
       return delegateList.stream()
-          .filter(
-              delegate -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+          .filter(delegate
+              -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
           .collect(toList());
     }
     return delegateList.stream()
-        .filter(delegate -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+        .filter(delegate
+            -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
         .collect(toList());
   }
 
