@@ -278,7 +278,12 @@ public class ElastigroupBGStageSetupStep
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME,
         elastigroupSetupDataOutcome, StepOutcomeGroup.STAGE.name());
 
-    return stepResponseBuilder.status(Status.SUCCEEDED).build();
+    return stepResponseBuilder.status(Status.SUCCEEDED)
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(elastigroupSetupDataOutcome)
+                         .build())
+        .build();
   }
 
   @Override
