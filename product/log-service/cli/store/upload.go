@@ -26,7 +26,7 @@ func (c *uploadCommand) run(*kingpin.ParseContext) error {
 		return err
 	}
 	defer f.Close()
-	client := client.NewHTTPClient(c.server, c.accountID, c.token, false)
+	client := client.NewHTTPClient(c.server, c.accountID, c.token, false, "")
 	return client.Upload(nocontext, c.key, f)
 }
 

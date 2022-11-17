@@ -81,8 +81,6 @@ public class CIExecutionConstants {
 
   public static final String ADDON_VOLUME = "addon";
   public static final String ADDON_VOL_MOUNT_PATH = "/addon";
-  // Lite engine container constants
-  public static final String LITE_ENGINE_CONTAINER_NAME = "lite-engine";
 
   public static final Integer LITE_ENGINE_CONTAINER_MEM = 100;
   public static final Integer DEFAULT_CONTAINER_MEM_POV = 3000;

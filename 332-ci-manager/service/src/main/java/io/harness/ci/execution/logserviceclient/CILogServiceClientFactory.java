@@ -7,6 +7,8 @@
 
 package io.harness.ci.logserviceclient;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.beans.entities.LogServiceConfig;
@@ -33,9 +35,16 @@ public class CILogServiceClientFactory implements Provider<CILogServiceClient> {
     Gson gson = new GsonBuilder().setLenient().create();
     Retrofit retrofit = new Retrofit.Builder()
                             .baseUrl(logConfig.getBaseUrl())
-                            .client(Http.getUnsafeOkHttpClient(logConfig.getBaseUrl()))
+                            .client(Http.getUnsafeOkHttpClient(this.getInternalUrl()))
                             .addConverterFactory(GsonConverterFactory.create(gson))
                             .build();
     return retrofit.create(CILogServiceClient.class);
+  }
+
+  private String getInternalUrl() {
+    if (!isEmpty(this.logConfig.getInternalUrl())) {
+      return this.logConfig.getInternalUrl();
+    }
+    return this.logConfig.getBaseUrl();
   }
 }
