@@ -10,12 +10,12 @@ package io.harness.cdng.spot.elastigroup.deploy;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
@@ -39,6 +39,7 @@ import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
@@ -144,23 +145,40 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = stepHelper.getElastigroupSetupOutcome(ambiance);
-    String oldElastigroupId = elastigroupSetupDataOutcome.getOldElastiGroupOriginalConfig().getId();
-    String newElastigroupId = elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig().getId();
+    ElastiGroup oldElastigroup = elastigroupSetupDataOutcome.getOldElastiGroupOriginalConfig();
+    ElastiGroup newElastigroup = elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig();
 
-    List<String> oldInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsExisting();
-    List<String> newInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsAdded();
+    if (oldElastigroup == null && newElastigroup == null) {
+      return null;
+    }
 
-    List<SpotServerInstanceInfo> oldSpotServerInstanceInfos = oldInstanceIds == null
-        ? Collections.emptyList()
-        : oldInstanceIds.stream()
-              .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), oldElastigroupId, id))
-              .collect(Collectors.toList());
+    List<SpotServerInstanceInfo> oldSpotServerInstanceInfos;
+    if (oldElastigroup != null && isNotEmpty(oldElastigroup.getId())) {
+      String oldElastigroupId = oldElastigroup.getId();
+      List<String> oldInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsExisting();
+      oldSpotServerInstanceInfos = oldInstanceIds == null
+          ? Collections.emptyList()
+          : oldInstanceIds.stream()
+                .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), oldElastigroupId, id))
+                .collect(Collectors.toList());
 
-    List<SpotServerInstanceInfo> newSpotServerInstanceInfos = newInstanceIds == null
-        ? Collections.emptyList()
-        : newInstanceIds.stream()
-              .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), newElastigroupId, id))
-              .collect(Collectors.toList());
+    } else {
+      oldSpotServerInstanceInfos = Collections.emptyList();
+    }
+
+    List<SpotServerInstanceInfo> newSpotServerInstanceInfos;
+    if (newElastigroup != null && isNotEmpty(newElastigroup.getId())) {
+      String newElastigroupId = newElastigroup.getId();
+      List<String> newInstanceIds = elastigroupDeployTaskResponse.getEc2InstanceIdsAdded();
+      newSpotServerInstanceInfos = newInstanceIds == null
+          ? Collections.emptyList()
+          : newInstanceIds.stream()
+                .map(id -> mapToSpotServerInstanceInfo(infrastructure.getInfrastructureKey(), newElastigroupId, id))
+                .collect(Collectors.toList());
+
+    } else {
+      newSpotServerInstanceInfos = Collections.emptyList();
+    }
 
     return Stream.of(oldSpotServerInstanceInfos, newSpotServerInstanceInfos)
         .flatMap(Collection::stream)
