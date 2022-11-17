@@ -18,11 +18,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretDTOV2.SecretDTOV2Builder;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
@@ -238,18 +235,5 @@ public class SecretMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    EncryptedData secretManagerConfig = (EncryptedData) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(
-            BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(secretManagerConfig.getName())))
-        .name(BaseInputDefinition.buildName(secretManagerConfig.getName()))
-        .spec(null)
-        .build();
   }
 }

@@ -15,10 +15,7 @@ import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
@@ -199,18 +196,5 @@ public class TemplateMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    Template template = (Template) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(template.getName())))
-        .name(BaseInputDefinition.buildName(template.getName()))
-        .scope(BaseInputDefinition.buildScope(Scope.PROJECT))
-        .spec(null)
-        .build();
   }
 }

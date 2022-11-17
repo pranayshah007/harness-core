@@ -24,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT)
+@JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
 @TypeAlias("ContainerStepNode")
 @OwnedBy(PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepNode")
@@ -36,7 +36,7 @@ public class ContainerStepNode extends PmsAbstractStepNode {
   ContainerStepInfo containerStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.SHELL_SCRIPT;
+    return StepSpecTypeConstants.CONTAINER_STEP;
   }
 
   @Override

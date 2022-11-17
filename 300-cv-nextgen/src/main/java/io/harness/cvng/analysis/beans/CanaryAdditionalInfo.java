@@ -7,6 +7,11 @@
 
 package io.harness.cvng.analysis.beans;
 
+import static io.harness.cvng.analysis.CVAnalysisConstants.AFTER;
+import static io.harness.cvng.analysis.CVAnalysisConstants.BEFORE;
+import static io.harness.cvng.analysis.CVAnalysisConstants.CANARY;
+import static io.harness.cvng.analysis.CVAnalysisConstants.PRIMARY;
+
 import io.harness.cvng.beans.job.VerificationJobType;
 
 import com.google.common.base.Preconditions;
@@ -24,9 +29,9 @@ public class CanaryAdditionalInfo extends CanaryBlueGreenAdditionalInfo {
   }
 
   public enum CanaryAnalysisType {
-    CLASSIC("primary", "canary"),
-    IMPROVISED("before", "after"),
-    BLUE_GREEN("blue", "green");
+    CLASSIC(PRIMARY, CANARY),
+    IMPROVISED(BEFORE, AFTER),
+    BLUE_GREEN(BEFORE, AFTER);
 
     private final String primaryInstancesLabel;
     private final String canaryInstancesLabel;

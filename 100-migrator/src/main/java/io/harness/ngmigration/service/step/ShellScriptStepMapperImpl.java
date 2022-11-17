@@ -7,18 +7,30 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.shell.ScriptType;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.shellscript.ExecutionTarget;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
 import io.harness.steps.shellscript.ShellScriptStepNode;
 import io.harness.steps.shellscript.ShellType;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.core.variables.NGVariableType;
+import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.sm.states.ShellScriptState;
 import software.wings.yaml.workflow.StepYaml;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptStepMapperImpl implements StepMapper {
   @Override
@@ -30,18 +42,58 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     // TODO: add mappers for other fields in shell script
+    ShellScriptState state = new ShellScriptState(stepYaml.getName());
+    state.parseProperties(properties);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
     baseSetup(stepYaml, shellScriptStepNode);
+
+    ExecutionTarget executionTarget = null;
+
+    if (!state.isExecuteOnDelegate()) {
+      // TODO: Fix connectionRef
+      executionTarget = ExecutionTarget.builder()
+                            .host(ParameterField.createValueField(state.getHost()))
+                            .connectorRef(ParameterField.createValueField("<+input>"))
+                            .workingDirectory(ParameterField.createValueField(state.getCommandPath()))
+                            .build();
+    }
+
+    List<NGVariable> outputVars = new ArrayList<>();
+    if (StringUtils.isNotBlank(state.getOutputVars())) {
+      outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .map(str
+                                -> StringNGVariable.builder()
+                                       .name(str)
+                                       .type(NGVariableType.STRING)
+                                       .value(ParameterField.createValueField(str))
+                                       .build())
+                            .collect(Collectors.toList()));
+    }
+    if (StringUtils.isNotBlank(state.getSecretOutputVars())) {
+      outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .map(str
+                                -> StringNGVariable.builder()
+                                       .name(str)
+                                       .type(NGVariableType.SECRET)
+                                       .value(ParameterField.createValueField(str))
+                                       .build())
+                            .collect(Collectors.toList()));
+    }
+
     shellScriptStepNode.setShellScriptStepInfo(
         ShellScriptStepInfo.infoBuilder()
-            .onDelegate(ParameterField.createValueField((boolean) properties.get("executeOnDelegate")))
-            .shell(ShellType.Bash)
+            .onDelegate(ParameterField.createValueField(state.isExecuteOnDelegate()))
+            .shell(ScriptType.BASH.equals(state.getScriptType()) ? ShellType.Bash : ShellType.PowerShell)
             .source(ShellScriptSourceWrapper.builder()
                         .type("Inline")
                         .spec(ShellScriptInlineSource.builder()
-                                  .script(ParameterField.createValueField((String) properties.get("scriptString")))
+                                  .script(ParameterField.createValueField(state.getScriptString()))
                                   .build())
                         .build())
+            .environmentVariables(new ArrayList<>())
+            .outputVariables(outputVars)
+            .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
+            .executionTarget(executionTarget)
             .build());
     return shellScriptStepNode;
   }

@@ -267,6 +267,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity;
+    long start = System.currentTimeMillis();
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
         optionalPipelineEntity =
@@ -282,6 +283,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving pipeline [%s]: %s", identifier, ExceptionUtils.getMessage(e)));
+    } finally {
+      log.info("[PMS_PipelineService] get Pipeline took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
     if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(

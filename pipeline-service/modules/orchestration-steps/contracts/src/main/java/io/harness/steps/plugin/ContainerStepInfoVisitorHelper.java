@@ -13,5 +13,7 @@ public class ContainerStepInfoVisitorHelper implements ConfigValidator {
   }
 
   @Override
-  public void validate(Object object, ValidationVisitor visitor) {}
+  public void validate(Object object, ValidationVisitor visitor) {
+    ContainerStepInfo.infoBuilder().build();
+  }
 }

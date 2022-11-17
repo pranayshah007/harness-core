@@ -23,11 +23,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.Http;
-import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
@@ -66,7 +64,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -256,20 +253,6 @@ public class DiscoveryService {
 
   private void exportImg(Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph) {
     exportImg(entities, graph, NGMigrationConstants.DISCOVERY_IMAGE_PATH);
-  }
-
-  public MigrationInputResult migrationInput(DiscoveryResult result) {
-    Collection<CgEntityNode> cgEntityNodes = result.getEntities().values();
-    Map<CgEntityId, BaseEntityInput> inputMap = new HashMap<>();
-    for (CgEntityNode node : cgEntityNodes) {
-      NgMigrationService ngMigration = migrationFactory.getMethod(node.getType());
-      BaseEntityInput generatedInputs =
-          ngMigration.generateInput(result.getEntities(), result.getLinks(), node.getEntityId());
-      if (generatedInputs != null) {
-        inputMap.put(node.getEntityId(), generatedInputs);
-      }
-    }
-    return MigrationInputResult.builder().inputs(inputMap).build();
   }
 
   public StreamingOutput exportYamlFilesAsZip(MigrationInputDTO inputDTO, DiscoveryResult discoveryResult) {

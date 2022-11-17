@@ -25,7 +25,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.fail;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -778,13 +777,14 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
                                            .encryptedValue(encryptedValue.toCharArray())
                                            .secretManagerIdentifier(identifier)
                                            .build();
-    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedDataDTO);
     when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean())).thenReturn(null);
-    assertThatExceptionOfType(SecretManagementException.class)
-        .isThrownBy(()
-                        -> ngEncryptedDataService.delete(
-                            accountIdentifier, orgIdentifier, projectIdentifier, identifier, false));
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
+    assertThat(deleted).isEqualTo(true);
   }
 
   @Test

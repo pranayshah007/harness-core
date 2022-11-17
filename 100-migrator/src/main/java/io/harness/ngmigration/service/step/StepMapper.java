@@ -25,7 +25,12 @@ public interface StepMapper {
 
   default ParameterField<Timeout> getTimeout(StepYaml stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
-    String timeoutString = properties.getOrDefault("stateTimeoutInMinutes", "10") + "m";
+
+    String timeoutString = "10m";
+    if (properties.containsKey("timeoutMillis")) {
+      long t = Long.parseLong(properties.get("timeoutMillis").toString()) / 1000;
+      timeoutString = t + "s";
+    }
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 
