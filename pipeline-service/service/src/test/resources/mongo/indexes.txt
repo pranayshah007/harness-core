@@ -42,10 +42,8 @@ nodeExecutions {"name": "planExecutionId_mode_status_oldRetry_idx", "background"
 nodeExecutions {"name": "planExecutionId_nodeId_idx", "background": true} {"ambiance.planExecutionId": 1, "nodeId": 1}
 nodeExecutions {"name": "planExecutionId_oldRetry_idx", "background": true} {"ambiance.planExecutionId": 1, "oldRetry": 1}
 nodeExecutions {"name": "planExecutionId_parentId_createdAt_idx", "background": true} {"ambiance.planExecutionId": 1, "parentId": 1, "createdAt": -1}
-nodeExecutions {"name": "planExecutionId_parentId_status_oldRetry_idx", "background": true} {"ambiance.planExecutionId": 1, "parentId": 1, "status": 1, "oldRetry": 1}
 nodeExecutions {"name": "planExecutionId_stageFqn_idx", "background": true} {"ambiance.planExecutionId": 1, "planNode.stageFqn": 1}
 nodeExecutions {"name": "planExecutionId_status_idx", "background": true} {"ambiance.planExecutionId": 1, "status": 1}
-nodeExecutions {"name": "planExecutionId_status_stepCategory_createdAt_idx", "background": true} {"ambiance.planExecutionId": 1, "status": 1, "stepType.stepCategory": 1, "createdAt": 1}
 nodeExecutions {"name": "planExecutionId_stepCategory_identifier_idx", "background": true} {"ambiance.planExecutionId": 1, "stepType.stepCategory": 1, "identifier": 1}
 nodeExecutions {"name": "previous_id_idx", "background": true} {"previousId": 1}
 nodeExecutions {"name": "status_idx", "background": true} {"status": 1}
@@ -58,7 +56,6 @@ notifyQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 notifyQueue {"name": "waitInstanceId_1", "unique": true} {"waitInstanceId": 1}
 notifyResponses {"name": "createdAt_1", "background": true} {"createdAt": 1}
 notifyResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-orchestrationEventLog {"name": "createdAt", "background": true} {"createdAt": 1}
 orchestrationEventLog {"name": "planExecutionId_createdAt", "background": true} {"planExecutionId": 1, "createdAt": 1}
 orchestrationEventLog {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
@@ -70,37 +67,29 @@ outcomeInstances {"name": "unique_producedBySetupIdRuntimeIdIdx", "unique": true
 outcomeInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 pipelineMetadata {"name": "account_org_project_pipeline_run_sequence_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "runSequence": -1}
 pipelineMetadata {"name": "account_org_project_pipeline_yaml_git_config_branch_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "entityGitDetails.branch": 1, "entityGitDetails.repoIdentifier": 1}
-pipelineMetadataV2 {"name": "account_org_project_last_executed", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastExecutedAt": -1}
 pipelineMetadataV2 {"name": "account_org_project_pipeline", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
-pipelinesPMS {"name": "accountId_idx", "background": true} {"accountId": 1}
 pipelinesPMS {"name": "accountId_orgId_projectId_repo_createdAt_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "repo": 1, "createdAt": -1}
 pipelinesPMS {"name": "accountId_organizationId_projectId_lastUpdatedAt", "background": true} {"accountId": 1, "orgIdentifier": 1, "lastUpdatedAt": 1, "projectIdentifier": 1}
 pipelinesPMS {"name": "accountId_repoURL_filePath", "background": true} {"accountId": 1, "repoURL": 1, "filePath": 1}
-pipelinesPMS {"name": "createdAt_1", "background": true} {"createdAt": 1}
-pipelinesPMS {"name": "lastUpdatedAt_idx", "background": true} {"lastUpdatedAt": 1}
 pipelinesPMS {"name": "unique_accountId_organizationId_projectId_pipelineId_repo_branch", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "yamlGitConfigRef": 1, "branch": 1}
 planExecutions {"name": "accountId_orgId_projectId_pipelineId_status_createdAt_idx", "background": true} {"setupAbstractions.accountId": 1, "setupAbstractions.orgIdentifier": 1, "setupAbstractions.projectIdentifier": 1, "metadata.pipelineIdentifier": 1, "status": 1, "createdAt": -1}
 planExecutions {"name": "exec_tag_status_idx", "background": true} {"metadata.triggerInfo.triggeredBy.extraInfo.execution_trigger_tag_needed_for_abort": 1, "status": 1, "createdAt": -1}
-planExecutions {"name": "id_status_idx", "background": true} {"_id": 1, "status": 1}
 planExecutions {"name": "status_idx", "background": true} {"status": 1}
 planExecutions {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 planExecutionsMetadata {"name": "planExecutionId_idx", "unique": true} {"planExecutionId": 1}
 planExecutionsMetadata {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-planExecutionsSummary {"name": "accountId_executed_modules_startTs_idx", "background": true} {"accountId": 1, "executedModules": 1, "startTs": 1}
 planExecutionsSummary {"name": "accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_range_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "name": -1, "startTs": 1, "entityGitDetails.repoName": 1, "entityGitDetails.branch": 1, "pipelineIdentifier": 1, "status": 1, "modules": 1}
 planExecutionsSummary {"name": "accountId_orgId_projectId_startTs_repo_branch_pipelineIds_status_modules_range_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "startTs": -1, "entityGitDetails.repoName": 1, "entityGitDetails.branch": 1, "pipelineIdentifier": 1, "status": 1, "modules": 1}
 planExecutionsSummary {"name": "accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_range_idx", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "status": -1, "startTs": 1, "entityGitDetails.repoName": 1, "entityGitDetails.branch": 1, "pipelineIdentifier": 1, "modules": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_idx", "background": true} {"projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_createdAt_modules_idx", "background": true} {"modules": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pipelineIdentifier": 1}
-planExecutionsSummary {"name": "accountId_organizationId_projectId_pipelineId_createdAt_idx", "background": true} {"pipelineIdentifier": 1, "projectIdentifier": 1, "orgIdentifier": 1, "accountId": 1, "createdAt": 1}
 planExecutionsSummary {"name": "createdAt_1", "background": true} {"createdAt": 1}
 planExecutionsSummary {"name": "planExecutionId_1", "unique": true} {"planExecutionId": 1}
 planExecutionsSummary {"name": "rootExecution_createdAt_id", "background": true} {"retryExecutionMetadata.rootExecutionId": 1, "createdAt": -1}
 planExecutionsSummary {"name": "unique_accountId_organizationId_projectId_planExecutionId", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "planExecutionId": 1}
 planExecutionsSummary {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 plans {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-pmsSdkInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
 pmsSdkInstances {"name": "name_1", "unique": true} {"name": 1}
 preFlightEntity {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -117,7 +106,6 @@ resourceRestraintInstances {"name": "resourceRestraintId_resourceUnit_order_idx"
 resourceRestraintInstances {"name": "resourceRestraintId_resourceUnit_state_idx", "background": true} {"resourceRestraintId": 1, "resourceUnit": 1, "state": 1}
 resourceRestraintInstances {"name": "resourceRestraintId_state_idx", "background": true} {"resourceRestraintId": 1, "state": 1}
 resourceRestraintInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-resourceRestraints {"name": "createdAt_1", "background": true} {"createdAt": 1}
 resourceRestraints {"name": "uniqueName", "unique": true} {"accountId": 1, "name": 1}
 stepDetailInstance {"name": "nodeExecutionId_name_unique_idx", "unique": true} {"nodeExecutionId": 1, "name": 1}
 stepDetailInstance {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

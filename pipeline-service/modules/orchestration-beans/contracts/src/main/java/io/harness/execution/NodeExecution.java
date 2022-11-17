@@ -85,11 +85,13 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
   @NotNull Ambiance ambiance;
   @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) Node planNode;
   @NotNull ExecutionMode mode;
+  // Required for debugging, can be removed later
   @Wither @FdIndex @CreatedDate Long createdAt;
   private Long startTs;
   private Long endTs;
   private Duration initialWaitDuration;
   private Integer levelCount;
+  // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   // Resolved StepParameters stored just before invoking step.
@@ -228,26 +230,12 @@ public class NodeExecution implements PersistentEntity, UuidAccess, PmsNodeExecu
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.stageFqn)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("planExecutionId_parentId_status_oldRetry_idx")
-                 .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.parentId)
-                 .field(NodeExecutionKeys.status)
-                 .field(NodeExecutionKeys.oldRetry)
-                 .build())
         .add(CompoundMongoIndex.builder().name("previous_id_idx").field(NodeExecutionKeys.previousId).build())
         .add(SortCompoundMongoIndex.builder()
                  .name("planExecutionId_parentId_createdAt_idx")
                  .field(NodeExecutionKeys.planExecutionId)
                  .field(NodeExecutionKeys.parentId)
                  .descRangeField(NodeExecutionKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("planExecutionId_status_stepCategory_createdAt_idx")
-                 .field(NodeExecutionKeys.planExecutionId)
-                 .field(NodeExecutionKeys.status)
-                 .field(NodeExecutionKeys.stepCategory)
-                 .ascRangeField(NodeExecutionKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
         .build();

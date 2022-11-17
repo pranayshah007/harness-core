@@ -99,6 +99,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   @Trimmed @NotEmpty String projectIdentifier;
 
   @NotEmpty String pipelineIdentifier;
+  // Get on PlanExecutionId index
   @NotEmpty @FdUniqueIndex String planExecutionId;
   @NotEmpty String name;
 
@@ -138,6 +139,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
 
   Boolean notifyOnlyMe;
 
+  // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   // TODO: removing these getters after 6 months (13/10/21)
@@ -161,6 +163,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   RetryExecutionMetadata retryExecutionMetadata;
   PipelineStageInfo parentStageInfo;
   Boolean isLatestExecution;
+  // Required Index for PipelineTelemetryPublisher
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
   @Setter @NonFinal @Version Long version;
@@ -175,7 +178,9 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   }
 
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        // Required from PmsExecutionSummaryRepository
         .add(CompoundMongoIndex.builder()
                  .name("unique_accountId_organizationId_projectId_planExecutionId")
                  .unique(true)
@@ -199,20 +204,6 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_organizationId_projectId_pipelineId_createdAt_idx")
-                 .field(PlanExecutionSummaryKeys.pipelineIdentifier)
-                 .field(PlanExecutionSummaryKeys.projectIdentifier)
-                 .field(PlanExecutionSummaryKeys.orgIdentifier)
-                 .field(PlanExecutionSummaryKeys.accountId)
-                 .field(PlanExecutionSummaryKeys.createdAt)
-                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_executed_modules_startTs_idx")
-                 .field(PlanExecutionSummaryKeys.accountId)
-                 .field(PlanExecutionSummaryKeys.executedModules)
-                 .field(PlanExecutionSummaryKeys.startTs)
-                 .build())
-        .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_createdAt_modules_idx")
                  .field(PlanExecutionSummaryKeys.modules)
                  .field(PlanExecutionSummaryKeys.projectIdentifier)
@@ -220,6 +211,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .field(PlanExecutionSummaryKeys.accountId)
                  .field(PlanExecutionSummaryKeys.createdAt)
                  .build())
+        // fetchPipelineSummaryEntityFromRootParentId in repoCustomImpl
         .add(SortCompoundMongoIndex.builder()
                  .name("rootExecution_createdAt_id")
                  .field(PlanExecutionSummaryKeys.rootExecutionId)
@@ -240,6 +232,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.status)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
                  .build())
+        // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projectId_name_startTs_repo_branch_pipelineIds_status_modules_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
@@ -255,7 +248,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
                  .ascRangeField(PlanExecutionSummaryKeys.status)
                  .ascRangeField(PlanExecutionSummaryKeys.modules)
                  .build())
-
+        // Sort queries are added for list page
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_orgId_projectId_status_startTs_repo_branch_pipelineIds_modules_range_idx")
                  .field(PlanExecutionSummaryKeys.accountId)
