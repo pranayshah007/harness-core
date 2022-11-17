@@ -61,13 +61,13 @@ import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.GalleryImageIdentifier;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.network.models.LoadBalancer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.GalleryImageIdentifier;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.network.LoadBalancer;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;

@@ -10,9 +10,10 @@ package software.wings.scheduler;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -36,6 +37,7 @@ import software.wings.service.intfc.ResourceLookupService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,7 +50,7 @@ import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
-public class ResourceLookupSyncHandler implements Handler<Account> {
+public class ResourceLookupSyncHandler extends IteratorPumpModeHandler implements Handler<Account> {
   @Inject private ResourceLookupService resourceLookupService;
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -56,25 +58,31 @@ public class ResourceLookupSyncHandler implements Handler<Account> {
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
   @Inject private HarnessTagService harnessTagService;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("ResourceLookupTagLinkSync")
-            .poolSize(1)
-            .interval(ofHours(12))
-            .build(),
-        ResourceLookupSyncHandler.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.resourceLookupSyncIteration)
-            .targetInterval(ofHours(12))
-            .acceptableNoAlertDelay(ofMinutes(120))
-            .acceptableExecutionTime(ofMinutes(5))
-            .handler(this)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       ResourceLookupSyncHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.resourceLookupSyncIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(120))
+                           .acceptableExecutionTime(ofMinutes(5))
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "ResourceLookupTagLinkSync";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

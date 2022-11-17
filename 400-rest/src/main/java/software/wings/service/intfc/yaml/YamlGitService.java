@@ -119,6 +119,8 @@ public interface YamlGitService {
   List<YamlGitConfig> getYamlGitConfigs(
       String accountId, String gitConnectorId, String branchName, String repositoryName);
 
+  List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId);
+
   List<String> getYamlGitConfigIds(String accountId, String gitConnectorId, String branchName, String repositoryName);
 
   void handleGitChangeSet(YamlChangeSet yamlChangeSets, String accountId);

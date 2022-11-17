@@ -111,6 +111,25 @@ public class AccountResource {
     return ResponseDTO.newResponse(accountDTO);
   }
 
+  @GET
+  @Path("{accountIdentifier}/immutable-delegate-enabled")
+  @ApiOperation(value = "Get Immutable delegate enabled flag", nickname = "isImmutableDelegateEnabled")
+  @Operation(operationId = "isImmutableDelegateEnabled",
+      summary = "Checks if immutable delegate is enabled for account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns true if immutable delegate is enabled for account")
+      })
+  @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  public ResponseDTO<Boolean>
+  immutableDelegateEnabled(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+      "accountIdentifier") String accountIdentifier) {
+    Boolean immutableDelegateEnabled =
+        CGRestUtils.getResponse(accountClient.isImmutableDelegateEnabled(accountIdentifier));
+    return ResponseDTO.newResponse(immutableDelegateEnabled);
+  }
+
   @PUT
   @Path("{accountIdentifier}/name")
   @ApiOperation(value = "Update Account Name", nickname = "updateAccountNameNG")

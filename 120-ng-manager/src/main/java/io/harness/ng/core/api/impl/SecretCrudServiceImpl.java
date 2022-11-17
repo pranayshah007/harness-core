@@ -440,12 +440,15 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     }
   }
   @Override
-  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
+      boolean forceDelete) {
     Optional<SecretResponseWrapper> optionalSecret =
         get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (optionalSecret.isPresent()) {
-      secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
-          accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (!forceDelete) {
+        secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      }
     } else {
       return false;
     }
@@ -457,7 +460,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean localDeletionSuccess = false;
     if (encryptedData != null) {
       remoteDeletionSuccess =
-          encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+          encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
     }
 
     if (remoteDeletionSuccess) {
@@ -466,6 +469,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (remoteDeletionSuccess && localDeletionSuccess) {
       secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
           projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+
       publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
           EventsFrameworkMetadataConstants.DELETE_ACTION);
       return true;

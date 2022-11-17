@@ -8,6 +8,8 @@
 package io.harness.delegate.task.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
+import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType.INHERIT_FROM_DELEGATE;
@@ -19,6 +21,7 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
@@ -27,9 +30,12 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDT
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialType;
 import io.harness.delegate.task.gcp.helpers.GkeClusterHelper;
+import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.LogCallback;
@@ -127,12 +133,26 @@ public class ContainerDeploymentDelegateBaseHelper {
           gcpCredentials.getGcpCredentialType() == INHERIT_FROM_DELEGATE, gcpK8sInfraDelegateConfig.getCluster(),
           gcpK8sInfraDelegateConfig.getNamespace());
     } else if (clusterConfigDTO instanceof AzureK8sInfraDelegateConfig) {
-      AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = (AzureK8sInfraDelegateConfig) clusterConfigDTO;
-      return azureAsyncTaskHelper.getClusterConfig(azureK8sInfraDelegateConfig.getAzureConnectorDTO(),
-          azureK8sInfraDelegateConfig.getSubscription(), azureK8sInfraDelegateConfig.getResourceGroup(),
-          azureK8sInfraDelegateConfig.getCluster(), azureK8sInfraDelegateConfig.getNamespace(),
-          azureK8sInfraDelegateConfig.getEncryptionDataDetails(),
-          azureK8sInfraDelegateConfig.isUseClusterAdminCredentials());
+      try (LazyAutoCloseableWorkingDirectory workingDirectory =
+               new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
+        AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = (AzureK8sInfraDelegateConfig) clusterConfigDTO;
+        AzureConfigContext azureConfigContext =
+            AzureConfigContext.builder()
+                .azureConnector(azureK8sInfraDelegateConfig.getAzureConnectorDTO())
+                .encryptedDataDetails(azureK8sInfraDelegateConfig.getEncryptionDataDetails())
+                .subscriptionId(azureK8sInfraDelegateConfig.getSubscription())
+                .resourceGroup(azureK8sInfraDelegateConfig.getResourceGroup())
+                .cluster(azureK8sInfraDelegateConfig.getCluster())
+                .namespace(azureK8sInfraDelegateConfig.getNamespace())
+                .useClusterAdminCredentials(azureK8sInfraDelegateConfig.isUseClusterAdminCredentials())
+                .certificateWorkingDirectory(workingDirectory)
+                .build();
+        return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
+      } catch (IOException ioe) {
+        throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
+            "Please check you Azure connector configuration or delegate filesystem permissions.",
+            new AzureAuthenticationException(ioe.getMessage()));
+      }
     } else {
       throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
     }

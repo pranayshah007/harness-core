@@ -475,10 +475,8 @@ public class EventPublishHelper {
       return false;
     }
 
-    List<String> appIds = appService.getAppIdsByAccountId(accountId);
-
     PageRequest<Workflow> pageRequest = aPageRequest()
-                                            .addFilter("appId", Operator.IN, appIds.toArray())
+                                            .addFilter("accountId", Operator.EQ, accountId)
                                             .addFilter("createdBy.email", Operator.EQ, userEmail)
                                             .addFilter("sample", Operator.EQ, false)
                                             .addOrder(Workflow.CREATED_AT_KEY, OrderType.ASC)
@@ -834,7 +832,7 @@ public class EventPublishHelper {
   private void publishIfFirstDeployment(
       String workflowExecutionId, List<String> appIds, String accountId, String userEmail) {
     PageRequest<WorkflowExecution> executionPageRequest = aPageRequest()
-                                                              .addFilter("appId", Operator.IN, appIds.toArray())
+                                                              .addFilter("accountId", Operator.EQ, accountId)
                                                               .addFilter("createdBy.email", Operator.EQ, userEmail)
                                                               .addOrder(WorkflowExecutionKeys.createdAt, OrderType.ASC)
                                                               .withLimit("1")

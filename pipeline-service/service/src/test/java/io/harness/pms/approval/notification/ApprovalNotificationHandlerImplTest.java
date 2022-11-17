@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.vivekveman;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -22,6 +24,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupDTO;
@@ -47,13 +50,16 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.usergroups.UserGroupClient;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -105,7 +111,11 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                             .build();
     HarnessApprovalInstance approvalInstance =
         HarnessApprovalInstance.builder()
-            .approvers(ApproversDTO.builder().userGroups(Collections.singletonList("user")).build())
+            .approvers(
+                ApproversDTO.builder()
+                    .userGroups(new ArrayList<>(Arrays.asList("proj_faulty", "proj_right", "org.org_faulty",
+                        "org.org_right", "account.acc_faulty", "account.acc_right", "proj_faulty", "proj_right")))
+                    .build())
             .build();
     approvalInstance.setAmbiance(ambiance);
     approvalInstance.setCreatedAt(System.currentTimeMillis());
@@ -125,21 +135,50 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
     notificationSettingConfigDTOS.add(SlackConfigDTO.builder().build());
     notificationSettingConfigDTOS.add(EmailConfigDTO.builder().build());
 
-    List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder()
-                                                                     .identifier(userGroupIdentifier)
-                                                                     .notificationConfigs(notificationSettingConfigDTOS)
-                                                                     .build());
+    List<UserGroupDTO> userGroupDTOS =
+        new ArrayList<>(Arrays.asList(UserGroupDTO.builder()
+                                          .identifier("proj_right")
+                                          .accountIdentifier(accountId)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .notificationConfigs(notificationSettingConfigDTOS)
+                                          .build(),
+            UserGroupDTO.builder()
+                .identifier("org_right")
+                .accountIdentifier(accountId)
+                .orgIdentifier(orgIdentifier)
+                .notificationConfigs(notificationSettingConfigDTOS)
+                .build(),
+            UserGroupDTO.builder()
+                .identifier("acc_right")
+                .accountIdentifier(accountId)
+                .notificationConfigs(notificationSettingConfigDTOS)
+                .build()));
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
 
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(2)).sendNotificationAsync(any());
+    verify(notificationClient, times(6)).sendNotificationAsync(any());
     verify(pmsExecutionService, times(1))
         .getPipelineExecutionSummaryEntity(anyString(), anyString(), anyString(), anyString(), anyBoolean());
-    verify(userGroupClient, times(1)).getFilteredUserGroups(any());
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
+    ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    verify(ngLogCallback, times(1)).saveExecutionLog(stringArgumentCaptor.capture(), eq(LogLevel.WARN));
+
+    String invalidUserGroups = stringArgumentCaptor.getValue().split(":")[1].trim();
+    List<String> invalidUserGroupsList =
+        Arrays.stream(invalidUserGroups.substring(1, invalidUserGroups.length() - 1).split(","))
+            .map(String::trim)
+            .collect(Collectors.toList());
+    List<String> expectedInvalidUserGroupsList =
+        new ArrayList<>(Arrays.asList("proj_faulty", "org.org_faulty", "account.acc_faulty"));
+    assertThat(invalidUserGroupsList.size() == expectedInvalidUserGroupsList.size()
+        && invalidUserGroupsList.containsAll(expectedInvalidUserGroupsList)
+        && expectedInvalidUserGroupsList.containsAll(invalidUserGroupsList))
+        .isTrue();
   }
 
   @Test
@@ -198,11 +237,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(2)).sendNotificationAsync(any());
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
+    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
   }
 
   @Test
@@ -266,11 +306,13 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(2)).sendNotificationAsync(any());
+
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
+    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
   }
 
   @Test
@@ -334,11 +376,13 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(2)).sendNotificationAsync(any());
+
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
+    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
   }
 
   @Test
@@ -409,10 +453,12 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
                                                                      .build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
     when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    approvalInstance.setValidatedUserGroups(userGroupDTOS);
 
     doReturn(url).when(notificationHelper).generateUrl(ambiance);
     approvalNotificationHandler.sendNotification(approvalInstance, ambiance);
-    verify(notificationClient, times(2)).sendNotificationAsync(any());
+
     verify(ngLogCallback, times(2)).saveExecutionLog(anyString());
+    verify(ngLogCallback, times(1)).saveExecutionLog(anyString(), eq(LogLevel.WARN));
   }
 }

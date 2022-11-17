@@ -96,6 +96,8 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorExecutionHandlerImpl;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLocker;
@@ -110,7 +112,6 @@ import io.harness.migrations.MigrationModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
 import io.harness.mongo.QueryFactory;
-import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
@@ -349,7 +350,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -758,13 +758,34 @@ public class WingsApplication extends Application<MainConfiguration> {
     // Register collection iterators
     log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
     if (configuration.isEnableIterators()) {
+      /*
+       * If "iteratorConfigPath" is empty then default to the local bazel path where the
+       * config file will be present else use the path provided to fetch the config file.
+       * It will be empty for local environment and non-empty for container environment.
+       */
+      String iteratorConfigPath = "";
+      String iteratorConfigFile = "";
+      if ((configuration.getIteratorConfigPath() == null) || (configuration.getIteratorConfigPath().isEmpty())) {
+        iteratorConfigPath = System.getProperty("user.dir") + "/360-cg-manager";
+      } else {
+        iteratorConfigPath = configuration.getIteratorConfigPath();
+      }
+
+      iteratorConfigFile = iteratorConfigPath + "/iterator_config.json";
+      log.info("Iterator config will be read from {} ", iteratorConfigFile);
+      // Create the Iterator Execution Handler instance.
+      IteratorExecutionHandler iteratorExecutionHandler =
+          new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile);
+
       if (isManager()) {
-        registerIteratorsManager(
-            configuration.getIteratorsConfig(), injector, configuration.getDisableInstanceSyncIterator());
+        registerIteratorsManager(injector, iteratorExecutionHandler);
       }
       if (shouldEnableDelegateMgmt) {
-        registerIteratorsDelegateService(configuration.getIteratorsConfig(), injector);
+        registerIteratorsDelegateService(injector, iteratorExecutionHandler);
       }
+
+      // Start all the iterators.
+      iteratorExecutionHandler.startIterators();
     }
   }
 
@@ -1451,69 +1472,47 @@ public class WingsApplication extends Application<MainConfiguration> {
     ObserversHelper.registerSharedObservers(injector);
   }
 
-  public static void registerIteratorsDelegateService(IteratorsConfig iteratorsConfig, Injector injector) {
-    injector.getInstance(PerpetualTaskRecordHandler.class)
-        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateDisconnectDetectorIterator.class)
-        .registerIterators(iteratorsConfig.getDelegateDisconnectDetectorIteratorConfig().getThreadPoolSize());
-    injector.getInstance(FailDelegateTaskIterator.class)
-        .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();
+  public static void registerIteratorsDelegateService(
+      Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+    injector.getInstance(PerpetualTaskRecordHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DelegateDisconnectDetectorIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(FailDelegateTaskIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DelegateTelemetryPublisher.class).registerIterator(iteratorExecutionHandler);
   }
 
-  public static void registerIteratorsManager(
-      IteratorsConfig iteratorsConfig, Injector injector, Boolean disableInstanceSyncIterator) {
-    final ScheduledThreadPoolExecutor artifactCollectionExecutor =
-        new ScheduledThreadPoolExecutor(iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize(),
-            new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCollection").build());
-    final ScheduledThreadPoolExecutor eventDeliveryExecutor =
-        new ScheduledThreadPoolExecutor(iteratorsConfig.getEventDeliveryIteratorConfig().getThreadPoolSize(),
-            new ThreadFactoryBuilder().setNameFormat("Iterator-Event-Delivery").build());
-
-    injector.getInstance(AlertReconciliationHandler.class).registerIterators();
-    injector.getInstance(ArtifactCollectionHandler.class)
-        .registerIterators(
-            artifactCollectionExecutor, iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize());
-    injector.getInstance(ArtifactCleanupHandler.class).registerIterators(artifactCollectionExecutor);
-    injector.getInstance(EventDeliveryHandler.class).registerIterators(eventDeliveryExecutor);
-    if (!Boolean.TRUE.equals(disableInstanceSyncIterator)) {
-      injector.getInstance(InstanceSyncHandler.class)
-          .registerIterators(iteratorsConfig.getInstanceSyncIteratorConfig().getThreadPoolSize());
-    }
-    injector.getInstance(LicenseCheckHandler.class).registerIterators();
-    injector.getInstance(ApprovalPollingHandler.class).registerIterators();
-    injector.getInstance(GCPBillingHandler.class).registerIterators();
-    injector.getInstance(SegmentGroupEventJob.class).registerIterators();
-    injector.getInstance(BarrierServiceImpl.class).registerIterators();
-    injector.getInstance(EntityAuditRecordHandler.class).registerIterators();
-    injector.getInstance(UsageMetricsHandler.class).registerIterators();
-    injector.getInstance(ResourceConstraintBackupHandler.class)
-        .registerIterators(iteratorsConfig.getResourceConstraintBackupIteratorConfig().getThreadPoolSize());
-    injector.getInstance(WorkflowExecutionMonitorHandler.class)
-        .registerIterators(iteratorsConfig.getWorkflowExecutionMonitorIteratorConfig().getThreadPoolSize());
-    injector.getInstance(SettingAttributeValidateConnectivityHandler.class)
-        .registerIterators(iteratorsConfig.getSettingAttributeValidateConnectivityIteratorConfig().getThreadPoolSize());
-    injector.getInstance(VaultSecretManagerRenewalHandler.class)
-        .registerIterators(iteratorsConfig.getVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
-    injector.getInstance(SettingAttributesSecretsMigrationHandler.class).registerIterators();
-    injector.getInstance(GitSyncEntitiesExpiryHandler.class).registerIterators();
-    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterators();
-    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterators();
-    injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterators();
-    injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterators();
-    injector.getInstance(CeLicenseExpiryHandler.class).registerIterators();
-    injector.getInstance(DeleteAccountHandler.class).registerIterators();
-    injector.getInstance(DeletedEntityHandler.class).registerIterators();
-    injector.getInstance(ResourceLookupSyncHandler.class).registerIterators();
-    injector.getInstance(AccessRequestHandler.class).registerIterators();
-    injector.getInstance(ScheduledTriggerHandler.class).registerIterators();
-    injector.getInstance(LdapGroupScheduledHandler.class).registerIterators();
-    injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterators();
-    injector.getInstance(TimeoutEngine.class)
-        .registerIterators(
-            IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
-    injector.getInstance(GitSyncPollingIterator.class)
-        .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
+  public static void registerIteratorsManager(Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+    injector.getInstance(AlertReconciliationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ArtifactCollectionHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ArtifactCleanupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EventDeliveryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(InstanceSyncHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(LicenseCheckHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ApprovalPollingHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GCPBillingHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SegmentGroupEventJob.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(BarrierServiceImpl.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EntityAuditRecordHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(UsageMetricsHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ResourceConstraintBackupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(WorkflowExecutionMonitorHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SettingAttributeValidateConnectivityHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(VaultSecretManagerRenewalHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SettingAttributesSecretsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GitSyncEntitiesExpiryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(CeLicenseExpiryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeleteAccountHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeletedEntityHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ResourceLookupSyncHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(AccessRequestHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ScheduledTriggerHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(LdapGroupScheduledHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(TimeoutEngine.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
   }
 
   private void registerCronJobs(Injector injector) {

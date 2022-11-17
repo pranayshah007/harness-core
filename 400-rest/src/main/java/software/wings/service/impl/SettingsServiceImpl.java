@@ -165,6 +165,7 @@ import software.wings.service.intfc.apm.ApmVerificationService;
 import software.wings.service.intfc.manipulation.SettingsServiceManipulationObserver;
 import software.wings.service.intfc.security.ManagerDecryptionService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.service.intfc.yaml.YamlPushService;
 import software.wings.settings.RestrictionsAndAppEnvMap;
 import software.wings.settings.SettingValue;
@@ -174,6 +175,7 @@ import software.wings.utils.CryptoUtils;
 import software.wings.utils.EmailHelperUtils;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.amazonaws.arn.Arn;
 import com.google.common.annotations.VisibleForTesting;
@@ -267,6 +269,7 @@ public class SettingsServiceImpl implements SettingsService {
   @Inject private SettingAttributeDao settingAttributeDao;
   @Inject private CEMetadataRecordDao ceMetadataRecordDao;
   @Inject private RemoteObserverInformer remoteObserverInformer;
+  @Inject private YamlGitService yamlGitService;
 
   private static final String OPEN_SSH = "OPENSSH";
 
@@ -1567,6 +1570,14 @@ public class SettingsServiceImpl implements SettingsService {
             join(", ", infraMappingNames)));
       }
     } else {
+      if (SettingVariableTypes.GIT.name().equals(connectorSetting.getValue().getType())) {
+        List<YamlGitConfig> yamlGitConfigByConnector =
+            yamlGitService.getYamlGitConfigByConnector(connectorSetting.getAccountId(), connectorSetting.getUuid());
+        if (isNotEmpty(yamlGitConfigByConnector)) {
+          throw new InvalidRequestException(String.format("Connector is referenced for git sync in apps %s",
+              yamlGitConfigByConnector.stream().map(YamlGitConfig::getAppId).collect(Collectors.toList())));
+        }
+      }
       List<String> allAccountApps = appService.getAppIdsByAccountId(connectorSetting.getAccountId());
       List<ArtifactStream> artifactStreams =
           artifactStreamService.listBySettingId(connectorSetting.getUuid())

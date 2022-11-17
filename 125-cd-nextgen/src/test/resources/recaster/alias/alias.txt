@@ -559,3 +559,4 @@ io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
 io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig
+io.harness.beans.yaml.extended.ImagePullPolicy

@@ -14,6 +14,7 @@ import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
+import static software.wings.utils.WingsTestConstants.ORIGINAL_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
@@ -80,6 +81,9 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
     Map<String, List<String>> listData = new HashMap<>();
     populateListData(listData);
 
+    Map<String, Boolean> booleanData = new HashMap<>();
+    populateBooleanData(booleanData);
+
     Map<String, Object> objectData = new HashMap<>();
     populateObjectData(objectData);
 
@@ -89,6 +93,7 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
                                                   .integerData(integerData)
                                                   .stringData(stringData)
                                                   .listData(listData)
+                                                  .booleanData(booleanData)
                                                   .data(objectData)
                                                   .build();
 
@@ -124,6 +129,9 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
     Map<String, List<String>> listData = new HashMap<>();
     populateListData(listData);
 
+    Map<String, Boolean> booleanData = new HashMap<>();
+    populateBooleanData(booleanData);
+
     Map<String, Object> objectData = new HashMap<>();
     populateObjectData(objectData);
 
@@ -133,6 +141,7 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
                                                   .integerData(integerData)
                                                   .stringData(stringData)
                                                   .listData(listData)
+                                                  .booleanData(booleanData)
                                                   .data(objectData)
                                                   .build();
 
@@ -157,6 +166,9 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
     Map<String, List<String>> listData = null;
     populateListData(listData);
 
+    Map<String, Boolean> booleanData = new HashMap<>();
+    populateBooleanData(booleanData);
+
     Map<String, Object> objectData = new HashMap<>();
     populateObjectData(objectData);
 
@@ -166,6 +178,7 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
                                                   .integerData(integerData)
                                                   .stringData(stringData)
                                                   .listData(listData)
+                                                  .booleanData(booleanData)
                                                   .data(objectData)
                                                   .build();
 
@@ -185,6 +198,7 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
     stringData.put(EventProcessor.PARENT_EXECUTION, WingsTestConstants.PIPELINE_WORKFLOW_EXECUTION_ID);
     stringData.put(EventProcessor.STAGENAME, WingsTestConstants.WORKFLOW_NAME);
     stringData.put(EventProcessor.PIPELINE, WingsTestConstants.PIPELINE_NAME);
+    stringData.put(EventProcessor.ORIGINAL_EXECUTION_ID, ORIGINAL_EXECUTION_ID);
   }
 
   private void populateLongData(
@@ -207,6 +221,13 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
       listData.put(EventProcessor.ENV_LIST, asList(ENV_ID));
       listData.put(EventProcessor.ARTIFACT_LIST, asList(ARTIFACT_ID));
       listData.put(EventProcessor.ENVTYPES, asList(EnvironmentType.PROD.name()));
+    }
+  }
+
+  private void populateBooleanData(Map<String, Boolean> booleanData) {
+    if (booleanData != null) {
+      booleanData.put(EventProcessor.ON_DEMAND_ROLLBACK, false);
+      booleanData.put(EventProcessor.MANUALLY_ROLLED_BACK, false);
     }
   }
 

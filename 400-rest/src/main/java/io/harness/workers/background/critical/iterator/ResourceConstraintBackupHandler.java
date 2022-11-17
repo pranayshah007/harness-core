@@ -16,6 +16,8 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.exception.WingsException;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.ExceptionLogger;
@@ -32,39 +34,45 @@ import software.wings.service.intfc.ResourceConstraintService;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ResourceConstraintBackupHandler implements Handler<ResourceConstraintInstance> {
+public class ResourceConstraintBackupHandler
+    extends IteratorPumpModeHandler implements Handler<ResourceConstraintInstance> {
   private static final String handlerName = "ResourceConstraint-Backup";
-  private static final int scheduleIntervalSeconds = 60;
 
   @Inject private AccountService accountService;
   @Inject private ResourceConstraintService resourceConstraintService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<ResourceConstraintInstance> persistenceProvider;
 
-  public void registerIterators(int threadPoolSize) {
-    PumpExecutorOptions executorOptions = PumpExecutorOptions.builder()
-                                              .name(handlerName)
-                                              .poolSize(threadPoolSize)
-                                              .interval(ofSeconds(scheduleIntervalSeconds))
-                                              .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
-        ResourceConstraintBackupHandler.class,
-        MongoPersistenceIterator
-            .<ResourceConstraintInstance, MorphiaFilterExpander<ResourceConstraintInstance>>builder()
-            .clazz(ResourceConstraintInstance.class)
-            .fieldName(ResourceConstraintInstanceKeys.nextIteration)
-            .filterExpander(q -> q.field(ResourceConstraintInstanceKeys.state).in(NOT_FINISHED_STATES))
-            .targetInterval(ofSeconds(30))
-            .acceptableNoAlertDelay(ofSeconds(30))
-            .acceptableExecutionTime(ofSeconds(30))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ResourceConstraintInstance, MorphiaFilterExpander<ResourceConstraintInstance>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       ResourceConstraintBackupHandler.class,
+                       MongoPersistenceIterator
+                           .<ResourceConstraintInstance, MorphiaFilterExpander<ResourceConstraintInstance>>builder()
+                           .clazz(ResourceConstraintInstance.class)
+                           .fieldName(ResourceConstraintInstanceKeys.nextIteration)
+                           .filterExpander(q -> q.field(ResourceConstraintInstanceKeys.state).in(NOT_FINISHED_STATES))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofSeconds(30))
+                           .acceptableExecutionTime(ofSeconds(30))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = handlerName;
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

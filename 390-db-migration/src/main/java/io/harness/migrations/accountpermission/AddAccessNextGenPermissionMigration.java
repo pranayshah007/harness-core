@@ -1,9 +1,14 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.migrations.accountpermission;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.mongo.MongoUtils.setUnset;
-
-import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.Migration;
@@ -34,7 +39,6 @@ public class AddAccessNextGenPermissionMigration implements Migration {
         try {
           Set<PermissionAttribute.PermissionType> accountPermissions =
               userGroup.getAccountPermissions().getPermissions();
-          accountPermissions.add(ACCESS_NEXTGEN);
 
           UpdateOperations<UserGroup> operations = wingsPersistence.createUpdateOperations(UserGroup.class);
           setUnset(operations, UserGroupKeys.accountPermissions,

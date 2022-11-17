@@ -63,6 +63,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -365,5 +366,10 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
       log.warn("Failed to retrieve ciCodeBase from pipeline");
     }
     return ciCodeBaseYamlField;
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

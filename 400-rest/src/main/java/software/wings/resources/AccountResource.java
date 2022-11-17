@@ -180,6 +180,12 @@ public class AccountResource {
   }
 
   @GET
+  @Path("{accountId}/immutable-delegate-enabled")
+  public RestResponse<Boolean> isImmutableDelegateEnabled(@PathParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
+  }
+
+  @GET
   @Path("services-cv-24x7")
   @Timed
   @ExceptionMetered

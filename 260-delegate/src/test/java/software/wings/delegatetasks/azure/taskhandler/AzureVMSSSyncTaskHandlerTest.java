@@ -46,19 +46,21 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVMs;
-import com.microsoft.azure.management.compute.VirtualMachineSizeTypes;
-import com.microsoft.azure.management.compute.implementation.VirtualMachineScaleSetVMInner;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.LoadBalancerBackend;
-import com.microsoft.azure.management.network.PublicIPAddressDnsSettings;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
-import com.microsoft.azure.management.resources.Subscription;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVMs;
+import com.azure.resourcemanager.compute.models.VirtualMachineSizeTypes;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.LoadBalancerBackend;
+import com.azure.resourcemanager.network.models.PublicIpAddressDnsSettings;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import com.azure.resourcemanager.resources.models.Subscription;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -68,6 +70,7 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import reactor.core.publisher.Mono;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
@@ -156,10 +159,10 @@ public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
         .when(mockAzureComputeClient)
         .getVirtualMachineScaleSetByName(any(), any(), any(), any());
 
-    PagedList<VirtualMachineScaleSetVM> pageList = getPageList();
+    List<VirtualMachineScaleSetVM> pageList = new ArrayList<>();
     pageList.add(virtualMachineScaleSetVM);
     doReturn(virtualMachineScaleSetVMs).when(virtualMachineScaleSet).virtualMachines();
-    doReturn(pageList).when(virtualMachineScaleSetVMs).list();
+    doReturn(getPagedIterable(new SimpleResponse<>(null, 200, null, pageList))).when(virtualMachineScaleSetVMs).list();
     doReturn("administratorName").when(virtualMachineScaleSetVM).administratorUserName();
 
     AzureVMSSGetVirtualMachineScaleSetParameters azureVMSSGetVirtualMachineScaleSetParameters =
@@ -250,14 +253,10 @@ public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
   public void testListVirtualMachineScaleSetVMs() {
     String ipAddress = "IpAddress";
     String fqdn = "FQDN";
-    VirtualMachineScaleSetVMInner virtualMachineScaleSetVMInner = mock(VirtualMachineScaleSetVMInner.class);
-    doReturn("vmId").when(virtualMachineScaleSetVMInner).id();
-
-    VirtualMachineScaleSetVM virtualMachineScaleSetVM = mock(VirtualMachineScaleSetVM.class);
-    doReturn(virtualMachineScaleSetVMInner).when(virtualMachineScaleSetVM).inner();
 
     PowerState powerState = PowerState.RUNNING;
     doReturn(powerState).when(virtualMachineScaleSetVM).powerState();
+    doReturn("vmId").when(virtualMachineScaleSetVM).id();
 
     VirtualMachineSizeTypes virtualMachineSizeTypes = VirtualMachineSizeTypes.STANDARD_B1S;
     doReturn(virtualMachineSizeTypes).when(virtualMachineScaleSetVM).size();
@@ -304,30 +303,16 @@ public class AzureVMSSSyncTaskHandlerTest extends WingsBaseTest {
   }
 
   private void mockGetVMPublicIPAddress(String ipAddress, String fqdn) {
-    PublicIPAddressInner publicIPAddressInner = new PublicIPAddressInner();
+    PublicIpAddressInner publicIPAddressInner = new PublicIpAddressInner();
     publicIPAddressInner.withIpAddress(ipAddress);
-    PublicIPAddressDnsSettings dnsSettings = new PublicIPAddressDnsSettings();
+    PublicIpAddressDnsSettings dnsSettings = new PublicIpAddressDnsSettings();
     dnsSettings.withFqdn(fqdn);
     publicIPAddressInner.withDnsSettings(dnsSettings);
     doReturn(Optional.of(publicIPAddressInner)).when(mockAzureComputeClient).getVMPublicIPAddress(any());
   }
 
   @NotNull
-  public PagedList<VirtualMachineScaleSetVM> getPageList() {
-    return new PagedList<VirtualMachineScaleSetVM>() {
-      @Override
-      public Page<VirtualMachineScaleSetVM> nextPage(String s) {
-        return new Page<VirtualMachineScaleSetVM>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<VirtualMachineScaleSetVM> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 }
