@@ -40,11 +40,13 @@ import io.harness.exception.runtime.azure.AzureARMValidationException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.management.resources.Deployment;
-import com.microsoft.azure.management.resources.DeploymentPropertiesExtended;
-import com.microsoft.azure.management.resources.ErrorResponse;
-import com.microsoft.azure.management.resources.implementation.DeploymentExtendedInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
+import com.azure.core.management.exception.ManagementError;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentExtendedInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentValidateResultInner;
+import com.azure.resourcemanager.resources.models.Deployment;
+import com.azure.resourcemanager.resources.models.DeploymentPropertiesExtended;
 import lombok.NonNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,7 +92,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                  .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
-    ErrorResponse mockErrorResponse = mockErrorResponse();
+    ManagementError mockErrorResponse = mockErrorResponse();
     doReturn(mockErrorResponse).when(mockDeploymentValidateResultInner).error();
 
     doReturn(mockDeploymentValidateResultInner)
@@ -120,12 +122,13 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                  .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
-    Deployment mockDeployment = mock(Deployment.class);
+
+    SyncPoller<Void, Deployment> syncPollerMock = mock(SyncPoller.class);
 
     doReturn(mockDeploymentValidateResultInner)
         .when(azureManagementClient)
         .validateDeploymentAtResourceGroupScope(any(AzureClientContext.class), any(AzureARMTemplate.class));
-    doReturn(mockDeployment)
+    doReturn(syncPollerMock)
         .when(azureManagementClient)
         .deployAtResourceGroupScope(any(AzureClientContext.class), any(AzureARMTemplate.class));
     doReturn("{propertyName={type=String, value=propertyValue}}")
@@ -156,7 +159,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                 .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
-    ErrorResponse mockErrorResponse = mockErrorResponse();
+    ManagementError mockErrorResponse = mockErrorResponse();
     doReturn(mockErrorResponse).when(mockDeploymentValidateResultInner).error();
 
     doReturn(mockDeploymentValidateResultInner)
@@ -188,15 +191,18 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                 .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerResponseObject =
+        mock(SyncPoller.class);
     DeploymentExtendedInner mockDeploymentExtendedInner = mock(DeploymentExtendedInner.class);
     DeploymentPropertiesExtended properties = mock(DeploymentPropertiesExtended.class);
 
     doReturn(mockDeploymentValidateResultInner)
         .when(azureManagementClient)
         .validateDeploymentAtSubscriptionScope(any(AzureConfig.class), eq(subscriptionId), any(AzureARMTemplate.class));
-    doReturn(mockDeploymentExtendedInner)
+    doReturn(syncPollerResponseObject)
         .when(azureManagementClient)
         .deployAtSubscriptionScope(any(AzureConfig.class), eq(subscriptionId), any(AzureARMTemplate.class));
+    doReturn(mockDeploymentExtendedInner).when(syncPollerResponseObject).getFinalResult();
     doReturn(properties).when(mockDeploymentExtendedInner).properties();
     doReturn("{propertyName={type=String, value=propertyValue}}")
         .when(azureManagementClient)
@@ -226,7 +232,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                    .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
-    ErrorResponse mockErrorResponse = mockErrorResponse();
+    ManagementError mockErrorResponse = mockErrorResponse();
     doReturn(mockErrorResponse).when(mockDeploymentValidateResultInner).error();
 
     doReturn(mockDeploymentValidateResultInner)
@@ -258,15 +264,18 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                                    .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerResponseObject =
+        mock(SyncPoller.class);
     DeploymentExtendedInner mockDeploymentExtendedInner = mock(DeploymentExtendedInner.class);
     DeploymentPropertiesExtended properties = mock(DeploymentPropertiesExtended.class);
 
     doReturn(mockDeploymentValidateResultInner)
         .when(azureManagementClient)
         .validateDeploymentAtManagementGroupScope(any(AzureConfig.class), eq(groupId), any(AzureARMTemplate.class));
-    doReturn(mockDeploymentExtendedInner)
+    doReturn(syncPollerResponseObject)
         .when(azureManagementClient)
         .deployAtManagementGroupScope(any(AzureConfig.class), eq(groupId), any(AzureARMTemplate.class));
+    doReturn(mockDeploymentExtendedInner).when(syncPollerResponseObject).getFinalResult();
     doReturn(properties).when(mockDeploymentExtendedInner).properties();
     doReturn("{propertyName={type=String, value=propertyValue}}")
         .when(azureManagementClient)
@@ -294,7 +303,7 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                           .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
-    ErrorResponse mockErrorResponse = mockErrorResponse();
+    ManagementError mockErrorResponse = mockErrorResponse();
     doReturn(mockErrorResponse).when(mockDeploymentValidateResultInner).error();
 
     doReturn(mockDeploymentValidateResultInner)
@@ -323,15 +332,18 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
                                           .build();
 
     DeploymentValidateResultInner mockDeploymentValidateResultInner = mock(DeploymentValidateResultInner.class);
+    SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> syncPollerResponseObject =
+        mock(SyncPoller.class);
     DeploymentExtendedInner mockDeploymentExtendedInner = mock(DeploymentExtendedInner.class);
     DeploymentPropertiesExtended properties = mock(DeploymentPropertiesExtended.class);
 
     doReturn(mockDeploymentValidateResultInner)
         .when(azureManagementClient)
         .validateDeploymentAtTenantScope(any(AzureConfig.class), any(AzureARMTemplate.class));
-    doReturn(mockDeploymentExtendedInner)
+    doReturn(syncPollerResponseObject)
         .when(azureManagementClient)
         .deployAtTenantScope(any(AzureConfig.class), any(AzureARMTemplate.class));
+    doReturn(mockDeploymentExtendedInner).when(syncPollerResponseObject).getFinalResult();
     doReturn(properties).when(mockDeploymentExtendedInner).properties();
     doReturn("{propertyName={type=String, value=propertyValue}}")
         .when(azureManagementClient)
@@ -343,11 +355,11 @@ public class AzureARMDeploymentServiceTest extends CategoryTest {
     assertThat(outputs).isEqualTo("{propertyName={type=String, value=propertyValue}}");
   }
 
-  private ErrorResponse mockErrorResponse() {
-    ErrorResponse mockErrorResponse = mock(ErrorResponse.class);
-    doReturn("InvalidTemplate").when(mockErrorResponse).code();
-    doReturn("Deployment template validation failed").when(mockErrorResponse).message();
-    doReturn(" /providers/Microsoft.Management/resource_id").when(mockErrorResponse).target();
+  private ManagementError mockErrorResponse() {
+    ManagementError mockErrorResponse = mock(ManagementError.class);
+    doReturn("InvalidTemplate").when(mockErrorResponse).getCode();
+    doReturn("Deployment template validation failed").when(mockErrorResponse).getMessage();
+    doReturn(" /providers/Microsoft.Management/resource_id").when(mockErrorResponse).getTarget();
     return mockErrorResponse;
   }
 

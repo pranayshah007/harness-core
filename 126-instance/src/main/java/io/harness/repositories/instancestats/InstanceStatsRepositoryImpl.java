@@ -9,7 +9,6 @@ package io.harness.repositories.instancestats;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.models.InstanceStats;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -18,6 +17,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,7 +28,7 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
   private TimeScaleDBService timeScaleDBService;
   private static final int MAX_RETRY_COUNT = 3;
 
-  public InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId) {
+  public Timestamp getLastSnapshotTime(String accountId, String orgId, String projectId) throws Exception {
     int totalTries = 0;
     while (totalTries <= MAX_RETRY_COUNT) {
       ResultSet resultSet = null;
@@ -38,17 +38,18 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
         statement.setString(1, accountId);
         statement.setString(2, orgId);
         statement.setString(3, projectId);
-        statement.setString(4, serviceId);
         resultSet = statement.executeQuery();
         return parseInstanceStatsRecord(resultSet);
       } catch (SQLException ex) {
         if (totalTries == MAX_RETRY_COUNT) {
-          log.error("Error while fetching latest instance stats record", ex);
+          log.error("Error while fetching latest instance stats record after all retries");
+          throw ex;
         }
         log.warn("Could not fetch latest instance stats record. Retrying again. Retry number: {}", totalTries, ex);
         totalTries++;
       } catch (Exception ex) {
-        log.error("Error while fetching latest instance stats record", ex);
+        log.error("Error while fetching latest instance stats record");
+        throw ex;
       } finally {
         DBUtils.close(resultSet);
       }
@@ -58,16 +59,9 @@ public class InstanceStatsRepositoryImpl implements InstanceStatsRepository {
 
   // ------------------------------- PRIVATE METHODS ------------------------------
 
-  private InstanceStats parseInstanceStatsRecord(ResultSet resultSet) throws SQLException {
-    while (resultSet != null && resultSet.next()) {
-      return InstanceStats.builder()
-          .accountId(
-              resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.ACCOUNTID.fieldName()))
-          .envId(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.ENVID.fieldName()))
-          .serviceId(
-              resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
-          .reportedAt(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName()))
-          .build();
+  private Timestamp parseInstanceStatsRecord(ResultSet resultSet) throws SQLException {
+    if (resultSet != null && resultSet.next()) {
+      return resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName());
     }
     return null;
   }

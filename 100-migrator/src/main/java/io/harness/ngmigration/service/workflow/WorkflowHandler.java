@@ -10,18 +10,41 @@ package io.harness.ngmigration.service.workflow;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.service.MigratorUtility;
+import io.harness.ngmigration.service.step.StepMapper;
+import io.harness.ngmigration.service.step.StepMapperFactory;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.AbstractStepNode;
+import io.harness.plancreator.steps.StepGroupElementConfig;
+import io.harness.yaml.core.variables.NGVariable;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import software.wings.beans.GraphNode;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowPhase;
 import software.wings.beans.WorkflowPhase.Yaml;
+import software.wings.yaml.workflow.StepYaml;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public interface WorkflowHandler {
+  default TemplateEntityType getTemplateType(Workflow workflow) {
+    return TemplateEntityType.STAGE_TEMPLATE;
+  }
+
+  default List<NGVariable> getVariables(Workflow workflow) {
+    return new ArrayList<>();
+  }
+
+  default JsonNode getTemplateSpec(Workflow workflow) {
+    return null;
+  }
+
   List<Yaml> getPhases(Workflow workflow);
 
   List<GraphNode> getSteps(Workflow workflow);
@@ -48,5 +71,35 @@ public interface WorkflowHandler {
         .filter(phaseStep -> isNotEmpty(phaseStep.getSteps()))
         .flatMap(phaseStep -> phaseStep.getSteps().stream())
         .collect(Collectors.toList());
+  }
+
+  default ExecutionWrapperConfig getSteps(StepMapperFactory stepMapperFactory, WorkflowPhase.Yaml phase) {
+    List<PhaseStep.Yaml> phaseSteps = phase.getPhaseSteps();
+    List<ExecutionWrapperConfig> currSteps = new ArrayList<>();
+    if (EmptyPredicate.isNotEmpty(phaseSteps)) {
+      currSteps = phaseSteps.stream()
+                      .filter(phaseStep -> EmptyPredicate.isNotEmpty(phaseStep.getSteps()))
+                      .flatMap(phaseStep -> phaseStep.getSteps().stream())
+                      .map(phaseStep
+                          -> ExecutionWrapperConfig.builder()
+                                 .step(JsonPipelineUtils.asTree(getStepElementConfig(stepMapperFactory, phaseStep)))
+                                 .build())
+                      .collect(Collectors.toList());
+    }
+    return ExecutionWrapperConfig.builder()
+        .stepGroup(JsonPipelineUtils.asTree(StepGroupElementConfig.builder()
+                                                .identifier(MigratorUtility.generateIdentifier(phase.getName()))
+                                                .name(phase.getName())
+                                                .steps(currSteps)
+                                                .skipCondition(null)
+                                                .when(null)
+                                                .failureStrategies(null)
+                                                .build()))
+        .build();
+  }
+
+  default AbstractStepNode getStepElementConfig(StepMapperFactory stepMapperFactory, StepYaml step) {
+    StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
+    return stepMapper.getSpec(step);
   }
 }

@@ -29,6 +29,7 @@ public class GitOpsInstance {
   @NotEmpty private String envIdentifier;
   @NotEmpty private String serviceIdentifier;
   @NotEmpty private String serviceEnvIdentifier;
+  @NotEmpty private String clusterIdentifier;
   @NotEmpty private String buildId;
   @NotNull private long creationTimestamp;
   @NotNull private long lastDeployedAt;

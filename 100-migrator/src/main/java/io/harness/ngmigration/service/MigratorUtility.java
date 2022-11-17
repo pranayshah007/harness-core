@@ -23,6 +23,7 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.secrets.SecretFactory;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -35,6 +36,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,8 @@ import org.apache.commons.text.CaseUtils;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
+  private MigratorUtility() {}
+
   public static String generateManifestIdentifier(String name) {
     return generateIdentifier(name);
   }
@@ -67,6 +71,12 @@ public class MigratorUtility {
 
   public static void sort(List<NGYamlFile> files) {
     files.sort(Comparator.comparingInt(MigratorUtility::toInt));
+  }
+
+  public static ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(List<String> strings) {
+    return EmptyPredicate.isEmpty(strings)
+        ? ParameterField.createValueField(Collections.emptyList())
+        : ParameterField.createValueField(strings.stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
   }
 
   // This is for sorting entities while creating
@@ -92,8 +102,10 @@ public class MigratorUtility {
         return 35;
       case SERVICE_VARIABLE:
         return 40;
+      case WORKFLOW:
+        return 70;
       case PIPELINE:
-        return 50;
+        return 100;
       default:
         throw new InvalidArgumentsException("Unknown type found: " + file.getType());
     }

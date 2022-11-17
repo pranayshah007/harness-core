@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
+import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoBuilder;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoKeys;
 import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
@@ -55,13 +56,15 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
 
   // TODO: Make this better this should be called from no where else
   @Override
-  public void addStepInputs(String nodeExecutionId, String planExecutionId, PmsStepParameters resolvedInputs) {
-    NodeExecutionsInfo nodeExecutionsInfo = NodeExecutionsInfo.builder()
-                                                .nodeExecutionId(nodeExecutionId)
-                                                .planExecutionId(planExecutionId)
-                                                .resolvedInputs(resolvedInputs)
-                                                .build();
-    nodeExecutionsInfoRepository.save(nodeExecutionsInfo);
+  public void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters resolvedInputs) {
+    NodeExecutionsInfoBuilder nodeExecutionsInfoBuilder =
+        NodeExecutionsInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId);
+    if (resolvedInputs == null) {
+      nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
+      return;
+    }
+    nodeExecutionsInfoBuilder.resolvedInputs(resolvedInputs);
+    nodeExecutionsInfoRepository.save(nodeExecutionsInfoBuilder.build());
     stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
         StepDetailsUpdateInfo.builder().nodeExecutionId(nodeExecutionId).planExecutionId(planExecutionId).build());
   }

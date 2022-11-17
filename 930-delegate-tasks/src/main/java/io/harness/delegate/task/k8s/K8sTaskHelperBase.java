@@ -347,10 +347,7 @@ public class K8sTaskHelperBase {
 
   public static ProcessResult executeCommandSilent(AbstractExecutable command, String workingDirectory)
       throws Exception {
-    try (LogOutputStream emptyLogOutputStream = getEmptyLogOutputStream()) {
-      return command.execute(
-          workingDirectory, emptyLogOutputStream, emptyLogOutputStream, false, Collections.emptyMap());
-    }
+    return command.execute(workingDirectory, null, null, false, Collections.emptyMap());
   }
 
   public static ProcessResponse executeCommand(AbstractExecutable command, K8sDelegateTaskParams k8sDelegateTaskParams,
@@ -1468,7 +1465,7 @@ public class K8sTaskHelperBase {
   public boolean doStatusCheckForWorkloads(Kubectl client, KubernetesResourceId resourceId,
       K8sDelegateTaskParams k8sDelegateTaskParams, String statusFormat, LogCallback executionLogCallback,
       boolean isErrorFrameworkEnabled) throws Exception {
-    try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream();
+    try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
          LogOutputStream statusErrorStream =
              new LogOutputStream() {
                @SneakyThrows

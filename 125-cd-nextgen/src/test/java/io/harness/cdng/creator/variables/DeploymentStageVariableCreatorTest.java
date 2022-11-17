@@ -426,13 +426,14 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
-            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
-                "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
-                "artifacts.primary.repositoryFormat", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.registryHostname",
-                "artifacts.primary.metadata", "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedSvcFqn(
+                List.of("service.identifier", "service.name", "service.description", "service.type", "service.tags",
+                    "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.repositoryName",
+                    "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
+                    "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                    "artifacts.primary.registryHostname", "artifacts.primary.metadata", "artifacts.primary.label",
+                    "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
                 "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",

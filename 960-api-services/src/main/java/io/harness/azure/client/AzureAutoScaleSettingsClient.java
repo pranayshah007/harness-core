@@ -9,9 +9,10 @@ package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
 
-import com.microsoft.azure.management.monitor.AutoscaleProfile;
-import com.microsoft.azure.management.monitor.AutoscaleSetting;
-import com.microsoft.azure.management.monitor.ScaleCapacity;
+import com.azure.resourcemanager.monitor.fluent.AutoscaleSettingsClient;
+import com.azure.resourcemanager.monitor.models.AutoscaleProfile;
+import com.azure.resourcemanager.monitor.models.AutoscaleSetting;
+import com.azure.resourcemanager.monitor.models.ScaleCapacity;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +65,20 @@ public interface AzureAutoScaleSettingsClient {
    */
   void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
       String resourceGroupName, String targetResourceId, String autoScaleSettingResourceInnerJson);
+
+  /**
+   * Attach Auto Scale Setting to target resource
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroupName
+   * @param targetResourceId
+   * @param autoScaleSettingResourceInnerJson
+   * @param autoscaleSettingsClient
+   */
+  void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String targetResourceId, String autoScaleSettingResourceInnerJson,
+      AutoscaleSettingsClient autoscaleSettingsClient);
   /**
    * Attach Auto Scale Setting to target resource
    * @param azureConfig
@@ -76,6 +91,20 @@ public interface AzureAutoScaleSettingsClient {
   void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
       String resourceGroupName, String targetResourceId, String autoScaleSettingResourceInnerJson,
       ScaleCapacity defaultProfileScaleCapacity);
+
+  /**
+   * Attach Auto Scale Setting to target resource
+   * @param azureConfig
+   * @param subscriptionId
+   * @param resourceGroupName
+   * @param targetResourceId
+   * @param autoScaleSettingResourceInnerJson
+   * @param defaultProfileScaleCapacity
+   * @param autoscaleSettingsClient
+   */
+  void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroupName, String targetResourceId, String autoScaleSettingResourceInnerJson,
+      ScaleCapacity defaultProfileScaleCapacity, AutoscaleSettingsClient autoscaleSettingsClient);
 
   /**
    * Clear Auto Scale Setting on target resource

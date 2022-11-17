@@ -317,7 +317,7 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
             .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipeline-id").build())
             .build();
 
-    when(pipelineService.getAndValidatePipeline("A", "B", "C", "pipeline-id", false))
+    when(pipelineService.getPipeline("A", "B", "C", "pipeline-id", false, true))
         .thenReturn(Optional.of(PipelineEntity.builder().name("pipeline-name").build()));
 
     Map<String, PipelineEntity> cache = new HashMap<>();
@@ -325,7 +325,7 @@ public class PMSResourceConstraintServiceTest extends PipelineServiceTestBase {
     assertThat(pmsResourceConstraintService.getPipelineName(cache, planExecution)).isEqualTo("pipeline-name");
     assertThat(pmsResourceConstraintService.getPipelineName(cache, planExecution)).isEqualTo("pipeline-name");
 
-    verify(pipelineService, Mockito.times(1)).getAndValidatePipeline("A", "B", "C", "pipeline-id", false);
+    verify(pipelineService, Mockito.times(1)).getPipeline("A", "B", "C", "pipeline-id", false, true);
   }
 
   @Test

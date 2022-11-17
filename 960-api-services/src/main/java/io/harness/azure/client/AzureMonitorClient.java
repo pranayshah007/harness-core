@@ -9,7 +9,7 @@ package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
 
-import com.microsoft.azure.management.monitor.EventData;
+import com.azure.resourcemanager.monitor.models.EventData;
 import java.util.List;
 import org.joda.time.DateTime;
 

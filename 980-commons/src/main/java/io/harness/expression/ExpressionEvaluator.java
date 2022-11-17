@@ -14,6 +14,7 @@ import static io.harness.exception.InvalidRequestException.USER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import software.wings.expression.SecretManagerMode;
 

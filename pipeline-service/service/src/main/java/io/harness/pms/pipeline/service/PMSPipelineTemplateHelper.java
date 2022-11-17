@@ -93,6 +93,7 @@ public class PMSPipelineTemplateHelper {
                 .checkForAccess(checkForTemplateAccess)
                 .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                 .build()));
+
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(
@@ -154,16 +155,22 @@ public class PMSPipelineTemplateHelper {
       String accountId, String orgId, String projectId, String yaml, PipelineEntity pipelineEntity) {
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
-    if (gitEntityInfo != null) {
-      return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
-          projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
-          gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
-          pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
-          pipelineEntity.getProjectIdentifier(), refreshRequest));
+    long start = System.currentTimeMillis();
+    try {
+      if (gitEntityInfo != null) {
+        return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(accountId, orgId,
+            projectId, gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
+            gitEntityInfo.getYamlGitConfigId(), true, pipelineEntity.getConnectorRef(), pipelineEntity.getRepo(),
+            pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+            pipelineEntity.getProjectIdentifier(), refreshRequest));
+      }
+      return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
+          accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+    } finally {
+      log.info(
+          "[PMS_PipelineTemplate] validating template inputs for given yaml took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectId, orgId, accountId);
     }
-
-    return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
-        accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
   }
 
   public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(

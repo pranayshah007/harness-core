@@ -29,8 +29,8 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import java.util.List;
 import java.util.Optional;
 import lombok.NoArgsConstructor;

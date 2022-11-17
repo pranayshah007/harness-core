@@ -29,8 +29,6 @@ import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
-import io.harness.azure.model.AzureHostConnectionType;
-import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.VirtualMachineData;
 import io.harness.azure.model.kube.AzureKubeConfig;
 import io.harness.azure.model.tag.TagDetails;
@@ -39,6 +37,7 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.DelegateResponseData;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.ManagementGroupData;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
@@ -55,7 +54,6 @@ import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
 import io.harness.exception.AzureAuthenticationException;
@@ -67,23 +65,23 @@ import io.harness.k8s.model.KubernetesAzureConfig;
 import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
+import com.azure.core.management.Region;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.containerregistry.models.Registry;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,13 +106,22 @@ public class AzureAsyncTaskHelper {
   private final int ITEM_LOG_LIMIT = 30;
   private final String SCOPE_DEFAULT_SUFFIX = "/.default";
 
-  public ConnectorValidationResult getConnectorValidationResult(
-      List<EncryptedDataDetail> encryptedDataDetails, AzureConnectorDTO connectorDTO) {
+  public ConnectorValidationResult getConnectorValidationResult(AzureConfigContext azureConfigContext) {
     String errorMessage;
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(connectorDTO.getCredential(),
-        encryptedDataDetails, connectorDTO.getCredential().getAzureCredentialType(),
-        connectorDTO.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = null;
+
+    try {
+      azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+          azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+          azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+          azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+          azureConfigContext.getCertificateWorkingDirectory());
+    } catch (IOException ioe) {
+      throw NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector",
+          "Please check you Azure connector configuration or delegate filesystem permissions.",
+          new AzureAuthenticationException(ioe.getMessage()));
+    }
 
     if (azureAuthorizationClient.validateAzureConnection(azureConfig)) {
       return ConnectorValidationResult.builder()
@@ -129,15 +136,16 @@ public class AzureAsyncTaskHelper {
         "Please check you Azure connector configuration.", new AzureAuthenticationException(errorMessage));
   }
 
-  public AzureSubscriptionsResponse listSubscriptions(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+  public AzureSubscriptionsResponse listSubscriptions(AzureConfigContext azureConfigContext) throws IOException {
     log.info(format("Fetching Azure subscriptions for %s user type",
-        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
-    log.trace(format("User: \n%s", azureConnector.toString()));
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureSubscriptionsResponse response;
     response =
@@ -155,22 +163,24 @@ public class AzureAsyncTaskHelper {
     return response;
   }
 
-  public AzureResourceGroupsResponse listResourceGroups(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
-    log.info(format("Fetching Azure resource groups for subscription %s for %s user type", subscriptionId,
-        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+  public AzureResourceGroupsResponse listResourceGroups(AzureConfigContext azureConfigContext) throws IOException {
+    log.info(format("Fetching Azure resource groups for subscription %s for %s user type",
+        azureConfigContext.getSubscriptionId(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConnector.toString()));
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
     AzureResourceGroupsResponse response;
-    response =
-        AzureResourceGroupsResponse.builder()
-            .resourceGroups(azureComputeClient.listResourceGroupsNamesBySubscriptionId(azureConfig, subscriptionId))
-            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .build();
+    response = AzureResourceGroupsResponse.builder()
+                   .resourceGroups(azureComputeClient.listResourceGroupsNamesBySubscriptionId(
+                       azureConfig, azureConfigContext.getSubscriptionId()))
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .build();
 
     log.info(format("Retrieved %d resource groups (listing first %d only): %s", response.getResourceGroups().size(),
         ITEM_LOG_LIMIT,
@@ -178,54 +188,62 @@ public class AzureAsyncTaskHelper {
 
     return response;
   }
-  public AzureImageGalleriesResponse listImageGalleries(List<EncryptedDataDetail> encryptionDetails,
-      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
-    log.info(format("Fetching Azure image galleries for subscription %s for %s user type", subscriptionId,
-        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+  public AzureImageGalleriesResponse listImageGalleries(AzureConfigContext azureConfigContext) throws IOException {
+    log.info(format("Fetching Azure image galleries for subscription %s for %s user type",
+        azureConfigContext.getSubscriptionId(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConnector.toString()));
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
     AzureImageGalleriesResponse response;
-    response =
-        AzureImageGalleriesResponse.builder()
-            .azureImageGalleries(azureComputeClient.listImageGalleries(azureConfig, subscriptionId, resourceGroup))
-            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .build();
+    response = AzureImageGalleriesResponse.builder()
+                   .azureImageGalleries(azureComputeClient.listImageGalleries(
+                       azureConfig, azureConfigContext.getSubscriptionId(), azureConfigContext.getResourceGroup()))
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .build();
 
     return response;
   }
-  public AzureWebAppNamesResponse listWebAppNames(List<EncryptedDataDetail> encryptionDetails,
-      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+  public AzureWebAppNamesResponse listWebAppNames(AzureConfigContext azureConfigContext) throws IOException {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureWebAppNamesResponse response;
     response = AzureWebAppNamesResponse.builder()
                    .webAppNames(azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(
-                       azureConfig, subscriptionId, resourceGroup))
+                       azureConfig, azureConfigContext.getSubscriptionId(), azureConfigContext.getResourceGroup()))
                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                    .build();
     return response;
   }
 
-  public AzureDeploymentSlotsResponse listDeploymentSlots(List<EncryptedDataDetail> encryptionDetails,
-      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup, String webAppName) {
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+  public AzureDeploymentSlotsResponse listDeploymentSlots(AzureConfigContext azureConfigContext)
+      throws IOException, ManagementException {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureDeploymentSlotsResponse response;
-    List<DeploymentSlot> webAppDeploymentSlots =
-        azureComputeClient.listWebAppDeploymentSlots(azureConfig, subscriptionId, resourceGroup, webAppName);
-    List<AzureDeploymentSlotResponse> deploymentSlotsData = toDeploymentSlotData(webAppDeploymentSlots, webAppName);
+    List<WebDeploymentSlotBasic> webAppDeploymentSlots =
+        azureComputeClient.listWebAppDeploymentSlots(azureConfig, azureConfigContext.getSubscriptionId(),
+            azureConfigContext.getResourceGroup(), azureConfigContext.getWebAppName());
+    List<AzureDeploymentSlotResponse> deploymentSlotsData =
+        toDeploymentSlotData(webAppDeploymentSlots, azureConfigContext.getWebAppName());
 
-    response = AzureDeploymentSlotsResponse.builder()
-                   .deploymentSlots(addProductionDeploymentSlotData(deploymentSlotsData, webAppName))
-                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                   .build();
+    response =
+        AzureDeploymentSlotsResponse.builder()
+            .deploymentSlots(addProductionDeploymentSlotData(deploymentSlotsData, azureConfigContext.getWebAppName()))
+            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+            .build();
     return response;
   }
 
@@ -238,9 +256,9 @@ public class AzureAsyncTaskHelper {
 
   @NotNull
   private List<AzureDeploymentSlotResponse> toDeploymentSlotData(
-      List<DeploymentSlot> deploymentSlots, String webAppName) {
+      List<WebDeploymentSlotBasic> deploymentSlots, String webAppName) {
     return deploymentSlots.stream()
-        .map(DeploymentSlot::name)
+        .map(WebDeploymentSlotBasic::name)
         .map(slotName
             -> AzureDeploymentSlotResponse.builder()
                    .name(format(DEPLOYMENT_SLOT_FULL_NAME_PATTERN, webAppName, slotName))
@@ -249,21 +267,24 @@ public class AzureAsyncTaskHelper {
         .collect(Collectors.toList());
   }
 
-  public AzureRegistriesResponse listContainerRegistries(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
-    log.info(format("Fetching Azure Container Registries for subscription %s for %s user type", subscriptionId,
-        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+  public AzureRegistriesResponse listContainerRegistries(AzureConfigContext azureConfigContext) throws IOException {
+    log.info(format("Fetching Azure Container Registries for subscription %s for %s user type",
+        azureConfigContext.getSubscriptionId(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConnector.toString()));
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureRegistriesResponse response;
     response =
         AzureRegistriesResponse.builder()
-            .containerRegistries(azureContainerRegistryClient.listContainerRegistries(azureConfig, subscriptionId)
+            .containerRegistries(azureContainerRegistryClient
+                                     .listContainerRegistries(azureConfig, azureConfigContext.getSubscriptionId())
                                      .stream()
                                      .map(Registry::name)
                                      .collect(Collectors.toList()))
@@ -277,26 +298,29 @@ public class AzureAsyncTaskHelper {
     return response;
   }
 
-  public AzureClustersResponse listClusters(List<EncryptedDataDetail> encryptionDetails,
-      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
+  public AzureClustersResponse listClusters(AzureConfigContext azureConfigContext) throws IOException {
     log.info(format("Fetching Azure Kubernetes Clusters for subscription %s, for resource group %s, for %s user type",
-        subscriptionId, resourceGroup, azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+        azureConfigContext.getSubscriptionId(), azureConfigContext.getResourceGroup(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConnector.toString()));
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureClustersResponse response;
     response =
         AzureClustersResponse.builder()
-            .clusters(
-                azureKubernetesClient.listKubernetesClusters(azureConfig, subscriptionId)
-                    .stream()
-                    .filter(kubernetesCluster -> kubernetesCluster.resourceGroupName().equalsIgnoreCase(resourceGroup))
-                    .map(HasName::name)
-                    .collect(Collectors.toList()))
+            .clusters(azureKubernetesClient.listKubernetesClusters(azureConfig, azureConfigContext.getSubscriptionId())
+                          .stream()
+                          .filter(kubernetesCluster
+                              -> kubernetesCluster.resourceGroupName().equalsIgnoreCase(
+                                  azureConfigContext.getResourceGroup()))
+                          .map(HasName::name)
+                          .collect(Collectors.toList()))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
 
@@ -306,34 +330,37 @@ public class AzureAsyncTaskHelper {
     return response;
   }
 
-  public AzureTagsResponse listTags(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+  public AzureTagsResponse listTags(AzureConfigContext azureConfigContext) throws IOException {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     return AzureTagsResponse.builder()
-        .tags(azureManagementClient.listTags(azureConfig, subscriptionId)
-                  .stream()
+        .tags(azureManagementClient.listTags(azureConfig, azureConfigContext.getSubscriptionId())
+                  .toStream()
                   .map(TagDetails::getTagName)
                   .collect(Collectors.toList()))
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
   }
 
-  public AzureHostsResponse listHosts(List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector,
-      String subscriptionId, String resourceGroup, AzureOSType osType, Map<String, String> tags,
-      AzureHostConnectionType hostConnectionType) {
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+  public AzureHostsResponse listHosts(AzureConfigContext azureConfigContext) throws IOException {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     return AzureHostsResponse.builder()
-        .hosts(
-            azureComputeClient.listHosts(azureConfig, subscriptionId, resourceGroup, osType, tags, hostConnectionType)
-                .stream()
-                .map(this::toAzureHost)
-                .collect(Collectors.toList()))
+        .hosts(azureComputeClient
+                   .listHosts(azureConfig, azureConfigContext.getSubscriptionId(),
+                       azureConfigContext.getResourceGroup(), azureConfigContext.getAzureOSType(),
+                       azureConfigContext.getTags(), azureConfigContext.getAzureHostConnectionType())
+                   .stream()
+                   .map(this::toAzureHost)
+                   .collect(Collectors.toList()))
         .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
         .build();
   }
@@ -348,44 +375,48 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(AzureConnectorDTO azureConnector, String subscriptionId,
-      String resourceGroup, String cluster, String namespace, List<EncryptedDataDetail> encryptedDataDetails,
-      boolean useClusterAdminCredentials) {
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptedDataDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext) throws IOException {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
-    return getKubernetesConfigK8sCluster(
-        azureConfig, subscriptionId, resourceGroup, cluster, namespace, useClusterAdminCredentials);
+    return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
+        azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
+        azureConfigContext.isUseClusterAdminCredentials());
   }
 
-  public AzureRepositoriesResponse listRepositories(List<EncryptedDataDetail> encryptionDetails,
-      AzureConnectorDTO azureConnector, String subscriptionId, String containerRegistry) {
-    log.info(format(
-        "Fetching Azure Container Registry repositories for subscription %s, for registry %s, for %s user type",
-        subscriptionId, containerRegistry, azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+  public AzureRepositoriesResponse listRepositories(AzureConfigContext azureConfigContext) throws IOException {
+    log.info(
+        format("Fetching Azure Container Registry repositories for subscription %s, for registry %s, for %s user type",
+            azureConfigContext.getSubscriptionId(), azureConfigContext.getContainerRegistry(),
+            azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType().getDisplayName()));
 
-    log.trace(format("User: \n%s", azureConnector.toString()));
+    log.trace(format("User: \n%s", azureConfigContext.getAzureConnector().toString()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureRepositoriesResponse response;
     Registry registry =
         azureContainerRegistryClient
-            .findFirstContainerRegistryByNameOnSubscription(azureConfig, subscriptionId, containerRegistry)
+            .findFirstContainerRegistryByNameOnSubscription(
+                azureConfig, azureConfigContext.getSubscriptionId(), azureConfigContext.getContainerRegistry())
             .orElseThrow(
                 ()
                     -> NestedExceptionUtils.hintWithExplanationException(
-                        format("Not found Azure container registry by name: %s, subscription id: %s", containerRegistry,
-                            subscriptionId),
+                        format("Not found Azure container registry by name: %s, subscription id: %s",
+                            azureConfigContext.getContainerRegistry(), azureConfigContext.getSubscriptionId()),
                         "Please check if the container registry and subscription values are properly configured.",
                         new AzureAuthenticationException("Failed to retrieve container registry")));
 
     response = AzureRepositoriesResponse.builder()
                    .repositories(azureContainerRegistryClient.listRepositories(
-                       azureConfig, subscriptionId, registry.loginServerUrl()))
+                       azureConfig, azureConfigContext.getSubscriptionId(), registry.loginServerUrl()))
                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                    .build();
 
@@ -554,7 +585,7 @@ public class AzureAsyncTaskHelper {
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
         || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
       scope = AzureUtils.convertToScope(
-          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint());
+          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint());
     }
     return azureAuthorizationClient.getUserAccessToken(azureConfig, scope).getAccessToken();
   }
@@ -651,13 +682,14 @@ public class AzureAsyncTaskHelper {
     }
   }
 
-  public AzureAcrTokenTaskResponse getAcrLoginToken(
-      String registry, List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
-    log.info(format("Fetching ACR login token for registry %s", registry));
+  public AzureAcrTokenTaskResponse getAcrLoginToken(AzureConfigContext azureConfigContext) throws IOException {
+    log.info(format("Fetching ACR login token for registry %s", azureConfigContext.getContainerRegistry()));
 
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     String azureAccessToken;
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
@@ -666,14 +698,15 @@ public class AzureAsyncTaskHelper {
           azureAuthorizationClient
               .getUserAccessToken(azureConfig,
                   AzureUtils.convertToScope(
-                      AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint()))
+                      AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
               .getAccessToken();
     } else {
       // only MSI connection will/should reach here
       azureAccessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();
     }
 
-    String refreshToken = azureContainerRegistryClient.getAcrRefreshToken(registry, azureAccessToken);
+    String refreshToken =
+        azureContainerRegistryClient.getAcrRefreshToken(azureConfigContext.getContainerRegistry(), azureAccessToken);
 
     return AzureAcrTokenTaskResponse.builder()
         .token(refreshToken)
@@ -681,17 +714,18 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public AzureMngGroupsResponse listMngGroup(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+  public AzureMngGroupsResponse listMngGroup(AzureConfigContext azureConfigContext) throws IOException {
     log.info("Fetching Azure management groups");
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
 
     AzureMngGroupsResponse azureMngGroupsResponse =
         AzureMngGroupsResponse.builder()
             .managementGroups(azureManagementClient.listManagementGroups(azureConfig)
-                                  .stream()
+                                  .toStream()
                                   .map(group
                                       -> ManagementGroupData.builder()
                                              .name(group.getName())
@@ -706,32 +740,35 @@ public class AzureAsyncTaskHelper {
     return azureMngGroupsResponse;
   }
 
-  public AzureLocationsResponse listSubscriptionLocations(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
+  public AzureLocationsResponse listSubscriptionLocations(AzureConfigContext azureConfigContext) throws IOException {
     log.info("Fetching Azure locations");
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
     AzureLocationsResponse azureLocationsResponse =
         AzureLocationsResponse.builder()
-            .locations(
-                new ArrayList<>(azureManagementClient.listLocationsBySubscriptionId(azureConfig, subscriptionId)))
+            .locations(new ArrayList<>(azureManagementClient.listLocationsBySubscriptionId(
+                azureConfig, azureConfigContext.getSubscriptionId())))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
     log.info(format("Retrieved %d locations", azureLocationsResponse.getLocations().size()));
     return azureLocationsResponse;
   }
 
-  public DelegateResponseData listLocations(
-      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+  public DelegateResponseData listLocations(AzureConfigContext azureConfigContext) throws IOException {
     log.info("Fetching Azure locations");
-    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
-        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
-        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
+        azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
+        azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
+        azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
+        azureConfigContext.getCertificateWorkingDirectory());
     AzureEnvironmentType azureEnvironmentType = azureConfig.getAzureEnvironmentType();
     AzureLocationsResponse azureLocationsResponse =
         AzureLocationsResponse.builder()
-            .locations(Arrays.stream(Region.values())
+            .locations(Region.values()
+                           .stream()
                            .filter(region
                                -> (AzureEnvironmentType.AZURE_US_GOVERNMENT == azureEnvironmentType)
                                    == AzureUtils.AZURE_GOV_REGIONS_NAMES.contains(region.name()))

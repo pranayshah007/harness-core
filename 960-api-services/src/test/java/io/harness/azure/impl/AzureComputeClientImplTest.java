@@ -18,13 +18,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.harness.CategoryTest;
 import io.harness.azure.AzureClient;
@@ -38,38 +37,41 @@ import io.harness.network.Http;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.azure.core.credential.AccessToken;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.ClientSecretCredential;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.DeploymentSlots;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.appservice.models.WebApps;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.compute.models.LinuxConfiguration;
+import com.azure.resourcemanager.compute.models.OSProfile;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.UpgradeMode;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVMs;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSets;
+import com.azure.resourcemanager.compute.models.VirtualMachines;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.PublicIpAddress;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.ResourceGroups;
+import com.azure.resourcemanager.resources.models.Subscription;
+import com.azure.resourcemanager.resources.models.Subscriptions;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.DeploymentSlots;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.appservice.WebApps;
-import com.microsoft.azure.management.compute.LinuxConfiguration;
-import com.microsoft.azure.management.compute.OSProfile;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.UpgradeMode;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithApply;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerBackendOrNatPool;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerNatPool;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVMs;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSets;
-import com.microsoft.azure.management.compute.VirtualMachines;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.PublicIPAddress;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.azure.management.resources.ResourceGroups;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.Subscriptions;
-import com.microsoft.rest.LogLevel;
-import com.microsoft.rest.RestException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -79,51 +81,53 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import reactor.core.publisher.Mono;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Azure.class, AzureClient.class, Http.class, TimeLimiter.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
+@PrepareForTest({AzureResourceManager.class, AzureClient.class, Http.class, TimeLimiter.class})
 public class AzureComputeClientImplTest extends CategoryTest {
-  @Mock private Azure.Configurable configurable;
-  @Mock private Azure.Authenticated authenticated;
-  @Mock private Azure azure;
+  @Mock private AzureResourceManager.Configurable configurable;
+  @Mock private AzureResourceManager.Authenticated authenticated;
+  @Mock private AzureResourceManager azure;
 
   @InjectMocks private AzureComputeClientImpl azureComputeClient;
 
   @Before
   public void before() throws Exception {
-    ApplicationTokenCredentials tokenCredentials = mock(ApplicationTokenCredentials.class);
-    whenNew(ApplicationTokenCredentials.class).withAnyArguments().thenReturn(tokenCredentials);
-    when(tokenCredentials.getToken(anyString())).thenReturn("tokenValue");
-    mockStatic(Azure.class);
-    when(Azure.configure()).thenReturn(configurable);
-    when(configurable.withLogLevel(any(LogLevel.class))).thenReturn(configurable);
-    when(configurable.authenticate(any(ApplicationTokenCredentials.class))).thenReturn(authenticated);
-    when(authenticated.withSubscription(anyString())).thenReturn(azure);
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
+    MockitoAnnotations.openMocks(this);
+    ClientSecretCredential clientSecretCredential = Mockito.mock(ClientSecretCredential.class);
+    PowerMockito.whenNew(ClientSecretCredential.class).withAnyArguments().thenReturn(clientSecretCredential);
+
+    AccessToken accessToken = Mockito.mock(AccessToken.class);
+    PowerMockito.whenNew(AccessToken.class).withAnyArguments().thenReturn(accessToken);
+
+    Mockito.when(clientSecretCredential.getToken(any())).thenReturn(Mono.just(accessToken));
+    MockedStatic<AzureResourceManager> azureResourceManagerMockedStatic = mockStatic(AzureResourceManager.class);
+
+    azureResourceManagerMockedStatic.when(() -> AzureResourceManager.configure()).thenReturn(configurable);
+    Mockito.when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+    Mockito.when(configurable.withHttpClient(any())).thenReturn(configurable);
+    Mockito.when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(configurable.authenticate(any(ClientSecretCredential.class), any(AzureProfile.class)))
+        .thenReturn(authenticated);
+    Mockito.when(authenticated.subscriptions()).thenReturn(getSubscriptions());
+    Mockito.when(authenticated.withSubscription(any())).thenReturn(azure);
+    Mockito.when(authenticated.withDefaultSubscription()).thenReturn(azure);
   }
 
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testListSubscriptions() throws Exception {
-    when(authenticated.withDefaultSubscription()).thenReturn(azure);
-    Subscription subscription = mock(Subscription.class);
-    Subscriptions subscriptions = mock(Subscriptions.class);
-    PagedList<Subscription> pageList = getPageList();
-    pageList.add(subscription);
-    when(azure.subscriptions()).thenReturn(subscriptions);
-    when(subscriptions.list()).thenReturn(pageList);
-
+  public void testListSubscriptions() {
+    when(azure.subscriptions()).thenReturn(getSubscriptions());
     List<Subscription> response = azureComputeClient.listSubscriptions(getAzureComputeConfig());
-
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(1);
   }
@@ -135,10 +139,11 @@ public class AzureComputeClientImplTest extends CategoryTest {
     when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
     ResourceGroups resourceGroups = mock(ResourceGroups.class);
     ResourceGroup resourceGroup = mock(ResourceGroup.class);
-    PagedList<ResourceGroup> pageList = getPageList();
-    pageList.add(resourceGroup);
+    List<ResourceGroup> responseList = new ArrayList<>();
+    responseList.add(resourceGroup);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
     when(azure.resourceGroups()).thenReturn(resourceGroups);
-    when(resourceGroups.list()).thenReturn(pageList);
+    when(resourceGroups.list()).thenReturn(getPagedIterable(simpleResponse));
 
     List<String> response =
         azureComputeClient.listResourceGroupsNamesBySubscriptionId(getAzureComputeConfig(), "subscriptionId");
@@ -156,14 +161,15 @@ public class AzureComputeClientImplTest extends CategoryTest {
     WebApp webApp1 = mock(WebApp.class);
     WebApps webApps = mock(WebApps.class);
 
-    PagedList<WebApp> pageList = getPageList();
-    pageList.add(webApp);
-    pageList.add(webApp1);
+    List<WebApp> responseList = new ArrayList<>();
+    responseList.add(webApp);
+    responseList.add(webApp1);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
     when(webApp.name()).thenReturn("test-web-app-1");
     when(webApp1.name()).thenReturn("test-web-app-2");
 
     when(azure.webApps()).thenReturn(webApps);
-    when(webApps.listByResourceGroup(anyString())).thenReturn(pageList);
+    when(webApps.listByResourceGroup(anyString())).thenReturn(getPagedIterable(simpleResponse));
 
     List<String> response = azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(
         getAzureComputeConfig(), "subscriptionId", "resourceGroup");
@@ -185,17 +191,18 @@ public class AzureComputeClientImplTest extends CategoryTest {
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     DeploymentSlots deploymentSlots = mock(DeploymentSlots.class);
 
-    PagedList<DeploymentSlot> pageList = getPageList();
-    pageList.add(deploymentSlot);
+    List<DeploymentSlot> responseList = new ArrayList<>();
+    responseList.add(deploymentSlot);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     when(webApp.name()).thenReturn("test-web-app-1");
     when(deploymentSlot.name()).thenReturn("test-deployment-slot");
     when(azure.webApps()).thenReturn(webApps);
     when(webApps.getByResourceGroup(anyString(), anyString())).thenReturn(webApp);
     when(webApp.deploymentSlots()).thenReturn(deploymentSlots);
-    when(deploymentSlots.list()).thenReturn(pageList);
+    when(deploymentSlots.list()).thenReturn(getPagedIterable(simpleResponse));
 
-    List<DeploymentSlot> response = azureComputeClient.listWebAppDeploymentSlots(
+    List<WebDeploymentSlotBasic> response = azureComputeClient.listWebAppDeploymentSlots(
         getAzureComputeConfig(), "subscriptionId", "resourceGroup", "webAppName");
 
     assertThat(response).isNotNull();
@@ -244,11 +251,12 @@ public class AzureComputeClientImplTest extends CategoryTest {
     VirtualMachineScaleSets virtualMachineScaleSets = mock(VirtualMachineScaleSets.class);
     VirtualMachineScaleSet virtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
 
-    PagedList<VirtualMachineScaleSet> pageList = getPageList();
-    pageList.add(virtualMachineScaleSet);
+    List<VirtualMachineScaleSet> responseList = new ArrayList<>();
+    responseList.add(virtualMachineScaleSet);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     when(azure.virtualMachineScaleSets()).thenReturn(virtualMachineScaleSets);
-    when(virtualMachineScaleSets.listByResourceGroup("resourceGroupName")).thenReturn(pageList);
+    when(virtualMachineScaleSets.listByResourceGroup("resourceGroupName")).thenReturn(getPagedIterable(simpleResponse));
 
     List<VirtualMachineScaleSet> response = azureComputeClient.listVirtualMachineScaleSetsByResourceGroupName(
         getAzureComputeConfig(), "subscriptionId", "resourceGroupName");
@@ -304,17 +312,14 @@ public class AzureComputeClientImplTest extends CategoryTest {
     VirtualMachineScaleSets virtualMachineScaleSets = mock(VirtualMachineScaleSets.class);
     VirtualMachineScaleSet virtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
     VirtualMachineScaleSetVMs virtualMachineScaleSetVMs = mock(VirtualMachineScaleSetVMs.class);
-    PagedList<VirtualMachineScaleSetVM> virtualMachineScaleSetVMPagedList = new PagedList<VirtualMachineScaleSetVM>() {
-      @Override
-      public Page<VirtualMachineScaleSetVM> nextPage(String s) throws RestException, IOException {
-        return null;
-      }
-    };
+
+    List<VirtualMachineScaleSetVM> responseList = new ArrayList<>();
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     when(azure.virtualMachineScaleSets()).thenReturn(virtualMachineScaleSets);
     when(virtualMachineScaleSets.getById("virtualMachineSetId")).thenReturn(virtualMachineScaleSet);
     when(virtualMachineScaleSet.virtualMachines()).thenReturn(virtualMachineScaleSetVMs);
-    when(virtualMachineScaleSetVMs.list()).thenReturn(virtualMachineScaleSetVMPagedList);
+    when(virtualMachineScaleSetVMs.list()).thenReturn(getPagedIterable(simpleResponse));
 
     assertThat(azureComputeClient.checkIsRequiredNumberOfVMInstances(
                    getAzureComputeConfig(), "subscriptionId", "virtualMachineSetId", 0))
@@ -364,11 +369,13 @@ public class AzureComputeClientImplTest extends CategoryTest {
     LoadBalancer primaryInternetFacingLoadBalancer = mock(LoadBalancer.class);
     VirtualMachineScaleSet virtualMachineScaleSet =
         mockVirtualMachineScaleSet(resourceGroupName, virtualMachineScaleSetName);
-    WithPrimaryLoadBalancer withPrimaryLoadBalancer = mock(WithPrimaryLoadBalancer.class);
-    WithPrimaryInternetFacingLoadBalancerBackendOrNatPool loadBalancerBackendOrNatPool =
-        mock(WithPrimaryInternetFacingLoadBalancerBackendOrNatPool.class);
-    WithPrimaryInternetFacingLoadBalancerNatPool loadBalancerNatPool =
-        mock(WithPrimaryInternetFacingLoadBalancerNatPool.class);
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer withPrimaryLoadBalancer =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSet.UpdateStages
+        .WithPrimaryInternetFacingLoadBalancerBackendOrNatPool loadBalancerBackendOrNatPool =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerBackendOrNatPool.class);
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerNatPool loadBalancerNatPool =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryInternetFacingLoadBalancerNatPool.class);
 
     when(virtualMachineScaleSet.name()).thenReturn(virtualMachineScaleSetName);
     when(virtualMachineScaleSet.update()).thenReturn(withPrimaryLoadBalancer);
@@ -398,8 +405,10 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
     VirtualMachineScaleSet virtualMachineScaleSet =
         mockVirtualMachineScaleSet(resourceGroupName, virtualMachineScaleSetName);
-    WithPrimaryLoadBalancer primaryLoadBalancer = mock(WithPrimaryLoadBalancer.class);
-    WithApply withoutPrimaryLoadBalancerBackend = mock(WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer primaryLoadBalancer =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSet.UpdateStages.WithApply withoutPrimaryLoadBalancerBackend =
+        mock(VirtualMachineScaleSet.UpdateStages.WithApply.class);
 
     when(virtualMachineScaleSet.name()).thenReturn(virtualMachineScaleSetName);
     when(virtualMachineScaleSet.update()).thenReturn(primaryLoadBalancer);
@@ -438,12 +447,13 @@ public class AzureComputeClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListHosts() {
     // Given
-    PagedList<VirtualMachine> pageList = getPageList();
-    pageList.add(aVirtualMachineWithName("vm-hostname-1"));
-    pageList.add(aVirtualMachineWithName("vm-hostname-2"));
+    List<VirtualMachine> responseList = new ArrayList<>();
+    responseList.add(aVirtualMachineWithName("vm-hostname-1"));
+    responseList.add(aVirtualMachineWithName("vm-hostname-2"));
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     VirtualMachines mockedVirtualMachines = mock(VirtualMachines.class);
-    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(pageList);
+    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(getPagedIterable(simpleResponse));
     when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
 
     // When
@@ -463,10 +473,11 @@ public class AzureComputeClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListHostsNoHosts() {
     // Given
-    PagedList<VirtualMachine> pageList = getPageList();
+    List<VirtualMachine> responseList = new ArrayList<>();
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
 
     VirtualMachines mockedVirtualMachines = mock(VirtualMachines.class);
-    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(pageList);
+    when(mockedVirtualMachines.listByResourceGroup(eq("resourceGroup"))).thenReturn(getPagedIterable(simpleResponse));
     when(azure.virtualMachines()).thenReturn(mockedVirtualMachines);
 
     // When
@@ -479,7 +490,7 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
   private VirtualMachine aVirtualMachineWithName(String name) {
     final VirtualMachine virtualMachine = Mockito.mock(VirtualMachine.class);
-    final PublicIPAddress publicIPAddress = Mockito.mock(PublicIPAddress.class);
+    final PublicIpAddress publicIPAddress = Mockito.mock(PublicIpAddress.class);
     Mockito.when(publicIPAddress.ipAddress()).thenReturn(name);
 
     Mockito.when(virtualMachine.name()).thenReturn(name);
@@ -500,23 +511,38 @@ public class AzureComputeClientImplTest extends CategoryTest {
     return virtualMachineScaleSet;
   }
 
-  @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
+  private Subscriptions getSubscriptions() {
+    Subscription subscription = mock(Subscription.class);
+    List<Subscription> responseList = new ArrayList<>();
+    responseList.add(subscription);
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
+
+    return new Subscriptions() {
       @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
+      public Subscription getById(String s) {
+        return null;
+      }
+
+      @Override
+      public Mono<Subscription> getByIdAsync(String s) {
+        return null;
+      }
+
+      @Override
+      public PagedIterable<Subscription> list() {
+        return getPagedIterable(simpleResponse);
+      }
+
+      @Override
+      public PagedFlux<Subscription> listAsync() {
+        return null;
       }
     };
+  }
+
+  @NotNull
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 
   private AzureConfig getAzureComputeConfig() {

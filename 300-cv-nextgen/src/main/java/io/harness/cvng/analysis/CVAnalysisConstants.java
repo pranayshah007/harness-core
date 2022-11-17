@@ -42,4 +42,8 @@ public interface CVAnalysisConstants {
       5; // This is updated to 5mins, previously it was 15. Once this becomes the normal, we will rename the variable.
   int TREND_ANALYSIS_BASELINE_WINDOW_FOR_NEW_CLUSTER = 30;
   String LEARNING_ENGINE_TASK_METRIC = "le_task_queued_count";
+  String BEFORE = "before";
+  String AFTER = "after";
+  String PRIMARY = "primary";
+  String CANARY = "canary";
 }

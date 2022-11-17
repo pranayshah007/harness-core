@@ -21,7 +21,9 @@ import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.entities.Project;
 import io.harness.repositories.instance.InstanceRepository;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -142,10 +144,8 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String serviceIdentifier, long timestamp) {
-    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
+  public List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp) {
+    return instanceRepository.getActiveInstancesByServiceAndEnv(project, timestamp).getMappedResults();
   }
 
   /*

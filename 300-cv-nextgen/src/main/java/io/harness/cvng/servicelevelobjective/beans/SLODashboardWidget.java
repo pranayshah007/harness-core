@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -84,6 +85,8 @@ public class SLODashboardWidget {
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
+    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore double sliStatusPercentage;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }

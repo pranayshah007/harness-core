@@ -29,7 +29,12 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import java.util.Collections;
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedResponse;
+import com.azure.core.http.rest.PagedResponseBase;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +43,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import reactor.core.publisher.Mono;
 
 public class AzureARMListManagementGroupTaskHandlerTest extends CategoryTest {
   @Mock private AzureManagementClient azureManagementClient;
@@ -58,7 +64,13 @@ public class AzureARMListManagementGroupTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteTaskInternal() {
     ManagementGroupInfo managementGroupInfo = getManagementGroupInfo();
-    doReturn(Collections.singletonList(managementGroupInfo)).when(azureManagementClient).listManagementGroups(any());
+    List<ManagementGroupInfo> managementGroupInfoList = new ArrayList<>();
+    managementGroupInfoList.add(managementGroupInfo);
+    PagedFlux<ManagementGroupInfo> pagedFluxResponse =
+        new PagedFlux<>((Supplier<Mono<PagedResponse<ManagementGroupInfo>>>) ()
+                            -> Mono.just(new PagedResponseBase(null, 200, null, managementGroupInfoList, null, null)));
+
+    doReturn(pagedFluxResponse).when(azureManagementClient).listManagementGroups(any());
 
     AzureARMTaskResponse azureARMTaskResponse = azureARMListManagementGroupTaskHandler.executeTaskInternal(
         new AzureARMTaskParameters(), AzureConfig.builder().build(), mockLogStreamingTaskClient);

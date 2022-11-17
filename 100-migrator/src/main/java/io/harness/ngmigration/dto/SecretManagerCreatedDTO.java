@@ -10,7 +10,7 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
-import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ngmigration.beans.CustomSecretRequestWrapper;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -25,5 +25,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class SecretManagerCreatedDTO {
   private ConnectorConfigDTO connector;
-  private List<SecretDTOV2> secrets;
+  private List<CustomSecretRequestWrapper> secrets;
 }

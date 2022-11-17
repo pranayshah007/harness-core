@@ -7,6 +7,8 @@
 
 package io.harness.ngmigration.service;
 
+import static software.wings.ngmigration.NGMigrationEntityType.WORKFLOW;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.BaseProvidedInput;
@@ -21,12 +23,14 @@ import io.harness.ngmigration.dto.SecretFilter;
 import io.harness.ngmigration.dto.SecretManagerFilter;
 import io.harness.ngmigration.dto.ServiceFilter;
 import io.harness.ngmigration.dto.TemplateFilter;
+import io.harness.ngmigration.dto.WorkflowFilter;
 import io.harness.ngmigration.service.importer.AppImportService;
 import io.harness.ngmigration.service.importer.ConnectorImportService;
 import io.harness.ngmigration.service.importer.SecretManagerImportService;
 import io.harness.ngmigration.service.importer.SecretsImportService;
 import io.harness.ngmigration.service.importer.ServiceImportService;
 import io.harness.ngmigration.service.importer.TemplateImportService;
+import io.harness.ngmigration.service.importer.WorkflowImportService;
 
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.DiscoveryResult;
@@ -46,6 +50,7 @@ public class MigrationResourceService {
   @Inject private ServiceImportService serviceImportService;
   @Inject private DiscoveryService discoveryService;
   @Inject private TemplateImportService templateImportService;
+  @Inject private WorkflowImportService workflowImportService;
 
   private DiscoveryResult discover(String authToken, ImportDTO importDTO) {
     // Migrate referenced entities as well.
@@ -69,6 +74,9 @@ public class MigrationResourceService {
     if (filter instanceof TemplateFilter) {
       return templateImportService.discover(authToken, importDTO);
     }
+    if (filter instanceof WorkflowFilter) {
+      return workflowImportService.discover(authToken, importDTO);
+    }
     return DiscoveryResult.builder().build();
   }
 
@@ -90,6 +98,14 @@ public class MigrationResourceService {
       defaults = importDTO.getInputs().getDefaults();
       expressions = importDTO.getInputs().getExpressions();
     }
+
+    // We do not want to auto migrate WFs. We want customers to migrate WFs by choice.
+    if (!WORKFLOW.equals(importDTO.getEntityType())) {
+      InputDefaults inputDefaults = defaults.getOrDefault(WORKFLOW, new InputDefaults());
+      inputDefaults.setSkipMigration(true);
+      defaults.put(WORKFLOW, inputDefaults);
+    }
+
     return MigrationInputDTO.builder()
         .accountIdentifier(importDTO.getAccountIdentifier())
         .orgIdentifier(importDTO.getDestinationDetails().getOrgIdentifier())

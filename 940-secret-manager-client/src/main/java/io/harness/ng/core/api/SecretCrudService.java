@@ -39,7 +39,8 @@ public interface SecretCrudService {
       String searchTerm, int page, int size, ConnectorCategory sourceCategory,
       boolean includeAllSecretsAccessibleAtScope);
 
-  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  boolean delete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean forceDelete);
 
   void deleteBatch(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> secretIdentifiersList);

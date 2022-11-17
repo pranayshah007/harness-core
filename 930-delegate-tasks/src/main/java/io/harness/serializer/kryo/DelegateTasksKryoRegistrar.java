@@ -24,9 +24,13 @@ import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.SecretManagementException;
+import io.harness.exception.TerraformSecretCleanupFailureException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
@@ -1000,5 +1004,9 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AWSPrometheusInfo.class, 90001);
     kryo.register(CustomSecretNGManagerConfig.class, 40114);
     kryo.register(NexusVersion.class, 40115);
+    kryo.register(TerraformSecretCleanupTaskParameters.class, 40116);
+    kryo.register(TerraformSecretCleanupTaskResponse.class, 40117);
+    kryo.register(TerraformSecretCleanupFailureException.class, 40118);
+    kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
   }
 }
