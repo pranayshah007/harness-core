@@ -1082,9 +1082,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
           - name
-          - created
           - updated
       description: Parameter on the basis of which sorting is done.
     Order:

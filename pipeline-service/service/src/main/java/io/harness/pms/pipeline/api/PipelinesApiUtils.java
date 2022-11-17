@@ -339,20 +339,13 @@ public class PipelinesApiUtils {
       return null;
     }
     switch (field) {
-      case "slug":
-        field = "identifier";
-        break;
       case "name":
-        break;
-      case "created":
-        field = "createdAt";
         break;
       case "updated":
         field = "lastUpdatedAt";
         break;
       default:
-        throw new InvalidRequestException(
-            "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+        throw new InvalidRequestException("Field provided for sorting unidentified. Accepted values: name / updated");
     }
     if (order == null) {
       order = "DESC";
