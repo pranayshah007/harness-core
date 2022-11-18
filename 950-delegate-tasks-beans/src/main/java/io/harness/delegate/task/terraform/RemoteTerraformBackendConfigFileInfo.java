@@ -9,11 +9,18 @@ package io.harness.delegate.task.terraform;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
+import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
+import lombok.Data;
 
 @OwnedBy(HarnessTeam.CDP)
-@SuperBuilder
+@Data
+@Builder
 public class RemoteTerraformBackendConfigFileInfo
-    extends RemoteTerraformFileInfo implements TerraformBackendConfigFileInfo, NestedAnnotationResolver {}
+    implements RemoteTerraformFileInfo, TerraformBackendConfigFileInfo, NestedAnnotationResolver {
+  GitFetchFilesConfig gitFetchFilesConfig;
+  FileStoreFetchFilesConfig filestoreFetchFilesConfig;
+}
