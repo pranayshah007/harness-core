@@ -8,7 +8,6 @@
 package io.harness.delegate.task.azure.arm;
 
 import static io.harness.azure.model.AzureConstants.ARM_DEPLOYMENT_STATUS_CHECK_INTERVAL;
-import static io.harness.azure.model.AzureConstants.ROLE_ASSIGNMENT_EXISTS_CLOUD_ERROR_CODE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import static java.lang.String.format;
@@ -36,13 +35,13 @@ import io.harness.logging.LogLevel;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 
+import com.azure.core.exception.AzureException;
+import com.azure.core.exception.ResourceExistsException;
+import com.azure.resourcemanager.authorization.models.BuiltInRole;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
+import com.azure.resourcemanager.network.models.ResourceIdentityType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.CloudError;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.management.graphrbac.BuiltInRole;
-import com.microsoft.azure.management.graphrbac.RoleAssignment;
-import com.microsoft.azure.management.network.ResourceIdentityType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -284,9 +283,8 @@ public class AzureBlueprintDeploymentService {
             "Role assignment successfully created %n- Principal ID: [%s] %n- Role Definition ID: [%s] %n- Scope: [%s]",
             roleAssignment.principalId(), roleAssignment.roleDefinitionId(), roleAssignment.scope()));
 
-      } catch (CloudException ex) {
-        CloudError body = ex.body();
-        if (body != null && ROLE_ASSIGNMENT_EXISTS_CLOUD_ERROR_CODE.equals(body.code())) {
+      } catch (AzureException ex) {
+        if (ex instanceof ResourceExistsException) {
           blueprintDeploymentLogCallback.saveExecutionLog(
               format("The role assignment already exists. %n- Scope: [%s]", assignmentResourceScope));
         } else {

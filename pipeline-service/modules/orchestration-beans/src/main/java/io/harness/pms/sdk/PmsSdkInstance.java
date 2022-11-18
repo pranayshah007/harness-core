@@ -11,7 +11,6 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
@@ -73,7 +72,7 @@ public class PmsSdkInstance implements PersistentEntity, UuidAware {
   ConsumerConfig nodeResumeEventConsumerConfig;
   ConsumerConfig startPlanCreationEventConsumerConfig;
 
-  @Default @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate Long createdAt = System.currentTimeMillis();
+  @Default @Setter @NonFinal @SchemaIgnore @CreatedDate Long createdAt = System.currentTimeMillis();
   @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate Long lastUpdatedAt;
   @Setter @NonFinal @Version Long version;
 

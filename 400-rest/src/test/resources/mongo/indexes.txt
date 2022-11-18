@@ -569,6 +569,7 @@ perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assig
 perpetualTask {"name": "assignIterator_1", "background": true} {"state": 1, "assignIteration": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
 perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
+perpetualTask {"name": "state_assignIteration_assignAfterMs", "background": true} {"state": 1, "assignIteration": 1, "assignAfterMs": 1}
 perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
 personalization {"name": "unique_identification", "unique": true} {"accountId": 1, "userId": 1}
 pipelineExecutions {"name": "appId_1", "background": true} {"appId": 1}
@@ -605,6 +606,7 @@ resourceLookup {"name": "resourceId_1", "background": true} {"resourceId": 1}
 resourceLookup {"name": "resourceIndex_1", "background": true} {"accountId": 1, "resourceType": 1, "appId": 1, "resourceName": 1}
 resourceLookup {"name": "resourceIndex_3", "background": true} {"accountId": 1, "resourceName": 1, "resourceType": 1}
 resourceLookup {"name": "tagsNameResourceLookupIndex", "background": true} {"accountId": 1, "tags.name": 1}
+roles {"name": "accountId_roleType_1", "background": true} {"accountId": 1, "roleType": 1}
 roles {"name": "appId_1", "background": true} {"appId": 1}
 roles {"name": "createdAt_1", "background": true} {"createdAt": 1}
 roles {"name": "roleType_accountId_1", "background": true} {"roleType": 1, "accountId": 1}

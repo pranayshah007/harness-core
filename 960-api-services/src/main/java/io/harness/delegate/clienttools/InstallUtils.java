@@ -256,7 +256,7 @@ public class InstallUtils {
     return runToolCommand(toolPath, tool.getValidateCommandArgs());
   }
 
-  private static boolean runToolCommand(final Path toolPath, final String script) {
+  static boolean runToolCommand(final Path toolPath, final String script) {
     final String command = String.format("%s %s", toolPath, script);
     try {
       return runCommand(null, command);

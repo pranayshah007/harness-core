@@ -233,7 +233,7 @@ public abstract class ContainerServiceSetup extends State {
               .deploymentType(deploymentType.name())
               .containerSetupParams(containerSetupParams)
               .activityId(activity.getUuid())
-              .cloudProviderSetting(settingAttribute)
+              .cloudProviderSetting(settingAttribute.toDTO())
               .cloudProviderCredentials(encryptedDataDetails)
               .serviceVariables(serviceVariables)
               .safeDisplayServiceVariables(safeDisplayServiceVariables)

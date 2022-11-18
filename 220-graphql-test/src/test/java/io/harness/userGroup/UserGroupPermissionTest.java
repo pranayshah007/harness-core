@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.DEEPAK;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.Environment.Builder.anEnvironment;
-import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
 import static software.wings.security.PermissionAttribute.PermissionType.AUDIT_VIEWER;
@@ -21,6 +20,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.CE_ADMI
 import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEWER;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.HIDE_NEXTGEN_BUTTON;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ACCOUNT_DEFAULTS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_API_KEYS;
@@ -146,7 +146,7 @@ public class UserGroupPermissionTest extends GraphQLTest {
         MANAGE_APPLICATION_STACKS, MANAGE_DELEGATES, MANAGE_ALERT_NOTIFICATION_RULES, MANAGE_DELEGATE_PROFILES,
         MANAGE_CONFIG_AS_CODE, MANAGE_SECRETS, MANAGE_SECRET_MANAGERS, MANAGE_AUTHENTICATION_SETTINGS,
         MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES, MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_API_KEYS,
-        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, ACCESS_NEXTGEN);
+        MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, HIDE_NEXTGEN_BUTTON);
     return new HashSet<>(permissionTypeList);
   }
 
@@ -170,7 +170,7 @@ MANAGE_TAGS, MANAGE_ACCOUNT_DEFAULTS, ADMINISTER_CE,
         MANAGE_ALERT_NOTIFICATION_RULES, MANAGE_DELEGATE_PROFILES, MANAGE_CONFIG_AS_CODE, MANAGE_SECRETS,
         MANAGE_SECRET_MANAGERS, MANAGE_SSH_AND_WINRM, MANAGE_AUTHENTICATION_SETTINGS, MANAGE_API_KEYS
         , MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES,
-        MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_RESTRICTED_ACCESS, ACCESS_NEXTGEN
+        MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_RESTRICTED_ACCESS, HIDE_NEXTGEN_BUTTON
 ]
 }
 }

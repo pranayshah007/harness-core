@@ -33,8 +33,8 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.KmsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.VaultConfig;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -169,7 +169,7 @@ public class CapabilityHelperTest extends WingsBaseTest {
     Integer sshPort = 22;
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(sshPort);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     GitConfig gitConfig = GitConfig.builder().repoUrl(repoUrl).sshSettingAttribute(sshSettingAttribute).build();
 
@@ -190,7 +190,7 @@ public class CapabilityHelperTest extends WingsBaseTest {
     Integer sshPort = 22;
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(sshPort);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     GitConfig gitConfig = GitConfig.builder().repoUrl(repoUrl).sshSettingAttribute(sshSettingAttribute).build();
 

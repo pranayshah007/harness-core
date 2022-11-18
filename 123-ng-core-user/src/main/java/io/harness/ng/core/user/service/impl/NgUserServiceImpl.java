@@ -511,6 +511,14 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @Override
+  public List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds) {
+    return userMetadataRepository.findAll(Criteria.where(UserMetadataKeys.email).in(emailIds), Pageable.unpaged())
+        .map(UserMetadataMapper::toDTO)
+        .stream()
+        .collect(toList());
+  }
+
+  @Override
   public Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable) {
     return userMembershipRepository.findAll(criteria, pageable);
   }

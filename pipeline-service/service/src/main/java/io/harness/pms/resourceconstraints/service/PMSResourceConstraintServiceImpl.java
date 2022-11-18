@@ -141,18 +141,17 @@ public class PMSResourceConstraintServiceImpl implements PMSResourceConstraintSe
     String cacheKey = String.format("%s_%s_%s_%s", accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     return cache
         .computeIfAbsent(
-            cacheKey, k -> getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier))
+            cacheKey, k -> getPipelineEntityName(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier))
         .getName();
   }
 
-  private PipelineEntity getPipelineEntity(
+  private PipelineEntity getPipelineEntityName(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     try (AutoLogContext ignore1 =
              new AutoLogContext(ImmutableMap.of("accountId", accountId, "orgIdentifier", orgIdentifier,
                                     "projectIdentifier", projectIdentifier, "pipelineIdentifier", pipelineIdentifier),
                  OVERRIDE_ERROR)) {
-      return pipelineService
-          .getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false)
+      return pipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, true)
           .orElseGet(() -> PipelineEntity.builder().build());
     } catch (RuntimeException e) {
       log.warn("An error occurs when resource constraint try access the pipeline entity", e);

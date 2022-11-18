@@ -32,6 +32,8 @@ import io.harness.distribution.barrier.Forcer;
 import io.harness.distribution.barrier.Forcer.State;
 import io.harness.distribution.barrier.ForcerId;
 import io.harness.exception.WingsException;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -62,6 +64,7 @@ import software.wings.sm.StateExecutionInstance.StateExecutionInstanceKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +79,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
-public class BarrierServiceImpl implements BarrierService, ForceProctor {
+public class BarrierServiceImpl extends IteratorPumpModeHandler implements BarrierService, ForceProctor {
   private static final String APP_ID = "appId";
   private static final String LEVEL = "level";
 
@@ -87,20 +90,29 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
   @Inject private MorphiaPersistenceProvider<BarrierInstance> persistenceProvider;
   @Inject private AppService appService;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder().name("BarrierInstanceMonitor").poolSize(2).interval(ofMinutes(1)).build(),
-        BarrierService.class,
-        MongoPersistenceIterator.<BarrierInstance, MorphiaFilterExpander<BarrierInstance>>builder()
-            .clazz(BarrierInstance.class)
-            .fieldName(BarrierInstanceKeys.nextIteration)
-            .targetInterval(ofMinutes(1))
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .handler(this::update)
-            .filterExpander(query -> query.filter(BarrierInstanceKeys.state, STANDING.name()))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<BarrierInstance, MorphiaFilterExpander<BarrierInstance>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions, BarrierService.class,
+                MongoPersistenceIterator.<BarrierInstance, MorphiaFilterExpander<BarrierInstance>>builder()
+                    .clazz(BarrierInstance.class)
+                    .fieldName(BarrierInstanceKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofMinutes(1))
+                    .handler(this::update)
+                    .filterExpander(query -> query.filter(BarrierInstanceKeys.state, STANDING.name()))
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "BarrierInstanceMonitor";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

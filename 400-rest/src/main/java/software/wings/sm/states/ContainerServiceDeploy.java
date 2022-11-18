@@ -217,7 +217,7 @@ public abstract class ContainerServiceDeploy extends State {
               .appId(contextData.app.getUuid())
               .envId(contextData.env.getUuid())
               .activityId(activity.getUuid())
-              .cloudProviderSetting(contextData.settingAttribute)
+              .cloudProviderSetting(contextData.settingAttribute.toDTO())
               .cloudProviderCredentials(contextData.encryptedDataDetails)
               .containerResizeParams(params)
               .deploymentType(deploymentType.name())

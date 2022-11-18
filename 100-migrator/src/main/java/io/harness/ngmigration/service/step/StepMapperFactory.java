@@ -14,6 +14,12 @@ import com.google.inject.Inject;
 public class StepMapperFactory {
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
+  @Inject HttpStepMapperImpl httpStepMapper;
+  @Inject ApprovalStepMapperImpl approvalStepMapper;
+  @Inject BarrierStepMapperImpl barrierStepMapper;
+  @Inject K8sApplyStepMapperImpl k8sApplyStepMapper;
+  @Inject K8sDeleteStepMapperImpl k8sDeleteStepMapper;
+  @Inject EmailStepMapperImpl emailStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
@@ -21,6 +27,18 @@ public class StepMapperFactory {
         return shellScriptStepMapper;
       case "K8S_DEPLOYMENT_ROLLING":
         return k8sRollingStepMapper;
+      case "HTTP":
+        return httpStepMapper;
+      case "APPROVAL":
+        return approvalStepMapper;
+      case "BARRIER":
+        return barrierStepMapper;
+      case "K8S_DELETE":
+        return k8sDeleteStepMapper;
+      case "K8S_APPLY":
+        return k8sApplyStepMapper;
+      case "EMAIL":
+        return emailStepMapper;
       default:
         throw new InvalidRequestException("Unsupported step");
     }

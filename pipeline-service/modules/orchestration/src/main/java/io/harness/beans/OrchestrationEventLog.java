@@ -57,11 +57,6 @@ public class OrchestrationEventLog implements PersistentEntity {
                  .field(OrchestrationEventLogKeys.planExecutionId)
                  .field(OrchestrationEventLogKeys.createdAt)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("createdAt")
-                 .unique(false)
-                 .field(OrchestrationEventLogKeys.createdAt)
-                 .build())
         .build();
   }
 
@@ -70,6 +65,7 @@ public class OrchestrationEventLog implements PersistentEntity {
   String nodeExecutionId;
   OrchestrationEventType orchestrationEventType;
   @Deprecated OrchestrationEvent event;
+  // TTL index
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plus(TTL).toInstant());
   long createdAt;
 }

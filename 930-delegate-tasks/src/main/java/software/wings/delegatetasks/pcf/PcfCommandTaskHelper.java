@@ -65,11 +65,11 @@ import io.harness.pcf.model.CfCreateApplicationRequestData;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 

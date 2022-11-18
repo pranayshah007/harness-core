@@ -73,6 +73,7 @@ public class DelegateTaskResourceV2 {
     SerializedResponseData serializedResponseData = SerializedResponseData.builder()
                                                         .data(serializedData)
                                                         .taskType(taskType)
+                                                        .taskTypeAsString(taskType.toString())
                                                         .serializationFormat(SerializationFormat.JSON)
                                                         .build();
 

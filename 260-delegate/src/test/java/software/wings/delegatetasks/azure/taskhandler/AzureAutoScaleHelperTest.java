@@ -35,8 +35,8 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.monitor.AutoscaleProfile;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.monitor.models.AutoscaleProfile;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Test;

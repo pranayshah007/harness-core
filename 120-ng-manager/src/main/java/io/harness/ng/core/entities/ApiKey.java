@@ -92,7 +92,7 @@ public class ApiKey implements PersistentEntity, UuidAware, NGAccountAccess, NGO
 
   @EntityIdentifier String identifier;
   @NGEntityName String name;
-  @NotNull @Size(max = 1024) String description;
+  @Size(max = 1024) String description;
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
 
   @NotNull String parentIdentifier;

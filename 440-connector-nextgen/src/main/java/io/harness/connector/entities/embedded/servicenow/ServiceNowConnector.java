@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.DbAliases;
 
 import lombok.AccessLevel;
@@ -38,4 +39,6 @@ public class ServiceNowConnector extends Connector {
   String username;
   String usernameRef;
   String passwordRef;
+  ServiceNowAuthType authType;
+  ServiceNowAuthentication serviceNowAuthentication;
 }

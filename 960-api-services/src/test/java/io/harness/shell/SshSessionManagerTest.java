@@ -14,10 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.ApiServiceTestBase;
 import io.harness.category.element.UnitTests;
@@ -37,13 +37,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @Slf4j
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(SshSessionFactory.class)
 public class SshSessionManagerTest extends ApiServiceTestBase {
   public static final String EXEC = "exec";
@@ -54,9 +52,9 @@ public class SshSessionManagerTest extends ApiServiceTestBase {
   private LogCallback logCallback = mock(LogCallback.class);
   private SshSessionManager manager = new SshSessionManager();
 
+  MockedStatic<SshSessionFactory> sshSessionFactoryMockedStatic;
+
   @Before
-  @Owner(developers = ARVIND)
-  @Category(UnitTests.class)
   public void before() {
     reset(jSch, session, channel, logCallback);
     Map<String, Session> sessions = (Map<String, Session>) ReflectionUtils.getFieldValue(manager, "sessions");
@@ -64,6 +62,8 @@ public class SshSessionManagerTest extends ApiServiceTestBase {
         (Map<String, List<Session>>) ReflectionUtils.getFieldValue(manager, "simplexSessions");
     sessions.clear();
     simplexSessions.clear();
+
+    sshSessionFactoryMockedStatic = mockStatic(SshSessionFactory.class);
   }
 
   @Test
@@ -91,10 +91,9 @@ public class SshSessionManagerTest extends ApiServiceTestBase {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetSimplexSession() throws Exception {
-    PowerMockito.mockStatic(SshSessionFactory.class);
     SshSessionConfig config =
         aSshSessionConfig().withHost("h").withExecutionId("e").withSocketConnectTimeout(SOCKET_CONNECT_TIMEOUT).build();
-    when(SshSessionFactory.getSSHSession(config, logCallback)).thenReturn(session);
+    sshSessionFactoryMockedStatic.when(() -> SshSessionFactory.getSSHSession(config, logCallback)).thenReturn(session);
     doReturn(channel).when(session).openChannel(EXEC);
 
     Map<String, List<Session>> simplexSessions =
@@ -113,10 +112,9 @@ public class SshSessionManagerTest extends ApiServiceTestBase {
   @Owner(developers = ARVIND)
   @Category(UnitTests.class)
   public void testGetSimplexSessionWithAlreadyCreatedSessions() throws Exception {
-    PowerMockito.mockStatic(SshSessionFactory.class);
     SshSessionConfig config =
         aSshSessionConfig().withHost("h").withExecutionId("e").withSocketConnectTimeout(SOCKET_CONNECT_TIMEOUT).build();
-    when(SshSessionFactory.getSSHSession(config, logCallback)).thenReturn(session);
+    sshSessionFactoryMockedStatic.when(() -> SshSessionFactory.getSSHSession(config, logCallback)).thenReturn(session);
     doReturn(channel).when(session).openChannel(EXEC);
 
     Map<String, List<Session>> simplexSessions =

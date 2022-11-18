@@ -39,7 +39,7 @@ public class ExecutionConfigOverrideFromFileOnDelegateTest extends CategoryTest 
   @Test
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
-  public void secretsShouldBeInitalizedAsEmptyIfFileIsNotPresent() {
+  public void secretsShouldBeInitializedAsEmptyIfFileIsNotPresent() {
     ExecutionConfigOverrideFromFileOnDelegate executionConfigOverrideFromFileOnDelegate =
         new ExecutionConfigOverrideFromFileOnDelegate();
     assertThat(executionConfigOverrideFromFileOnDelegate.getLocalDelegateSecrets()).isNotNull();
@@ -51,7 +51,7 @@ public class ExecutionConfigOverrideFromFileOnDelegateTest extends CategoryTest 
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
   public void secretsShouldBeInitializedIfFileIsPresent() throws IOException {
-    HashMap<String, String> secrets = new HashMap<String, String>() {
+    HashMap<String, String> secrets = new HashMap<>() {
       { put(TEST_KEY, TEST_VALUE); }
     };
     String string = new JSONObject(secrets).toString();

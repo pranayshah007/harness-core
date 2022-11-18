@@ -21,7 +21,6 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
@@ -131,21 +130,18 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testGetPipelines() {
-    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
-        PMSPipelineSummaryResponseDTO.builder()
-            .identifier(slug)
-            .name(name)
-            .createdAt(123456L)
-            .lastUpdatedAt(987654L)
-            .executionSummaryInfo(ExecutionSummaryInfoDTO.builder().deployments(Collections.singletonList(1)).build())
-            .storeType(StoreType.INLINE)
-            .build();
+    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO = PMSPipelineSummaryResponseDTO.builder()
+                                                                      .identifier(slug)
+                                                                      .name(name)
+                                                                      .createdAt(123456L)
+                                                                      .lastUpdatedAt(987654L)
+                                                                      .storeType(StoreType.INLINE)
+                                                                      .build();
     PipelineListResponseBody listResponseBody = PipelinesApiUtils.getPipelines(pmsPipelineSummaryResponseDTO);
     assertEquals(listResponseBody.getCreated().longValue(), 123456L);
     assertEquals(listResponseBody.getUpdated().longValue(), 987654L);
     assertEquals(listResponseBody.getSlug(), slug);
     assertEquals(listResponseBody.getName(), name);
     assertEquals(listResponseBody.getStoreType(), StoreTypeEnum.INLINE);
-    assertEquals(listResponseBody.getExecutionSummary().getDeploymentsCount().get(0).intValue(), 1);
   }
 }

@@ -178,9 +178,9 @@ public class ArtifactUtils {
         return String.format("type: %s, build: %s", sourceType, customArtifactConfig.getVersion().getValue());
       case JENKINS:
         JenkinsArtifactConfig jenkinsArtifactConfig = (JenkinsArtifactConfig) artifactConfig;
-        return String.format(placeholder, sourceType, jenkinsArtifactConfig.getJobName().getValue(),
-            jenkinsArtifactConfig.getArtifactPath().getValue(), jenkinsArtifactConfig.getBuild().getValue(),
-            jenkinsArtifactConfig.getConnectorRef().getValue());
+        return String.format("\ntype: %s \nJobName: %s \nArtifactPath: %s \nBuild: %s \nConnectorRef: %s\n", sourceType,
+            jenkinsArtifactConfig.getJobName().getValue(), jenkinsArtifactConfig.getArtifactPath().getValue(),
+            jenkinsArtifactConfig.getBuild().getValue(), jenkinsArtifactConfig.getConnectorRef().getValue());
       case GITHUB_PACKAGES:
         GithubPackagesArtifactConfig githubPackagesArtifactConfig = (GithubPackagesArtifactConfig) artifactConfig;
         return String.format(

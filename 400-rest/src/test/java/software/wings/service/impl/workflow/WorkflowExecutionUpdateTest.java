@@ -354,10 +354,10 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     when(workflowExecutionService.getUpdatedWorkflowExecution("appId", "uuid")).thenReturn(updatedWorkflowExecution);
     doNothing()
         .when(usageMetricsEventPublisher)
-        .publishDeploymentTimeSeriesEvent("accountId", updatedWorkflowExecution);
+        .publishDeploymentTimeSeriesEvent("accountId", updatedWorkflowExecution, Collections.emptyMap());
     workflowExecutionUpdate.publish(workflowExecution);
     ArgumentCaptor<WorkflowExecution> captor = ArgumentCaptor.forClass(WorkflowExecution.class);
-    verify(usageMetricsEventPublisher, times(1)).publishDeploymentTimeSeriesEvent(any(), captor.capture());
+    verify(usageMetricsEventPublisher, times(1)).publishDeploymentTimeSeriesEvent(any(), captor.capture(), anyMap());
     assertThat(captor.getValue()).isEqualTo(updatedWorkflowExecution);
   }
 }

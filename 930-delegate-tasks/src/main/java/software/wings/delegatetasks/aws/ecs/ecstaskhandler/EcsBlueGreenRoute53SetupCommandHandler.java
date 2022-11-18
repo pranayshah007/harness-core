@@ -13,8 +13,6 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -23,11 +21,11 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.response.EcsBGRoute53ServiceSetupResponse;
@@ -71,7 +69,7 @@ public class EcsBlueGreenRoute53SetupCommandHandler extends EcsCommandTaskHandle
               ecsBGRoute53ServiceSetupRequest.getSafeDisplayServiceVariables(), executionLogCallback, setupParams);
 
       SettingAttribute cloudProviderSetting =
-          aSettingAttribute().withValue(ecsBGRoute53ServiceSetupRequest.getAwsConfig()).build();
+          SettingAttribute.builder().value(ecsBGRoute53ServiceSetupRequest.getAwsConfig()).build();
 
       ecsSetupCommandTaskHelper.deleteExistingServicesOtherThanBlueVersion(
           setupParams, cloudProviderSetting, encryptedDataDetails, executionLogCallback);

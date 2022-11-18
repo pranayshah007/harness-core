@@ -91,7 +91,7 @@ public class PmsGraphStepDetailsServiceImplTest extends OrchestrationTestBase {
     String nodeExecutionId = generateUuid();
     String planExecutionId = generateUuid();
     PmsStepParameters pmsStepDetails = new PmsStepParameters(new HashMap<>());
-    pmsGraphStepDetailsService.addStepInputs(nodeExecutionId, planExecutionId, pmsStepDetails);
+    pmsGraphStepDetailsService.saveNodeExecutionInfo(nodeExecutionId, planExecutionId, pmsStepDetails);
     verify(stepDetailsUpdateObserverSubject, times(1)).fireInform(any(), any());
     verify(nodeExecutionsInfoRepository, times(1)).save(any());
   }

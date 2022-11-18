@@ -140,7 +140,7 @@ public class OrgSecretApiImpl implements OrgSecretApi {
     secretPermissionValidator.checkForAccessOrThrow(ResourceScope.of(account, org, null),
         Resource.of(SECRET_RESOURCE_TYPE, secret), SECRET_DELETE_PERMISSION,
         secretResponseWrapper != null ? secretResponseWrapper.getSecret().getOwner() : null);
-    boolean deleted = ngSecretService.delete(account, org, null, secret);
+    boolean deleted = ngSecretService.delete(account, org, null, secret, false);
     if (deleted) {
       return Response.ok().entity(secretApiUtils.toSecretResponse(secretResponseWrapper)).build();
     }

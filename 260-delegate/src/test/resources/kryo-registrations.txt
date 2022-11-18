@@ -227,7 +227,7 @@
 5005:software.wings.beans.TaskType
 5006:io.harness.delegate.beans.DelegateTaskResponse
 5007:software.wings.beans.artifact.ArtifactStreamAttributes
-5008:software.wings.beans.SettingAttribute
+5008:software.wings.beans.dto.SettingAttribute
 5009:software.wings.beans.BambooConfig
 5010:software.wings.beans.DockerConfig
 5011:software.wings.beans.EcrConfig
@@ -277,7 +277,6 @@
 5065:io.harness.delegate.beans.ChecksumType
 5066:software.wings.beans.artifact.ArtifactFile
 5067:software.wings.beans.infrastructure.Host
-5069:software.wings.beans.SettingAttribute.SettingCategory
 5070:software.wings.beans.HostConnectionAttributes
 5071:software.wings.beans.HostConnectionAttributes.ConnectionType
 5072:io.harness.shell.AccessType
@@ -1683,6 +1682,10 @@
 40113:com.amazonaws.services.cloudformation.model.StackStatus
 40114:software.wings.beans.CustomSecretNGManagerConfig
 40115:io.harness.delegate.utils.NexusVersion
+40116:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters
+40117:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse
+40118:io.harness.exception.TerraformSecretCleanupFailureException
+40119:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -2443,3 +2446,8 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+10000112:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO
+10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
+10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
+10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+
