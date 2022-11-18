@@ -11,6 +11,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
 import static java.util.Collections.emptyList;
 
@@ -23,7 +27,6 @@ import io.harness.cdng.common.capacity.PercentageCapacitySpec;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -55,6 +58,7 @@ import io.harness.steps.StepUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -225,11 +229,10 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     if (ExceptionUtils.cause(TaskNGDataException.class, e) != null) {
       throw e;
     }
-    CommandStepParameters executeCommandStepParameters = (CommandStepParameters) stepElementParameters.getSpec();
     List<UnitProgress> commandExecutionUnits =
-        executeCommandStepParameters.getCommandUnits()
+        getExecutionUnits()
             .stream()
-            .map(cu -> UnitProgress.newBuilder().setUnitName(cu.getName()).setStatus(UnitStatus.RUNNING).build())
+            .map(unit -> UnitProgress.newBuilder().setUnitName(unit).setStatus(UnitStatus.RUNNING).build())
             .collect(Collectors.toList());
 
     UnitProgressData currentUnitProgressData = UnitProgressData.builder().unitProgresses(commandExecutionUnits).build();
@@ -276,5 +279,10 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     }
 
     return stepResponseBuilder.build();
+  }
+
+  public List<String> getExecutionUnits() {
+    return Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
+        DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT);
   }
 }
