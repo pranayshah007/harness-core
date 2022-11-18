@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetValidatorType;
 import io.harness.category.element.UnitTests;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;

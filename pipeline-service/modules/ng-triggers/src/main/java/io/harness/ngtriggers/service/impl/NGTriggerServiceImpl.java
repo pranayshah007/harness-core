@@ -41,7 +41,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionConstants;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -990,8 +990,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @VisibleForTesting
   public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(EngineExpressionEvaluator.EXPR_START)
-        && pipelineBranch.endsWith(EngineExpressionEvaluator.EXPR_END);
+    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
+        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {

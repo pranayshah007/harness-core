@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.expression;
+package io.harness.expression.common;
 /**
  * THROW_EXCEPTION_IF_UNRESOLVED: Expression engine should throw exception if any expression is not resolved.
  *

@@ -9,8 +9,8 @@ package io.harness.text.resolver;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionConstants;
+import io.harness.expression.common.ExpressionMode;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface ExpressionResolver {
@@ -22,7 +22,7 @@ public interface ExpressionResolver {
     // null value(means unresolved), do not replace with null value, instead keep the original expression as is.
     if (getExpressionMode() == ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED
         && (resolvedExpression == null || resolvedExpression.equals(nullStringValue))) {
-      return EngineExpressionEvaluator.EXPR_START + expression + EngineExpressionEvaluator.EXPR_END;
+      return ExpressionConstants.EXPR_START + expression + ExpressionConstants.EXPR_END;
     }
     return resolvedExpression;
   }
