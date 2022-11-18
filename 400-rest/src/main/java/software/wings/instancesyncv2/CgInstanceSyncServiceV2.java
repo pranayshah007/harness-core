@@ -116,9 +116,6 @@ public class CgInstanceSyncServiceV2 {
             updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
           }
 
-          // handle current instances
-
-          // filter db instances
           Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
               instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary);
 
@@ -137,10 +134,6 @@ public class CgInstanceSyncServiceV2 {
 
   private void handleInstances(
       List<Instance> instances, List<Instance> instancesInDb, CgInstanceSyncV2Handler instanceSyncHandler) {
-    if (CollectionUtils.isEmpty(instances)) {
-      return;
-    }
-
     List<Instance> instancesToDelete = instanceSyncHandler.difference(instancesInDb, instances);
     Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
     log.info("Instances to delete: [{}]", instanceIdsToDelete);
