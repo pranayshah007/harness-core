@@ -8,17 +8,16 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.BitriseStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
-import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,8 +25,6 @@ import java.util.Map;
 
 @Singleton
 public class VmBitriseStepSerializer {
-  @Inject CIExecutionServiceConfig ciExecutionServiceConfig;
-
   public VmRunStep serialize(BitriseStepInfo bitriseStepInfo, String identifier, StageInfraDetails stageInfraDetails) {
     if (stageInfraDetails.getType() != StageInfraDetails.Type.DLITE_VM) {
       throw new CIStageExecutionException("Bitrise step is only applicable for builds on cloud infrastructure");
@@ -40,6 +37,7 @@ public class VmBitriseStepSerializer {
     if (env == null) {
       env = new HashMap<>();
     }
+    env.put("HOME", HOME_DIR);
 
     if (!isEmpty(with)) {
       for (Map.Entry<String, String> entry : with.entrySet()) {

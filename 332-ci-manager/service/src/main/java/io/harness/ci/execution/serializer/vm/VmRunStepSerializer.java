@@ -8,10 +8,13 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -31,6 +34,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,8 +44,8 @@ import org.apache.commons.lang3.StringUtils;
 public class VmRunStepSerializer {
   @Inject ConnectorUtils connectorUtils;
 
-  public VmRunStep serialize(RunStepInfo runStepInfo, Ambiance ambiance, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName) {
+  public VmRunStep serialize(RunStepInfo runStepInfo, StageInfraDetails stageInfraDetails, Ambiance ambiance,
+      String identifier, ParameterField<Timeout> parameterFieldTimeout, String stepName) {
     String command =
         RunTimeInputHandler.resolveStringParameter("Command", "Run", identifier, runStepInfo.getCommand(), true);
     String image =
@@ -52,6 +56,12 @@ public class VmRunStepSerializer {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runStepInfo.getDefaultTimeout());
     Map<String, String> envVars =
         resolveMapParameter("envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
+    if (isEmpty(image) && stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      if (envVars == null) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HOME", HOME_DIR);
+    }
 
     List<String> outputVarNames = new ArrayList<>();
     if (isNotEmpty(runStepInfo.getOutputVariables().getValue())) {

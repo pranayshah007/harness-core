@@ -8,10 +8,12 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -26,6 +28,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +37,8 @@ import org.apache.commons.lang3.StringUtils;
 public class VmBackgroundStepSerializer {
   @Inject ConnectorUtils connectorUtils;
 
-  public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, Ambiance ambiance, String identifier) {
+  public VmBackgroundStep serialize(BackgroundStepInfo backgroundStepInfo, StageInfraDetails stageInfraDetails,
+      Ambiance ambiance, String identifier) {
     String command = RunTimeInputHandler.resolveStringParameter(
         "Command", "Background", identifier, backgroundStepInfo.getCommand(), false);
     String image = RunTimeInputHandler.resolveStringParameter(
@@ -56,6 +60,12 @@ public class VmBackgroundStepSerializer {
 
     Map<String, String> envVars =
         resolveMapParameter("envVariables", "Background", identifier, backgroundStepInfo.getEnvVariables(), false);
+    if (isEmpty(image) && stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      if (envVars == null) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HOME", HOME_DIR);
+    }
 
     if (!isEmpty(command)) {
       String earlyExitCommand = SerializerUtils.getEarlyExitCommand(backgroundStepInfo.getShell());

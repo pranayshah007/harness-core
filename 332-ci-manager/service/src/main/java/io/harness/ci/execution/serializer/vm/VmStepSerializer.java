@@ -31,7 +31,7 @@ import java.util.Set;
 public class VmStepSerializer {
   @Inject VmPluginCompatibleStepSerializer vmPluginCompatibleStepSerializer;
   @Inject VmPluginStepSerializer vmPluginStepSerializer;
-  @Inject VmRunStepSerializer vmRunStepSerializer;
+  @Inject BitriseSerializer BitriseSerializer;
   @Inject VmRunTestStepSerializer vmRunTestStepSerializer;
   @Inject VmBackgroundStepSerializer vmBackgroundStepSerializer;
   @Inject VmActionStepSerializer vmActionStepSerializer;
@@ -49,12 +49,13 @@ public class VmStepSerializer {
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return vmRunStepSerializer.serialize(
-            (RunStepInfo) stepInfo, ambiance, identifier, parameterFieldTimeout, stepName);
+            (RunStepInfo) stepInfo, stageInfraDetails, ambiance, identifier, parameterFieldTimeout, stepName);
       case BACKGROUND:
-        return vmBackgroundStepSerializer.serialize((BackgroundStepInfo) stepInfo, ambiance, identifier);
+        return vmBackgroundStepSerializer.serialize(
+            (BackgroundStepInfo) stepInfo, stageInfraDetails, ambiance, identifier);
       case RUN_TESTS:
         return vmRunTestStepSerializer.serialize(
-            (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance);
+            (RunTestsStepInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);
       case PLUGIN:
         return vmPluginStepSerializer.serialize(
             (PluginStepInfo) stepInfo, stageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);

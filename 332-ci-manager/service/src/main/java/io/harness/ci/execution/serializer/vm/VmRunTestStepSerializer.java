@@ -9,10 +9,13 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
@@ -33,6 +36,7 @@ import io.harness.yaml.core.variables.OutputNGVariable;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,8 +47,8 @@ public class VmRunTestStepSerializer {
   @Inject ConnectorUtils connectorUtils;
   String NULL_STR = "null";
 
-  public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, String identifier,
-      ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
+  public VmRunTestStep serialize(RunTestsStepInfo runTestsStepInfo, StageInfraDetails stageInfraDetails,
+      String identifier, ParameterField<Timeout> parameterFieldTimeout, String stepName, Ambiance ambiance) {
     String buildTool = RunTimeInputHandler.resolveBuildTool(runTestsStepInfo.getBuildTool());
     if (buildTool == null) {
       throw new CIStageExecutionException("Build tool cannot be null");
@@ -90,6 +94,12 @@ public class VmRunTestStepSerializer {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, runTestsStepInfo.getDefaultTimeout());
     Map<String, String> envVars =
         resolveMapParameter("envVariables", stepName, identifier, runTestsStepInfo.getEnvVariables(), false);
+    if (isEmpty(image) && stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      if (envVars == null) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HOME", HOME_DIR);
+    }
 
     String earlyExitCommand = SerializerUtils.getEarlyExitCommand(runTestsStepInfo.getShell());
     preCommand = earlyExitCommand + preCommand;

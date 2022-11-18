@@ -9,6 +9,7 @@ package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -99,6 +100,9 @@ public class VmPluginStepSerializer {
   private VmPluginStep convertContainerStep(Ambiance ambiance, String identifier, String image,
       String connectorIdentifier, Map<String, String> envVars, long timeout, StageInfraDetails stageInfraDetails,
       PluginStepInfo pluginStepInfo) {
+    if (stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM && pluginStepInfo.isHarnessManagedImage()) {
+      envVars.put("HOME", HOME_DIR);
+    }
     VmPluginStepBuilder pluginStepBuilder =
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 
@@ -132,6 +136,7 @@ public class VmPluginStepSerializer {
 
   private VmRunStep convertContainerlessStep(
       String identifier, String uses, Map<String, String> envVars, long timeout, PluginStepInfo pluginStepInfo) {
+    envVars.put("HOME", HOME_DIR);
     VmRunStepBuilder stepBuilder = VmRunStep.builder()
                                        .entrypoint(Arrays.asList("plugin", "-kind", "harness", "-repo"))
                                        .command(uses)

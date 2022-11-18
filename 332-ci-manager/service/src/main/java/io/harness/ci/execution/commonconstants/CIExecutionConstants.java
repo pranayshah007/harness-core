@@ -31,6 +31,7 @@ public class CIExecutionConstants {
 
   public static final String STEP_VOLUME = "harness";
   public static final String STEP_MOUNT_PATH = "/harness";
+  public static final String HOME_DIR = "/harness";
   public static final String OSX_STEP_MOUNT_PATH = "/tmp/harness";
   public static final String OSX_ADDON_MOUNT_PATH = "/tmp/addon";
   public static final String STEP_WORK_DIR = STEP_MOUNT_PATH;

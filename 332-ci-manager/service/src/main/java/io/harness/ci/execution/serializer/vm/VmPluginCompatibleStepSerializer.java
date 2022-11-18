@@ -7,6 +7,8 @@
 
 package io.harness.ci.serializer.vm;
 
+import static io.harness.ci.commonconstants.CIExecutionConstants.HOME_DIR;
+
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
@@ -29,6 +31,7 @@ import io.harness.yaml.core.timeout.Timeout;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashMap;
 import java.util.Map;
 
 @Singleton
@@ -42,9 +45,14 @@ public class VmPluginCompatibleStepSerializer {
       StageInfraDetails stageInfraDetails, String identifier, ParameterField<Timeout> parameterFieldTimeout,
       String stepName) {
     long timeout = TimeoutUtils.getTimeoutInSeconds(parameterFieldTimeout, pluginCompatibleStep.getDefaultTimeout());
-    StageInfraDetails.Type type = stageInfraDetails.getType();
     Map<String, String> envVars = pluginSettingUtils.getPluginCompatibleEnvVariables(
         pluginCompatibleStep, identifier, timeout, ambiance, Type.VM);
+    if (stageInfraDetails.getType() == Type.DLITE_VM) {
+      if (envVars == null) {
+        envVars = new HashMap<>();
+      }
+      envVars.put("HOME", HOME_DIR);
+    }
     String image = CIStepInfoUtils.getPluginCustomStepImage(
         pluginCompatibleStep, ciExecutionConfigService, Type.VM, AmbianceUtils.getAccountId(ambiance));
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
