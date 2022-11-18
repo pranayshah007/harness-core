@@ -11,7 +11,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static okhttp3.Protocol.HTTP_1_1;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
@@ -107,7 +106,6 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
     OkHttpClient httpClient =
         apiClient.getHttpClient()
             .newBuilder()
-            .protocols(List.of(HTTP_1_1))
             .readTimeout(useNewReadTimeoutForValidation ? READ_TIMEOUT_IN_SECONDS : 0, TimeUnit.SECONDS)
             .connectTimeout(CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
             .connectionPool(connectionPool)
