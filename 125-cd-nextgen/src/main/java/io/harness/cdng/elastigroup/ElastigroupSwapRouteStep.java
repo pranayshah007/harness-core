@@ -102,7 +102,8 @@ public class ElastigroupSwapRouteStep
     ElastigroupSwapRouteStepParameters elastigroupSwapRouteStepParameters =
         (ElastigroupSwapRouteStepParameters) stepParameters.getSpec();
 
-    String awsRegion = "us-east-1";
+    ConnectorInfoDTO connectorInfoDTO = elastigroupStepCommonHelper.getConnector(
+            elastigroupStepCommonHelper.renderExpression(ambiance, elastigroupSetupDataOutcome.getAwsConnectorRef()), ambiance);
 
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
             ElastigroupSwapRouteCommandRequest.builder()
@@ -115,11 +116,13 @@ public class ElastigroupSwapRouteStep
             .accountId(accountId)
                     .downsizeOldElastigroup(String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
                     .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
-                    .awsRegion(awsRegion)
+                    .awsRegion(elastigroupSetupDataOutcome.getAwsRegion())
             .spotInstConfig(spotInstConfig)
+                    .connectorInfoDTO(connectorInfoDTO)
             .commandName(ELASTIGROUP_SWAP_ROUTE_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+                    .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSwapRouteCommandRequest, ambiance,
