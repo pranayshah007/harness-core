@@ -38,4 +38,6 @@ public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOu
   private ElastiGroup oldElastigroupOriginalConfig;
   private String elastigroupNamePrefix;
   private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
+  private String awsRegion;
+  private String awsConnectorRef;
 }
