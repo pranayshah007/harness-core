@@ -630,7 +630,7 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
 
   private void addFileCommitIdsToMap(
       String accountId, RemoteTerraformFileInfo fileInfo, Map<String, String> commitIdForConfigFilesMap) {
-    if (fileInfo.gitFetchFilesConfig != null) {
+    if (fileInfo.getGitFetchFilesConfig() != null) {
       GitFetchFilesConfig gitFetchFilesConfig = ((RemoteTerraformFileInfo) fileInfo).getGitFetchFilesConfig();
       GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitStoreDelegateConfig.getGitConfigDTO();
