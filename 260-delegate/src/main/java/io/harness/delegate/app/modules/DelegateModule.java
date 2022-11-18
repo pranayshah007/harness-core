@@ -264,6 +264,7 @@ import io.harness.delegate.task.elastigroup.ElastigroupBGStageSetupCommandTaskNG
 import io.harness.delegate.task.elastigroup.ElastigroupParametersFetchTask;
 import io.harness.delegate.task.elastigroup.ElastigroupSetupCommandTaskNG;
 import io.harness.delegate.task.elastigroup.ElastigroupStartupScriptFetchRunTask;
+import io.harness.delegate.task.elastigroup.ElastigroupSwapRouteCommandTaskNG;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTask;
 import io.harness.delegate.task.gcp.GcpTask;
 import io.harness.delegate.task.gcp.GcpTaskType;
@@ -1948,6 +1949,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG).toInstance(ElastigroupParametersFetchTask.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupSetupCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG).toInstance(ElastigroupBGStageSetupCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG).toInstance(ElastigroupSwapRouteCommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
