@@ -6,7 +6,6 @@ import io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO;
 import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -22,8 +21,7 @@ import lombok.experimental.FieldDefaults;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TasCredentialOutcomeDTO {
-  @NotNull @JsonProperty("type") TasCredentialType type;
-  @JsonProperty("spec")
+  @NotNull TasCredentialType type;
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
   @Valid
