@@ -313,12 +313,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         .cloudProviderId(cloudProviderId)
         .infraMappingId(deploymentSummary.getInfraMappingId())
         .lastSuccessfulRun(0L)
-        .releaseIdentifiers(buildReleaseIdentifiers(deploymentSummary))
+        .releaseIdentifiers(createReleaseIdentifiers(deploymentSummary))
         .build();
   }
 
   @Override
-  public Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentSummary deploymentSummary) {
+  public Set<CgReleaseIdentifiers> createReleaseIdentifiers(DeploymentSummary deploymentSummary) {
     DeploymentInfo deploymentInfo = deploymentSummary.getDeploymentInfo();
     Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
     if (deploymentInfo instanceof K8sDeploymentInfo) {
@@ -452,7 +452,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         || deploymentInfoClazz.equals(ContainerDeploymentInfoWithLabels.class);
   }
 
-  @Override
   public List<Instance> difference(List<Instance> list1, List<Instance> list2) {
     Map<String, Instance> instanceKeyMapList1 = getInstanceKeyMap(list1);
     Map<String, Instance> instanceKeyMapList2 = getInstanceKeyMap(list2);
@@ -460,6 +459,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     SetView<String> difference = Sets.difference(instanceKeyMapList1.keySet(), instanceKeyMapList2.keySet());
 
     return difference.parallelStream().map(instanceKeyMapList1::get).collect(Collectors.toList());
+  }
+  @Override
+  public List<Instance> instancesToDelete(List<Instance> instanceInDb, List<Instance> instances) {
+    return difference(instanceInDb, instances);
   }
 
   private Map<String, Instance> getInstanceKeyMap(List<Instance> instanceList) {
@@ -491,9 +494,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   @Override
-  public List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb) {
+  public List<Instance> instancesToSaveAndUpdate(List<Instance> instances, List<Instance> instancesInDb) {
     Map<String, Instance> instancesKeyMap = getInstanceKeyMap(instances);
     Map<String, Instance> instancesInDbKeyMap = getInstanceKeyMap(instancesInDb);
+    List<Instance> instancesToAddAndUpdate = new ArrayList<>();
+
+    List<Instance> instancesToAdd = difference(instances, instancesInDb);
 
     SetView<String> intersection = Sets.intersection(instancesKeyMap.keySet(), instancesInDbKeyMap.keySet());
     List<Instance> instancesToUpdate = new ArrayList<>();
@@ -503,15 +509,15 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       newInstance.setUuid(instanceInDb.getUuid());
       instancesToUpdate.add(newInstance);
     }
-
-    return instancesToUpdate;
+    instancesToAddAndUpdate.addAll(instancesToAdd);
+    instancesToAddAndUpdate.addAll(instancesToUpdate);
+    return instancesToAddAndUpdate;
   }
 
   @Override
-  public Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
+  public Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(
       Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries,
-      Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap,
-      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap) {
+      Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap) {
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
 
     for (CgReleaseIdentifiers cgReleaseIdentifier : deploymentSummaries.keySet()) {
@@ -525,7 +531,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
               .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
               .collect(Collectors.toList());
       DeploymentSummary deploymentSummary = deploymentSummaries.get(cgK8sReleaseIdentifier);
-      List<Instance> instancesInDb = instancesInDbMap.get(cgK8sReleaseIdentifier);
 
       if (CollectionUtils.isEmpty(instanceInfos) || Objects.isNull(deploymentSummary)) {
         instancesMap.put(cgK8sReleaseIdentifier, emptyList());
@@ -535,17 +540,14 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       if (instanceInfos.get(0) instanceof K8sPodInfo) {
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-        List<Instance> instancesForK8sPods = getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
-            instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()), instancesInDb);
-        instances = handleExistingInstances(instancesForK8sPods, instancesInDb);
+        instances = getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
+            instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
       } else if (instanceInfos.get(0) instanceof KubernetesContainerInfo) {
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
-        List<Instance> instancesForContainerPods =
-            getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
-                instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
-        instances = handleExistingInstances(instancesForContainerPods, instancesInDb);
+        instances = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
+            instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
       }
       instancesMap.put(cgK8sReleaseIdentifier, instances);
     }
@@ -602,33 +604,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return instancesMap;
   }
 
-  private DeploymentSummary generateDeploymentSummaryFromInstance(Instance instance) {
-    DeploymentSummary deploymentSummary = DeploymentSummary.builder().build();
-    deploymentSummary.setAppId(instance.getAppId());
-    deploymentSummary.setAccountId(instance.getAccountId());
-    deploymentSummary.setInfraMappingId(instance.getInfraMappingId());
-    deploymentSummary.setWorkflowExecutionId(instance.getLastWorkflowExecutionId());
-    deploymentSummary.setWorkflowExecutionName(instance.getLastWorkflowExecutionName());
-    deploymentSummary.setWorkflowId(instance.getLastWorkflowExecutionId());
-
-    deploymentSummary.setArtifactId(instance.getLastArtifactId());
-    deploymentSummary.setArtifactName(instance.getLastArtifactName());
-    deploymentSummary.setArtifactStreamId(instance.getLastArtifactStreamId());
-    deploymentSummary.setArtifactSourceName(instance.getLastArtifactSourceName());
-    deploymentSummary.setArtifactBuildNum(instance.getLastArtifactBuildNum());
-
-    deploymentSummary.setPipelineExecutionId(instance.getLastPipelineExecutionId());
-    deploymentSummary.setPipelineExecutionName(instance.getLastPipelineExecutionName());
-
-    // Commented this out, so we can distinguish between autoscales instances and instances we deployed
-    deploymentSummary.setDeployedById(AUTO_SCALE);
-    deploymentSummary.setDeployedByName(AUTO_SCALE);
-    deploymentSummary.setDeployedAt(System.currentTimeMillis());
-    deploymentSummary.setArtifactBuildNum(instance.getLastArtifactBuildNum());
-
-    return deploymentSummary;
-  }
-
   private List<Instance> getInstancesForContainerPods(DeploymentSummary deploymentSummary,
       ContainerInfrastructureMapping containerInfraMapping, List<ContainerInfo> containerInfoList) {
     if (CollectionUtils.isEmpty(containerInfoList)) {
@@ -647,8 +622,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return instances;
   }
 
-  private List<Instance> getInstancesForK8sPods(DeploymentSummary deploymentSummary,
-      InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods, List<Instance> instancesFromDb) {
+  private List<Instance> getInstancesForK8sPods(
+      DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
     if (CollectionUtils.isEmpty(pods)) {
       return Collections.emptyList();
     }
@@ -656,7 +631,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     List<Instance> instances = new ArrayList<>();
     for (K8sPodInfo pod : pods) {
       HelmChartInfo helmChartInfo =
-          getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod, instancesFromDb);
+          getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod);
       Instance instance = buildInstanceFromPodInfo(infrastructureMapping, pod, deploymentSummary);
       ContainerInfo containerInfo = (ContainerInfo) instance.getInstanceInfo();
       setHelmChartInfoToContainerInfo(helmChartInfo, containerInfo);
@@ -676,61 +651,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         .namespace(releaseIdentifier.getNamespace())
         .type(type)
         .build();
-  }
-
-  private List<ContainerMetadata> getContainerMetadata(
-      DeploymentSummary deploymentSummary, ContainerInfrastructureMapping containerInfraMapping) {
-    ContainerDeploymentInfoWithLabels containerDeploymentInfo =
-        (ContainerDeploymentInfoWithLabels) deploymentSummary.getDeploymentInfo();
-    List<ContainerMetadata> containerMetadataList = new ArrayList<>();
-    Map<String, String> labelMap = new HashMap<>();
-    containerDeploymentInfo.getLabels().forEach(
-        labelEntry -> labelMap.put(labelEntry.getName(), labelEntry.getValue()));
-
-    String namespace = containerInfraMapping.getNamespace();
-    if (ExpressionEvaluator.containsVariablePattern(namespace)) {
-      namespace = containerDeploymentInfo.getNamespace();
-    }
-
-    final List<String> namespaces = containerDeploymentInfo.getNamespaces();
-
-    boolean isControllerNamesRetrievable = emptyIfNull(containerDeploymentInfo.getContainerInfoList())
-                                               .stream()
-                                               .map(io.harness.container.ContainerInfo::getWorkloadName)
-                                               .anyMatch(EmptyPredicate::isNotEmpty);
-    /*
-     We need controller names only if release name is not set
-     */
-    if (isControllerNamesRetrievable || isEmpty(containerDeploymentInfo.getContainerInfoList())) {
-      Set<String> controllerNames = containerSync.getControllerNames(containerInfraMapping, labelMap, namespace);
-
-      for (String controllerName : controllerNames) {
-        ContainerMetadata containerMetadata = ContainerMetadata.builder()
-                                                  .containerServiceName(controllerName)
-                                                  .namespace(namespace)
-                                                  .releaseName(containerDeploymentInfo.getReleaseName())
-                                                  .build();
-        containerMetadataList.add(containerMetadata);
-      }
-    } else {
-      if (isNotEmpty(namespaces)) {
-        namespaces.stream()
-            .map(ns
-                -> ContainerMetadata.builder()
-                       .releaseName(containerDeploymentInfo.getReleaseName())
-                       .namespace(ns)
-                       .build())
-            .forEach(containerMetadataList::add);
-      } else {
-        ContainerMetadata containerMetadata = ContainerMetadata.builder()
-                                                  .namespace(namespace)
-                                                  .releaseName(containerDeploymentInfo.getReleaseName())
-                                                  .build();
-        containerMetadataList.add(containerMetadata);
-      }
-    }
-
-    return containerMetadataList;
   }
 
   private Instance buildInstanceFromContainerInfo(
@@ -893,21 +813,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return builder;
   }
 
-  private HelmChartInfo getK8sPodHelmChartInfo(
-      K8sDeploymentInfo deploymentInfo, K8sPodInfo pod, List<Instance> instancesFromDb) {
+  private HelmChartInfo getK8sPodHelmChartInfo(K8sDeploymentInfo deploymentInfo, K8sPodInfo pod) {
     if (deploymentInfo != null) {
       if (StringUtils.equals(pod.getBlueGreenColor(), deploymentInfo.getBlueGreenStageColor())) {
         return deploymentInfo.getHelmChartInfo();
-      } else if (CollectionUtils.isNotEmpty(instancesFromDb)) {
-        Optional<K8sPodInfo> podFromDbOptional =
-            instancesFromDb.parallelStream()
-                .filter(instance -> instance.getInstanceInfo() instanceof K8sPodInfo)
-                .map(K8sPodInfo.class ::cast)
-                .filter(instancePod -> StringUtils.equals(instancePod.getBlueGreenColor(), pod.getBlueGreenColor()))
-                .findAny();
-        if (podFromDbOptional.isPresent()) {
-          return podFromDbOptional.get().getHelmChartInfo();
-        }
       }
     }
 

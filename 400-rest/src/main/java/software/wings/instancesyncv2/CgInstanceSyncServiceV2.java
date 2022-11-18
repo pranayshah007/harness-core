@@ -117,7 +117,7 @@ public class CgInstanceSyncServiceV2 {
           }
 
           Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
-              instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary);
+              instanceSyncHandler.createReleaseIdentifiers(deploymentSummary);
 
           Map<CgReleaseIdentifiers, List<Instance>> deployedInstancesMap =
               instanceSyncHandler.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
@@ -134,18 +134,14 @@ public class CgInstanceSyncServiceV2 {
 
   private void handleInstances(
       List<Instance> instances, List<Instance> instancesInDb, CgInstanceSyncV2Handler instanceSyncHandler) {
-    List<Instance> instancesToDelete = instanceSyncHandler.difference(instancesInDb, instances);
+    List<Instance> instancesToDelete = instanceSyncHandler.instancesToDelete(instancesInDb, instances);
     Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
     log.info("Instances to delete: [{}]", instanceIdsToDelete);
     instanceService.delete(instanceIdsToDelete);
 
-    List<Instance> instancesToAdd = instanceSyncHandler.difference(instances, instancesInDb);
-    log.info("Instances to add: [{}]", instancesToAdd);
-    instanceService.saveOrUpdate(instancesToAdd);
-
-    List<Instance> instancesToUpdate = instanceSyncHandler.instancesToUpdate(instances, instancesInDb);
-    log.info("Instances to update: [{}]", instancesToUpdate);
-    instanceService.saveOrUpdate(instancesToUpdate);
+    List<Instance> instancesToSaveAndUpdate = instanceSyncHandler.instancesToSaveAndUpdate(instances, instancesInDb);
+    log.info("Instances to add: [{}]", instancesToSaveAndUpdate);
+    instanceService.saveOrUpdate(instancesToSaveAndUpdate);
   }
 
   private SettingAttribute fetchCloudProvider(DeploymentSummary deploymentSummary) {
@@ -190,7 +186,7 @@ public class CgInstanceSyncServiceV2 {
     if (Objects.nonNull(instanceSyncTaskDetails)) {
       instanceSyncTaskDetails.setReleaseIdentifiers(
           instanceSyncHandler.mergeReleaseIdentifiers(instanceSyncTaskDetails.getReleaseIdentifiers(),
-              instanceSyncHandler.buildReleaseIdentifiers(deploymentSummary)));
+              instanceSyncHandler.createReleaseIdentifiers(deploymentSummary)));
 
       taskDetailsService.save(instanceSyncTaskDetails);
       return instanceSyncTaskDetails.getPerpetualTaskId();
@@ -278,8 +274,8 @@ public class CgInstanceSyncServiceV2 {
       instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
           cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
-      deployedInstances = instanceSyncHandler.getDeployedInstances(
-          deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap, instancesInDbMap);
+      deployedInstances =
+          instanceSyncHandler.groupInstanceSyncData(deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
 
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersInstanceSyncDataMap.keySet()) {
         List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);

@@ -162,7 +162,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
-  public void buildReleaseIdentifiers() {
+  public void createReleaseIdentifiersTest() {
     DeploymentInfo deploymentInfo = K8sDeploymentInfo.builder()
                                         .releaseName("releaseName")
                                         .namespace("namespace")
@@ -171,7 +171,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                         .build();
     DeploymentSummary deploymentSummary = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
     Set<CgReleaseIdentifiers> releaseIdentifiers =
-        k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary);
+        k8sInstanceSyncV2HandlerCg.createReleaseIdentifiers(deploymentSummary);
     assertThat(releaseIdentifiers).isNotNull();
     assertThat(releaseIdentifiers.size()).isEqualTo(3);
     assertThat(releaseIdentifiers.stream().findAny().get().getClass()).isEqualTo(CgK8sReleaseIdentifier.class);
@@ -184,7 +184,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                              new ArrayList<>(Arrays.asList(ContainerInfo.builder().containerId("containerId").build())))
                          .build();
     DeploymentSummary deploymentSummary1 = DeploymentSummary.builder().deploymentInfo(deploymentInfo).build();
-    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.buildReleaseIdentifiers(deploymentSummary1);
+    Set<CgReleaseIdentifiers> newIdentifiers = k8sInstanceSyncV2HandlerCg.createReleaseIdentifiers(deploymentSummary1);
     assertThat(newIdentifiers).isNotNull();
     CgK8sReleaseIdentifier identifier = (CgK8sReleaseIdentifier) newIdentifiers.stream().findFirst().get();
     assertThat(identifier.getReleaseName()).isEqualTo("releaseName");
@@ -234,29 +234,16 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetDeployedInstances() throws InterruptedException {
-    DeploymentSummary deploymentSummary =
-        DeploymentSummary.builder()
-            .appId("appId")
-            .infraMappingId("infraMappingId")
-            .accountId("accountId")
-            .deploymentInfo(
-                K8sDeploymentInfo.builder()
-                    .releaseName("releaseName")
-                    .k8sPods(Arrays.asList(K8sPodInfo.builder()
-                                               .podName("podName")
-                                               .namespace("namespace")
-                                               .releaseName("releaseName")
-                                               .clusterName("clusterName")
-                                               .containers(Collections.singletonList(K8sContainerInfo.builder()
-                                                                                         .containerId("containerId")
-                                                                                         .image("image")
-                                                                                         .name("nginx")
-                                                                                         .build()))
-                                               .build()))
-                    .namespace("namespace")
-                    .clusterName("clusterName")
-                    .build())
-            .build();
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder()
+                                              .appId("appId")
+                                              .infraMappingId("infraMappingId")
+                                              .accountId("accountId")
+                                              .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                  .releaseName("releaseName")
+                                                                  .namespace("namespace")
+                                                                  .clusterName("clusterName")
+                                                                  .build())
+                                              .build();
     InfrastructureMapping infraMapping = DirectKubernetesInfrastructureMapping.builder()
                                              .appId("appId")
                                              .infraMappingType("K8s")
@@ -438,7 +425,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
     deploymentSummaryMap.put(cgK8sReleaseIdentifier, deploymentSummary);
     instancesInDbMap.put(cgK8sReleaseIdentifier, instancesInDb);
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap =
-        k8sInstanceSyncV2HandlerCg.getDeployedInstances(deploymentSummaryMap, instanceSyncDataMap, instancesInDbMap);
+        k8sInstanceSyncV2HandlerCg.groupInstanceSyncData(deploymentSummaryMap, instanceSyncDataMap);
     assertThat(instancesMap).isNotNull();
     assertThat(instancesMap.size()).isEqualTo(1);
     List<Instance> instances = instancesMap.get(cgK8sReleaseIdentifier);

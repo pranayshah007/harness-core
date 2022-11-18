@@ -28,7 +28,7 @@ public interface CgInstanceSyncV2Handler {
   InstanceSyncTaskDetails prepareTaskDetails(
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId);
 
-  Set<CgReleaseIdentifiers> buildReleaseIdentifiers(DeploymentSummary deploymentSummary);
+  Set<CgReleaseIdentifiers> createReleaseIdentifiers(DeploymentSummary deploymentSummary);
 
   Set<CgReleaseIdentifiers> mergeReleaseIdentifiers(
       Set<CgReleaseIdentifiers> releaseIdentifiers, Set<CgReleaseIdentifiers> buildReleaseIdentifiers);
@@ -40,14 +40,13 @@ public interface CgInstanceSyncV2Handler {
   Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
       Set<CgReleaseIdentifiers> cgReleaseIdentifiers, DeploymentSummary deploymentSummary);
 
-  List<Instance> difference(List<Instance> list1, List<Instance> list2);
+  List<Instance> instancesToDelete(List<Instance> list1, List<Instance> list2);
 
-  Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
+  Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(
       Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries,
-      Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap,
-      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap);
+      Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap);
 
-  List<Instance> instancesToUpdate(List<Instance> instances, List<Instance> instancesInDb);
+  List<Instance> instancesToSaveAndUpdate(List<Instance> instances, List<Instance> instancesInDb);
 
   Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
       Set<CgReleaseIdentifiers> cgReleaseIdentifiers, String appId, String InfraMappingId);
