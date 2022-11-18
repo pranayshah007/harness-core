@@ -7,6 +7,9 @@
 
 package io.harness.delegate.elastigroup;
 
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 
 import static software.wings.beans.LogHelper.color;
@@ -26,6 +29,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.ElastigroupNGException;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
+import io.harness.delegate.task.elastigroup.ElastigroupDeployTaskHelper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
@@ -39,6 +43,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
+import io.harness.spotinst.model.ElastiGroupCapacity;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -56,6 +61,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
+  @Inject private ElastigroupDeployTaskHelper elastigroupDeployTaskHelper;
   private long timeoutInMillis;
 
   @Override
@@ -145,6 +151,33 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       deployLogCallback.saveExecutionLog(
           color(format("Completed Blue green setup for Spotinst"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
           CommandExecutionStatus.SUCCESS);
+
+      ElastiGroupCapacity elastiGroupCapacity =
+          elastigroupSetupCommandRequest.getElastigroupOriginalConfig().getCapacity();
+      int min = elastiGroupCapacity.getMinimum();
+      int max = elastiGroupCapacity.getMaximum();
+      int target = elastiGroupCapacity.getTarget();
+      if (elastigroupSetupCommandRequest.isUseCurrentRunningInstanceCount()) {
+        min = DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+        max = DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+        target = DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+        if (prodOptionalElastiGroup.isPresent()) {
+          ElastiGroupCapacity capacity = prodOptionalElastiGroup.get().getCapacity();
+          if (capacity != null) {
+            min = capacity.getMinimum();
+            max = capacity.getMaximum();
+            target = capacity.getTarget();
+          }
+        }
+      }
+      stageElastiGroup.getCapacity().setMaximum(max);
+      stageElastiGroup.getCapacity().setMinimum(min);
+      stageElastiGroup.getCapacity().setTarget(target);
+
+      elastigroupDeployTaskHelper.scaleElastigroup(stageElastiGroup, spotInstApiTokenRef, spotInstAccountId,
+          elastigroupDeployTaskHelper.getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin()),
+          iLogStreamingTaskClient, ElastigroupCommandUnitConstants.upScale.toString(),
+          ElastigroupCommandUnitConstants.upScaleSteadyStateWait.toString(), commandUnitsProgress);
 
       ElastigroupSetupResult elastigroupSetupResult =
           ElastigroupSetupResult.builder()

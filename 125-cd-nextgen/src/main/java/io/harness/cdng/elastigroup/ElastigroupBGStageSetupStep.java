@@ -250,7 +250,7 @@ public class ElastigroupBGStageSetupStep
             .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastigroupOriginalConfig(oldElastiGroup)
-            .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
+            .newElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup())
             .loadBalancerDetailsForBGDeployments(elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments())
             .awsConnectorRef(
                 ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
@@ -266,28 +266,6 @@ public class ElastigroupBGStageSetupStep
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
     } else {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT);
-    }
-
-    elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().setName(
-        elastigroupSetupResult.getNewElastiGroup().getName());
-    elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().setId(
-        elastigroupSetupResult.getNewElastiGroup().getId());
-
-    if (elastigroupSetupResult.isUseCurrentRunningInstanceCount()) {
-      int min = DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-      int max = DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-      int target = DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-      if (oldElastiGroup != null) {
-        ElastiGroupCapacity capacity = oldElastiGroup.getCapacity();
-        if (capacity != null) {
-          min = capacity.getMinimum();
-          max = capacity.getMaximum();
-          target = capacity.getTarget();
-        }
-      }
-      elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().getCapacity().setMinimum(min);
-      elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().getCapacity().setMaximum(max);
-      elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().getCapacity().setTarget(target);
     }
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME,
