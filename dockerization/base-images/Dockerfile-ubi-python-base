@@ -13,8 +13,8 @@
 #     -t <tag> \
 #     .
 # Python Application runtime base image
-#FROM us.gcr.io/platform-205701/ubi/ubi-base:latest
-FROM ubi-base-new:fisp
+FROM us.gcr.io/platform-205701/ubi/ubi-base:bt-2033
+
 USER root
 
 #RUN microdnf install yum

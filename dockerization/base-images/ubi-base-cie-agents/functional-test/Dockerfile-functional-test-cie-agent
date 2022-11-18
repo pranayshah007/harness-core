@@ -13,7 +13,7 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:latest
+FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:bt-2033
 
 #Install terragrunt and helm BT-310
 ARG TERRAGRUNT_VERSION=v0.28.18
