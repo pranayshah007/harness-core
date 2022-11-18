@@ -25,9 +25,9 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-@TypeAlias("elastigroupSetupDataOutcome")
-@JsonTypeName("elastigroupSetupDataOutcome")
-@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome")
+@TypeAlias("elastigroupSwapRouteDataOutcome")
+@JsonTypeName("elastigroupSwapRouteDataOutcome")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome")
 public class ElastigroupSwapRouteDataOutcome implements Outcome, ExecutionSweepingOutput {
   private String downsizeOldElastiGroup;
   private List<LoadBalancerDetailsForBGDeployment> lbDetails;

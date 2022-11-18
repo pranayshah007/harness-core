@@ -199,7 +199,9 @@ public class ElastigroupSwapRouteStep
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData = ElastigroupExecutionPassThroughData.builder().build();
+    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData = ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupStepCommonHelper.getInfrastructureOutcome(ambiance
+            ))
+            .build();
     ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder().build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
     return executeElastigroupTask(ambiance, stepParameters, elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);

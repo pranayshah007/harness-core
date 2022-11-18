@@ -147,6 +147,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return engineExpressionService.renderExpression(ambiance, stringObject);
   }
 
+  public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
+    return (InfrastructureOutcome) outcomeService.resolve(
+            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+  }
+
   public TaskChainResponse startChainLink(
       ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
