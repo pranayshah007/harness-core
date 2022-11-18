@@ -412,8 +412,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                 accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
-      String latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
+      String latestTemplate;
+      try {
+        latestTemplate = validateAndMergeHelper.getPipelineTemplate(
+            accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
+      } catch (InvalidRequestException e) {
+        latestTemplate = null;
+      }
+
       String yaml = executionSummaryEntity.getInputSetYaml();
       String template = executionSummaryEntity.getPipelineTemplate();
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {

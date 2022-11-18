@@ -217,8 +217,12 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
         savedEntity = fetchRemoteEntityWithFallBackBranch(
             accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
       } else {
-        savedEntity =
-            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+        try {
+          savedEntity =
+              fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+        } catch (Exception e) {
+          savedEntity = null;
+        }
       }
     }
     return Optional.of(savedEntity);
