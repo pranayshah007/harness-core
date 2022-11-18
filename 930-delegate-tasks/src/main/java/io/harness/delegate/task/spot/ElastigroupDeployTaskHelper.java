@@ -8,6 +8,7 @@
 package io.harness.delegate.task.spot;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
@@ -15,6 +16,7 @@ import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MA
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
 import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
+import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
@@ -28,6 +30,8 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
+import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -38,6 +42,11 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
+import software.wings.beans.AwsConfig;
+import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
+
+import com.amazonaws.services.elasticloadbalancingv2.model.Action;
+import com.amazonaws.services.elasticloadbalancingv2.model.DescribeListenersResult;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -53,6 +62,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDeployTaskHelper {
   @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
+  @Inject private AwsElbHelperServiceDelegate awsElbHelperServiceDelegate;
   @Inject private TimeLimiter timeLimiter;
 
   public void scaleElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
@@ -257,5 +267,47 @@ public class ElastigroupDeployTaskHelper {
     spotInstHelperServiceDelegate.updateElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId(),
         ElastiGroupRenameRequest.builder().name(newName).build());
     logCallback.saveExecutionLog("Successfully renamed Elastigroup", INFO, SUCCESS);
+  }
+
+  public void restoreLoadBalancerRoutesIfNeeded(List<LoadBalancerDetailsForBGDeployment> loadBalancerDetails,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+    final LogCallback logCallback =
+        getLogCallback(logStreamingTaskClient, SWAP_ROUTES_COMMAND_UNIT, commandUnitsProgress);
+
+    if (isEmpty(loadBalancerDetails)) {
+      logCallback.saveExecutionLog("No Action Needed", INFO, SUCCESS);
+      return;
+    }
+
+    for (LoadBalancerDetailsForBGDeployment lbDetail : loadBalancerDetails) {
+      if (lbDetail.isUseSpecificRules()) {
+        restoreSpecificRulesRoutesIfChanged(lbDetail, logCallback, awsConfig, swapRoutesParameters.getAwsRegion());
+      } else {
+        restoreDefaultRulesRoutesIfChanged(lbDetail, logCallback, awsConfig, swapRoutesParameters);
+      }
+    }
+
+    logCallback.saveExecutionLog("Prod Elastigroup is UP with correct traffic", INFO, SUCCESS);
+  }
+
+  private void restoreDefaultRulesRoutesIfChanged(LoadBalancerDetailsForBGDeployment lbDetail, LogCallback logCallback,
+      AwsConfig awsConfig, SpotInstSwapRoutesTaskParameters swapRoutesParameters) {
+    DescribeListenersResult result = awsElbHelperServiceDelegate.describeListenerResult(
+        awsConfig, emptyList(), lbDetail.getProdListenerArn(), swapRoutesParameters.getAwsRegion());
+    Optional<Action> optionalAction =
+        result.getListeners()
+            .get(0)
+            .getDefaultActions()
+            .stream()
+            .filter(action -> "forward".equalsIgnoreCase(action.getType()) && isNotEmpty(action.getTargetGroupArn()))
+            .findFirst();
+
+    if (optionalAction.isPresent()
+        && optionalAction.get().getTargetGroupArn().equals(lbDetail.getStageTargetGroupArn())) {
+      logCallback.saveExecutionLog(format("Listener: [%s] is forwarding traffic to: [%s]. Swap routes in rollback",
+          lbDetail.getProdListenerArn(), lbDetail.getStageTargetGroupArn()));
+      awsElbHelperServiceDelegate.updateDefaultListenersForSpotInstBG(awsConfig, emptyList(),
+          lbDetail.getProdListenerArn(), lbDetail.getStageListenerArn(), swapRoutesParameters.getAwsRegion());
+    }
   }
 }

@@ -16,6 +16,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
@@ -39,6 +40,7 @@ public class ElastigroupRollbackTaskParameters implements TaskParameters, Execut
   int timeout;
   boolean isBlueGreen;
   private String elastigroupNamePrefix;
+  private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

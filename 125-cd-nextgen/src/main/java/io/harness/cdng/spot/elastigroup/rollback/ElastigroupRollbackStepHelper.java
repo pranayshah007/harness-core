@@ -84,6 +84,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         .timeout(getTimeoutInMin(stepElementParameters))
         .isBlueGreen(elastigroupSetupOutcome.isBlueGreen())
         .elastigroupNamePrefix(elastigroupSetupOutcome.getElastiGroupNamePrefix())
+        .loadBalancerDetailsForBGDeployments(elastigroupSetupOutcome.getLoadBalancerDetailsForBGDeployments())
         .build();
   }
 

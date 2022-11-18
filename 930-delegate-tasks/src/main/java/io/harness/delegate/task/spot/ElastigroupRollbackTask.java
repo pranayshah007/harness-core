@@ -100,7 +100,7 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     int timeoutInMinutes = parameters.getTimeout() > 0 ? parameters.getTimeout() : STEADY_STATE_TIME_OUT_IN_MINUTES;
 
     restoreOld(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
-    //    restoreListeners();
+    rollbackRoutes(parameters, commandUnitsProgress);
     rollbackNew(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
 
     return ElastigroupRollbackTaskResponse.builder()
@@ -119,6 +119,11 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
 
     taskHelper.renameElastigroup(parameters.getOldElastigroup(), parameters.getElastigroupNamePrefix(),
         spotInstAccountId, spotInstToken, getLogStreamingTaskClient(), RENAME_OLD_COMMAND_UNIT, commandUnitsProgress);
+  }
+
+  private void rollbackRoutes(ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
+    taskHelper.restoreLoadBalancerRoutesIfNeeded(
+        parameters.getLoadBalancerDetailsForBGDeployments(), getLogStreamingTaskClient(), commandUnitsProgress);
   }
 
   private void rollbackNew(ElastigroupRollbackTaskParameters parameters, String spotInstAccountId, String spotInstToken,
