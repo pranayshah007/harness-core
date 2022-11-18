@@ -425,6 +425,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
         yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(yaml, planExecutionId);
       }
+
       if (EmptyPredicate.isEmpty(template) && EmptyPredicate.isNotEmpty(yaml)) {
         EntityGitDetails entityGitDetails =
             pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntity.getGitSyncBranchContext());
