@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
@@ -130,7 +131,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
   public void updateRunningWFsFromTSDB(WorkflowExecution workflowExecution) {
     DeploymentTimeSeriesEvent deploymentTimeSeriesEvent = usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
-        workflowExecution.getAccountId(), workflowExecution);
+        workflowExecution.getAccountId(), workflowExecution, Collections.emptyMap());
     log.info("UPDATING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
         deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
     try {
@@ -172,7 +173,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
         } else {
           DeploymentTimeSeriesEvent deploymentTimeSeriesEvent =
               usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
-                  workflowExecution.getAccountId(), workflowExecution);
+                  workflowExecution.getAccountId(), workflowExecution, Collections.emptyMap());
           log.info("ADDING MISSING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
               deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
           deploymentEventProcessor.processEvent(deploymentTimeSeriesEvent.getTimeSeriesEventInfo());

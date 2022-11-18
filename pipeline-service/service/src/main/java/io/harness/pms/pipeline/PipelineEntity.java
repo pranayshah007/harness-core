@@ -19,7 +19,6 @@ import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -94,7 +93,6 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.lastUpdatedAt)
                  .field(PipelineEntityKeys.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("lastUpdatedAt_idx").field(PipelineEntityKeys.lastUpdatedAt).build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_repoURL_filePath")
                  .field(PipelineEntityKeys.accountId)
@@ -109,7 +107,6 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.repo)
                  .descSortField(PipelineEntityKeys.createdAt)
                  .build())
-        .add(CompoundMongoIndex.builder().name("accountId_idx").field(PipelineEntityKeys.accountId).build())
         .build();
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
@@ -124,7 +121,7 @@ public class PipelineEntity
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
+  @Setter @NonFinal @SchemaIgnore @CreatedDate long createdAt;
   @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
   @Wither @Default Boolean deleted = Boolean.FALSE;
 

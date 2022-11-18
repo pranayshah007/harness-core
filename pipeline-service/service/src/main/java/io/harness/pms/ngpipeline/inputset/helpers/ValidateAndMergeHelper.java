@@ -102,8 +102,12 @@ public class ValidateAndMergeHelper {
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
+      long start = System.currentTimeMillis();
       optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      log.info(
+          "[PMS_ValidateMerger] fetching and validating pipeline when update to new branch is false, took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
     if (optionalPipelineEntity.isPresent()) {
       StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();

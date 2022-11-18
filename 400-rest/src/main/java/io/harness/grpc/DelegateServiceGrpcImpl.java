@@ -38,6 +38,8 @@ import io.harness.delegate.SendTaskStatusRequest;
 import io.harness.delegate.SendTaskStatusResponse;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
+import io.harness.delegate.SupportedTaskTypeRequest;
+import io.harness.delegate.SupportedTaskTypeResponse;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
@@ -114,6 +116,23 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
+  }
+
+  @Override
+  public void isTaskTypeSupported(
+      SupportedTaskTypeRequest request, StreamObserver<SupportedTaskTypeResponse> responseObserver) {
+    try {
+      String accountId = request.getAccountId();
+      String taskType = request.getTaskType();
+
+      boolean isSupported = delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, taskType);
+
+      responseObserver.onNext(SupportedTaskTypeResponse.newBuilder().setIsTaskTypeSupported(isSupported).build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      log.error("Exception occurred during finding supported task type.", ex);
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
   }
 
   @Override

@@ -1323,6 +1323,7 @@ public class DelegateServiceImpl implements DelegateService {
             .managerHost(managerHost)
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .build(),
         true);
@@ -1333,6 +1334,7 @@ public class DelegateServiceImpl implements DelegateService {
             .managerHost(managerHost)
             .verificationHost(verificationHost)
             .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .delegateXmx(getDelegateXmx(delegateType))
             .delegateTokenName(delegateTokenName.orElse(null))
             .watcher(true)
             .build(),
@@ -1569,7 +1571,15 @@ public class DelegateServiceImpl implements DelegateService {
       params.put("remoteWatcherUrlCdn", EMPTY);
     }
 
-    params.put("delegateXmx", getDelegateXmx(templateParameters.getDelegateType()));
+    if (isNotBlank(templateParameters.getDelegateXmx())) {
+      params.put("delegateXmx", templateParameters.getDelegateXmx());
+    } else {
+      if (featureFlagService.isEnabled(REDUCE_DELEGATE_MEMORY_SIZE, templateParameters.getAccountId())) {
+        params.put("delegateXmx", "-Xmx1536m");
+      } else {
+        params.put("delegateXmx", "-Xmx4096m");
+      }
+    }
 
     params.put(JRE_VERSION_KEY, jreVersionHelper.getTargetJreVersion());
 
@@ -4347,7 +4357,7 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateNamespace(delegateSetupDetails != null && delegateSetupDetails.getK8sConfigDetails() != null
                     ? delegateSetupDetails.getK8sConfigDetails().getNamespace()
                     : EMPTY)
-            .delegateRam(sizeDetails.getRam())
+            .delegateXmx(String.valueOf(sizeDetails.getRam()))
             .delegateCpu(sizeDetails.getCpu())
             .accountId(accountId)
             .delegateType(DOCKER)
@@ -4434,10 +4444,10 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   private String getDelegateXmx(String delegateType) {
-    if (SHELL_SCRIPT.equals(delegateType)) {
-      return "-Xmx1536m";
-    }
-    return "-XX:MaxRAMPercentage=70.0 -XX:MinRAMPercentage=40.0";
+    // TODO: ARPIT remove this community and null check once new delegate and watcher goes in prod.
+    return (DeployVariant.isCommunity(deployVersion) || (delegateType != null && (delegateType.equals(DOCKER))))
+        ? "-Xmx512m"
+        : "-Xmx1536m";
   }
 
   private boolean matchOwners(DelegateEntityOwner existingOwner, DelegateEntityOwner owner) {

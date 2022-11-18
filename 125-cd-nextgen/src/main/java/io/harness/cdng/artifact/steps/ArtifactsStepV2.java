@@ -174,25 +174,32 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     final List<ArtifactConfig> artifactConfigMapForNonDelegateTaskTypes = new ArrayList<>();
     final NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     String primaryArtifactTaskId = null;
+
     if (artifacts.getPrimary() != null) {
-      if (shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec())) {
+      ACTION actionForPrimaryArtifact =
+          shouldCreateDelegateTask(artifacts.getPrimary().getSourceType(), artifacts.getPrimary().getSpec());
+      if (ACTION.CREATE_DELEGATE_TASK.equals(actionForPrimaryArtifact)) {
         primaryArtifactTaskId = createDelegateTask(
             ambiance, logCallback, artifacts.getPrimary().getSpec(), artifacts.getPrimary().getSourceType(), true);
         taskIds.add(primaryArtifactTaskId);
         artifactConfigMap.put(primaryArtifactTaskId, artifacts.getPrimary().getSpec());
-      } else {
+      } else if (ACTION.RUN_SYNC.equals(actionForPrimaryArtifact)) {
         artifactConfigMapForNonDelegateTaskTypes.add(artifacts.getPrimary().getSpec());
       }
     }
 
     if (isNotEmpty(artifacts.getSidecars())) {
-      for (SidecarArtifactWrapper sidecar : artifacts.getSidecars()) {
-        if (shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec())) {
+      List<SidecarArtifactWrapper> sidecarList =
+          artifacts.getSidecars().stream().filter(sidecar -> sidecar.getSidecar() != null).collect(Collectors.toList());
+      for (SidecarArtifactWrapper sidecar : sidecarList) {
+        ACTION actionForSidecar =
+            shouldCreateDelegateTask(sidecar.getSidecar().getSourceType(), sidecar.getSidecar().getSpec());
+        if (ACTION.CREATE_DELEGATE_TASK.equals(actionForSidecar)) {
           String taskId = createDelegateTask(
               ambiance, logCallback, sidecar.getSidecar().getSpec(), sidecar.getSidecar().getSourceType(), false);
           taskIds.add(taskId);
           artifactConfigMap.put(taskId, sidecar.getSidecar().getSpec());
-        } else {
+        } else if (ACTION.RUN_SYNC.equals(actionForSidecar)) {
           artifactConfigMapForNonDelegateTaskTypes.add(sidecar.getSidecar().getSpec());
         }
       }
@@ -202,6 +209,16 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
             primaryArtifactTaskId, artifactConfigMap, artifactConfigMapForNonDelegateTaskTypes),
         "");
     return AsyncExecutableResponse.newBuilder().addAllCallbackIds(taskIds).build();
+  }
+
+  enum ACTION {
+    CREATE_DELEGATE_TASK,
+    RUN_SYNC,
+    SKIP;
+  }
+
+  private boolean isSpecAndSourceTypePresent(ArtifactListConfig artifacts) {
+    return artifacts.getPrimary().getSpec() != null && artifacts.getPrimary().getSourceType() != null;
   }
 
   public String resolveArtifactSourceTemplateRefs(String accountId, String orgId, String projectId, String yaml) {
@@ -419,12 +436,15 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
     }
   }
 
-  public boolean shouldCreateDelegateTask(ArtifactSourceType type, ArtifactConfig config) {
+  public ACTION shouldCreateDelegateTask(ArtifactSourceType type, ArtifactConfig config) {
+    if (type == null || config == null) {
+      return ACTION.SKIP;
+    }
     if (ArtifactSourceType.CUSTOM_ARTIFACT != type) {
-      return true;
+      return ACTION.CREATE_DELEGATE_TASK;
     }
     if (((CustomArtifactConfig) config).getScripts() == null) {
-      return false;
+      return ACTION.RUN_SYNC;
     } else {
       CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) ((CustomArtifactConfig) config)
                                                               .getScripts()
@@ -432,7 +452,8 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                               .getShellScriptBaseStepInfo()
                                                               .getSource()
                                                               .getSpec();
-      return !isEmpty(customScriptInlineSource.getScript().getValue().trim());
+      return !isEmpty(customScriptInlineSource.getScript().getValue().trim()) ? ACTION.CREATE_DELEGATE_TASK
+                                                                              : ACTION.RUN_SYNC;
     }
   }
 

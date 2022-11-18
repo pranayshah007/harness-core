@@ -23,6 +23,7 @@ public class CICreatorUtils {
   public static Set<String> getSupportedStepsV2() {
     return Sets.newHashSet("Run", "SaveCacheS3", "RunTests", "liteEngineTask", "BuildAndPushACR", "BuildAndPushGCR",
         "BuildAndPushECR", "BuildAndPushDockerRegistry", "Plugin", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS",
-        "S3Upload", "GCSUpload", "ArtifactoryUpload", "Security", "GitClone", "Background", "Action", "Bitrise");
+        "S3Upload", "GCSUpload", "ArtifactoryUpload", "Security", "GitClone", "Background", "Action", "Bitrise",
+        "script", "run_tests");
   }
 }

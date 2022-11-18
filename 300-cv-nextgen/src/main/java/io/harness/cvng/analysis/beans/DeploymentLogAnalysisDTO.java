@@ -213,7 +213,7 @@ public class DeploymentLogAnalysisDTO {
                        .build())
             .collect(Collectors.toList());
       }
-      if (controlClusterHostFrequencies == null) {
+      if (controlClusterSummaries == null) {
         return Collections.emptyList();
       }
       return controlClusterSummaries;

@@ -87,7 +87,7 @@ public class K8sClusterConfigTest extends WingsBaseTest {
     KubernetesClusterConfig clusterConfig = KubernetesClusterConfig.builder().masterUrl("http://localhost").build();
     ContainerServiceParams params =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build())
+            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build().toDTO())
             .masterUrl(masterUrl)
             .build();
 
@@ -100,7 +100,7 @@ public class K8sClusterConfigTest extends WingsBaseTest {
     KubernetesClusterConfig clusterConfig = KubernetesClusterConfig.builder().masterUrl("http://localhost").build();
     ContainerServiceParams params =
         ContainerServiceParams.builder()
-            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build())
+            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(clusterConfig).build().toDTO())
             .masterUrl("http://masterUrl")
             .build();
 

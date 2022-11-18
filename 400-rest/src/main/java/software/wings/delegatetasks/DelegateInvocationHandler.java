@@ -27,9 +27,9 @@ import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.impl.aws.model.AwsRequest;
 import software.wings.service.intfc.DelegateService;
@@ -135,7 +135,8 @@ public class DelegateInvocationHandler implements InvocationHandler {
             return ((AwsConfig) settingValue).getTag();
           }
         } else if (arg instanceof ContainerServiceParams) {
-          SettingAttribute settingAttribute = ((ContainerServiceParams) arg).getSettingAttribute();
+          ContainerServiceParams containerServiceParams = (ContainerServiceParams) arg;
+          SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
           SettingValue settingValue = settingAttribute.getValue();
           if (settingValue instanceof AwsConfig) {
             return ((AwsConfig) settingValue).getTag();

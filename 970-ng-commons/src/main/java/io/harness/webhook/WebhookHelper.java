@@ -78,4 +78,10 @@ public class WebhookHelper {
         .append(triggerIdentifier);
     return urlBuilder.toString();
   }
+
+  public String generateCustomWebhookCurlCommand(String webhookUrl) {
+    return String.format(
+        "curl -X POST -H 'content-type: application/json' -H 'X-Api-Key: sample_api_key' --url '%s' -d '{\"sample_key\": \"sample_value\"}'",
+        webhookUrl);
+  }
 }

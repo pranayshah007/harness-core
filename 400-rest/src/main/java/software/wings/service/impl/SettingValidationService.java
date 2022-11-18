@@ -200,7 +200,7 @@ public class SettingValidationService {
       }
       ConnectivityValidationDelegateRequest request = ConnectivityValidationDelegateRequest.builder()
                                                           .encryptedDataDetails(encryptionDetails)
-                                                          .settingAttribute(settingAttribute)
+                                                          .settingAttribute(settingAttribute.toDTO())
                                                           .sshVaultConfig(sshVaultConfig)
                                                           .build();
       DelegateTask delegateTask =
@@ -482,7 +482,7 @@ public class SettingValidationService {
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .encryptionDetails(encryptedDataDetails)
                                                         .namespace(namespace)
                                                         .build();
@@ -531,7 +531,7 @@ public class SettingValidationService {
 
     String namespace = "default";
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .encryptionDetails(fetchEncryptionDetails(settingValue))
                                                         .namespace(namespace)
                                                         .build();

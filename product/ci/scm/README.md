@@ -5,9 +5,8 @@
 1. This assumes you can run the following commands successfully from the root of `./portal`.
 
     ```BASH
-    bazelisk build //product/ci/scm/proto/...
-    bazelisk build //product/ci/scm/...
-    gazelle
+    bazel --output_base=/tmp/bazel/output build //product/ci/scm/proto/...
+    bazel build //product/ci/scm/...
     ```
 
 2. git change.
@@ -18,37 +17,39 @@
       insteadOf = https://github.com/
     ```
 
-3. go private EG `~/,zshrc`
+3. go private EG `~/.zshrc`
 
     ```BASH
     export GOPRIVATE=github.com/harness/harness-core
     ```
 
 4. Only open the scm folder in vscode `portal/product/ci/scm`, do not open from the portal root.
-5. You will need to comment out the logservice line from `commons/go/lib/go.mod` Then you can run go build in `portal/product/ci/scm` or run the vscode debugger.
-6. If you change the proto file you will need to run `bazelisk build //product/ci/scm/proto/...` to re-create the go file `scm.pb.go`. Then you can copy this file to `portal/product/ci/scm`.
-
+5. You will need to comment out the logservice line from `commons/go/lib/go.mod`. Add below line in go.mod file
+    
     ```BASH
-    cp /home/tp/.cache/bazel/_bazel_tp/529a9f5eb5d3c3de90f20271ededd500/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin/product/ci/scm/proto/linux_amd64_stripped/ciscmpb_go_proto%/github.com/harness/harness-core/product/ci/scm/proto/scm.pb.go ~/workspace/portal/product/ci/scm/proto
+    replace github.com/harness/harness-core/product/ci/scm/proto => ./proto
     ```
 
-7. If you change code dependencies you will need to re-run gazelle again to update the `BUILD.bazel` files in `portal/product/ci/scm`.
+6. If you change the proto file you will need to run `bazel build --output_base=/tmp/bazel/output //product/ci/scm/proto/...` to re-create the go file `scm.pb.go`. Then you can copy this file to `portal/product/ci/scm`.
 
-```BASH
-diff --git a/commons/go/lib/go.mod b/commons/go/lib/go.mod
-index bdfe753b01..2bef85919d 100644
---- a/commons/go/lib/go.mod
-+++ b/commons/go/lib/go.mod
-@@ -30,7 +30,7 @@ require (
-        github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37 // indirect
-        github.com/stretchr/testify v1.6.1
-        github.com/vdemeester/k8s-pkg-credentialprovider v1.18.1-0.20201019120933-f1d16962a4db
--       github.com/harness/harness-core/product/log-service v0.0.0-00010101000000-000000000000
-+//     github.com/harness/harness-core/product/log-service v0.0.0-00010101000000-000000000000
-        go.uber.org/zap v1.15.0
-        golang.org/x/tools v0.0.0-20201105220310-78b158585360 // indirect
-        google.golang.org/api v0.24.0
-```
+    ```BASH
+    cd /tmp/bazel/output
+    find . -name scm.pb.go -print
+    # copy the output of above statement
+    cp <filepath printed above> <your codebase root>/product/ci/scm/proto/scm.pb.go
+    
+    Example: 
+    cp ./execroot/harness_monorepo/bazel-out/darwin_arm64-fastbuild/bin/product/ci/scm/proto/ciscmpb_go_proto_/github.com/harness/harness-core/product/ci/scm/proto/scm.pb.go ~/workspace/portal/product/ci/scm/proto
+    ```
+
+7. Enable `Autocomplete Unimported Packages` setting in VS code Go Extension
+    ```BASH
+    Navigate to `Preferences -> settings -> Extensions -> Go` and select `Autocomplete Unimported Packages`
+    ```
+   ![Alt text](./vscode-GO-settings.png?raw=true "vscode-go-settings")
+
+7. If you change code dependencies you will need to re-run bazel build again to update the `BUILD.bazel` files in `portal/product/ci/scm`.
+
 
 ## Building the SCM binary setting version and build commit ID
 
@@ -113,7 +114,7 @@ How to build the scm binary and use a unix socket then run an example test clien
 
 ```BASH
 # build the scm binary
-bazelisk build //product/ci/scm/...
+bazel build //product/ci/scm/...
 # where it is located
 ls -al $(bazelisk info bazel-bin)/product/ci/scm/*stripped/scm
 INFO: Invocation ID: 69ecbe65-f101-469e-a5b9-4d39f25a426b

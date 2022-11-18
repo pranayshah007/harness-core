@@ -87,7 +87,9 @@ public class PdcPerpetualTaskClientTest extends WingsBaseTest {
                         .withUuid(INFRA_ID)
                         .build());
     when(settingsService.get(any()))
-        .thenReturn(SettingAttribute.Builder.aSettingAttribute().withValue(hostConnectionAttributes).build());
+        .thenReturn(software.wings.beans.SettingAttribute.Builder.aSettingAttribute()
+                        .withValue(hostConnectionAttributes)
+                        .build());
     when(perpetualTaskService.getTaskRecord(TASK_ID))
         .thenReturn(PerpetualTaskRecord.builder().accountId(ACCOUNT_ID).build());
     when(secretsManager.getEncryptionDetails(hostConnectionAttributes, null, null)).thenReturn(Collections.emptyList());

@@ -227,6 +227,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
+    return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
+      String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity =
         getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
     if (optionalPipelineEntity.isEmpty()) {
@@ -254,14 +260,21 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
+    return getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity;
+    long start = System.currentTimeMillis();
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
         optionalPipelineEntity =
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
         optionalPipelineEntity = pmsPipelineRepository.find(
-            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnlyIfApplicable);
+            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnly, loadFromFallbackBranch);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
@@ -270,6 +283,9 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving pipeline [%s]: %s", identifier, ExceptionUtils.getMessage(e)));
+    } finally {
+      log.info("[PMS_PipelineService] get Pipeline took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
     if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(

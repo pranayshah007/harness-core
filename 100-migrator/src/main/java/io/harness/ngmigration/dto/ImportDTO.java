@@ -29,7 +29,7 @@ import lombok.NoArgsConstructor;
 public class ImportDTO {
   @Parameter(description = "The type of the entity that we wish to migrate")
   @NotNull
-  private NGMigrationEntityType type;
+  private NGMigrationEntityType entityType;
 
   private DestinationDetails destinationDetails;
 

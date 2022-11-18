@@ -67,6 +67,9 @@ public interface EventProcessor<T extends EventInfo> {
   String FAILED_STEP_NAMES = "FAILED_STEP_NAMES";
   String FAILED_STEP_TYPES = "FAILED_STEP_TYPES";
   String CREATED_BY_TYPE = "CREATED_BY_TYPE";
+  String ON_DEMAND_ROLLBACK = "ON_DEMAND_ROLLBACK";
+  String ORIGINAL_EXECUTION_ID = "ORIGINAL_EXECUTION_ID";
+  String MANUALLY_ROLLED_BACK = "MANUALLY_ROLLED_BACK";
 
   void processEvent(T eventInfo) throws Exception;
 }

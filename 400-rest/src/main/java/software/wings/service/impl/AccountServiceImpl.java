@@ -938,8 +938,12 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public Optional<Account> getOnPremAccount() {
-    List<Account> accounts = listAccounts(Sets.newHashSet(GLOBAL_ACCOUNT_ID));
-    return isNotEmpty(accounts) ? Optional.of(accounts.get(0)) : Optional.empty();
+    Account account =
+        wingsPersistence.createQuery(Account.class, excludeAuthority).field("_id").notEqual(GLOBAL_ACCOUNT_ID).get();
+    if (account == null) {
+      return Optional.empty();
+    }
+    return Optional.of(account);
   }
 
   @Override
@@ -955,17 +959,17 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listAccounts(Set<String> excludedAccountIds) {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority);
-    if (isNotEmpty(excludedAccountIds)) {
-      query.field("_id").notIn(excludedAccountIds);
-    }
+  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds) {
+    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
+                               .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
       for (Account account : iterator) {
         LicenseUtils.decryptLicenseInfo(account, false);
-        accountList.add(account);
+        if (!excludedAccountIds.contains(account.getUuid())) {
+          accountList.add(account);
+        }
       }
     }
     return accountList;

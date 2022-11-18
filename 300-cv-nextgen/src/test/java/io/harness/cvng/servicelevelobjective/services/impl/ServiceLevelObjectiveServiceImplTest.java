@@ -71,6 +71,8 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
@@ -90,6 +92,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.exception.InvalidRequestException;
@@ -101,7 +104,9 @@ import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -139,6 +144,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Mock FakeNotificationClient notificationClient;
   @Inject private SLIRecordServiceImpl sliRecordService;
   @Inject private OutboxService outboxService;
+  @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
   String accountId;
   String orgIdentifier;
   String projectIdentifier;
@@ -1125,20 +1131,28 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testCreate_ServiceLevelObjectiveCreateAuditEvent() {
+  public void testCreate_ServiceLevelObjectiveCreateAuditEvent() throws JsonProcessingException {
     ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
     createMonitoredService();
     serviceLevelObjectiveService.create(projectParams, sloDTO);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    ServiceLevelObjectiveCreateEvent serviceLevelObjectiveCreateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), ServiceLevelObjectiveCreateEvent.class);
     assertThat(outboxEvent.getEventType()).isEqualTo(ServiceLevelObjectiveCreateEvent.builder().build().getEventType());
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE).getSLOV2DTO(sloDTO);
+    assertThat(serviceLevelObjectiveCreateEvent.getNewServiceLevelObjectiveDTO()).isEqualTo(serviceLevelObjectiveV2DTO);
   }
 
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testUpdate_ServiceLevelObjectiveUpdateAuditEvent() {
+  public void testUpdate_ServiceLevelObjectiveUpdateAuditEvent() throws JsonProcessingException {
     ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    ServiceLevelObjectiveV2DTO oldServiceLevelObjectiveV2DTO =
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE).getSLOV2DTO(sloDTO);
     createMonitoredService();
     ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
         serviceLevelObjectiveService.create(projectParams, sloDTO);
@@ -1147,13 +1161,22 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    ServiceLevelObjectiveUpdateEvent serviceLevelObjectiveUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), ServiceLevelObjectiveUpdateEvent.class);
     assertThat(outboxEvent.getEventType()).isEqualTo(ServiceLevelObjectiveUpdateEvent.builder().build().getEventType());
+    ServiceLevelObjectiveV2DTO newServiceLevelObjectiveV2DTO =
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE).getSLOV2DTO(sloDTO);
+    assertThat(serviceLevelObjectiveUpdateEvent.getOldServiceLevelObjectiveDTO())
+        .isEqualTo(oldServiceLevelObjectiveV2DTO);
+    assertThat(serviceLevelObjectiveUpdateEvent.getNewServiceLevelObjectiveDTO())
+        .isEqualTo(newServiceLevelObjectiveV2DTO);
   }
 
   @Test
   @Owner(developers = NAVEEN)
   @Category(UnitTests.class)
-  public void testDelete_ServiceLevelObjectiveDeleteAuditEvent() {
+  public void testDelete_ServiceLevelObjectiveDeleteAuditEvent() throws JsonProcessingException {
     ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
     createMonitoredService();
     serviceLevelObjectiveService.create(projectParams, sloDTO);
@@ -1161,7 +1184,14 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThat(isDeleted).isEqualTo(true);
     List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
     OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    ServiceLevelObjectiveDeleteEvent serviceLevelObjectiveDeleteEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(
+            outboxEvent.getEventData(), ServiceLevelObjectiveDeleteEvent.class);
     assertThat(outboxEvent.getEventType()).isEqualTo(ServiceLevelObjectiveDeleteEvent.builder().build().getEventType());
+    ServiceLevelObjectiveV2DTO oldServiceLevelObjectiveV2DTO =
+        serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.SIMPLE).getSLOV2DTO(sloDTO);
+    assertThat(serviceLevelObjectiveDeleteEvent.getOldServiceLevelObjectiveDTO())
+        .isEqualTo(oldServiceLevelObjectiveV2DTO);
   }
 
   @Test

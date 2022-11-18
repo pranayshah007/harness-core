@@ -124,7 +124,7 @@ public class AccountResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
   public ResponseDTO<Boolean>
   immutableDelegateEnabled(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
-      "accountIdentifier") String accountIdentifier) {
+      "accountIdentifier") @AccountIdentifier String accountIdentifier) {
     Boolean immutableDelegateEnabled =
         CGRestUtils.getResponse(accountClient.isImmutableDelegateEnabled(accountIdentifier));
     return ResponseDTO.newResponse(immutableDelegateEnabled);
