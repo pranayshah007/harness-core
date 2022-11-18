@@ -55,8 +55,9 @@ public class TasValidationHandler implements ConnectorValidationHandler {
 
   private void reformatEndpointURL(CloudFoundryConfig cfConfig) {
     String endpointUrl = cfConfig.getEndpointUrl();
-    if (endpointUrl.startsWith("https://"))
-      cfConfig.setEndpointUrl(endpointUrl.substring("https://".length()));
+    String httpPrefix = "https://";
+    if (endpointUrl.startsWith(httpPrefix))
+      cfConfig.setEndpointUrl(endpointUrl.substring(httpPrefix.length()));
   }
 
   private ConnectorValidationResult handleValidateTask(CloudFoundryConfig cfConfig) {
