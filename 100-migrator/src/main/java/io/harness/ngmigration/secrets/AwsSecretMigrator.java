@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialDTO;
@@ -129,7 +128,6 @@ public class AwsSecretMigrator implements SecretMigrator {
     } else {
       connectorDTO.credential(AwsSecretManagerCredentialDTO.builder()
                                   .credentialType(AwsSecretManagerCredentialType.ASSUME_IAM_ROLE)
-                                  .config(AwsSMCredentialSpecAssumeIAMDTO.builder().build())
                                   .build());
     }
 

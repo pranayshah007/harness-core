@@ -16,7 +16,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GitConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.time.Duration;
 import java.util.List;

@@ -98,6 +98,7 @@ public class RollingWorkflowHandlerImpl implements WorkflowHandler {
                                            .put("type", "Deployment")
                                            .put("spec", deploymentStageConfig)
                                            .put("failureStrategies", new ArrayList<>())
+                                           .put("variables", getVariables(workflow))
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }

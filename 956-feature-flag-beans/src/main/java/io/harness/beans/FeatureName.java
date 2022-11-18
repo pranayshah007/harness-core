@@ -47,6 +47,7 @@ public enum FeatureName {
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
+  CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
@@ -489,7 +490,9 @@ public enum FeatureName {
       HarnessTeam.PL),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
-  TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP);
+  TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
+  CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE);
+
 
   @Deprecated
   FeatureName() {

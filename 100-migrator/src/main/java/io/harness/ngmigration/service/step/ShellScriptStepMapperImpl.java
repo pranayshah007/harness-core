@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType() {
+  public String getStepType(StepYaml stepYaml) {
     return StepSpecTypeConstants.SHELL_SCRIPT;
   }
 

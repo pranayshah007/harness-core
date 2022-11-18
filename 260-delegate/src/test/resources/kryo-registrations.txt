@@ -227,7 +227,7 @@
 5005:software.wings.beans.TaskType
 5006:io.harness.delegate.beans.DelegateTaskResponse
 5007:software.wings.beans.artifact.ArtifactStreamAttributes
-5008:software.wings.beans.SettingAttribute
+5008:software.wings.beans.dto.SettingAttribute
 5009:software.wings.beans.BambooConfig
 5010:software.wings.beans.DockerConfig
 5011:software.wings.beans.EcrConfig
@@ -277,7 +277,6 @@
 5065:io.harness.delegate.beans.ChecksumType
 5066:software.wings.beans.artifact.ArtifactFile
 5067:software.wings.beans.infrastructure.Host
-5069:software.wings.beans.SettingAttribute.SettingCategory
 5070:software.wings.beans.HostConnectionAttributes
 5071:software.wings.beans.HostConnectionAttributes.ConnectionType
 5072:io.harness.shell.AccessType

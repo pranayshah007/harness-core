@@ -17,7 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateLogService;
 
 import com.google.inject.Inject;

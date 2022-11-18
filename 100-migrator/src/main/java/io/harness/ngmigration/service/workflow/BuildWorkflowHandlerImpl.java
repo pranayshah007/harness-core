@@ -68,6 +68,7 @@ public class BuildWorkflowHandlerImpl implements WorkflowHandler {
                                            .put("type", "Custom")
                                            .put("spec", customStageConfig)
                                            .put("failureStrategies", new ArrayList<>())
+                                           .put("variables", getVariables(workflow))
                                            .build();
     return JsonPipelineUtils.asTree(templateSpec);
   }

@@ -189,6 +189,11 @@ public class SettingAttribute
                  .collation(
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdNameIdx")
+                 .field(SettingAttributeKeys.name)
+                 .field(SettingAttributeKeys.accountId)
+                 .build())
         .build();
   }
 
@@ -480,5 +485,26 @@ public class SettingAttribute
   @Nonnull
   public List<String> fetchRelevantSecretIds() {
     return value == null ? Collections.emptyList() : value.fetchRelevantEncryptedSecrets();
+  }
+
+  public software.wings.beans.dto.SettingAttribute toDTO() {
+    return software.wings.beans.dto.SettingAttribute.builder()
+        .accountId(this.accountId)
+        .appId(this.appId)
+        .appIds(this.appIds)
+        .uuid(this.uuid)
+        .usageRestrictions(this.usageRestrictions)
+        .connectivityError(this.connectivityError)
+        .validationAttributes(this.validationAttributes)
+        .envId(this.envId)
+        .artifactStreamCount(this.artifactStreamCount)
+        .artifactStreams(this.artifactStreams)
+        .secretsMigrated(this.secretsMigrated)
+        .encryptionType(this.encryptionType)
+        .encryptedBy(this.encryptedBy)
+        .value(this.value)
+        .name(this.name)
+        .sample(this.sample)
+        .build();
   }
 }

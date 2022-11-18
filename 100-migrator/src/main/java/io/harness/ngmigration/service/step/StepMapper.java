@@ -14,12 +14,13 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public interface StepMapper {
-  String getStepType();
+  String getStepType(StepYaml stepYaml);
 
   AbstractStepNode getSpec(StepYaml stepYaml);
 
@@ -50,6 +51,16 @@ public interface StepMapper {
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
       pmsAbstractStepNode.setTimeout(getTimeout(stepYaml));
+    }
+  }
+
+  default void baseSetup(State state, AbstractStepNode stepNode) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
+    stepNode.setName(state.getName());
+    if (stepNode instanceof PmsAbstractStepNode) {
+      PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
+      pmsAbstractStepNode.setTimeout(
+          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
     }
   }
 }

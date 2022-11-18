@@ -7,8 +7,6 @@
 
 package software.wings.resources;
 
-import static io.harness.beans.SearchFilter.Operator.EQ;
-
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder;
@@ -52,7 +50,6 @@ public class ResourceLookupResource {
   @Produces("application/json")
   public RestResponse<PageResponse<ResourceLookup>> list(
       @QueryParam("accountId") String accountId, @BeanParam PageRequest<ResourceLookup> pageRequest) {
-    pageRequest.addFilter(ResourceLookupKeys.accountId, EQ, accountId);
     // Sorting has been added so that it takes index correctly
     pageRequest.addOrder(ResourceLookupKeys.accountId, SortOrder.OrderType.ASC);
     return new RestResponse<>(resourceLookupService.list(pageRequest));

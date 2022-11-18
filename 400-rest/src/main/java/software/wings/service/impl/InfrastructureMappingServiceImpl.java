@@ -1116,7 +1116,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .namespace(infraMapping.getNamespace())
@@ -1176,7 +1176,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue());
 
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .encryptionDetails(encryptionDetails)
         .clusterName(infraMapping.getClusterName())
         .subscriptionId(infraMapping.getSubscriptionId())
@@ -1214,7 +1214,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
 
     SyncTaskContext syncTaskContext = getSyncTaskContext(infraMapping);
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .encryptionDetails(encryptionDetails)
                                                         .namespace(namespace)
                                                         .build();
@@ -2186,7 +2186,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
       ((HostConnectionAttributes) hostConnectionSetting.getValue()).setSshVaultConfig(sshVaultConfig);
     }
     return delegateProxyFactory.get(HostValidationService.class, syncTaskContext)
-        .validateHost(validationRequest.getHostNames(), hostConnectionSetting, encryptionDetails,
+        .validateHost(validationRequest.getHostNames(), hostConnectionSetting.toDTO(), encryptionDetails,
             validationRequest.getExecutionCredential(), sshVaultConfig);
   }
 
@@ -2416,7 +2416,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
             .build();
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder()
-                                                        .settingAttribute(settingAttribute)
+                                                        .settingAttribute(settingAttribute.toDTO())
                                                         .containerServiceName(containerServiceName)
                                                         .encryptionDetails(encryptionDetails)
                                                         .clusterName(clusterName)

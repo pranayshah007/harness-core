@@ -22,7 +22,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.network.Http;
 import io.harness.ngmigration.beans.DiscoverEntityInput;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -56,7 +55,6 @@ import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Factory;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
-import io.serializer.HObjectMapper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -75,11 +73,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.ws.rs.core.StreamingOutput;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.OkHttpClient;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
@@ -287,20 +282,10 @@ public class DiscoveryService {
     return createEntities(auth, inputDTO, ngYamlFiles);
   }
 
-  private static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
-    OkHttpClient okHttpClient = Http.getOkHttpClient(ngClientConfig.getBaseUrl(), false);
-    Retrofit retrofit = new Retrofit.Builder()
-                            .client(okHttpClient)
-                            .baseUrl(ngClientConfig.getBaseUrl())
-                            .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
-                            .build();
-    return retrofit.create(clazz);
-  }
-
   private SaveSummaryDTO createEntities(String auth, MigrationInputDTO inputDTO, List<NGYamlFile> ngYamlFiles) {
-    NGClient ngClient = getRestClient(ngClientConfig, NGClient.class);
-    PmsClient pmsClient = getRestClient(pipelineServiceClientConfig, PmsClient.class);
-    TemplateClient templateClient = getRestClient(templateServiceClientConfig, TemplateClient.class);
+    NGClient ngClient = MigratorUtility.getRestClient(ngClientConfig, NGClient.class);
+    PmsClient pmsClient = MigratorUtility.getRestClient(pipelineServiceClientConfig, PmsClient.class);
+    TemplateClient templateClient = MigratorUtility.getRestClient(templateServiceClientConfig, TemplateClient.class);
     // Sort such that we create secrets first then connectors and so on.
     MigratorUtility.sort(ngYamlFiles);
     SaveSummaryDTO summaryDTO = SaveSummaryDTO.builder()

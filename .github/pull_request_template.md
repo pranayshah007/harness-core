@@ -36,6 +36,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`
 - CodeFormatCheckstyle: `trigger checkstylecodeformat`
+- SonarScan: `trigger ss`
 - Trigger all Checks: `trigger smartchecks`
 </details>
 

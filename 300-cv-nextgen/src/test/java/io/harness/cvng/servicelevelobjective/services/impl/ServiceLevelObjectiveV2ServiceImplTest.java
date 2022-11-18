@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -147,9 +148,12 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Before
   public void setup() throws IllegalAccessException, ParseException {
     MockitoAnnotations.initMocks(this);
+    clock = Clock.fixed(Instant.parse("2020-08-21T10:02:06Z"), ZoneOffset.UTC);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(serviceLevelIndicatorService, "compositeSLOService", compositeSLOService, true);
     FieldUtils.writeField(compositeSLOService, "hPersistence", hPersistence, true);
+    FieldUtils.writeField(compositeSLOService, "sideKickService", sideKickService, true);
+    FieldUtils.writeField(compositeSLOService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveV2Service, "sideKickService", sideKickService, true);
     when(compositeSLOService.isReferencedInCompositeSLO(any(), any())).thenCallRealMethod();
     when(compositeSLOService.getReferencedCompositeSLOs(any(), any())).thenCallRealMethod();
@@ -237,8 +241,6 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
                            .sloTargetPercentage(80.0)
                            .spec(RollingSLOTargetSpec.builder().periodLength("60d").build())
                            .build();
-
-    clock = Clock.fixed(Instant.parse("2020-08-21T10:02:06Z"), ZoneOffset.UTC);
   }
 
   @Test
@@ -864,6 +866,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testUpdate_UpdateWeightageCompositeSLOSuccess() {
+    doCallRealMethod().when(compositeSLOService).recalculate(any());
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
@@ -902,12 +905,16 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(compositeSLODTO1);
     verify(compositeSLOService, times(0)).reset(any());
     verify(compositeSLOService, times(1)).recalculate(any());
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, compositeServiceLevelObjective.getIdentifier());
+    assertThat(compositeServiceLevelObjective.getVersion()).isEqualTo(1);
   }
 
   @Test
   @Owner(developers = VARSHA_LALWANI)
   @Category(UnitTests.class)
   public void testUpdate_AddAndDeleteCompositeSLOSuccess() {
+    doCallRealMethod().when(compositeSLOService).reset(any());
     ServiceLevelObjectiveV2DTO sloDTO = createSLOBuilder();
     createMonitoredService();
     ServiceLevelObjectiveV2Response serviceLevelObjectiveResponse =
@@ -948,6 +955,11 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()).isEqualTo(compositeSLODTO1);
     verify(compositeSLOService, times(1)).reset(any());
     verify(compositeSLOService, times(0)).recalculate(any());
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        projectParams, compositeServiceLevelObjective.getIdentifier());
+    assertThat(compositeServiceLevelObjective.getVersion()).isEqualTo(1);
+    assertThat(compositeServiceLevelObjective.getStartedAt())
+        .isGreaterThan(compositeServiceLevelObjective.getCreatedAt());
   }
 
   @Test

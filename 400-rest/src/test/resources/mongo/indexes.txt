@@ -678,6 +678,7 @@ services {"name": "createdAt_1", "background": true} {"createdAt": 1}
 services {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
+settingAttributes {"name": "accountIdNameIdx", "background": true} {"name": 1, "accountId": 1}
 settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
 settingAttributes {"name": "acctValTypeIdx", "background": true} {"accountId": 1, "value.type": 1}
 settingAttributes {"name": "appId_1", "background": true} {"appId": 1}
@@ -818,6 +819,7 @@ userGroups {"name": "accountIdAndFilterTypeAndAppIds", "background": true} {"acc
 userGroups {"name": "accountIdAndImportedByScim", "background": true} {"accountId": 1, "importedByScim": 1}
 userGroups {"name": "accountIdAndName", "background": true} {"accountId": 1, "name": 1}
 userGroups {"name": "accountId_1", "background": true} {"accountId": 1}
+userGroups {"name": "accountId_linkedSsoId_isSsoLinked", "background": true} {"accountId": 1, "linkedSsoId": 1, "isSsoLinked": 1}
 userGroups {"name": "appId_1", "background": true} {"appId": 1}
 userGroups {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userGroups {"name": "name_1", "background": true} {"name": 1}

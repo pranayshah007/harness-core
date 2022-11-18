@@ -245,7 +245,7 @@ public class PdcInstanceHandler extends InstanceHandler implements InstanceSyncB
       SettingAttribute settingAttribute, List<EncryptedDataDetail> encryptedDataDetails) {
     HostValidationTaskParameters parameters = HostValidationTaskParameters.builder()
                                                   .hostNames(hostNames)
-                                                  .connectionSetting(settingAttribute)
+                                                  .connectionSetting(settingAttribute.toDTO())
                                                   .encryptionDetails(encryptedDataDetails)
                                                   .checkOnlyReachability(true)
                                                   .checkOr(true)

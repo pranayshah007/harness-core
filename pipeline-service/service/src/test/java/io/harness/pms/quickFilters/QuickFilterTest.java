@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -315,6 +316,24 @@ public class QuickFilterTest extends CategoryTest {
     // Verify that tags are present in criteria.
     assertTrue(
         (form.getCriteriaObject().get("$and").toString()).contains("Document{{entityGitDetails.repoName=testRepo}}"));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaWithEmptyRepoNameAndEmptyBranch() {
+    when(gitSyncSdkService.isGitSyncEnabled(any(), any(), any())).thenReturn(false);
+    setupGitContext(GitEntityInfo.builder().repoName("").branch("").build());
+    // Testing the execution list by tags
+    Criteria form = pmsExecutionServiceImpl.formCriteria(accountId, orgId, projId, pipelineId, null,
+        PipelineExecutionFilterPropertiesDTO.builder()
+            .pipelineTags(Collections.singletonList(NGTag.builder().key("key1").value("val1").build()))
+            .build(),
+        null, null, null, false, false, true);
+
+    // Verify that tags are present in criteria.
+    assertFalse((form.getCriteriaObject().get("$and").toString()).contains("Document{{entityGitDetails.repoName=}}"));
+    assertFalse((form.getCriteriaObject().get("$and").toString()).contains("Document{{entityGitDetails.branch=}}"));
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

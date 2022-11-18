@@ -1024,7 +1024,7 @@ public class TerraformStepHelper {
                            ((TerraformInlineBackendConfigFileConfig) bcFileConfig).getBackendConfigFileContent())
                        .build();
       } else if (bcFileConfig instanceof TerraformRemoteBackendConfigFileConfig) {
-        RemoteTerraformBackendConfigFileInfoBuilder<?, ?> remoteTerraformBCFileInfoBuilder =
+        RemoteTerraformBackendConfigFileInfoBuilder remoteTerraformBCFileInfoBuilder =
             RemoteTerraformBackendConfigFileInfo.builder();
         TerraformRemoteBackendConfigFileConfig terraformRemoteBCFileConfig =
             (TerraformRemoteBackendConfigFileConfig) bcFileConfig;
