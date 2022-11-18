@@ -206,15 +206,14 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         .build();
   }
 
-  private List<Instance> getK8sInstanceFromDelegate(ContainerInfrastructureMapping containerInfraMapping,
+  private List<Instance> getK8sInstanceFromDelegate(InfrastructureMapping infrastructureMapping,
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier, DeploymentSummary deploymentSummary) {
     List<Instance> instances = new ArrayList<>();
+    ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
     List<K8sPod> k8sPods = getK8sPodsFromDelegate(containerInfraMapping, cgK8sReleaseIdentifier);
     if (isEmpty(k8sPods)) {
       return instances;
     }
-    InfrastructureMapping infrastructureMapping =
-        infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
     for (K8sPod k8sPod : k8sPods) {
       instances.add(buildInstanceFromPodInfo(infrastructureMapping, k8sPod, deploymentSummary));
     }
@@ -269,6 +268,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(appId, InfraMappingId);
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
 
+    // Todo: should be subject to optimisation, it’s ineffective and theoretically can be reduced to just creating
+    // CgReleaseIdentifier based on instance
     for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifierList) {
       List<Instance> instances = new ArrayList<>();
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) cgReleaseIdentifiers;
@@ -584,7 +585,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
-        instances = getK8sInstanceFromDelegate(containerInfraMapping, cgK8sReleaseIdentifier, deploymentSummary);
+        instances = getK8sInstanceFromDelegate(infrastructureMapping, cgK8sReleaseIdentifier, deploymentSummary);
 
       } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
         ContainerMetadata containerMetadata = getContainerMetadataFromReleaseIdentifier(cgK8sReleaseIdentifier, null);
