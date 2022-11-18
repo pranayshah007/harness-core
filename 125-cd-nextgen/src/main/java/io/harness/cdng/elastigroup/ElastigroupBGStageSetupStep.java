@@ -238,6 +238,9 @@ public class ElastigroupBGStageSetupStep
     ElastigroupSetupResult elastigroupSetupResult = elastigroupSetupResponse.getElastigroupSetupResult();
     ElastiGroup oldElastiGroup = elastigroupStepCommonHelper.fetchOldElasticGroup(elastigroupSetupResult);
 
+    ElastigroupBGStageSetupStepParameters elastigroupBGStageSetupStepParameters =
+        (ElastigroupBGStageSetupStepParameters) stepParameters.getSpec();
+
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
         ElastigroupSetupDataOutcome.builder()
             .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
@@ -249,6 +252,15 @@ public class ElastigroupBGStageSetupStep
             .oldElastigroupOriginalConfig(oldElastiGroup)
             .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
             .loadBalancerDetailsForBGDeployments(elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments())
+            .awsConnectorRef(
+                ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
+                        .getSpec())
+                    .getConnectorRef()
+                    .getValue())
+            .awsRegion(((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
+                            .getSpec())
+                           .getConnectorRef()
+                           .getValue())
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
