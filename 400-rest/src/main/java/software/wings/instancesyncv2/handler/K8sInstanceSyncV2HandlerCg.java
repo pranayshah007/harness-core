@@ -17,6 +17,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
 
+import static com.hazelcast.sql.impl.expression.predicate.TernaryLogic.isNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -497,13 +498,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     SetView<String> intersection = Sets.intersection(instancesKeyMap.keySet(), instancesInDbKeyMap.keySet());
     List<Instance> instancesToUpdate = new ArrayList<>();
     for (String instanceKey : intersection) {
-      if (!instancesKeyMap.get(instanceKey)
-               .getInstanceInfo()
-               .equals(instancesInDbKeyMap.get(instanceKey).getInstanceInfo())) {
-        Instance instance = instancesInDbKeyMap.get(instanceKey);
-        instance.setInstanceInfo(instancesKeyMap.get(instanceKey).getInstanceInfo());
-        instancesToUpdate.add(instance);
-      }
+      Instance newInstance = instancesKeyMap.get(instanceKey);
+      Instance instanceInDb = instancesInDbKeyMap.get(instanceKey);
+      newInstance.setUuid(instanceInDb.getUuid());
+      instancesToUpdate.add(newInstance);
     }
 
     return instancesToUpdate;
