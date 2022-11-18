@@ -1931,45 +1931,45 @@ public class K8sTaskHelperBase {
 
     String valuesFileOptions =
         createValuesFileOptions(k8sDelegateTaskParams.getWorkingDirectory(), valuesFiles, executionLogCallback);
-    log.info("Values file options: " + valuesFileOptions);
+    logManifestRenderMessages(executionLogCallback, valuesFileOptions);
 
-    List<FileData> result = new ArrayList<>();
+    List<FileData> nonValuesFiles =
+        manifestFiles.stream().filter(file -> isValidManifestFile(file.getFileName())).collect(toList());
+
+    String combinedContents = ManifestHelper.concatenateFileContents(nonValuesFiles);
+    FileIo.writeUtf8StringToFile(k8sDelegateTaskParams.getWorkingDirectory() + "/template.yaml", combinedContents);
+
+    try (
+        ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
+        LogOutputStream logErrorStream = getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
+      String goTemplateCommand = encloseWithQuotesIfNeeded(k8sDelegateTaskParams.getGoTemplateClientPath())
+          + " -t template.yaml " + valuesFileOptions;
+      ProcessResult processResult = executeShellCommand(
+          k8sDelegateTaskParams.getWorkingDirectory(), goTemplateCommand, logErrorStream, timeoutInMillis);
+
+      if (processResult.getExitValue() != 0) {
+        throwManifestRenderException(errorCaptureStream.toString(), processResult);
+      }
+
+      String fileContent = processResult.outputUTF8();
+      logIfRenderHasValuesMissing(executionLogCallback, fileContent);
+      FileData combinedManifestFile = FileData.builder().fileName("template.yaml").fileContent(fileContent).build();
+      return List.of(combinedManifestFile);
+    }
+  }
+
+  private void logManifestRenderMessages(LogCallback executionLogCallback, String valuesFileOptions) {
+    log.info("Values file options: " + valuesFileOptions);
 
     executionLogCallback.saveExecutionLog(color("\nRendering manifest files using go template", White, Bold));
     executionLogCallback.saveExecutionLog(
         color("Only manifest files with [.yaml] or [.yml] extension will be processed", White, Bold));
+  }
 
-    for (FileData manifestFile : manifestFiles) {
-      if (StringUtils.equals(values_filename, manifestFile.getFileName())) {
-        continue;
-      }
-
-      FileIo.writeUtf8StringToFile(
-          k8sDelegateTaskParams.getWorkingDirectory() + "/template.yaml", manifestFile.getFileContent());
-
-      try (ByteArrayOutputStream errorCaptureStream = new ByteArrayOutputStream(1024);
-           LogOutputStream logErrorStream =
-               getExecutionLogOutputStream(executionLogCallback, ERROR, errorCaptureStream)) {
-        String goTemplateCommand = encloseWithQuotesIfNeeded(k8sDelegateTaskParams.getGoTemplateClientPath())
-            + " -t template.yaml " + valuesFileOptions;
-        ProcessResult processResult = executeShellCommand(
-            k8sDelegateTaskParams.getWorkingDirectory(), goTemplateCommand, logErrorStream, timeoutInMillis);
-
-        if (processResult.getExitValue() != 0) {
-          throw NestedExceptionUtils.hintWithExplanationException(
-              KubernetesExceptionHints.MANIFEST_RENDER_ERROR_GO_TEMPLATE,
-              format(KubernetesExceptionExplanation.MANIFEST_RENDER_ERROR_GO_TEMPLATE, errorCaptureStream.toString()),
-              new KubernetesTaskException(getErrorMessageIfProcessFailed(
-                  format("Failed to render template for %s.", manifestFile.getFileName()), processResult)));
-        }
-
-        String fileContent = processResult.outputUTF8();
-        logIfRenderHasValuesMissing(executionLogCallback, fileContent);
-        result.add(FileData.builder().fileName(manifestFile.getFileName()).fileContent(fileContent).build());
-      }
-    }
-
-    return result;
+  private void throwManifestRenderException(String errorMessage, ProcessResult processResult) {
+    throw NestedExceptionUtils.hintWithExplanationException(KubernetesExceptionHints.MANIFEST_RENDER_ERROR_GO_TEMPLATE,
+        format(KubernetesExceptionExplanation.MANIFEST_RENDER_ERROR_GO_TEMPLATE, errorMessage),
+        new KubernetesTaskException(getErrorMessageIfProcessFailed("Failed to render template.", processResult)));
   }
 
   private void logIfRenderHasValuesMissing(LogCallback executionLogCallback, String fileContent) {
