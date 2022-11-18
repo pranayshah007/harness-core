@@ -19,7 +19,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
+import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -27,9 +29,11 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -55,7 +59,7 @@ public class ElastigroupDeployStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
-  public void handleTaskFailure() throws Exception {
+  public void testHandleTaskFailure() throws Exception {
     // Given
     Ambiance ambiance = mock(Ambiance.class);
 
@@ -70,5 +74,34 @@ public class ElastigroupDeployStepHelperTest extends CategoryTest {
 
     // Then
     assertThat(response).isNotNull().extracting(StepResponse::getStatus).isEqualTo(Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testHandleTaskResult() throws Exception {
+    // Given
+    Ambiance ambiance = mock(Ambiance.class);
+    StepOutcome stepOutcome = mock(StepOutcome.class);
+
+    StepElementParameters stepParameters = StepElementParameters.builder()
+                                               .spec(ElastigroupDeployStepParameters.builder().build())
+                                               .timeout(ParameterField.createValueField("15m"))
+                                               .build();
+
+    ElastigroupDeployTaskResponse taskResponse = ElastigroupDeployTaskResponse.builder()
+                                                     .status(CommandExecutionStatus.SUCCESS)
+                                                     .ec2InstanceIdsAdded(Collections.emptyList())
+                                                     .ec2InstanceIdsExisting(Collections.emptyList())
+                                                     .build();
+
+    // When
+    StepResponse stepResponse = stepHelper.handleTaskResult(ambiance, stepParameters, taskResponse, stepOutcome);
+
+    // Then
+    assertThat(stepResponse)
+        .isNotNull()
+        .extracting(StepResponse::getStatus, StepResponse::getStepOutcomes)
+        .containsExactly(Status.SUCCEEDED, Collections.singletonList(stepOutcome));
   }
 }
