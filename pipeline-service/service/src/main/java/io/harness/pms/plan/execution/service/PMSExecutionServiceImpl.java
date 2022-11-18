@@ -110,9 +110,9 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public Criteria formCriteria(String accountId, String orgId, String projectId, String pipelineIdentifier,
-                               String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
-                               String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
-                               boolean isLatest) {
+      String filterIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String moduleName,
+      String searchTerm, List<ExecutionStatus> statusList, boolean myDeployments, boolean pipelineDeleted,
+      boolean isLatest) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -143,31 +143,31 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     if (myDeployments) {
       criteria.and(PlanExecutionSummaryKeys.triggerType)
-              .is(MANUAL)
-              .and(PlanExecutionSummaryKeys.triggeredBy)
-              .is(triggeredByHelper.getFromSecurityContext());
+          .is(MANUAL)
+          .and(PlanExecutionSummaryKeys.triggeredBy)
+          .is(triggeredByHelper.getFromSecurityContext());
     }
 
     Criteria moduleCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(moduleName)) {
       // Pipelines having only pipeline stages like custom and approval
       moduleCriteria.orOperator(Criteria.where(PlanExecutionSummaryKeys.modules)
-                      .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
-              // Pipelines for checking in actual module
-              Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
+                                    .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+          // Pipelines for checking in actual module
+          Criteria.where(PlanExecutionSummaryKeys.modules).in(moduleName));
     }
 
     Criteria searchCriteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(searchTerm)) {
       try {
         searchCriteria.orOperator(where(PlanExecutionSummaryKeys.pipelineIdentifier)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.name)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.key)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-                where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
-                        .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+                                      .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.name)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.key)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+            where(PlanExecutionSummaryKeys.tags + "." + NGTagKeys.value)
+                .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       } catch (PatternSyntaxException pex) {
         throw new InvalidRequestException(pex.getMessage() + " Use \\\\ for special character", pex);
       }
@@ -178,20 +178,20 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (gitEntityInfo != null) {
       //      Adding the branch filter if the branch is not null or default
       if (EmptyPredicate.isNotEmpty(gitEntityInfo.getBranch())
-              && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
+          && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
         gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
       }
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
         //     Adding the repoIdentifier for the old git sync flow
         if (EmptyPredicate.isNotEmpty(gitEntityInfo.getYamlGitConfigId())
-                && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
+            && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
           gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
-                  .is(gitEntityInfo.getYamlGitConfigId());
+              .is(gitEntityInfo.getYamlGitConfigId());
         }
       } else {
         //     Adding the repoName for the new git experience flow
         if (EmptyPredicate.isNotEmpty(gitEntityInfo.getRepoName())
-                && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
+            && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
           gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
         }
       }
@@ -219,7 +219,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public Criteria formCriteriaForRepoAndBranchListing(String accountIdentifier, String orgIdentifier,
-                                                      String projectIdentifier, String pipelineIdentifier, String repoName) {
+      String projectIdentifier, String pipelineIdentifier, String repoName) {
     Criteria criteria = new Criteria();
     criteria.and(PlanExecutionSummaryKeys.accountId).is(accountIdentifier);
     criteria.and(PlanExecutionSummaryKeys.orgIdentifier).is(orgIdentifier);
@@ -258,7 +258,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public Criteria formCriteriaOROperatorOnModules(String accountId, String orgId, String projectId,
-                                                  List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier) {
+      List<String> pipelineIdentifier, PipelineExecutionFilterPropertiesDTO filterProperties, String filterIdentifier) {
     Criteria criteria = new Criteria();
     if (EmptyPredicate.isNotEmpty(accountId)) {
       criteria.and(PlanExecutionSummaryKeys.accountId).is(accountId);
@@ -280,7 +280,7 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       throw new InvalidRequestException("Can not apply both filter properties and saved filter together");
     } else if (EmptyPredicate.isNotEmpty(filterIdentifier) && filterProperties == null) {
       populatePipelineFilterUsingIdentifierOROperator(
-              filterCriteria, accountId, orgId, projectId, filterIdentifier, filterCriteriaList);
+          filterCriteria, accountId, orgId, projectId, filterIdentifier, filterCriteriaList);
     } else if (EmptyPredicate.isEmpty(filterIdentifier) && filterProperties != null) {
       populatePipelineFilterOROperator(filterCriteria, filterProperties, filterCriteriaList);
     }
@@ -306,39 +306,39 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   private void populatePipelineFilterUsingIdentifierANDOperator(Criteria criteria, String accountIdentifier,
-                                                                String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier) {
     populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(
-            criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, ModuleInfoOperators.AND, null);
+        criteria, accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, ModuleInfoOperators.AND, null);
   }
 
   private void populatePipelineFilterUsingIdentifierOROperator(Criteria criteria, String accountIdentifier,
-                                                               String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier, List<Criteria> criteriaList) {
+      String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier, List<Criteria> criteriaList) {
     populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(criteria, accountIdentifier, orgIdentifier,
-            projectIdentifier, filterIdentifier, ModuleInfoOperators.OR, criteriaList);
+        projectIdentifier, filterIdentifier, ModuleInfoOperators.OR, criteriaList);
   }
 
   private void populatePipelineFilterUsingIdentifierParametrisedOperatorOnModules(Criteria criteria,
-                                                                                  String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier,
-                                                                                  ModuleInfoOperators operatorOnModules, List<Criteria> criteriaList) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String filterIdentifier,
+      ModuleInfoOperators operatorOnModules, List<Criteria> criteriaList) {
     FilterDTO pipelineFilterDTO = this.filterService.get(
-            accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINEEXECUTION);
+        accountIdentifier, orgIdentifier, projectIdentifier, filterIdentifier, FilterType.PIPELINEEXECUTION);
     if (pipelineFilterDTO == null) {
       throw new InvalidRequestException("Could not find a pipeline filter with the identifier ");
     }
     if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
       this.populatePipelineFilterOROperator(
-              criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), criteriaList);
+          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties(), criteriaList);
     } else {
       this.populatePipelineFilterANDOperator(
-              criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
+          criteria, (PipelineExecutionFilterPropertiesDTO) pipelineFilterDTO.getFilterProperties());
     }
   }
 
   // This is the function created and parametrized on operator to apply on modules in filterProperties to obtain the
   // criteria.
   private void populatePipelineFilterParametrisedOperatorOnModules(Criteria criteria,
-                                                                   @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, ModuleInfoOperators operatorOnModules,
-                                                                   List<Criteria> criteriaList) {
+      @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, ModuleInfoOperators operatorOnModules,
+      List<Criteria> criteriaList) {
     if (pipelineFilter.getTimeRange() != null) {
       TimeRange timeRange = pipelineFilter.getTimeRange();
       // Apply filter to criteria if StartTime and EndTime both are not null.
@@ -346,10 +346,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
         criteria.and(PlanExecutionSummaryKeys.startTs).gte(timeRange.getStartTime()).lte(timeRange.getEndTime());
 
       } else if ((timeRange.getStartTime() != null && timeRange.getEndTime() == null)
-              || (timeRange.getStartTime() == null && timeRange.getEndTime() != null)) {
+          || (timeRange.getStartTime() == null && timeRange.getEndTime() != null)) {
         // If any one of StartTime and EndTime is null. Throw exception.
         throw new InvalidRequestException(
-                "startTime or endTime is not provided in TimeRange filter. Either add the missing field or remove the timeRange filter.");
+            "startTime or endTime is not provided in TimeRange filter. Either add the missing field or remove the timeRange filter.");
       }
       // Ignore TimeRange filter if StartTime and EndTime both are null.
     }
@@ -360,10 +360,10 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineName())) {
       criteria.orOperator(
-              where(PlanExecutionSummaryKeys.pipelineIdentifier)
-                      .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
-              where(PlanExecutionSummaryKeys.name)
-                      .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
+          where(PlanExecutionSummaryKeys.pipelineIdentifier)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS),
+          where(PlanExecutionSummaryKeys.name)
+              .regex(pipelineFilter.getPipelineName(), NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
     }
 
     if (EmptyPredicate.isNotEmpty(pipelineFilter.getPipelineTags())) {
@@ -373,21 +373,21 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     if (pipelineFilter.getModuleProperties() != null) {
       if (operatorOnModules.name().equals(ModuleInfoOperators.Operators.OR)) {
         ModuleInfoFilterUtils.processNodeOROperator(
-                JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteriaList);
+            JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteriaList);
       } else {
         ModuleInfoFilterUtils.processNode(
-                JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteria);
+            JsonUtils.readTree(pipelineFilter.getModuleProperties().toJson()), PARENT_PATH_MODULE_INFO, criteria);
       }
     }
   }
 
   private void populatePipelineFilterANDOperator(
-          Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
+      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter) {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.AND, null);
   }
 
   private void populatePipelineFilterOROperator(
-          Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
+      Criteria criteria, @NotNull PipelineExecutionFilterPropertiesDTO pipelineFilter, List<Criteria> criteriaList) {
     populatePipelineFilterParametrisedOperatorOnModules(criteria, pipelineFilter, ModuleInfoOperators.OR, criteriaList);
   }
 
@@ -399,21 +399,21 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     });
     Criteria tagsCriteria = new Criteria();
     tagsCriteria.orOperator(
-            where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
+        where(PlanExecutionSummaryKeys.tagsKey).in(tags), where(PlanExecutionSummaryKeys.tagsValue).in(tags));
     criteria.andOperator(tagsCriteria);
   }
 
   @Override
   public InputSetYamlWithTemplateDTO getInputSetYamlWithTemplate(String accountId, String orgId, String projectId,
-                                                                 String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions) {
+      String planExecutionId, boolean pipelineDeleted, boolean resolveExpressions) {
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
-            pmsExecutionSummaryRespository
-                    .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
-                            accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
+        pmsExecutionSummaryRespository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+                accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
       String latestTemplate = validateAndMergeHelper.getPipelineTemplate(
-              accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
+          accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
       String yaml = executionSummaryEntity.getInputSetYaml();
       String template = executionSummaryEntity.getPipelineTemplate();
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
@@ -421,41 +421,41 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO.builder()
-              .inputSetTemplateYaml(template)
-              .inputSetYaml(yaml)
-              .latestTemplateYaml(latestTemplate)
-              .expressionValues(stagesExecutionMetadata != null ? stagesExecutionMetadata.getExpressionValues() : null)
-              .build();
+          .inputSetTemplateYaml(template)
+          .inputSetYaml(yaml)
+          .latestTemplateYaml(latestTemplate)
+          .expressionValues(stagesExecutionMetadata != null ? stagesExecutionMetadata.getExpressionValues() : null)
+          .build();
     }
     throw new InvalidRequestException(
-            "Invalid request : Input Set did not exist or pipeline execution has been deleted");
+        "Invalid request : Input Set did not exist or pipeline execution has been deleted");
   }
 
   @Override
   public PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
-          String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted) {
+      String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted) {
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
-            pmsExecutionSummaryRespository
-                    .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
-                            accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
+        pmsExecutionSummaryRespository
+            .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionIdAndPipelineDeletedNot(
+                accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       return pipelineExecutionSummaryEntityOptional.get();
     }
     throw new EntityNotFoundException(
-            "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
+        "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
   }
 
   @Override
   public PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
-          String accountId, String orgId, String projectId, String planExecutionId) {
+      String accountId, String orgId, String projectId, String planExecutionId) {
     Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
-            pmsExecutionSummaryRespository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
-                    accountId, orgId, projectId, planExecutionId);
+        pmsExecutionSummaryRespository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
+            accountId, orgId, projectId, planExecutionId);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       return pipelineExecutionSummaryEntityOptional.get();
     }
     throw new EntityNotFoundException(
-            "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
+        "Plan Execution Summary does not exist or has been deleted for planExecutionId: " + planExecutionId);
   }
 
   @Override
@@ -470,51 +470,51 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
 
   @Override
   public OrchestrationGraphDTO getOrchestrationGraph(
-          String stageNodeId, String planExecutionId, String stageNodeExecutionId) {
+      String stageNodeId, String planExecutionId, String stageNodeExecutionId) {
     if (EmptyPredicate.isEmpty(stageNodeId)) {
       return graphGenerationService.generateOrchestrationGraphV2(planExecutionId);
     }
     return graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
-            stageNodeId, planExecutionId, stageNodeExecutionId);
+        stageNodeId, planExecutionId, stageNodeExecutionId);
   }
   @Override
   public InterruptDTO registerInterrupt(
-          PlanExecutionInterruptType executionInterruptType, String planExecutionId, String nodeExecutionId) {
+      PlanExecutionInterruptType executionInterruptType, String planExecutionId, String nodeExecutionId) {
     final Principal principal = SecurityContextBuilder.getPrincipal();
     InterruptConfig interruptConfig =
-            InterruptConfig.newBuilder()
-                    .setIssuedBy(IssuedBy.newBuilder()
-                            .setManualIssuer(ManualIssuer.newBuilder()
-                                    .setType(principal.getType().toString())
-                                    .setIdentifier(principal.getName())
-                                    .build())
-                            .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
-                            .build())
-                    .build();
+        InterruptConfig.newBuilder()
+            .setIssuedBy(IssuedBy.newBuilder()
+                             .setManualIssuer(ManualIssuer.newBuilder()
+                                                  .setType(principal.getType().toString())
+                                                  .setIdentifier(principal.getName())
+                                                  .build())
+                             .setIssueTime(ProtoUtils.unixMillisToTimestamp(System.currentTimeMillis()))
+                             .build())
+            .build();
     return registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId, interruptConfig);
   }
 
   @Override
   public InterruptDTO registerInterrupt(PlanExecutionInterruptType executionInterruptType, String planExecutionId,
-                                        String nodeExecutionId, InterruptConfig interruptConfig) {
+      String nodeExecutionId, InterruptConfig interruptConfig) {
     InterruptPackage interruptPackage = InterruptPackage.builder()
-            .interruptType(executionInterruptType.getExecutionInterruptType())
-            .planExecutionId(planExecutionId)
-            .nodeExecutionId(nodeExecutionId)
-            .interruptConfig(interruptConfig)
-            .metadata(getMetadata(executionInterruptType))
-            .build();
+                                            .interruptType(executionInterruptType.getExecutionInterruptType())
+                                            .planExecutionId(planExecutionId)
+                                            .nodeExecutionId(nodeExecutionId)
+                                            .interruptConfig(interruptConfig)
+                                            .metadata(getMetadata(executionInterruptType))
+                                            .build();
     Interrupt interrupt = orchestrationService.registerInterrupt(interruptPackage);
     return InterruptDTO.builder()
-            .id(interrupt.getUuid())
-            .planExecutionId(interrupt.getPlanExecutionId())
-            .type(executionInterruptType)
-            .build();
+        .id(interrupt.getUuid())
+        .planExecutionId(interrupt.getPlanExecutionId())
+        .type(executionInterruptType)
+        .build();
   }
 
   private Map<String, String> getMetadata(PlanExecutionInterruptType planExecutionInterruptType) {
     if (planExecutionInterruptType == PlanExecutionInterruptType.STAGEROLLBACK
-            || planExecutionInterruptType == PlanExecutionInterruptType.STEPGROUPROLLBACK) {
+        || planExecutionInterruptType == PlanExecutionInterruptType.STEPGROUPROLLBACK) {
       return Collections.singletonMap("ROLLBACK", planExecutionInterruptType.getDisplayName());
     }
     return Collections.emptyMap();
@@ -524,13 +524,13 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   public void deleteExecutionsOnPipelineDeletion(PipelineEntity pipelineEntity) {
     Criteria criteria = new Criteria();
     criteria.and(PlanExecutionSummaryKeys.accountId)
-            .is(pipelineEntity.getAccountId())
-            .and(PlanExecutionSummaryKeys.orgIdentifier)
-            .is(pipelineEntity.getOrgIdentifier())
-            .and(PlanExecutionSummaryKeys.projectIdentifier)
-            .is(pipelineEntity.getProjectIdentifier())
-            .and(PlanExecutionSummaryKeys.pipelineIdentifier)
-            .is(pipelineEntity.getIdentifier());
+        .is(pipelineEntity.getAccountId())
+        .and(PlanExecutionSummaryKeys.orgIdentifier)
+        .is(pipelineEntity.getOrgIdentifier())
+        .and(PlanExecutionSummaryKeys.projectIdentifier)
+        .is(pipelineEntity.getProjectIdentifier())
+        .and(PlanExecutionSummaryKeys.pipelineIdentifier)
+        .is(pipelineEntity.getIdentifier());
     Query query = new Query(criteria);
 
     Update update = new Update();
@@ -539,8 +539,8 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     UpdateResult updateResult = pmsExecutionSummaryRespository.deleteAllExecutionsWhenPipelineDeleted(query, update);
     if (!updateResult.wasAcknowledged()) {
       throw new InvalidRequestException(format(
-              "Executions for Pipeline [%s] under Project[%s], Organization [%s] couldn't be deleted.",
-              pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()));
+          "Executions for Pipeline [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+          pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()));
     }
   }
 
@@ -552,11 +552,11 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   @Override
   public ExecutionDataResponseDTO getExecutionData(String planExecutionId) {
     Optional<PlanExecutionMetadata> planExecutionMetadata =
-            planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
+        planExecutionMetadataService.findByPlanExecutionId(planExecutionId);
 
     if (!planExecutionMetadata.isPresent()) {
       throw new InvalidRequestException(
-              String.format("Execution with id [%s] is not present or deleted", planExecutionId));
+          String.format("Execution with id [%s] is not present or deleted", planExecutionId));
     }
     String executionYaml = planExecutionMetadata.get().getYaml();
 
