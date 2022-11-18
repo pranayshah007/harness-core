@@ -7,12 +7,10 @@
 
 package io.harness.pms.plan.execution.service;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
-
-import static java.lang.String.format;
-import static org.springframework.data.mongodb.core.query.Criteria.where;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.protobuf.ByteString;
+import com.mongodb.client.result.UpdateResult;
 import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -59,20 +57,6 @@ import io.harness.security.dto.Principal;
 import io.harness.serializer.JsonUtils;
 import io.harness.serializer.ProtoUtils;
 import io.harness.service.GraphGenerationService;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.protobuf.ByteString;
-import com.mongodb.client.result.UpdateResult;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.PatternSyntaxException;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.InternalServerErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
@@ -81,6 +65,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.InternalServerErrorException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.PatternSyntaxException;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
+import static java.lang.String.format;
+import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 @Singleton
 @Slf4j
@@ -333,24 +332,12 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
                 accountId, orgId, projectId, planExecutionId, !pipelineDeleted);
     if (pipelineExecutionSummaryEntityOptional.isPresent()) {
       PipelineExecutionSummaryEntity executionSummaryEntity = pipelineExecutionSummaryEntityOptional.get();
+      String latestTemplate = validateAndMergeHelper.getPipelineTemplate(
+              accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
       String yaml = executionSummaryEntity.getInputSetYaml();
       String template = executionSummaryEntity.getPipelineTemplate();
-      String latestTemplate = null;
       if (resolveExpressions && EmptyPredicate.isNotEmpty(yaml)) {
         yaml = yamlExpressionResolveHelper.resolveExpressionsInYaml(yaml, planExecutionId);
-      }
-      if (EmptyPredicate.isEmpty(template) && EmptyPredicate.isNotEmpty(yaml)) {
-        EntityGitDetails entityGitDetails =
-            pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntity.getGitSyncBranchContext());
-        if (entityGitDetails != null) {
-          template = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId,
-              executionSummaryEntity.getPipelineIdentifier(), entityGitDetails.getBranch(),
-              entityGitDetails.getRepoIdentifier(), null);
-        } else {
-          template = validateAndMergeHelper.getPipelineTemplate(
-              accountId, orgId, projectId, executionSummaryEntity.getPipelineIdentifier(), null);
-          latestTemplate = template;
-        }
       }
       StagesExecutionMetadata stagesExecutionMetadata = executionSummaryEntity.getStagesExecutionMetadata();
       return InputSetYamlWithTemplateDTO.builder()
