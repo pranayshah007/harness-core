@@ -485,8 +485,7 @@ public enum FeatureName {
   USE_GET_FILE_V2_GIT_CALL(
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
-  ;
-
+  CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
