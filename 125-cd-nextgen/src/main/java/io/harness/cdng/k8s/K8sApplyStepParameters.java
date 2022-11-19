@@ -19,6 +19,8 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nonnull;
 import lombok.Builder;
@@ -37,21 +39,28 @@ public class K8sApplyStepParameters extends K8sApplyBaseStepInfo implements K8sS
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
       ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering);
+      List<ManifestConfigWrapper> overrides, ParameterField<Boolean> skipRendering,
+      ParameterField<Boolean> showJobLogs) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides, skipRendering, showJobLogs);
   }
 
   @Nonnull
   @Override
   @JsonIgnore
   public List<String> getCommandUnits() {
-    List<String> commandUnits = K8sSpecParameters.super.getCommandUnits();
-    if (!ParameterField.isNull(skipSteadyStateCheck)
-        && CDStepHelper.getParameterFieldBooleanValue(skipSteadyStateCheck,
+    List<String> commandUnits = new ArrayList<>(Arrays.asList(K8sCommandUnitConstants.FetchFiles,
+        K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Prepare, K8sCommandUnitConstants.Apply));
+    if (!ParameterField.isNull(showJobLogs)
+        && CDStepHelper.getParameterFieldBooleanValue(showJobLogs, K8sApplyBaseStepInfoKeys.showJobLogs,
+            String.format("%s step", ExecutionNodeType.K8S_APPLY.getYamlType()))) {
+      commandUnits.add(K8sCommandUnitConstants.JobLogs);
+    } else if (!ParameterField.isNull(skipSteadyStateCheck)
+        && !CDStepHelper.getParameterFieldBooleanValue(skipSteadyStateCheck,
             K8sApplyBaseStepInfoKeys.skipSteadyStateCheck,
             String.format("%s step", ExecutionNodeType.K8S_APPLY.getYamlType()))) {
-      commandUnits.remove(K8sCommandUnitConstants.WaitForSteadyState);
+      commandUnits.add(K8sCommandUnitConstants.WaitForSteadyState);
     }
+    commandUnits.add(K8sCommandUnitConstants.WrapUp);
     return commandUnits;
   }
 }

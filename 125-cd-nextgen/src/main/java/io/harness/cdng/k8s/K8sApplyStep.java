@@ -131,6 +131,8 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             K8sApplyBaseStepInfoKeys.skipSteadyStateCheck, stepElementParameters);
     boolean skipRendering = CDStepHelper.getParameterFieldBooleanValue(
         k8sApplyStepParameters.getSkipRendering(), K8sApplyBaseStepInfoKeys.skipRendering, stepElementParameters);
+    boolean showJobLogs = CDStepHelper.getParameterFieldBooleanValue(
+        k8sApplyStepParameters.getShowJobLogs(), K8sApplyBaseStepInfoKeys.showJobLogs, stepElementParameters);
 
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     K8sApplyRequest k8sApplyRequest =
@@ -156,6 +158,7 @@ public class K8sApplyStep extends TaskChainExecutableWithRollbackAndRbac impleme
             .useNewKubectlVersion(cdStepHelper.isUseNewKubectlVersion(accountId))
             .useK8sApiForSteadyStateCheck(cdStepHelper.shouldUseK8sApiForSteadyStateCheck(accountId))
             .skipRendering(skipRendering)
+            .showJobLogs(showJobLogs)
             .build();
 
     k8sStepHelper.publishReleaseNameStepDetails(ambiance, releaseName);

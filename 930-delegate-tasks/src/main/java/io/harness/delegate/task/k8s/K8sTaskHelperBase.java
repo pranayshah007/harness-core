@@ -3071,6 +3071,10 @@ public class K8sTaskHelperBase {
     return kubernetesCliClient;
   }
 
+  public K8sClient getKubernetesClient() {
+    return kubernetesApiClient;
+  }
+
   private boolean writeManifestFilesToDirectory(
       StoreDelegateConfig storeDelegateConfig, String manifestFilesDirectory, LogCallback executionLogCallback) {
     LocalFileStoreDelegateConfig localFileStoreDelegateConfig = (LocalFileStoreDelegateConfig) storeDelegateConfig;

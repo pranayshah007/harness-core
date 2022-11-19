@@ -14,6 +14,7 @@ import static io.harness.delegate.task.k8s.K8sTaskHelperBase.getTimeoutMillisFro
 import static io.harness.k8s.K8sCommandUnitConstants.Apply;
 import static io.harness.k8s.K8sCommandUnitConstants.FetchFiles;
 import static io.harness.k8s.K8sCommandUnitConstants.Init;
+import static io.harness.k8s.K8sCommandUnitConstants.JobLogs;
 import static io.harness.k8s.K8sCommandUnitConstants.Prepare;
 import static io.harness.k8s.K8sCommandUnitConstants.WaitForSteadyState;
 import static io.harness.k8s.K8sCommandUnitConstants.WrapUp;
@@ -47,7 +48,9 @@ import io.harness.k8s.exception.KubernetesExceptionMessages;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sLogStreamingDTO;
 import io.harness.k8s.model.K8sSteadyStateDTO;
+import io.harness.k8s.model.Kind;
 import io.harness.k8s.model.KubernetesResource;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.logging.CommandExecutionStatus;
@@ -112,7 +115,8 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     final LogCallback waitForSteadyStateLogCallback =
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WaitForSteadyState, true, commandUnitsProgress);
 
-    if (!k8sApplyRequest.isSkipSteadyStateCheck() && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
+    if (!k8sApplyRequest.isShowJobLogs() && !k8sApplyRequest.isSkipSteadyStateCheck()
+        && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
       List<KubernetesResourceId> kubernetesResourceIds = k8sApplyHandlerConfig.getWorkloads()
                                                              .stream()
                                                              .map(KubernetesResource::getResourceId)
@@ -136,6 +140,27 @@ public class K8sApplyRequestHandler extends K8sRequestHandler {
     k8sApplyBaseHandler.steadyStateCheck(k8sApplyRequest.isSkipSteadyStateCheck(),
         k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace(), k8sDelegateTaskParams, timeoutInMillis,
         waitForSteadyStateLogCallback, k8sApplyHandlerConfig, isErrorFrameworkSupported(), true);
+
+    if (k8sApplyRequest.isShowJobLogs() && isNotEmpty(k8sApplyHandlerConfig.getWorkloads())) {
+      final LogCallback logStreamingLogCallback =
+          k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, JobLogs, true, commandUnitsProgress);
+      List<KubernetesResourceId> jobIds =
+          k8sApplyHandlerConfig.getWorkloads()
+              .stream()
+              .map(KubernetesResource::getResourceId)
+              .filter(kubernetesResource -> kubernetesResource.getKind().equals(Kind.Job.name()))
+              .collect(Collectors.toList());
+      K8sLogStreamingDTO k8SLogStreamingDTO = K8sLogStreamingDTO.builder()
+                                                  .request(k8sDeployRequest)
+                                                  .resourceIds(jobIds)
+                                                  .executionLogCallback(logStreamingLogCallback)
+                                                  .k8sDelegateTaskParams(k8sDelegateTaskParams)
+                                                  .namespace(k8sApplyRequest.getK8sInfraDelegateConfig().getNamespace())
+                                                  .isErrorFrameworkEnabled(true)
+                                                  .build();
+      K8sClient k8sApiClient = k8sTaskHelperBase.getKubernetesClient();
+      k8sApiClient.streamLogs(k8SLogStreamingDTO);
+    }
 
     k8sApplyBaseHandler.wrapUp(k8sDelegateTaskParams,
         k8sTaskHelperBase.getLogCallback(logStreamingTaskClient, WrapUp, true, commandUnitsProgress),

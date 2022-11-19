@@ -16,22 +16,27 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.k8s.model.K8sLogStreamingDTO;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.k8s.steadystate.watcher.event.K8sApiEventWatcher;
-import io.harness.k8s.steadystate.watcher.workload.K8sWorkloadWatcherFactory;
-import io.harness.k8s.steadystate.watcher.workload.WorkloadWatcher;
+import io.harness.k8s.steadystate.watcher.workload.*;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -41,6 +46,7 @@ public class K8sApiClient implements K8sClient {
   @Inject private K8sClientHelper k8sClientHelper;
   @Inject private K8sApiEventWatcher k8sApiEventWatcher;
   @Inject private K8sWorkloadWatcherFactory workloadWatcherFactory;
+  @Inject private K8sLogStreamerFactory logStreamerFactory;
 
   @Override
   public boolean performSteadyStateCheck(K8sSteadyStateDTO steadyStateDTO) throws Exception {
@@ -96,6 +102,50 @@ public class K8sApiClient implements K8sClient {
         executionLogCallback.saveExecutionLog(
             format("%nStatus check for resources in namespace [%s] failed.", steadyStateDTO.getNamespace()), INFO,
             FAILURE);
+      }
+    }
+  }
+
+  @Override
+  public boolean streamLogs(K8sLogStreamingDTO logStreamingDTO) throws Exception {
+    List<KubernetesResourceId> workloads = logStreamingDTO.getResourceIds();
+    if (EmptyPredicate.isEmpty(workloads)) {
+      return true;
+    }
+
+    ApiClient apiClient =
+        k8sClientHelper.createKubernetesApiClient(logStreamingDTO.getRequest().getK8sInfraDelegateConfig());
+    K8sStatusWatchDTO rolloutStatusDTO = k8sClientHelper.createStatusWatchDTO(logStreamingDTO, apiClient);
+    LogCallback executionLogCallback = logStreamingDTO.getExecutionLogCallback();
+    final AtomicBoolean success = new AtomicBoolean(false);
+
+    try {
+      String workloadKindNames =
+          workloads.stream().map(KubernetesResourceId::kindNameRef).collect(Collectors.joining(", "));
+      executionLogCallback.saveExecutionLog(
+          String.format("Streaming logs for the following workloads: [%s]", workloadKindNames));
+      for (KubernetesResourceId workloadId : workloads) {
+        K8sLogStreamer logStreamer = logStreamerFactory.getWorkloadLogStreamer(workloadId.getKind());
+        success.set(logStreamer.streamLogs(rolloutStatusDTO, workloadId, executionLogCallback));
+        if (!success.get()) {
+          log.info(String.format("Log streaming for workload %s did not succeed.", workloadId.kindNameRef()));
+          break;
+        }
+      }
+      return success.get();
+    } catch (Exception e) {
+      log.error("Exception while streaming workload logs", e);
+      if (logStreamingDTO.isErrorFrameworkEnabled()) {
+        throw e;
+      }
+      executionLogCallback.saveExecutionLog("\nFailed.", INFO, FAILURE);
+      return false;
+    } finally {
+      if (success.get()) {
+        executionLogCallback.saveExecutionLog("\nDone.", INFO, SUCCESS);
+      } else {
+        executionLogCallback.saveExecutionLog(
+            format("%nStreaming workload logs [%s] failed.", logStreamingDTO.getNamespace()), INFO, FAILURE);
       }
     }
   }

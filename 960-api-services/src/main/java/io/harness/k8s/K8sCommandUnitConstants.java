@@ -21,6 +21,7 @@ public interface K8sCommandUnitConstants {
   String Delete = "Delete";
   String Rollback = "Rollback";
   String WaitForSteadyState = "Wait for Steady State";
+  String JobLogs = "Job Logs";
   String WrapUp = "Wrap Up";
   String TrafficSplit = "Traffic Split";
   String SwapServiceSelectors = "Swap Service Selectors";

@@ -13,10 +13,7 @@ import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.k8s.KubernetesHelperService;
 import io.harness.k8s.kubectl.Kubectl;
-import io.harness.k8s.model.K8sDelegateTaskParams;
-import io.harness.k8s.model.K8sSteadyStateDTO;
-import io.harness.k8s.model.KubernetesConfig;
-import io.harness.k8s.model.KubernetesResourceId;
+import io.harness.k8s.model.*;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
 import io.harness.k8s.steadystate.model.K8sStatusWatchDTO;
 import io.harness.logging.LogCallback;
@@ -62,6 +59,18 @@ public class K8sClientHelper {
         .build();
   }
 
+  K8sEventWatchDTO createEventWatchDTO(K8sLogStreamingDTO logStreamingDTO, ApiClient apiClient) {
+    final String eventInfoFormat = fetchEventInfoFormat(logStreamingDTO.getResourceIds(), EVENT_INFO_FORMAT);
+    return K8sEventWatchDTO.builder()
+        .apiClient(apiClient)
+        .eventInfoFormat(eventInfoFormat)
+        .eventErrorFormat(EVENT_ERROR_FORMAT)
+        .resourceIds(logStreamingDTO.getResourceIds())
+        .workingDirectory(logStreamingDTO.getK8sDelegateTaskParams().getWorkingDirectory())
+        .isErrorFrameworkEnabled(logStreamingDTO.isErrorFrameworkEnabled())
+        .build();
+  }
+
   K8sStatusWatchDTO createStatusWatchDTO(K8sSteadyStateDTO steadyStateDTO, ApiClient apiClient) {
     final String statusFormat = fetchEventInfoFormat(steadyStateDTO.getResourceIds(), WATCH_STATUS_FORMAT);
     return K8sStatusWatchDTO.builder()
@@ -78,6 +87,16 @@ public class K8sClientHelper {
         .client(client)
         .k8sDelegateTaskParams(steadyStateDTO.getK8sDelegateTaskParams())
         .isErrorFrameworkEnabled(steadyStateDTO.isErrorFrameworkEnabled())
+        .statusFormat(statusFormat)
+        .build();
+  }
+
+  K8sStatusWatchDTO createStatusWatchDTO(K8sLogStreamingDTO jobLogStreamingDTO, ApiClient apiClient) {
+    final String statusFormat = fetchEventInfoFormat(jobLogStreamingDTO.getResourceIds(), WATCH_STATUS_FORMAT);
+    return K8sStatusWatchDTO.builder()
+        .apiClient(apiClient)
+        .k8sDelegateTaskParams(jobLogStreamingDTO.getK8sDelegateTaskParams())
+        .isErrorFrameworkEnabled(jobLogStreamingDTO.isErrorFrameworkEnabled())
         .statusFormat(statusFormat)
         .build();
   }

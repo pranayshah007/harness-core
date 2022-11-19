@@ -1032,6 +1032,14 @@ public class DelegateModule extends AbstractModule {
         new DefaultAsyncHttpClientConfig.Builder().setUseProxyProperties(true).setSslContext(sslContext).build());
   }
 
+  @Provides
+  @Singleton
+  @Named("k8sLogStreamer")
+  public ScheduledExecutorService k8sLogStreamer() {
+    return new ScheduledThreadPoolExecutor(
+        10, new ThreadFactoryBuilder().setNameFormat("k8sLogStreamer-%d").setPriority(Thread.MAX_PRIORITY).build());
+  }
+
   @Override
   protected void configure() {
     bindDelegateTasks();

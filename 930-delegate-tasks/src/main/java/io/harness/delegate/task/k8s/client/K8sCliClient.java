@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.model.K8sDelegateTaskParams;
+import io.harness.k8s.model.K8sLogStreamingDTO;
 import io.harness.k8s.model.K8sSteadyStateDTO;
 import io.harness.k8s.model.KubernetesResourceId;
 import io.harness.k8s.steadystate.model.K8sEventWatchDTO;
@@ -97,5 +98,10 @@ public class K8sCliClient implements K8sClient {
             FAILURE);
       }
     }
+  }
+
+  @Override
+  public boolean streamLogs(K8sLogStreamingDTO k8SLogStreamingDTO) {
+    throw new UnsupportedOperationException("Log streaming is not supported by K8s cli client");
   }
 }
