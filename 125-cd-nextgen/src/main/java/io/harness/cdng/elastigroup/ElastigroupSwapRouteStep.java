@@ -123,6 +123,7 @@ public class ElastigroupSwapRouteStep
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
                     .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
+                    .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSwapRouteCommandRequest, ambiance,

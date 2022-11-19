@@ -81,14 +81,14 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
     timeoutInMillis = elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.swapTargetGroup.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
-          ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsEncryptedDetails());
+              elastigroupSwapRouteCommandRequest.getAwsEncryptedDetails());
       AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig(
           (AwsConnectorDTO) elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
-          ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).getAwsRegion());
+              elastigroupSwapRouteCommandRequest.getAwsRegion());
 
       SpotInstConfig spotInstConfig = elastigroupSwapRouteCommandRequest.getSpotInstConfig();
       elastigroupCommandTaskNGHelper.decryptSpotInstConfig(spotInstConfig);

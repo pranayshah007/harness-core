@@ -258,6 +258,7 @@ import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
 import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
+import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
@@ -552,9 +553,11 @@ import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
+import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -1948,5 +1951,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573552);
     kryo.register(ElastigroupParametersFetchResponse.class, 573553);
     kryo.register(ElastigroupParametersFetchRequest.class, 573554);
+    kryo.register(ElastigroupSwapRouteCommandRequest.class, 10000112);
+    kryo.register(ElastigroupSwapRouteResponse.class, 10000113);
+    kryo.register(ElastigroupSwapRouteResult.class, 10000114);
   }
 }

@@ -259,7 +259,7 @@ public class ElastigroupBGStageSetupStep
                     .getValue())
             .awsRegion(((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
                             .getSpec())
-                           .getConnectorRef()
+                    .getRegion()
                            .getValue())
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
