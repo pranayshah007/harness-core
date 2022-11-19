@@ -10,7 +10,7 @@ package io.harness.cdng.service.steps;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.rule.Owner;

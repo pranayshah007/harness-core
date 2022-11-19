@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
-import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.kustomize.OverlayConfiguration;
 import io.harness.logging.LoggingInitializer;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;

@@ -16,7 +16,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.StepCategory;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;

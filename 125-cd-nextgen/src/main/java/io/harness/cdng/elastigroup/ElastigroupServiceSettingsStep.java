@@ -12,9 +12,9 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.cdng.service.beans.ElastigroupServiceSpec;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.executions.steps.ExecutionNodeType;

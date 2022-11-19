@@ -21,7 +21,7 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.instance.outcome.HostOutcome;
 import io.harness.cdng.instance.outcome.InstanceOutcome;

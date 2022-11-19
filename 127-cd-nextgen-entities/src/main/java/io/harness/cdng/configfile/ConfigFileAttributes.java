@@ -8,11 +8,11 @@
 package io.harness.cdng.configfile;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
+import static io.harness.cdng.manifest.yaml.StoreConfigWrapper.StoreConfigWrapperParameters;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.configfile.ConfigFileAttributesVisitorHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -54,7 +54,7 @@ public class ConfigFileAttributes implements OverridesApplier<ConfigFileAttribut
 
   @NotNull
   @Wither
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.StoreConfigWrapper")
   @JsonProperty("store")
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;

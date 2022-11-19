@@ -14,7 +14,7 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.cdng.chaos.ChaosStepNotifyData;
 import io.harness.cdng.k8s.K8sEntityHelper;
-import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.ManifestType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;

@@ -10,7 +10,7 @@ package io.harness.polling.bean.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfig;
 import io.harness.polling.bean.PollingInfo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;

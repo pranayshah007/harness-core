@@ -10,8 +10,6 @@ package io.harness.cdng.expressions;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.expression.EngineExpressionService;
@@ -25,12 +23,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CDExpressionResolver {
   @Inject private EngineExpressionService engineExpressionService;
-
-  public void updateStoreConfigExpressions(Ambiance ambiance, StoreConfigWrapper storeConfigWrapper) {
-    StoreConfig storeConfig = storeConfigWrapper.getSpec();
-    storeConfig = (StoreConfig) updateExpressions(ambiance, storeConfig);
-    storeConfigWrapper.setSpec(storeConfig);
-  }
 
   public Object updateExpressions(Ambiance ambiance, Object obj) {
     if (obj == null) {

@@ -30,7 +30,7 @@ import io.harness.cdng.execution.StageExecutionInfo.StageExecutionInfoBuilder;
 import io.harness.cdng.execution.azure.webapps.AzureWebAppsStageExecutionDetails;
 import io.harness.cdng.execution.service.StageExecutionInfoService;
 import io.harness.cdng.execution.sshwinrm.SshWinRmStageExecutionDetails;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.instance.InstanceDeploymentInfo;
 import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;

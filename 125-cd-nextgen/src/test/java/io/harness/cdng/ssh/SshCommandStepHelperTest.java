@@ -29,8 +29,8 @@ import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
-import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.infra.outcome.PdcInfrastructureOutcome;
+import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
 import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
@@ -265,7 +265,7 @@ public class SshCommandStepHelperTest extends CategoryTest {
         .updateRollbackData(any(io.harness.beans.Scope.class), any(String.class), any(Map.class), any(Map.class));
     doReturn(Arrays.asList(encryptedDataDetail)).when(ngEncryptedDataService).getEncryptionDetails(any(), any());
     doReturn(harnessStore).when(cdExpressionResolver).updateExpressions(any(), any());
-    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateExpressions(any(), any());
     doReturn(fileDelegateConfig).when(sshWinRmConfigFileHelper).getFileDelegateConfig(any(), eq(ambiance));
   }
 

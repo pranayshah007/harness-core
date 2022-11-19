@@ -7,7 +7,6 @@
 
 package io.harness.cdng.manifest.yaml;
 
-import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.helm.HelmSubCommandType;
 import io.harness.ng.core.k8s.ServiceSpecType;
 

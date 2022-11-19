@@ -12,7 +12,7 @@ import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
 import static io.harness.cdng.k8s.K8sStepHelper.MISSING_INFRASTRUCTURE_ERROR;
 import static io.harness.cdng.k8s.K8sStepHelper.RELEASE_NAME;
-import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.manifest.yaml.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.AWS;
 import static io.harness.delegate.beans.connector.ConnectorType.GCP;
@@ -56,8 +56,8 @@ import io.harness.cdng.K8sHelmCommonStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.HelmDeployStepParams;
-import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome.K8sDirectInfrastructureOutcomeBuilder;
+import io.harness.cdng.infra.outcome.K8sDirectInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sDirectInfrastructureOutcome.K8sDirectInfrastructureOutcomeBuilder;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
@@ -85,12 +85,12 @@ import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
-import io.harness.cdng.manifest.yaml.kinds.kustomize.OverlayConfiguration;
+import io.harness.cdng.manifest.yaml.HarnessStore;
+import io.harness.cdng.manifest.yaml.ValuesManifest;
+import io.harness.cdng.manifest.yaml.kustomize.OverlayConfiguration;
 import io.harness.cdng.manifest.yaml.oci.OciHelmChartStoreConfigWrapper;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -3430,7 +3430,7 @@ public class K8sStepHelperTest extends CategoryTest {
         k8sStepHelper.getKustomizePatchesManifests(manifestOutcomeList);
     assertThat(kustomizePatchesManifests.size()).isEqualTo(1);
     assertThat(kustomizePatchesManifests.get(0).getType())
-        .isEqualTo(io.harness.cdng.manifest.ManifestType.KustomizePatches);
+        .isEqualTo(io.harness.cdng.manifest.yaml.ManifestType.KustomizePatches);
   }
 
   @Test
@@ -3567,7 +3567,7 @@ public class K8sStepHelperTest extends CategoryTest {
     }
     List<OpenshiftParamManifestOutcome> openshiftParamManifestOutcomeList = new ArrayList<>();
     for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
-      if (io.harness.cdng.manifest.ManifestType.OpenshiftParam.equals(manifestOutcome.getType())) {
+      if (io.harness.cdng.manifest.yaml.ManifestType.OpenshiftParam.equals(manifestOutcome.getType())) {
         openshiftParamManifestOutcomeList.add((OpenshiftParamManifestOutcome) manifestOutcome);
       }
     }
@@ -3915,7 +3915,7 @@ public class K8sStepHelperTest extends CategoryTest {
     }
     List<KustomizePatchesManifestOutcome> kustomizePatchesManifestOutcomeList = new ArrayList<>();
     for (ManifestOutcome manifestOutcome : manifestOutcomeList) {
-      if (io.harness.cdng.manifest.ManifestType.KustomizePatches.equals(manifestOutcome.getType())) {
+      if (io.harness.cdng.manifest.yaml.ManifestType.KustomizePatches.equals(manifestOutcome.getType())) {
         kustomizePatchesManifestOutcomeList.add((KustomizePatchesManifestOutcome) manifestOutcome);
       }
     }

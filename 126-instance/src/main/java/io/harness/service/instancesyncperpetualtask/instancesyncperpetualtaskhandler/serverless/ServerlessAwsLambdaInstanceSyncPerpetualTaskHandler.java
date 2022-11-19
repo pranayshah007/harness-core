@@ -9,7 +9,7 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeploymentReleaseData;

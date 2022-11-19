@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitpolling.bean.GitPollingConfig;
 import io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.trigger.WebhookSource;

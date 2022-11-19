@@ -9,8 +9,8 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.CustomDeploymentInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.dtos.InfrastructureMappingDTO;

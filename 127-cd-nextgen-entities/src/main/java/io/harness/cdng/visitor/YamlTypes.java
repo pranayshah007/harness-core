@@ -10,7 +10,7 @@ package io.harness.cdng.visitor;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.ManifestType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
@@ -90,7 +90,6 @@ public interface YamlTypes {
   String SERVICE_OVERRIDE = "serviceOverrides";
   String SERVICE_INPUTS = "serviceInputs";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
-  String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
   String CONFIGURATION = "configuration";
   String TAG = "tag";

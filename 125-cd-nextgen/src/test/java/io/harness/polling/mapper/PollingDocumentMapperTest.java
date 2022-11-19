@@ -18,7 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
-import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.polling.bean.PollingDocument;

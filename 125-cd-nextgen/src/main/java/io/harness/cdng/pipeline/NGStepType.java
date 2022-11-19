@@ -13,7 +13,7 @@ import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_D
 import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.executions.steps.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;

@@ -28,7 +28,7 @@ import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.gitpolling.utils.GitPollingStepHelper;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.StoreConfigType;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;

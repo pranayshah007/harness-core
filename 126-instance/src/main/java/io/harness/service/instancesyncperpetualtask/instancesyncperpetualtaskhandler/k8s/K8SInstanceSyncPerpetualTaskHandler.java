@@ -15,10 +15,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sAzureInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sDirectInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.k8s.K8sDeploymentReleaseData;

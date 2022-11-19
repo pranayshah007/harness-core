@@ -8,7 +8,7 @@
 package io.harness.cdng.azure;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
@@ -22,9 +22,9 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.resources.acr.mappers.AcrResourceMapper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.HarnessStore;
+import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -233,7 +233,7 @@ public class AzureHelperService {
 
   public void validateSettingsStoreReferences(
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
-    cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);
+    updateStoreConfigExpressions(ambiance, storeConfigWrapper);
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
@@ -241,6 +241,12 @@ public class AzureHelperService {
     } else {
       validateSettingsConnectorByRef(storeConfig, ambiance, entityType);
     }
+  }
+
+  private void updateStoreConfigExpressions(Ambiance ambiance, StoreConfigWrapper storeConfigWrapper) {
+    StoreConfig storeConfig = storeConfigWrapper.getSpec();
+    storeConfig = (StoreConfig) cdExpressionResolver.updateExpressions(ambiance, storeConfig);
+    storeConfigWrapper.setSpec(storeConfig);
   }
 
   private LinkedHashMap<String, String> createLogStreamingAbstractions(BaseNGAccess ngAccess, Ambiance ambiance) {

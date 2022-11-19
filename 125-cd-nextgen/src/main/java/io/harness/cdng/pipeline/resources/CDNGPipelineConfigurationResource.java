@@ -16,7 +16,7 @@ import io.harness.beans.ExecutionStrategyType;
 import io.harness.cdng.infra.beans.ProvisionerType;
 import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.pipeline.helpers.CDNGPipelineConfigurationHelper;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;

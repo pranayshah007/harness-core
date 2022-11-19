@@ -13,7 +13,7 @@ import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.beans.SshServiceSpec;
 import io.harness.cdng.service.beans.SshServiceSpec.SshServiceSpecBuilder;
 import io.harness.ngmigration.beans.MigrationInputDTO;

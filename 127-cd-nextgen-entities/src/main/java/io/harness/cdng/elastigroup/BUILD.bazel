@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/expressions:module",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/manifest/yaml:module",
+        "//440-connector-nextgen:module",
+        "//877-filestore:module",
+        "//884-pms-commons:module",
+        "//890-sm-core:module",
+        "//890-sm-delegate:module",
+        "//910-delegate-service-driver:module",
+        "//940-secret-manager-client:module",
+        "//950-delegate-tasks-beans:module",
+        "//950-ng-core:module",
+        "//953-yaml-commons:module",
+        "//954-connector-beans:module",
+        "//967-walktree-visitor:module",
+        "//970-ng-commons:module",
+        "//979-recaster:module",
+        "//980-commons:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)
+
+run_analysis_per_module()

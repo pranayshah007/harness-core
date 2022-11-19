@@ -10,7 +10,6 @@ package io.harness.cdng.manifest.yaml;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.ManifestConfig.ManifestConfigStepParameters;
-import io.harness.cdng.visitor.helpers.manifest.ManifestOverridesVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;

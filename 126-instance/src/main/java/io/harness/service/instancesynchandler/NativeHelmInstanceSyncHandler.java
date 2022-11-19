@@ -9,9 +9,9 @@ package io.harness.service.instancesynchandler;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
-import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sDirectInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.K8sGcpInfrastructureOutcome;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.NativeHelmServerInstanceInfo;
 import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;

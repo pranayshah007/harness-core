@@ -8,7 +8,7 @@
 package io.harness.cdng.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -18,10 +18,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.manifest.ManifestStoreType;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.HarnessStore;
+import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
@@ -64,7 +64,7 @@ public class ElastigroupHelperService {
 
   public void validateSettingsStoreReferences(
       StoreConfigWrapper storeConfigWrapper, Ambiance ambiance, String entityType) {
-    cdExpressionResolver.updateStoreConfigExpressions(ambiance, storeConfigWrapper);
+    cdExpressionResolver.updateExpressions(ambiance, storeConfigWrapper);
     StoreConfig storeConfig = storeConfigWrapper.getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {

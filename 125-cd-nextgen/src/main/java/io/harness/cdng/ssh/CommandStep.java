@@ -16,11 +16,11 @@ import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.CustomDeploymentInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;

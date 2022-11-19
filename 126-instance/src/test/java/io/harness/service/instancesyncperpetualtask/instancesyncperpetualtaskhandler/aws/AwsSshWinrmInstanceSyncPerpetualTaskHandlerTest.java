@@ -21,7 +21,7 @@ import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.serverless.ServerlessEntityHelper;
 import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.connector.ConnectorInfoDTO;

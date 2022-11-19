@@ -9,7 +9,6 @@ package io.harness.cdng.manifest.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;

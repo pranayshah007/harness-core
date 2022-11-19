@@ -17,7 +17,7 @@ import io.harness.cdng.infra.beans.ProvisionerType;
 import io.harness.cdng.pipeline.NGStepType;
 import io.harness.cdng.pipeline.StepCategory;
 import io.harness.cdng.pipeline.StepData;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.steps.matrix.StrategyParameters;

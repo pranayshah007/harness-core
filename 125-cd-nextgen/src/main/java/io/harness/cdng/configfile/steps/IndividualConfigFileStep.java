@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.expressions.CDExpressionResolver;
+import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -46,7 +48,7 @@ public class IndividualConfigFileStep
   public StepResponse executeSync(Ambiance ambiance, ConfigFileStepParameters stepParameters,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     ConfigFileAttributes finalConfigFile = applyConfigFileOverrides(stepParameters);
-    cdExpressionResolver.updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
+    updateStoreConfigExpressions(ambiance, finalConfigFile.getStore().getValue());
     validateConfigFileAttributes(stepParameters.getIdentifier(), finalConfigFile, true);
     verifyConfigFileReference(stepParameters.getIdentifier(), finalConfigFile, ambiance);
     return StepResponse.builder()
@@ -57,5 +59,11 @@ public class IndividualConfigFileStep
                              stepParameters.getIdentifier(), stepParameters.getOrder(), finalConfigFile))
                          .build())
         .build();
+  }
+
+  private void updateStoreConfigExpressions(Ambiance ambiance, StoreConfigWrapper storeConfigWrapper) {
+    StoreConfig storeConfig = storeConfigWrapper.getSpec();
+    storeConfig = (StoreConfig) cdExpressionResolver.updateExpressions(ambiance, storeConfig);
+    storeConfigWrapper.setSpec(storeConfig);
   }
 }

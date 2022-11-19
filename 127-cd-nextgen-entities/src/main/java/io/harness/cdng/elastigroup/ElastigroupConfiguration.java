@@ -10,8 +10,7 @@ package io.harness.cdng.elastigroup;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.visitor.helpers.azure.StartupCommandConfigurationVisitorHelper;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -24,7 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@SimpleVisitorHelper(helperClass = StartupCommandConfigurationVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ElastigroupVisitorHelper.class)
 @TypeAlias("elastigroupConfiguration")
 @RecasterAlias("io.harness.cdng.elastigroup.ElastigroupConfiguration")
 @OwnedBy(HarnessTeam.CDP)

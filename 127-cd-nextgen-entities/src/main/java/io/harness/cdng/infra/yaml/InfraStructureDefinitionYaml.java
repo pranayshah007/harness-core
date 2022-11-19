@@ -13,7 +13,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expressio
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.helper.InfraStructureDefinitionVisitorHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.visitor.SimpleVisitorHelper;

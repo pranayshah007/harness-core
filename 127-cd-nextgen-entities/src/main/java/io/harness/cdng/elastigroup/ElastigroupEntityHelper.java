@@ -15,7 +15,6 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -50,8 +49,8 @@ public class ElastigroupEntityHelper {
     return connectorDTO.get().getConnector();
   }
 
-  public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, NGAccess ngAccess) {
-    ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
+  public SpotInstConfig getSpotInstConfig(String connectorRef, NGAccess ngAccess) {
+    ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(connectorRef, ngAccess);
     SpotConnectorDTO connectorConfigDTO = (SpotConnectorDTO) connectorDTO.getConnectorConfig();
     SpotCredentialDTO spotCredentialDTO = connectorConfigDTO.getCredential();
     SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =

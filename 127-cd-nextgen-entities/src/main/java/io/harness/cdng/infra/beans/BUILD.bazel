@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/infra/beans/host:module",
+        "//878-ng-common-utilities:module",
+        "//960-persistence:module",
+        "//960-yaml-sdk:module",
+        "//970-ng-commons:module",
+        "//979-recaster:module",
+        "//980-commons/src/main/java/io/harness/annotations:module",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "//clients/pipeline-service/pms-sdk-core:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)
+
+run_analysis_per_module()

@@ -10,7 +10,7 @@ package io.harness.cdng.ecs.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.List;

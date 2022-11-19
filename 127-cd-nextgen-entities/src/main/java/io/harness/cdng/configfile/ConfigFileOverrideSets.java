@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFile.ConfigFileStepParameters;
-import io.harness.cdng.visitor.helpers.manifest.ManifestOverridesVisitorHelper;
+import io.harness.cdng.manifest.yaml.ManifestOverridesVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;

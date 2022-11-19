@@ -7,6 +7,7 @@
 
 package io.harness.cdng.environment.yaml;
 
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 

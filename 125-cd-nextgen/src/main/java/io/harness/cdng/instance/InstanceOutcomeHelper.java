@@ -14,11 +14,11 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.CustomDeploymentInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.PdcInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.SshWinRmAwsInfrastructureOutcome;
+import io.harness.cdng.infra.outcome.SshWinRmAzureInfrastructureOutcome;
 import io.harness.cdng.instance.outcome.HostOutcome;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;

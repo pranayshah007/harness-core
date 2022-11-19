@@ -9,7 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.service.step.StepMapperFactory;

@@ -10,7 +10,7 @@ package io.harness.cdng.featureFlag;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.ff.filters.EnumFeatureFlagFilter;
 
 import com.google.common.collect.Sets;

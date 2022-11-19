@@ -26,9 +26,9 @@ import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.HarnessStore;
+import io.harness.cdng.manifest.yaml.StoreConfigType;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -104,7 +104,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(fileStoreService.getWithChildrenByPath(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH, false))
         .thenReturn(Optional.of(getFileStoreNode()));
-    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateExpressions(any(), any());
 
     ConfigFileStepParameters stepParameters =
         ConfigFileStepParameters.builder().identifier(IDENTIFIER).order(0).spec(getConfigFileAttributes()).build();
@@ -148,7 +148,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(fileStoreService.getWithChildrenByPath(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH_OVERRIDE, false))
         .thenReturn(Optional.of(getFileStoreNode()));
-    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateExpressions(any(), any());
 
     ConfigFileAttributes spec = getConfigFileAttributes();
     ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
@@ -195,7 +195,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
                 .connector(ConnectorInfoDTO.builder().identifier(CONNECTOR_REF).name(CONNECTOR_NAME).build())
                 .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                 .build()));
-    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateExpressions(any(), any());
 
     ConfigFileAttributes spec = getConfigFileAttributesWithGitStore();
     ConfigFileStepParameters stepParameters =

@@ -7,12 +7,12 @@
 
 package io.harness.cdng.creator.variables;
 
-import static io.harness.cdng.manifest.ManifestStoreType.isInGitSubset;
-import static io.harness.cdng.manifest.ManifestStoreType.isInStorageRepository;
+import static io.harness.cdng.manifest.yaml.ManifestStoreType.isInGitSubset;
+import static io.harness.cdng.manifest.yaml.ManifestStoreType.isInStorageRepository;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.ManifestType;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.k8s.ServiceSpecType;

@@ -7,7 +7,7 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.helm;
 
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;

@@ -27,9 +27,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.GitStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.manifest.yaml.HarnessStore;
+import io.harness.cdng.manifest.yaml.StoreConfigType;
+import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -81,7 +81,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
 
   @Before
   public void prepare() {
-    doNothing().when(cdExpressionResolver).updateStoreConfigExpressions(any(), any());
+    doNothing().when(cdExpressionResolver).updateExpressions(any(), any());
   }
 
   @Test

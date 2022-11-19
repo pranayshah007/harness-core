@@ -16,10 +16,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.manifest.yaml.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;

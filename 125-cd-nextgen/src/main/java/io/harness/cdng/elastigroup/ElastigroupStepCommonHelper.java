@@ -24,8 +24,8 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.manifest.ManifestStoreType;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
+import io.harness.cdng.manifest.yaml.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
@@ -232,7 +232,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   public SpotInstConfig getSpotInstConfig(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    return elastigroupEntityHelper.getSpotInstConfig(infrastructureOutcome, ngAccess);
+    return elastigroupEntityHelper.getSpotInstConfig(infrastructureOutcome.getConnectorRef(), ngAccess);
   }
 
   private TaskChainResponse handleElastigroupStartupScriptFetchFilesResponse(

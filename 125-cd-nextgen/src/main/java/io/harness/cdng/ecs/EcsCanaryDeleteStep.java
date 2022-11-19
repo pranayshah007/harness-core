@@ -16,7 +16,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteDataOutcome;
 import io.harness.cdng.ecs.beans.EcsCanaryDeleteOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;

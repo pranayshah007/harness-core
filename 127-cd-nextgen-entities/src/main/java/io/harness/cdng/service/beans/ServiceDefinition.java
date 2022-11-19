@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.visitor.helpers.serviceconfig.ServiceDefinitionVisitorHelper;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -46,7 +47,8 @@ public class ServiceDefinition implements Visitable {
   @ApiModelProperty(hidden = true)
   private String uuid;
 
-  @NotNull @JsonProperty("type") ServiceDefinitionType type;
+  @NotNull @JsonProperty("type")
+  ServiceDefinitionType type;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)

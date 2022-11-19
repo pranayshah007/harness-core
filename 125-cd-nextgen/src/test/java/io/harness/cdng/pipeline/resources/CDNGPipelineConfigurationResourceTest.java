@@ -18,7 +18,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.ExecutionStrategyType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.pipeline.helpers.CDNGPipelineConfigurationHelper;
-import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.ng.core.Status;
 import io.harness.rule.Owner;
 

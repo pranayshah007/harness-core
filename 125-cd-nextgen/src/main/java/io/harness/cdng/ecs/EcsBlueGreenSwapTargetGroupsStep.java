@@ -16,7 +16,7 @@ import io.harness.cdng.ecs.beans.EcsBlueGreenPrepareRollbackDataOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsOutcome;
 import io.harness.cdng.ecs.beans.EcsBlueGreenSwapTargetGroupsStartOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;

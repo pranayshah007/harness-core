@@ -7,9 +7,9 @@
 
 package io.harness.cdng.creator;
 
-import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
-import static io.harness.cdng.manifest.ManifestType.EcsTaskDefinition;
-import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
+import static io.harness.cdng.manifest.yaml.ManifestType.EcsScalingPolicyDefinition;
+import static io.harness.cdng.manifest.yaml.ManifestType.EcsTaskDefinition;
+import static io.harness.cdng.manifest.yaml.ManifestType.ServerlessAwsLambda;
 import static io.harness.cdng.visitor.YamlTypes.APPLICATION_SETTINGS;
 import static io.harness.cdng.visitor.YamlTypes.ARTIFACTS;
 import static io.harness.cdng.visitor.YamlTypes.CONFIG_FILE;
@@ -165,7 +165,7 @@ import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsCreateStepPlanCreator;
-import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.ManifestType;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;

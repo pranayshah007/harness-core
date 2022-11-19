@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.stage;
 
-import static io.harness.cdng.service.beans.ServiceDefinitionType.KUBERNETES;
+import static io.harness.cdng.commons.ServiceDefinitionType.KUBERNETES;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.util.Arrays.asList;
