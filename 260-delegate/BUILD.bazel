@@ -5,7 +5,6 @@ load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image", "container_push")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
 load("@rules_spring//springboot:springboot.bzl", "springboot")
-#load("//:tools/bazel/harness.bzl", "java_binary", "java_library")
 
 HarnessTeam = "DEL"
 
@@ -64,6 +63,7 @@ springboot(
         ":immutable": "io.harness.delegate.app.DelegateAgentApplication",
         "//conditions:default": "io.harness.delegate.app.DelegateApplication",
     }),
+    deps_exclude = ["@maven//:org_mongodb_mongo_java_driver"],
     java_library = ":module",
     visibility = ["//visibility:public"],
 )
