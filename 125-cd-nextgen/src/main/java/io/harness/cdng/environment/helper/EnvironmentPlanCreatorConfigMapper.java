@@ -13,13 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
-import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
-import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.NGEnvironmentConfig;
+import io.harness.ng.core.environment.beans.NGEnvironmentInfoConfig;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverrideConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.ArrayList;

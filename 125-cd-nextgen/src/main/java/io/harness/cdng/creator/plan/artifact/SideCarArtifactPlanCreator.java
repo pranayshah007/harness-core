@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.delegate.task.artifacts.ArtifactSourceConstants;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.sdk.core.plan.PlanNode;

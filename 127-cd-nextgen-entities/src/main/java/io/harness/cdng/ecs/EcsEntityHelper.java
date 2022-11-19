@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.ng.core.infrastructure.InfrastructureKind.ECS;
+import static io.harness.cdng.commons.InfrastructureKind.ECS;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;

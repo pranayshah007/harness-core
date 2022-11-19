@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

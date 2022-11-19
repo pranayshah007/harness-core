@@ -8,7 +8,7 @@
 package io.harness.cdng.provision.terraform.steps.rolllback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;

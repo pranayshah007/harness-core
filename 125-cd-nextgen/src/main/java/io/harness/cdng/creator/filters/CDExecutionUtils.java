@@ -9,7 +9,7 @@ package io.harness.cdng.creator.filters;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 

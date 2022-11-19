@@ -7,14 +7,14 @@
 
 package io.harness.cdng.creator.plan.steps.serverless;
 
-import static io.harness.cdng.visitor.YamlTypes.SERVERLESS_AWS_LAMBDA_DEPLOY;
+import static io.harness.cdng.commons.YamlTypes.SERVERLESS_AWS_LAMBDA_DEPLOY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

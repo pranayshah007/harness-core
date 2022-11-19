@@ -25,7 +25,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
 import io.harness.models.infrastructuredetails.SshWinrmInfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.perpetualtask.PerpetualTaskType;
 

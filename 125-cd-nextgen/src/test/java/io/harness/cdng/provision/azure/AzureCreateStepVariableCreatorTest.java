@@ -19,7 +19,7 @@ import io.harness.cdng.creator.variables.StepVariableCreatorTestUtils;
 import io.harness.cdng.provision.azure.variablecreator.AzureARMRollbackStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateARMResourceStepVariableCreator;
 import io.harness.cdng.provision.azure.variablecreator.AzureCreateBPStepVariableCreator;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

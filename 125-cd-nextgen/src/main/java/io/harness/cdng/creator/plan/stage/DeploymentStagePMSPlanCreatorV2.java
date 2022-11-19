@@ -34,7 +34,7 @@ import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;

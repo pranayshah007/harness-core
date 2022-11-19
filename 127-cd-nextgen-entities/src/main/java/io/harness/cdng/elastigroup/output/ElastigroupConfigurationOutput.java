@@ -10,7 +10,7 @@ package io.harness.cdng.elastigroup.output;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

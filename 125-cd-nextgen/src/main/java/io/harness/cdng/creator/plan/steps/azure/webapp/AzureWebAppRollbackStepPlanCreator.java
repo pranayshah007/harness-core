@@ -7,15 +7,15 @@
 
 package io.harness.cdng.creator.plan.steps.azure.webapp;
 
-import static io.harness.cdng.visitor.YamlTypes.AZURE_SLOT_DEPLOYMENT;
-import static io.harness.cdng.visitor.YamlTypes.AZURE_SWAP_SLOT;
+import static io.harness.cdng.commons.YamlTypes.AZURE_SLOT_DEPLOYMENT;
+import static io.harness.cdng.commons.YamlTypes.AZURE_SWAP_SLOT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepParameters;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

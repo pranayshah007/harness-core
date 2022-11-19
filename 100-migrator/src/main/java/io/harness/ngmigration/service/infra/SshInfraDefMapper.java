@@ -24,7 +24,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.cdng.commons.InfrastructureType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.service.MigratorUtility;

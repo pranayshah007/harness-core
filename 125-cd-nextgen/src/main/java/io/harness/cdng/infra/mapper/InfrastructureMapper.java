@@ -17,6 +17,7 @@ import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureConfig.InfrastructureConfigKeys;
+import io.harness.cdng.infra.yaml.InfrastructureEntityConfigMapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;

@@ -12,8 +12,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.StoreConfig;
-import io.harness.cdng.manifest.yaml.StoreConfigType;
+import io.harness.cdng.commons.StoreConfig;
+import io.harness.cdng.commons.StoreConfigType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.yaml.YamlNode;

@@ -24,7 +24,7 @@ import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Singleton;

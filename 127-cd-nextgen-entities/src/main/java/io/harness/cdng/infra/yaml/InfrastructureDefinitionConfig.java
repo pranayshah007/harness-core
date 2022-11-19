@@ -16,7 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
-import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.cdng.commons.InfrastructureType;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;

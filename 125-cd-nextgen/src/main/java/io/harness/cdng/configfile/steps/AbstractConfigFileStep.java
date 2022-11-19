@@ -1,6 +1,6 @@
 package io.harness.cdng.configfile.steps;
 
-import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.commons.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
@@ -13,7 +13,7 @@ import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.manifest.yaml.HarnessStore;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;

@@ -23,7 +23,7 @@ import io.harness.dtos.deploymentinfo.K8sDeploymentInfoDTO;
 import io.harness.entities.DeploymentSummary;
 import io.harness.entities.deploymentinfo.DeploymentInfo;
 import io.harness.entities.deploymentinfo.K8sDeploymentInfo;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.repositories.deploymentsummary.DeploymentSummaryRepository;
 import io.harness.rule.Owner;
 

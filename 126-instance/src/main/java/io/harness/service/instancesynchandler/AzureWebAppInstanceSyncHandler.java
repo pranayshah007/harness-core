@@ -23,7 +23,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.AzureWebAppInfrastructureDetails;
 import io.harness.models.infrastructuredetails.InfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 
 import com.google.inject.Singleton;

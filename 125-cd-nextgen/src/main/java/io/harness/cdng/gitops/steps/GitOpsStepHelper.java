@@ -13,7 +13,7 @@ import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.k8s.K8sStepHelper;
-import io.harness.cdng.manifest.yaml.ManifestType;
+import io.harness.cdng.commons.ManifestType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.exception.InvalidRequestException;

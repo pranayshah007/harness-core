@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.ssh.CommandStepNode;
 import io.harness.cdng.ssh.CommandStepParameters;
 import io.harness.exception.InvalidRequestException;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

@@ -18,7 +18,7 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;

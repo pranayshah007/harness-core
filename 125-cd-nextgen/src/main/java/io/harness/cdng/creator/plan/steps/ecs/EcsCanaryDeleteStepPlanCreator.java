@@ -7,15 +7,15 @@
 
 package io.harness.cdng.creator.plan.steps.ecs;
 
-import static io.harness.cdng.visitor.YamlTypes.ECS_CANARY_DELETE;
-import static io.harness.cdng.visitor.YamlTypes.ECS_CANARY_DEPLOY;
+import static io.harness.cdng.commons.YamlTypes.ECS_CANARY_DELETE;
+import static io.harness.cdng.commons.YamlTypes.ECS_CANARY_DEPLOY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepNode;
 import io.harness.cdng.ecs.EcsCanaryDeleteStepParameters;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

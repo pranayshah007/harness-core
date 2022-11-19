@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.UnexpectedException;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.rule.Owner;
 import io.harness.service.instancesynchandler.AwsSshWinrmInstanceSyncHandler;

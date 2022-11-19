@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.entity.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.setupusage.SetupUsageHelper;
 import io.harness.ng.core.setupusage.SetupUsageOwnerEntity;

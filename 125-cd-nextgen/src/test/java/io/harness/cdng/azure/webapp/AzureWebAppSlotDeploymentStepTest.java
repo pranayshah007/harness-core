@@ -51,7 +51,7 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HarnessStore;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.task.TaskParameters;

@@ -30,7 +30,7 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.models.infrastructuredetails.CustomDeploymentInfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.rule.Owner;
 

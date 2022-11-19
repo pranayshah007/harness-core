@@ -14,7 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.common.ParameterFieldHelper;

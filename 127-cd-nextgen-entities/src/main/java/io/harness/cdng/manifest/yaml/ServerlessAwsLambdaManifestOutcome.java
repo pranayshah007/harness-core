@@ -10,6 +10,8 @@ package io.harness.cdng.manifest.yaml;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.commons.ManifestType;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

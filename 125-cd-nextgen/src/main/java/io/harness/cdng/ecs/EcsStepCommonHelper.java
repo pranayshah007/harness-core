@@ -7,7 +7,7 @@
 
 package io.harness.cdng.ecs;
 
-import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.commons.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
@@ -32,14 +32,14 @@ import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.outcome.InfrastructureOutcome;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
-import io.harness.cdng.manifest.yaml.ManifestType;
+import io.harness.cdng.commons.ManifestStoreType;
+import io.harness.cdng.commons.ManifestType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.EcsRunTaskRequestDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsTaskDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;

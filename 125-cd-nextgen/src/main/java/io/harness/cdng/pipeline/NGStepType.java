@@ -8,13 +8,13 @@
 package io.harness.cdng.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.commons.ServiceDefinitionType;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

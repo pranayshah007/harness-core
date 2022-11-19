@@ -25,7 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.entity.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.rbac.NGResourceType;

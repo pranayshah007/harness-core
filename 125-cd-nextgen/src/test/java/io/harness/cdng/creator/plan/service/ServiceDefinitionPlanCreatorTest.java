@@ -19,7 +19,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceUseFromStage;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;

@@ -14,7 +14,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.ManifestType;
+import io.harness.cdng.commons.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.exception.InvalidRequestException;
 

@@ -8,7 +8,7 @@
 package io.harness.cdng.creator.variables;
 
 import io.harness.cdng.ecs.EcsRunTaskStepNode;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 
 import java.util.Collections;

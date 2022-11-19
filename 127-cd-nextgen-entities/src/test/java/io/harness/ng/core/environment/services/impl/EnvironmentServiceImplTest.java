@@ -24,7 +24,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.repositories.UpsertOptions;

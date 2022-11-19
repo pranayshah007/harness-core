@@ -17,7 +17,7 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
+import io.harness.ng.core.service.entity.NGServiceEntityMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.persistence.HIterator;
 import io.harness.remote.client.CGRestUtils;

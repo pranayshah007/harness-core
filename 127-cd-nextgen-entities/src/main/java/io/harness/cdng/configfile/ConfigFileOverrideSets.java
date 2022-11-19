@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.configfile.ConfigFile.ConfigFileStepParameters;
-import io.harness.cdng.manifest.yaml.ManifestOverridesVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -32,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName("overrideSet")
-@SimpleVisitorHelper(helperClass = ManifestOverridesVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ConfigFileOverrideSetsVisitorHelper.class)
 @TypeAlias("configFileOverrideSets")
 public class ConfigFileOverrideSets implements Visitable {
   @EntityIdentifier String identifier;

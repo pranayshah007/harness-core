@@ -15,8 +15,8 @@ import io.harness.mongo.MongoPersistence;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.NGEnvironmentConfig;
 import io.harness.persistence.HIterator;
 import io.harness.remote.client.CGRestUtils;
 

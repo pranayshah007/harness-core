@@ -9,7 +9,7 @@ package io.harness.cdng.utilities;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.plan.creation.PlanCreatorUtils;

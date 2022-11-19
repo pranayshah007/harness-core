@@ -43,8 +43,8 @@ import io.harness.cdng.infra.outcome.K8sDirectInfrastructureOutcome.K8sDirectInf
 import io.harness.cdng.infra.outcome.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
-import io.harness.cdng.manifest.yaml.ManifestType;
+import io.harness.cdng.commons.ManifestStoreType;
+import io.harness.cdng.commons.ManifestType;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GithubStore;

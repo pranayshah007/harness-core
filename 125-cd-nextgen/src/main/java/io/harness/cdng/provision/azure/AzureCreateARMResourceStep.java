@@ -35,7 +35,7 @@ import io.harness.cdng.azure.webapp.AzureWebAppStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.cdng.provision.azure.beans.AzureARMConfig;

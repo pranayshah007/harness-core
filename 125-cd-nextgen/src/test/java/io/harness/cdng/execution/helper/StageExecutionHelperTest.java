@@ -42,7 +42,7 @@ import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;

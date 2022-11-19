@@ -30,7 +30,7 @@ import io.harness.entities.InstanceType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.models.infrastructuredetails.K8sInfrastructureDetails;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.perpetualtask.PerpetualTaskType;
 import io.harness.rule.Owner;
 

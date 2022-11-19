@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.CreatePRStepNode;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 
 import com.google.common.collect.Sets;
 import java.util.Set;

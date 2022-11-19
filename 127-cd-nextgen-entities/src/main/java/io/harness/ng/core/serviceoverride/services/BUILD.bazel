@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/serviceoverride/beans:module",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)
+
+run_analysis_per_module()
+

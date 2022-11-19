@@ -47,7 +47,7 @@ import io.harness.ng.core.envGroup.dto.EnvironmentGroupRequestDTO;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponse;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;

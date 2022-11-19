@@ -8,12 +8,12 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.visitor.YamlTypes.HELM_DEPLOY;
+import static io.harness.cdng.commons.YamlTypes.HELM_DEPLOY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

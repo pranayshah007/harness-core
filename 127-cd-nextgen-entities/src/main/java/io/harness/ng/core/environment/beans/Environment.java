@@ -20,8 +20,6 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.persistence.PersistentEntity;
 
 import com.google.common.collect.ImmutableList;

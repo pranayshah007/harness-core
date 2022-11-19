@@ -8,8 +8,8 @@
 package io.harness.cdng.creator.plan.manifest;
 
 import static io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator.SERVICE_ENTITY_DEFINITION_TYPE_KEY;
-import static io.harness.cdng.manifest.yaml.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
-import static io.harness.cdng.manifest.yaml.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.commons.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.commons.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -38,7 +38,7 @@ import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.beans.StageOverridesConfig;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependency;

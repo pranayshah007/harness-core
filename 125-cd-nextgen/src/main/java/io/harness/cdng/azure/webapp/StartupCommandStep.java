@@ -13,7 +13,7 @@ import static io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstan
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.azure.config.StartupCommandOutcome;
-import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
+import io.harness.cdng.commons.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logstreaming.NGLogCallback;

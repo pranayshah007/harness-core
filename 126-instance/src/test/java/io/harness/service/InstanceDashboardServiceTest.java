@@ -7,7 +7,7 @@
 
 package io.harness.service;
 
-import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.cdng.commons.InfrastructureKind.KUBERNETES_DIRECT;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.JASMEET;
 

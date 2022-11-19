@@ -22,13 +22,14 @@ import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
-import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
+import io.harness.ng.core.environment.beans.NGEnvironmentConfig;
+import io.harness.ng.core.environment.beans.NGEnvironmentInfoConfig;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 

@@ -8,7 +8,7 @@ java_library(
     deps = [
         "//:lombok",
         "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/infra/beans:module",
-        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/infrastructure:module",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/infrastructure/entity:module",
         "//878-ng-common-utilities:module",
         "//970-ng-commons:module",
         "//979-recaster:module",

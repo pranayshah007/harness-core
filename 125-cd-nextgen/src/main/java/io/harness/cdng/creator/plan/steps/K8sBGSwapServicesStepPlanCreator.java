@@ -8,13 +8,13 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.visitor.YamlTypes.K8S_BG_SWAP_SERVICES;
-import static io.harness.cdng.visitor.YamlTypes.K8S_BLUE_GREEN_DEPLOY;
+import static io.harness.cdng.commons.YamlTypes.K8S_BG_SWAP_SERVICES;
+import static io.harness.cdng.commons.YamlTypes.K8S_BLUE_GREEN_DEPLOY;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepNode;
 import io.harness.cdng.k8s.K8sBGSwapServicesStepParameters;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;

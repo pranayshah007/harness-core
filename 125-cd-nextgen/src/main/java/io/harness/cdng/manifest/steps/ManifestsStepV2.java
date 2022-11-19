@@ -7,8 +7,8 @@
 
 package io.harness.cdng.manifest.steps;
 
-import static io.harness.cdng.manifest.yaml.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
-import static io.harness.cdng.manifest.yaml.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.commons.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.commons.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.ENVIRONMENT_GLOBAL_OVERRIDES;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE;
 import static io.harness.cdng.service.steps.ServiceStepOverrideHelper.SERVICE_OVERRIDES;
@@ -27,7 +27,7 @@ import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.steps.EmptyStepParameters;

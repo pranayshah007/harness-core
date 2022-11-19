@@ -8,7 +8,7 @@
 package io.harness.ng.core.infrastructure.dto;
 
 import io.harness.cdng.commons.ServiceDefinitionType;
-import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.cdng.commons.InfrastructureType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;

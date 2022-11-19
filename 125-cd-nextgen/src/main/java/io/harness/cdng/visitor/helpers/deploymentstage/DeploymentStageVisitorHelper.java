@@ -8,7 +8,7 @@
 package io.harness.cdng.visitor.helpers.deploymentstage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.executions.steps.StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
+import static io.harness.cdng.commons.StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT;
 
 import static java.util.Objects.isNull;
 

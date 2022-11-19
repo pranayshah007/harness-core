@@ -7,6 +7,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/commons:module",
         "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/manifest/yaml/kustomize:module",
         "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/manifest/yaml/oci:module",
         "//877-filestore:module",

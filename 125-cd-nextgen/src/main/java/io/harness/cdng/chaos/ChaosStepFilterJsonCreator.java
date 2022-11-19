@@ -7,7 +7,7 @@
 
 package io.harness.cdng.chaos;
 
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.filters.GenericStepPMSFilterJsonCreator;
 
 import java.util.Arrays;

@@ -8,11 +8,14 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
-import static io.harness.cdng.manifest.yaml.StoreConfigWrapper.StoreConfigWrapperParameters;
+import static io.harness.cdng.commons.StoreConfigWrapper.StoreConfigWrapperParameters;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.commons.ManifestType;
+import io.harness.cdng.commons.StoreConfig;
+import io.harness.cdng.commons.StoreConfigWrapper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -54,7 +57,7 @@ public class ServerlessAwsLambdaManifest implements ManifestAttributes, Visitabl
 
   @Wither
   @JsonProperty("store")
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.StoreConfigWrapper")
+  @ApiModelProperty(dataType = "io.harness.cdng.commons.StoreConfigWrapper")
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 

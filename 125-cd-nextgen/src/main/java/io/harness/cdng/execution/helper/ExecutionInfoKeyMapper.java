@@ -16,7 +16,7 @@ import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.steps.environment.EnvironmentOutcome;

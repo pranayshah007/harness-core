@@ -8,19 +8,19 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.ManifestType.EcsScalableTargetDefinition;
-import static io.harness.cdng.manifest.yaml.ManifestType.EcsScalingPolicyDefinition;
-import static io.harness.cdng.manifest.yaml.ManifestType.EcsServiceDefinition;
-import static io.harness.cdng.manifest.yaml.ManifestType.EcsTaskDefinition;
-import static io.harness.cdng.manifest.yaml.ManifestType.HelmChart;
-import static io.harness.cdng.manifest.yaml.ManifestType.K8Manifest;
-import static io.harness.cdng.manifest.yaml.ManifestType.Kustomize;
-import static io.harness.cdng.manifest.yaml.ManifestType.KustomizePatches;
-import static io.harness.cdng.manifest.yaml.ManifestType.OpenshiftParam;
-import static io.harness.cdng.manifest.yaml.ManifestType.OpenshiftTemplate;
-import static io.harness.cdng.manifest.yaml.ManifestType.ReleaseRepo;
-import static io.harness.cdng.manifest.yaml.ManifestType.ServerlessAwsLambda;
-import static io.harness.cdng.manifest.yaml.ManifestType.VALUES;
+import static io.harness.cdng.commons.ManifestType.EcsScalableTargetDefinition;
+import static io.harness.cdng.commons.ManifestType.EcsScalingPolicyDefinition;
+import static io.harness.cdng.commons.ManifestType.EcsServiceDefinition;
+import static io.harness.cdng.commons.ManifestType.EcsTaskDefinition;
+import static io.harness.cdng.commons.ManifestType.HelmChart;
+import static io.harness.cdng.commons.ManifestType.K8Manifest;
+import static io.harness.cdng.commons.ManifestType.Kustomize;
+import static io.harness.cdng.commons.ManifestType.KustomizePatches;
+import static io.harness.cdng.commons.ManifestType.OpenshiftParam;
+import static io.harness.cdng.commons.ManifestType.OpenshiftTemplate;
+import static io.harness.cdng.commons.ManifestType.ReleaseRepo;
+import static io.harness.cdng.commons.ManifestType.ServerlessAwsLambda;
+import static io.harness.cdng.commons.ManifestType.VALUES;
 
 import static java.lang.String.format;
 

@@ -14,7 +14,7 @@ import io.harness.cdng.azure.config.yaml.StartupCommandConfiguration;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
 import io.harness.cdng.azure.webapp.StartupCommandStep;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;

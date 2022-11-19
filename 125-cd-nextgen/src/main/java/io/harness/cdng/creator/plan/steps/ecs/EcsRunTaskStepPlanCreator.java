@@ -7,7 +7,7 @@
 
 package io.harness.cdng.creator.plan.steps.ecs;
 
-import static io.harness.cdng.visitor.YamlTypes.ECS_RUN_TASK;
+import static io.harness.cdng.commons.YamlTypes.ECS_RUN_TASK;
 
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
 import io.harness.cdng.ecs.EcsRunTaskStepNode;

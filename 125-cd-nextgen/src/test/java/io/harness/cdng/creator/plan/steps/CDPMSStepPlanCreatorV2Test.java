@@ -1,6 +1,6 @@
 package io.harness.cdng.creator.plan.steps;
 
-import static io.harness.cdng.visitor.YamlTypes.K8S_ROLLING_DEPLOY;
+import static io.harness.cdng.commons.YamlTypes.K8S_ROLLING_DEPLOY;
 import static io.harness.rule.OwnerRule.PRATYUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;

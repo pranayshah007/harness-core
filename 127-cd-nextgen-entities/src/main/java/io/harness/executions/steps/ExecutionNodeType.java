@@ -9,7 +9,8 @@ package io.harness.executions.steps;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.StepSpecTypeConstants;
+import io.harness.cdng.commons.YamlTypes;
 
 @OwnedBy(HarnessTeam.CDP)
 public enum ExecutionNodeType {

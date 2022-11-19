@@ -9,7 +9,7 @@ package io.harness.cdng.creator.plan.customDeployment;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
+import io.harness.cdng.commons.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.customDeployment.CustomDeploymentVisitorHelper;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -51,7 +51,7 @@ public class CustomDeploymentFetchInstancesScriptConfig implements Visitable {
 
   @Wither
   @JsonProperty("store")
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.StoreConfigWrapper")
+  @ApiModelProperty(dataType = "io.harness.cdng.commons.StoreConfigWrapper")
   @SkipAutoEvaluation
   @NotNull
   @NotEmpty

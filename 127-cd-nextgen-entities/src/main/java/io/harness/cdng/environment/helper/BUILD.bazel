@@ -7,6 +7,8 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/environment/bean:module",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/beans:module",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/services:module",
         "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/environment/yaml:module",
         "//953-events-api/src/main/proto:953_events_api_java_proto",
         "//967-walktree-visitor:module",

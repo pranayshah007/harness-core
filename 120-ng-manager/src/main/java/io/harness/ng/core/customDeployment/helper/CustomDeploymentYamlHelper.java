@@ -21,7 +21,7 @@ import static java.util.Objects.isNull;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entity.ScopeProtoEnum;

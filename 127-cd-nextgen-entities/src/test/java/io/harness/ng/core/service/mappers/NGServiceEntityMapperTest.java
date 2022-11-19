@@ -16,6 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.commons.ServiceDefinitionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.common.beans.NGTag;
+import io.harness.ng.core.service.entity.NGServiceEntityMapper;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;

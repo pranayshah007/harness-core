@@ -54,7 +54,7 @@ import io.harness.models.DeploymentEvent;
 import io.harness.models.RollbackInfo;
 import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;

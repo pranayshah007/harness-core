@@ -7,11 +7,11 @@
 
 package io.harness.cdng.pipeline.executions;
 
-import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
-import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
-import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
-import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_PLAN;
-import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
+import static io.harness.cdng.commons.StepSpecTypeConstants.TERRAFORM_APPLY;
+import static io.harness.cdng.commons.StepSpecTypeConstants.TERRAFORM_DESTROY;
+import static io.harness.cdng.commons.StepSpecTypeConstants.TERRAFORM_PLAN;
+import static io.harness.cdng.commons.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 
@@ -24,7 +24,7 @@ import io.harness.cdng.instance.InstanceDeploymentInfoStatus;
 import io.harness.cdng.instance.service.InstanceDeploymentInfoService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;

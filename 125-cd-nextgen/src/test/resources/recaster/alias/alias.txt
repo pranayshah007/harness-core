@@ -54,7 +54,7 @@ io.harness.cdng.k8s.K8sRollingRollbackStepParameters
 io.harness.cdng.manifest.yaml.ValuesManifestOutcome
 io.harness.cdng.service.beans.ServiceOutcome$ArtifactsWrapperOutcome
 io.harness.cdng.manifest.steps.ManifestsOutcome
-io.harness.cdng.manifest.yaml.StoreConfigWrapper
+io.harness.cdng.commons.StoreConfigWrapper
 io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.service.steps.ServiceStepParameters
 io.harness.cdng.service.steps.ServiceStepParametersV2
@@ -416,7 +416,7 @@ io.harness.cdng.gitpolling.bean.yaml.GitHubPollingConfig
 io.harness.cdng.azure.config.yaml.ApplicationSettingsConfiguration
 io.harness.cdng.azure.config.yaml.ConnectionStringsConfiguration
 io.harness.cdng.azure.config.yaml.StartupCommandConfiguration
-io.harness.cdng.elastigroup.config.yaml.StartupScriptConfiguration
+io.harness.cdng.elastigroup.config.StartupScriptConfiguration
 io.harness.ngpipeline.artifact.bean.GithubPackagesArtifactOutcome
 io.harness.ngpipeline.pipeline.executions.beans.GithubPackagesArtifactSummary
 io.harness.cdng.artifact.bean.yaml.GithubPackageArtifactConfig

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.governance.ExpansionKeysConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentBasicInfo;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
 import io.harness.pms.sdk.core.governance.ExpandedValue;
 import io.harness.serializer.JsonUtils;
 

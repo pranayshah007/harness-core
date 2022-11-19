@@ -10,7 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
+import io.harness.cdng.commons.StoreConfigWrapper;
 
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;

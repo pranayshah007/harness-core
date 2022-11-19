@@ -21,7 +21,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.helm.beans.NativeHelmExecutionPassThroughData;
 import io.harness.cdng.infra.outcome.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.helm.HelmCommandRequestNG;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;

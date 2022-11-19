@@ -10,7 +10,6 @@ package io.harness.cdng.variables.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.visitor.helpers.variables.VariableOverridesVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.walktree.visitor.SimpleVisitorHelper;

@@ -25,7 +25,7 @@ import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.outcome.InfrastructureOutcome;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.HarnessStringUtils;

@@ -16,7 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.HarnessStore;

@@ -7,6 +7,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/beans:module",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/repositories:module",
         "@maven//:org_springframework_data_spring_data_commons",
         "@maven//:org_springframework_data_spring_data_mongodb",
     ],

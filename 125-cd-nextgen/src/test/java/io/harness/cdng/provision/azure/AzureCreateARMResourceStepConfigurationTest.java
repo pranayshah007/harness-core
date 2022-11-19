@@ -20,7 +20,7 @@ import io.harness.cdng.manifest.yaml.GithubStore;
 import io.harness.cdng.manifest.yaml.GithubStore.GithubStoreBuilder;
 import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.cdng.manifest.yaml.HarnessStore.HarnessStoreBuilder;
-import io.harness.cdng.manifest.yaml.StoreConfigWrapper;
+import io.harness.cdng.commons.StoreConfigWrapper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;

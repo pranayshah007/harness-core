@@ -17,7 +17,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
-import io.harness.cdng.manifest.yaml.ManifestStoreType;
+import io.harness.cdng.commons.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.HarnessStore;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
 import io.harness.exception.InvalidRequestException;

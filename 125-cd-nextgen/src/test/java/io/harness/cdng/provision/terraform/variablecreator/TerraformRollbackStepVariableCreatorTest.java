@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.variables.StepVariableCreatorTestUtils;
 import io.harness.cdng.provision.terraform.TerraformRollbackStepNode;
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.rule.Owner;
 
 import java.io.IOException;

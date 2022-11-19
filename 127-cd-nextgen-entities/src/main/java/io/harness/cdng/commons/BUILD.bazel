@@ -6,7 +6,9 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//:lombok",
         "//870-cg-orchestration:module",
+        "//953-yaml-commons:module",
         "//960-ng-core-beans/src/main/java/io/harness/ng/core/k8s:module",
         "@maven//:com_fasterxml_jackson_core_jackson_annotations",
         "@maven//:io_fabric8_fabric8_utils",

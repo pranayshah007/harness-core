@@ -25,7 +25,7 @@ import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
 import io.harness.ng.core.environment.beans.Environment;
-import io.harness.ng.core.environment.mappers.EnvironmentMapper;
+import io.harness.ng.core.environment.beans.EnvironmentMapper;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;

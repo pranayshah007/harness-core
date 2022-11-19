@@ -10,7 +10,7 @@ package io.harness.cdng.creator.plan.stage;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
-import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverrideConfig;
 
 import javax.validation.constraints.NotNull;
 import lombok.Builder;

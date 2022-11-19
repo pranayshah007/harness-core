@@ -8,7 +8,7 @@
 package io.harness.cdng.manifest.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.commons.HarnessStoreConstants.HARNESS_STORE_TYPE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;

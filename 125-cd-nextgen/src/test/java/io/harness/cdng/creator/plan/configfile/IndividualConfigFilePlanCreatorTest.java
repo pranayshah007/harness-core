@@ -18,7 +18,7 @@ import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.configfile.ConfigFile;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.visitor.YamlTypes;
+import io.harness.cdng.commons.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.plan.creation.PlanCreatorUtils;

@@ -16,7 +16,7 @@ import io.harness.cdng.infra.beans.AwsInstanceFilter;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfraMapping.SshWinRmAwsInfraMappingBuilder;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
-import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.cdng.commons.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;

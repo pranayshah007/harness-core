@@ -8,7 +8,7 @@
 package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.yaml.HarnessStoreConstants.HARNESS_STORE_TYPE;
+import static io.harness.cdng.commons.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filestore.utils.FileStoreNodeUtils.mapFileNodes;
@@ -21,7 +21,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileOutcome;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.manifest.yaml.HarnessStore;
-import io.harness.cdng.manifest.yaml.StoreConfig;
+import io.harness.cdng.commons.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;

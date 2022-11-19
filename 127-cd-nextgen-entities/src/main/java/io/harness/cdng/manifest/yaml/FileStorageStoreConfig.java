@@ -9,6 +9,7 @@ package io.harness.cdng.manifest.yaml;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.commons.StoreConfig;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface FileStorageStoreConfig extends StoreConfig {

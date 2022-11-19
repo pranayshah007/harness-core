@@ -13,7 +13,7 @@ import static io.harness.utils.DelegateOwner.getNGTaskSetupAbstractionsWithOwner
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.k8s.K8sStepHelper;
-import io.harness.cdng.manifest.yaml.ManifestType;
+import io.harness.cdng.commons.ManifestType;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.delegate.Capability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;

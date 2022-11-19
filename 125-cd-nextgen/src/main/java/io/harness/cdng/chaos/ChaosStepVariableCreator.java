@@ -7,7 +7,7 @@
 
 package io.harness.cdng.chaos;
 
-import io.harness.executions.steps.StepSpecTypeConstants;
+import io.harness.cdng.commons.StepSpecTypeConstants;
 import io.harness.pms.sdk.core.pipeline.variables.GenericStepVariableCreator;
 
 import java.util.Arrays;
