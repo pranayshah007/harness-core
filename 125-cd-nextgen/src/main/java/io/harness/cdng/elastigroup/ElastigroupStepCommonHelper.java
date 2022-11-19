@@ -203,7 +203,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScript);
   }
 
-  public TaskChainResponse fetchElastigroupParameters(ElastigroupStepExecutor elastigroupStepExecutor,
+  private TaskChainResponse fetchElastigroupParameters(ElastigroupStepExecutor elastigroupStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters, UnitProgressData unitProgressData,
       String startupScript, InfrastructureOutcome infrastructureOutcome) {
     LogCallback logCallback =
@@ -538,7 +538,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         .build();
   }
 
-  String getBase64EncodedStartupScript(Ambiance ambiance, String startupScript) {
+  public String getBase64EncodedStartupScript(Ambiance ambiance, String startupScript) {
     if (startupScript != null) {
       String startupScriptAfterEvaluation = renderExpression(ambiance, startupScript);
       return BaseEncoding.base64().encode(startupScriptAfterEvaluation.getBytes(Charsets.UTF_8));
