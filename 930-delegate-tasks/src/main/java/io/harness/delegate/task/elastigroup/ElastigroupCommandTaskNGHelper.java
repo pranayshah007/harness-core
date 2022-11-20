@@ -26,15 +26,9 @@ import static io.harness.spotinst.model.SpotInstConstants.LB_TYPE_TG;
 import static io.harness.spotinst.model.SpotInstConstants.LOAD_BALANCERS_CONFIG;
 import static io.harness.spotinst.model.SpotInstConstants.NAME_CONFIG_ELEMENT;
 import static io.harness.spotinst.model.SpotInstConstants.UNIT_INSTANCE;
-import static io.harness.spotinst.model.SpotInstConstants.listElastiGroupsQueryTime;
-import static io.harness.spotinst.model.SpotInstConstants.spotInstBaseUrl;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -58,14 +52,8 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
-import io.harness.spotinst.SpotInstRestClient;
-import io.harness.spotinst.model.ElastiGroup;
-import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupLoadBalancer;
 import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
-import io.harness.spotinst.model.SpotInstConstants;
-import io.harness.spotinst.model.SpotInstListElastiGroupInstancesHealthResponse;
-import io.harness.spotinst.model.SpotInstListElastiGroupsResponse;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -74,16 +62,10 @@ import com.google.inject.Singleton;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import retrofit2.Call;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.jackson.JacksonConverterFactory;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
@@ -186,7 +168,6 @@ public class ElastigroupCommandTaskNGHelper {
     return elastiGroupLoadBalancers;
   }
 
-  void removeUnsupportedFieldsForCreatingNewGroup(Map<String, Object> elastiGroupConfigMap) {
   private void removeUnsupportedFieldsForCreatingNewGroup(Map<String, Object> elastiGroupConfigMap) {
     if (elastiGroupConfigMap.containsKey(ELASTI_GROUP_ID)) {
       elastiGroupConfigMap.remove(ELASTI_GROUP_ID);
@@ -251,7 +232,6 @@ public class ElastigroupCommandTaskNGHelper {
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(spotPermanentTokenConfigSpecDTO, encryptedDataDetails);
     }
   }
-
 
   private Listener getListenerByPort(String listenerPort, List<Listener> listeners, String loadBalancer) {
     if (EmptyPredicate.isNotEmpty(listeners)) {
