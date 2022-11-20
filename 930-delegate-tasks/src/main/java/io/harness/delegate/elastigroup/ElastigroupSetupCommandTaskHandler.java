@@ -99,7 +99,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       deployLogCallback.saveExecutionLog(
           format("Sending request to create Elastigroup with name: [%s]", newElastiGroupName));
       ElastiGroup elastiGroup =
-          elastigroupCommandTaskNGHelper.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
+          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
       String newElastiGroupId = elastiGroup.getId();
       deployLogCallback.saveExecutionLog(format("Created Elastigroup with id: [%s]", newElastiGroupId));
 
@@ -129,7 +129,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
                                    .name(elastigroupCurrent.getName())
                                    .capacity(ElastiGroupCapacity.builder().minimum(0).maximum(0).target(0).build())
                                    .build();
-            elastigroupCommandTaskNGHelper.updateElastiGroupCapacity(
+            spotInstHelperServiceDelegate.updateElastiGroupCapacity(
                 spotInstApiTokenRef, spotInstAccountId, elastigroupCurrent.getId(), temp);
           }
         }
@@ -141,9 +141,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
         String idToDelete = groupsWithoutInstances.get(i).getId();
         deployLogCallback.saveExecutionLog(
             format("Sending request to delete Elastigroup: [%s] with id: [%s]", nameToDelete, idToDelete));
-        elastigroupCommandTaskNGHelper.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, idToDelete);
+        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, idToDelete);
       }
-      //------------
 
       deployLogCallback.saveExecutionLog(color(format("%n Setup Successful."), LogColor.Green, LogWeight.Bold),
           LogLevel.INFO, CommandExecutionStatus.SUCCESS);
