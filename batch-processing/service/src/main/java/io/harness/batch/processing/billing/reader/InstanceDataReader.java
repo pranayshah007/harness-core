@@ -8,14 +8,13 @@
 package io.harness.batch.processing.billing.reader;
 
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
+import io.harness.ccm.cluster.ClusterRecordService;
+import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.InstanceType;
-import io.harness.ccm.commons.entities.ClusterRecord;
 import io.harness.ccm.commons.entities.batch.InstanceData;
-import io.harness.ccm.commons.service.intf.ClusterRecordService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -45,7 +44,7 @@ public class InstanceDataReader {
   }
 
   public List<InstanceData> getNext() {
-    List<ClusterRecord> clusterRecords = clusterRecordService.getByAccountId(accountId);
+    List<ClusterRecord> clusterRecords = clusterRecordService.listCeEnabledClusters(accountId);
     List<InstanceData> instanceDataLists =
         clusterRecords.stream()
             .map(clusterRecord

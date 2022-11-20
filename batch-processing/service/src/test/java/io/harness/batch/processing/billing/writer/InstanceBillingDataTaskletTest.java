@@ -39,6 +39,7 @@ import io.harness.batch.processing.pricing.PricingSource;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.Resource;
@@ -114,6 +115,8 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private InstanceDataDao instanceDataDao;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private BatchMainConfig config;
+
+  @Mock private ClusterRecord clusterRecord;
 
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
