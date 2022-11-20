@@ -27,16 +27,12 @@ import static io.harness.spotinst.model.SpotInstConstants.LOAD_BALANCERS_CONFIG;
 import static io.harness.spotinst.model.SpotInstConstants.NAME_CONFIG_ELEMENT;
 import static io.harness.spotinst.model.SpotInstConstants.UNIT_INSTANCE;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.concurrent.TimeUnit.DAYS;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.stream.Collectors.toList;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
-import com.amazonaws.services.elasticloadbalancingv2.AmazonElasticLoadBalancing;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
@@ -51,8 +47,6 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
-import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.exception.InvalidRequestException;
@@ -65,6 +59,8 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.spotinst.model.ElastiGroupLoadBalancer;
 import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
 
+import software.wings.beans.LogColor;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
@@ -76,7 +72,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
@@ -93,9 +88,6 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListen
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyRuleRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.TargetGroup;
-import software.wings.beans.AwsConfig;
-import software.wings.beans.LogColor;
-import software.wings.beans.command.ExecutionLogCallback;
 
 @OwnedBy(CDP)
 @Singleton
@@ -437,55 +429,55 @@ public class ElastigroupCommandTaskNGHelper {
     return listeners;
   }
 
-  public void modifyListenerRule(String region, String listenerArn, String listenerRuleArn,
-                                 String targetGroupArn, AwsInternalConfig awsInternalConfig, LogCallback logCallback) {
+  public void modifyListenerRule(String region, String listenerArn, String listenerRuleArn, String targetGroupArn,
+      AwsInternalConfig awsInternalConfig, LogCallback logCallback) {
     // check if listener rule is default one in listener
     if (checkForDefaultRule(region, listenerArn, listenerRuleArn, awsInternalConfig)) {
       logCallback.saveExecutionLog(
-              format("Modifying the default Listener: %s %n with listener rule: %s %n to forward traffic to"
-                              + " TargetGroup: %s",
-                      listenerArn, listenerRuleArn, targetGroupArn),
-              LogLevel.INFO);
+          format("Modifying the default Listener: %s %n with listener rule: %s %n to forward traffic to"
+                  + " TargetGroup: %s",
+              listenerArn, listenerRuleArn, targetGroupArn),
+          LogLevel.INFO);
       // update listener with target group
       modifyDefaultListenerRule(region, listenerArn, targetGroupArn, awsInternalConfig);
     } else {
       logCallback.saveExecutionLog(format("Modifying the Listener rule: %s %n to forward traffic to"
-                              + " TargetGroup: %s",
-                      listenerRuleArn, targetGroupArn),
-              LogLevel.INFO);
+                                           + " TargetGroup: %s",
+                                       listenerRuleArn, targetGroupArn),
+          LogLevel.INFO);
       // update listener rule with target group
       modifySpecificListenerRule(region, listenerRuleArn, targetGroupArn, awsInternalConfig);
     }
   }
 
   private void modifyDefaultListenerRule(
-          String region, String listenerArn, String targetGroupArn, AwsInternalConfig awsInternalConfig) {
+      String region, String listenerArn, String targetGroupArn, AwsInternalConfig awsInternalConfig) {
     ModifyListenerRequest modifyListenerRequest =
-            ModifyListenerRequest.builder()
-                    .listenerArn(listenerArn)
-                    .defaultActions(Action.builder().type(ActionTypeEnum.FORWARD).targetGroupArn(targetGroupArn).build())
-                    .build();
+        ModifyListenerRequest.builder()
+            .listenerArn(listenerArn)
+            .defaultActions(Action.builder().type(ActionTypeEnum.FORWARD).targetGroupArn(targetGroupArn).build())
+            .build();
     elbV2Client.modifyListener(awsInternalConfig, modifyListenerRequest, region);
   }
 
-  private void modifySpecificListenerRule(String region, String listenerRuleArn, String targetGroupArn,
-                                          AwsInternalConfig awsInternalConfig) {
+  private void modifySpecificListenerRule(
+      String region, String listenerRuleArn, String targetGroupArn, AwsInternalConfig awsInternalConfig) {
     ModifyRuleRequest modifyRuleRequest =
-            ModifyRuleRequest.builder()
-                    .ruleArn(listenerRuleArn)
-                    .actions(Action.builder().type(ActionTypeEnum.FORWARD).targetGroupArn(targetGroupArn).build())
-                    .build();
+        ModifyRuleRequest.builder()
+            .ruleArn(listenerRuleArn)
+            .actions(Action.builder().type(ActionTypeEnum.FORWARD).targetGroupArn(targetGroupArn).build())
+            .build();
     elbV2Client.modifyRule(awsInternalConfig, modifyRuleRequest, region);
   }
 
   private boolean checkForDefaultRule(
-          String region, String listenerArn, String listenerRuleArn, AwsInternalConfig awsInternalConfig) {
+      String region, String listenerArn, String listenerRuleArn, AwsInternalConfig awsInternalConfig) {
     String nextToken = null;
     do {
       DescribeRulesRequest describeRulesRequest =
-              DescribeRulesRequest.builder().listenerArn(listenerArn).marker(nextToken).pageSize(10).build();
+          DescribeRulesRequest.builder().listenerArn(listenerArn).marker(nextToken).pageSize(10).build();
       DescribeRulesResponse describeRulesResponse =
-              elbV2Client.describeRules(awsInternalConfig, describeRulesRequest, region);
+          elbV2Client.describeRules(awsInternalConfig, describeRulesRequest, region);
       List<Rule> currentRules = describeRulesResponse.rules();
       if (EmptyPredicate.isNotEmpty(currentRules)) {
         Optional<Rule> defaultRule = currentRules.stream().filter(Rule::isDefault).findFirst();
@@ -499,30 +491,28 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public void swapTargetGroups(String region, LogCallback logCallback,
-                               LoadBalancerDetailsForBGDeployment lbDetailsForBGDeployment, AwsInternalConfig awsInternalConfig) {
+      LoadBalancerDetailsForBGDeployment lbDetailsForBGDeployment, AwsInternalConfig awsInternalConfig) {
     logCallback.saveExecutionLog(
-            format("Modifying ELB Prod Listener to Forward requests to Target group associated with new Service%n,"
-                            + "TargetGroup: %s",
-                    lbDetailsForBGDeployment.getStageTargetGroupArn()),
-            LogLevel.INFO);
+        format("Modifying ELB Prod Listener to Forward requests to Target group associated with new Service%n,"
+                + "TargetGroup: %s",
+            lbDetailsForBGDeployment.getStageTargetGroupArn()),
+        LogLevel.INFO);
     // modify prod listener rule with stage target group
-    modifyListenerRule(region, lbDetailsForBGDeployment.getProdListenerArn(),
-            lbDetailsForBGDeployment.getProdRuleArn(), lbDetailsForBGDeployment.getStageTargetGroupArn(),
-            awsInternalConfig, logCallback);
+    modifyListenerRule(region, lbDetailsForBGDeployment.getProdListenerArn(), lbDetailsForBGDeployment.getProdRuleArn(),
+        lbDetailsForBGDeployment.getStageTargetGroupArn(), awsInternalConfig, logCallback);
     logCallback.saveExecutionLog(
-            color(format("Successfully updated Prod Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
+        color(format("Successfully updated Prod Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
 
     logCallback.saveExecutionLog(
-            format("Modifying ELB Stage Listener to Forward requests to Target group associated with old Service%n,"
-                            + "TargetGroup: %s",
-                    lbDetailsForBGDeployment.getProdTargetGroupArn()),
-            LogLevel.INFO);
+        format("Modifying ELB Stage Listener to Forward requests to Target group associated with old Service%n,"
+                + "TargetGroup: %s",
+            lbDetailsForBGDeployment.getProdTargetGroupArn()),
+        LogLevel.INFO);
     // modify stage listener rule with prod target group
     modifyListenerRule(region, lbDetailsForBGDeployment.getStageListenerArn(),
-            lbDetailsForBGDeployment.getStageRuleArn(), lbDetailsForBGDeployment.getProdTargetGroupArn(),
-            awsInternalConfig, logCallback);
+        lbDetailsForBGDeployment.getStageRuleArn(), lbDetailsForBGDeployment.getProdTargetGroupArn(), awsInternalConfig,
+        logCallback);
     logCallback.saveExecutionLog(
-            color(format("Successfully updated Stage Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
+        color(format("Successfully updated Stage Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
   }
-
 }
