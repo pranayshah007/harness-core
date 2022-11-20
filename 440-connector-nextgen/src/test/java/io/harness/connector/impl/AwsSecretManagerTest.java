@@ -29,7 +29,6 @@ import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCred
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -55,7 +54,6 @@ public class AwsSecretManagerTest extends ConnectorsTestBase {
   @Mock KubernetesConnectionValidator kubernetesConnectionValidator;
   @Mock ConnectorRepository connectorRepository;
   @Mock private Map<String, ConnectionValidator> connectionValidatorMap;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Inject @InjectMocks DefaultConnectorServiceImpl connectorService;

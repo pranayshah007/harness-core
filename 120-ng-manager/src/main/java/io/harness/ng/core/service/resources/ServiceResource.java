@@ -82,6 +82,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
     })
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
+@Deprecated
 public class ServiceResource {
   private final ServiceEntityService serviceEntityService;
   private final ServiceEntityManagementService serviceEntityManagementService;
