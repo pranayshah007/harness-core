@@ -36,6 +36,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
+  @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   private long timeoutInMillis;
 
   @Override
@@ -83,7 +85,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
           ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
       String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
-      List<ElastiGroup> elastiGroups = elastigroupCommandTaskNGHelper.listAllElastiGroups(
+      List<ElastiGroup> elastiGroups = spotInstHelperServiceDelegate.listAllElastiGroups(
           spotInstApiTokenRef, spotInstAccountId, elastigroupSetupCommandRequest.getElastigroupNamePrefix());
       if (isNotEmpty(elastiGroups)) {
         elastiGroupVersion =
@@ -97,7 +99,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       deployLogCallback.saveExecutionLog(
           format("Sending request to create Elastigroup with name: [%s]", newElastiGroupName));
       ElastiGroup elastiGroup =
-          elastigroupCommandTaskNGHelper.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
+          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
       String newElastiGroupId = elastiGroup.getId();
       deployLogCallback.saveExecutionLog(format("Created Elastigroup with id: [%s]", newElastiGroupId));
 
@@ -127,7 +129,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
                                    .name(elastigroupCurrent.getName())
                                    .capacity(ElastiGroupCapacity.builder().minimum(0).maximum(0).target(0).build())
                                    .build();
-            elastigroupCommandTaskNGHelper.updateElastiGroupCapacity(
+            spotInstHelperServiceDelegate.updateElastiGroupCapacity(
                 spotInstApiTokenRef, spotInstAccountId, elastigroupCurrent.getId(), temp);
           }
         }
@@ -139,9 +141,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
         String idToDelete = groupsWithoutInstances.get(i).getId();
         deployLogCallback.saveExecutionLog(
             format("Sending request to delete Elastigroup: [%s] with id: [%s]", nameToDelete, idToDelete));
-        elastigroupCommandTaskNGHelper.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, idToDelete);
+        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, idToDelete);
       }
-      //------------
 
       deployLogCallback.saveExecutionLog(
           color("Setup Successful.", LogColor.Green, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
