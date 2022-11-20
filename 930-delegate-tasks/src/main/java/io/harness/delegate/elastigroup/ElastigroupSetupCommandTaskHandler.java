@@ -36,6 +36,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
+import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 
@@ -53,6 +54,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
+  @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   private long timeoutInMillis;
 
   @Override
@@ -83,7 +85,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
           ? spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue().toString()
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
       String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
-      List<ElastiGroup> elastiGroups = elastigroupCommandTaskNGHelper.listAllElastiGroups(
+      List<ElastiGroup> elastiGroups = spotInstHelperServiceDelegate.listAllElastiGroups(
           spotInstApiTokenRef, spotInstAccountId, elastigroupSetupCommandRequest.getElastigroupNamePrefix());
       if (isNotEmpty(elastiGroups)) {
         elastiGroupVersion =
