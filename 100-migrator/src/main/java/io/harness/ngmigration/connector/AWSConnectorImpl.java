@@ -20,8 +20,6 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO.AwsConne
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
-import io.harness.delegate.beans.connector.awsconnector.AwsIRSASpecDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.encryption.SecretRefData;
@@ -78,14 +76,13 @@ public class AWSConnectorImpl implements BaseConnector {
   }
 
   private AwsCredentialDTO getEc2IamCredentials(AwsConfig clusterConfig) {
-    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE, AwsInheritFromDelegateSpecDTO.builder().build(),
-        clusterConfig.getDefaultRegion(), clusterConfig.getCrossAccountAttributes(),
-        clusterConfig.isAssumeCrossAccountRole());
+    return getAwsCredentialDTO(INHERIT_FROM_DELEGATE, null, clusterConfig.getDefaultRegion(),
+        clusterConfig.getCrossAccountAttributes(), clusterConfig.isAssumeCrossAccountRole());
   }
 
   private AwsCredentialDTO getIrsaCredentials(AwsConfig clusterConfig) {
-    return getAwsCredentialDTO(IRSA, AwsIRSASpecDTO.builder().build(), clusterConfig.getDefaultRegion(),
-        clusterConfig.getCrossAccountAttributes(), clusterConfig.isAssumeCrossAccountRole());
+    return getAwsCredentialDTO(IRSA, null, clusterConfig.getDefaultRegion(), clusterConfig.getCrossAccountAttributes(),
+        clusterConfig.isAssumeCrossAccountRole());
   }
 
   private AwsCredentialDTO getManualCredentials(AwsConfig clusterConfig, Map<CgEntityId, NGYamlFile> migratedEntities) {

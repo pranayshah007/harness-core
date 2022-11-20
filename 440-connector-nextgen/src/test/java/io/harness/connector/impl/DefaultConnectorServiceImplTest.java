@@ -21,7 +21,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,12 +51,12 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
@@ -95,7 +94,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock KubernetesConnectionValidator kubernetesConnectionValidator;
   @Inject ConnectorRepository connectorRepository;
   @Mock private Map<String, ConnectionValidator> connectionValidatorMap;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
@@ -378,15 +377,10 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDelete() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
-    }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
     assertThat(deleted).isTrue();
   }
 
@@ -399,7 +393,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
              any(ConnectorInfoDTO.class), anyString()))
         .thenReturn(true);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
-    verify(entitySetupUsageClient, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
     assertThat(deleted).isTrue();
   }
 
@@ -420,20 +414,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDeleteWithEntitiesReferenced_throwsException() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
-    }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     try {
       connectorService.delete(accountIdentifier, null, null, identifier, false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
     }
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
 
   @Test(expected = InvalidRequestException.class)
