@@ -29,10 +29,10 @@ import java.util.List;
 @JsonTypeName("elastigroupSwapRouteDataOutcome")
 @RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome")
 public class ElastigroupSwapRouteDataOutcome implements Outcome, ExecutionSweepingOutput {
-  private String downsizeOldElastiGroup;
-  private List<LoadBalancerDetailsForBGDeployment> lbDetails;
-  private String newElastiGroupId;
-  private String newElastiGroupName;
-  private String oldElastiGroupId;
-  private String oldElastiGroupName;
+  private String downsizeOldElastigroup;
+  private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetails;
+  private String newElastigroupId;
+  private String newElastigroupName;
+  private String oldElastigroupId;
+  private String oldElastigroupName;
 }

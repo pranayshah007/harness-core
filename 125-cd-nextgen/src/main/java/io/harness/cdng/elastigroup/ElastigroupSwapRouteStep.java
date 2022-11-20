@@ -179,12 +179,12 @@ public class ElastigroupSwapRouteStep
 
     ElastigroupSwapRouteDataOutcome elastigroupSwapRouteDataOutcome =
         ElastigroupSwapRouteDataOutcome.builder()
-            .downsizeOldElastiGroup(elastigroupSwapRouteResult.getDownsizeOldElastiGroup())
-            .lbDetails(elastigroupSwapRouteResult.getLbDetails())
-            .newElastiGroupId(elastigroupSwapRouteResult.getNewElastiGroupId())
-            .oldElastiGroupId(elastigroupSwapRouteResult.getOldElastiGroupId())
-            .newElastiGroupName(elastigroupSwapRouteResult.getNewElastiGroupName())
-            .oldElastiGroupName(elastigroupSwapRouteResult.getOldElastiGroupName())
+            .downsizeOldElastigroup(elastigroupSwapRouteResult.getDownsizeOldElastiGroup())
+            .loadBalancerDetails(elastigroupSwapRouteResult.getLbDetails())
+            .newElastigroupId(elastigroupSwapRouteResult.getNewElastiGroupId())
+            .oldElastigroupId(elastigroupSwapRouteResult.getOldElastiGroupId())
+            .newElastigroupName(elastigroupSwapRouteResult.getNewElastiGroupName())
+            .oldElastigroupName(elastigroupSwapRouteResult.getOldElastiGroupName())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SWAP_ROUTE_OUTCOME,
