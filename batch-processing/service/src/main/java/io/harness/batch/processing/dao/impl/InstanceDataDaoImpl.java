@@ -283,7 +283,8 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .lessThanOrEq(endTime)
                                     .field(InstanceDataKeys.instanceType)
                                     .in(instanceTypes)
-                                    .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
+                                    .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
+                                        + InstanceDataKeys.activeInstanceIterator);
     return query.asList(new FindOptions().limit(batchSize));
   }
 }
