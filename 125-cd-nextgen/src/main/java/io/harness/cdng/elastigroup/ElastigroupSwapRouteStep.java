@@ -60,9 +60,8 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Collections;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -89,45 +88,46 @@ public class ElastigroupSwapRouteStep
 
     SpotInstConfig spotInstConfig = elastigroupStepCommonHelper.getSpotInstConfig(infrastructureOutcome, ambiance);
 
-    OptionalSweepingOutput optionalElastigroupSetupOutput =
-            executionSweepingOutputService.resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME));
+    OptionalSweepingOutput optionalElastigroupSetupOutput = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME));
 
-    if(!optionalElastigroupSetupOutput.isFound()) {
-      elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(unitProgressData, "Elastigroup BG Stage Setup Outcome not found");
+    if (!optionalElastigroupSetupOutput.isFound()) {
+      elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(
+          unitProgressData, "Elastigroup BG Stage Setup Outcome not found");
     }
 
-    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = (ElastigroupSetupDataOutcome) optionalElastigroupSetupOutput.getOutput();
+    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
+        (ElastigroupSetupDataOutcome) optionalElastigroupSetupOutput.getOutput();
 
     ElastigroupSwapRouteStepParameters elastigroupSwapRouteStepParameters =
         (ElastigroupSwapRouteStepParameters) stepParameters.getSpec();
 
     ConnectorInfoDTO connectorInfoDTO = elastigroupStepCommonHelper.getConnector(
-            elastigroupStepCommonHelper.renderExpression(ambiance, elastigroupSetupDataOutcome.getAwsConnectorRef()), ambiance);
+        elastigroupStepCommonHelper.renderExpression(ambiance, elastigroupSetupDataOutcome.getAwsConnectorRef()),
+        ambiance);
 
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
-            ElastigroupSwapRouteCommandRequest.builder()
+        ElastigroupSwapRouteCommandRequest.builder()
             .blueGreen(elastigroupSetupDataOutcome.isBlueGreen())
-                    .awsEncryptedDetails(Collections.emptyList())
-                    .connectorInfoDTO(ConnectorInfoDTO.builder().build())
-                    .newElastigroup(elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig())
-                    .oldElastigroup(elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig())
+            .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
+            .connectorInfoDTO(connectorInfoDTO)
+            .newElastigroup(elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig())
+            .oldElastigroup(elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig())
             .elastigroupNamePrefix(elastigroupSetupDataOutcome.getElastigroupNamePrefix())
             .accountId(accountId)
-                    .downsizeOldElastigroup(String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
-                    .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
-                    .awsRegion(elastigroupSetupDataOutcome.getAwsRegion())
+            .downsizeOldElastigroup(
+                String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
+            .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
+            .awsRegion(elastigroupSetupDataOutcome.getAwsRegion())
             .spotInstConfig(spotInstConfig)
-                    .connectorInfoDTO(connectorInfoDTO)
             .commandName(ELASTIGROUP_SWAP_ROUTE_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-                    .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
-                    .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
+            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
             .build();
 
-    return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSwapRouteCommandRequest, ambiance,
-        executionPassThroughData, true, TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG);
+    return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSwapRouteCommandRequest,
+        ambiance, executionPassThroughData, true, TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG);
   }
 
   @Override
@@ -174,37 +174,40 @@ public class ElastigroupSwapRouteStep
           .build();
     }
 
-    ElastigroupSwapRouteResult elastigroupSwapRouteResult = elastigroupSwapRouteResponse.getElastigroupSwapRouteResult();
+    ElastigroupSwapRouteResult elastigroupSwapRouteResult =
+        elastigroupSwapRouteResponse.getElastigroupSwapRouteResult();
 
     ElastigroupSwapRouteDataOutcome elastigroupSwapRouteDataOutcome =
-            ElastigroupSwapRouteDataOutcome.builder()
-                    .downsizeOldElastiGroup(elastigroupSwapRouteResult.getDownsizeOldElastiGroup())
-                    .lbDetails(elastigroupSwapRouteResult.getLbDetails())
-                    .newElastiGroupId(elastigroupSwapRouteResult.getNewElastiGroupId())
-                    .oldElastiGroupId(elastigroupSwapRouteResult.getOldElastiGroupId())
-                    .newElastiGroupName(elastigroupSwapRouteResult.getNewElastiGroupName())
-                    .oldElastiGroupName(elastigroupSwapRouteResult.getOldElastiGroupName())
+        ElastigroupSwapRouteDataOutcome.builder()
+            .downsizeOldElastiGroup(elastigroupSwapRouteResult.getDownsizeOldElastiGroup())
+            .lbDetails(elastigroupSwapRouteResult.getLbDetails())
+            .newElastiGroupId(elastigroupSwapRouteResult.getNewElastiGroupId())
+            .oldElastiGroupId(elastigroupSwapRouteResult.getOldElastiGroupId())
+            .newElastiGroupName(elastigroupSwapRouteResult.getNewElastiGroupName())
+            .oldElastiGroupName(elastigroupSwapRouteResult.getOldElastiGroupName())
             .build();
 
     executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SWAP_ROUTE_OUTCOME,
-            elastigroupSwapRouteDataOutcome, StepOutcomeGroup.STEP.name());
+        elastigroupSwapRouteDataOutcome, StepOutcomeGroup.STAGE.name());
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
-            .stepOutcome(StepResponse.StepOutcome.builder()
-                    .name(OutcomeExpressionConstants.OUTPUT)
-                    .outcome(elastigroupSwapRouteDataOutcome)
-                    .build())
-            .build();
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.OUTPUT)
+                         .outcome(elastigroupSwapRouteDataOutcome)
+                         .build())
+        .build();
   }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData = ElastigroupExecutionPassThroughData.builder().infrastructure(elastigroupStepCommonHelper.getInfrastructureOutcome(ambiance
-            ))
+    ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
+        ElastigroupExecutionPassThroughData.builder()
+            .infrastructure(elastigroupStepCommonHelper.getInfrastructureOutcome(ambiance))
             .build();
     ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder().build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
-    return executeElastigroupTask(ambiance, stepParameters, elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
+    return executeElastigroupTask(
+        ambiance, stepParameters, elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
   }
 }
