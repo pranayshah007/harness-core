@@ -39,6 +39,7 @@ import io.harness.batch.processing.pricing.PricingSource;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -116,7 +117,7 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private BatchMainConfig config;
 
-  @Mock private ClusterRecord clusterRecord;
+  @Mock private ClusterRecordService clusterRecordService;
 
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
@@ -330,7 +331,7 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
             .harnessServiceInfo(getHarnessServiceInfo())
             .build();
 
-    when(instanceDataDao.getInstanceDataListsOfTypes(any(), anyInt(), any(), any(), any()))
+    when(instanceDataDao.getInstanceDataListsOfTypesAndClusterId(any(), anyInt(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(instanceData));
 
     RepeatStatus repeatStatus = instanceBillingDataTasklet.execute(null, chunkContext);
