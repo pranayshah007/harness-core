@@ -50,6 +50,7 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -90,6 +91,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private InstanceDataDao instanceDataDao;
   @Autowired private BatchMainConfig config;
+  @Autowired private ClusterRecordService clusterRecordService;
 
   private static final String CLAIM_REF_SEPARATOR = "/";
   private int batchSize;
@@ -113,7 +115,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId,
+    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, clusterRecordService, accountId,
         ImmutableList.of(
             ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
         startTime, endTime, batchSize);
@@ -134,8 +136,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
   private Map<String, MutableInt> getPvcClaimCount(String accountId, Instant startTime, Instant endTime) {
     List<InstanceData> instanceDataLists;
     Map<String, MutableInt> result = new HashMap<>();
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
+    InstanceDataReader instanceDataReader = new InstanceDataReader(
+        instanceDataDao, clusterRecordService, accountId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
     do {
       // TODO change here
       instanceDataLists = instanceDataReader.getNext();
@@ -157,8 +159,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       BatchJobType batchJobType, String accountId, Instant startTime, Instant endTime) {
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
+    InstanceDataReader instanceDataReader = new InstanceDataReader(
+        instanceDataDao, clusterRecordService, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
     do {
       instanceDataLists = instanceDataReader.getNext();
       try {

@@ -9,11 +9,17 @@ package io.harness.batch.processing.billing.reader;
 
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
 import io.harness.ccm.commons.beans.InstanceType;
+import io.harness.ccm.commons.entities.ClusterRecord;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -24,20 +30,30 @@ public class InstanceDataReader {
   private Instant endTime;
   private int batchSize;
   private InstanceDataDao instanceDataDao;
+  private ClusterRecordService clusterRecordService;
 
-  public InstanceDataReader(InstanceDataDao instanceDataDao, String accountId, List<InstanceType> instanceTypes,
-      Instant activeInstanceIterator, Instant endTime, int batchSize) {
+  public InstanceDataReader(InstanceDataDao instanceDataDao, ClusterRecordService clusterRecordService,
+      String accountId, List<InstanceType> instanceTypes, Instant activeInstanceIterator, Instant endTime,
+      int batchSize) {
     this.accountId = accountId;
     this.instanceTypes = instanceTypes;
     this.activeInstanceIterator = activeInstanceIterator;
     this.endTime = endTime;
     this.batchSize = batchSize;
     this.instanceDataDao = instanceDataDao;
+    this.clusterRecordService = clusterRecordService;
   }
 
   public List<InstanceData> getNext() {
-    List<InstanceData> instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
-        accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+    List<ClusterRecord> clusterRecords = clusterRecordService.getByAccountId(accountId);
+    List<InstanceData> instanceDataLists =
+        clusterRecords.stream()
+            .map(clusterRecord
+                -> instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
+                    accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterRecord.getUuid()))
+            .filter(Objects::nonNull)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
       if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {

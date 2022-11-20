@@ -54,4 +54,7 @@ public interface InstanceDataDao {
 
   List<InstanceData> getInstanceDataListsOfTypes(
       String accountId, int batchSize, Instant startTime, Instant endTime, List<InstanceType> instanceTypes);
+
+  List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
+      Instant endTime, List<InstanceType> instanceTypes, String clusterId);
 }
