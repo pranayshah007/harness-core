@@ -42,6 +42,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
+import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import org.junit.Rule;
 import org.junit.Test;
@@ -78,6 +79,7 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
   @Mock private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Mock private LogCallback createServiceLogCallback;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
+  @Mock private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
 
   @InjectMocks private ElastigroupSetupCommandTaskHandler elastigroupSetupCommandTaskHandler;
 
@@ -112,7 +114,7 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().spotConnectorDTO(spotConnectorDTO).build();
     doNothing().when(elastigroupCommandTaskNGHelper).decryptSpotInstConfig(spotInstConfig);
 
-    doReturn(Arrays.asList()).when(elastigroupCommandTaskNGHelper).listAllElastiGroups(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, prefix);
+    doReturn(Arrays.asList()).when(spotInstHelperServiceDelegate).listAllElastiGroups(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, prefix);
 
     String newElastiGroupName = format("%s%d", prefix, elastiGroupVersion);
     String finalJson = "finalJson";
@@ -126,7 +128,7 @@ public class ElastigroupSetupCommandTaskHandlerTest extends CategoryTest {
 
     String id = "id";
     ElastiGroup elastiGroup = ElastiGroup.builder().id(id).build();
-    doReturn(elastiGroup).when(elastigroupCommandTaskNGHelper).createElastiGroup(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, finalJson);
+    doReturn(elastiGroup).when(spotInstHelperServiceDelegate).createElastiGroup(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, finalJson);
 
     ElastigroupSetupResult elastigroupSetupResult =
             ElastigroupSetupResult.builder()

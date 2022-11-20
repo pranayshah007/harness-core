@@ -260,22 +260,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         unitProgressData, infrastructureOutcome, startupScript, elastigroupConfigurationOutput);
   }
 
-  public StartupScriptOutcome resolveStartupScriptOutcome(Ambiance ambiance) {
-    OptionalOutcome startupScriptOutcome = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
-
-    if (!startupScriptOutcome.isFound()) {
-      String stageName =
-          AmbianceUtils.getStageLevelFromAmbiance(ambiance).map(Level::getIdentifier).orElse("Deployment stage");
-      String stepType =
-          Optional.ofNullable(AmbianceUtils.getCurrentStepType(ambiance)).map(StepType::getType).orElse("Elastigroup");
-      throw new GeneralException(format(
-          "No startupScript found in stage %s. %s step requires a startupScript defined in stage service definition",
-          stageName, stepType));
-    }
-    return (StartupScriptOutcome) startupScriptOutcome.getOutcome();
-  }
-
   public ElastiGroup fetchOldElasticGroup(ElastigroupSetupResult elastigroupSetupResult) {
     if (isEmpty(elastigroupSetupResult.getGroupToBeDownsized())) {
       return null;

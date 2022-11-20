@@ -163,9 +163,6 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
     doReturn(taskChainResponse).when(elastigroupStepCommonHelper).queueElastigroupTask(stepElementParameters, elastigroupSwapRouteCommandRequest, ambiance, elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG);
     elastigroupSetupStep.executeElastigroupTask(
             ambiance, stepElementParameters, elastigroupExecutionPassThroughData, null, elastigroupStepExecutorParams);
-//    verify(elastigroupStepCommonHelper)
-//            .queueElastigroupTask(
-//                    stepElementParameters, elastigroupSetupCommandRequest, ambiance, elastigroupExecutionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
   }
 
   @Test
@@ -202,6 +199,6 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
             StepResponse.builder().unitProgressList(elastigroupSwapRouteResponse.getUnitProgressData().getUnitProgresses());
     StepResponse stepResponse = elastigroupSetupStep.finalizeExecutionWithSecurityContext(ambiance, stepElementParameters, elastigroupExecutionPassThroughData, responseSupplier);
     assertThat(stepResponse.getStepOutcomes().size()).isEqualTo(1);
-    assertThat(((ElastigroupSwapRouteDataOutcome) stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome()).getNewElastiGroupId()).isEqualTo(newElastiGroupId);
+    assertThat(((ElastigroupSwapRouteDataOutcome) stepResponse.getStepOutcomes().stream().findFirst().get().getOutcome()).getNewElastigroupId()).isEqualTo(newElastiGroupId);
   }
 }
