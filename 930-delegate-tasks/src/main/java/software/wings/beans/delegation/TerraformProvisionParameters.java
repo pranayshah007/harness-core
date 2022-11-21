@@ -35,6 +35,7 @@ import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.TerraformSourceType;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 
@@ -52,6 +53,7 @@ import lombok.Value;
 public class TerraformProvisionParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   public static final long TIMEOUT_IN_MINUTES = 100;
   public static final String TERRAFORM = "terraform";
+  private TerraformSourceType sourceType;
 
   private String accountId;
   private final String activityId;
