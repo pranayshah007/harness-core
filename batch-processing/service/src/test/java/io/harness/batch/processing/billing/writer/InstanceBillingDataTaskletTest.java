@@ -39,17 +39,17 @@ import io.harness.batch.processing.pricing.PricingSource;
 import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.category.element.UnitTests;
-import io.harness.ccm.cluster.ClusterRecordService;
-import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
 import io.harness.rule.Owner;
 
 import software.wings.security.authentication.BatchQueryConfig;
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.amazonaws.services.ecs.model.LaunchType;
 import com.google.common.collect.ImmutableMap;
@@ -117,9 +117,9 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
   @Mock private BatchMainConfig config;
 
-  @Mock private ClusterRecordService clusterRecordService;
+  @Mock private ClusterRecordService eventsClusterRecordService;
 
-  @Mock private io.harness.ccm.commons.service.intf.ClusterRecordService eventsClusterRecordService;
+  @Mock private CloudToHarnessMappingService cloudToHarnessMappingService;
 
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
