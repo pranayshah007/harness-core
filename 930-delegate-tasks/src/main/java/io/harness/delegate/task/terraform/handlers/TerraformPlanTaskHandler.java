@@ -37,6 +37,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -139,7 +140,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
     try (PlanJsonLogOutputStream planJsonLogOutputStream =
              new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson());
-         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
+         PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
               .tfBackendConfigsFile(backendConfigFile)
@@ -154,6 +156,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
+              .planHumanReadableOutputStream(planHumanReadableOutputStream)
+              .isSaveTerraformHumanReadablePlan(taskParameters.isSaveTerraformHumanReadablePlan())
               .planLogOutputStream(planLogOutputStream)
               .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be
                                            // sent from manager side
@@ -200,6 +204,16 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
       EncryptedRecordData encryptedTfPlan = terraformBaseHelper.encryptPlan(
           Files.readAllBytes(Paths.get(scriptDirectory, planName)), taskParameters, delegateId, taskId);
 
+      String tfHumanReadablePlanFileId = null;
+      if (taskParameters.isSaveTerraformHumanReadablePlan()) {
+        planHumanReadableOutputStream.flush();
+        planHumanReadableOutputStream.close();
+        String tfHumanReadableFilePath = planHumanReadableOutputStream.getTfHumanReadablePlanLocalPath();
+
+        tfHumanReadablePlanFileId = terraformBaseHelper.uploadTfPlanHumanReadable(taskParameters.getAccountId(),
+            delegateId, taskId, taskParameters.getEntityId(), planName, tfHumanReadableFilePath);
+      }
+
       String tfPlanJsonFileId = null;
       if (taskParameters.isSaveTerraformStateJson()
           && planJsonLogOutputStream.getTfPlanShowJsonStatus().equals(CommandExecutionStatus.SUCCESS)) {
@@ -226,6 +240,7 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           .stateFileId(uploadedTfStateFile)
           .detailedExitCode(detailedExitCode)
           .tfPlanJsonFileId(tfPlanJsonFileId)
+          .tfHumanReadablePlanFileId(tfHumanReadablePlanFileId)
           .build();
     }
   }

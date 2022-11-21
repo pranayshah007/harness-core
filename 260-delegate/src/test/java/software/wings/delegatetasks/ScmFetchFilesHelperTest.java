@@ -43,8 +43,8 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitFetchFilesResult;
 
 import java.io.File;
@@ -221,19 +221,19 @@ public class ScmFetchFilesHelperTest extends WingsBaseTest {
         .isTrue();
     assertThat(scmFetchFilesHelper.shouldUseScm(false,
                    GitConfig.builder()
-                       .sshSettingAttribute(SettingAttribute.Builder.aSettingAttribute().build())
+                       .sshSettingAttribute(SettingAttribute.builder().build())
                        .providerType(ProviderType.GITHUB)
                        .build()))
         .isFalse();
     assertThat(scmFetchFilesHelper.shouldUseScm(false,
                    GitConfig.builder()
-                       .sshSettingAttribute(SettingAttribute.Builder.aSettingAttribute().build())
+                       .sshSettingAttribute(SettingAttribute.builder().build())
                        .providerType(ProviderType.GITLAB)
                        .build()))
         .isFalse();
     assertThat(scmFetchFilesHelper.shouldUseScm(false,
                    GitConfig.builder()
-                       .sshSettingAttribute(SettingAttribute.Builder.aSettingAttribute().build())
+                       .sshSettingAttribute(SettingAttribute.builder().build())
                        .providerType(ProviderType.BITBUCKET)
                        .build()))
         .isFalse();

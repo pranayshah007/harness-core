@@ -155,6 +155,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             .backendConfigFileInfo(helper.toTerraformBackendFileInfo(spec.getBackendConfig(), ambiance))
             .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
             .saveTerraformStateJson(false)
+            .saveTerraformHumanReadablePlan(false)
             .environmentVariables(helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()) == null
                     ? new HashMap<>()
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
@@ -203,6 +204,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
                 inheritOutput.getBackendConfigurationFileConfig(), ambiance))
             .targets(inheritOutput.getTargets())
             .saveTerraformStateJson(false)
+            .saveTerraformHumanReadablePlan(false)
             .encryptionConfig(inheritOutput.getEncryptionConfig())
             .encryptedTfPlan(inheritOutput.getEncryptedTfPlan())
             .planName(inheritOutput.getPlanName())
@@ -247,6 +249,7 @@ public class TerraformDestroyStep extends TaskExecutableWithRollbackAndRbac<Terr
             helper.prepareTerraformBackendConfigFileInfo(terraformConfig.getBackendConfigFileConfig(), ambiance))
         .targets(terraformConfig.getTargets())
         .saveTerraformStateJson(false)
+        .saveTerraformHumanReadablePlan(false)
         .environmentVariables(terraformConfig.getEnvironmentVariables() == null
                 ? new HashMap<>()
                 : terraformConfig.getEnvironmentVariables())

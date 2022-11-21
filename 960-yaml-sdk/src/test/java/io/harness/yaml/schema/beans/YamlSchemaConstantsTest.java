@@ -98,6 +98,31 @@ public class YamlSchemaConstantsTest extends CategoryTest {
     assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN, "<+input>.executionInput()s")).isFalse();
     assertThat(checkPattern(SchemaConstants.RUNTIME_INPUT_PATTERN, "<+input>.default(val).")).isFalse();
   }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testNumberVariablePattern() {
+    // True, runtime input string.
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "<+input>")).isTrue();
+    // True, expressions.
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "<+abc>")).isTrue();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "<+abc.def>")).isTrue();
+
+    // False, does not start with <+
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "a<+input>")).isFalse();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "a<+bcd.efg>")).isFalse();
+
+    // True, number values.
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "1.2")).isTrue();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "1.0")).isTrue();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "+1.0")).isTrue();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "-1.0")).isTrue();
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, ".1")).isTrue();
+
+    assertThat(checkPattern(SchemaConstants.NUMBER_STRING_WITH_EXPRESSION_PATTERN, "1.")).isFalse();
+  }
+
   private boolean checkPattern(String regex, String str) {
     Pattern pattern = Pattern.compile(regex);
     return pattern.matcher(str).matches();

@@ -26,7 +26,6 @@ import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs;
 import io.harness.cvng.core.beans.sli.SLIOnboardingGraphs.MetricGraph;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MetricCVConfig;
-import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -46,7 +45,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -101,7 +99,6 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private SideKickService sideKickService;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private CompositeSLOService compositeSLOService;
-  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
@@ -110,8 +107,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
                                        projectParams.getProjectIdentifier(), monitoredServiceIdentifier,
                                        serviceLevelIndicatorDTO.getHealthSourceRef())
                                    .stream()
-                                   .filter(cvConfig -> cvConfig instanceof MetricCVConfig)
-                                   .map(cvConfig -> (MetricCVConfig) cvConfig)
+                                   .filter(MetricCVConfig.class ::isInstance)
+                                   .map(MetricCVConfig.class ::cast)
                                    .peek(metricCVConfig
                                        -> metricPackService.populateDataCollectionDsl(
                                            metricCVConfig.getType(), metricCVConfig.getMetricPack()))
@@ -157,8 +154,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     List<TimeSeriesRecord> timeSeriesRecords = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
 
     Map<String, List<SLIAnalyseRequest>> sliAnalyseRequest =
-        timeSeriesRecords.stream().collect(Collectors.groupingBy(timeSeriesRecord
-            -> timeSeriesRecord.getMetricIdentifier(),
+        timeSeriesRecords.stream().collect(Collectors.groupingBy(TimeSeriesRecord::getMetricIdentifier,
             Collectors.mapping(timeSeriesRecord
                 -> SLIAnalyseRequest.builder()
                        .metricValue(timeSeriesRecord.getMetricValue())
@@ -273,7 +269,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         List<CompositeServiceLevelObjective> referencedCompositeSLOs =
             compositeSLOService.getReferencedCompositeSLOs(projectParams, serviceLevelObjectiveIdentifier);
         for (CompositeServiceLevelObjective compositeServiceLevelObjective : referencedCompositeSLOs) {
-          compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
+          compositeSLOService.reset(compositeServiceLevelObjective);
         }
       } else {
         updateServiceLevelIndicatorEntity(projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator,
@@ -317,11 +313,6 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     }
   }
 
-  private String getDSL(DataSourceType dataSourceType, MetricPack metricPack) {
-    metricPackService.populateDataCollectionDsl(dataSourceType, metricPack);
-    return metricPack.getDataCollectionDsl();
-  }
-
   private void updateServiceLevelIndicatorEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
       TimePeriod timePeriod, TimePeriod currentTimePeriod, String serviceLevelObjectiveIdentifier) {
@@ -353,7 +344,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       List<CompositeServiceLevelObjective> referencedCompositeSLOs =
           compositeSLOService.getReferencedCompositeSLOs(projectParams, serviceLevelObjectiveIdentifier);
       for (CompositeServiceLevelObjective compositeServiceLevelObjective : referencedCompositeSLOs) {
-        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+        compositeSLOService.recalculate(compositeServiceLevelObjective);
       }
     }
   }
@@ -444,8 +435,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     Map<String, List<DataPoints>> metricToDataPoints =
         timeSeriesRecords.stream()
             .filter(timeSeriesRecord -> metricIdentifiers.contains(timeSeriesRecord.getMetricIdentifier()))
-            .collect(Collectors.groupingBy(timeSeriesRecord
-                -> timeSeriesRecord.getMetricIdentifier(),
+            .collect(Collectors.groupingBy(TimeSeriesRecord::getMetricIdentifier,
                 Collectors.mapping(timeSeriesRecord
                     -> DataPoints.builder()
                            .value(timeSeriesRecord.getMetricValue())
@@ -456,10 +446,9 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
     Map<String, String> metricIdentifierToNameMap = timeSeriesRecords.stream().collect(
         Collectors.toMap(TimeSeriesRecord::getMetricIdentifier, TimeSeriesRecord::getMetricName, (a, b) -> a));
 
-    return metricToDataPoints.entrySet().stream().collect(Collectors.toMap(entry
-        -> entry.getKey(),
+    return metricToDataPoints.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey,
         entry
-        -> (MetricGraph) MetricGraph.builder()
+        -> MetricGraph.builder()
                .metricName(metricIdentifierToNameMap.get(entry.getKey()))
                .metricIdentifier(entry.getKey())
                .startTime(startTime.toEpochMilli())

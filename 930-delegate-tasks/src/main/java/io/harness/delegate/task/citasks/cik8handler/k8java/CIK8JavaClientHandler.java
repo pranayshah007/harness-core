@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.citasks.cik8handler.k8java;
 
+import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
+import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
 import static io.harness.connector.SecretSpecBuilder.DOCKER_REGISTRY_SECRET_TYPE;
 import static io.harness.connector.SecretSpecBuilder.OPAQUE_SECRET_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -21,6 +23,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ImageCredentials;
 import io.harness.connector.ImageSecretBuilder;
 import io.harness.connector.SecretSpecBuilder;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.PodStatus;
@@ -31,6 +34,7 @@ import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.task.citasks.cik8handler.params.CIConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.PodNotFoundException;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.apiclient.ApiClientFactory;
 import io.harness.threading.Sleeper;
 
@@ -60,6 +64,7 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -98,20 +103,29 @@ public class CIK8JavaClientHandler {
     return Failsafe.with(retryPolicy).get(() -> createOrReplacePod(coreV1Api, pod, namespace));
   }
 
-  public V1Secret createRegistrySecret(
-      CoreV1Api coreV1Api, String namespace, String secretName, ImageDetailsWithConnector imageDetails) {
+  public V1Secret createRegistrySecret(CoreV1Api coreV1Api, String namespace, String secretName,
+      ImageDetailsWithConnector imageDetails) throws IOException {
     String credentialData = null;
     if (imageDetails.getImageConnectorDetails() != null
         && imageDetails.getImageConnectorDetails().getConnectorType() == ConnectorType.AZURE) {
       ConnectorDetails connectorDetails = imageDetails.getImageConnectorDetails();
       String regName = StringUtils.substringBefore(imageDetails.getImageDetails().getName(), "/");
-      AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(regName,
-          connectorDetails.getEncryptedDataDetails(), (AzureConnectorDTO) connectorDetails.getConnectorConfig());
-      credentialData = imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
-                                                                             .registryUrl(regName)
-                                                                             .userName(USER_NAME)
-                                                                             .password(acrLoginToken.getToken())
-                                                                             .build());
+      try (LazyAutoCloseableWorkingDirectory workingDirectory =
+               new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
+        AzureConfigContext azureConfigContext =
+            AzureConfigContext.builder()
+                .containerRegistry(regName)
+                .azureConnector((AzureConnectorDTO) connectorDetails.getConnectorConfig())
+                .encryptedDataDetails(connectorDetails.getEncryptedDataDetails())
+                .certificateWorkingDirectory(workingDirectory)
+                .build();
+        AzureAcrTokenTaskResponse acrLoginToken = azureAsyncTaskHelper.getAcrLoginToken(azureConfigContext);
+        credentialData = imageSecretBuilder.getJSONEncodedAzureCredentials(ImageCredentials.builder()
+                                                                               .registryUrl(regName)
+                                                                               .userName(USER_NAME)
+                                                                               .password(acrLoginToken.getToken())
+                                                                               .build());
+      }
     } else {
       credentialData = imageSecretBuilder.getJSONEncodedImageCredentials(imageDetails);
     }

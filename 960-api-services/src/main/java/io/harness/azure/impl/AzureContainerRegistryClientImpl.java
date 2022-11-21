@@ -34,17 +34,19 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import software.wings.helpers.ext.azure.AcrGetRepositoryTagsResponse;
 import software.wings.helpers.ext.azure.AcrGetTokenResponse;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.identity.implementation.util.ScopeUtil;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.containerregistry.models.Registry;
+import com.azure.resourcemanager.containerregistry.models.RegistryCredentials;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.containerregistry.RegistryCredentials;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
@@ -58,7 +60,7 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
   public Optional<RegistryCredentials> getContainerRegistryCredentials(AzureContainerRegistryClientContext context) {
     String registryName = context.getRegistryName();
     String resourceGroupName = context.getResourceGroupName();
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
     log.debug("Start getting container registry credentials by registryName: {}, context: {}", registryName, context);
     return Optional.ofNullable(azure.containerRegistries().getCredentials(resourceGroupName, registryName));
   }
@@ -70,9 +72,9 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       throw new IllegalArgumentException(ACR_REGISTRY_NAME_BLANK_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     Instant startFilteringRegistries = Instant.now();
-    PagedList<Registry> registries = azure.containerRegistries().list();
+    PagedIterable<Registry> registries = azure.containerRegistries().list();
     Optional<Registry> registryOptional =
         registries.stream().filter(registry -> registryName.equalsIgnoreCase(registry.name())).findFirst();
     long elapsedTime = Duration.between(startFilteringRegistries, Instant.now()).toMillis();
@@ -86,10 +88,10 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
     if (isBlank(subscriptionId)) {
       throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing container registries on subscription, subscriptionId: {}", subscriptionId);
-    return new ArrayList<>(azure.containerRegistries().list());
+    return azure.containerRegistries().list().stream().collect(Collectors.toList());
   }
 
   @Override
@@ -112,13 +114,16 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
           || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED) {
         String azureAccessToken =
             getAuthenticationTokenCredentials(azureConfig)
-                .getToken(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint());
+                .getToken(AzureUtils.getTokenRequestContext(ScopeUtil.resourceToScopes(
+                    AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+                .block()
+                .getToken();
         String acrAccessToken =
             getAcrAccessToken(registryHost, azureAccessToken, format(REPOSITORY_SCOPE, repositoryName));
 
         authHeader = getAzureBearerAuthHeader(acrAccessToken);
       } else {
-        authHeader = getAzureBasicAuthHeader(azureConfig.getClientId(), new String(azureConfig.getKey()));
+        authHeader = getAzureBasicAuthHeader(azureConfig.getClientId(), String.valueOf(azureConfig.getKey()));
       }
 
       log.debug("Start listing repository tags, registryHost: {}, repositoryName: {}", registryHost, repositoryName);
@@ -150,7 +155,10 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       } else {
         String azureAccessToken =
             getAuthenticationTokenCredentials(azureConfig)
-                .getToken(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint());
+                .getToken(AzureUtils.getTokenRequestContext(ScopeUtil.resourceToScopes(
+                    AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+                .block()
+                .getToken();
         String acrAccessToken = getAcrAccessToken(registryUrl, azureAccessToken, REGISTRY_SCOPE);
 
         authHeader = getAzureBearerAuthHeader(acrAccessToken);

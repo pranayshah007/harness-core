@@ -145,8 +145,8 @@ public class GithubServiceImpl implements GithubService {
         if (response.code() != 405) {
           break;
         }
-        log.info(format("Received code {}, retrying attempt {} after sleeping for {}", response.code()), i,
-            RETRY_SLEEP_DURATION);
+        log.info(format(
+            "Received code %s, retrying attempt %s after sleeping for %s", response.code(), i, RETRY_SLEEP_DURATION));
         sleep(RETRY_SLEEP_DURATION);
       }
 

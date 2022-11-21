@@ -24,7 +24,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.HostValidationTaskParameters;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 

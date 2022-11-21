@@ -14,7 +14,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import static java.lang.String.format;
-import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.stream.Collectors.toList;
 
@@ -36,7 +35,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.exception.DelegateTaskExpiredException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.iterator.PersistenceIterator;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -64,6 +64,7 @@ import software.wings.service.intfc.perpetualtask.PerpetualTaskCrudObserver;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -72,10 +73,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @BreakDependencyOn("software.wings.service.InstanceSyncConstants")
-public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
-  private static final int PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE = 1;
-  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
-
+public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implements PerpetualTaskCrudObserver {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private DelegateService delegateService;
   @Inject private PerpetualTaskService perpetualTaskService;
@@ -86,31 +84,36 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private PerpetualTaskRecordDao perpetualTaskRecordDao;
 
-  PersistenceIterator<PerpetualTaskRecord> assignmentIterator;
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                PerpetualTaskRecordHandler.class,
+                MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
+                    .clazz(PerpetualTaskRecord.class)
+                    .fieldName(PerpetualTaskRecordKeys.assignIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofSeconds(45))
+                    .acceptableExecutionTime(ofSeconds(30))
+                    .handler(this::assign)
+                    .filterExpander(query
+                        -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
+                               .field(PerpetualTaskRecordKeys.assignAfterMs)
+                               .lessThanOrEq(System.currentTimeMillis()))
+                    .entityProcessController(
+                        new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
 
-  public void registerIterators(int perpetualTaskAssignmentThreadPoolSize) {
-    assignmentIterator = persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder()
-            .name("PerpetualTaskAssignment")
-            .poolSize(perpetualTaskAssignmentThreadPoolSize)
-            .interval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
-            .build(),
-        PerpetualTaskRecordHandler.class,
-        MongoPersistenceIterator.<PerpetualTaskRecord, MorphiaFilterExpander<PerpetualTaskRecord>>builder()
-            .clazz(PerpetualTaskRecord.class)
-            .fieldName(PerpetualTaskRecordKeys.assignIteration)
-            .targetInterval(ofMinutes(PERPETUAL_TASK_ASSIGNMENT_INTERVAL_MINUTE))
-            .acceptableNoAlertDelay(ofSeconds(45))
-            .acceptableExecutionTime(ofSeconds(30))
-            .handler(this::assign)
-            .filterExpander(query
-                -> query.filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_UNASSIGNED)
-                       .field(PerpetualTaskRecordKeys.assignAfterMs)
-                       .lessThanOrEq(System.currentTimeMillis()))
-            .entityProcessController(new CrossEnvironmentAccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "PerpetualTaskAssignment";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   public void assign(PerpetualTaskRecord taskRecord) {
@@ -249,8 +252,8 @@ public class PerpetualTaskRecordHandler implements PerpetualTaskCrudObserver {
 
   @Override
   public void onPerpetualTaskCreated() {
-    if (assignmentIterator != null) {
-      assignmentIterator.wakeup();
+    if (iterator != null) {
+      iterator.wakeup();
     }
   }
 

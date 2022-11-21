@@ -15,11 +15,15 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
 import io.harness.azure.model.tag.TagDetails;
 
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.resources.Deployment;
-import com.microsoft.azure.management.resources.implementation.DeploymentExtendedInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentOperationInner;
-import com.microsoft.azure.management.resources.implementation.DeploymentValidateResultInner;
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.resources.fluent.DeploymentsClient;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentExtendedInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentOperationInner;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentValidateResultInner;
+import com.azure.resourcemanager.resources.models.Deployment;
 import java.util.List;
 
 public interface AzureManagementClient {
@@ -38,7 +42,7 @@ public interface AzureManagementClient {
    * @param azureConfig
    * @return
    */
-  List<ManagementGroupInfo> listManagementGroups(AzureConfig azureConfig);
+  PagedFlux<ManagementGroupInfo> listManagementGroups(AzureConfig azureConfig);
 
   /**
    * Export template in JSON format by including comments or parameters with default values or both.
@@ -70,13 +74,25 @@ public interface AzureManagementClient {
       AzureClientContext context, AzureARMTemplate template);
 
   /**
+   * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
+   * resource group scope.
+   *
+   * @param context
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentValidateResultInner validateDeploymentAtResourceGroupScope(
+      AzureClientContext context, AzureARMTemplate template, DeploymentsClient deploymentsClient);
+
+  /**
    * Start deployment at subscription scope.
    *
    * @param context
    * @param template
    * @return
    */
-  Deployment deployAtResourceGroupScope(AzureClientContext context, AzureARMTemplate template);
+  SyncPoller<Void, Deployment> deployAtResourceGroupScope(AzureClientContext context, AzureARMTemplate template);
 
   /**
    * Get deployment at subscription scope.
@@ -88,6 +104,18 @@ public interface AzureManagementClient {
    */
   DeploymentExtendedInner getDeploymentAtSubscriptionScope(
       AzureConfig azureConfig, String subscriptionId, String deploymentName);
+
+  /**
+   * Get deployment at subscription scope.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param deploymentName
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentExtendedInner getDeploymentAtSubscriptionScope(
+      AzureConfig azureConfig, String subscriptionId, String deploymentName, DeploymentsClient deploymentsClient);
 
   /**
    * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
@@ -102,6 +130,19 @@ public interface AzureManagementClient {
       AzureConfig azureConfig, String subscriptionId, AzureARMTemplate template);
 
   /**
+   * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
+   * subscription scope.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentValidateResultInner validateDeploymentAtSubscriptionScope(
+      AzureConfig azureConfig, String subscriptionId, AzureARMTemplate template, DeploymentsClient deploymentsClient);
+
+  /**
    * Start deployment at subscription scope.
    *
    * @param azureConfig
@@ -109,8 +150,20 @@ public interface AzureManagementClient {
    * @param template
    * @return
    */
-  DeploymentExtendedInner deployAtSubscriptionScope(
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtSubscriptionScope(
       AzureConfig azureConfig, String subscriptionId, AzureARMTemplate template);
+
+  /**
+   * Start deployment at subscription scope.
+   *
+   * @param azureConfig
+   * @param subscriptionId
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtSubscriptionScope(
+      AzureConfig azureConfig, String subscriptionId, AzureARMTemplate template, DeploymentsClient deploymentsClient);
 
   /**
    * Get deployment at management group scope.
@@ -122,6 +175,18 @@ public interface AzureManagementClient {
    */
   DeploymentExtendedInner getDeploymentAtManagementScope(
       AzureConfig azureConfig, String groupId, String deploymentName);
+
+  /**
+   * Get deployment at management group scope.
+   *
+   * @param azureConfig
+   * @param groupId
+   * @param deploymentName
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentExtendedInner getDeploymentAtManagementScope(
+      AzureConfig azureConfig, String groupId, String deploymentName, DeploymentsClient deploymentsClient);
 
   /**
    * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
@@ -136,6 +201,19 @@ public interface AzureManagementClient {
       AzureConfig azureConfig, String groupId, AzureARMTemplate template);
 
   /**
+   * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
+   * management group scope.
+   *
+   * @param azureConfig
+   * @param groupId
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentValidateResultInner validateDeploymentAtManagementGroupScope(
+      AzureConfig azureConfig, String groupId, AzureARMTemplate template, DeploymentsClient deploymentsClient);
+
+  /**
    * Start deployment at management group scope.
    *
    * @param azureConfig
@@ -143,8 +221,20 @@ public interface AzureManagementClient {
    * @param template
    * @return
    */
-  DeploymentExtendedInner deployAtManagementGroupScope(
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtManagementGroupScope(
       AzureConfig azureConfig, String groupId, AzureARMTemplate template);
+
+  /**
+   * Start deployment at management group scope.
+   *
+   * @param azureConfig
+   * @param groupId
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtManagementGroupScope(
+      AzureConfig azureConfig, String groupId, AzureARMTemplate template, DeploymentsClient deploymentsClient);
 
   /**
    * Get deployment at tenant scope.
@@ -154,6 +244,17 @@ public interface AzureManagementClient {
    * @return
    */
   DeploymentExtendedInner getDeploymentAtTenantScope(AzureConfig azureConfig, String deploymentName);
+
+  /**
+   * Get deployment at tenant scope.
+   *
+   * @param azureConfig
+   * @param deploymentName
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentExtendedInner getDeploymentAtTenantScope(
+      AzureConfig azureConfig, String deploymentName, DeploymentsClient deploymentsClient);
 
   /**
    * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
@@ -166,19 +267,47 @@ public interface AzureManagementClient {
   DeploymentValidateResultInner validateDeploymentAtTenantScope(AzureConfig azureConfig, AzureARMTemplate template);
 
   /**
+   * Validates whether the specified template is syntactically correct and will be accepted by Azure Resource Manager at
+   * tenant scope.
+   *
+   * @param azureConfig
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  DeploymentValidateResultInner validateDeploymentAtTenantScope(
+      AzureConfig azureConfig, AzureARMTemplate template, DeploymentsClient deploymentsClient);
+
+  /**
    * Start deployment at tenant scope.
    *
    * @param azureConfig
    * @param template
    * @return
    */
-  DeploymentExtendedInner deployAtTenantScope(AzureConfig azureConfig, AzureARMTemplate template);
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtTenantScope(
+      AzureConfig azureConfig, AzureARMTemplate template);
+
+  /**
+   * Start deployment at tenant scope.
+   *
+   * @param azureConfig
+   * @param template
+   * @param deploymentsClient
+   * @return
+   */
+  SyncPoller<PollResult<DeploymentExtendedInner>, DeploymentExtendedInner> deployAtTenantScope(
+      AzureConfig azureConfig, AzureARMTemplate template, DeploymentsClient deploymentsClient);
 
   String getARMDeploymentStatus(ARMDeploymentSteadyStateContext context);
 
-  PagedList<DeploymentOperationInner> getDeploymentOperations(ARMDeploymentSteadyStateContext context);
+  String getARMDeploymentStatus(ARMDeploymentSteadyStateContext context, DeploymentsClient deploymentsClient);
+
+  PagedIterable<DeploymentOperationInner> getDeploymentOperations(ARMDeploymentSteadyStateContext context);
 
   String getARMDeploymentOutputs(ARMDeploymentSteadyStateContext context);
 
-  List<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId);
+  String getARMDeploymentOutputs(ARMDeploymentSteadyStateContext context, DeploymentsClient deploymentsClient);
+
+  PagedFlux<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId);
 }

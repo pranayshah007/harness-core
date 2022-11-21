@@ -48,11 +48,11 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;

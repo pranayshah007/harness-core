@@ -49,8 +49,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DeploymentReconServiceHelper {
   protected static final long COOL_DOWN_INTERVAL = 15 * 60 * 1000; /* 15 MINS COOL DOWN INTERVAL */
 
-  public static boolean shouldPerformReconciliation(
-      @NotNull DeploymentReconRecord record, Long durationEndTs, HPersistence persistence) {
+  public static boolean shouldPerformReconciliation(@NotNull DeploymentReconRecord record, Long durationEndTs,
+      HPersistence persistence, DeploymentReconRecordRepository deploymentReconRecordRepository) {
     if (record.getReconciliationStatus() == ReconciliationStatus.IN_PROGRESS) {
       /***
        * If the latest record in db is older than COOL_DOWN_INTERVAL, mark that reconciliation as failed and move on.
@@ -63,7 +63,7 @@ public class DeploymentReconServiceHelper {
         UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
         updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
         updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
-        persistence.update(record, updateOperations);
+        deploymentReconRecordRepository.updateDeploymentReconRecord(record, updateOperations);
         return true;
       }
 
@@ -132,12 +132,14 @@ public class DeploymentReconServiceHelper {
 
     DeploymentReconRecord record =
         deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
-    if (record == null || shouldPerformReconciliation(record, durationEndTs, persistence)) {
+    if (record == null
+        || shouldPerformReconciliation(record, durationEndTs, persistence, deploymentReconRecordRepository)) {
       try (AcquiredLock ignore = persistentLocker.waitToAcquireLock(DeploymentReconRecord.class,
                "AccountID-" + accountId + "-Entity-" + sourceEntityClass, ofMinutes(1), ofMinutes(5))) {
         record = deploymentReconRecordRepository.getLatestDeploymentReconRecord(accountId, sourceEntityClass);
 
-        if (record != null && !shouldPerformReconciliation(record, durationEndTs, persistence)) {
+        if (record != null
+            && !shouldPerformReconciliation(record, durationEndTs, persistence, deploymentReconRecordRepository)) {
           if (record.getReconciliationStatus() == ReconciliationStatus.IN_PROGRESS) {
             log.info(
                 "Reconciliation is in progress, not running it again for entity: [{}] accountID:[{}] in duration:[{}-{}]",
@@ -159,7 +161,7 @@ public class DeploymentReconServiceHelper {
                      .durationStartTs(durationStartTs)
                      .durationEndTs(durationEndTs)
                      .build();
-        String id = persistence.save(record);
+        String id = deploymentReconRecordRepository.saveDeploymentReconRecord(record);
         log.info("Inserted new deploymentReconRecord for entity: [{}] accountId:[{}],uuid:[{}]", sourceEntityClass,
             accountId, id);
         record = fetchRecord(id, persistence);
@@ -235,7 +237,7 @@ public class DeploymentReconServiceHelper {
         updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.SUCCESS);
         updateOperations.set(DeploymentReconRecordKeys.reconcilationAction, action);
         updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
-        persistence.update(record, updateOperations);
+        deploymentReconRecordRepository.updateDeploymentReconRecord(record, updateOperations);
 
       } catch (Exception e) {
         log.error("Exception occurred while running reconciliation for entity: [{}] accountID:[{}] in duration:[{}-{}]",
@@ -244,7 +246,7 @@ public class DeploymentReconServiceHelper {
           UpdateOperations updateOperations = persistence.createUpdateOperations(DeploymentReconRecord.class);
           updateOperations.set(DeploymentReconRecordKeys.reconciliationStatus, ReconciliationStatus.FAILED);
           updateOperations.set(DeploymentReconRecordKeys.reconEndTs, System.currentTimeMillis());
-          persistence.update(record, updateOperations);
+          deploymentReconRecordRepository.updateDeploymentReconRecord(record, updateOperations);
           return ReconciliationStatus.FAILED;
         }
       }

@@ -137,6 +137,9 @@ public class HintException extends WingsException {
       "Please check user email, password entered for Ldap test/enable authentication for the configured Ldap settings";
   public static final String LDAP_ATTRIBUTES_INCORRECT =
       "Verify configuration provided in Base DN or Search Filter are correct";
+  public static final String HINT_AZURE_AUTHENTICATION_ISSUE =
+      "Please check if you Azure credentials are valid and correct";
+  public static final String HINT_AZURE_GENERIC_ISSUE = "Please check if you Azure configuration is valid and correct";
 
   public HintException(String message) {
     super(message, null, HINT, INFO, null, null);

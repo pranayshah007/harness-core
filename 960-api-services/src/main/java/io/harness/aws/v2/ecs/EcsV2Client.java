@@ -58,9 +58,6 @@ public interface EcsV2Client {
   RegisterTaskDefinitionResponse createTask(
       AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region);
 
-  WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(AwsInternalConfig awsConfig,
-      DescribeServicesRequest describeServicesRequest, String region, long serviceSteadyStateTimeout);
-
   WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(AwsInternalConfig awsConfig,
       DescribeServicesRequest describeServicesRequest, String region, int serviceInactiveStateTimeout);
 

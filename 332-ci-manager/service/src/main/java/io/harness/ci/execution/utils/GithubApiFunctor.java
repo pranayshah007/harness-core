@@ -15,7 +15,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.exception.FunctorException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ng.core.NGAccess;
 import io.harness.utils.IdentifierRefHelper;
 

@@ -136,8 +136,8 @@ public class K8sWatchServiceDelegate {
       watcherFactory.createPVWatcher(apiClient, clusterDetails, sharedInformerFactory);
 
       blockingWaitForFetchersToSync(ImmutableList.of(pvcInformer, namespaceInformer));
-      watcherFactory.createPodWatcher(apiClient, clusterDetails, controllerFetcher, sharedInformerFactory, pvcFetcher,
-          namespaceFetcher, kubernetesConfig.getAccountId());
+      watcherFactory.createPodWatcher(
+          apiClient, clusterDetails, controllerFetcher, sharedInformerFactory, pvcFetcher, namespaceFetcher);
 
       log.info("Starting AllRegisteredInformers for watch {}", watchId);
       sharedInformerFactory.startAllRegisteredInformers();

@@ -193,8 +193,8 @@ import software.wings.yaml.directory.FolderNode;
 import software.wings.yaml.directory.ServiceLevelYamlNode;
 import software.wings.yaml.directory.SettingAttributeYamlNode;
 import software.wings.yaml.directory.YamlNode;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

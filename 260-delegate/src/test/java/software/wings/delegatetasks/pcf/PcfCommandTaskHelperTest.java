@@ -65,9 +65,9 @@ import software.wings.beans.Account;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.config.ArtifactoryConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 import software.wings.service.intfc.security.EncryptionService;
@@ -248,7 +248,7 @@ public class PcfCommandTaskHelperTest extends WingsBaseTest {
     artifactStreamAttributes.setDockerBasedDeployment(true);
     artifactStreamAttributes.setMetadata(metadata);
 
-    SettingAttribute serverSetting = SettingAttribute.Builder.aSettingAttribute().withValue(value).build();
+    SettingAttribute serverSetting = SettingAttribute.builder().value(value).build();
     artifactStreamAttributes.setServerSetting(serverSetting);
     cfCommandSetupRequest.setArtifactStreamAttributes(artifactStreamAttributes);
   }

@@ -213,7 +213,7 @@ public class AwsLambdaStateTest extends CategoryTest {
                                                             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
                                                             .metadataOnly(true)
                                                             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-                                                            .serverSetting(awsSetting)
+                                                            .serverSetting(awsSetting.toDTO())
                                                             .artifactServerEncryptedDataDetails(Collections.emptyList())
                                                             .build();
 

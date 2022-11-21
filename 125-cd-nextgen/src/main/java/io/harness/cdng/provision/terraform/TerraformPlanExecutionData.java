@@ -57,6 +57,9 @@ public class TerraformPlanExecutionData {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> exportTerraformPlanJson;
+  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
+  @YamlSchemaTypes({string})
+  ParameterField<Boolean> exportTerraformHumanReadablePlan;
 
   public TerraformPlanExecutionDataParameters toStepParameters() {
     validateParams();
@@ -69,7 +72,8 @@ public class TerraformPlanExecutionData {
             .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
             .command(command)
             .secretManagerRef(secretManagerRef)
-            .exportTerraformPlanJson(exportTerraformPlanJson);
+            .exportTerraformPlanJson(exportTerraformPlanJson)
+            .exportTerraformHumanReadablePlan(exportTerraformHumanReadablePlan);
     LinkedHashMap<String, TerraformVarFile> varFiles = new LinkedHashMap<>();
     if (EmptyPredicate.isNotEmpty(terraformVarFiles)) {
       terraformVarFiles.forEach(terraformVarFile -> {

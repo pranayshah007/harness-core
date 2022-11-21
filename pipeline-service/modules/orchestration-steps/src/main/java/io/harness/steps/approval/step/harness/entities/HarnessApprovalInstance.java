@@ -15,8 +15,10 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.DbAliases;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.HarnessApprovalOutcome;
 import io.harness.steps.approval.step.harness.HarnessApprovalSpecParameters;
@@ -41,6 +43,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Transient;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.annotation.TypeAlias;
 
@@ -60,6 +63,8 @@ public class HarnessApprovalInstance extends ApprovalInstance {
   @NotNull List<HarnessApprovalActivity> approvalActivities;
   @NotNull ApproversDTO approvers;
   List<ApproverInputInfoDTO> approverInputs;
+  @Transient private transient List<UserGroupDTO> validatedUserGroups;
+  List<ApprovalUserGroupDTO> validatedApprovalUserGroups;
 
   public Optional<HarnessApprovalActivity> fetchLastApprovalActivity() {
     if (EmptyPredicate.isEmpty(approvalActivities)) {

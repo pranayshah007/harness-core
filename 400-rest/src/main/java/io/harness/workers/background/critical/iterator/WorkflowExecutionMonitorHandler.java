@@ -30,6 +30,8 @@ import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AutoLogContext;
@@ -66,7 +68,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecution> {
+public class WorkflowExecutionMonitorHandler extends IteratorPumpModeHandler implements Handler<WorkflowExecution> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
@@ -80,24 +82,30 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
   private static final Duration SHELL_SCRIPT_EXPIRE_THRESHOLD = Duration.ofSeconds(10);
 
-  public void registerIterators(int threadPoolSize) {
-    PumpExecutorOptions options = PumpExecutorOptions.builder()
-                                      .interval(Duration.ofSeconds(10))
-                                      .poolSize(threadPoolSize)
-                                      .name("WorkflowExecutionMonitor")
-                                      .build();
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(options, WorkflowExecution.class,
-        MongoPersistenceIterator.<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>builder()
-            .clazz(WorkflowExecution.class)
-            .fieldName(WorkflowExecutionKeys.nextIteration)
-            .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
-            .targetInterval(Duration.ofMinutes(1))
-            .acceptableNoAlertDelay(Duration.ofSeconds(30))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(SchedulingType.REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       WorkflowExecution.class,
+                       MongoPersistenceIterator.<WorkflowExecution, MorphiaFilterExpander<WorkflowExecution>>builder()
+                           .clazz(WorkflowExecution.class)
+                           .fieldName(WorkflowExecutionKeys.nextIteration)
+                           .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(flowingStatuses()))
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(Duration.ofSeconds(30))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .schedulingType(SchedulingType.REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "WorkflowExecutionMonitor";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

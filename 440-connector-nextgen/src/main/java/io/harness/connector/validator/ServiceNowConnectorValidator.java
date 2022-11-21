@@ -7,8 +7,11 @@
 
 package io.harness.connector.validator;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.ConnectorValidationResult;
@@ -29,11 +32,14 @@ public class ServiceNowConnectorValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     ServiceNowConnectorDTO serviceNowConnectorDTO = (ServiceNowConnectorDTO) connectorConfig;
-
+    DecryptableEntity decryptableEntity =
+        (isNull(serviceNowConnectorDTO.getAuth()) || isNull(serviceNowConnectorDTO.getAuth().getCredentials()))
+        ? serviceNowConnectorDTO
+        : serviceNowConnectorDTO.getAuth().getCredentials();
     return ServiceNowConnectionTaskParams.builder()
         .serviceNowConnectorDTO(serviceNowConnectorDTO)
         .encryptionDetails(
-            super.getEncryptionDetail(serviceNowConnectorDTO, accountIdentifier, orgIdentifier, projectIdentifier))
+            super.getEncryptionDetail(decryptableEntity, accountIdentifier, orgIdentifier, projectIdentifier))
         .build();
   }
 

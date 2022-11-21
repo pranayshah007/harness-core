@@ -12,6 +12,7 @@ import io.harness.beans.steps.nodes.RunTestStepNode;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
+import io.harness.pms.yaml.PipelineVersion;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
@@ -30,5 +31,10 @@ public class RunTestStepPlanCreator extends CIPMSStepPlanCreatorV2<RunTestStepNo
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, RunTestStepNode stepElement) {
     return super.createPlanForField(ctx, stepElement);
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

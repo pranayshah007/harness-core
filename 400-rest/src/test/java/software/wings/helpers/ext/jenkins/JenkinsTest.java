@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.MILOS;
+import static io.harness.rule.OwnerRule.RAFAEL;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -661,5 +662,36 @@ public class JenkinsTest extends WingsBaseTest {
         .isEqualTo(
             "Failure in fetching environment variables for job: Invalid request: Failed to collect environment variables from Jenkins: job/test/2/injectedEnvVars/api/json."
             + "\nThis might be because 'Capture environment variables' is enabled in Jenkins step but EnvInject plugin is not installed in the Jenkins instance.");
+  }
+
+  @Test
+  @Owner(developers = RAFAEL)
+  @Category(UnitTests.class)
+  public void constructJobPathDetails() throws URISyntaxException {
+    JenkinsImpl jenkinsImpl = new JenkinsImpl("");
+
+    // default case when called by delegate
+    JenkinsImpl.JobPathDetails jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/new%2Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by delegate
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project/release/master");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
+
+    // default case when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fnew%252Ftest");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("new%2Ftest");
+
+    // more than three paths when called by ui
+    jobPathDetails = jenkinsImpl.constructJobPathDetails("project%2Frelease%2Fmaster");
+    assertThat(jobPathDetails.getParentJobUrl()).isEqualTo("/job/project/job/release/");
+    assertThat(jobPathDetails.getParentJobName()).isEqualTo("release");
+    assertThat(jobPathDetails.getChildJobName()).isEqualTo("master");
   }
 }

@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.DummyNode;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
@@ -84,11 +83,5 @@ public class DummyMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return false;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return null;
   }
 }

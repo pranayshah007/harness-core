@@ -114,7 +114,7 @@ public class InputSetValidationHelper {
       optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }

@@ -67,6 +67,15 @@ public class OrchestrationServiceImpl implements OrchestrationService {
 
   @Override
   public void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime) {
+    String accountId = verificationTaskService.get(verificationTaskId).getAccountId();
+    queueAnalysisWithoutEventPublish(verificationTaskId, accountId, startTime, endTime);
+
+    stateMachineEventPublisherService.registerTaskComplete(accountId, verificationTaskId);
+  }
+
+  @Override
+  public void queueAnalysisWithoutEventPublish(
+      String verificationTaskId, String accountId, Instant startTime, Instant endTime) {
     log.info("Queuing analysis for verificationTaskId: {}, startTime: {}, endTime: {}", verificationTaskId, startTime,
         endTime);
     if (deploymentTimeSeriesAnalysisService.isAnalysisFailFastForLatestTimeRange(verificationTaskId)) {
@@ -74,7 +83,6 @@ public class OrchestrationServiceImpl implements OrchestrationService {
           verificationTaskId);
       return;
     }
-
     AnalysisInput inputForAnalysis =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
     validateAnalysisInputs(inputForAnalysis);
@@ -88,22 +96,18 @@ public class OrchestrationServiceImpl implements OrchestrationService {
         hPersistence.createQuery(AnalysisOrchestrator.class)
             .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId);
 
-    String accountId = verificationTaskService.get(verificationTaskId).getAccountId();
-
     UpdateOperations<AnalysisOrchestrator> updateOperations =
         hPersistence.createUpdateOperations(AnalysisOrchestrator.class)
             .setOnInsert(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
             .setOnInsert(AnalysisOrchestratorKeys.accountId, accountId)
             .setOnInsert(AnalysisOrchestratorKeys.uuid,
                 generateUuid()) // By default mongo generates object id instead of string and our hPersistence does not
-                                // work well with objectIds.
+            // work well with objectIds.
             .set(AnalysisOrchestratorKeys.status, AnalysisOrchestratorStatus.RUNNING)
             .set(AnalysisOrchestratorKeys.validUntil, Date.from(OffsetDateTime.now().plusDays(30).toInstant()))
             .addToSet(AnalysisOrchestratorKeys.analysisStateMachineQueue, Arrays.asList(stateMachine));
 
     hPersistence.upsert(orchestratorQuery, updateOperations);
-
-    stateMachineEventPublisherService.registerTaskComplete(accountId, verificationTaskId);
   }
 
   private void validateAnalysisInputs(AnalysisInput inputs) {
@@ -261,6 +265,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
       if (!ignoredStateMachine.isPresent()) {
         break;
       }
+      analysisStateMachine = null;
       ignoredCount++;
 
       // add to ignored list and remove from queue

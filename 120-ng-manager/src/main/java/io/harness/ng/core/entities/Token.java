@@ -104,7 +104,7 @@ public class Token implements PersistentEntity, UuidAware, NGAccountAccess, NGOr
   Instant validFrom;
   Instant validTo;
   Instant scheduledExpireTime;
-  @NotNull @Size(max = 1024) String description;
+  @Size(max = 1024) String description;
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
 
   @FdTtlIndex private Date validUntil;

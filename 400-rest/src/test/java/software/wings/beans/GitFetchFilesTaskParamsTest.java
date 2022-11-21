@@ -10,7 +10,6 @@ package software.wings.beans;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.TMACARI;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +25,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.service.impl.ContainerServiceParams;
 import software.wings.service.intfc.security.SecretManager;
@@ -46,7 +46,7 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
     GitFetchFilesTaskParams gitFetchFilesTaskParams =
         GitFetchFilesTaskParams.builder()
             .containerServiceParams(ContainerServiceParams.builder()
-                                        .settingAttribute(aSettingAttribute().build())
+                                        .settingAttribute(SettingAttribute.builder().build())
                                         .masterUrl("http://foo.bar")
                                         .build())
             .build();
@@ -115,7 +115,7 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
     GitFetchFilesTaskParams gitFetchFilesTaskParams =
         GitFetchFilesTaskParams.builder()
             .containerServiceParams(ContainerServiceParams.builder()
-                                        .settingAttribute(aSettingAttribute().build())
+                                        .settingAttribute(SettingAttribute.builder().build())
                                         .masterUrl("http://foo.bar")
                                         .build())
             .build();
@@ -127,7 +127,7 @@ public class GitFetchFilesTaskParamsTest extends WingsBaseTest {
             .build());
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(22);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     gitFetchFilesConfigMap.put("Environment",
         GitFetchFilesConfig.builder()

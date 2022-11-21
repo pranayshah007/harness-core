@@ -77,7 +77,7 @@ public class GcpInfrastructureProvider implements InfrastructureProvider {
     return delegateProxyFactory.get(ContainerService.class, syncTaskContext)
         .listClusters(ContainerServiceParams.builder()
                           .encryptionDetails(encryptedDataDetails)
-                          .settingAttribute(computeProviderSetting)
+                          .settingAttribute(computeProviderSetting.toDTO())
                           .clusterName("None")
                           .build());
   }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.PL)
@@ -20,7 +21,7 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScmGitMetaData {
-  String repoName;
+  @Setter String repoName;
   String branchName;
   String commitId;
   String filePath;
