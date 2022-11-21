@@ -461,10 +461,10 @@ public class FeatureNameTest extends WingsBaseTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   public void testMappingExistsForAllEnumConstants() {
-    Arrays.stream(FeatureName.values()).forEach(taskType -> {
-      if (!taskType.name().equals(featureNameOrdinalMapping.get(taskType.ordinal()))) {
-        Assertions.fail(String.format("Not all constants from enum [%s] mapped in test [%s].",
-            FeatureName.class.getCanonicalName(), this.getClass().getCanonicalName()));
+    Arrays.stream(FeatureName.values()).forEach(featureName -> {
+      if (!featureName.name().equals(featureNameOrdinalMapping.get(featureName.ordinal()))) {
+        Assertions.fail(String.format("Not all constants from enum [%s] mapped in test [%s]. Feature Name = [%s]",
+            FeatureName.class.getCanonicalName(), this.getClass().getCanonicalName(), featureName.name()));
       }
     });
   }
