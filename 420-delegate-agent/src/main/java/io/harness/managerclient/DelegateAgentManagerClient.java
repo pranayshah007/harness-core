@@ -15,6 +15,7 @@ import io.harness.delegate.SendTaskProgressRequest;
 import io.harness.delegate.SendTaskProgressResponse;
 import io.harness.delegate.SendTaskStatusRequest;
 import io.harness.delegate.SendTaskStatusResponse;
+import io.harness.delegate.TaskAcquireResponse;
 import io.harness.delegate.TaskProgressRequest;
 import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
@@ -178,8 +179,8 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @KryoResponse
-  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
-  Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2/old")
+  Call<DelegateTaskPackage> acquireTask1(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 
   @POST("agent/delegates/heartbeat-with-polling")
@@ -232,4 +233,11 @@ public interface DelegateAgentManagerClient {
   @PUT("agent/delegates/task-progress/status")
   Call<SendTaskStatusResponse> sendTaskStatus(
       @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
+
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
+  Call<TaskAcquireResponse> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
+                                        @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
+
 }

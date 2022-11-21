@@ -55,9 +55,9 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    when(delegateAgentManagerClient.acquireTask(
+   /* when(delegateAgentManagerClient.acquireTask(
              Matchers.anyString(), Matchers.anyString(), Matchers.anyString(), Matchers.anyString()))
-        .thenReturn(delegatePackageCall);
+        .thenReturn(delegatePackageCall);*/
   }
 
   @Test

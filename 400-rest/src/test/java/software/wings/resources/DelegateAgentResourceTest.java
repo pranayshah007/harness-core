@@ -91,6 +91,7 @@ import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.DelegateTaskProcessService;
 import software.wings.utils.ResourceTestRule;
 
 import com.google.common.collect.Lists;
@@ -150,6 +151,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final PollingResourceClient pollResourceClient = mock(PollingResourceClient.class);
   private static final DelegatePollingHeartbeatService delegatePollingHeartbeatService =
       mock(DelegatePollingHeartbeatService.class);
+  private static final DelegateTaskProcessService delegateTaskProcessService = mock(DelegateTaskProcessService.class);
 
   @Parameter public String apiUrl;
 
@@ -165,7 +167,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
               delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
               instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
               kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService))
+              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService,delegateTaskProcessService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

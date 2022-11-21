@@ -321,8 +321,8 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
   }
 
   private boolean canAssignDelegateScopesV2(Delegate delegate, DelegateTask task) {
-    TaskGroup taskGroup = isNotBlank(task.getTaskDataV2().getTaskType())
-        ? TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup()
+    TaskGroup taskGroup = isNotBlank(task.getTaskType())
+        ? TaskType.valueOf(task.getTaskType()).getTaskGroup()
         : null;
 
     String appId =
@@ -924,14 +924,13 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     task.setNonAssignableDelegates(new HashMap<>());
     try {
       List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
-      boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
+      boolean isTaskNg = task.isNG();
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, NO_ACTIVE_DELEGATES);
         throw new NoAvailableDelegatesException();
       }
-
       List<Delegate> delegates = getDelegatesWithOwnerShipCriteriaMatch(task, accountDelegates);
       if (isEmpty(delegates)) {
         task.getNonAssignableDelegates().put(CAN_NOT_ASSIGN_OWNER, Collections.emptyList());
@@ -941,8 +940,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
       eligibleDelegateIds = delegates.stream()
                                 .filter(delegate
-                                    -> delegate.getStatus() != DelegateInstanceStatus.DELETED
-                                        && canAssignTaskV2(delegate.getUuid(), task))
+                                    -> delegate.getStatus() != DelegateInstanceStatus.DELETED)
                                 .map(Delegate::getUuid)
                                 .collect(Collectors.toList());
       delegateSelectionLogsService.logNonSelectedDelegates(task, task.getNonAssignableDelegates());
@@ -1027,12 +1025,12 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     String delegateName = isNotEmpty(delegate.getHostName()) ? delegate.getHostName() : delegate.getUuid();
 
     boolean canAssignTaskToDelegate =
-        canAssignTaskToDelegate(delegate.getSupportedTaskTypes(), task.getTaskDataV2().getTaskType());
+        canAssignTaskToDelegate(delegate.getSupportedTaskTypes(), task.getTaskType());
     if (!canAssignTaskToDelegate) {
       task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_TASK_GROUP, new ArrayList<>());
       task.getNonAssignableDelegates().get(CAN_NOT_ASSIGN_TASK_GROUP).add(delegateName);
       log.debug("Delegate {} does not support task {} which is of type {}", delegateId, task.getUuid(),
-          task.getTaskDataV2().getTaskType());
+          task.getTaskType());
       return canAssignTaskToDelegate;
     }
 

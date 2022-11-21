@@ -171,6 +171,8 @@ public class StepUtils {
   public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       List<String> keys, List<String> units, String taskName, List<TaskSelector> selectors,
       EnvironmentType environmentType) {
+
+
     return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, keys, units, true,
         taskName, selectors, Scope.PROJECT, environmentType, false, Collections.emptyList(), false, null, null);
   }
@@ -254,7 +256,12 @@ public class StepUtils {
             .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
 
     ObjectMapper objectMapper = new ObjectMapper();
-    if (SerializationFormat.JSON.equals(taskData.getSerializationFormat())) {
+    try {
+      taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+    } catch (JsonProcessingException e) {
+      throw new InvalidRequestException("Could not serialize the task request", e);
+    }
+   /* if (SerializationFormat.JSON.equals(taskData.getSerializationFormat())) {
       try {
         taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
       } catch (JsonProcessingException e) {
@@ -264,7 +271,7 @@ public class StepUtils {
       taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
               ? new byte[] {}
               : kryoSerializer.asDeflatedBytes(taskParameters)));
-    }
+    }*/
 
     Map<String, String> setupAbstractionsMap = buildAbstractions(ambiance, taskScope);
     if (environmentType != null && environmentType != EnvironmentType.ALL) {

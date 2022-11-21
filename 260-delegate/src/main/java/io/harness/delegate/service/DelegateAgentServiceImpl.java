@@ -101,6 +101,7 @@ import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.DelegateServiceAgentClient;
+import io.harness.delegate.TaskAcquireResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
@@ -1962,8 +1963,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
 
-        DelegateTaskPackage delegateTaskPackage = executeRestCall(
+        TaskAcquireResponse taskAcquireResponse = executeRestCall(
             delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
+        io.harness.delegate.DelegateTaskPackage dp = taskAcquireResponse.getDelegateTaskPackage();
+        DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder()
+                                                      .delegateTaskId(dp.getDelegateTaskId())
+                                                      .delegateId(dp.getDelegateId())
+                                                      .delegateInstanceId(dp.getDelegateInstanceId())
+                                                      .build();
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
             log.warn("Delegate task package is null for task: {} - accountId: {}", delegateTaskId,

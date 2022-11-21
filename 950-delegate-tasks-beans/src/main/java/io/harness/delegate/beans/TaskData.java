@@ -37,6 +37,6 @@ public class TaskData {
   private int expressionFunctorToken;
   Map<String, String> expressions;
 
-  @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
+  SerializationFormat serializationFormat;
   private byte[] data;
 }

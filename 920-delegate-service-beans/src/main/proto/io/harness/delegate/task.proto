@@ -57,6 +57,9 @@ message TaskDetails {
     bytes kryo_parameters = 3;
 
     bytes json_parameters = 8;
+
+    bytes new_parameters = 9;
+
   }
 
   // Execution time out determines for how long the task should be kept waited on to accomplish its work.

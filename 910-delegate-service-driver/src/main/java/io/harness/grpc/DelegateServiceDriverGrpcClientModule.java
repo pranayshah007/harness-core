@@ -13,6 +13,7 @@ import static io.harness.delegateprofile.DelegateProfileServiceGrpc.DelegateProf
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.DelegateServiceGrpc;
+import io.harness.delegate.DelegateTaskProcessServiceGrpc;
 import io.harness.delegatedetails.DelegateDetailsServiceGrpc;
 import io.harness.delegatedetails.DelegateDetailsServiceGrpc.DelegateDetailsServiceBlockingStub;
 import io.harness.delegateprofile.DelegateProfileServiceGrpc;
@@ -57,6 +58,7 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
     bind(DelegateServiceGrpcClient.class).in(Singleton.class);
     bind(DelegateProfileServiceGrpcClient.class).in(Singleton.class);
     bind(DelegateDetailsServiceGrpcClient.class).in(Singleton.class);
+    bind(DelegateTaskProcessGrpcClient.class).in(Singleton.class);
   }
 
   @Named("delegate-service-channel")
@@ -144,5 +146,20 @@ public class DelegateServiceDriverGrpcClientModule extends ProviderModule {
   @Singleton
   BooleanSupplier isDelegateDriverInstalledInNgServiceSupplier() {
     return () -> delegateDriverInstalledInNgService;
+  }
+
+  @Named("dts-call-credentials")
+  @Provides
+  @Singleton
+  CallCredentials dtsCallCredentials() {
+    return new ServiceAuthCallCredentials(serviceSecret, new ServiceTokenGenerator(), "delegate-task-service");
+  }
+
+  @Provides
+  @Singleton
+  DelegateTaskProcessServiceGrpc.DelegateTaskProcessServiceBlockingStub delegateTaskProcessServiceBlockingStub(
+          @Named("delegate-service-channel") Channel channel,
+      @Named("dts-call-credentials") CallCredentials callCredentials) {
+    return DelegateTaskProcessServiceGrpc.newBlockingStub(channel).withCallCredentials(callCredentials);
   }
 }

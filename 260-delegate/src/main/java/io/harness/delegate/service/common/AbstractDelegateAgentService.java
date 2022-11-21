@@ -47,6 +47,7 @@ import io.harness.delegate.beans.DelegateTaskEvent;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.logging.DelegateStackdriverLogAppender;
 import io.harness.delegate.service.DelegateAgentService;
@@ -311,9 +312,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   }
 
   protected DelegateTaskPackage acquireTask(final String delegateTaskId) throws IOException {
-    final var delegateTaskPackage =
-        executeRestCall(getDelegateAgentManagerClient().acquireTask(DelegateAgentCommonVariables.getDelegateId(),
-            delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID));
+    final var delegateTaskPackage = acquireTaskInternal(delegateTaskId);
 
     if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
       if (delegateTaskPackage == null) {
@@ -981,5 +980,17 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     final String[] suffixes = nonProxyHostsString.split("\\|");
     final List<String> nonProxyHosts = Stream.of(suffixes).map(suffix -> suffix.substring(1)).collect(toList());
     log.info("No proxy for hosts with suffix in: {}", nonProxyHosts);
+  }
+
+  private DelegateTaskPackage acquireTaskInternal(String delegateTaskId) throws IOException {
+    io.harness.delegate.DelegateTaskPackage dp =
+        executeRestCall(getDelegateAgentManagerClient().acquireTask(DelegateAgentCommonVariables.getDelegateId(),
+                            delegateTaskId, getDelegateConfiguration().getAccountId(), DELEGATE_INSTANCE_ID))
+            .getDelegateTaskPackage();
+    return DelegateTaskPackage.builder()
+        .delegateId(dp.getDelegateId())
+        .delegateTaskId(dp.getDelegateTaskId())
+        .delegateInstanceId(dp.getDelegateInstanceId()).data(TaskData.builder().build())
+        .build();
   }
 }

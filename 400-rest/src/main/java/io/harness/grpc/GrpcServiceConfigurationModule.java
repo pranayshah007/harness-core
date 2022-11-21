@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.DelegateServiceGrpc;
+import io.harness.delegate.DelegateTaskProcessServiceGrpc;
 import io.harness.delegate.authenticator.DelegateTokenAuthenticatorImpl;
 import io.harness.delegatedetails.DelegateDetailsServiceGrpc;
 import io.harness.delegateprofile.DelegateProfileServiceGrpc;
@@ -61,6 +62,7 @@ public class GrpcServiceConfigurationModule extends AbstractModule {
     bindableServiceMultibinder.addBinding().to(DelegateDetailsServiceGrpcImpl.class);
     bindableServiceMultibinder.addBinding().to(PerpetualTaskServiceGrpc.class);
     bindableServiceMultibinder.addBinding().to(PingPongService.class);
+    bindableServiceMultibinder.addBinding().to(DelegateTaskProcessGrpcImpl.class);
 
     Multibinder<ServerInterceptor> serverInterceptorMultibinder =
         Multibinder.newSetBinder(binder(), ServerInterceptor.class);
@@ -74,6 +76,8 @@ public class GrpcServiceConfigurationModule extends AbstractModule {
         .toInstance(ServiceInfo.builder().id("delegate-profile-service").secret(serviceSecret).build());
     stringServiceInfoMapBinder.addBinding(DelegateDetailsServiceGrpc.SERVICE_NAME)
         .toInstance(ServiceInfo.builder().id("delegate-details-service").secret(serviceSecret).build());
+    stringServiceInfoMapBinder.addBinding(DelegateTaskProcessServiceGrpc.SERVICE_NAME)
+            .toInstance(ServiceInfo.builder().id("delegate-task-service").secret(serviceSecret).build());
 
     Multibinder<GrpcExceptionMapper> expectionMapperMultibinder =
         Multibinder.newSetBinder(binder(), GrpcExceptionMapper.class);

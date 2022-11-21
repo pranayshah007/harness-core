@@ -9,7 +9,6 @@ package io.harness.delegate.app;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.grpc.DelegateServiceClassicGrpcImpl;
 import io.harness.grpc.auth.DelegateAuthServerInterceptor;
 import io.harness.grpc.auth.ServiceInfo;
 import io.harness.grpc.auth.ValidateAuthServerInterceptor;
@@ -56,7 +55,7 @@ public class DelegateServiceClassicGrpcServerModule extends AbstractModule {
     //    healthStatusManagerProvider.get().getHealthService());
     // bindableServiceMultibinder.addBinding().to(DelegateServicePingPongService.class);
 
-    bindableServiceMultibinder.addBinding().to(DelegateServiceClassicGrpcImpl.class);
+
 
     // Service Interceptors
     Provider<Set<ServerInterceptor>> serverInterceptorsProvider =

@@ -1,0 +1,49 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegate;
+
+option java_multiple_files = true;
+option go_package = "920_delegate_service_beans";
+
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/delegate_task.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
+
+import "google/protobuf/timestamp.proto";
+
+service DelegateTaskProcessService {
+  rpc processDelegateTask(TaskRequest) returns (TaskResponse);
+  rpc acquireDelegateTask(TaskAcquireRequest) returns (TaskAcquireResponse);
+}
+
+
+ message TaskRequest {
+   callback.DelegateCallbackToken callback_token = 1;
+   DelegateTaskMetaData task_meta_data = 2;
+   DelegateTaskData delegate_task_data = 3;
+   Capabilities capabilities = 4;
+   Secrets secrets = 5;
+ }
+
+
+ message TaskResponse {
+   TaskId task_id = 1;
+   google.protobuf.Timestamp total_expiry = 2;
+  }
+
+  message TaskAcquireRequest {
+     TaskId task_id = 1;
+     string delegate_id = 2;
+     string delegate_instance_id = 3;
+     AccountId account_id = 4;
+ }
+
+ message TaskAcquireResponse {
+      DelegateTaskPackage delegate_task_package = 1;
+  }

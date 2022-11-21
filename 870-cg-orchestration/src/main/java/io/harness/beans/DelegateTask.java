@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.TaskType;
 import io.harness.delegate.beans.DelegateTaskRank;
 import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.TaskData;
@@ -108,6 +109,9 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
   private String driverId;
 
   private DelegateTaskRank rank;
+
+  @Transient private boolean isNG;
+  @Transient private String taskType;
 
   private String description;
   private boolean selectionLogsTrackingEnabled;

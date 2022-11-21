@@ -11,14 +11,21 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import static java.util.Collections.emptyList;
 
+import com.google.common.base.Preconditions;
+import com.google.protobuf.Duration;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.TaskDetails;
+import io.harness.delegate.TaskMode;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.delegate.task.shell.WinRmShellScriptTaskNG;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.grpc.DelegateTaskProcessGrpcClient;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.ILogStreamingStepClient;
@@ -42,11 +49,15 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
+import org.apache.commons.collections4.ListUtils;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,6 +70,7 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
   @Inject private StepHelper stepHelper;
   @Inject private ShellScriptHelperService shellScriptHelperService;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private DelegateTaskProcessGrpcClient delegateTaskProcessGrpcClient;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -93,6 +105,8 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
+
+
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         CollectionUtils.emptyIfNull(StepUtils.generateLogKeys(
             StepUtils.generateLogAbstractions(ambiance), Collections.singletonList(ShellScriptTaskNG.COMMAND_UNIT))),
@@ -116,6 +130,23 @@ public class ShellScriptStep extends TaskExecutableWithRollback<ShellScriptTaskR
             .parameters(new Object[] {taskParameters})
             .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
             .build();
+
+    String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
+    List<ExecutionCapability> capabilities = new ArrayList<>();
+
+    LinkedHashMap<String, String> logAbstractionMap = StepUtils.generateLogAbstractions(ambiance);
+
+
+    TaskDetails.Builder taskDetailsBuilder =
+            TaskDetails.newBuilder()
+                    .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
+                    .setExpressionFunctorToken(ambiance.getExpressionFunctorToken())
+                    .setMode(taskData.isAsync() ? TaskMode.ASYNC : TaskMode.SYNC)
+                    .setParked(taskData.isParked())
+                    .setType(io.harness.delegate.TaskType.newBuilder().setType(taskData.getTaskType()).build());
+
+    //delegateTaskProcessGrpcClient.queueTask(null,accountId,null,null,taskDetailsBuilder.build(),capabilities,TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),null,false)
+
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units,
         TaskType.WIN_RM_SHELL_SCRIPT_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(shellScriptStepParameters.getDelegateSelectors()),

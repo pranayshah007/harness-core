@@ -8,6 +8,7 @@ proto_library(
         "delegate_service.proto",
         "delegate_task.proto",
         "progress.proto",
+        "delegate_task_process_service.proto",
         "task.proto",
     ],
     visibility = ["//visibility:public"],

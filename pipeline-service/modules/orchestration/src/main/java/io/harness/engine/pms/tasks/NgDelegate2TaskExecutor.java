@@ -16,12 +16,17 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
+import io.harness.delegate.DelegateTaskProcessServiceGrpc;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskMode;
+import io.harness.delegate.TaskResponse;
 import io.harness.exception.InvalidRequestException;
+import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.grpc.DelegateTaskProcessGrpcClient;
 import io.harness.grpc.utils.HTimestamps;
+import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest.RequestCase;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -47,6 +52,7 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateAsyncService delegateAsyncService;
   @Inject private Supplier<DelegateCallbackToken> tokenSupplier;
+  @Inject private DelegateTaskProcessGrpcClient delegateTaskProcessGrpcClient;
 
   @Override
   public String queueTask(Map<String, String> setupAbstractions, TaskRequest taskRequest, Duration holdFor) {
@@ -54,13 +60,22 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
     if (!check.isValid()) {
       throw new InvalidRequestException(check.getMessage());
     }
-
-    SubmitTaskResponse submitTaskResponse =
+    TaskResponse submitTaskResponse = queueTask(taskRequest,holdFor);
+    //taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters()
+    /*SubmitTaskResponse submitTaskResponse =
         PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask,
-            buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));
+            buildTaskRequestWithToken(taskRequest.getDelegateTaskRequest().getRequest()));*/
     delegateAsyncService.setupTimeoutForTask(submitTaskResponse.getTaskId().getId(),
         Timestamps.toMillis(submitTaskResponse.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
     return submitTaskResponse.getTaskId().getId();
+  }
+
+  public TaskResponse queueTask(io.harness.pms.contracts.execution.tasks.TaskRequest taskRequest,Duration holdFor){
+    DelegateTaskRequest delegateTaskRequest = taskRequest.getDelegateTaskRequest();
+    SubmitTaskRequest request = delegateTaskRequest.getRequest();
+    TaskResponse response = delegateTaskProcessGrpcClient.submitTask(request.getCallbackToken(), request.getAccountId(), request.getSetupAbstractions(), request.getLogAbstractions(),
+            request.getDetails(), request.getCapabilitiesList(), request.getSelectorsList(), holdFor, request.getForceExecute());
+    return response;
   }
 
   @Override

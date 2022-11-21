@@ -25,6 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
+import io.harness.delegate.TaskAcquireResponse;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
@@ -78,6 +79,7 @@ import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.instance.InstanceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.DelegateTaskProcessService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -100,6 +102,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Response;
+
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -128,6 +132,7 @@ public class DelegateAgentResource {
   private ConfigurationController configurationController;
   private FeatureFlagService featureFlagService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  private DelegateTaskProcessService delegateTaskProcessService;
   private InstanceSyncResponsePublisher instanceSyncResponsePublisher;
   private PollingResourceClient pollingResourceClient;
   private DelegatePollingHeartbeatService delegatePollingHeartbeatService;
@@ -141,7 +146,7 @@ public class DelegateAgentResource {
       ConfigurationController configurationController, FeatureFlagService featureFlagService,
       DelegateTaskServiceClassic delegateTaskServiceClassic, PollingResourceClient pollingResourceClient,
       InstanceSyncResponsePublisher instanceSyncResponsePublisher,
-      DelegatePollingHeartbeatService delegatePollingHeartbeatService) {
+      DelegatePollingHeartbeatService delegatePollingHeartbeatService, DelegateTaskProcessService delegateTaskProcessService) {
     this.instanceHelper = instanceHelper;
     this.delegateService = delegateService;
     this.accountService = accountService;
@@ -158,6 +163,7 @@ public class DelegateAgentResource {
     this.pollingResourceClient = pollingResourceClient;
     this.instanceSyncResponsePublisher = instanceSyncResponsePublisher;
     this.delegatePollingHeartbeatService = delegatePollingHeartbeatService;
+    this.delegateTaskProcessService = delegateTaskProcessService;
   }
 
   @DelegateAuth
@@ -306,10 +312,10 @@ public class DelegateAgentResource {
   @DelegateAuth
   @PUT
   @Produces("application/x-kryo")
-  @Path("{delegateId}/tasks/{taskId}/acquire")
+  @Path("{delegateId}/tasks/{taskId}/acquire1")
   @Timed
   @ExceptionMetered
-  public DelegateTaskPackage acquireDelegateTask(@PathParam("delegateId") String delegateId,
+  public DelegateTaskPackage acquireDelegateTask1(@PathParam("delegateId") String delegateId,
       @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("delegateInstanceId") String delegateInstanceId) {
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
@@ -322,6 +328,21 @@ public class DelegateAgentResource {
     }
   }
 
+
+  @DelegateAuth
+  @PUT
+  @Produces("application/x-protobuf")
+  @Path("{delegateId}/tasks/{taskId}/acquire")
+  @Timed
+  @ExceptionMetered
+  public Response acquireDelegateTask(@PathParam("delegateId") String delegateId,
+                                             @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+                                             @QueryParam("delegateInstanceId") String delegateInstanceId) {
+    TaskAcquireResponse response =  delegateTaskProcessService.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+    return Response.ok(response).build();
+  }
+
+
   @DelegateAuth
   @PUT
   @Produces("application/x-kryo-v2")
@@ -331,7 +352,7 @@ public class DelegateAgentResource {
   public DelegateTaskPackage acquireDelegateTaskV2(@PathParam("delegateId") String delegateId,
       @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
       @QueryParam("delegateInstanceId") String delegateInstanceId) {
-    return acquireDelegateTask(delegateId, taskId, accountId, delegateInstanceId);
+    return acquireDelegateTask1(delegateId, taskId, accountId, delegateInstanceId);
   }
 
   @DelegateAuth

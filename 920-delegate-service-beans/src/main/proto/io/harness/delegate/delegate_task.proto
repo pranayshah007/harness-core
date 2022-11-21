@@ -10,53 +10,88 @@ package io.harness.delegate;
 option java_multiple_files = true;
 option go_package = "920_delegate_service_beans";
 
-service DelegateTask {
-  rpc QueueTask(DelegateClassicTaskRequest) returns (QueueTaskResponse);
-  rpc QueueTaskV2(DelegateClassicTaskRequest) returns (QueueTaskResponse);
-  rpc ExecuteTask(DelegateClassicTaskRequest) returns (ExecuteTaskResponse);
-  rpc ExecuteTaskV2(DelegateClassicTaskRequest) returns (ExecuteTaskResponse);
-  rpc AbortTask(AbortExpireTaskRequest) returns (AbortTaskResponse);
-  rpc AbortTaskV2(AbortExpireTaskRequest) returns (AbortTaskResponse);
-  rpc ExpireTask(AbortExpireTaskRequest) returns (ExpireTaskResponse);
-  rpc ExpireTaskV2(AbortExpireTaskRequest) returns (ExpireTaskResponse);
-  rpc CreatePerpetualTaskClassic(CreatePerpetualTaskRequestClassic) returns (CreatePerpetualTaskResponseClassic);
-  rpc CreatePerpetualTaskClassicV2(CreatePerpetualTaskRequestClassic) returns (CreatePerpetualTaskResponseClassic);
+import "955-delegate-beans/src/main/proto/io/harness/delegate/capability.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/delegate/task.proto";
+import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
+import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
+
+import "google/protobuf/duration.proto";
+
+// Task metadata
+message DelegateTaskMetaData {
+   TaskId task_id = 1;
+   AccountId account_id = 2;
+   string description = 3;
+   bool ng = 4;
+   TaskMode mode = 5;
+   TaskType type = 6;
+   bool force_execute = 7;
+   repeated string eligibleToExecuteDelegateIds = 8;
+   callback.DelegateCallbackToken callback_token = 9;
+   DelegateTaskRank rank = 10;
+   string workflowExecutionId = 11;
+   TaskOwner taskOwner = 12;
+   google.protobuf.Duration timeout = 13;
+   repeated TaskSelector selectors = 14;
+   bool selectionTrackingLogEnabled = 15;
+   TaskLogAbstractions log_abstractions = 16;
+   bool execute_on_harness_hosted_delegates = 17;
+   bool parked = 18;
+   bool emitEvent = 19;
+   string stageId = 20;
+   bool isAsync = 21;
 }
 
-message DelegateClassicTaskRequest {
-  bytes delegate_task_kryo = 1;
+
+// Task data
+message DelegateTaskData {
+  bytes task_data = 1;
+  bool async = 2;
+  string taskType =3;
+  bytes task_parameters = 4;
 }
 
-message AbortExpireTaskRequest {
-  string account_id = 1;
-  string delegate_task_id = 2;
+// Task Capabilities
+message Capabilities {
+  repeated Capability capabilities = 1;
 }
 
-message CreatePerpetualTaskRequestClassic {
-  string perpetual_task_type = 1;
-  string account_id = 2;
-  bytes client_context_kryo = 3;
-  bytes perpetual_task_schedule_kryo = 4;
-  bool allowDuplicate = 5;
-  string task_description = 6;
+// Secrets
+message Secrets {
+ map<string, string> expressions = 1;
+ int64 expression_functor_token = 2;
+
 }
 
-message QueueTaskResponse {
-  string uuid = 1;
+message DelegateTaskPackage {
+  AccountId account_id = 1;
+  string delegateTaskId = 2;
+  string delegateId = 3;
+  string delegateInstanceId = 4;
+  string logStreamingToken = 5;
+  string delegateCallbackToken = 6;
+  bytes task_parameters = 7;
+
+}
+enum DelegateTaskRank {
+   OPTIONAL = 0;
+   IMPORTANT  = 1;
+   CRITICAL  = 2;
 }
 
-message ExecuteTaskResponse {
-  bytes delegate_task_response_kryo = 1;
+message TaskOwner {
+  string accountIdentifier = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
 }
 
-message AbortTaskResponse {
-  bytes delegate_task_kryo = 1;
+enum DelegateTaskStatus {
+   QUEUED = 0;
+   STARTED = 1;
+   ERROR = 2;
 }
 
-message ExpireTaskResponse {
-  string message = 1;
-}
 
-message CreatePerpetualTaskResponseClassic {
-  string message = 1;
-}
+
+
+
