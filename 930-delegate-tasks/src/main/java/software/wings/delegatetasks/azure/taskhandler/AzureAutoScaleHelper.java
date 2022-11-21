@@ -30,10 +30,10 @@ import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
 
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.monitor.models.AutoscaleProfile;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.monitor.AutoscaleProfile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;

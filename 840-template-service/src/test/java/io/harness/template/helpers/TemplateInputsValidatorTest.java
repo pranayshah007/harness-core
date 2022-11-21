@@ -15,20 +15,24 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.refresh.ErrorNodeSummary;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
 import io.harness.ng.core.template.refresh.NodeInfo;
 import io.harness.ng.core.template.refresh.TemplateInfo;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -49,6 +53,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
@@ -64,13 +70,28 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(inputsValidator).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(inputsValidator).set("featureFlagHelperService", featureFlagHelperService);
     on(inputsValidator).set("ngManagerReconcileClient", ngManagerReconcileClient);
     on(templateInputsValidator).set("inputsValidator", inputsValidator);
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+
+    // default behaviour of validation
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), eq(null), any(NgManagerRefreshRequestDTO.class));
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
+
+    doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
   }
 
   private String readFile(String filename) {
@@ -317,5 +338,34 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
                                             .versionLabel(stageTemplateWithInCorrectInputs.getVersionLabel())
                                             .templateEntityType(TemplateEntityType.STAGE_TEMPLATE)
                                             .build());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testValidateWhenNGManagerMarksInvalid() throws IOException {
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+
+    doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(false).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
+
+    String stageTemplateWithCorrectInputs = readFile("stage-template-with-correct-inputs.yaml");
+    String stepTemplateYaml = readFile("step-template.yaml");
+
+    TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+        .thenReturn(Optional.of(stepTemplate));
+
+    ValidateTemplateInputsResponseDTO response =
+        templateInputsValidator.validateNestedTemplateInputsForTemplates(ACCOUNT_ID, ORG_ID, PROJECT_ID,
+            new TemplateEntityGetResponse(
+                convertYamlToTemplateEntity(stageTemplateWithCorrectInputs), EntityGitDetails.builder().build()));
+    assertThat(response).isNotNull();
+    assertThat(response.isValidYaml()).isFalse();
   }
 }

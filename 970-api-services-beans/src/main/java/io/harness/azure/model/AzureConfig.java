@@ -15,7 +15,7 @@ import lombok.ToString;
 
 @Data
 @Builder
-@ToString(exclude = {"key", "cert"})
+@ToString(exclude = {"key", "cert", "certPassword"})
 public class AzureConfig {
   String tenantId;
   String clientId;
@@ -23,4 +23,7 @@ public class AzureConfig {
   byte[] cert;
   private AzureEnvironmentType azureEnvironmentType;
   @Builder.Default AzureAuthenticationType azureAuthenticationType = AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET;
+  String certFilePath;
+  String certPassword;
+  @Builder.Default AzureCertAuthenticationType azureCertAuthenticationType = AzureCertAuthenticationType.PEM;
 }

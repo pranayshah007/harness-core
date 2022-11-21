@@ -63,6 +63,7 @@ import io.kubernetes.client.util.Watch;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -110,7 +111,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void executeTaskInternalWithImageSecretError() {
+  public void executeTaskInternalWithImageSecretError() throws IOException {
     KubernetesConfig kubernetesConfig = mock(KubernetesConfig.class);
 
     CIK8InitializeTaskParams cik8InitializeTaskParams = buildImageSecretErrorTaskParams();
@@ -129,7 +130,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void executeTaskInternalWithPodCreateError() {
+  public void executeTaskInternalWithPodCreateError() throws IOException {
     KubernetesConfig kubernetesConfig = mock(KubernetesConfig.class);
     V1PodBuilder podBuilder = new V1PodBuilder();
 
@@ -187,7 +188,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void executeTaskInternalWithPVC() throws InterruptedException {
+  public void executeTaskInternalWithPVC() throws InterruptedException, IOException {
     KubernetesConfig kubernetesConfig = mock(KubernetesConfig.class);
     V1PodBuilder podBuilder = new V1PodBuilder();
     Watch<CoreV1Event> watch = mock(Watch.class);
@@ -218,8 +219,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void executeTaskInternalWithSuccess()
-      throws UnsupportedEncodingException, TimeoutException, InterruptedException {
+  public void executeTaskInternalWithSuccess() throws IOException, TimeoutException, InterruptedException {
     KubernetesConfig kubernetesConfig = mock(KubernetesConfig.class);
     V1PodBuilder podBuilder = new V1PodBuilder();
     Watch<CoreV1Event> watch = mock(Watch.class);
@@ -235,7 +235,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(k8sConnectorHelper.getKubernetesConfig(any(ConnectorDetails.class))).thenReturn(kubernetesConfig);
     when(cik8JavaClientHandler.createRegistrySecret(any(), any(), any(), any())).thenReturn(imgSecret);
     when(secretVolumesHelper.checkSecretVolumesConfigured()).thenReturn(false);
-    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails())).thenReturn(getCustomVarSecret());
+    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails(), Collections.emptyMap()))
+        .thenReturn(getCustomVarSecret());
     when(secretSpecBuilder.decryptConnectorSecretVariables(publishArtifactEncryptedValues))
         .thenReturn(getPublishArtifactSecrets());
     when(podSpecBuilder.createSpec((PodParams) cik8InitializeTaskParams.getCik8PodParams())).thenReturn(podBuilder);
@@ -257,7 +258,7 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void executeTaskInternalWithServicePodSuccess() throws InterruptedException, ApiException {
+  public void executeTaskInternalWithServicePodSuccess() throws InterruptedException, ApiException, IOException {
     KubernetesConfig kubernetesConfig = mock(KubernetesConfig.class);
     V1PodBuilder podBuilder = new V1PodBuilder();
     Watch<CoreV1Event> watch = mock(Watch.class);
@@ -278,7 +279,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
         .thenReturn(gitSecretData);
     when(cik8JavaClientHandler.createRegistrySecret(coreV1Api, namespace, secretName, imageDetailsWithConnector))
         .thenReturn(imgSecret);
-    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails())).thenReturn(getCustomVarSecret());
+    when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails(), Collections.emptyMap()))
+        .thenReturn(getCustomVarSecret());
     when(secretSpecBuilder.decryptConnectorSecretVariables(publishArtifactConnectors))
         .thenReturn(getPublishArtifactSecrets());
 

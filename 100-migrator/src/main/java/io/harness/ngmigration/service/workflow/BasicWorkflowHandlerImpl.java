@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ngmigration.service.step.StepMapperFactory;
+
 import software.wings.beans.BasicOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
@@ -14,11 +17,13 @@ import software.wings.beans.WorkflowPhase.Yaml;
 import software.wings.service.impl.yaml.handler.workflow.BasicWorkflowYamlHandler;
 import software.wings.yaml.workflow.BasicWorkflowYaml;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
 
-public class BasicWorkflowHandlerImpl implements WorkflowHandler {
+public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BasicWorkflowYamlHandler basicWorkflowYamlHandler;
+  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public List<Yaml> getPhases(Workflow workflow) {
@@ -31,5 +36,23 @@ public class BasicWorkflowHandlerImpl implements WorkflowHandler {
     BasicOrchestrationWorkflow orchestrationWorkflow = (BasicOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
         orchestrationWorkflow.getPostDeploymentSteps());
+  }
+
+  @Override
+  public JsonNode getTemplateSpec(Workflow workflow) {
+    return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+  }
+
+  @Override
+  public List<Yaml> getRollbackPhases(Workflow workflow) {
+    BasicWorkflowYaml basicWorkflowYaml = basicWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return basicWorkflowYaml.getRollbackPhases();
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
+    // We can infer the type based on the service, infra & sometimes based on the steps used.
+    // TODO: Deepak Puthraya
+    return ServiceDefinitionType.SSH;
   }
 }

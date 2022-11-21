@@ -37,7 +37,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class InputsValidationHelper {
+  private static final List<String> keysToIgnoreInNodeToValidate =
+      Collections.singletonList("artifacts.primary.sources");
   @Inject ServiceEntityService serviceEntityService;
   @Inject EntityFetchHelper entityFetchHelper;
   @Inject EnvironmentRefreshHelper environmentRefreshHelper;
@@ -176,7 +180,8 @@ public class InputsValidationHelper {
     ObjectNode serviceInputsNode = mapper.createObjectNode();
     serviceInputsNode.set(YamlTypes.SERVICE_INPUTS, serviceInputs);
     String linkedServiceInputsYaml = YamlPipelineUtils.writeYamlString(serviceInputsNode);
-    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml)) {
+    if (!RuntimeInputsValidator.validateInputsAgainstSourceNode(linkedServiceInputsYaml, serviceRuntimeInputYaml,
+            new HashSet<>(), new HashSet<>(keysToIgnoreInNodeToValidate))) {
       errorNodeSummary.setValid(false);
     }
   }

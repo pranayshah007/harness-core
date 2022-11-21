@@ -27,7 +27,7 @@ import io.harness.rule.OwnerRule;
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.RancherConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 import groovy.util.logging.Slf4j;
 import java.util.Collections;
@@ -45,8 +45,7 @@ public class ContainerServiceParamsTest extends WingsBaseTest {
     // awsConfig useEc2IamCredentials = false
     ContainerServiceParams containerServiceParams = ContainerServiceParams.builder().build();
     AwsConfig awsConfig = AwsConfig.builder().build();
-    containerServiceParams.setSettingAttribute(
-        SettingAttribute.Builder.aSettingAttribute().withValue(awsConfig).build());
+    containerServiceParams.setSettingAttribute(SettingAttribute.builder().value(awsConfig).build());
 
     List<ExecutionCapability> requiredExecutionCapabilities =
         containerServiceParams.fetchRequiredExecutionCapabilities(null);

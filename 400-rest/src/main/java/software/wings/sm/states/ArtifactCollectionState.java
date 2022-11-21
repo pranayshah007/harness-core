@@ -75,6 +75,7 @@ import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.ArtifactStreamHelper;
+import software.wings.service.impl.ShellScriptUtils;
 import software.wings.service.impl.WorkflowExecutionLogContext;
 import software.wings.service.impl.applicationmanifest.ManifestCollectionUtils;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
@@ -322,7 +323,8 @@ public class ArtifactCollectionState extends State {
                   -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
               .findFirst()
               .orElse(CustomArtifactStream.Script.builder().build());
-      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isEmpty(versionScript.getScriptString())) {
+      if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled())
+          && ShellScriptUtils.isNoopScript(versionScript.getScriptString())) {
         return saveCustomArtifactResponse(customArtifactStream, evaluatedBuildNo, timeout);
       }
       ArtifactStreamAttributes artifactStreamAttributes =

@@ -10,12 +10,15 @@ package io.harness.k8s.manifest;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.exception.WingsException.ReportTarget.LOG_SYSTEM;
 import static io.harness.k8s.manifest.ManifestHelper.MAX_VALUES_EXPRESSION_RECURSION_DEPTH;
+import static io.harness.k8s.manifest.ManifestHelper.concatenateFileContents;
 import static io.harness.k8s.manifest.ManifestHelper.getMapFromValuesFileContent;
 import static io.harness.k8s.manifest.ManifestHelper.getValuesExpressionKeysFromMap;
 import static io.harness.k8s.manifest.ManifestHelper.processYaml;
 import static io.harness.k8s.manifest.ManifestHelper.validateValuesFileContents;
+import static io.harness.k8s.manifest.ObjectYamlUtils.YAML_DOCUMENT_DELIMITER;
 import static io.harness.k8s.manifest.ObjectYamlUtils.toYaml;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
+import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -27,6 +30,7 @@ import static org.assertj.core.api.Assertions.fail;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileData;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionUtils;
@@ -755,5 +759,46 @@ public class ManifestHelperTest extends CategoryTest {
         + "    kind: ResourceDef\n");
 
     assertThat(kubernetesResources).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = ABHINAV2)
+  @Category(UnitTests.class)
+  public void testManifestFileConcatenation() {
+    List<FileData> manifestFiles = createManifestFiles();
+    String concatenatedFileContent = concatenateFileContents(manifestFiles);
+    String expectedFileContent = YAML_DOCUMENT_DELIMITER + System.lineSeparator()
+        + manifestFiles.get(0).getFileContent() + System.lineSeparator() + YAML_DOCUMENT_DELIMITER
+        + System.lineSeparator() + manifestFiles.get(1).getFileContent() + System.lineSeparator();
+    assertThat(concatenatedFileContent).isEqualTo(expectedFileContent);
+  }
+
+  private List<FileData> createManifestFiles() {
+    String configmap = "apiVersion: v1\n"
+        + "kind: ConfigMap\n"
+        + "metadata:\n"
+        + "  name: configmap-test\n"
+        + "  namespace: \n"
+        + "data:\n"
+        + "  hello: world";
+    String crd = "apiVersion: apiextensions.k8s.io/v1\n"
+        + "kind: CustomResourceDefinition\n"
+        + "metadata:\n"
+        + "  name: custom.resource.def\n"
+        + "spec:\n"
+        + "  versions:\n"
+        + "    - &version\n"
+        + "      name: v1alpha1\n"
+        + "      served: true\n"
+        + "      schema:\n"
+        + "        openAPIV3Schema:\n"
+        + "          type: object\n"
+        + "    - !!merge <<: *version\n"
+        + "  names:\n"
+        + "    kind: ResourceDef\n";
+
+    FileData configmapFile = FileData.builder().fileContent(configmap).build();
+    FileData crdFile = FileData.builder().fileContent(crd).build();
+    return List.of(configmapFile, crdFile);
   }
 }

@@ -40,6 +40,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
 import io.harness.steps.servicenow.ServiceNowStepHelperService;
@@ -104,7 +105,7 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
 
     ServiceNowConnectorDTO connectorDTO = (ServiceNowConnectorDTO) configDTO;
     paramsBuilder.serviceNowConnectorDTO(connectorDTO);
-    paramsBuilder.encryptionDetails(secretManagerClientService.getEncryptionDetails(ngAccess, connectorDTO));
+    paramsBuilder.encryptionDetails(getEncryptionDetails(connectorDTO, ngAccess));
     ServiceNowTaskNGParameters params = paramsBuilder.build();
 
     TaskData taskData = TaskData.builder()
@@ -171,5 +172,14 @@ public class ServiceNowStepHelperServiceImpl implements ServiceNowStepHelperServ
                          .outcome(serviceNowImportSetOutcomeBuilder.build())
                          .build())
         .build();
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDetails(
+      ServiceNowConnectorDTO serviceNowConnectorDTO, NGAccess ngAccess) {
+    if (!isNull(serviceNowConnectorDTO.getAuth()) && !isNull(serviceNowConnectorDTO.getAuth().getCredentials())) {
+      return secretManagerClientService.getEncryptionDetails(
+          ngAccess, serviceNowConnectorDTO.getAuth().getCredentials());
+    }
+    return secretManagerClientService.getEncryptionDetails(ngAccess, serviceNowConnectorDTO);
   }
 }

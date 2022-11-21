@@ -41,12 +41,12 @@ import io.harness.rule.Owner;
 
 import software.wings.delegatetasks.azure.arm.deployment.context.DeploymentBlueprintContext;
 
-import com.microsoft.azure.management.graphrbac.BuiltInRole;
-import com.microsoft.azure.management.graphrbac.RoleAssignment;
-import com.microsoft.azure.management.graphrbac.implementation.GraphRbacManager;
-import com.microsoft.azure.management.graphrbac.implementation.RoleAssignmentInner;
-import com.microsoft.azure.management.network.ManagedServiceIdentity;
-import com.microsoft.azure.management.network.ResourceIdentityType;
+import com.azure.resourcemanager.authorization.AuthorizationManager;
+import com.azure.resourcemanager.authorization.fluent.models.RoleAssignmentInner;
+import com.azure.resourcemanager.authorization.models.BuiltInRole;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
+import com.azure.resourcemanager.network.models.ManagedServiceIdentity;
+import com.azure.resourcemanager.network.models.ResourceIdentityType;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -320,27 +320,38 @@ public class AzureBlueprintDeploymentServiceTest extends CategoryTest {
   private RoleAssignment getRoleAssignment(
       final String id, final String name, final String principalId, final String roleDefinitionId) {
     return new RoleAssignment() {
+      @Override
+      public RoleAssignmentInner innerModel() {
+        return null;
+      }
+      @Override
+      public AuthorizationManager manager() {
+        return null;
+      }
+      @Override
       public String scope() {
         return null;
       }
+      @Override
       public String roleDefinitionId() {
         return roleDefinitionId;
       }
+      @Override
       public String principalId() {
         return principalId;
+      }
+      @Override
+      public String condition() {
+        return null;
       }
       public String id() {
         return id;
       }
-      public GraphRbacManager manager() {
-        return null;
-      }
+      @Override
       public String name() {
         return name;
       }
-      public RoleAssignmentInner inner() {
-        return null;
-      }
+      @Override
       public String key() {
         return null;
       }

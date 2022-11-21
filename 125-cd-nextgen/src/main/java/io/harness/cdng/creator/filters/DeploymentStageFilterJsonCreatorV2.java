@@ -157,7 +157,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     } else {
       throw new InvalidYamlRuntimeException(
-          format("serviceConfig or service should be present in stage [%s]. Please add it and try again",
+          format("serviceConfig or service or services should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }
@@ -181,7 +181,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     } else {
       throw new InvalidYamlRuntimeException(format(
-          "Infrastructure or Environment or EnvironmentGroup should be present in stage [%s]. Please add it and try again",
+          "infrastructure or environment or environments or environmentGroup should be present in stage [%s]. Please add it and try again",
           YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }

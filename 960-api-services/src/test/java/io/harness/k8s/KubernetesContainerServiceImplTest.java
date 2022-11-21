@@ -1305,7 +1305,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     kubernetesContainerService.saveReleaseHistory(KUBERNETES_CONFIG, "release", "version=2.0", false);
 
-    verify(k8sApiClient, times(3)).execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType());
+    verify(k8sApiClient, times(2)).execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType());
   }
 
   @Test
@@ -1366,7 +1366,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
 
     kubernetesContainerService.saveReleaseHistory(KUBERNETES_CONFIG, "release", "version=2.0", true);
 
-    verify(k8sApiClient, times(3)).execute(k8sApiCall, TypeToken.get(V1Secret.class).getType());
+    verify(k8sApiClient, times(2)).execute(k8sApiCall, TypeToken.get(V1Secret.class).getType());
   }
 
   @Test

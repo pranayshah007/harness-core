@@ -17,6 +17,7 @@ public final class TerragruntConstants {
     throw new UnsupportedOperationException();
   }
 
+  public static final String TERRAGRUNT_INIT_COMMAND_FORMAT = "terragrunt init%s";
   public static final String TERRAGRUNT_REFRESH_COMMAND_FORMAT = "terragrunt refresh -input=false %s %s";
   public static final String TERRAGRUNT_APPLY_COMMAND_FORMAT = "terragrunt apply -input=false tfplan";
   public static final String TERRAGRUNT_PLAN_COMMAND_FORMAT = "terragrunt plan -out=tfplan -input=false %s %s";
@@ -24,6 +25,7 @@ public final class TerragruntConstants {
       "terragrunt plan -destroy -out=tfdestroyplan -input=false %s %s";
   public static final String TERRAGRUNT_DESTROY_COMMAND_FORMAT =
       "terragrunt destroy %s --terragrunt-non-interactive %s %s";
+  public static final String TERRAGRUNT_SHOW_COMMAND_FORMAT = "terragrunt show %s";
   public static final String TERRAGRUNT_RUN_ALL_APPLY_COMMAND_FORMAT =
       "terragrunt run-all apply -input=false --terragrunt-non-interactive %s %s";
   public static final String TERRAGRUNT_RUN_ALL_PLAN_COMMAND_FORMAT =
@@ -35,6 +37,7 @@ public final class TerragruntConstants {
   public static final String TERRAGRUNT_WORKSPACE_LIST_COMMAND_FORMAT = "terragrunt workspace list";
   public static final String TERRAGRUNT_RUN_ALL_REFRESH_COMMAND_FORMAT =
       "terragrunt run-all refresh -input=false %s %s";
+  public static final String TERRAGRUNT_RUN_ALL_SHOW_COMMAND_FORMAT = "terragrunt run-all show %s";
 
   public static final String TG_BASE_DIR = "./terragrunt-working-dir/${ACCOUNT_ID}/${ENTITY_ID}";
   public static final String TG_SCRIPT_DIR = "terragrunt-script-repository";
@@ -44,6 +47,8 @@ public final class TerragruntConstants {
   public static final String PROVISIONER_ID = "provisionerId";
   public static final String WORKSPACE = "workspace";
   public static final String TIMEOUT_MILLIS = "timeoutMillis";
+  public static final String VAR_FILE_FORMAT = " -var-file=\"%s\" ";
+  public static final String TARGET_FORMAT = " -target=\"%s\" ";
 
   public static final String FETCH_CONFIG_FILES = "Fetch Config Files";
   public static final String INIT = "Init";

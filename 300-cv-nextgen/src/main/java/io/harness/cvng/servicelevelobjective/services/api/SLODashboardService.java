@@ -11,6 +11,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
@@ -22,6 +23,8 @@ public interface SLODashboardService {
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
   PageResponse<SLOHealthListView> getSloHealthListView(
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
+  PageResponse<SLOConsumptionBreakdown> getSLOConsumptionBreakdownView(
+      ProjectParams projectParams, String compositeSLOIdentifier, Long startTime, Long endTime);
 
   SLODashboardDetail getSloDashboardDetail(
       ProjectParams projectParams, String sloIdentifier, Long startTime, Long endTime);

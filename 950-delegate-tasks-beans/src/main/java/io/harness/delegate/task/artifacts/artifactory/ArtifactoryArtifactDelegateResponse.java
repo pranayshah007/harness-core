@@ -17,6 +17,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 
 import software.wings.utils.RepositoryFormat;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -32,14 +33,16 @@ public class ArtifactoryArtifactDelegateResponse extends ArtifactDelegateRespons
   /** Tag refers to exact tag number */
   String tag;
 
+  Map<String, String> label;
   @Builder
   public ArtifactoryArtifactDelegateResponse(ArtifactBuildDetailsNG buildDetails, ArtifactSourceType sourceType,
-      String repositoryName, String artifactPath, String repositoryFormat, String tag) {
+      String repositoryName, String artifactPath, String repositoryFormat, String tag, Map<String, String> label) {
     super(buildDetails, sourceType);
     this.repositoryName = repositoryName;
     this.artifactPath = artifactPath;
     this.repositoryFormat = repositoryFormat;
     this.tag = tag;
+    this.label = label;
   }
 
   @Override

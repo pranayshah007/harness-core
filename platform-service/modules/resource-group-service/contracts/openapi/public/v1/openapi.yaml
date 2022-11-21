@@ -19,13 +19,6 @@ tags:
     description: This contains APIs for performing CRUD operations on Project level Resource Groups.
   - name: Filter Resource Groups
     description: This contains the filter endpoint for Resource Groups.
-x-tagGroups:
-  - name: Resource Groups
-    tags:
-      - Account Resource Groups
-      - Organization Resource Groups
-      - Project Resource Groups
-      - Filter Resource Groups
 paths:
   /v1/resource-groups:
     parameters: []

@@ -54,7 +54,6 @@ public class SubdomainUrlHelper implements SubdomainUrlHelperIntfc {
   public String getPortalBaseUrl(String accountId) {
     // Set baseUrl = subDomainUrl only if subDomainUrl is not null, otherwise
     // set baseUrl equal to URL of portal
-    log.info("Generating Portal URL for account {}", accountId);
     String portalUrl = appendSeparatorToUrl(getPortalUrl(accountId));
     log.info("Returning {} from getPortalBaseUrl for account {}", portalUrl, accountId);
     return portalUrl;
@@ -109,7 +108,6 @@ public class SubdomainUrlHelper implements SubdomainUrlHelperIntfc {
    * @return
    */
   private Optional<String> getCustomSubdomainUrl(String accountId) {
-    log.info("Getting subdomainUrl for account Id: {}", accountId);
     try {
       if (null == accountId) {
         accountId = getAccountIdFromThreadLocal();

@@ -1,0 +1,35 @@
+template:
+  name: t4
+  identifier: t4
+  versionLabel: v1
+  type: Stage
+  projectIdentifier: test
+  orgIdentifier: default
+  tags: {}
+  spec:
+    type: deploy
+    spec:
+      service:
+        serviceRef: my_service
+      environment:
+        environmentRef: my_env
+        infrastructureDefinition:
+          identifier: ssh_infra
+      execution:
+        steps:
+          - step:
+              type: ShellScript
+              name: ssh
+              identifier: ssh
+              spec:
+                shell: Bash
+                onDelegate: true
+                source:
+                  type: Inline
+                  spec:
+                    script: echo hi
+                environmentVariables: []
+                outputVariables: []
+                executionTarget: {}
+              timeout: 10m
+      serviceDependencies: []

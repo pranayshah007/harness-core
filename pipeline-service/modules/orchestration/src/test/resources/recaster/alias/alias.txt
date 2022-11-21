@@ -43,6 +43,7 @@ io.harness.steps.section.chain.SectionChainStepParameters
 io.harness.steps.common.NGSectionStepParameters
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
 io.harness.steps.fork.ForkStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.plancreator.strategy.AxisConfig
 io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
@@ -53,3 +54,4 @@ io.harness.logging.CommandExecutionStatus
 io.harness.plancreator.strategy.ExpressionAxisConfig
 io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
+io.harness.beans.yaml.extended.ImagePullPolicy

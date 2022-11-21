@@ -19,6 +19,7 @@ shared_dependencies = [
     "@maven//:com_google_inject_guice",
     "@maven//:io_leangen_graphql_spqr",
     "@maven//:org_jooq_jooq",
+    "@maven//:com_amazonaws_aws_java_sdk_costexplorer",
 ]
 
 java_library(

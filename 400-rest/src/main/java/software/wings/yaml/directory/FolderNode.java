@@ -10,7 +10,7 @@ package software.wings.yaml.directory;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.util.ArrayList;
 import java.util.List;

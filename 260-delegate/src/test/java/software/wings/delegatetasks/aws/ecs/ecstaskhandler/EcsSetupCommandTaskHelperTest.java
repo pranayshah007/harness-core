@@ -18,7 +18,6 @@ import static io.harness.rule.OwnerRule.SAINATH;
 import static io.harness.rule.OwnerRule.SATYAM;
 import static io.harness.rule.OwnerRule.TMACARI;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.command.EcsSetupParams.EcsSetupParamsBuilder.anEcsSetupParams;
 import static software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSwapRoutesCommandTaskHelper.BG_GREEN;
 import static software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsSwapRoutesCommandTaskHelper.BG_VERSION;
@@ -60,7 +59,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
@@ -68,6 +66,7 @@ import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
 import software.wings.beans.dto.EcsContainerTask;
 import software.wings.beans.dto.EcsServiceSpecification;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.cloudprovider.aws.EcsContainerService;
 import software.wings.service.impl.AwsHelperService;
@@ -140,7 +139,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Mock private EcsContainerService mockEcsContainerService;
   @Spy @InjectMocks @Inject private EcsSetupCommandTaskHelper ecsSetupCommandTaskHelper;
 
-  private SettingAttribute computeProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+  private SettingAttribute computeProvider = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
 
   private String ecsSErviceSpecJsonString = "{\n\"capacityProviderStrategy\":[],\n"
       + "\"placementConstraints\":[],\n"
@@ -1158,7 +1157,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testBackupAutoScalarConfig() {
     EcsSetupParams params = anEcsSetupParams().withRegion("us-east-1").withClusterName("cluster").build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
@@ -1198,7 +1197,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                                 .build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     doReturn(new Service().withServiceName("foo__1").withServiceArn("svcArn"))
         .when(ecsSetupCommandTaskHelper)
@@ -1235,7 +1234,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                                 .withClusterName("cluster")
                                 .withIsDaemonSchedulingStrategy(true)
                                 .build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     ecsSetupCommandTaskHelper.handleRollback(params, attribute, builder, emptyList(), mockCallback);
     verify(mockAwsHelperService).deleteService(anyString(), any(), anyList(), any());
@@ -1254,7 +1253,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                                 .build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     doReturn(new Service().withServiceName("foo__1").withServiceArn("svcArn"))
         .when(ecsSetupCommandTaskHelper)
@@ -1283,7 +1282,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
     EcsSetupParams params =
         anEcsSetupParams().withRegion("us-east-1").withClusterName("cluster").withTaskFamily("foo").build();
     TaskDefinition taskDefinition = new TaskDefinition().withRevision(2);
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
@@ -1327,7 +1326,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                                 .withEcsServiceSpecification(ecsServiceSpecification)
                                 .build();
     TaskDefinition taskDefinition = new TaskDefinition().withRevision(2);
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
@@ -1368,7 +1367,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                                 .withEcsServiceSpecification(ecsServiceSpecification)
                                 .build();
     TaskDefinition taskDefinition = new TaskDefinition().withRevision(2);
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
@@ -1389,7 +1388,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   public void testDownsizeOldOrUnhealthy() {
     EcsSetupParams params =
         anEcsSetupParams().withRegion("us-east-1").withClusterName("cluster").withTaskFamily("foo").build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
     LinkedHashMap<String, Integer> result = new LinkedHashMap<>();
@@ -1423,7 +1422,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
                  new Service().withServiceName("foo__3").withDesiredCount(0)))
         .when(awsClusterService)
         .getServices(anyString(), any(), anyList(), anyString(), anyString());
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
     ecsSetupCommandTaskHelper.cleanup(attribute, params, emptyList(), mockCallback);
@@ -1436,7 +1435,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testGetExistingServiceMetadataSnapshot() {
     EcsSetupParams params = anEcsSetupParams().withRegion("us-east-1").withClusterName("cluster").build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
     doReturn(new DescribeServicesResult().withServices(new Service().withServiceName("foo__1")))
@@ -1466,7 +1465,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeleteExistingServicesOtherThanBlueVersion() {
     EcsSetupParams params = anEcsSetupParams().withRegion("us-east-1").withClusterName("cluster").build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
     doReturn(singletonList(new Service().withServiceArn("arn").withServiceName("foo__1").withTags(
@@ -1487,7 +1486,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSetLoadBalancerToServiceReplaceContainerNamePlaceholderInContainerName() {
     EcsSetupParams params = anEcsSetupParams().build();
-    SettingAttribute attribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute attribute = SettingAttribute.builder().value(AwsConfig.builder().build()).build();
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
     doNothing().when(mockCallback).saveExecutionLog(anyString());
     CreateServiceRequest createServiceRequest =

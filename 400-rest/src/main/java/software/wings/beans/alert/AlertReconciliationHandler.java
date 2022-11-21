@@ -11,6 +11,8 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 
 import static java.time.Duration.ofMinutes;
 
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -31,7 +33,7 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class AlertReconciliationHandler implements Handler<Alert> {
+public class AlertReconciliationHandler extends IteratorPumpModeHandler implements Handler<Alert> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
 
   @Inject private AssignDelegateService assignDelegateService;
@@ -41,24 +43,33 @@ public class AlertReconciliationHandler implements Handler<Alert> {
   @Inject private MorphiaPersistenceProvider<Alert> persistenceProvider;
   @Inject private AccountService accountService;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder().name("AlertReconciliation").poolSize(3).interval(Duration.ofMinutes(1)).build(),
-        AlertReconciliationHandler.class,
-        MongoPersistenceIterator.<Alert, MorphiaFilterExpander<Alert>>builder()
-            .clazz(Alert.class)
-            .fieldName(AlertKeys.alertReconciliation_nextIteration)
-            .targetInterval(ofMinutes(10))
-            .acceptableNoAlertDelay(ofMinutes(5))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(query
-                -> query.filter(AlertKeys.alertReconciliation_needed, Boolean.TRUE)
-                       .field(AlertKeys.status)
-                       .notEqual(AlertStatus.Closed))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Alert, MorphiaFilterExpander<Alert>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       AlertReconciliationHandler.class,
+                       MongoPersistenceIterator.<Alert, MorphiaFilterExpander<Alert>>builder()
+                           .clazz(Alert.class)
+                           .fieldName(AlertKeys.alertReconciliation_nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(5))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(query
+                               -> query.filter(AlertKeys.alertReconciliation_needed, Boolean.TRUE)
+                                      .field(AlertKeys.status)
+                                      .notEqual(AlertStatus.Closed))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "AlertReconciliation";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

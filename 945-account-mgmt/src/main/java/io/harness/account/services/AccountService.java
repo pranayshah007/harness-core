@@ -15,10 +15,15 @@ import io.harness.ng.core.account.DefaultExperience;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.signup.dto.SignupDTO;
 
+import java.util.List;
+
 @OwnedBy(GTM)
 public interface AccountService {
   AccountDTO createAccount(SignupDTO dto) throws WingsException;
+  AccountDTO createAccount(AccountDTO accountDTO);
   Boolean updateDefaultExperienceIfApplicable(String accountId, DefaultExperience defaultExperience);
   String getBaseUrl(String accountId);
   AccountDTO getAccount(String accountId);
+  AccountDTO getOnPremAccount();
+  List<String> getAdminUsers(String accountId);
 }

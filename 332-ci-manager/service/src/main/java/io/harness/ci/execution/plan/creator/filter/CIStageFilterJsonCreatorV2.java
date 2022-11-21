@@ -64,7 +64,7 @@ public class CIStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE);
+    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE, StepSpecTypeConstants.CI_STAGE_V2);
   }
 
   @Override

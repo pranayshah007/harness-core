@@ -8,6 +8,7 @@
 package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
@@ -64,10 +65,12 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import java.util.Arrays;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -378,5 +381,20 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getWinRmMetaData());
     assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetPaginatedResults() {
+    Secret secret1 =
+        Secret.builder().name("name1").type(SecretType.SecretText).identifier("id1").createdAt((long) 2).build();
+    Secret secret2 =
+        Secret.builder().name("name2").type(SecretType.SecretText).identifier("id2").createdAt((long) 7).build();
+    Secret secret3 =
+        Secret.builder().name("name3").type(SecretType.SecretText).identifier("id3").createdAt((long) 3).build();
+    Page<Secret> paginatedResult = secretServiceV2.getPaginatedResult(Arrays.asList(secret1, secret2, secret3), 1, 2);
+    assertThat(paginatedResult.getNumberOfElements()).isEqualTo(1);
+    assertThat(paginatedResult.getContent()).isEqualTo(Arrays.asList(secret1));
   }
 }

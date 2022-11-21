@@ -23,6 +23,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +47,12 @@ public class DeleteAccountHandlerTest extends WingsBaseTest {
   public void testRegisterIterators() {
     ArgumentCaptor<MongoPersistenceIteratorBuilder> captor =
         ArgumentCaptor.forClass(MongoPersistenceIteratorBuilder.class);
-    deleteAccountHandler.registerIterators();
+    deleteAccountHandler.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                    .name("DeleteAccountIterator")
+                                                    .poolSize(2)
+                                                    .interval(Duration.ofMinutes(1))
+                                                    .build(),
+        Duration.ofMinutes(300));
     verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(DeleteAccountHandler.class), captor.capture());
     MongoPersistenceIteratorBuilder mongoPersistenceIteratorBuilder = captor.getValue();

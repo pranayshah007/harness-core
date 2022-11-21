@@ -19,6 +19,7 @@ import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
@@ -58,6 +59,7 @@ public class BusinessMappingResource {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private OutboxService outboxService;
   @Inject CCMRbacHelper rbacHelper;
+  @Inject CEViewService ceViewService;
 
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
@@ -119,6 +121,9 @@ public class BusinessMappingResource {
       throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
     }
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
+    if (!oldCostCategory.getName().equals(newCostCategory.getName())) {
+      ceViewService.updateBusinessMappingName(accountId, newCostCategory.getUuid(), newCostCategory.getName());
+    }
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryUpdateEvent(accountId, newCostCategory.toDTO(), oldCostCategory.toDTO()));
       return true;

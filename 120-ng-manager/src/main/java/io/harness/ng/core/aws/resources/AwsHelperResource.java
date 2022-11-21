@@ -250,14 +250,19 @@ public class AwsHelperResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
-    if (isEmpty(awsConnectorRef)) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
           accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
-      if (infrastructureDefinitionConfig.getSpec() != null) {
-        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
-        awsConnectorRef = infrastructure.getConnectorRef().getValue();
-        region = infrastructure.getRegion().getValue();
-      }
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -277,14 +282,19 @@ public class AwsHelperResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
-    if (isEmpty(awsConnectorRef)) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
           accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
-      if (infrastructureDefinitionConfig.getSpec() != null) {
-        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
-        awsConnectorRef = infrastructure.getConnectorRef().getValue();
-        region = infrastructure.getRegion().getValue();
-      }
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -305,14 +315,19 @@ public class AwsHelperResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
-    if (isEmpty(awsConnectorRef)) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
           accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
-      if (infrastructureDefinitionConfig.getSpec() != null) {
-        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
-        awsConnectorRef = infrastructure.getConnectorRef().getValue();
-        region = infrastructure.getRegion().getValue();
-      }
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -334,14 +349,19 @@ public class AwsHelperResource {
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
-    if (isEmpty(awsConnectorRef)) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
       InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
           accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
-      if (infrastructureDefinitionConfig.getSpec() != null) {
-        EcsInfrastructure infrastructure = (EcsInfrastructure) infrastructureDefinitionConfig.getSpec();
-        awsConnectorRef = infrastructure.getConnectorRef().getValue();
-        region = infrastructure.getRegion().getValue();
-      }
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);

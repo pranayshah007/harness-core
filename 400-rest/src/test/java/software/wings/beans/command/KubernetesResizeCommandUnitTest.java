@@ -91,11 +91,12 @@ public class KubernetesResizeCommandUnitTest extends WingsBaseTest {
                                                                   .withResizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST);
   private SettingAttribute computeProvider = aSettingAttribute().withValue(GcpConfig.builder().build()).build();
   private CommandExecutionContext.Builder contextBuilder =
-      aCommandExecutionContext().cloudProviderSetting(computeProvider).cloudProviderCredentials(emptyList());
+      aCommandExecutionContext().cloudProviderSetting(computeProvider.toDTO()).cloudProviderCredentials(emptyList());
 
   @Before
   public void setup() {
-    when(gkeClusterService.getCluster(any(SettingAttribute.class), eq(emptyList()), any(), any(), anyBoolean()))
+    when(gkeClusterService.getCluster(
+             any(software.wings.beans.dto.SettingAttribute.class), eq(emptyList()), any(), any(), anyBoolean()))
         .thenReturn(kubernetesConfig);
     when(kubernetesContainerService.setControllerPodCount(
              eq(kubernetesConfig), eq(CLUSTER_NAME), any(), anyInt(), anyInt(), anyInt(), any()))
