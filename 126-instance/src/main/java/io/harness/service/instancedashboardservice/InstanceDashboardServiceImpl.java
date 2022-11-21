@@ -8,6 +8,7 @@
 package io.harness.service.instancedashboardservice;
 
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.in;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -212,6 +213,25 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     });
 
     return buildIdAndInstancesList;
+  }
+
+  @Override
+  public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, String infraId, String pipelineExecutionId,
+      String buildId) {
+    AggregationResults<InstancesByBuildId> instancesByBuildId =
+        instanceService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId,
+            infraId, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
+
+    List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
+
+    instancesByBuildId.getMappedResults().forEach(buildIdAndInstances -> {
+      List<Instance> instances = buildIdAndInstances.getInstances();
+      buildIdAndInstancesList.add(new InstanceDetailsByBuildId(
+          buildId, instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances))));
+    });
+
+    return buildIdAndInstancesList.get(0);
   }
 
   /*

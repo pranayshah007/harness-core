@@ -296,6 +296,46 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         newAggregation(matchStage, group, projection), Instance.class, InstancesByBuildId.class);
   }
 
+  @Override
+  public AggregationResults<InstancesByBuildId> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, String infraId, String pipelineExecutionId,
+      String buildId, int limit) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    if (envId != null) {
+      criteria.and(InstanceKeys.envIdentifier).is(envId);
+    }
+    if (serviceId != null) {
+      criteria.and(InstanceKeys.serviceIdentifier).is(serviceId);
+    }
+    if (buildId != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildId);
+    }
+    if (infraId != null) {
+      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
+    }
+    if (pipelineExecutionId != null) {
+      criteria.and(InstanceKeys.lastPipelineExecutionId).is(pipelineExecutionId);
+    }
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+    GroupOperation group = group(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                               .push(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                               .as(InstanceSyncConstants.buildId)
+                               .push(Aggregation.ROOT)
+                               .as(InstanceSyncConstants.INSTANCES);
+
+    ProjectionOperation projection = Aggregation.project()
+                                         .andExpression(InstanceSyncConstants.ID)
+                                         .as(InstanceSyncConstants.buildId)
+                                         .andExpression(InstanceSyncConstants.INSTANCES)
+                                         .slice(limit)
+                                         .as(InstanceSyncConstants.INSTANCES);
+
+    return secondaryMongoTemplate.aggregate(
+        newAggregation(matchStage, group, projection), Instance.class, InstancesByBuildId.class);
+  }
+
   /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceId

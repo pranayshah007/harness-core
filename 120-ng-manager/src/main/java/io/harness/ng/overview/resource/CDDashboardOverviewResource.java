@@ -21,6 +21,7 @@ import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cd.NGServiceConstants;
+import io.harness.models.InstanceDetailsByBuildId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.ng.core.ProjectIdentifier;
 import io.harness.ng.core.activityhistory.dto.TimeGroupType;
@@ -278,6 +279,24 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.BUILDS_KEY) List<String> buildIds) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds));
+  }
+
+  @GET
+  @Path("/getInstancesDetails")
+  @ApiOperation(
+      value = "Get list of instances grouped by serviceId, buildId, environment, infrastructure and pipeline execution",
+      nickname = "getInstancesDetails")
+  public ResponseDTO<InstanceDetailsByBuildId>
+  getActiveInstancesDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
+      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @NotNull @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
+      @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
+      @NotNull @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstanceDetails(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, infraId, pipelineExecutionId, buildId));
   }
 
   @GET

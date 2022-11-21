@@ -1905,6 +1905,14 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return InstancesByBuildIdList.builder().instancesByBuildIdList(instancesByBuildIdList).build();
   }
 
+  @Override
+  public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,
+      String pipelineExecutionId, String buildId) {
+    return instanceDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier,
+        serviceIdentifier, envIdentifier, infraIdentifier, pipelineExecutionId, buildId);
+  }
+
   /*
     Returns instance count summary for given account+org+project+serviceId, includes rate of change in count since
     provided timestamp
