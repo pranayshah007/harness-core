@@ -452,6 +452,7 @@ public class FeatureNameTest extends WingsBaseTest {
     featureNameOrdinalMapping.put(418, "SPG_WFE_OPTIMIZE_WORKFLOW_LISTING");
     featureNameOrdinalMapping.put(419, "SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH");
     featureNameOrdinalMapping.put(420, "SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION");
+    featureNameOrdinalMapping.put(421, "CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI");
 
     featureNameConstantMapping =
         featureNameOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
