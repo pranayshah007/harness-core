@@ -154,7 +154,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
               .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
               .useCurrentRunningInstanceCount(
                   ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
-              .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
               .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
               .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
               .build();

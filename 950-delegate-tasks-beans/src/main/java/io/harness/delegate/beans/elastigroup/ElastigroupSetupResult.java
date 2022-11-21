@@ -28,6 +28,5 @@ public class ElastigroupSetupResult {
   boolean isBlueGreen;
   String elastiGroupNamePrefix;
   boolean useCurrentRunningInstanceCount;
-  Integer currentRunningInstanceCount;
   ElastiGroup elastigroupOriginalConfig;
 }

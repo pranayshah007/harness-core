@@ -35,7 +35,6 @@ public class ElastigroupSetupCommandRequest
   ElastiGroup elastigroupOriginalConfig;
   Integer maxInstanceCount;
   boolean useCurrentRunningInstanceCount;
-  Integer currentRunningInstanceCount;
   String startupScript;
   String image;
   boolean blueGreen;
