@@ -1847,11 +1847,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public InstanceGroupedByServiceList getInstanceGroupedByServiceList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier) {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList =
-        instanceDashboardService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+        instanceDashboardService.getActiveServiceInstanceInfo(accountIdentifier, orgIdentifier, projectIdentifier,
+            envIdentifier, serviceIdentifier, tagIdentifier, false);
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceGitOpsInfoList =
-        instanceDashboardService.getActiveServiceGitOpsInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+        instanceDashboardService.getActiveServiceInstanceInfo(
+            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier, true);
     activeServiceInstanceGitOpsInfoList.addAll(activeServiceInstanceGitOpsInfoList);
 
     return getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoList);

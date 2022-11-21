@@ -30,12 +30,9 @@ public interface InstanceDashboardService {
   List<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
   List<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier);
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier, boolean isGitOps);
   List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
-  List<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier);
-
   List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs);

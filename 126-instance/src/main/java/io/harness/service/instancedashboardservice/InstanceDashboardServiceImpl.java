@@ -161,10 +161,16 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
 
   @Override
   public List<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier) {
-    AggregationResults<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoAggregationResults =
-        instanceService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier,
+      boolean isGitOps) {
+    AggregationResults<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoAggregationResults;
+    if (!isGitOps) {
+      activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+    } else {
+      activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceGitOpsInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+    }
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList = new ArrayList<>();
 
     activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
@@ -217,36 +223,6 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
     return activeServiceInstanceInfoList;
   }
 
-  public List<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String tagIdentifier) {
-    AggregationResults<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoAggregationResults =
-        instanceService.getActiveServiceGitOpsInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
-    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList = new ArrayList<>();
-
-    activeServiceInstanceInfoAggregationResults.getMappedResults().forEach(activeServiceInstanceInfo -> {
-      final String serviceId = activeServiceInstanceInfo.getServiceIdentifier();
-      final String serviceName = activeServiceInstanceInfo.getServiceName();
-      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
-      final String envName = activeServiceInstanceInfo.getEnvName();
-      final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
-      final String infraName = activeServiceInstanceInfo.getInfraName();
-      final String agentIdentifier = activeServiceInstanceInfo.getAgentIdentifier();
-      final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
-      final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
-      final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
-      final Long lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
-      final String buildId = activeServiceInstanceInfo.getTag();
-      final String displayName = activeServiceInstanceInfo.getDisplayName();
-      final Integer count = activeServiceInstanceInfo.getCount();
-      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfoV2(serviceId, serviceName, envId, envName,
-          infraIdentifier, infraName, clusterIdentifier, agentIdentifier, lastPipelineExecutionId,
-          lastPipelineExecutionName, lastDeployedAt, buildId, displayName, count));
-    });
-
-    return activeServiceInstanceInfoList;
-  }
   /**
    * API to fetch all active instances for given account+org+project+service+env and list of buildIds at a given time
    * @param accountIdentifier
