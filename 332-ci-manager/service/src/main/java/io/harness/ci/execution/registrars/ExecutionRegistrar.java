@@ -33,6 +33,7 @@ import io.harness.ci.states.UploadToArtifactoryStep;
 import io.harness.ci.states.UploadToGCSStep;
 import io.harness.ci.states.UploadToS3Step;
 import io.harness.ci.states.V1.IntegrationStageStepPMSV1;
+import io.harness.ci.states.V1.NewInitializeTaskStep;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -47,7 +48,8 @@ public class ExecutionRegistrar {
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
-    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    engineSteps.put(InitializeTaskStep.STEP_TYPE, NewInitializeTaskStep.class);
+    //    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
