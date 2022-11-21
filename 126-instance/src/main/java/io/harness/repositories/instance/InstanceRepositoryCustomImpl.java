@@ -18,7 +18,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.CountByOrgIdProjectIdAndServiceId;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
@@ -232,22 +232,30 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
-  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId) {
-    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier)
-                            .and(InstanceKeys.envIdentifier)
-                            .is(envId);
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String tagIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    if (envIdentifier != null) {
+      criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
+    }
+    if (serviceIdentifier != null) {
+      criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
+    }
+    if (tagIdentifier != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(tagIdentifier);
+    }
 
     MatchOperation matchStage = Aggregation.match(criteria);
     GroupOperation groupEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
-        InstanceKeys.infraIdentifier, InstanceKeys.infraName, InstanceKeys.lastPipelineExecutionId,
-        InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
-        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeys.infraIdentifier, InstanceKeys.infraName,
+        InstanceKeys.lastPipelineExecutionId, InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_TAG, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
-    return secondaryMongoTemplate.aggregate(newAggregation(matchStage, groupEnvId), Instance.class,
-        ActiveServiceInstanceInfoWithoutEnvWithServiceDetails.class);
+    return secondaryMongoTemplate.aggregate(
+        newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfoV2.class);
   }
 
   @Override
@@ -278,6 +286,36 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
   }
 
+  @Override
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String tagIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    if (envIdentifier != null) {
+      criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
+    }
+    if (serviceIdentifier != null) {
+      criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
+    }
+    if (tagIdentifier != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(tagIdentifier);
+    }
+
+    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).exists(true);
+
+    MatchOperation matchStage = Aggregation.match(criteria);
+
+    GroupOperation groupClusterEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.serviceName,
+        InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceKeysAdditional.instanceInfoClusterIdentifier,
+        InstanceKeysAdditional.instanceInfoAgentIdentifier, InstanceKeys.lastPipelineExecutionId,
+        InstanceKeys.lastPipelineExecutionName, InstanceKeys.lastDeployedAt, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG,
+        InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
+                                           .count()
+                                           .as(InstanceSyncConstants.COUNT);
+    return mongoTemplate.aggregate(
+        newAggregation(matchStage, groupClusterEnvId), "instanceNG", ActiveServiceInstanceInfoV2.class);
+  }
   /*
     Return instances that are active at a given timestamp for specified accountIdentifier, projectIdentifier,
     orgIdentifier, serviceId, envId and list of buildIds

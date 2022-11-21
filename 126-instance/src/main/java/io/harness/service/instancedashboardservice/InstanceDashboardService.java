@@ -10,7 +10,7 @@ package io.harness.service.instancedashboardservice;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstanceDetailsByBuildId;
@@ -29,10 +29,13 @@ public interface InstanceDashboardService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
   List<ActiveServiceInstanceInfo> getActiveServiceInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
-  List<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails> getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envId);
+  List<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier);
   List<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId);
+  List<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier);
+
   List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs);
