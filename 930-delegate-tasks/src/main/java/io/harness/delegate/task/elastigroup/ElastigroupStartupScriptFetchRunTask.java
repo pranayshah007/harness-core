@@ -65,7 +65,7 @@ public class ElastigroupStartupScriptFetchRunTask extends AbstractDelegateRunnab
           (ElastigroupStartupScriptFetchRequest) parameters;
 
       UnitProgressData unitProgressData = getCommandUnitProgressData(
-          ElastigroupCommandUnitConstants.fetchStartupScript.toString(), CommandExecutionStatus.SUCCESS);
+          ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
 
       return ElastigroupStartupScriptFetchResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)

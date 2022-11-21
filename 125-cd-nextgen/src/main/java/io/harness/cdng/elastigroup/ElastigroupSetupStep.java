@@ -67,7 +67,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
+  private static final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
   public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
 
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;

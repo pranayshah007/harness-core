@@ -143,7 +143,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
 
     LogCallback logCallback =
-        getLogCallback(ElastigroupCommandUnitConstants.fetchStartupScript.toString(), ambiance, true);
+        getLogCallback(ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), ambiance, true);
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
@@ -157,7 +157,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
         startupScript = fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
         UnitProgressData unitProgressData = getCommandUnitProgressData(
-            ElastigroupCommandUnitConstants.fetchStartupScript.toString(), CommandExecutionStatus.SUCCESS);
+            ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
 
         //     Render expressions for all file content fetched from Harness File Store
         if (startupScript != null) {
@@ -173,7 +173,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
         logCallback.saveExecutionLog("Fetched Startup Script ", INFO, CommandExecutionStatus.SUCCESS);
         UnitProgressData unitProgressData = getCommandUnitProgressData(
-            ElastigroupCommandUnitConstants.fetchStartupScript.toString(), CommandExecutionStatus.SUCCESS);
+            ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
 
         //     Render expressions for all file content fetched from Harness File Store
         if (startupScript != null) {
@@ -186,64 +186,64 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     }
 
     return prepareStartupScriptFetchTask(
-        elastigroupStepExecutor, ambiance, stepElementParameters, infrastructureOutcome, startupScript);
+        ambiance, stepElementParameters, infrastructureOutcome, startupScript);
   }
 
   public TaskChainResponse fetchElastigroupParameters(ElastigroupStepExecutor elastigroupStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters, UnitProgressData unitProgressData,
       String startupScript, InfrastructureOutcome infrastructureOutcome) {
     LogCallback logCallback =
-        getLogCallback(ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(), ambiance, true);
+        getLogCallback(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(), ambiance, true);
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput = null;
     OptionalSweepingOutput optionalElastigroupConfigurationOutput =
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_CONFIGURATION_OUTPUT));
+    String elastigroupParameters = null;
     if (optionalElastigroupConfigurationOutput.isFound()) {
       elastigroupConfigurationOutput =
           (ElastigroupConfigurationOutput) optionalElastigroupConfigurationOutput.getOutput();
-    }
 
-    String elastigroupParameters = null;
-    StoreConfig storeConfig = elastigroupConfigurationOutput.getStoreConfig();
-    if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
-      elastigroupParameters =
-          fetchElastigroupJsonFilesContentFromLocalStore(ambiance, elastigroupConfigurationOutput, logCallback).get(0);
-      unitProgressData.getUnitProgresses().add(
-          UnitProgress.newBuilder()
-              .setUnitName(ElastigroupCommandUnitConstants.fetchElastigroupJson.toString())
-              .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
-              .build());
+      StoreConfig storeConfig = elastigroupConfigurationOutput.getStoreConfig();
+      if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
+        elastigroupParameters =
+                fetchElastigroupJsonFilesContentFromLocalStore(ambiance, elastigroupConfigurationOutput, logCallback).get(0);
+        unitProgressData.getUnitProgresses().add(
+                UnitProgress.newBuilder()
+                        .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
+                        .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
+                        .build());
 
-      //     Render expressions for all file content fetched from Harness File Store
-      if (elastigroupParameters != null) {
-        elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
+        //     Render expressions for all file content fetched from Harness File Store
+        if (elastigroupParameters != null) {
+          elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
+        }
+
+        return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
+                startupScript, infrastructureOutcome, elastigroupParameters);
+
+      } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
+        logCallback.saveExecutionLog(
+                color(format("%nFetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
+        elastigroupParameters = ((InlineStoreConfig) storeConfig).extractContent();
+        logCallback.saveExecutionLog("Fetched Elastigroup Json", INFO, CommandExecutionStatus.SUCCESS);
+        unitProgressData.getUnitProgresses().add(
+                UnitProgress.newBuilder()
+                        .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
+                        .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
+                        .build());
+
+        // Render expressions for all file content fetched from Harness File Store
+        if (elastigroupParameters != null) {
+          elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
+        }
+
+        return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
+                startupScript, infrastructureOutcome, elastigroupParameters);
       }
-
-      return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-          startupScript, infrastructureOutcome, elastigroupParameters);
-
-    } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
-      logCallback.saveExecutionLog(
-          color(format("%nFetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
-      elastigroupParameters = ((InlineStoreConfig) storeConfig).extractContent();
-      logCallback.saveExecutionLog("Fetched Elastigroup Json", INFO, CommandExecutionStatus.SUCCESS);
-      unitProgressData.getUnitProgresses().add(
-          UnitProgress.newBuilder()
-              .setUnitName(ElastigroupCommandUnitConstants.fetchElastigroupJson.toString())
-              .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
-              .build());
-
-      // Render expressions for all file content fetched from Harness File Store
-      if (elastigroupParameters != null) {
-        elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
-      }
-
-      return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-          startupScript, infrastructureOutcome, elastigroupParameters);
     }
-    return prepareElastigroupParametersFetchTask(elastigroupStepExecutor, ambiance, stepElementParameters,
-        unitProgressData, infrastructureOutcome, startupScript, elastigroupConfigurationOutput);
+    return prepareElastigroupParametersFetchTask(ambiance, stepElementParameters,
+        infrastructureOutcome, startupScript);
   }
 
   public StartupScriptOutcome resolveStartupScriptOutcome(Ambiance ambiance) {
@@ -270,7 +270,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return elastigroupSetupResult.getGroupToBeDownsized().get(0);
   }
 
-  private TaskChainResponse prepareStartupScriptFetchTask(ElastigroupStepExecutor elastigroupStepExecutor,
+  private TaskChainResponse prepareStartupScriptFetchTask(
       Ambiance ambiance, StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
       String startupScript) {
     ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData =
@@ -283,10 +283,8 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         ambiance, false, stepElementParameters, elastigroupStartupScriptFetchPassThroughData);
   }
 
-  private TaskChainResponse prepareElastigroupParametersFetchTask(ElastigroupStepExecutor elastigroupStepExecutor,
-      Ambiance ambiance, StepElementParameters stepElementParameters, UnitProgressData unitProgressData,
-      InfrastructureOutcome infrastructureOutcome, String startupScript,
-      ElastigroupConfigurationOutput elastigroupConfigurationOutput) {
+  private TaskChainResponse prepareElastigroupParametersFetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
+      InfrastructureOutcome infrastructureOutcome, String startupScript) {
     //     Render expressions for all file content fetched from Harness File Store
     if (startupScript != null) {
       startupScript = renderExpression(ambiance, startupScript);
@@ -505,7 +503,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   String getBase64EncodedStartupScript(Ambiance ambiance, String startupScript) {
     if (startupScript != null) {
       String startupScriptAfterEvaluation = renderExpression(ambiance, startupScript);
-      return BaseEncoding.base64().encode(startupScriptAfterEvaluation.getBytes(Charsets.UTF_8));
+      return java.util.Base64.getEncoder().encodeToString(startupScriptAfterEvaluation.getBytes(Charsets.UTF_8));
     }
     return null;
   }

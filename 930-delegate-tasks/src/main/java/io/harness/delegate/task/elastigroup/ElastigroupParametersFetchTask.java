@@ -61,11 +61,8 @@ public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
-      ElastigroupParametersFetchRequest elastigroupParametersFetchRequest =
-          (ElastigroupParametersFetchRequest) parameters;
-
       UnitProgressData unitProgressData = getCommandUnitProgressData(
-          ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(), CommandExecutionStatus.SUCCESS);
+          ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(), CommandExecutionStatus.SUCCESS);
 
       return ElastigroupParametersFetchResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)

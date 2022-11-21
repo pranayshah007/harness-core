@@ -65,13 +65,13 @@ public class ElastigroupCommandTaskNGHelper {
     updateName(elastiGroupConfigMap, newElastiGroupName);
     updateInitialCapacity(elastiGroupConfigMap);
     updateWithImageConfig(elastiGroupConfigMap, elastigroupSetupCommandRequest.getImage(),
-        elastigroupSetupCommandRequest.getStartupScript(), elastigroupSetupCommandRequest.isBlueGreen());
+        elastigroupSetupCommandRequest.getStartupScript());
     Gson gson = new Gson();
     return gson.toJson(jsonConfigMap);
   }
 
   private void updateWithImageConfig(
-      Map<String, Object> elastiGroupConfigMap, String image, String userData, boolean blueGreen) {
+      Map<String, Object> elastiGroupConfigMap, String image, String userData) {
     Map<String, Object> computeConfigMap = (Map<String, Object>) elastiGroupConfigMap.get(COMPUTE);
     Map<String, Object> launchSpecificationMap = (Map<String, Object>) computeConfigMap.get(LAUNCH_SPECIFICATION);
 
