@@ -120,12 +120,12 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return gson.fromJson(groupConfigJson, ElastiGroup.class);
   }
 
-  public int renderCount(ParameterField<Integer> field, int defaultValue) {
+  public int renderCount(ParameterField<Integer> field, int defaultValue, Ambiance ambiance) {
     if (field == null || field.isExpression() || field.getValue() == null) {
       return defaultValue;
     } else {
       try {
-        return Integer.parseInt(field.fetchFinalValue().toString());
+        return Integer.parseInt(renderExpression(ambiance, field.fetchFinalValue().toString()));
       } catch (NumberFormatException e) {
         log.error(format("Number format Exception while evaluating: [%s]", field.fetchFinalValue().toString()), e);
         return defaultValue;
@@ -166,7 +166,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         }
       } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
         logCallback.saveExecutionLog(
-            color(format("%nFetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
+            color(format("Fetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
         startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
         logCallback.saveExecutionLog("Fetched Startup Script ", INFO, CommandExecutionStatus.SUCCESS);
         unitProgressData = getCommandUnitProgressData(
@@ -213,7 +213,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         }
       } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
         logCallback.saveExecutionLog(
-                color(format("%nFetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
+                color(format("Fetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
         elastigroupParameters = ((InlineStoreConfig) storeConfig).extractContent();
         logCallback.saveExecutionLog("Fetched Elastigroup Json", INFO, CommandExecutionStatus.SUCCESS);
         unitProgressData.getUnitProgresses().add(
