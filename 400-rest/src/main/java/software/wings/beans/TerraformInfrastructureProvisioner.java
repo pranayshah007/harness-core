@@ -10,6 +10,8 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static software.wings.beans.InfrastructureProvisionerType.TERRAFORM;
+import static software.wings.beans.TerraformSourceType.GIT;
+import static software.wings.beans.TerraformSourceType.S3_URI;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +41,13 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class TerraformInfrastructureProvisioner extends InfrastructureProvisioner implements TerraGroupProvisioners {
   public static final String VARIABLE_KEY = "terraform";
   @NotEmpty private String sourceRepoSettingId;
+  private String sourceType;
+  public boolean provisionByS3Uri() {
+    return S3_URI.name().equals(sourceType);
+  }
+  public boolean provisionByGit() {
+    return GIT.name().equals(sourceType);
+  }
 
   /**
    * This could be either a branch or a commit id or any other reference which
@@ -110,12 +119,16 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
     private String secretMangerName;
     private boolean skipRefreshBeforeApplyingPlan;
 
+    private String sourceType;
+
+    private String s3Uri;
+
     @Builder
     public Yaml(String type, String harnessApiVersion, String description, String infrastructureProvisionerType,
         List<NameValuePair.Yaml> variables, List<InfrastructureMappingBlueprint.Yaml> mappingBlueprints,
         String sourceRepoSettingName, String sourceRepoBranch, String path, List<NameValuePair.Yaml> backendConfigs,
         String repoName, List<NameValuePair.Yaml> environmentVariables, String commitId,
-        boolean skipRefreshBeforeApplyingPlan, String secretMangerName) {
+        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3Uri, String sourceType) {
       super(type, harnessApiVersion, description, infrastructureProvisionerType, variables, mappingBlueprints);
       this.sourceRepoSettingName = sourceRepoSettingName;
       this.sourceRepoBranch = sourceRepoBranch;
@@ -127,6 +140,8 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       this.environmentVariables = environmentVariables;
       this.secretMangerName = secretMangerName;
       this.skipRefreshBeforeApplyingPlan = skipRefreshBeforeApplyingPlan;
+      this.s3Uri = s3Uri;
+      this.sourceType = sourceType;
     }
   }
 }
