@@ -235,8 +235,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String tagIdentifier) {
-    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+      String buildIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
 
     if (envIdentifier != null) {
       criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
@@ -244,8 +244,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     if (serviceIdentifier != null) {
       criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
     }
-    if (tagIdentifier != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(tagIdentifier);
+    if (buildIdentifier != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildIdentifier);
     }
 
     MatchOperation matchStage = Aggregation.match(criteria);
@@ -290,8 +290,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String tagIdentifier) {
-    Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
+      String buildIdentifier) {
+    Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
 
     if (envIdentifier != null) {
       criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
@@ -299,8 +299,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     if (serviceIdentifier != null) {
       criteria.and(InstanceKeys.serviceIdentifier).is(serviceIdentifier);
     }
-    if (tagIdentifier != null) {
-      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(tagIdentifier);
+    if (buildIdentifier != null) {
+      criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildIdentifier);
     }
 
     criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).exists(true);
@@ -427,6 +427,21 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         .is(projectIdentifier)
         .and(InstanceKeys.isDeleted)
         .is(false);
+  }
+  private Criteria getCriteriaForActiveInstancesV2(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier).is(accountIdentifier);
+
+    if (orgIdentifier != null) {
+      criteria.and(InstanceKeys.orgIdentifier).is(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      criteria.and(InstanceKeys.projectIdentifier).is(projectIdentifier);
+    }
+
+    criteria.and(InstanceKeys.isDeleted).is(false);
+
+    return criteria;
   }
 
   @Override

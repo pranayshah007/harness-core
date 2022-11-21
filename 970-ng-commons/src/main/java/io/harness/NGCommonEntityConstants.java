@@ -31,6 +31,7 @@ public class NGCommonEntityConstants {
   public static final String INFRA_DEFINITION_KEY = "infraDefinitionId";
 
   public static final String BUILDS_KEY = "buildIds";
+  public static final String BUILD_KEY = "buildId";
   public static final String TIMESTAMP = "timestamp";
   public static final String IDENTIFIER_KEY = "identifier";
   public static final String GROUP_IDENTIFIER_KEY = "groupIdentifier";
@@ -39,7 +40,6 @@ public class NGCommonEntityConstants {
   public static final String DELEGATE_IDENTIFIER_KEY = "delegateIdentifier";
   public static final String DRAFT_KEY = "skipValidation";
   public static final String TAGS_KEY = "tags";
-  public static final String TAG_KEY = "tag";
   public static final String DESCRIPTION_KEY = "description";
   public static final String DELETED_KEY = "deleted";
   public static final String PIPELINE_KEY = "pipelineIdentifier";

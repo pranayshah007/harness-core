@@ -161,15 +161,15 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
 
   @Override
   public List<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier, String tagIdentifier,
+      String projectIdentifier, String envIdentifier, String serviceIdentifier, String buildIdentifier,
       boolean isGitOps) {
     AggregationResults<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoAggregationResults;
     if (!isGitOps) {
       activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceInstanceInfo(
-          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
     } else {
       activeServiceInstanceInfoAggregationResults = instanceService.getActiveServiceGitOpsInstanceInfo(
-          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+          accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
     }
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoList = new ArrayList<>();
 

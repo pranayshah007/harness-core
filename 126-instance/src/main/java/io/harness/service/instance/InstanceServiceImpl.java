@@ -210,9 +210,9 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String tagIdentifier) {
+      String buildIdentifier) {
     return instanceRepository.getActiveServiceInstanceInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
   }
 
   @Override
@@ -224,9 +224,9 @@ public class InstanceServiceImpl implements InstanceService {
 
   public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
-      String tagIdentifier) {
+      String buildIdentifier) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
-        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
   }
 
   /*

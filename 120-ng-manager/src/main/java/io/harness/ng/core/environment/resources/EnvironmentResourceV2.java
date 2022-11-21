@@ -389,7 +389,7 @@ public class EnvironmentResourceV2 {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier,
       @QueryParam(NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) String serviceIdentifier,
-      @QueryParam(NGCommonEntityConstants.TAG_KEY) String tag) {
+      @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
     /*
     if (tag != null && serviceIdentifier == null) {
 
@@ -397,7 +397,7 @@ public class EnvironmentResourceV2 {
 
      */
     return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByServiceList(
-        accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier, tag));
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier, buildId));
   }
 
   @POST
