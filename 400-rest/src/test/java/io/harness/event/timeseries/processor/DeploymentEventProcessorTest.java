@@ -9,6 +9,7 @@ package io.harness.event.timeseries.processor;
 
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.RAMA;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -21,6 +22,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -39,7 +41,9 @@ import software.wings.utils.WingsTestConstants;
 import com.google.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,13 +52,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 
 /**
  * @author rktummala
  */
 public class DeploymentEventProcessorTest extends WingsBaseTest {
   @Mock TimeScaleDBService timeScaleService;
-  @Inject @InjectMocks DeploymentEventProcessor deploymentEventProcessor;
+  @Spy @Inject @InjectMocks DeploymentEventProcessor deploymentEventProcessor;
 
   private Connection dbConnection = mock(Connection.class);
   private PreparedStatement preparedStatement = mock(PreparedStatement.class);
@@ -185,6 +190,54 @@ public class DeploymentEventProcessorTest extends WingsBaseTest {
     when(dbConnection.prepareStatement(anyString())).thenReturn(preparedStatement);
     deploymentEventProcessor.processEvent(timeSeriesEventInfo);
     verify(preparedStatement).execute();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_batchIntervalMigrationQuery() throws SQLException {
+    when(dbConnection.prepareStatement(anyString())).thenReturn(preparedStatement);
+    ResultSet resultSet = mock(ResultSet.class);
+    when(preparedStatement.executeQuery()).thenReturn(resultSet);
+
+    List<Map<String, Object>> eventInfoList = new ArrayList<>();
+    Map<String, Object> eventInfo = new HashMap<>();
+    eventInfo.put(EventProcessor.EXECUTIONID, "uuid");
+    eventInfo.put(EventProcessor.STARTTIME, 100000025L);
+    eventInfo.put(EventProcessor.ENDTIME, 100001120L);
+    eventInfo.put(EventProcessor.ACCOUNTID, "accountId");
+    eventInfo.put(EventProcessor.APPID, "appId");
+    eventInfo.put(EventProcessor.TRIGGERED_BY, null);
+    eventInfo.put(EventProcessor.TRIGGER_ID, null);
+    eventInfo.put(EventProcessor.STATUS, "SUCCESS");
+    eventInfo.put(EventProcessor.SERVICE_LIST, null);
+    eventInfo.put(EventProcessor.WORKFLOW_LIST, null);
+    eventInfo.put(EventProcessor.CLOUD_PROVIDER_LIST, null);
+    eventInfo.put(EventProcessor.ENV_LIST, null);
+    eventInfo.put(EventProcessor.PIPELINE, null);
+    eventInfo.put(EventProcessor.DURATION, 1095L);
+    eventInfo.put(EventProcessor.ARTIFACT_LIST, null);
+    eventInfo.put(EventProcessor.ENVTYPES, null);
+    eventInfo.put(EventProcessor.PARENT_EXECUTION, null);
+    eventInfo.put(EventProcessor.FAILURE_DETAILS, null);
+    eventInfo.put(EventProcessor.FAILED_STEP_NAMES, null);
+    eventInfo.put(EventProcessor.FAILED_STEP_TYPES, null);
+    eventInfo.put(EventProcessor.STAGENAME, null);
+    eventInfo.put(EventProcessor.ROLLBACK_DURATION, 0L);
+    eventInfo.put(EventProcessor.ON_DEMAND_ROLLBACK, false);
+    eventInfo.put(EventProcessor.ORIGINAL_EXECUTION_ID, null);
+    eventInfo.put(EventProcessor.MANUALLY_ROLLED_BACK, false);
+    eventInfo.put(EventProcessor.INSTANCES_DEPLOYED, 1);
+    eventInfo.put(EventProcessor.TAGS, null);
+    eventInfo.put(EventProcessor.PARENT_PIPELINE_ID, null);
+    eventInfo.put(EventProcessor.CREATED_BY_TYPE, null);
+    eventInfoList.add(eventInfo);
+
+    doReturn(eventInfoList).when(deploymentEventProcessor).parseFetchResults(resultSet);
+    deploymentEventProcessor.handleBatchIntervalMigration("accountId", 100000024L, 100001124L, 1, 1);
+    verify(preparedStatement).executeQuery();
+    verify(preparedStatement).setString(29, null);
+    verify(preparedStatement, times(2)).execute();
   }
 
   // Inner methods

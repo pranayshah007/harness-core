@@ -96,10 +96,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                                           CreatedAtAware, CreatedByAware, KeywordsAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
+        .add(SortCompoundMongoIndex.builder()
                  .name("search")
                  .field(WorkflowExecutionKeys.workflowId)
                  .field(WorkflowExecutionKeys.status)
+                 .descSortField(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("app_pipExecutionId_createdAt")

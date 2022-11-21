@@ -16,7 +16,6 @@ import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -53,13 +52,6 @@ public class PipelineMetadataV2 {
                  .field(PipelineMetadataV2Keys.orgIdentifier)
                  .field(PipelineMetadataV2Keys.projectIdentifier)
                  .field(PipelineMetadataV2Keys.identifier)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("account_org_project_last_executed")
-                 .field(PipelineMetadataV2Keys.accountIdentifier)
-                 .field(PipelineMetadataV2Keys.orgIdentifier)
-                 .field(PipelineMetadataV2Keys.projectIdentifier)
-                 .descRangeField(PipelineMetadataV2Keys.lastExecutedAt)
                  .build())
         .build();
   }

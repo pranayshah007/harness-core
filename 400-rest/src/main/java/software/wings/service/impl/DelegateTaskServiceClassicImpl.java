@@ -956,9 +956,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1006,9 +1007,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();

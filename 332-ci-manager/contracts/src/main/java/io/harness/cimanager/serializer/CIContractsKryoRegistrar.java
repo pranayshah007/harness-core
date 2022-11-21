@@ -7,7 +7,6 @@
 
 package io.harness.cimanager.serializer;
 
-import static io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import static io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
 import static io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
 
@@ -52,10 +51,6 @@ import io.harness.beans.yaml.extended.repository.Repository;
 import io.harness.beans.yaml.extended.runtime.CloudRuntime;
 import io.harness.beans.yaml.extended.runtime.DockerRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
-import io.harness.beans.yaml.extended.volumes.CIVolume;
-import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
-import io.harness.beans.yaml.extended.volumes.HostPathYaml;
-import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
 import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.serializer.KryoRegistrar;
@@ -77,7 +72,6 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(TestStepInfo.class, 100013);
     kryo.register(CustomVariable.class, 100023);
     kryo.register(K8sDirectInfraYaml.class, 100040);
-    kryo.register(K8sDirectInfraYamlSpec.class, 100041);
     kryo.register(CIStepOutcome.class, 100057);
     kryo.register(PluginStepInfo.class, 100058);
     kryo.register(SecurityStepInfo.class, 110105);
@@ -114,11 +108,6 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(CloudRuntime.class, 110114);
     kryo.register(DockerRuntime.class, 110116);
     kryo.register(DockerInfraYaml.class, 110117);
-
-    kryo.register(CIVolume.class, 390005);
-    kryo.register(EmptyDirYaml.class, 390006);
-    kryo.register(HostPathYaml.class, 390007);
-    kryo.register(PersistentVolumeClaimYaml.class, 390008);
 
     kryo.register(IntegrationStageNodeV1.class, 110118);
     kryo.register(IntegrationStageConfigImplV1.class, 110119);

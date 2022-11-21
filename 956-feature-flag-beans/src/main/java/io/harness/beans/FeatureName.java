@@ -486,7 +486,17 @@ public enum FeatureName {
   PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  CDS_OrgAccountLevelServiceEnvEnvGroup(
+      "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
+  CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
+  GITOPS_DR_ENABLED("Enable disaster recovery feature", HarnessTeam.GITOPS),
+  GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
+  CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
+  SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
+  SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
+  SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
+      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {

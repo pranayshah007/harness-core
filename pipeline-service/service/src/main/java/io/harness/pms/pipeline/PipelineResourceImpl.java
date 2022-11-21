@@ -306,7 +306,6 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       PipelineFilterPropertiesDto filterProperties, Boolean getDistinctFromBranches) {
     log.info(String.format("Get List of pipelines in project %s, org %s, account %s", projectId, orgId, accountId));
 
-    // todo: Add handling for sort by lastExecutedAt
     Criteria criteria = pipelineServiceHelper.formCriteria(
         accountId, orgId, projectId, filterIdentifier, filterProperties, false, module, searchTerm);
 

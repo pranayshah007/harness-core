@@ -1186,7 +1186,7 @@ public class AzureVMSSStateHelperTest extends CategoryTest {
     doReturn(ArtifactType.DOCKER).when(artifactStreamAttributes).getArtifactType();
     doReturn(ArtifactStreamType.DOCKER.name()).when(artifactStreamAttributes).getArtifactStreamType();
     doReturn(artifactStreamAttributes).when(artifactStream).fetchArtifactStreamAttributes(any());
-
+    when(settingsService.get(artifact.getSettingId())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     doReturn(true).when(featureFlagService).isEnabled(any(), anyString());
 
     ArtifactConnectorMapper artifactConnectorMapper =
@@ -1256,7 +1256,7 @@ public class AzureVMSSStateHelperTest extends CategoryTest {
     JenkinsArtifactStream jenkinsArtifactStream =
         JenkinsArtifactStream.builder().artifactPaths(artifactPaths).metadataOnly(true).build();
     when(artifactStreamService.get(any())).thenReturn(jenkinsArtifactStream);
-
+    when(settingsService.get(artifact.getSettingId())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     ArtifactConnectorMapper jenkinsArtifactConnectorMapper = azureVMSSStateHelper.getConnectorMapper(context, artifact);
 
     assertThat(jenkinsArtifactConnectorMapper.artifactStreamAttributes().isMetadataOnly()).isTrue();

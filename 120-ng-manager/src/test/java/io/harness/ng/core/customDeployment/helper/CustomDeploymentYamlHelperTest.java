@@ -217,15 +217,27 @@ public class CustomDeploymentYamlHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetReferencesFromYamlInvalidRef() {
     String template = readFile("templateInvalidReferences.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
-    doReturn(TemplateResponseDTO.builder()
-                 .yaml(readFile("templateInvalidReferences.yaml", TEMPLATE_RESOURCE_PATH_PREFIX))
-                 .build())
+    doReturn(TemplateResponseDTO.builder().yaml(template).build())
         .when(customDeploymentYamlHelper)
         .getScopedTemplateResponseDTO(anyString(), anyString(), anyString(), anyString(), anyString());
 
     assertThatThrownBy(() -> customDeploymentYamlHelper.getReferencesFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, template))
         .hasMessage(
             "Template yaml provided does not have valid entity references: step template linked cannot have empty identifier");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testGetReferencesFromYamlDuplicateRef() {
+    String template = readFile("templateDuplicateReferences.yaml", TEMPLATE_RESOURCE_PATH_PREFIX);
+    doReturn(TemplateResponseDTO.builder().yaml(template).build())
+        .when(customDeploymentYamlHelper)
+        .getScopedTemplateResponseDTO(anyString(), anyString(), anyString(), anyString(), anyString());
+
+    assertThatThrownBy(() -> customDeploymentYamlHelper.getReferencesFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, template))
+        .hasMessage(
+            "Template yaml provided does not have valid entity references: Duplicate step account.accountTemplate linked with the template");
   }
 
   @Test

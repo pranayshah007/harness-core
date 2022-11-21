@@ -29,7 +29,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.UpdateOperations;
 
+@Slf4j
 public class CompositeSLOServiceImpl implements CompositeSLOService {
   @Inject HPersistence hPersistence;
 
@@ -131,8 +134,12 @@ public class CompositeSLOServiceImpl implements CompositeSLOService {
   }
   @Override
   public void reset(CompositeServiceLevelObjective compositeServiceLevelObjective) {
-    compositeServiceLevelObjective.setStartedAt(System.currentTimeMillis());
-
+    log.info("Reseting composite SLO with identifier {}:", compositeServiceLevelObjective.getIdentifier());
+    UpdateOperations<CompositeServiceLevelObjective> updateOperations =
+        hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
+            .inc(CompositeServiceLevelObjectiveKeys.version)
+            .set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.startedAt, System.currentTimeMillis());
+    hPersistence.update(compositeServiceLevelObjective, updateOperations);
     String sloId = compositeServiceLevelObjective.getUuid();
     int sloVersion = compositeServiceLevelObjective.getVersion();
     long startTime = TimeUnit.MILLISECONDS.toMinutes(compositeServiceLevelObjective
@@ -150,5 +157,11 @@ public class CompositeSLOServiceImpl implements CompositeSLOService {
   }
 
   @Override
-  public void recalculate(CompositeServiceLevelObjective compositeServiceLevelObjective) {}
+  public void recalculate(CompositeServiceLevelObjective compositeServiceLevelObjective) {
+    log.info("Recalculating composite SLO with identifier {}:", compositeServiceLevelObjective.getIdentifier());
+    UpdateOperations<CompositeServiceLevelObjective> updateOperations =
+        hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
+            .inc(CompositeServiceLevelObjectiveKeys.version);
+    hPersistence.update(compositeServiceLevelObjective, updateOperations);
+  }
 }

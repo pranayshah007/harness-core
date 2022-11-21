@@ -237,7 +237,7 @@ public class ExecutionHelper {
         ExecutionMetadata.newBuilder()
             .setExecutionUuid(executionId)
             .setTriggerInfo(triggerInfo)
-            .setModuleType(moduleType)
+            .setModuleType(EmptyPredicate.isEmpty(moduleType) ? "" : moduleType)
             .setRunSequence(pipelineMetadataService.incrementRunSequence(pipelineEntity))
             .setPipelineIdentifier(pipelineIdentifier)
             .setRetryInfo(retryExecutionInfo)

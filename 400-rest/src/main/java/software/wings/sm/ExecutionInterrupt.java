@@ -19,6 +19,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
+import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -68,6 +69,11 @@ public class ExecutionInterrupt implements PersistentEntity, UuidAware, CreatedA
                  .field(ExecutionInterruptKeys.seized)
                  .field(ExecutionInterruptKeys.executionUuid)
                  .descSortField(ExecutionInterruptKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_lastUpdatedAt")
+                 .field(ExecutionInterruptKeys.accountId)
+                 .field(ExecutionInterruptKeys.lastUpdatedAt)
                  .build())
         .build();
   }

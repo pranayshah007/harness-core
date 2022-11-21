@@ -134,6 +134,10 @@ export SONAR_LIBS_FILES=$(get_info_from_file $PR_MODULES_LIB_FILE)
 export SONAR_SRCS=$(get_info_from_file $PR_SRCS_FILE)
 export SONAR_TEST_INCLUSIONS=$(get_info_from_file $PR_TEST_INCLUSION_FILE)
 
+[ ! -f "${SONAR_CONFIG_FILE}" ] \
+&& echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
+&& echo "sonar.log.level=DEBUG" >> ${SONAR_CONFIG_FILE}
+
 echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.tests=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.test.inclusions=$SONAR_TEST_INCLUSIONS" >> ${SONAR_CONFIG_FILE}

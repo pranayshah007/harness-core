@@ -42,8 +42,7 @@ public class ShellScriptTemplateService implements NgTemplateService {
     List<Map<String, String>> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables().forEach(variable -> {
-        outputVariables.add(
-            ImmutableMap.of("name", variable.getName(), "type", "String", "value", variable.getValue()));
+        variables.add(ImmutableMap.of("name", variable.getName(), "type", "String", "value", variable.getValue()));
       });
     }
     Map<String, Object> templateSpec =

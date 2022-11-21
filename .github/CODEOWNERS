@@ -47,6 +47,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /945-account-mgmt/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /948-cv-nextgen-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /950-delegate-tasks-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/950-delegate-tasks-beans/src/main/java/software/wings/beans/TaskType.java ashish.sanodia@harness.io archit.singla@harness.io harsh.jain@harness.io
 /950-log-client/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /950-ng-authentication-service/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /950-ng-core/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
@@ -63,7 +64,9 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /955-outbox-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /955-setup-usage-sdk/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /956-feature-flag-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/956-feature-flag-beans/src/main/java/io/harness/beans/FeatureName.java ashish.sanodia@harness.io archit.singla@harness.io harsh.jain@harness.io
 /957-cg-beans/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
+/957-cg-beans/src/main/java/software/wings/beans/EntityType.java ashish.sanodia@harness.io archit.singla@harness.io harsh.jain@harness.io
 /959-common-entities/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /959-file-service-commons/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /959-psql-database-models/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io

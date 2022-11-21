@@ -240,10 +240,10 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .deploymentType(DeploymentType.ECS.name())
                                           .executeOnDelegate(true)
                                           .inlineSshCommand(true)
-                                          .bastionConnectionAttributes(new SettingAttribute())
+                                          .bastionConnectionAttributes(new SettingAttribute().toDTO())
                                           .winRmConnectionAttributes(WinRmConnectionAttributes.builder().build())
-                                          .cloudProviderSetting(new SettingAttribute())
-                                          .hostConnectionAttributes(new SettingAttribute())
+                                          .cloudProviderSetting(new SettingAttribute().toDTO())
+                                          .hostConnectionAttributes(new SettingAttribute().toDTO())
                                           .build();
     Command nestedCommand =
         Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();

@@ -23,6 +23,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -37,8 +38,10 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -70,7 +73,9 @@ public class ContainerStepInfo
   private ParameterField<Map<String, JsonNode>> settings;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> uses;
-  private ContainerResource resources;
+  @NotNull @Valid private ContainerResource resources;
+
+  @NotNull @Valid private ContainerStepInfra infrastructure;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

@@ -71,6 +71,7 @@ public class CiBeansRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .addAll(LicenseManagerRegistrars.kryoRegistrars)
+          .addAll(ContainerRegistrars.kryoRegistrars)
           .add(NgPersistenceKryoRegistrar.class)
           .add(CIBeansKryoRegistrar.class)
           .add(CIContractsKryoRegistrar.class)

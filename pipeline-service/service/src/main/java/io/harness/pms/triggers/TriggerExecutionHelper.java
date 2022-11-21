@@ -207,7 +207,7 @@ public class TriggerExecutionHelper {
                   ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
         }
 
-        if (!pipelineEntityToExecute.isPresent()) {
+        if (pipelineEntityToExecute.isEmpty()) {
           throw new TriggerException("Unable to continue trigger execution. Pipeline with identifier: "
                   + ngTriggerEntity.getTargetIdentifier() + ", with org: " + ngTriggerEntity.getOrgIdentifier()
                   + ", with ProjectId: " + ngTriggerEntity.getProjectIdentifier()

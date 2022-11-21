@@ -284,6 +284,7 @@ events {"name": "status_1", "background": true} {"status": 1}
 executionInterruptTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 executionInterruptTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 executionInterrupts {"name": "accountId_1", "background": true} {"accountId": 1}
+executionInterrupts {"name": "accountId_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": 1}
 executionInterrupts {"name": "appId_seized_executionUuid_createdAt", "background": true} {"appId": 1, "seized": 1, "executionUuid": 1, "createdAt": -1}
 executionInterrupts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 executionInterrupts {"name": "executionUuid_1", "background": true} {"executionUuid": 1}
@@ -569,6 +570,7 @@ perpetualTask {"name": "assignIterator", "background": true} {"state": 1, "assig
 perpetualTask {"name": "assignIterator_1", "background": true} {"state": 1, "assignIteration": 1}
 perpetualTask {"name": "delegateId_1", "background": true} {"delegateId": 1}
 perpetualTask {"name": "rebalanceIterator", "background": true} {"state": 1, "rebalanceIteration": 1}
+perpetualTask {"name": "state_assignIteration_assignAfterMs", "background": true} {"state": 1, "assignIteration": 1, "assignAfterMs": 1}
 perpetualTaskScheduleConfig {"name": "unique_perpetualTaskScheduleConfig_index1", "unique": true} {"accountId": 1, "perpetualTaskType": 1}
 personalization {"name": "unique_identification", "unique": true} {"accountId": 1, "userId": 1}
 pipelineExecutions {"name": "appId_1", "background": true} {"appId": 1}
@@ -677,6 +679,7 @@ services {"name": "createdAt_1", "background": true} {"createdAt": 1}
 services {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 settingAttributes {"name": "accountIdAppIdCategoryCreatedAt", "background": true} {"accountId": 1, "appId": 1, "category": 1, "createdAt": -1}
 settingAttributes {"name": "accountIdAppIdCategoryNameIdx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountId": 1, "appId": 1, "category": 1, "name": 1}
+settingAttributes {"name": "accountIdNameIdx", "background": true} {"name": 1, "accountId": 1}
 settingAttributes {"name": "acctCatTypeIdx", "background": true} {"accountId": 1, "category": 1, "value.type": 1}
 settingAttributes {"name": "acctValTypeIdx", "background": true} {"accountId": 1, "value.type": 1}
 settingAttributes {"name": "appId_1", "background": true} {"appId": 1}
@@ -692,6 +695,7 @@ ssoSettings {"name": "createdAt_1", "background": true} {"createdAt": 1}
 ssoSettings {"name": "nextIterations_1", "background": true} {"nextIterations": 1}
 ssoSettings {"name": "typeNextIterations", "background": true} {"type": 1, "nextIterations": 1}
 stateExecutionInstances {"name": "accountId_1", "background": true} {"accountId": 1}
+stateExecutionInstances {"name": "accountId_status_stateType", "background": true} {"accountId": 1, "status": 1, "stateType": 1}
 stateExecutionInstances {"name": "appIdExecutionIdStatus", "background": true} {"appId": 1, "executionUuid": 1, "status": 1}
 stateExecutionInstances {"name": "appId_endTs", "background": true} {"appId": 1, "endTs": 1}
 stateExecutionInstances {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -817,6 +821,7 @@ userGroups {"name": "accountIdAndFilterTypeAndAppIds", "background": true} {"acc
 userGroups {"name": "accountIdAndImportedByScim", "background": true} {"accountId": 1, "importedByScim": 1}
 userGroups {"name": "accountIdAndName", "background": true} {"accountId": 1, "name": 1}
 userGroups {"name": "accountId_1", "background": true} {"accountId": 1}
+userGroups {"name": "accountId_linkedSsoId_isSsoLinked", "background": true} {"accountId": 1, "linkedSsoId": 1, "isSsoLinked": 1}
 userGroups {"name": "appId_1", "background": true} {"appId": 1}
 userGroups {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userGroups {"name": "name_1", "background": true} {"name": 1}
@@ -899,7 +904,7 @@ workflowExecutions {"name": "infraDefinitionIds_1", "background": true} {"infraD
 workflowExecutions {"name": "infraMappingIds_1", "background": true} {"infraMappingIds": 1}
 workflowExecutions {"name": "lastInfraMappingSearch", "background": true} {"appId": 1, "workflowType": 1, "status": 1, "infraMappingIds": 1, "createdAt": -1}
 workflowExecutions {"name": "pipelineResumeId_1", "background": true, "sparse": true} {"pipelineResumeId": 1}
-workflowExecutions {"name": "search", "background": true} {"workflowId": 1, "status": 1}
+workflowExecutions {"name": "search", "background": true} {"workflowId": 1, "status": 1, "endTs": -1}
 workflowExecutions {"name": "searchByServiceIds", "background": true} {"appId": 1, "workflowId": 1, "status": 1, "serviceIds": 1, "createdAt": -1}
 workflowExecutions {"name": "serviceIds_1", "background": true} {"serviceIds": 1}
 workflowExecutions {"name": "service_guard", "background": true} {"appId": 1, "startTs": 1}

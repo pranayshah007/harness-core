@@ -30,6 +30,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.persistence.HIterator;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -332,7 +333,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
-    when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(serviceOverrideService.get(any(), any(), any(), any(), any()))
+        .thenReturn(Optional.of(NGServiceOverridesEntity.builder().build()));
 
     YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
 

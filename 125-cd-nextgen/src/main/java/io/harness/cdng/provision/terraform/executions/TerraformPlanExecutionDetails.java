@@ -57,8 +57,10 @@ public class TerraformPlanExecutionDetails implements PersistentEntity, UuidAwar
   @NotNull private String pipelineExecutionId;
   @NotNull private String stageExecutionId;
   @NotNull private String provisionerId;
-  @NotNull private String tfPlanJsonFieldId;
+  private String tfPlanJsonFieldId;
   @NotNull private String tfPlanFileBucket;
+  private String tfHumanReadablePlanId;
+  @NotNull private String tfHumanReadablePlanFileBucket;
   @NotNull private EncryptionConfig encryptionConfig;
   /**
    * Currently, encryptedTfPlan is storing only one element. But in future encryptedTfPlan will be broken in multiple

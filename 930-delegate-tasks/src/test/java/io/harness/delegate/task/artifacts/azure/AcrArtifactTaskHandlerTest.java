@@ -8,10 +8,12 @@
 package io.harness.delegate.task.artifacts.azure;
 
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -162,6 +164,24 @@ public class AcrArtifactTaskHandlerTest extends CategoryTest {
     assertThat(responseList.get(0).getBuildDetails().getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("3.0");
     assertThat(responseList.get(1).getBuildDetails().getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("2.0");
     assertThat(responseList.get(2).getBuildDetails().getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("1.0");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testdecryptRequestDTOs() {
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+    List encryptedDataDetails = Lists.emptyList();
+    AcrArtifactDelegateRequest acrArtifactDelegateRequest = AcrArtifactDelegateRequest.builder()
+                                                                .azureConnectorDTO(azureConnectorDTO)
+                                                                .encryptedDataDetails(encryptedDataDetails)
+                                                                .subscription(SUBSCRIPTION_ID)
+                                                                .registry(REGISTRY)
+                                                                .repository(REPOSITORY)
+                                                                .sourceType(ArtifactSourceType.ACR)
+                                                                .build();
+    acrArtifactTaskHandler.decryptRequestDTOs(acrArtifactDelegateRequest);
+
+    verify(secretDecryptionService).decrypt(any(), any());
   }
 
   private AcrArtifactDelegateResponse createAcrArtifactDelegateResponse(String tag) {

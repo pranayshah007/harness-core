@@ -42,7 +42,8 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
-import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.service.PipelineEntityReadHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
@@ -70,6 +71,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock OutboxService outboxService;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock PipelineEntityReadHelper pipelineEntityReadHelper;
 
   String accountIdentifier = "acc";
   String orgIdentifier = "org";
@@ -80,16 +82,16 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
 
   String scmBadRequest = "SCM bad request";
 
-  Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                          .is(false)
-                          .and(PipelineEntityKeys.identifier)
-                          .is(pipelineId)
-                          .and(PipelineEntityKeys.projectIdentifier)
-                          .is(projectIdentifier)
+  Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
+                          .is(accountIdentifier)
                           .and(PipelineEntityKeys.orgIdentifier)
                           .is(orgIdentifier)
-                          .and(PipelineEntityKeys.accountId)
-                          .is(accountIdentifier);
+                          .and(PipelineEntityKeys.projectIdentifier)
+                          .is(projectIdentifier)
+                          .and(PipelineEntityKeys.identifier)
+                          .is(pipelineId)
+                          .and(PipelineEntityKeys.deleted)
+                          .is(false);
   Query query = new Query(criteria);
 
   Scope scope = Scope.builder()
@@ -107,7 +109,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     pipelineRepository = new PMSPipelineRepositoryCustomImpl(mongoTemplate, gitAwarePersistence, transactionHelper,
-        pipelineMetadataService, gitAwareEntityHelper, outboxService, gitSyncSdkService);
+        pipelineMetadataService, gitAwareEntityHelper, outboxService, gitSyncSdkService, pipelineEntityReadHelper);
     doReturn(true)
         .when(gitSyncSdkService)
         .isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -205,16 +207,17 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                               .yaml(pipelineYaml)
                                               .storeType(StoreType.INLINE)
                                               .build();
-    Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                            .is(false)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineId)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier)
+
+    Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
+                            .is(accountIdentifier)
                             .and(PipelineEntityKeys.orgIdentifier)
                             .is(orgIdentifier)
-                            .and(PipelineEntityKeys.accountId)
-                            .is(accountIdentifier);
+                            .and(PipelineEntityKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(PipelineEntityKeys.identifier)
+                            .is(pipelineId)
+                            .and(PipelineEntityKeys.deleted)
+                            .is(false);
     Query query = new Query(criteria);
     doReturn(inlinePipelineEntity).when(mongoTemplate).findOne(query, PipelineEntity.class);
     Optional<PipelineEntity> optionalPipelineEntity =
@@ -416,12 +419,11 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = VIVEK_DIXIT)
   @Category(UnitTests.class)
-  public void testcountFileInstances() {
+  public void testCountFileInstances() {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountIdentifier, repoURL, filePath);
-    Query query = new Query().addCriteria(criteria);
-    doReturn(17L).when(mongoTemplate).count(query, PipelineEntity.class);
+    Query query = new Query(criteria);
+    doReturn(17L).when(pipelineEntityReadHelper).findCount(query);
     assertThat(pipelineRepository.countFileInstances(accountIdentifier, repoURL, filePath)).isEqualTo(17L);
-    verify(mongoTemplate, times(1)).count(query, PipelineEntity.class);
   }
 
   @Test

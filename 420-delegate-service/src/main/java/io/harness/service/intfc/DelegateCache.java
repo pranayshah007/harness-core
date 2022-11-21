@@ -14,6 +14,8 @@ import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
 
 import java.util.List;
+import java.util.Set;
+import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateCache {
@@ -26,4 +28,6 @@ public interface DelegateCache {
   void invalidateDelegateProfileCache(String accountId, String delegateProfileId);
 
   List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
+
+  Set<String> getDelegateSupportedTaskTypes(@NotNull String accountId);
 }

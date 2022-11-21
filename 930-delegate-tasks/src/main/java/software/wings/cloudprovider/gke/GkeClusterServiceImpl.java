@@ -15,7 +15,7 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.GcpConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.inject.Inject;

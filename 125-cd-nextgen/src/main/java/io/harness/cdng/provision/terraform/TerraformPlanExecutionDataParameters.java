@@ -32,4 +32,5 @@ public class TerraformPlanExecutionDataParameters {
   TerraformPlanCommand command;
   ParameterField<String> secretManagerRef;
   ParameterField<Boolean> exportTerraformPlanJson;
+  ParameterField<Boolean> exportTerraformHumanReadablePlan;
 }
