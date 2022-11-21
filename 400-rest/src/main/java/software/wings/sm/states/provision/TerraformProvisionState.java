@@ -137,6 +137,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.TerraformBackendConfig;
 import software.wings.beans.TerraformInfrastructureProvisioner;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.command.Command.Builder;
 import software.wings.beans.command.CommandType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
@@ -802,13 +803,13 @@ public abstract class TerraformProvisionState extends State {
 
   protected ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
     if (inheritApprovedPlan) {
-      return executeInternalInherited(context, activityId);
+      return executeInternal(context, activityId);
     } else {
       return executeInternalRegular(context, activityId);
     }
   }
 
-  private ExecutionResponse executeInternalInherited(ExecutionContext context, String activityId) {
+  private ExecutionResponse execInheriteduteInternalInherited(ExecutionContext context, String activityId) {
     List<TerraformProvisionInheritPlanElement> allPlanElements = context.getContextElementList(TERRAFORM_INHERIT_PLAN);
     if (isEmpty(allPlanElements)) {
       throw new InvalidRequestException(
@@ -922,6 +923,7 @@ public abstract class TerraformProvisionState extends State {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.provisionByGit() ? TerraformSourceType.GIT : TerraformSourceType.S3_URI)
             .accountId(executionContext.getApp().getAccountId())
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .activityId(activityId)
@@ -1218,6 +1220,7 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.provisionByGit() ? TerraformSourceType.GIT : TerraformSourceType.S3_URI)
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
