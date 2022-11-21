@@ -231,6 +231,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       }
     }
 
+    if (isEmpty(elastigroupParameters)) {
+      return stepFailureTaskResponseWithMessage(
+              unitProgressData, "Either Store Type Not Supported For Elastigroup Json or content inside it is empty");
+    }
+
     return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
             startupScript, infrastructureOutcome, elastigroupParameters);
   }
