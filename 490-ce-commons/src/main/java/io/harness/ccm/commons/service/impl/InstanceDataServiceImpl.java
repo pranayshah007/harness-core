@@ -32,14 +32,14 @@ public class InstanceDataServiceImpl implements InstanceDataService {
   }
 
   @Override
-  public List<InstanceData> fetchInstanceDataForGivenInstances(List<String> instanceIds) {
-    return instanceDataDao.fetchInstanceDataForGivenInstances(instanceIds);
+  public List<InstanceData> fetchInstanceDataForGivenInstances(String accountId, List<String> instanceIds) {
+    return instanceDataDao.fetchInstanceDataForGivenInstances(accountId, instanceIds);
   }
 
   @Override
   public Map<String, Map<String, String>> fetchLabelsForGivenInstances(String accountId, List<String> instanceIds) {
     try {
-      return instanceDataDao.fetchInstanceDataForGivenInstances(instanceIds)
+      return instanceDataDao.fetchInstanceDataForGivenInstances(accountId, instanceIds)
           .stream()
           .filter(instanceData -> instanceData.getLabels() != null && instanceData.getAccountId().equals(accountId))
           .collect(Collectors.toMap(
