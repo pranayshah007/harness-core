@@ -7,6 +7,9 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.ngmigration.service.step.StepMapperFactory;
+
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.GraphNode;
 import software.wings.beans.Workflow;
@@ -14,11 +17,14 @@ import software.wings.beans.WorkflowPhase.Yaml;
 import software.wings.service.impl.yaml.handler.workflow.BlueGreenWorkflowYamlHandler;
 import software.wings.yaml.workflow.BlueGreenWorkflowYaml;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.List;
 
-public class BlueGreenWorkflowHandlerImpl implements WorkflowHandler {
+public class BlueGreenWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BlueGreenWorkflowYamlHandler blueGreenWorkflowYamlHandler;
+
+  @Inject private StepMapperFactory stepMapperFactory;
 
   @Override
   public List<Yaml> getPhases(Workflow workflow) {
@@ -32,5 +38,23 @@ public class BlueGreenWorkflowHandlerImpl implements WorkflowHandler {
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
     return getSteps(orchestrationWorkflow.getWorkflowPhases(), orchestrationWorkflow.getPreDeploymentSteps(),
         orchestrationWorkflow.getPostDeploymentSteps());
+  }
+
+  @Override
+  public List<Yaml> getRollbackPhases(Workflow workflow) {
+    BlueGreenWorkflowYaml blueGreenWorkflowYaml = blueGreenWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return blueGreenWorkflowYaml.getRollbackPhases();
+  }
+
+  @Override
+  public JsonNode getTemplateSpec(Workflow workflow) {
+    return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+  }
+
+  @Override
+  public ServiceDefinitionType inferServiceDefinitionType(Workflow workflow) {
+    // We can infer the type based on the service, infra & sometimes based on the steps used.
+    // TODO: Deepak Puthraya
+    return ServiceDefinitionType.KUBERNETES;
   }
 }

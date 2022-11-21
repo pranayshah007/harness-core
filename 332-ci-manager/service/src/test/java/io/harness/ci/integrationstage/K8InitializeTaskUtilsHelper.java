@@ -23,7 +23,7 @@ import io.harness.beans.environment.pod.container.ContainerImageDetails;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml.EmptyDirYamlSpec;

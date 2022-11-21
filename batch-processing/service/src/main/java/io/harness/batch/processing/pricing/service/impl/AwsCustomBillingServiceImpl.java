@@ -49,9 +49,9 @@ public class AwsCustomBillingServiceImpl implements AwsCustomBillingService {
 
   @Override
   public void updateAwsEC2BillingDataCache(
-      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId) {
+      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId, String accountId) {
     Map<String, VMInstanceBillingData> awsEC2BillingData =
-        bigQueryHelperService.getAwsEC2BillingData(resourceIds, startTime, endTime, dataSetId);
+        bigQueryHelperService.getAwsEC2BillingData(resourceIds, startTime, endTime, dataSetId, accountId);
     awsEC2BillingData.forEach(
         (resourceId, vmInstanceBillingData)
             -> awsResourceBillingCache.put(new CacheKey(resourceId, startTime, endTime), vmInstanceBillingData));

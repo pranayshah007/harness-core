@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnectionAttributes;
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 
@@ -32,6 +31,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.HostValidationTaskParameters;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.service.intfc.security.SSHVaultService;
 import software.wings.settings.validation.SshConnectionConnectivityValidationAttributes;
@@ -103,12 +103,12 @@ public class HostValidationTaskTest extends WingsBaseTest {
   private HostValidationTaskParameters getTaskParameters() {
     return HostValidationTaskParameters.builder()
         .hostNames(Arrays.asList("host1"))
-        .connectionSetting(aSettingAttribute()
-                               .withAccountId(ACCOUNT_ID)
-                               .withValue(aHostConnectionAttributes().build())
-                               .withConnectivityValidationAttributes(
-                                   SshConnectionConnectivityValidationAttributes.builder().hostName("host1").build())
-                               .build())
+        .connectionSetting(
+            SettingAttribute.builder()
+                .accountId(ACCOUNT_ID)
+                .value(aHostConnectionAttributes().build())
+                .validationAttributes(SshConnectionConnectivityValidationAttributes.builder().hostName("host1").build())
+                .build())
         .encryptionDetails(Collections.emptyList())
         .build();
   }
@@ -116,12 +116,12 @@ public class HostValidationTaskTest extends WingsBaseTest {
   private HostValidationTaskParameters getTaskParametersWithOnlyReachability() {
     return HostValidationTaskParameters.builder()
         .hostNames(Arrays.asList("host1"))
-        .connectionSetting(aSettingAttribute()
-                               .withAccountId(ACCOUNT_ID)
-                               .withValue(aHostConnectionAttributes().build())
-                               .withConnectivityValidationAttributes(
-                                   SshConnectionConnectivityValidationAttributes.builder().hostName("host1").build())
-                               .build())
+        .connectionSetting(
+            SettingAttribute.builder()
+                .accountId(ACCOUNT_ID)
+                .value(aHostConnectionAttributes().build())
+                .validationAttributes(SshConnectionConnectivityValidationAttributes.builder().hostName("host1").build())
+                .build())
         .encryptionDetails(Collections.emptyList())
         .checkOnlyReachability(true)
         .checkOr(true)

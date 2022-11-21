@@ -84,7 +84,7 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   @Inject private YamlGitService yamlGitService;
   @Inject private YamlSuccessfulChangeService yamlSuccessfulChangeService;
   @Inject private YamlGitConfigService yamlGitConfigService;
-  private static final Integer MAX_RETRY_COUNT = 3;
+  public static final Integer MAX_RETRY_COUNT = 3;
 
   @Override
   public YamlChangeSet save(YamlChangeSet yamlChangeSet) {
@@ -396,19 +396,27 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   public void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId) {
     try (AcquiredLock lock = persistentLocker.waitToAcquireLock(
              YamlChangeSet.class, accountId, Duration.ofMinutes(1), Duration.ofSeconds(10))) {
-      UpdateOperations<YamlChangeSet> ops = wingsPersistence.createUpdateOperations(YamlChangeSet.class);
-      setUnset(ops, YamlChangeSetKeys.status, SKIPPED);
-      setUnset(ops, YamlChangeSetKeys.messageCode, MAX_RETRY_COUNT_EXCEEDED_CODE);
-
-      Query<YamlChangeSet> yamlChangeSetQuery = wingsPersistence.createQuery(YamlChangeSet.class)
-                                                    .filter(YamlChangeSetKeys.accountId, accountId)
-                                                    .filter(YamlChangeSetKeys.status, QUEUED)
-                                                    .field(YamlChangeSetKeys.retryCount)
-                                                    .greaterThan(MAX_RETRY_COUNT);
-      UpdateResults status = wingsPersistence.update(yamlChangeSetQuery, ops);
-      log.info(
-          "Updated the status of [{}] YamlChangeSets to Skipped. Max retry count exceeded", status.getUpdatedCount());
+      markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(accountId, null);
     }
+  }
+
+  @Override
+  public void markQueuedYamlChangeSetsWithMaxRetriesAsSkipped(String accountId, String changeSetId) {
+    UpdateOperations<YamlChangeSet> ops = wingsPersistence.createUpdateOperations(YamlChangeSet.class);
+    setUnset(ops, YamlChangeSetKeys.status, SKIPPED);
+    setUnset(ops, YamlChangeSetKeys.messageCode, MAX_RETRY_COUNT_EXCEEDED_CODE);
+
+    Query<YamlChangeSet> yamlChangeSetQuery = wingsPersistence.createQuery(YamlChangeSet.class)
+                                                  .filter(YamlChangeSetKeys.accountId, accountId)
+                                                  .filter(YamlChangeSetKeys.status, QUEUED)
+                                                  .field(YamlChangeSetKeys.retryCount)
+                                                  .greaterThan(MAX_RETRY_COUNT);
+    if (changeSetId != null) {
+      yamlChangeSetQuery.filter(Base.ID_KEY2, changeSetId);
+    }
+    UpdateResults status = wingsPersistence.update(yamlChangeSetQuery, ops);
+    log.info(
+        "Updated the status of [{}] YamlChangeSets to Skipped. Max retry count exceeded", status.getUpdatedCount());
   }
 
   @Override

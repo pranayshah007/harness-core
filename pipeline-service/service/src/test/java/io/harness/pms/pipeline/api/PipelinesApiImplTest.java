@@ -260,7 +260,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineList() {
-    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
     Page<PipelineEntity> pipelineEntities = new PageImpl<>(Collections.singletonList(entityModified), pageable, 1);
     doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), any());
     doReturn(Collections.emptyMap())

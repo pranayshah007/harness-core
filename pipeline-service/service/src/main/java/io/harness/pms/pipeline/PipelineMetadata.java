@@ -76,7 +76,6 @@ public class PipelineMetadata {
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
 
-  ExecutionSummaryInfo executionSummaryInfo;
   EntityGitDetails entityGitDetails;
   int runSequence;
 }

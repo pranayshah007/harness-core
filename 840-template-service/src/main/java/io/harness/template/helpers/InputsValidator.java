@@ -12,7 +12,6 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -34,6 +33,7 @@ import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntityGetResponse;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 import io.harness.template.utils.NGTemplateFeatureFlagHelperService;
+import io.harness.template.yaml.TemplateRefHelper;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -112,19 +112,20 @@ public class InputsValidator {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
     InputsValidationResponse templateInputsValidationResponse =
         validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth);
-    if (featureFlagHelperService.isEnabled(accountId, FeatureName.CD_SERVICE_ENV_RECONCILIATION)) {
+    String resolvedTemplatesYaml = yaml;
+    if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
           accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
-      String resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
-      InputsValidationResponse ngManagerInputsValidationResponse =
-          NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
-              NgManagerRefreshRequestDTO.builder().yaml(yaml).resolvedTemplatesYaml(resolvedTemplatesYaml).build()));
-      templateInputsValidationResponse.setValid(
-          templateInputsValidationResponse.isValid() && ngManagerInputsValidationResponse.isValid());
-      if (EmptyPredicate.isNotEmpty(ngManagerInputsValidationResponse.getChildrenErrorNodes())) {
-        ngManagerInputsValidationResponse.getChildrenErrorNodes().forEach(
-            templateInputsValidationResponse::addChildErrorNode);
-      }
+      resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
+    }
+    InputsValidationResponse ngManagerInputsValidationResponse =
+        NGRestUtils.getResponse(ngManagerReconcileClient.validateYaml(accountId, orgId, projectId,
+            NgManagerRefreshRequestDTO.builder().yaml(yaml).resolvedTemplatesYaml(resolvedTemplatesYaml).build()));
+    templateInputsValidationResponse.setValid(
+        templateInputsValidationResponse.isValid() && ngManagerInputsValidationResponse.isValid());
+    if (EmptyPredicate.isNotEmpty(ngManagerInputsValidationResponse.getChildrenErrorNodes())) {
+      ngManagerInputsValidationResponse.getChildrenErrorNodes().forEach(
+          templateInputsValidationResponse::addChildErrorNode);
     }
     return templateInputsValidationResponse;
   }

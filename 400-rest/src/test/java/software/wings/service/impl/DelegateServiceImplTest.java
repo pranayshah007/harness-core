@@ -7,7 +7,6 @@
 
 package software.wings.service.impl;
 
-import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
@@ -61,7 +60,6 @@ import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureFlag;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.DelegateGlobalAccountController;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
@@ -1486,12 +1484,11 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
   public void testFinalizeTemplateParametersWithMtlsIfRequiredSmokeTest() {
-    this.persistence.save(
-        FeatureFlag.builder().uuid("21").name(USE_IMMUTABLE_DELEGATE.name()).enabled(true).obsolete(false).build());
-
     final String accountId = "abc21";
     this.persistence.save(
         AgentMtlsEndpoint.builder().accountId(accountId).fqdn("customer.agent.ut.harness.io").build());
+
+    when(accountService.isImmutableDelegateEnabled(accountId)).thenReturn(true);
 
     // test some arbitrary values that shouldn't get modified by the function
     String delegateType = KUBERNETES;
@@ -1546,9 +1543,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = JOHANNES)
   @Category(UnitTests.class)
   public void testFinalizeTemplateParametersWithMtlsIfRequiredForNonMtls() {
-    this.persistence.save(
-        FeatureFlag.builder().uuid("21").name(USE_IMMUTABLE_DELEGATE.name()).enabled(true).obsolete(false).build());
-
     final String accountId = "abc21";
     TemplateParameters templateParameters =
         delegateService.finalizeTemplateParametersWithMtlsIfRequired(TemplateParameters.builder().accountId(accountId));

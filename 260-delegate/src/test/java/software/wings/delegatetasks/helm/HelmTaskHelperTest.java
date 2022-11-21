@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.PRATYUSH;
 import static io.harness.rule.OwnerRule.RAGHVENDRA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SHUBHAM_MAHESHWARI;
+import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.delegatetasks.helm.HelmTestConstants.ACCOUNT_ID;
@@ -297,9 +298,11 @@ public class HelmTaskHelperTest extends WingsBaseTest {
         .when(helmTaskHelperBase)
         .executeCommand(any(), any(), any(), any(), anyLong(), eq(HelmCliCommandType.FETCH));
 
+    doReturn(true).when(helmTaskHelperBase).checkChartVersion(anyString(), anyString(), anyString());
+
     assertThatCode(()
                        -> helmTaskHelperBase.fetchChartFromRepo("repo", "repo display", "chart", "1.0.0", "/dir", V3,
-                           HelmCommandFlag.builder().build(), 90000, false, ""))
+                           HelmCommandFlag.builder().build(), 90000, ""))
         .doesNotThrowAnyException();
 
     verify(helmTaskHelperBase, times(1))
@@ -460,6 +463,7 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     Path outputTemporaryDir = Files.createTempDirectory("chartFile");
     ProcessResult successfulResult = new ProcessResult(0, null);
 
+    doReturn(true).when(helmTaskHelperBase).checkChartVersion(anyString(), anyString(), anyString());
     doNothing()
         .when(helmTaskHelperBase)
         .loginOciRegistry(repoConfig.getChartRepoUrl(), repoConfig.getUsername(), repoConfig.getPassword(),
@@ -1364,5 +1368,41 @@ public class HelmTaskHelperTest extends WingsBaseTest {
     assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V2, "repo", true)).isEmpty();
     assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V3, "repo", true)).endsWith("repo/cache");
     assertThat(helmTaskHelperBase.getCacheDirForManifestCollection(V380, "repo", true)).endsWith("repo/cache");
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCopyManifestFilesToWorkingDirWhenManifestIsAFolder() throws IOException {
+    Path srcPath = Files.createTempDirectory("temp");
+    Path destPath = Files.createTempDirectory("manifest-files");
+    File file = File.createTempFile("manifest", ".yaml", srcPath.toFile());
+
+    HelmTaskHelper.copyManifestFilesToWorkingDir(srcPath.toFile(), destPath.toFile());
+
+    String fileName = file.getPath().split("/")[file.getPath().split("/").length - 1];
+    assertThat(Files.exists(Paths.get(destPath.toString(), fileName))).isTrue();
+
+    // cleanup
+    deleteDirectoryAndItsContentIfExists(srcPath.toString());
+    deleteDirectoryAndItsContentIfExists(destPath.toString());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void testCopyManifestFilesToWorkingDirWhenManifestIsAFile() throws IOException {
+    Path srcPath = Files.createTempDirectory("temp");
+    Path destPath = Files.createTempDirectory("manifest-files");
+    File file = File.createTempFile("manifest", ".yaml", srcPath.toFile());
+
+    HelmTaskHelper.copyManifestFilesToWorkingDir(file, destPath.toFile());
+
+    String fileName = file.getPath().split("/")[file.getPath().split("/").length - 1];
+    assertThat(Files.exists(Paths.get(destPath.toString(), fileName))).isTrue();
+
+    // cleanup
+    deleteDirectoryAndItsContentIfExists(srcPath.toString());
+    deleteDirectoryAndItsContentIfExists(destPath.toString());
   }
 }

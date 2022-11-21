@@ -125,6 +125,42 @@ public class DebeziumConfig {
    * represents the index of the element in the array. Every element is then passed as the value for the given field.
    */
   @JsonProperty("transforms.unwrap.array.encoding") private String transformsUnwrapArrayEncoding;
+  /**
+   * Positive integer value that specifies the maximum number of records that the blocking queue can hold. When Debezium
+   * reads events streamed from the database, it places the events in the blocking queue before it writes them to Kafka.
+   * The blocking queue can provide backpressure for reading change events from the database in cases where the
+   * connector ingests messages faster than it can write them to Kafka, or when Kafka becomes unavailable. Events that
+   * are held in the queue are disregarded when the connector periodically records offsets.
+   */
+  @JsonProperty("max.queue.size") private String maxQueueSize;
+  /**
+   * Positive integer value that specifies the maximum size of each batch of events that should be processed during
+   * each iteration of this connector.
+   */
+  @JsonProperty("max.batch.size") private String maxBatchSize;
+  /**
+   * A long integer value that specifies the maximum volume of the blocking queue in bytes. By default, volume limits
+   * are not specified for the blocking queue. To specify the number of bytes that the queue can consume, set this
+   * property to a positive long value. If max.queue.size is also set, writing to the queue is blocked when the size of
+   * the queue reaches the limit specified by either property.
+   */
+  @JsonProperty("max.queue.size.in.bytes") private long maxQueueSizeInBytes;
+  /**
+   * Positive integer value that specifies the number of milliseconds the connector should wait during each iteration
+   * for new change events to appear.
+   */
+  @JsonProperty("poll.interval.ms") private String pollIntervalMs;
+  /**
+   * Controls how frequently heartbeat messages are sent. This property contains an interval in milliseconds that
+   * defines how frequently the connector sends messages into a heartbeat topic. This can be used to monitor whether the
+   * connector is still receiving change events from the database.
+   */
+  @JsonProperty("heartbeat.interval.ms") private String heartbeatIntervalMs;
+  /**
+   * A comma-separated list of the fully-qualified names of fields that should be excluded from change event message
+   * values.
+   */
+  @JsonProperty("field.exclude.list") private String fieldExcludeList;
   public List<String> getMonitoredCollections() {
     if (EmptyPredicate.isEmpty(collectionIncludeList)) {
       return new ArrayList<>();

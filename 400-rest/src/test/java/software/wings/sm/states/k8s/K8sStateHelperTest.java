@@ -283,7 +283,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
 
     SettingAttribute settingAttribute =
         aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(AwsConfig.builder().build()).build();
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
@@ -291,18 +291,18 @@ public class K8sStateHelperTest extends WingsBaseTest {
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(KubernetesClusterConfig.builder().build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(
         KubernetesClusterConfig.builder().useKubernetesDelegate(true).delegateName("delegateName").build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isNotEmpty();
     assertThat(tags).contains("delegateName");

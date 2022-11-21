@@ -274,14 +274,14 @@ public class YamlGitServiceImpl implements YamlGitService {
         gitConfig.setBranch(ygs.getBranchName());
         if (EmptyPredicate.isNotEmpty(gitConfig.getSshSettingId())) {
           SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(gitConfig.getSshSettingId());
-          gitConfig.setSshSettingAttribute(settingAttributeForSshKey);
+          gitConfig.setSshSettingAttribute(settingAttributeForSshKey.toDTO());
         }
       }
     } else {
       // This is to support backward compatibility. Should be removed once we move to using gitConnector completely
       if (EmptyPredicate.isNotEmpty(ygs.getSshSettingId())) {
         SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(ygs.getSshSettingId());
-        gitConfig = ygs.getGitConfig(settingAttributeForSshKey);
+        gitConfig = ygs.getGitConfig(settingAttributeForSshKey.toDTO());
       } else {
         gitConfig = ygs.getGitConfig(null);
       }
@@ -931,6 +931,14 @@ public class YamlGitServiceImpl implements YamlGitService {
     }
 
     return list;
+  }
+
+  @Override
+  public List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId) {
+    return wingsPersistence.createQuery(YamlGitConfig.class)
+        .filter(YamlGitConfigKeys.accountId, accountId)
+        .filter(GIT_CONNECTOR_ID_KEY, connectorId)
+        .asList();
   }
 
   @Override

@@ -18,14 +18,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
-import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.GovernanceService;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
@@ -38,59 +34,45 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
-import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
-import io.harness.pms.contracts.governance.ExpansionResponseBatch;
-import io.harness.pms.contracts.governance.ExpansionResponseProto;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
-import io.harness.pms.gitsync.PmsGitSyncHelper;
-import io.harness.pms.governance.ExpansionRequest;
-import io.harness.pms.governance.ExpansionRequestsExtractor;
-import io.harness.pms.governance.JsonExpander;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
-import io.harness.telemetry.TelemetryReporter;
-import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.bson.Document;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Assertions;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
-public class PMSPipelineServiceHelperTest extends CategoryTest {
-  PMSPipelineServiceHelper pmsPipelineServiceHelper;
+public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock FilterService filterService;
   @Mock FilterCreatorMergeService filterCreatorMergeService;
-  @Mock private PmsGitSyncHelper gitSyncHelper;
-  @Mock private ExpansionRequestsExtractor expansionRequestsExtractor;
-  @Mock private JsonExpander jsonExpander;
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
-  @Mock TelemetryReporter telemetryReporter;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
-  @Mock PMSYamlSchemaService yamlSchemaService;
-  @Mock GovernanceService governanceService;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock PMSPipelineRepository pmsPipelineRepository;
+  @Mock PipelineValidationService pipelineValidationService;
+  @Mock PipelineGovernanceService pipelineGovernanceService;
+  @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
   String orgIdentifier = "org";
@@ -98,14 +80,6 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   String pipelineIdentifier = "pipeline";
 
   String repoName = "testRepo";
-
-  @Before
-  public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService, yamlSchemaService,
-        pipelineTemplateHelper, governanceService, jsonExpander, expansionRequestsExtractor, pmsFeatureFlagService,
-        gitSyncHelper, telemetryReporter, gitAwareEntityHelper, pmsPipelineRepository);
-  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -287,53 +261,12 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, false);
+
+    Mockito.when(pipelineGovernanceService.validateGovernanceRules(any(), any(), any(), any()))
+        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
     GovernanceMetadata governanceMetadata =
         pmsPipelineServiceHelper.validatePipelineYamlInternal(pipelineEntity, false);
     assertThat(governanceMetadata.getDeny()).isFalse();
-    verify(yamlSchemaService, times(1)).validateYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, yaml);
-    verify(yamlSchemaService, times(1)).validateUniqueFqn(yaml);
-    verify(governanceService, times(0)).evaluateGovernancePolicies(any(), any(), any(), any(), any(), any());
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testFetchExpandedPipelineJSONFromYaml() {
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    String dummyYaml = "don't really need a proper yaml cuz only testing the flow";
-    ByteString randomByteString = ByteString.copyFromUtf8("sss");
-    ExpansionRequestMetadata expansionRequestMetadata = ExpansionRequestMetadata.newBuilder()
-                                                            .setAccountId(accountIdentifier)
-                                                            .setOrgId(orgIdentifier)
-                                                            .setProjectId(projectIdentifier)
-                                                            .setGitSyncBranchContext(randomByteString)
-                                                            .setYaml(ByteString.copyFromUtf8(dummyYaml))
-                                                            .build();
-    ExpansionRequest dummyRequest = ExpansionRequest.builder().fqn("fqn").build();
-    Set<ExpansionRequest> dummyRequestSet = Collections.singleton(dummyRequest);
-    doReturn(randomByteString).when(gitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
-    doReturn(dummyRequestSet).when(expansionRequestsExtractor).fetchExpansionRequests(dummyYaml);
-    ExpansionResponseProto dummyResponse =
-        ExpansionResponseProto.newBuilder().setSuccess(false).setErrorMessage("just because").build();
-    ExpansionResponseBatch dummyResponseBatch =
-        ExpansionResponseBatch.newBuilder().addExpansionResponseProto(dummyResponse).build();
-    Set<ExpansionResponseBatch> dummyResponseSet = Collections.singleton(dummyResponseBatch);
-    doReturn(dummyResponseSet).when(jsonExpander).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
-    pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    verify(pmsFeatureFlagService, times(1)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
-    verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
-    verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
-
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    String noExp = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
-        accountIdentifier, orgIdentifier, projectIdentifier, dummyYaml, false);
-    assertThat(noExp).isEqualTo(dummyYaml);
-    verify(pmsFeatureFlagService, times(2)).isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    verify(gitSyncHelper, times(1)).getGitSyncBranchContextBytesThreadLocal();
-    verify(expansionRequestsExtractor, times(1)).fetchExpansionRequests(dummyYaml);
-    verify(jsonExpander, times(1)).fetchExpansionResponses(dummyRequestSet, expansionRequestMetadata);
   }
 
   @Test

@@ -17,14 +17,16 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.MonitoredServiceDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboardWidgetBuilder;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView.SLOHealthListViewBuilder;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
@@ -33,6 +35,7 @@ import io.harness.cvng.servicelevelobjective.beans.UserJourneyDTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -49,7 +52,6 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -57,6 +59,7 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -156,19 +159,102 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   }
 
   @Override
+  public PageResponse<SLOConsumptionBreakdown> getSLOConsumptionBreakdownView(
+      ProjectParams projectParams, String compositeSLOIdentifier, Long startTime, Long endTime) {
+    PageResponse<SLOHealthListView> sloHealthListViewPageResponse = getSloHealthListView(projectParams,
+        SLODashboardApiFilter.builder().compositeSLOIdentifier(compositeSLOIdentifier).build(),
+        PageParams.builder().page(0).size(20).build());
+
+    CompositeServiceLevelObjective compositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            projectParams, compositeSLOIdentifier);
+    Map<ServiceLevelObjectiveDetailsRefDTO, Double> sloDetailsToWeightPercentageMap =
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails().stream().collect(
+            Collectors.toMap(ServiceLevelObjectivesDetail::getServiceLevelObjectiveDetailsRefDTO,
+                ServiceLevelObjectivesDetail::getWeightagePercentage));
+
+    List<SLOConsumptionBreakdown> sloConsumptionBreakdownList =
+        sloHealthListViewPageResponse.getContent()
+            .stream()
+            .map(sloDetail
+                -> getSLOConsumptionBreakdown(sloDetail, compositeServiceLevelObjective,
+                    sloDetailsToWeightPercentageMap, projectParams, startTime, endTime))
+            .collect(Collectors.toList());
+
+    return PageResponse.<SLOConsumptionBreakdown>builder()
+        .content(sloConsumptionBreakdownList)
+        .pageSize(sloHealthListViewPageResponse.getPageSize())
+        .pageIndex(sloHealthListViewPageResponse.getPageIndex())
+        .totalPages(sloHealthListViewPageResponse.getTotalPages())
+        .totalItems(sloHealthListViewPageResponse.getTotalItems())
+        .pageItemCount(sloHealthListViewPageResponse.getPageItemCount())
+        .build();
+  }
+
+  private SLOConsumptionBreakdown getSLOConsumptionBreakdown(SLOHealthListView sloDetail,
+      CompositeServiceLevelObjective compositeServiceLevelObjective,
+      Map<ServiceLevelObjectiveDetailsRefDTO, Double> sloDetailsToWeightPercentageMap, ProjectParams projectParams,
+      Long startTime, Long endTime) {
+    Double weightPercentage =
+        sloDetailsToWeightPercentageMap.get(ServiceLevelObjectiveDetailsRefDTO.builder()
+                                                .accountId(projectParams.getAccountIdentifier())
+                                                .orgIdentifier(sloDetail.getOrgIdentifier())
+                                                .projectIdentifier(sloDetail.getProjectIdentifier())
+                                                .serviceLevelObjectiveRef(sloDetail.getSloIdentifier())
+                                                .build());
+
+    TimeRangeParams filter = null;
+    if (Objects.nonNull(startTime) && Objects.nonNull(endTime)) {
+      filter = TimeRangeParams.builder()
+                   .startTime(Instant.ofEpochMilli(startTime))
+                   .endTime(Instant.ofEpochMilli(endTime))
+                   .build();
+    }
+    LocalDateTime currentLocalDate =
+        LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
+    TimePeriod timePeriod = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate);
+    Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
+
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        ProjectParams.builder()
+            .accountIdentifier(projectParams.getAccountIdentifier())
+            .orgIdentifier(sloDetail.getOrgIdentifier())
+            .projectIdentifier(sloDetail.getProjectIdentifier())
+            .build(),
+        sloDetail.getSliIdentifier());
+    SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
+        timePeriod.getStartTime(compositeServiceLevelObjective.getZoneOffset()), currentTimeMinute,
+        sloDetail.getTotalErrorBudget(), serviceLevelIndicator.getSliMissingDataType(),
+        serviceLevelIndicator.getVersion(), filter);
+
+    return SLOConsumptionBreakdown.builder()
+        .sloIdentifier(sloDetail.getSloIdentifier())
+        .sloName(sloDetail.getName())
+        .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
+        .serviceName(sloDetail.getServiceName())
+        .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
+        .sliType(sloDetail.getSliType())
+        .weightagePercentage(weightPercentage)
+        .sloTargetPercentage(sloDetail.getSloTargetPercentage())
+        .sliStatusPercentage(sloGraphData.getSliStatusPercentage())
+        .errorBudgetBurned(sloGraphData.getErrorBudgetBurned())
+        .contributedErrorBudgetBurned((int) ((weightPercentage / 100) * sloGraphData.getErrorBudgetBurned()))
+        .build();
+  }
+
+  @Override
   public SLODashboardDetail getSloDashboardDetail(
       ProjectParams projectParams, String identifier, Long startTime, Long endTime) {
     ServiceLevelObjectiveV2Response sloResponse = serviceLevelObjectiveV2Service.get(projectParams, identifier);
-    SLODashboardWidget sloDashboardWidget;
-    if (Objects.isNull(startTime) || Objects.isNull(endTime)) {
-      sloDashboardWidget = getSloDashboardWidget(projectParams, sloResponse, null);
-    } else {
-      sloDashboardWidget = getSloDashboardWidget(projectParams, sloResponse,
-          TimeRangeParams.builder()
-              .startTime(Instant.ofEpochMilli(startTime))
-              .endTime(Instant.ofEpochMilli(endTime))
-              .build());
+    TimeRangeParams filter = null;
+    if (Objects.nonNull(startTime) && Objects.nonNull(endTime)) {
+      filter = TimeRangeParams.builder()
+                   .startTime(Instant.ofEpochMilli(startTime))
+                   .endTime(Instant.ofEpochMilli(endTime))
+                   .build();
     }
+    SLODashboardWidget sloDashboardWidget = getSloDashboardWidget(projectParams, sloResponse, filter);
+
     return SLODashboardDetail.builder()
         .description(sloResponse.getServiceLevelObjectiveV2DTO().getDescription())
         .createdAt(sloResponse.getCreatedAt())
@@ -215,8 +301,30 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
           serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
 
-      return getSloDashboardWidgetBuilder(
-          slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
+      MonitoredServiceDetail monitoredServiceDetail =
+          MonitoredServiceDetail.builder()
+              .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
+              .monitoredServiceName(monitoredService.getName())
+              .environmentIdentifier(monitoredService.getEnvironmentRef())
+              .environmentName(
+                  nextGenService
+                      .getEnvironment(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                          serviceLevelObjective.getProjectIdentifier(), monitoredService.getEnvironmentRef())
+                      .getName())
+              .serviceName(
+                  nextGenService
+                      .getService(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                          serviceLevelObjective.getProjectIdentifier(), monitoredService.getServiceRef())
+                      .getName())
+              .serviceIdentifier(monitoredService.getServiceRef())
+              .healthSourceIdentifier(simpleServiceLevelObjectiveSpec.getHealthSourceRef())
+              .healthSourceName(
+                  getHealthSourceName(monitoredService, simpleServiceLevelObjectiveSpec.getHealthSourceRef()))
+              .build();
+      List<MonitoredServiceDetail> monitoredServiceDetails = Collections.singletonList(monitoredServiceDetail);
+
+      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
+          currentLocalDate, monitoredServiceDetails)
           .monitoredServiceIdentifier(simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -236,19 +344,40 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .build();
     } else {
       CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) serviceLevelObjective;
+
+      PageResponse<SLOHealthListView> sloHealthListViewPageResponse = getSloHealthListView(projectParams,
+          SLODashboardApiFilter.builder().compositeSLOIdentifier(compositeSLO.getIdentifier()).build(),
+          PageParams.builder().page(0).size(20).build());
+      List<MonitoredServiceDetail> monitoredServiceDetails =
+          sloHealthListViewPageResponse.getContent()
+              .stream()
+              .map(sloDetail
+                  -> MonitoredServiceDetail.builder()
+                         .monitoredServiceIdentifier(sloDetail.getMonitoredServiceIdentifier())
+                         .monitoredServiceName(sloDetail.getMonitoredServiceName())
+                         .environmentIdentifier(sloDetail.getEnvironmentIdentifier())
+                         .environmentName(sloDetail.getEnvironmentName())
+                         .serviceName(sloDetail.getServiceName())
+                         .serviceIdentifier(sloDetail.getServiceIdentifier())
+                         .healthSourceIdentifier(sloDetail.getHealthSourceIdentifier())
+                         .healthSourceName(sloDetail.getHealthSourceName())
+                         .build())
+              .collect(Collectors.toList());
+
       SLODashboardWidget.SLOGraphData sloGraphData =
           sloRecordService.getGraphData(compositeSLO, timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()),
               currentTimeMinute, totalErrorBudgetMinutes, compositeSLO.getVersion(), filter);
 
-      return getSloDashboardWidgetBuilder(
-          slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes, currentLocalDate)
+      return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
+          currentLocalDate, monitoredServiceDetails)
           .build();
     }
   }
 
   private SLODashboardWidgetBuilder getSloDashboardWidgetBuilder(ServiceLevelObjectiveV2DTO slo, TimePeriod timePeriod,
       SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective,
-      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate) {
+      int totalErrorBudgetMinutes, LocalDateTime currentLocalDate,
+      List<MonitoredServiceDetail> monitoredServiceDetails) {
     return SLODashboardWidget.withGraphData(sloGraphData)
         .sloIdentifier(slo.getIdentifier())
         .title(slo.getName())
@@ -256,6 +385,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
         .currentPeriodLengthDays(timePeriod.getTotalDays())
         .currentPeriodStartTime(timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())
         .currentPeriodEndTime(timePeriod.getEndTime(serviceLevelObjective.getZoneOffset()).toEpochMilli())
+        .monitoredServiceDetails(monitoredServiceDetails)
         .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
         .tags(slo.getTags())
         .totalErrorBudget(totalErrorBudgetMinutes)
@@ -318,7 +448,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
       MonitoredServiceDTO monitoredService =
           monitoredServiceIdentifierToDTOMap.get(simpleServiceLevelObjective.getMonitoredServiceIdentifier());
 
-      return getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+      return SLOHealthListView
+          .getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
           .monitoredServiceIdentifier(monitoredService.getIdentifier())
           .monitoredServiceName(monitoredService.getName())
           .environmentIdentifier(monitoredService.getEnvironmentRef())
@@ -334,30 +465,13 @@ public class SLODashboardServiceImpl implements SLODashboardService {
           .healthSourceIdentifier(simpleServiceLevelObjective.getHealthSourceIdentifier())
           .healthSourceName(
               getHealthSourceName(monitoredService, simpleServiceLevelObjective.getHealthSourceIdentifier()))
-          .sliType(((SimpleServiceLevelObjective) slo).getServiceLevelIndicatorType())
+          .sliType(simpleServiceLevelObjective.getServiceLevelIndicatorType())
+          .sliIdentifier(simpleServiceLevelObjective.getServiceLevelIndicators().get(0))
           .build();
     }
 
-    return getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator).build();
-  }
-
-  private SLOHealthListViewBuilder getSLOHealthListViewBuilder(AbstractServiceLevelObjective serviceLevelObjective,
-      List<UserJourneyDTO> userJourneys, int totalErrorBudgetMinutes, SLOHealthIndicator sloHealthIndicator) {
-    return SLOHealthListView.builder()
-        .sloIdentifier(serviceLevelObjective.getIdentifier())
-        .name(serviceLevelObjective.getName())
-        .sloTargetType(serviceLevelObjective.getSloTarget().getType())
-        .sloTargetPercentage(serviceLevelObjective.getSloTargetPercentage())
-        .userJourneys(userJourneys)
-        .userJourneyName(userJourneys.get(0).getName())
-        .tags(TagMapper.convertToMap(serviceLevelObjective.getTags()))
-        .description(serviceLevelObjective.getDesc())
-        .totalErrorBudget(totalErrorBudgetMinutes)
-        .errorBudgetRemaining(sloHealthIndicator.getErrorBudgetRemainingMinutes())
-        .errorBudgetRemainingPercentage(sloHealthIndicator.getErrorBudgetRemainingPercentage())
-        .burnRate(sloHealthIndicator.getErrorBudgetBurnRate())
-        .noOfActiveAlerts(serviceLevelObjective.getNotificationRuleRefs().size())
-        .sloType(serviceLevelObjective.getType());
+    return SLOHealthListView.getSLOHealthListViewBuilder(slo, userJourneys, totalErrorBudgetMinutes, sloHealthIndicator)
+        .build();
   }
 
   private String getHealthSourceName(MonitoredServiceDTO monitoredServiceDTO, String healthSourceRef) {

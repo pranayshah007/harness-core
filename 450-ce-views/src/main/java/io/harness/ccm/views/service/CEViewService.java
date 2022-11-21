@@ -26,6 +26,7 @@ public interface CEViewService {
 
   CEView get(String uuid);
   CEView update(CEView ceView);
+  void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName);
   CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);

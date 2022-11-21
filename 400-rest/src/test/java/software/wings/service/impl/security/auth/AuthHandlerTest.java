@@ -21,7 +21,6 @@ import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.security.EnvFilter.FilterType.NON_PROD;
 import static software.wings.security.EnvFilter.FilterType.PROD;
-import static software.wings.security.PermissionAttribute.PermissionType.ACCESS_NEXTGEN;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
 import static software.wings.security.PermissionAttribute.PermissionType.AUDIT_VIEWER;
@@ -30,6 +29,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEW
 import static software.wings.security.PermissionAttribute.PermissionType.CREATE_CUSTOM_DASHBOARDS;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.HIDE_NEXTGEN_BUTTON;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ACCOUNT_DEFAULTS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
@@ -292,7 +292,7 @@ public class AuthHandlerTest extends WingsBaseTest {
         MANAGE_APPLICATION_STACKS, MANAGE_DELEGATES, MANAGE_ALERT_NOTIFICATION_RULES, MANAGE_DELEGATE_PROFILES,
         MANAGE_CONFIG_AS_CODE, MANAGE_SECRETS, MANAGE_SECRET_MANAGERS, MANAGE_AUTHENTICATION_SETTINGS,
         MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES, MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_CUSTOM_DASHBOARDS,
-        CREATE_CUSTOM_DASHBOARDS, MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, ACCESS_NEXTGEN);
+        CREATE_CUSTOM_DASHBOARDS, MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, HIDE_NEXTGEN_BUTTON);
 
     Set<PermissionType> accountPermissions = authHandler.getAllAccountPermissions();
     permissionTypes.forEach(permissionType -> assertThat(accountPermissions.contains(permissionType)).isTrue());

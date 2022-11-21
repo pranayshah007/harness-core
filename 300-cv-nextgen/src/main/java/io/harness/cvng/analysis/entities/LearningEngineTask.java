@@ -40,6 +40,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.SuperBuilder;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
@@ -47,6 +48,7 @@ import org.mongodb.morphia.annotations.Id;
  * @author praveensugavanam
  */
 @Data
+@SuperBuilder
 @NoArgsConstructor
 @FieldNameConstants(innerTypeName = "LearningEngineTaskKeys")
 @AllArgsConstructor

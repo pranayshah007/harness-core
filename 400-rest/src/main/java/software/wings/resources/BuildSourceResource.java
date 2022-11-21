@@ -246,7 +246,8 @@ public class BuildSourceResource {
     List<BuildDetails> buildDetails;
     ArtifactStream artifactStream = artifactStreamService.get(artifactStreamId);
     if (!Boolean.FALSE.equals(artifactStream.getCollectionEnabled())) {
-      List<Artifact> artifacts = artifactService.listArtifactsByArtifactStreamId(appId, artifactStreamId);
+      List<Artifact> artifacts =
+          artifactService.listArtifactsByArtifactStreamId(artifactStream.getAccountId(), artifactStreamId);
       buildDetails =
           artifacts.stream()
               .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())

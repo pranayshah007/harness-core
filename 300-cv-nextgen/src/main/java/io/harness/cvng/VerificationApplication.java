@@ -967,8 +967,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(2))
             .handler(compositeSLODataExecutorTaskHandler)
             .schedulingType(REGULAR)
-            .filterExpander(
-                query -> query.filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE))
+            .filterExpander(query
+                -> query.and(
+                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.COMPOSITE),
+                    query.criteria(ServiceLevelObjectiveV2Keys.createNextTaskIteration).equal(0L)))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

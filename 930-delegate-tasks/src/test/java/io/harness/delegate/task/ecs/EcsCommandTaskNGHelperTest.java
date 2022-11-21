@@ -215,56 +215,6 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void ecsServiceSteadyStateCheckTest() {
-    DescribeServicesRequest describeServicesRequest =
-        DescribeServicesRequest.builder().services(Collections.singletonList(serviceName)).cluster(cluster).build();
-    DescribeServicesResponse describeServicesResponse =
-        DescribeServicesResponse.builder().services(Arrays.asList(Service.builder().build())).build();
-    doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(awsConnectorDTO);
-
-    doReturn(DefaultWaiterResponse.builder().response(describeServicesResponse).attemptsExecuted(1).build())
-        .when(ecsV2Client)
-        .ecsServiceSteadyStateCheck(awsInternalConfig, describeServicesRequest, region, serviceSteadyStateTimeout);
-    List<ServiceEvent> eventsAlreadyProcessed = Arrays.asList(ServiceEvent.builder().build());
-    doReturn(Optional.of(describeServicesResponse.services().get(0)))
-        .when(ecsCommandTaskNGHelper)
-        .describeService(cluster, serviceName, region, awsConnectorDTO);
-
-    ecsCommandTaskNGHelper.ecsServiceSteadyStateCheck(
-        logCallback, awsConnectorDTO, cluster, serviceName, region, serviceSteadyStateTimeout, eventsAlreadyProcessed);
-
-    verify(ecsV2Client)
-        .ecsServiceSteadyStateCheck(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), describeServicesRequest,
-            region, serviceSteadyStateTimeout);
-  }
-
-  @Test(expected = RuntimeException.class)
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
-  public void ecsServiceSteadyStateCheckExceptionTest() {
-    DescribeServicesRequest describeServicesRequest =
-        DescribeServicesRequest.builder().services(Collections.singletonList(serviceName)).cluster(cluster).build();
-    DescribeServicesResponse describeServicesResponse = DescribeServicesResponse.builder().build();
-    doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(awsConnectorDTO);
-    doReturn(DefaultWaiterResponse.builder()
-                 .response(describeServicesResponse)
-                 .attemptsExecuted(1)
-                 .exception(new Throwable("error"))
-                 .build())
-        .when(ecsV2Client)
-        .ecsServiceSteadyStateCheck(awsInternalConfig, describeServicesRequest, region, serviceSteadyStateTimeout);
-    List<ServiceEvent> eventsAlreadyProcessed = Arrays.asList(ServiceEvent.builder().build());
-    ecsCommandTaskNGHelper.ecsServiceSteadyStateCheck(
-        logCallback, awsConnectorDTO, cluster, serviceName, region, serviceSteadyStateTimeout, eventsAlreadyProcessed);
-
-    verify(ecsV2Client)
-        .ecsServiceSteadyStateCheck(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO), describeServicesRequest,
-            region, serviceSteadyStateTimeout);
-  }
-
-  @Test
-  @Owner(developers = ALLU_VAMSI)
-  @Category(UnitTests.class)
   public void ecsServiceInactiveStateCheckTest() {
     DescribeServicesRequest describeServicesRequest =
         DescribeServicesRequest.builder().services(Collections.singletonList(serviceName)).cluster(cluster).build();
@@ -573,9 +523,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback,
             timeoutInMillis);
 
-    WaiterResponse<Object> describeServicesResponseWaiterResponse =
-        DefaultWaiterResponse.builder().response(describeServicesResponse).attemptsExecuted(1).build();
-    doReturn(describeServicesResponseWaiterResponse)
+    doNothing()
         .when(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
@@ -661,9 +609,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
         .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(), updateServiceRequest.service(),
             ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
-    WaiterResponse<Object> describeServicesResponseWaiterResponse =
-        DefaultWaiterResponse.builder().response(describeServicesResponse).attemptsExecuted(1).build();
-    doReturn(describeServicesResponseWaiterResponse)
+    doNothing()
         .when(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
@@ -765,8 +711,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
         .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback,
             timeoutInMillis);
-
-    doReturn(describeServicesResponseWaiterResponse)
+    doNothing()
         .when(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
             createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), timeoutInMillis, eventsAlreadyProcessed);
@@ -953,7 +898,7 @@ public class EcsCommandTaskNGHelperTest extends CategoryTest {
         .waitForTasksToBeInRunningState(awsInternalConfig, ecsInfraConfig.getCluster(), stageServiceName,
             ecsInfraConfig.getRegion(), eventsAlreadyProcessed, logCallback, timeoutInMillis);
 
-    doReturn(describeServicesResponseWaiterResponse)
+    doNothing()
         .when(ecsCommandTaskNGHelper)
         .ecsServiceSteadyStateCheck(any(), any(), anyString(), anyString(), anyString(), anyLong(), any());
 

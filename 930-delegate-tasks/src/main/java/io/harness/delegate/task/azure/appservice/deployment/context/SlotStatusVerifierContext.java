@@ -10,20 +10,21 @@ package io.harness.delegate.task.azure.appservice.deployment.context;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.logging.LogCallback;
 
+import com.azure.core.http.rest.Response;
 import lombok.Builder;
 import lombok.NonNull;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class SlotStatusVerifierContext extends StatusVerifierContext {
   @Builder
   public SlotStatusVerifierContext(@NonNull LogCallback logCallback, @NonNull String slotName,
       @NonNull AzureWebClient azureWebClient, @NonNull AzureWebClientContext azureWebClientContext,
-      AzureServiceCallBack restCallBack) {
-    super(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+      Mono<Response<Void>> responseMono) {
+    super(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
   }
 }

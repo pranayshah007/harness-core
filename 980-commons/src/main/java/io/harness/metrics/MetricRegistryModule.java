@@ -25,6 +25,11 @@ public class MetricRegistryModule extends AbstractModule {
     this.harnessMetricRegistry = new HarnessMetricRegistry(metricRegistry, collectorRegistry);
   }
 
+  public MetricRegistryModule(MetricRegistry metricRegistry, MetricRegistry threadPoolMetricRegistry) {
+    this.metricRegistry = metricRegistry;
+    this.harnessMetricRegistry = new HarnessMetricRegistry(metricRegistry, threadPoolMetricRegistry, collectorRegistry);
+  }
+
   @Override
   protected void configure() {
     bind(MetricRegistry.class).toInstance(metricRegistry);

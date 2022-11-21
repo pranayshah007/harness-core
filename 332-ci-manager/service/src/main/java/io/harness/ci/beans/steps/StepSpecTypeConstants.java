@@ -36,4 +36,6 @@ public interface StepSpecTypeConstants {
 
   String CI_STAGE = "CI";
   String SECURITY_STAGE = "SecurityTests";
+
+  String CI_STAGE_V2 = "ci";
 }

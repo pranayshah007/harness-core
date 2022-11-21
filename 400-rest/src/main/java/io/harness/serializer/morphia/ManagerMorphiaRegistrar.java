@@ -195,6 +195,7 @@ import software.wings.beans.Schema;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
+import software.wings.beans.SettingAttribute;
 import software.wings.beans.SystemCatalog;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
@@ -858,6 +859,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
     set.add(YamlGitConfig.class);
+    set.add(SettingAttribute.class);
   }
 
   @Override

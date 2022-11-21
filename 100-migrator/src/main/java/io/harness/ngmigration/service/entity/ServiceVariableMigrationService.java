@@ -23,7 +23,6 @@ import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -265,11 +264,5 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    throw new NotImplementedException("Not implemented for service variables");
   }
 }

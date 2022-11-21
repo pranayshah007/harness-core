@@ -38,7 +38,7 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.HostConnectionAttributes;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitCommitAndPushResult;
 import software.wings.beans.yaml.GitCommitRequest;
 import software.wings.beans.yaml.GitCommitResult;

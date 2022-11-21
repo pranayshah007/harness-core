@@ -22,6 +22,9 @@ import io.harness.cvng.activity.entities.KubernetesClusterActivity.KubernetesClu
 import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.activity.entities.PagerDutyActivity;
 import io.harness.cvng.activity.entities.PagerDutyActivity.PagerDutyActivityBuilder;
+import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask;
+import io.harness.cvng.analysis.entities.CanaryLogAnalysisLearningEngineTask.CanaryLogAnalysisLearningEngineTaskBuilder;
+import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.MonitoredServiceDataSourceType;
 import io.harness.cvng.beans.MonitoredServiceType;
@@ -234,6 +237,21 @@ public class BuilderFactory {
 
   public static BuilderFactory getDefault() {
     return BuilderFactory.builder().build();
+  }
+
+  public CanaryLogAnalysisLearningEngineTaskBuilder canaryLogAnalysisLearningEngineTaskBuilder() {
+    return CanaryLogAnalysisLearningEngineTask.builder()
+        .accountId(context.getAccountId())
+        .uuid(generateUuid())
+        .analysisEndTime(clock.instant())
+        .analysisStartTime(clock.instant())
+        .analysisType(LearningEngineTaskType.CANARY_LOG_ANALYSIS)
+        .analysisSaveUrl("saveUrl")
+        .controlDataUrl("controlDataUrl")
+        .pickedAt(clock.instant())
+        .failureUrl("failureUrl")
+        .previousAnalysisUrl("previousAnalysisUrl")
+        .verificationTaskId("verificationTaskId");
   }
 
   public CVNGStepTaskBuilder cvngStepTaskBuilder() {
