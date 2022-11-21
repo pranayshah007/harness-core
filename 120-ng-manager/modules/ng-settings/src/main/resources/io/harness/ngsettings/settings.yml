@@ -30,7 +30,7 @@ settings :
       - ORGANIZATION
       - PROJECT
   - identifier: scim_jwt_token_key_field
-    name: SCIM JWT token KEY field
+    name: SCIM JWT token Key field
     category: SCIM
     groupIdentifier: scim_jwt_token_configuration_g1
     valueType: STRING
@@ -38,7 +38,7 @@ settings :
     allowedScopes:
       - ACCOUNT
   - identifier: scim_jwt_token_value_field
-    name: SCIM JWT token VALUE to be matched for KEY field
+    name: SCIM JWT token value to be matched for Key field
     category: SCIM
     groupIdentifier: scim_jwt_token_configuration_g1
     valueType: STRING
@@ -54,7 +54,7 @@ settings :
     allowedScopes:
       - ACCOUNT
   - identifier: scim_jwt_token_service_account_id
-    name: SCIM JWT token mapped service account identifier
+    name: SCIM JWT token mapped Service Account identifier
     category: SCIM
     groupIdentifier: scim_jwt_token_configuration_g1
     valueType: STRING
