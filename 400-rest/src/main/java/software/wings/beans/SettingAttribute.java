@@ -145,7 +145,7 @@ public class SettingAttribute
                  .descSortField(SettingAttributeKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("locate")
+                 .name("unique_locate")
                  .unique(true)
                  .field(SettingAttributeKeys.accountId)
                  .field(SettingAttributeKeys.appId)

@@ -94,7 +94,7 @@ public class EncryptedData implements EncryptedRecord, PersistentEntity, UuidAwa
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .unique(true)
-                 .name("acctNameIdx")
+                 .name("unique_acctNameIdx")
                  .field(EncryptedDataKeys.accountId)
                  .field(EncryptedDataKeys.name)
                  .field(EncryptedDataKeys.accountIdentifier)

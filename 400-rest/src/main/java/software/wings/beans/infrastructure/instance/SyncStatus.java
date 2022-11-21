@@ -39,7 +39,7 @@ public class SyncStatus extends Base {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("compositeIdx1")
+                 .name("unique_compositeIdx1")
                  .unique(true)
                  .field(Base.APP_ID_KEY2)
                  .field(SyncStatusKeys.serviceId)

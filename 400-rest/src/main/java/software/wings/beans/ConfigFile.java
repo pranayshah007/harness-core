@@ -72,7 +72,7 @@ public class ConfigFile extends BaseFile implements EncryptableSetting {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("entityId_1_templateId_1_relativeFilePath_1_OType_1_instances_1_OExpression_1")
+                 .name("unique_entityId_1_templateId_1_relativeFilePath_1_OType_1_instances_1_OExpression_1")
                  .unique(true)
                  .field(ConfigFileKeys.entityId)
                  .field(ConfigFileKeys.templateId)

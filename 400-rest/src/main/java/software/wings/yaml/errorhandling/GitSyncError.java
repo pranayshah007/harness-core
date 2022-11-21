@@ -50,7 +50,7 @@ public class GitSyncError extends Base implements PersistentRegularIterable {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("account_filepath_direction_idx")
+                 .name("unique_account_filepath_direction_idx")
                  .unique(true)
                  .field(GitSyncErrorKeys.accountId)
                  .field(GitSyncErrorKeys.yamlFilePath)

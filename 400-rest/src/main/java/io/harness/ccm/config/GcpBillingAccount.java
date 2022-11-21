@@ -41,7 +41,7 @@ public class GcpBillingAccount implements PersistentEntity, UuidAware, AccountAc
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("no_dup")
+                 .name("unique_no_dup")
                  .unique(true)
                  .field(GcpBillingAccountKeys.accountId)
                  .field(GcpBillingAccountKeys.organizationSettingId)

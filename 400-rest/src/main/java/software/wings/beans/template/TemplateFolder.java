@@ -57,7 +57,7 @@ public class TemplateFolder extends Base implements KeywordsAware, NameAccess {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .unique(true)
-                 .name("duplicateKey")
+                 .name("unique_duplicateKey")
                  .field(TemplateFolderKeys.accountId)
                  .field(TemplateFolderKeys.name)
                  .field(TemplateFolderKeys.pathId)

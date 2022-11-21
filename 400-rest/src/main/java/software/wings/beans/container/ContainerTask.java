@@ -51,7 +51,7 @@ public abstract class ContainerTask extends DeploymentSpecification implements A
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("service")
+                 .name("unique_service")
                  .unique(true)
                  .field(ContainerTaskKeys.serviceId)
                  .field(ContainerTaskKeys.deploymentType)

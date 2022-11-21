@@ -78,7 +78,7 @@ public class Command extends Base implements CommandUnit, NestedAnnotationResolv
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("yaml")
+                 .name("unique_yaml")
                  .unique(true)
                  .field(BaseKeys.appId)
                  .field(CommandKeys.originEntityId)

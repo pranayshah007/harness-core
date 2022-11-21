@@ -44,7 +44,7 @@ public class InstanceSyncTaskDetails implements PersistentEntity, UuidAware, Uui
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .unique(true)
-                 .name("accountId_infrastructureMappingId_idx")
+                 .name("unique_accountId_infrastructureMappingId_idx")
                  .field(InstanceSyncTaskDetailsKeys.accountId)
                  .field(InstanceSyncTaskDetailsKeys.infraMappingId)
                  .build())

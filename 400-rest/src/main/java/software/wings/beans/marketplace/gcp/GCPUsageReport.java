@@ -46,7 +46,7 @@ public class GCPUsageReport implements PersistentEntity, UuidAccess, CreatedAtAc
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .unique(true)
-                 .name("accountId_startTimestamp_unique_idx")
+                 .name("unique_accountId_startTimestamp_idx")
                  .field(GCPUsageReportKeys.accountId)
                  .field(GCPUsageReportKeys.startTimestamp)
                  .build())

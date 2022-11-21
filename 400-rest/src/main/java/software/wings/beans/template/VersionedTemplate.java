@@ -45,7 +45,7 @@ public class VersionedTemplate extends Base implements AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("yaml")
+                 .name("unique_yaml")
                  .unique(true)
                  .field(VersionedTemplateKeys.accountId)
                  .field(VersionedTemplateKeys.templateId)

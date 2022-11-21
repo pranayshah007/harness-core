@@ -47,7 +47,7 @@ public class DelegateConnectionResult implements PersistentEntity, UuidAware, Up
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("delegateConnectionResultsIdx")
+                 .name("unique_delegateConnectionResultsIdx")
                  .unique(true)
                  .field(DelegateConnectionResultKeys.accountId)
                  .field(DelegateConnectionResultKeys.delegateId)

@@ -53,7 +53,7 @@ public class DelegateNgToken
                  .field(DelegateNgTokenKeys.owner)
                  .field(DelegateNgTokenKeys.name)
                  .unique(true)
-                 .name("byAccountOwnerAndName")
+                 .name("unique_byAccountOwnerAndName")
                  .build())
         .add(CompoundMongoIndex.builder()
                  .field(DelegateNgTokenKeys.accountId)

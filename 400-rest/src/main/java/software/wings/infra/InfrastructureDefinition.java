@@ -67,7 +67,7 @@ public class InfrastructureDefinition
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("infraDefinitionIdx")
+                 .name("unique_infraDefinitionIdx")
                  .unique(true)
                  .field(InfrastructureDefinitionKeys.appId)
                  .field(InfrastructureDefinitionKeys.envId)

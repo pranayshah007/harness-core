@@ -59,7 +59,7 @@ public class AnalysisContext extends Base implements PersistentRegularIterable, 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("task_Unique_Idx")
+                 .name("unique_task_Idx")
                  .unique(true)
                  .field(AnalysisContextKeys.stateExecutionId)
                  .field(AnalysisContextKeys.executionStatus)

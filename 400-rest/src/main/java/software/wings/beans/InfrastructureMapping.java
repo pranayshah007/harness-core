@@ -82,7 +82,7 @@ public abstract class InfrastructureMapping
                  .descSortField(InfrastructureMappingKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("yaml")
+                 .name("unique_yaml")
                  .unique(true)
                  .field(InfrastructureMappingKeys.appId)
                  .field(InfrastructureMappingKeys.envId)

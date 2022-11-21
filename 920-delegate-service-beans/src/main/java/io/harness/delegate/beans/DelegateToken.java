@@ -51,7 +51,7 @@ public class DelegateToken implements PersistentEntity, UuidAware, CreatedAtAwar
                  .field(DelegateTokenKeys.accountId)
                  .field(DelegateTokenKeys.name)
                  .unique(true)
-                 .name("byAccountAndName")
+                 .name("unique_byAccountAndName")
                  .build())
         .add(CompoundMongoIndex.builder()
                  .field(DelegateTokenKeys.accountId)
