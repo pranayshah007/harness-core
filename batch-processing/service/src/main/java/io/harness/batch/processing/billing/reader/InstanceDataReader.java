@@ -72,6 +72,8 @@ public class InstanceDataReader {
       }
     }
 
+    log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
+
     List<InstanceData> instanceDataLists =
         clusterIds.stream()
             .map(clusterId
