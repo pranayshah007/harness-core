@@ -66,9 +66,8 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
                              .setData(eventInfo.toByteString())
                              .build());
       Map<String, String> dataMap = dataPoints.get(0).getDataMap();
-      log.info("Event sent for service: {} (account: {}, org: {}, project: {})",
-          dataMap.get(TimescaleConstants.SERVICE_ID.getKey()), project, dataMap.get(TimescaleConstants.ORG_ID.getKey()),
-          dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));
+      log.info("Event sent for project: {} (account: {}, org: {})", dataMap.get(TimescaleConstants.PROJECT_ID.getKey()),
+          dataMap.get(TimescaleConstants.ACCOUNT_ID.getKey()), dataMap.get(TimescaleConstants.ORG_ID.getKey()));
     } catch (Exception ex) {
       log.error("Error publishing instance stats for services of account {}", project, ex);
     }

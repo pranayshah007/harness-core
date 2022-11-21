@@ -11,7 +11,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.PIPELINE)
-@RecasterAlias("io.harness.steps.plugin.ContainerStepOutcome")
-public class ContainerStepOutcome implements Outcome {
+@RecasterAlias("io.harness.steps.plugin.ContainerStepInitOutcome")
+public class ContainerStepInitOutcome implements Outcome {
   // todo(abhinav): implement
 }

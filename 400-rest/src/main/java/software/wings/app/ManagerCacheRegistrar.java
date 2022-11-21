@@ -13,6 +13,7 @@ import static javax.cache.expiry.Duration.THIRTY_MINUTES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
+import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.ApiKeyEntry;
@@ -49,6 +50,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String SECRET_CACHE = "secretCache";
+  public static final String DEPLOYMENT_RECONCILIATION_CACHE = "deploymentReconciliationCache";
 
   @Provides
   @Named(AUTH_TOKEN_CACHE)
@@ -127,6 +129,15 @@ public class ManagerCacheRegistrar extends AbstractModule {
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache(SECRET_CACHE, String.class, EncryptedDataDetails.class,
         CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Named(DEPLOYMENT_RECONCILIATION_CACHE)
+  @Singleton
+  public Cache<String, DeploymentReconRecord> getDeploymentReconCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(DEPLOYMENT_RECONCILIATION_CACHE, String.class, DeploymentReconRecord.class,
+        CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Override

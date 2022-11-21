@@ -54,6 +54,7 @@ import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInher
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -423,11 +424,29 @@ public class TerraformStepHelper {
     return outputName;
   }
 
+  @Nullable
+  public String saveTerraformPlanHumanReadableOutput(
+      Ambiance ambiance, TerraformTaskNGResponse response, String provisionIdentifier) {
+    if (isEmpty(response.getTfHumanReadablePlanFileId())) {
+      return null;
+    }
+
+    TerraformHumanReadablePlanOutput terraformHumanReadablePlanOutput =
+        TerraformHumanReadablePlanOutput.builder()
+            .provisionerIdentifier(provisionIdentifier)
+            .tfPlanFileId(response.getTfHumanReadablePlanFileId())
+            .tfPlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
+            .build();
+
+    String outputName = TerraformHumanReadablePlanOutput.getOutputName(provisionIdentifier);
+    executionSweepingOutputService.consume(
+        ambiance, outputName, terraformHumanReadablePlanOutput, StepCategory.STEP.name());
+
+    return outputName;
+  }
+
   public void saveTerraformPlanExecutionDetails(Ambiance ambiance, TerraformTaskNGResponse response,
       String provisionerIdentifier, TerraformPlanStepParameters planStepParameters) {
-    if (isEmpty(response.getTfPlanJsonFileId())) {
-      return;
-    }
     String planExecutionId = ambiance.getPlanExecutionId();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
@@ -441,10 +460,12 @@ public class TerraformStepHelper {
             .pipelineExecutionId(planExecutionId)
             .stageExecutionId(stageExecutionId)
             .provisionerId(provisionerIdentifier)
-            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
-            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
             .encryptedTfPlan(List.of(response.getEncryptedTfPlan()))
             .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
+            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfHumanReadablePlanId(response.getTfHumanReadablePlanFileId())
+            .tfHumanReadablePlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
             .build();
 
     terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
@@ -528,6 +549,26 @@ public class TerraformStepHelper {
       }
     }
     return map;
+  }
+
+  public void cleanupTfPlanHumanReadable(List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
+    for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformPlanExecutionDetails.getTfHumanReadablePlanId())
+          && isNotEmpty(terraformPlanExecutionDetails.getTfHumanReadablePlanFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformPlanExecutionDetails.getTfHumanReadablePlanFileBucket());
+        try {
+          log.info("Remove terraform plan human readable file [{}] from bucket [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfHumanReadablePlanId(), fileBucket,
+              terraformPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformPlanExecutionDetails.getTfHumanReadablePlanId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform plan human readable file [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfHumanReadablePlanId(),
+              terraformPlanExecutionDetails.getProvisionerId(), e);
+        }
+      }
+    }
   }
 
   public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance, String provisionId) {

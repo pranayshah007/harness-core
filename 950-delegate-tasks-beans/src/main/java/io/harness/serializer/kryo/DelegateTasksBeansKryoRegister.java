@@ -338,9 +338,17 @@ import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.InlineFileConfig;
+import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
+import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters;
+import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
+import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
+import io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
@@ -1940,5 +1948,14 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ElastigroupSetupCommandRequest.class, 573547);
     kryo.register(ElastigroupSetupResponse.class, 573548);
     kryo.register(ElastigroupSetupResult.class, 573549);
+
+    kryo.register(InlineFileConfig.class, 573550);
+    kryo.register(InlineStoreDelegateConfig.class, 573551);
+    kryo.register(TerragruntTaskRunType.class, 573552);
+    kryo.register(TerragruntRunConfiguration.class, 573553);
+    kryo.register(AbstractTerragruntTaskParameters.class, 573554);
+    kryo.register(TerragruntPlanTaskParameters.class, 573555);
+    kryo.register(AbstractTerragruntTaskResponse.class, 573556);
+    kryo.register(TerragruntPlanTaskResponse.class, 573557);
   }
 }

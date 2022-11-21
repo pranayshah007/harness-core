@@ -18,6 +18,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupRequestV2DTO;
 import io.harness.ng.core.dto.UserGroupResponse;
@@ -37,6 +38,7 @@ import io.harness.ng.core.user.entities.UserGroup;
 
 import software.wings.beans.sso.SSOType;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -173,7 +175,14 @@ public class UserGroupMapper {
             .build();
 
     if (isNotEmpty(userGroupDTO.getLinkedSsoType())) {
-      group.setLinkedSsoType(SSOType.valueOf(userGroupDTO.getLinkedSsoType()));
+      SSOType ssoType;
+      try {
+        ssoType = SSOType.valueOf(userGroupDTO.getLinkedSsoType());
+      } catch (IllegalArgumentException ex) {
+        throw new InvalidRequestException(String.format("Invalid LinkedSsoType passed: [%s]. Valid SSO Types: %s",
+            userGroupDTO.getLinkedSsoType(), Arrays.toString(SSOType.values())));
+      }
+      group.setLinkedSsoType(ssoType);
     }
 
     return group;

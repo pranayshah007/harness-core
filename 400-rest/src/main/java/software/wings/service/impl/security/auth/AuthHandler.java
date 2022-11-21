@@ -73,6 +73,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.ApiKeyEntry;
@@ -81,6 +82,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.HttpMethod;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.Pipeline;
+import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.PipelineStage.PipelineStageElement;
 import software.wings.beans.Service;
 import software.wings.beans.TemplateExpression;
@@ -201,6 +203,7 @@ public class AuthHandler {
   @Inject private WorkflowServiceHelper workflowServiceHelper;
   @Inject private TemplateService templateService;
   @Inject private TemplateGalleryService templateGalleryService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public UserPermissionInfo evaluateUserPermissionInfo(String accountId, List<UserGroup> userGroups, User user) {
     double accountPermissionsTime, getAppIdsTime, collectAppIdsTime, fetchRequiredEntitiesTime,
@@ -932,9 +935,19 @@ public class AuthHandler {
   }
 
   private Map<String, List<Base>> getAppIdPipelineMap(String accountId) {
-    PageRequest<Pipeline> pageRequest = aPageRequest().addFilter("accountId", Operator.EQ, accountId).build();
-    List<Pipeline> list = getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest));
-    return list.stream().collect(Collectors.groupingBy(Base::getAppId));
+    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH, accountId)) {
+      List<Pipeline> pipelines = wingsPersistence.createQuery(Pipeline.class)
+                                     .filter(PipelineKeys.accountId, accountId)
+                                     .project(PipelineKeys.uuid, true)
+                                     .project(PipelineKeys.appId, true)
+                                     .project(PipelineKeys.accountId, true)
+                                     .asList();
+      return pipelines.stream().collect(Collectors.groupingBy(Base::getAppId));
+    } else {
+      PageRequest<Pipeline> pageRequest = aPageRequest().addFilter("accountId", Operator.EQ, accountId).build();
+      List<Pipeline> list = getAllEntities(pageRequest, () -> pipelineService.listPipelines(pageRequest));
+      return list.stream().collect(Collectors.groupingBy(Base::getAppId));
+    }
   }
 
   private Map<String, List<Base>> getAppIdTemplateMap(String accountId) {

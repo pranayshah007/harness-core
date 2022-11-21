@@ -2321,6 +2321,14 @@
 573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
 573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
 573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
+573550:io.harness.delegate.beans.storeconfig.InlineFileConfig
+573551:io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig
+573552:io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType
+573553:io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration
+573554:io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters
+573555:io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
+573556:io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse
+573557:io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

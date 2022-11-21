@@ -301,6 +301,7 @@ import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
 import software.wings.yaml.gitSync.GitSyncPollingIterator;
 
+import com.codahale.metrics.InstrumentedExecutorService;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -390,6 +391,7 @@ public class WingsApplication extends Application<MainConfiguration> {
   private static final SecureRandom random = new SecureRandom();
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
   private HarnessMetricRegistry harnessMetricRegistry;
   private StartupMode startupMode;
 
@@ -485,10 +487,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
-    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
-        configuration.getCommonPoolConfig().getCorePoolSize(), configuration.getCommonPoolConfig().getMaxPoolSize(),
-        configuration.getCommonPoolConfig().getIdleTime(), configuration.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    ExecutorService mainPoolExecutor = ThreadPool.create(configuration.getCommonPoolConfig().getCorePoolSize(),
+        configuration.getCommonPoolConfig().getMaxPoolSize(), configuration.getCommonPoolConfig().getIdleTime(),
+        configuration.getCommonPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
+    ExecutorModule.getInstance().setExecutorService(
+        new InstrumentedExecutorService(mainPoolExecutor, threadPoolMetricRegistry, "main"));
 
     List<Module> modules = new ArrayList<>();
     addModules(configuration, modules);
@@ -933,7 +937,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(new EventsModule(configuration));
     if (configuration.isGraphQLEnabled()) {
       modules.add(GraphQLModule.getInstance());

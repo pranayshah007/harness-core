@@ -177,7 +177,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       return PlanCreatorServiceHelper.handlePlanCreationResponses(
           planCreationResponses, finalResponse, currentYaml, dependencies, dependenciesList);
     } catch (Exception ex) {
-      log.error(format("Unexpected plan creation error: %s", ex.getMessage()), ex);
       throw new UnexpectedException(format("Unexpected plan creation error: %s", ex.getMessage()), ex);
     } finally {
       log.info("[PMS_PlanCreatorService_Time] Dependencies list time took {}ms for dependencies size {}",
@@ -192,7 +191,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       FilterCreationBlobResponse response = filterCreatorService.createFilterBlobResponse(request);
       filterCreationResponse = FilterCreationResponse.newBuilder().setBlobResponse(response).build();
     } catch (Exception ex) {
-      log.error(ExceptionUtils.getMessage(ex), ex);
       WingsException processedException = exceptionManager.processException(ex);
       filterCreationResponse =
           FilterCreationResponse.newBuilder()
@@ -218,7 +216,6 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
       VariablesCreationBlobResponse response = variableCreatorService.createVariablesResponse(request);
       variablesCreationResponse = VariablesCreationResponse.newBuilder().setBlobResponse(response).build();
     } catch (Exception ex) {
-      log.error(ExceptionUtils.getMessage(ex), ex);
       variablesCreationResponse =
           VariablesCreationResponse.newBuilder()
               .setErrorResponse(ErrorResponse.newBuilder().addMessages(ExceptionUtils.getMessage(ex)).build())

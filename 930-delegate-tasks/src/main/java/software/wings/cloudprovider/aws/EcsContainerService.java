@@ -62,8 +62,7 @@ public interface EcsContainerService {
    */
   List<ContainerInfo> provisionTasks(String region, SettingAttribute connectorConfig,
       List<EncryptedDataDetail> encryptedDataDetails, String clusterName, String serviceName, int previousCount,
-      int desiredCount, int serviceSteadyStateTimeout, ExecutionLogCallback executionLogCallback,
-      boolean timeoutErrorSupported);
+      int desiredCount, int serviceSteadyStateTimeout, ExecutionLogCallback executionLogCallback);
 
   void waitForTasksToBeInRunningStateWithHandledExceptions(UpdateServiceCountRequestData requestData);
 

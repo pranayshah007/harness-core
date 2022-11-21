@@ -445,6 +445,13 @@ public class FeatureNameTest extends WingsBaseTest {
     featureNameOrdinalMapping.put(411, "PL_HIDE_LAUNCH_NEXTGEN");
     featureNameOrdinalMapping.put(412, "PL_LDAP_PARALLEL_GROUP_SYNC");
     featureNameOrdinalMapping.put(413, "CDS_OrgAccountLevelServiceEnvEnvGroup");
+    featureNameOrdinalMapping.put(414, "CE_NET_AMORTISED_COST_ENABLED");
+    featureNameOrdinalMapping.put(415, "GITOPS_DR_ENABLED");
+    featureNameOrdinalMapping.put(416, "GITOPS_RECONCILER_ENABLED");
+    featureNameOrdinalMapping.put(417, "CE_RERUN_HOURLY_JOBS");
+    featureNameOrdinalMapping.put(418, "SPG_WFE_OPTIMIZE_WORKFLOW_LISTING");
+    featureNameOrdinalMapping.put(419, "SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH");
+    featureNameOrdinalMapping.put(420, "SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION");
 
     featureNameConstantMapping =
         featureNameOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

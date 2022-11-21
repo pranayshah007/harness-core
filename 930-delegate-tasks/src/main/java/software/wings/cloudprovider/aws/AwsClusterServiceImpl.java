@@ -91,8 +91,7 @@ public class AwsClusterServiceImpl implements AwsClusterService {
           format("Service [%s] in cluster [%s] stays at %s instances", serviceName, clusterName, previousCount));
     }
     return ecsContainerService.provisionTasks(region, cloudProviderSetting, encryptedDataDetails, clusterName,
-        serviceName, previousCount, desiredCount, serviceSteadyStateTimeout, executionLogCallback,
-        timeoutErrorSupported);
+        serviceName, previousCount, desiredCount, serviceSteadyStateTimeout, executionLogCallback);
   }
 
   @Override

@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration.service.workflow;
 
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -28,11 +27,16 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-public class BuildWorkflowHandlerImpl implements WorkflowHandler {
+public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   @Inject BuildWorkflowYamlHandler buildWorkflowYamlHandler;
   @Inject private StepMapperFactory stepMapperFactory;
+
+  @Override
+  public List<Yaml> getRollbackPhases(Workflow workflow) {
+    BuildWorkflowYaml buildWorkflowYaml = buildWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return buildWorkflowYaml.getRollbackPhases();
+  }
 
   @Override
   public List<Yaml> getPhases(Workflow workflow) {
@@ -49,14 +53,14 @@ public class BuildWorkflowHandlerImpl implements WorkflowHandler {
 
   @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
-    List<ExecutionWrapperConfig> steps = new ArrayList<>();
-    List<ExecutionWrapperConfig> rollingSteps = new ArrayList<>();
     List<WorkflowPhase.Yaml> phases = getPhases(workflow);
+    List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);
 
     // Add all the steps
-    if (EmptyPredicate.isNotEmpty(phases)) {
-      steps.addAll(phases.stream().map(phase -> getSteps(stepMapperFactory, phase)).collect(Collectors.toList()));
-    }
+    List<ExecutionWrapperConfig> steps = getSteps(stepMapperFactory, phases);
+
+    // Add all the steps
+    List<ExecutionWrapperConfig> rollingSteps = getSteps(stepMapperFactory, rollbackPhases);
 
     // Build Stage
     CustomStageConfig customStageConfig =

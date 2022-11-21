@@ -225,6 +225,8 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String accountId, @NotEmpty String userId);
 
+  void loadSupportAccounts(User user);
+
   /**
    * Gets user from cache or db.
    *

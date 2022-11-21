@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.pipeline.mappers;
+package io.harness.pms.pipeline.filters;
 
 import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -55,26 +55,26 @@ public class PMSPipelineFilterHelper {
 
   public Criteria getCriteriaForFind(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean notDeleted) {
-    return Criteria.where(PipelineEntityKeys.deleted)
-        .is(!notDeleted)
-        .and(PipelineEntityKeys.identifier)
-        .is(identifier)
-        .and(PipelineEntityKeys.projectIdentifier)
-        .is(projectIdentifier)
+    return Criteria.where(PipelineEntityKeys.accountId)
+        .is(accountId)
         .and(PipelineEntityKeys.orgIdentifier)
         .is(orgIdentifier)
-        .and(PipelineEntityKeys.accountId)
-        .is(accountId);
+        .and(PipelineEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineEntityKeys.identifier)
+        .is(identifier)
+        .and(PipelineEntityKeys.deleted)
+        .is(!notDeleted);
   }
 
   public Criteria getCriteriaForAllPipelinesInProject(
       String accountId, String orgIdentifier, String projectIdentifier) {
-    return Criteria.where(PipelineEntityKeys.projectIdentifier)
-        .is(projectIdentifier)
+    return Criteria.where(PipelineEntityKeys.accountId)
+        .is(accountId)
         .and(PipelineEntityKeys.orgIdentifier)
         .is(orgIdentifier)
-        .and(PipelineEntityKeys.accountId)
-        .is(accountId);
+        .and(PipelineEntityKeys.projectIdentifier)
+        .is(projectIdentifier);
   }
 
   public Criteria getCriteriaForFileUniquenessCheck(String accountId, String repoURl, String filePath) {

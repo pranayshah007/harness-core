@@ -189,6 +189,11 @@ public class SettingAttribute
                  .collation(
                      Collation.builder().locale(CollationLocale.ENGLISH).strength(CollationStrength.PRIMARY).build())
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountIdNameIdx")
+                 .field(SettingAttributeKeys.name)
+                 .field(SettingAttributeKeys.accountId)
+                 .build())
         .build();
   }
 

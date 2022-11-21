@@ -61,6 +61,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     List<NGVariable> outputVars = new ArrayList<>();
     if (StringUtils.isNotBlank(state.getOutputVars())) {
       outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .filter(StringUtils::isNotBlank)
                             .map(str
                                 -> StringNGVariable.builder()
                                        .name(str)
@@ -71,6 +72,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     }
     if (StringUtils.isNotBlank(state.getSecretOutputVars())) {
       outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .filter(StringUtils::isNotBlank)
                             .map(str
                                 -> StringNGVariable.builder()
                                        .name(str)

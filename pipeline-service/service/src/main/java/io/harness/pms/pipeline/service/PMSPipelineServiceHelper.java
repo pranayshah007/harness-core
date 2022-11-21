@@ -264,7 +264,6 @@ public class PMSPipelineServiceHelper {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
-
     // Add Template Module Info temporarily to Pipeline Entity
     HashSet<String> templateModuleInfo = new HashSet<>();
     if (isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
@@ -275,7 +274,8 @@ public class PMSPipelineServiceHelper {
     }
     pipelineEntity.setTemplateModules(templateModuleInfo);
 
-    pipelineValidationService.validateYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+    pipelineValidationService.validateYaml(
+        accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline, pipelineEntity);
     return pipelineGovernanceService.validateGovernanceRules(
         accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
   }

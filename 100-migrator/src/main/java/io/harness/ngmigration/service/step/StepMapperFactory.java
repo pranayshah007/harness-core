@@ -20,6 +20,8 @@ public class StepMapperFactory {
   @Inject K8sApplyStepMapperImpl k8sApplyStepMapper;
   @Inject K8sDeleteStepMapperImpl k8sDeleteStepMapper;
   @Inject EmailStepMapperImpl emailStepMapper;
+  @Inject K8sRollingRollbackStepMapperImpl k8sRollingRollbackStepMapper;
+  @Inject K8sCanaryDeployStepMapperImpl k8sCanaryDeployStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
@@ -39,6 +41,10 @@ public class StepMapperFactory {
         return k8sApplyStepMapper;
       case "EMAIL":
         return emailStepMapper;
+      case "K8S_DEPLOYMENT_ROLLING_ROLLBACK":
+        return k8sRollingRollbackStepMapper;
+      case "K8S_CANARY_DEPLOY":
+        return k8sCanaryDeployStepMapper;
       default:
         throw new InvalidRequestException("Unsupported step");
     }
