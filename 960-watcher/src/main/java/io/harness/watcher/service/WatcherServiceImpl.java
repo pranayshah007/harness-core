@@ -1450,6 +1450,14 @@ public class WatcherServiceImpl implements WatcherService {
             success = true;
             stop();
           }
+        } else {
+          try {
+            message = messageService.readMessage(SECONDS.toMillis(2));
+            log.error("Failed to get message from new watcher, current message {}", message.getMessage());
+          } catch (Exception ex) {
+            log.error("Not able to read messages from channel, as it has probably gone into bad state, shutting down now ", ex);
+            stop();
+          }
         }
       }
       if (!success) {
