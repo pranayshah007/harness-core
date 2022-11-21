@@ -31,7 +31,7 @@ import java.util.Set;
 public class VmStepSerializer {
   @Inject VmPluginCompatibleStepSerializer vmPluginCompatibleStepSerializer;
   @Inject VmPluginStepSerializer vmPluginStepSerializer;
-  @Inject BitriseSerializer BitriseSerializer;
+  @Inject VmRunStepSerializer vmRunStepSerializer;
   @Inject VmRunTestStepSerializer vmRunTestStepSerializer;
   @Inject VmBackgroundStepSerializer vmBackgroundStepSerializer;
   @Inject VmActionStepSerializer vmActionStepSerializer;
