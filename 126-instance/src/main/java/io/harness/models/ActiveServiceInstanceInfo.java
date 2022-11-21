@@ -24,5 +24,5 @@ public class ActiveServiceInstanceInfo {
   private String envName;
   private String tag;
   private String displayName;
-  private int count;
+  private Integer count;
 }

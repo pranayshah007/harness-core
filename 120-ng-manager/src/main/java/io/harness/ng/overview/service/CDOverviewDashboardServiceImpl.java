@@ -1792,11 +1792,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public InstanceGroupedByArtifactList getInstanceGroupedByArtifactList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
-        new HashMap<>();
-    Map<String, String> envIdToEnvNameMap = new HashMap<>();
-    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
-
     List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
@@ -1804,8 +1799,27 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         instanceDashboardService.getActiveServiceGitOpsInstanceInfo(
             accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     activeServiceInstanceInfoList.addAll(activeServiceInstanceGitOpsInfoList);
+    return getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList);
+  }
 
+  public InstanceGroupedByArtifactList getInstanceGroupedByArtifactListHelper(
+      List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList) {
+    Map<String, Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>>>>
+        buildEnvInfraMap = new HashMap<>();
+    Map<String, Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>>>>
+        buildEnvClusterMap = new HashMap<>();
+    Map<String, String> envIdToEnvNameMap = new HashMap<>();
+    Map<String, String> infraIdToInfraNameMap = new HashMap<>();
+    Map<String, String> clusterIdToAgentIdMap = new HashMap<>();
+    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
+      final String buildId = activeServiceInstanceInfo.getTag();
+      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
+
+      if (buildId == null || envId == null) {
+        return;
+      }
+
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
       final String infraName = activeServiceInstanceInfo.getInfraName();
       final String clusterIdentifier = activeServiceInstanceInfo.getClusterIdentifier();
@@ -1813,30 +1827,39 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String lastPipelineExecutionId = activeServiceInstanceInfo.getLastPipelineExecutionId();
       final String lastPipelineExecutionName = activeServiceInstanceInfo.getLastPipelineExecutionName();
       final String lastDeployedAt = activeServiceInstanceInfo.getLastDeployedAt();
-      final String envId = activeServiceInstanceInfo.getEnvIdentifier();
       final String envName = activeServiceInstanceInfo.getEnvName();
-      final String buildId = activeServiceInstanceInfo.getTag();
       final String artifactPath = getArtifactPathFromDisplayName(activeServiceInstanceInfo.getDisplayName());
       final int count = activeServiceInstanceInfo.getCount();
-      buildEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
-      buildEnvInfraMap.get(buildId).putIfAbsent(envId, new ArrayList<>());
 
-      buildEnvInfraMap.get(buildId).get(envId).add(
-          InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
-              .infraIdentifier(infraIdentifier)
-              .infraName(infraName)
-              .agentIdentifier(agentIdentifier)
-              .clusterIdentifier(clusterIdentifier)
-              .count(count)
-              .lastDeployedAt(lastDeployedAt)
-              .lastPipelineExecutionId(lastPipelineExecutionId)
-              .lastPipelineExecutionName(lastPipelineExecutionName)
-              .build());
+      if (infraIdentifier != null) {
+        buildEnvInfraMap.putIfAbsent(buildId, new HashMap<>());
+        buildEnvInfraMap.get(buildId).putIfAbsent(envId, new HashMap<>());
+        buildEnvInfraMap.get(buildId).get(envId).putIfAbsent(infraIdentifier, new ArrayList<>());
+        infraIdToInfraNameMap.putIfAbsent(infraIdentifier, infraName);
+        buildEnvInfraMap.get(buildId)
+            .get(envId)
+            .get(infraIdentifier)
+            .add(new InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution(
+                count, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt));
+      } else {
+        buildEnvClusterMap.putIfAbsent(buildId, new HashMap<>());
+        buildEnvClusterMap.get(buildId).putIfAbsent(envId, new HashMap<>());
+        buildEnvClusterMap.get(buildId).get(envId).putIfAbsent(clusterIdentifier, new ArrayList<>());
+        clusterIdToAgentIdMap.putIfAbsent(clusterIdentifier, agentIdentifier);
+        buildEnvClusterMap.get(buildId)
+            .get(envId)
+            .get(clusterIdentifier)
+            .add(new InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution(
+                count, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt));
+      }
+
       envIdToEnvNameMap.putIfAbsent(envId, envName);
       buildIdToArtifactPathMap.putIfAbsent(buildId, artifactPath);
     });
-    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
-        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
+    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = groupedByArtifacts(
+        buildEnvInfraMap, envIdToEnvNameMap, infraIdToInfraNameMap, buildIdToArtifactPathMap, false, false);
+    instanceGroupedByArtifactList.addAll(groupedByArtifacts(
+        buildEnvClusterMap, envIdToEnvNameMap, clusterIdToAgentIdMap, buildIdToArtifactPathMap, true, false));
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
   }
 
@@ -1852,35 +1875,83 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   private List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> groupedByArtifacts(
-      Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap,
-      Map<String, String> envIdToEnvNameMap, Map<String, String> buildIdToArtifactPathMap) {
+      Map<String, Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>>>>
+          buildEnvInfraMap,
+      Map<String, String> envIdToEnvNameMap, Map<String, String> infraIdToInfraNameMap,
+      Map<String, String> buildIdToArtifactPathMap, boolean isGitOps, boolean isActiveDeploymentAPI) {
     List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
 
-    for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> entry :
+    for (Map.Entry<String,
+             Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>>>> entry :
         buildEnvInfraMap.entrySet()) {
       String buildId = entry.getKey();
       String artifactPath = buildIdToArtifactPathMap.get(buildId);
-      Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> envInfraMap = entry.getValue();
+
       List<InstanceGroupedByArtifactList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
           new ArrayList<>();
 
-      for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>> entry1 :
-          envInfraMap.entrySet()) {
+      for (Map.Entry<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>>>
+               entry1 : entry.getValue().entrySet()) {
         String envId = entry1.getKey();
         String envName = envIdToEnvNameMap.get(envId);
 
-        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceList = entry1.getValue();
         List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
-            instanceList.stream().filter(e -> e.getInfraIdentifier() != null).collect(Collectors.toList());
-        List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList =
-            instanceList.stream().filter(e -> e.getClusterIdentifier() != null).collect(Collectors.toList());
+            new ArrayList<>();
 
-        instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
-                                                 .envId(envId)
-                                                 .envName(envName)
-                                                 .instanceGroupedByClusterList(instanceGroupedByClusterList)
-                                                 .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
-                                                 .build());
+        for (Map.Entry<String, List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>> entry2 :
+            entry1.getValue().entrySet()) {
+          String infraId = entry2.getKey();
+          String infraName = infraIdToInfraNameMap.get(infraId);
+
+          List<InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution> pipelineExecutions = entry2.getValue();
+
+          if (!isActiveDeploymentAPI) {
+            Map<String, InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution>
+                instanceGroupedByPipelineExecutionMap = new HashMap<>();
+
+            for (InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution pipelineExecution :
+                pipelineExecutions) {
+              if (instanceGroupedByPipelineExecutionMap.containsKey(pipelineExecution.getLastPipelineExecutionId())) {
+                InstanceGroupedByArtifactList.InstanceGroupedByPipelineExecution instanceGroupedByPipelineExecution =
+                    instanceGroupedByPipelineExecutionMap.get(pipelineExecution.getLastPipelineExecutionId());
+                instanceGroupedByPipelineExecution.setCount(
+                    instanceGroupedByPipelineExecution.getCount() + pipelineExecution.getCount());
+              } else {
+                instanceGroupedByPipelineExecutionMap.put(
+                    pipelineExecution.getLastPipelineExecutionId(), pipelineExecution);
+              }
+            }
+            pipelineExecutions = new ArrayList<>(instanceGroupedByPipelineExecutionMap.values());
+          }
+          if (!isGitOps) {
+            instanceGroupedByInfrastructureList.add(
+                InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
+                    .infraName(infraName)
+                    .infraIdentifier(infraId)
+                    .instanceGroupedByPipelineExecutions(pipelineExecutions)
+                    .build());
+          } else {
+            instanceGroupedByInfrastructureList.add(
+                InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
+                    .agentIdentifier(infraName)
+                    .clusterIdentifier(infraId)
+                    .instanceGroupedByPipelineExecutions(pipelineExecutions)
+                    .build());
+          }
+        }
+        if (!isGitOps) {
+          instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                                   .envId(envId)
+                                                   .envName(envName)
+                                                   .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
+                                                   .build());
+        } else {
+          instanceGroupedByEnvironmentList.add(InstanceGroupedByArtifactList.InstanceGroupedByEnvironment.builder()
+                                                   .envId(envId)
+                                                   .envName(envName)
+                                                   .instanceGroupedByClusterList(instanceGroupedByInfrastructureList)
+                                                   .build());
+        }
       }
       instanceGroupedByArtifactList.add(InstanceGroupedByArtifactList.InstanceGroupedByArtifact.builder()
                                             .artifactVersion(buildId)
@@ -1888,7 +1959,6 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                             .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
                                             .build());
     }
-
     return instanceGroupedByArtifactList;
   }
 
@@ -2107,11 +2177,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public InstanceGroupedByArtifactList getActiveServiceDeploymentsList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    Map<String, Map<String, List<InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure>>> buildEnvInfraMap =
-        new HashMap<>();
-    Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Set<String> envIdsWithInfra = new HashSet<>();
-    Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList = new ArrayList<>();
 
     String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
     List<ActiveServiceDeploymentsInfo> deploymentsInfo = getActiveServiceDeploymentsInfo(query);
@@ -2119,7 +2186,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<String> pipelineExecutionIdList = new ArrayList<>();
 
     deploymentsInfo.forEach(deploymentInfo -> {
-      pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId());
+      if (deploymentInfo.getPipelineExecutionId() != null) {
+        pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId());
+      }
       if (deploymentInfo.getInfrastructureIdentifier() != null) {
         envIdsWithInfra.add(deploymentInfo.getEnvId());
       }
@@ -2128,11 +2197,17 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, ServicePipelineInfo> pipelineExecutionDetailsMap = getPipelineExecutionDetails(pipelineExecutionIdList);
 
     deploymentsInfo.forEach(deploymentInfo -> {
-      final String artifact = deploymentInfo.getTag();
       final String envId = deploymentInfo.getEnvId();
+      final String infrastructureIdentifier = deploymentInfo.getInfrastructureIdentifier();
+      final String artifact = deploymentInfo.getTag();
+
+      if (artifact == null || envId == null || (infrastructureIdentifier == null && envIdsWithInfra.contains(envId))) {
+        return;
+      }
+
       final String envName = deploymentInfo.getEnvName();
       final String pipelineExecutionId = deploymentInfo.getPipelineExecutionId();
-      final String infrastructureIdentifier = deploymentInfo.getInfrastructureIdentifier();
+
       final String infrastructureName = deploymentInfo.getInfrastructureName();
       final String artifactPath = deploymentInfo.getArtifactPath();
       String lastPipelineExecutionId = null;
@@ -2146,29 +2221,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           lastDeployedAt = Long.toString(servicePipelineInfo.getLastExecutedAt());
         }
       }
-      InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure deploymentPipelineInfo =
-          InstanceGroupedByArtifactList.InstanceGroupedByInfrastructure.builder()
-              .lastPipelineExecutionId(lastPipelineExecutionId)
-              .lastPipelineExecutionName(lastPipelineExecutionName)
-              .lastDeployedAt(lastDeployedAt)
-              .infraIdentifier(infrastructureIdentifier)
-              .infraName(infrastructureName)
-              .build();
-
-      if (infrastructureIdentifier != null || !envIdsWithInfra.contains(envId)) {
-        buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
-        buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
-
-        buildEnvInfraMap.get(artifact).get(envId).add(deploymentPipelineInfo);
-        envIdToEnvNameMap.putIfAbsent(envId, envName);
-        buildIdToArtifactPathMap.putIfAbsent(artifact, artifactPath);
-      }
+      activeServiceInstanceInfoList.add(new ActiveServiceInstanceInfo(infrastructureIdentifier, infrastructureName,
+          null, null, lastPipelineExecutionId, lastPipelineExecutionName, lastDeployedAt, envId, envName, artifact,
+          artifactPath, null));
     });
-
-    List<InstanceGroupedByArtifactList.InstanceGroupedByArtifact> instanceGroupedByArtifactList =
-        groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
-
-    return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
+    return getInstanceGroupedByArtifactListHelper(activeServiceInstanceInfoList);
   }
 
   public String queryBuilderDeploymentsWithArtifactsDetails(

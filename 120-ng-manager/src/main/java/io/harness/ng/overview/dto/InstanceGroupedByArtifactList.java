@@ -8,8 +8,7 @@
 package io.harness.ng.overview.dto;
 
 import java.util.List;
-import lombok.Builder;
-import lombok.Value;
+import lombok.*;
 
 @Value
 @Builder
@@ -40,6 +39,13 @@ public class InstanceGroupedByArtifactList {
     String infraName;
     String clusterIdentifier;
     String agentIdentifier;
+    List<InstanceGroupedByPipelineExecution> instanceGroupedByPipelineExecutions;
+  }
+
+  @Getter
+  @Setter
+  @AllArgsConstructor
+  public static class InstanceGroupedByPipelineExecution {
     Integer count;
     String lastPipelineExecutionId;
     String lastPipelineExecutionName;
