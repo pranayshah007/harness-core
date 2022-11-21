@@ -138,7 +138,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
   }
 
   public TaskChainResponse startChainLink(
-      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters){
     OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
 
@@ -150,48 +150,41 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     String startupScript = null;
+    UnitProgressData unitProgressData = null;
 
     if (startupScriptOptionalOutcome.isFound()) {
       StartupScriptOutcome startupScriptOutcome = (StartupScriptOutcome) startupScriptOptionalOutcome.getOutcome();
 
       if (ManifestStoreType.HARNESS.equals(startupScriptOutcome.getStore().getKind())) {
         startupScript = fetchFilesContentFromLocalStore(ambiance, startupScriptOutcome, logCallback).get(0);
-        UnitProgressData unitProgressData = getCommandUnitProgressData(
+        unitProgressData = getCommandUnitProgressData(
             ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
 
         //     Render expressions for all file content fetched from Harness File Store
         if (startupScript != null) {
           startupScript = renderExpression(ambiance, startupScript);
         }
-
-        fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-            startupScript, infrastructureOutcome);
-
       } else if (ManifestStoreType.INLINE.equals(startupScriptOutcome.getStore().getKind())) {
         logCallback.saveExecutionLog(
             color(format("%nFetching %s from Inline Store", "startupScript"), LogColor.White, LogWeight.Bold));
         startupScript = ((InlineStoreConfig) startupScriptOutcome.getStore()).extractContent();
         logCallback.saveExecutionLog("Fetched Startup Script ", INFO, CommandExecutionStatus.SUCCESS);
-        UnitProgressData unitProgressData = getCommandUnitProgressData(
+        unitProgressData = getCommandUnitProgressData(
             ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
 
         //     Render expressions for all file content fetched from Harness File Store
         if (startupScript != null) {
           startupScript = renderExpression(ambiance, startupScript);
         }
-
-        fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-            startupScript, infrastructureOutcome);
       }
     }
-
-    return prepareStartupScriptFetchTask(
-        ambiance, stepElementParameters, infrastructureOutcome, startupScript);
+    return fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
+            startupScript, infrastructureOutcome);
   }
 
   public TaskChainResponse fetchElastigroupParameters(ElastigroupStepExecutor elastigroupStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters, UnitProgressData unitProgressData,
-      String startupScript, InfrastructureOutcome infrastructureOutcome) {
+      String startupScript, InfrastructureOutcome infrastructureOutcome){
     LogCallback logCallback =
         getLogCallback(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(), ambiance, true);
 
@@ -218,10 +211,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         if (elastigroupParameters != null) {
           elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
         }
-
-        return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-                startupScript, infrastructureOutcome, elastigroupParameters);
-
       } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
         logCallback.saveExecutionLog(
                 color(format("%nFetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
@@ -237,13 +226,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         if (elastigroupParameters != null) {
           elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
         }
-
-        return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-                startupScript, infrastructureOutcome, elastigroupParameters);
       }
     }
-    return prepareElastigroupParametersFetchTask(ambiance, stepElementParameters,
-        infrastructureOutcome, startupScript);
+
+    return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
+            startupScript, infrastructureOutcome, elastigroupParameters);
   }
 
   public StartupScriptOutcome resolveStartupScriptOutcome(Ambiance ambiance) {
@@ -270,108 +257,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return elastigroupSetupResult.getGroupToBeDownsized().get(0);
   }
 
-  private TaskChainResponse prepareStartupScriptFetchTask(
-      Ambiance ambiance, StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
-      String startupScript) {
-    ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData =
-        ElastigroupStartupScriptFetchPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
-            .startupScript(startupScript)
-            .build();
-
-    return getElastigroupStartupScriptTaskResponse(
-        ambiance, false, stepElementParameters, elastigroupStartupScriptFetchPassThroughData);
-  }
-
-  private TaskChainResponse prepareElastigroupParametersFetchTask(Ambiance ambiance, StepElementParameters stepElementParameters,
-      InfrastructureOutcome infrastructureOutcome, String startupScript) {
-    //     Render expressions for all file content fetched from Harness File Store
-    if (startupScript != null) {
-      startupScript = renderExpression(ambiance, startupScript);
-    }
-
-    ElastigroupParametersFetchPassThroughData elastigroupParametersFetchPassThroughData =
-        ElastigroupParametersFetchPassThroughData.builder()
-            .infrastructureOutcome(infrastructureOutcome)
-            .startupScript(startupScript)
-            .build();
-
-    return getElastigroupParametersTaskResponse(
-        ambiance, false, stepElementParameters, elastigroupParametersFetchPassThroughData);
-  }
-
-  private TaskChainResponse getElastigroupParametersTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters,
-      ElastigroupParametersFetchPassThroughData elastigroupParametersFetchPassThroughData) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-
-    ElastigroupParametersFetchRequest elastigroupStartupScriptFetchRequest =
-        ElastigroupParametersFetchRequest.builder()
-            .accountId(accountId)
-            .shouldOpenLogStream(shouldOpenLogStream)
-            .startupScript(elastigroupParametersFetchPassThroughData.getStartupScript())
-            .build();
-
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                  .taskType(TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG.name())
-                                  .parameters(new Object[] {elastigroupStartupScriptFetchRequest})
-                                  .build();
-
-    String taskName = TaskType.ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG.getDisplayName();
-
-    ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
-
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, elastigroupSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
-
-    return TaskChainResponse.builder()
-        .chainEnd(false)
-        .taskRequest(taskRequest)
-        .passThroughData(elastigroupParametersFetchPassThroughData)
-        .build();
-  }
-
-  private TaskChainResponse getElastigroupStartupScriptTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
-      StepElementParameters stepElementParameters,
-      ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-
-    ElastigroupStartupScriptFetchRequest elastigroupStartupScriptFetchRequest =
-        ElastigroupStartupScriptFetchRequest.builder()
-            .accountId(accountId)
-            .shouldOpenLogStream(shouldOpenLogStream)
-            .startupScript(elastigroupStartupScriptFetchPassThroughData.getStartupScript())
-            .build();
-
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
-                                  .taskType(TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG.name())
-                                  .parameters(new Object[] {elastigroupStartupScriptFetchRequest})
-                                  .build();
-
-    String taskName = TaskType.ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG.getDisplayName();
-
-    ElastigroupSpecParameters elastigroupSpecParameters = (ElastigroupSpecParameters) stepElementParameters.getSpec();
-
-    final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, elastigroupSpecParameters.getCommandUnits(), taskName,
-            TaskSelectorYaml.toTaskSelector(
-                emptyIfNull(getParameterFieldValue(elastigroupSpecParameters.getDelegateSelectors()))),
-            stepHelper.getEnvironmentType(ambiance));
-
-    return TaskChainResponse.builder()
-        .chainEnd(false)
-        .taskRequest(taskRequest)
-        .passThroughData(elastigroupStartupScriptFetchPassThroughData)
-        .build();
-  }
-
   public TaskChainResponse executeNextLink(ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, PassThroughData passThroughData,
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
@@ -379,7 +264,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     UnitProgressData unitProgressData = null;
     TaskChainResponse taskChainResponse = null;
     try {
-      if (responseData instanceof ElastigroupStartupScriptFetchResponse) { // if EcsGitFetchResponse is received
+      if (responseData instanceof ElastigroupStartupScriptFetchResponse) {
 
         ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse =
             (ElastigroupStartupScriptFetchResponse) responseData;
@@ -388,7 +273,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
         taskChainResponse = handleElastigroupStartupScriptFetchFilesResponse(elastigroupStartupScriptFetchResponse,
             elastigroupStepExecutor, ambiance, stepElementParameters, elastigroupStartupScriptFetchPassThroughData);
-      } else if (responseData instanceof ElastigroupParametersFetchResponse) { // if EcsGitFetchResponse is received
+      } else if (responseData instanceof ElastigroupParametersFetchResponse) {
 
         ElastigroupParametersFetchResponse elastigroupParametersFetchResponse =
             (ElastigroupParametersFetchResponse) responseData;
