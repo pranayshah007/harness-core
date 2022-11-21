@@ -363,7 +363,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     }
     if (isEmpty(image)) {
       return stepFailureTaskResponseWithMessage(
-          unitProgressData, "AMI not available. Please specify the AMI artifact in the pipeline.");
+          unitProgressData, "AMI not available. Please specify the AMI artifact");
     }
 
     ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder()
