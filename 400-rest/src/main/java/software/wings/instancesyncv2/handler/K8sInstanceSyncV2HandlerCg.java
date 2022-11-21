@@ -454,6 +454,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   public List<Instance> difference(List<Instance> list1, List<Instance> list2) {
+    if (isEmpty(list1)) {
+      return emptyList();
+    }
+    if (isEmpty(list2)) {
+      return list1;
+    }
     Map<String, Instance> instanceKeyMapList1 = getInstanceKeyMap(list1);
     Map<String, Instance> instanceKeyMapList2 = getInstanceKeyMap(list2);
 
@@ -468,6 +474,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private Map<String, Instance> getInstanceKeyMap(List<Instance> instanceList) {
     Map<String, Instance> instanceKeyMap = new HashMap<>();
+    if (isEmpty(instanceList)) {
+      return instanceKeyMap;
+    }
     for (Instance instance : instanceList) {
       if (Objects.nonNull(instance.getPodInstanceKey())) {
         instanceKeyMap.put(instance.getPodInstanceKey().getPodName() + instance.getPodInstanceKey().getNamespace()
@@ -496,6 +505,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   @Override
   public List<Instance> instancesToSaveAndUpdate(List<Instance> instances, List<Instance> instancesInDb) {
+    if (isEmpty(instances)) {
+      return emptyList();
+    }
     Map<String, Instance> instancesKeyMap = getInstanceKeyMap(instances);
     Map<String, Instance> instancesInDbKeyMap = getInstanceKeyMap(instancesInDb);
     List<Instance> instancesToAddAndUpdate = new ArrayList<>();

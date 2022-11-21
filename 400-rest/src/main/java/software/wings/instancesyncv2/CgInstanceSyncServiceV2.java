@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -89,6 +90,10 @@ public class CgInstanceSyncServiceV2 {
         .parallelStream()
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
         .forEach(deploymentSummary -> {
+          if (event.isRollback()) {
+            deploymentSummary = getDeploymentSummaryForRollback(deploymentSummary);
+          }
+
           SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
 
           CgInstanceSyncV2Handler instanceSyncHandler =
@@ -130,6 +135,22 @@ public class CgInstanceSyncServiceV2 {
                 instanceSyncHandler);
           }
         });
+  }
+  protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
+    Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);
+    if (summaryOptional != null && summaryOptional.isPresent()) {
+      DeploymentSummary deploymentSummaryFromDB = summaryOptional.get();
+      deploymentSummary.setUuid(deploymentSummaryFromDB.getUuid());
+      // Copy Artifact Information for rollback version for previous deployment summary
+      deploymentSummary.setArtifactBuildNum(deploymentSummaryFromDB.getArtifactBuildNum());
+      deploymentSummary.setArtifactName(deploymentSummaryFromDB.getArtifactName());
+      deploymentSummary.setArtifactId(deploymentSummaryFromDB.getArtifactId());
+      deploymentSummary.setArtifactSourceName(deploymentSummaryFromDB.getArtifactSourceName());
+      deploymentSummary.setArtifactStreamId(deploymentSummaryFromDB.getArtifactStreamId());
+    } else {
+      log.info("Unable to find DeploymentSummary while rolling back " + deploymentSummary);
+    }
+    return deploymentSummary;
   }
 
   private void handleInstances(

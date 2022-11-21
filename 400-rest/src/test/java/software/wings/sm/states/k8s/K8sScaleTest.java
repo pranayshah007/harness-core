@@ -238,7 +238,6 @@ public class K8sScaleTest extends CategoryTest {
         .when(k8sScale)
         .fetchInstanceElementListParam(anyListOf(K8sPod.class));
     doReturn(emptyList()).when(k8sScale).fetchInstanceStatusSummaries(any(), any());
-    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.INSTANCE_SYNC_V2_CG), any());
     k8sScale.handleAsyncResponse(executionContext, response);
     verify(activityService, times(1)).updateStatus(nullable(String.class), anyString(), any(ExecutionStatus.class));
   }
