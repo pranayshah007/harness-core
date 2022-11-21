@@ -15,9 +15,6 @@ import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
 import static io.harness.validation.Validator.notNullCheck;
 
-import static software.wings.instancesyncv2.CgInstanceSyncServiceV2.AUTO_SCALE;
-
-import static com.hazelcast.sql.impl.expression.predicate.TernaryLogic.isNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -32,13 +29,11 @@ import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.K8sPodSyncException;
-import io.harness.expression.ExpressionEvaluator;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sPod;
 import io.harness.perpetualtask.PerpetualTaskExecutionBundle;
 import io.harness.perpetualtask.instancesyncv2.CgDeploymentReleaseDetails;
-import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncTaskParams;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sInstanceSyncTaskDetails;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
@@ -167,20 +162,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return mergeIdentifiersSet;
   }
 
-  public Map<CgReleaseIdentifiers, List<InstanceInfo>> instanceSyncDataPerReleaseIdentifiers(
-      CgInstanceSyncResponse result) {
-    Map<CgReleaseIdentifiers, List<InstanceInfo>> instanceSyncDataPerReleaseIdentifiers = new HashMap<>();
-    for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
-      CgK8sReleaseIdentifier cgK8sReleaseIdentifier = getCgReleaseIdentifiers(instanceSyncData);
-
-      instanceSyncDataPerReleaseIdentifiers.put(cgK8sReleaseIdentifier,
-          instanceSyncData.getInstanceDataList()
-              .parallelStream()
-              .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
-              .collect(Collectors.toList()));
-    }
-    return instanceSyncDataPerReleaseIdentifiers;
-  }
   public Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(
       List<InstanceSyncData> instanceSyncDataList) {
     Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap = new HashMap<>();
@@ -596,7 +577,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       if (deploymentSummary.getDeploymentInfo() instanceof K8sDeploymentInfo) {
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-        ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
         instances = getK8sInstanceFromDelegate(infrastructureMapping, cgK8sReleaseIdentifier, deploymentSummary);
 
       } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {

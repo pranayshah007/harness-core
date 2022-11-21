@@ -3,16 +3,11 @@ package software.wings.instancesyncv2;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.k8s.model.HarnessLabelValues.colorBlue;
 import static io.harness.k8s.model.HarnessLabelValues.colorGreen;
-import static io.harness.rule.OwnerRule.ABOSII;
-import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
-import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
-import static software.wings.beans.container.Label.Builder.aLabel;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
 import static software.wings.service.impl.instance.InstanceSyncTestConstants.*;
-import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_ID;
 import static software.wings.utils.WingsTestConstants.UUID;
 
 import static java.util.Arrays.asList;
@@ -27,7 +22,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -41,7 +35,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EnvironmentType;
-import io.harness.beans.PageResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
 import io.harness.delegate.task.helm.HelmChartInfo;
@@ -50,11 +43,9 @@ import io.harness.k8s.model.HarnessLabels;
 import io.harness.k8s.model.K8sContainer;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.mongo.MongoPersistence;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
 import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
-import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
@@ -67,6 +58,7 @@ import software.wings.beans.Application;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.Environment;
+import software.wings.beans.GcpKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.KubernetesClusterConfig;
@@ -75,13 +67,11 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
-import software.wings.beans.infrastructure.instance.info.EcsContainerInfo;
 import software.wings.beans.infrastructure.instance.info.InstanceInfo;
 import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
 import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
-import software.wings.beans.infrastructure.instance.key.HostInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
@@ -89,9 +79,7 @@ import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
-import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.SettingsServiceImpl;
-import software.wings.service.impl.instance.InstanceSyncFlow;
 import software.wings.service.impl.instance.InstanceUtils;
 import software.wings.service.impl.instance.sync.ContainerSync;
 import software.wings.service.impl.instance.sync.response.ContainerSyncResponse;
@@ -104,7 +92,6 @@ import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
-import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.protobuf.Any;
@@ -112,12 +99,9 @@ import com.google.protobuf.ByteString;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -132,7 +116,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.FieldEnd;
 import org.mongodb.morphia.query.Query;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -204,6 +187,309 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
                  .build())
         .when(mockQuery)
         .get();
+  }
+  /*
+    @Test
+    @Owner(developers = NAMAN_TALAYCHA)
+    @Category(UnitTests.class)
+    public void test_syncK8sHelmChartInfo_forBlueGreenDeployment() throws Exception {
+      DeploymentSummary deploymentSummary = DeploymentSummary.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .infraMappingId(INFRA_MAPPING_ID)
+                                                .workflowExecutionId("workflowExecution_1")
+                                                .stateExecutionInstanceId("stateExecutionInstanceId")
+                                                .workflowExecutionName("Current Workflow")
+                                                .deploymentInfo(K8sDeploymentInfo.builder()
+                                                        .namespace("namespace")
+                                                        .releaseName("releaseName")
+                                                                    .helmChartInfo(helmChartInfoWithVersion("1.1.0"))
+                                                        .blueGreenStageColor("green")
+                                                                    .blueGreenStageColor(colorBlue)
+                                                                    .build())
+                                                .build();
+      Instance instanceWithGreenColor = buildInstanceWith("sample-pod-1",
+          K8sPodInfo.builder()
+              .blueGreenColor(colorGreen)
+              .helmChartInfo(helmChartInfoWithVersion("1.0.0"))
+              .namespace("namespace")
+              .releaseName("releaseName")
+              .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
+              .build());
+      instanceWithGreenColor.setLastWorkflowExecutionId("workflowExecution_1");
+      Instance instanceWithBlueColor = buildInstanceWith("sample-pod-2",
+          K8sPodInfo.builder()
+              .blueGreenColor(colorBlue)
+              .helmChartInfo(helmChartInfoWithVersion("1.0.0"))
+              .namespace("namepace")
+              .releaseName("releaseName")
+              .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
+              .build());
+      instanceWithBlueColor.setLastWorkflowExecutionId("workflowExecution_1");
+
+      */
+  /* Given:
+    - New deployment with blue stage color
+    - No existing instances in database
+    Should store 2 new instances:
+     - 1 green instance with null helm chart info (is not matching the deployment color)
+     - 1 blue instance using HelmChartInfo fromm deployment summary (1.1.0)
+ */
+  /*
+
+test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary, emptyList(),
+   asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
+   asList(null, helmChartInfoWithVersion("1.1.0")));
+
+*/ /* Given:
+    - New deployment with blue stage color
+    - 1 green instance existing in db
+    Should store 1 new instance:
+     - 1 blue instance using HelmChartInfo fromm deployment summary (1.1.0)
+ */
+  /*
+test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary, singletonList(instanceWithGreenColor),
+    asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
+    singletonList(helmChartInfoWithVersion("1.1.0")));
+
+*/
+  /* Given:
+   - New deployment with blue stage color
+   - 1 green and 1 blue instance existing in db
+   Should update 1 instance:
+    - existing 1 blue instance (sample-pod-2) with helmChartInfo from deployment summary
+*/ /*
+ test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary,
+     asList(instanceWithGreenColor, instanceWithBlueColor),
+     asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
+     singletonList(helmChartInfoWithVersion("1.1.0")));
+}
+
+public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary deploymentSummary,
+   List<Instance> instances, List<K8sPod> pods, List<HelmChartInfo> expectedVersions) throws Exception {
+ reset(instanceService);
+ ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
+ doReturn(getInframapping(InfrastructureMappingType.DIRECT_KUBERNETES.name()))
+     .when(infrastructureMappingService)
+     .get(any(), any());
+
+
+ doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), any(), any(), any());
+
+ doReturn(InstanceSyncTaskDetails.builder()
+              .infraMappingId("infraMappingId")
+              .perpetualTaskId("perpetualTaskId")
+              .cloudProviderId("cloudProviderId")
+              .appId("appId")
+              .accountId("accountId")
+              .releaseIdentifiers(singleton(CgK8sReleaseIdentifier.builder()
+                                                .releaseName("releaseName")
+                                                .clusterName("clusterName")
+                                                .namespace("namespace")
+                                                .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                .build()))
+              .build())
+     .when(taskDetailsService)
+     .getForInfraMapping(any(), any());
+
+ doReturn(SettingAttribute.Builder.aSettingAttribute()
+              .withAccountId("accountId")
+              .withAppId("appId")
+              .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+              .build())
+     .when(cloudProviderService)
+     .get(any());
+
+ doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
+ doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+ doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+
+ doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+
+ DeploymentEvent deploymentEvent =
+     DeploymentEvent.builder().deploymentSummaries(asList(deploymentSummary)).isRollback(true).build();
+ cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
+
+ verify(instanceService, times(expectedVersions.size())).saveOrUpdate(instanceCaptor.capture());
+ List<Instance> savedInstances = instanceCaptor.getAllValues();
+ IntStream.range(0, savedInstances.size()).forEach(idx -> {
+   Instance instance = savedInstances.get(idx);
+   HelmChartInfo expectedVersion = expectedVersions.get(idx);
+   assertThat(instance.getInstanceInfo()).isInstanceOf(K8sPodInfo.class);
+   K8sPodInfo k8sPodInfo = (K8sPodInfo) instance.getInstanceInfo();
+   assertThat(k8sPodInfo.getHelmChartInfo()).isEqualTo(expectedVersion);
+ });
+}*/
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void test_syncK8sHelmChartInfo_forBlueGreenDeploymentAutoScale() throws Exception {
+    Instance instanceWithGreenColor = buildInstanceWith("sample-pod-g1",
+        K8sPodInfo.builder()
+            .blueGreenColor(colorGreen)
+            .helmChartInfo(helmChartInfoWithVersion("1.0.0"))
+            .namespace("default")
+            .releaseName("release-123")
+            .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
+            .build());
+    Instance instanceWithBlueColor = buildInstanceWith("sample-pod-b1",
+        K8sPodInfo.builder()
+            .blueGreenColor(colorBlue)
+            .helmChartInfo(helmChartInfoWithVersion("1.1.0"))
+            .namespace("default")
+            .releaseName("release-123")
+            .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
+            .build());
+
+    /* Given:
+        - 1 green instance with helm chart version 1.0.0 exist in db
+        - 1 blue instance with helm chart version 1.1.0 exist in db
+        - 1 new green pod and 1 new blue pod
+       Should store 2 new instances:
+        - 1 green instance using HelmChartInfo from <sample-pod-g1> (1.0.0)
+        - 1 blue instance using HelmChartInfo fromm <sample-pod-b1> (1.1.0)
+    */
+    test_syncK8sHelmChartInfo_forBlueGreenDeploymentAutoScaleWith(asList(instanceWithGreenColor, instanceWithBlueColor),
+        asList(k8sPodWithColorLabel("sample-pod-g1", colorGreen), k8sPodWithColorLabel("sample-pod-g2", colorGreen),
+            k8sPodWithColorLabel("sample-pod-b1", colorBlue), k8sPodWithColorLabel("sample-pod-b2", colorBlue)),
+        asList(helmChartInfoWithVersion("1.0.0"), helmChartInfoWithVersion("1.1.0")));
+
+    /* Given:
+        - 1 blue instance with helm chart version 1.1.0 exist in db
+        - 1 new green pod and 1 new blue pod
+       Should store 2 new instances:
+        - 1 green instance with no HelmChartInfo, since there is any instances with this color marker
+        - 1 blue instance using HelmChartInfo fromm <sample-pod-b1> (1.1.0)
+     */
+    test_syncK8sHelmChartInfo_forBlueGreenDeploymentAutoScaleWith(singletonList(instanceWithBlueColor),
+        asList(k8sPodWithColorLabel("sample-pod-g1", colorGreen), k8sPodWithColorLabel("sample-pod-b1", colorBlue),
+            k8sPodWithColorLabel("sample-pod-b2", colorBlue)),
+        asList(null, helmChartInfoWithVersion("1.1.0")));
+  }
+  private K8sPod k8sPodWithColorLabel(String podName, String colorValue) {
+    return K8sPod.builder()
+        .name(podName)
+        .podIP("ip-127.0.0.1")
+        .namespace("namespace")
+        .containerList(singletonList(K8sContainer.builder().image("nginx:0.1").build()))
+        .labels(ImmutableMap.of(HarnessLabels.color, colorValue))
+        .build();
+  }
+  public void test_syncK8sHelmChartInfo_forBlueGreenDeploymentAutoScaleWith(
+      List<Instance> instances, List<K8sPod> pods, List<HelmChartInfo> expectedVersions) throws Exception {
+    reset(instanceService);
+    ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
+    doReturn(getInframapping(InfrastructureMappingType.DIRECT_KUBERNETES.name()))
+        .when(infrastructureMappingService)
+        .get(any(), any());
+    doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
+    doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), any(), any(), any());
+
+    doReturn(InstanceSyncTaskDetails.builder()
+                 .infraMappingId("infraMappingId")
+                 .perpetualTaskId("perpetualTaskId")
+                 .cloudProviderId("cloudProviderId")
+                 .appId("appId")
+                 .accountId("accountId")
+                 .releaseIdentifiers(singleton(CgK8sReleaseIdentifier.builder()
+                                                   .releaseName("releaseName")
+                                                   .clusterName("clusterName")
+                                                   .namespace("namespace")
+                                                   .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                   .build()))
+                 .build())
+        .when(taskDetailsService)
+        .getForInfraMapping(any(), any());
+
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(any());
+
+    doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
+    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
+
+    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    DeploymentSummary deploymentSummary = DeploymentSummary.builder()
+                                              .artifactId("newArtifactId")
+                                              .artifactStreamId("artifactStreamId")
+                                              .workflowExecutionId("newWorkflow")
+                                              .workflowExecutionName("workflowName")
+                                              .artifactBuildNum("1.0")
+                                              .appId("appId")
+                                              .accountId("accountId")
+                                              .infraMappingId("infraMappingId")
+                                              .deploymentInfo(K8sDeploymentInfo.builder()
+                                                                  .namespaces(singleton("namespace"))
+                                                                  .clusterName("clusterName")
+                                                                  .releaseName("releaseName")
+                                                                  .build())
+                                              .build();
+
+    DeploymentEvent deploymentEvent =
+        DeploymentEvent.builder().deploymentSummaries(asList(deploymentSummary)).isRollback(true).build();
+    cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
+
+    verify(instanceService, atLeast(0)).saveOrUpdate(instanceCaptor.capture());
+    List<Instance> savedInstances = instanceCaptor.getAllValues();
+    IntStream.range(0, savedInstances.size()).forEach(idx -> {
+      Instance instance = savedInstances.get(idx);
+      HelmChartInfo expectedVersion = expectedVersions.get(idx);
+      assertThat(instance.getInstanceInfo()).isInstanceOf(K8sPodInfo.class);
+      K8sPodInfo k8sPodInfo = (K8sPodInfo) instance.getInstanceInfo();
+      assertThat(k8sPodInfo.getHelmChartInfo()).isEqualTo(expectedVersion);
+    });
+  }
+  private InfrastructureMapping getInframapping(String inframappingType) {
+    if (inframappingType.equals(InfrastructureMappingType.DIRECT_KUBERNETES.getName())) {
+      return DirectKubernetesInfrastructureMapping.Builder.aDirectKubernetesInfrastructureMapping()
+          .withAppId(APP_ID)
+          .withComputeProviderSettingId(COMPUTE_PROVIDER_SETTING_ID)
+          .withUuid("infraMappingId")
+          .withClusterName("clusterName")
+          .withEnvId(ENV_ID)
+          .withInfraMappingType(InfrastructureMappingType.DIRECT_KUBERNETES.getName())
+          .withServiceId("svcId")
+          .withAccountId("accountId")
+          .build();
+    } else {
+      return GcpKubernetesInfrastructureMapping.Builder.aGcpKubernetesInfrastructureMapping()
+          .withAppId(APP_ID)
+          .withComputeProviderSettingId(COMPUTE_PROVIDER_SETTING_ID)
+          .withUuid("infraMappingId")
+          .withClusterName("clusterName")
+          .withNamespace("namespace")
+          .withEnvId(ENV_ID)
+          .withInfraMappingType(InfrastructureMappingType.GCP_KUBERNETES.getName())
+          .withServiceId(SERVICE_ID)
+          .withServiceId("svcId")
+          .withAccountId("accountId")
+          .build();
+    }
+  }
+
+  private Instance buildInstanceWith(String podName, InstanceInfo instanceInfo) {
+    return Instance.builder()
+        .uuid(INSTANCE_1_ID)
+        .accountId(ACCOUNT_ID)
+        .appId(APP_ID)
+        .computeProviderId(COMPUTE_PROVIDER_NAME)
+        .appName(APP_NAME)
+        .envId(ENV_ID)
+        .envName(ENV_NAME)
+        .envType(EnvironmentType.PROD)
+        .infraMappingId(INFRA_MAPPING_ID)
+        .infraMappingType(InfrastructureMappingType.GCP_KUBERNETES.getName())
+        .instanceType(KUBERNETES_CONTAINER_INSTANCE)
+        .podInstanceKey(PodInstanceKey.builder().namespace("default").podName(podName).build())
+        .containerInstanceKey(ContainerInstanceKey.builder().namespace("default").containerId(podName).build())
+        .instanceInfo(instanceInfo)
+        .lastWorkflowExecutionName("Current Workflow")
+        .build();
   }
 
   @Test
@@ -309,12 +595,12 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
                     createKubernetesContainerInfo("pod:1", "releaseName", "namespace", "controllerName:0")))
             .build();
 
-    assertSavedAndDeletedInstancesOnNewDeploymentHelm(
-        deploymentEvent, instancesInDb, containerSyncResponse, asList("pod:0", "pod:1"), emptyList(), null);
+    assertSavedAndDeletedInstancesOnNewDeploymentHelm(deploymentEvent, instancesInDb, containerSyncResponse,
+        asList("pod:0", "pod:1"), asList("pod:3", "pod:4"), null);
   }
 
   @Test
-  @Owner(developers = ADWAIT)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testSyncInstances_AddAndNoDeleteInstance_Helm() throws Exception {
     final List<Instance> instancesInDb = emptyList();
@@ -357,7 +643,7 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
   }
 
   @Test
-  @Owner(developers = ADWAIT)
+  @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testSyncInstances_AddAndDeleteInstance_Helm() throws Exception {
     final List<Instance> instancesInDb = asList(buildInstanceWithHelm("pod:0",
@@ -444,16 +730,6 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
         .containerInstanceKey(ContainerInstanceKey.builder().namespace("namespace").containerId(podName).build())
         .instanceInfo(instanceInfo)
         .lastWorkflowExecutionName("Current Workflow")
-        .build();
-  }
-
-  private K8sPod k8sPodWithColorLabel(String podName, String colorValue) {
-    return K8sPod.builder()
-        .name(podName)
-        .podIP("ip-127.0.0.1")
-        .namespace("default")
-        .containerList(singletonList(K8sContainer.builder().image("nginx:0.1").build()))
-        .labels(ImmutableMap.of(HarnessLabels.color, colorValue))
         .build();
   }
 
@@ -662,7 +938,7 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
         ArgumentCaptor.forClass((Class<Set<String>>) (Object) Set.class);
 
     // don't care about the number of calls until we save/delete right instances
-    verify(instanceService, times(1)).saveOrUpdate(savedInstancesCaptor.capture());
+    verify(instanceService, atLeast(0)).saveOrUpdate(savedInstancesCaptor.capture());
     verify(instanceService, atLeast(0)).delete(deletedInstancesCaptor.capture());
 
     // assert for Add instance

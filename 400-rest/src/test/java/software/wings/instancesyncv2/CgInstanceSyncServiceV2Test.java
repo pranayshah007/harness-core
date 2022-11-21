@@ -24,6 +24,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
+import io.harness.perpetualtask.instancesyncv2.DirectK8sReleaseDetails;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 import io.harness.perpetualtask.instancesyncv2.InstanceSyncTrackedDeploymentDetails;
 import io.harness.rule.Owner;
@@ -40,6 +41,7 @@ import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
+import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -47,6 +49,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
+import com.google.protobuf.Any;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Rule;
@@ -227,6 +230,11 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     InstanceSyncData instanceSyncData = InstanceSyncData.newBuilder()
                                             .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
                                             .setTaskDetailsId("taskId")
+                                            .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
+                                                                            .setReleaseName("releaseName")
+                                                                            .setNamespace("namespace")
+                                                                            .setIsHelm(false)
+                                                                            .build()))
                                             .build();
 
     CgInstanceSyncResponse.Builder builder = CgInstanceSyncResponse.newBuilder()
@@ -240,6 +248,12 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(InstanceSyncTaskDetails.builder()
                  .perpetualTaskId("perpetualTaskId")
                  .accountId("accountId")
+                 .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                               .releaseName("releaseName")
+                                                               .namespace("namespace")
+                                                               .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                               .isHelmDeployment(false)
+                                                               .build()))
                  .appId("appId")
                  .cloudProviderId("cpId")
                  .build())
