@@ -119,6 +119,8 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
 
   @Mock private ClusterRecordService clusterRecordService;
 
+  @Mock private io.harness.ccm.commons.service.intf.ClusterRecordService eventsClusterRecordService;
+
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
   @Before
