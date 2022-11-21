@@ -304,9 +304,4 @@ public class ClusterRecordServiceImpl implements ClusterRecordService {
 
     return clusterRecord;
   }
-
-  @Override
-  public List<ClusterRecord> listCeEnabledClusters(String accountId) {
-    return clusterRecordDao.listCeEnabledClusters(accountId);
-  }
 }

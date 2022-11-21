@@ -42,7 +42,6 @@ import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.ccm.HarnessServiceInfoNG;
-import io.harness.ccm.cluster.ClusterRecordService;
 import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceState;
@@ -52,6 +51,9 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
+
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -93,9 +95,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private InstanceDataDao instanceDataDao;
   @Autowired private BatchMainConfig config;
-  @Autowired private ClusterRecordService clusterRecordService;
-
-  @Autowired private io.harness.ccm.commons.service.intf.ClusterRecordService eventsClusterRecordService;
+  @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Autowired private ClusterRecordService eventsClusterRecordService;
 
   private static final String CLAIM_REF_SEPARATOR = "/";
   private int batchSize;
@@ -144,7 +145,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
   @NotNull
   private Set<String> getClusterIdsFromClusterRecords(String accountId, Instant startTime) {
-    List<ClusterRecord> clusterRecords = clusterRecordService.listCeEnabledClusters(accountId);
+    List<ClusterRecord> clusterRecords = cloudToHarnessMappingService.listCeEnabledClusters(accountId);
     List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
         eventsClusterRecordService.getByAccountId(accountId);
     Set<String> clusterIds = new HashSet<>();
