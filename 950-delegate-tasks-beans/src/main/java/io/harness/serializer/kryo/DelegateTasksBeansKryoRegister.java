@@ -258,6 +258,7 @@ import io.harness.delegate.beans.ecs.EcsRollingRollbackResult;
 import io.harness.delegate.beans.ecs.EcsRunTaskResult;
 import io.harness.delegate.beans.ecs.EcsTask;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
+import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
 import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
 import io.harness.delegate.beans.executioncapability.AwsCliInstallationCapability;
 import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
@@ -553,10 +554,11 @@ import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG;
+import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
+import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
 import io.harness.delegate.task.gcp.GcpTaskType;
 import io.harness.delegate.task.gcp.request.GcpListBucketsRequest;
 import io.harness.delegate.task.gcp.request.GcpListClustersRequest;
@@ -769,7 +771,9 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
+import io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformCommand;
@@ -1871,18 +1875,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
 
-    // Elastigroup
-    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
-    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
-    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
-    kryo.register(ElastigroupSetupResponse.class, 573548);
-    kryo.register(ElastigroupSetupResult.class, 573549);
-    kryo.register(ElastigroupCommandTypeNG.class, 573550);
-    kryo.register(ElastigroupNGException.class, 573551);
-    kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573552);
-    kryo.register(ElastigroupParametersFetchResponse.class, 573553);
-    kryo.register(ElastigroupParametersFetchRequest.class, 573554);
-
     kryo.register(AzurePackageArtifactConfig.class, 55410);
     kryo.register(AzureArtifactRequestDetails.class, 55411);
     kryo.register(ArtifactoryAzureArtifactRequestDetails.class, 55412);
@@ -1923,6 +1915,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureFetchArmPreDeploymentDataTaskParameters.class, 55423);
     kryo.register(AzureFetchArmPreDeploymentDataTaskResponse.class, 55424);
     kryo.register(AwsS3ArtifactDelegateConfig.class, 9800007);
+    kryo.register(InlineTerraformBackendConfigFileInfo.class, 9800008);
+    kryo.register(RemoteTerraformBackendConfigFileInfo.class, 9800009);
     kryo.register(WinrmConnectivityExecutionCapability.class, 55425);
     kryo.register(GcpSecretManagerValidationParams.class, 19879);
     kryo.register(ShellScriptProvisionTaskNGRequest.class, 55426);
@@ -1952,5 +1946,19 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
+
+    // Elastigroup
+    kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
+    kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
+    kryo.register(ElastigroupSetupCommandRequest.class, 573547);
+    kryo.register(ElastigroupSetupResponse.class, 573548);
+    kryo.register(ElastigroupSetupResult.class, 573549);
+    kryo.register(ElastigroupNGException.class, 573551);
+    kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573552);
+    kryo.register(ElastigroupParametersFetchResponse.class, 573553);
+    kryo.register(ElastigroupParametersFetchRequest.class, 573554);
+    kryo.register(ElastigroupSwapRouteCommandRequest.class, 10000112);
+    kryo.register(ElastigroupSwapRouteResponse.class, 10000113);
+    kryo.register(ElastigroupSwapRouteResult.class, 10000114);
   }
 }

@@ -71,4 +71,12 @@ public interface InstanceRepositoryCustom {
   Instance findFirstInstance(Criteria criteria);
 
   void updateInfrastructureMapping(String instanceId, String infrastructureMappingId);
+
+  long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
 }

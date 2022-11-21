@@ -38,6 +38,7 @@ import io.harness.plancreator.pipeline.NGPipelinePlanCreator;
 import io.harness.plancreator.pipeline.PipelinePlanCreatorV1;
 import io.harness.plancreator.stages.StagesPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
+import io.harness.plancreator.stages.parallel.v1.ParallelPlanCreatorV1;
 import io.harness.plancreator.stages.v1.StagesPlanCreatorV1;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
 import io.harness.plancreator.steps.SpecNodePlanCreator;
@@ -124,6 +125,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new StagesPlanCreator());
     planCreators.add(new StagesPlanCreatorV1());
     planCreators.add(new ParallelPlanCreator());
+    planCreators.add(new ParallelPlanCreatorV1());
     planCreators.add(new PMSStepPlanCreator());
     planCreators.add(new HttpStepPlanCreator());
     planCreators.add(new HttpStepPlanCreatorV1());

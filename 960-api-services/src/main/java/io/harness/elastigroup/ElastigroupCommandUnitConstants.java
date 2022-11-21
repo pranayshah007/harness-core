@@ -67,5 +67,29 @@ public enum ElastigroupCommandUnitConstants {
     public String toString() {
       return "Fetch Elastigroup Json";
     }
+  },
+  upScale {
+    @Override
+    public String toString() {
+      return "Upscale Elastigroup";
+    }
+  },
+  upScaleSteadyStateWait {
+    @Override
+    public String toString() {
+      return "Upscale wait for steady state";
+    }
+  },
+  downScale {
+    @Override
+    public String toString() {
+      return "Downscale Elastigroup";
+    }
+  },
+  downScaleSteadyStateWait {
+    @Override
+    public String toString() {
+      return "Downscale wait for steady state";
+    }
   }
 }

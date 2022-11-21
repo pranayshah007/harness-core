@@ -52,14 +52,13 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.utils.IdentifierRefHelper;
 
-import software.wings.beans.TaskType;
-
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -106,6 +105,12 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         TerraformStepHelper.prepareEntityDetailsForVarFiles(accountId, orgIdentifier, projectIdentifier, varFiles);
     entityDetailList.addAll(varFilesEntityDetails);
 
+    // Backend Config connector
+    TerraformBackendConfig backendConfig = stepParametersSpec.getConfiguration().getBackendConfig();
+    Optional<EntityDetail> bcFileEntityDetails = TerraformStepHelper.prepareEntityDetailForBackendConfigFiles(
+        accountId, orgIdentifier, projectIdentifier, backendConfig);
+    bcFileEntityDetails.ifPresent(entityDetailList::add);
+
     // Secret Manager Connector
     String secretManagerRef = stepParametersSpec.getConfiguration().getSecretManagerRef().getValue();
     identifierRef = IdentifierRefHelper.getIdentifierRef(secretManagerRef, accountId, orgIdentifier, projectIdentifier);
@@ -128,44 +133,48 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     ParameterField<Boolean> exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
-    builder.taskType(TFTaskType.PLAN)
-        .terraformCommandUnit(TerraformCommandUnit.Plan)
-        .entityId(entityId)
-        .tfModuleSourceInheritSSH(
-            helper.isExportCredentialForSourceModule(configuration.getConfigFiles(), stepElementParameters.getType()))
-        .currentStateFileId(helper.getLatestFileId(entityId))
-        .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
-        .configFile(helper.getGitFetchFilesConfig(
-            configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
-            configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
-        .varFileInfos(helper.toTerraformVarFileInfo(configuration.getVarFiles(), ambiance))
-        .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
-        .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
-        .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
-        .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
-                ? new HashMap<>()
-                : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
-        .encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters))
-        .terraformCommand(TerraformPlanCommand.APPLY == planStepParameters.getConfiguration().getCommand()
-                ? TerraformCommand.APPLY
-                : TerraformCommand.DESTROY)
-        .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
-            planStepParameters.getProvisionerIdentifier().getValue()))
-        .timeoutInMillis(
-            StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
-        .useOptimizedTfPlan(
-            featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG));
+    TerraformTaskNGParameters terraformTaskNGParameters =
+        builder.taskType(TFTaskType.PLAN)
+            .terraformCommandUnit(TerraformCommandUnit.Plan)
+            .entityId(entityId)
+            .tfModuleSourceInheritSSH(helper.isExportCredentialForSourceModule(
+                configuration.getConfigFiles(), stepElementParameters.getType()))
+            .currentStateFileId(helper.getLatestFileId(entityId))
+            .workspace(ParameterFieldHelper.getParameterFieldValue(configuration.getWorkspace()))
+            .configFile(helper.getGitFetchFilesConfig(
+                configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .fileStoreConfigFiles(helper.getFileStoreFetchFilesConfig(
+                configuration.getConfigFiles().getStore().getSpec(), ambiance, TerraformStepHelper.TF_CONFIG_FILES))
+            .varFileInfos(helper.toTerraformVarFileInfo(configuration.getVarFiles(), ambiance))
+            .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
+            .backendConfigFileInfo(helper.toTerraformBackendFileInfo(configuration.getBackendConfig(), ambiance))
+            .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
+            .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
+            .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
+                    ? new HashMap<>()
+                    : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
+            .encryptionConfig(helper.getEncryptionConfig(ambiance, planStepParameters))
+            .terraformCommand(TerraformPlanCommand.APPLY == planStepParameters.getConfiguration().getCommand()
+                    ? TerraformCommand.APPLY
+                    : TerraformCommand.DESTROY)
+            .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance,
+                planStepParameters.getProvisionerIdentifier().getValue()))
+            .timeoutInMillis(
+                StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
+            .useOptimizedTfPlan(
+                featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.OPTIMIZED_TF_PLAN_NG))
+            .build();
 
     TaskData taskData =
         TaskData.builder()
             .async(true)
-            .taskType(TaskType.TERRAFORM_TASK_NG.name())
+            .taskType(terraformTaskNGParameters.getDelegateTaskType().name())
             .timeout(StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT))
             .parameters(new Object[] {builder.build()})
             .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Collections.singletonList(TerraformCommandUnit.Plan.name()), TaskType.TERRAFORM_TASK_NG.getDisplayName(),
+        Collections.singletonList(TerraformCommandUnit.Plan.name()),
+        terraformTaskNGParameters.getDelegateTaskType().getDisplayName(),
         TaskSelectorYaml.toTaskSelector(planStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

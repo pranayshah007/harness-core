@@ -204,7 +204,6 @@ public enum FeatureName {
   OPTIMIZED_GIT_FETCH_FILES,
   CVNG_VERIFY_STEP_DEMO,
   CVNG_MONITORED_SERVICE_DEMO,
-  CVNG_VERIFY_STEP_LOGS_UI_V2,
   MANIFEST_INHERIT_FROM_CANARY_TO_PRIMARY_PHASE,
   USE_LATEST_CHARTMUSEUM_VERSION,
   NEW_KUSTOMIZE_BINARY,
@@ -228,8 +227,6 @@ public enum FeatureName {
   CI_DISABLE_GIT_SAFEDIR,
   OPTIMIZED_TF_PLAN,
   SELF_SERVICE_ENABLED,
-  CHI_CUSTOM_HEALTH,
-  CHI_CUSTOM_HEALTH_LOGS,
   CLOUDFORMATION_SKIP_WAIT_FOR_RESOURCES,
   CLOUDFORMATION_CHANGE_SET,
   FAIL_WORKFLOW_IF_SECRET_DECRYPTION_FAILS,
@@ -240,7 +237,6 @@ public enum FeatureName {
   BYPASS_HELM_FETCH,
   FREEZE_DURING_MIGRATION,
   USE_ANALYTIC_MONGO_FOR_GRAPHQL_QUERY,
-  DYNATRACE_APM_ENABLED,
   CCM_AS_DRY_RUN("Dry Run functionality of the AutoStopping Rules", HarnessTeam.CE),
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
@@ -287,7 +283,6 @@ public enum FeatureName {
   LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   TRIGGERS_PAGE_PAGINATION,
-  CVNG_NOTIFICATION_UI,
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
   NEW_PIPELINE_STUDIO,
@@ -304,9 +299,6 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   ADD_MANIFEST_COLLECTION_STEP,
   ACCOUNT_BASIC_ROLE,
-  CVNG_TEMPLATE_MONITORED_SERVICE,
-  CVNG_TEMPLATE_VERIFY_STEP,
-  CVNG_METRIC_THRESHOLD,
   WORKFLOW_EXECUTION_ZOMBIE_MONITOR,
   USE_PAGINATED_ENCRYPT_SERVICE, // To be only used by UI for safeguarding encrypt component changes in CG
   INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT,
@@ -314,7 +306,6 @@ public enum FeatureName {
   DEPLOYMENT_SUBFORMIK_WORKFLOW_DROPDOWN,
   TI_DOTNET,
   TG_USE_AUTO_APPROVE_FLAG,
-  CVNG_SPLUNK_METRICS,
   AUTO_FREE_MODULE_LICENSE,
   SRM_LICENSE_ENABLED,
   ACCOUNT_BASIC_ROLE_ONLY,
@@ -355,6 +346,9 @@ public enum FeatureName {
   REMOVE_USERGROUP_CHECK(
       "Customers started facing NPE due to migration of usergroup reference, removed null check behind FF - ticket ID - CDS-39770, CG",
       HarnessTeam.SPG),
+
+  STO_STEP_PALETTE_V1("Enable first iteration of individual steps for STO", HarnessTeam.STO),
+  STO_STEP_PALETTE_V2("Enable second iteration of individual steps for STO", HarnessTeam.STO),
   HOSTED_BUILDS("Used to enabled Hosted builds in paid accounts", HarnessTeam.CI),
   CD_ONBOARDING_ENABLED,
   SPOT_ELASTIGROUP_NG("Enables Spot Elastigroup implementation on NG", HarnessTeam.CDP),
@@ -424,6 +418,7 @@ public enum FeatureName {
   LOOKER_ENTITY_RECONCILIATION,
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
+  NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
   NEW_EXECUTION_LIST_VIEW(
@@ -442,11 +437,15 @@ public enum FeatureName {
   SPG_USE_NEW_METADATA("To use new metadata endpoint for jira server version greater than 9.0", HarnessTeam.SPG),
   SPG_OPTIMIZE_WORKFLOW_EXECUTIONS_LISTING(
       "Make the workflowExecutions listing better providing appId for children ids", HarnessTeam.SPG),
+  SPG_OPTIMIZE_CONCILIATION_QUERY(
+      "Change the conciliation query from using notExists to use equal null", HarnessTeam.SPG),
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
+  PL_FORCE_DELETE_CONNECTOR_SECRET(
+      "Enables force delete of connectors and secrets irrespective of existing references.", HarnessTeam.PL),
   PL_CONNECTOR_ENCRYPTION_PRIVILEGED_CALL("make the encryption/decryption call as pirvileged call", HarnessTeam.PL),
   SPG_DASHBOARD_STATS_OPTIMIZE_DEPLOYMENTS(
       "Dashboard stats slow api call optimization. Also solves MOM issue in CG.", HarnessTeam.SPG),
@@ -479,7 +478,8 @@ public enum FeatureName {
   USE_GET_FILE_V2_GIT_CALL(
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
-  ;
+  GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS),
+  CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI);
 
   @Deprecated
   FeatureName() {

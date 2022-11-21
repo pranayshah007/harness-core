@@ -162,13 +162,6 @@ public class InstanceServiceImpl implements InstanceService {
         accountIdentifier, organizationId, projectId, startTimestamp, endTimeStamp));
   }
 
-  @Override
-  public List<InstanceDTO> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
-    return InstanceMapper.toDTO(
-        instanceRepository.getInstances(accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId));
-  }
-
   /*
     Returns list of active instances for given account+org+project at given timestamp
   */
@@ -268,6 +261,24 @@ public class InstanceServiceImpl implements InstanceService {
         softDeleteById(instanceId);
       }
     }
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, startTS, endTS);
+  }
+
+  @Override
+  public long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countServiceInstancesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
+  }
+
+  @Override
+  public long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS) {
+    return instanceRepository.countDistinctActiveServicesDeployedInInterval(
+        accountId, orgId, projectId, startTS, endTS);
   }
 
   // ----------------------------------- PRIVATE METHODS -------------------------------------

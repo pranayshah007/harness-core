@@ -2319,7 +2319,6 @@
 573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
 573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
 573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
-573550:io.harness.delegate.task.elastigroup.response.ElastigroupCommandTypeNG
 573551:io.harness.delegate.exception.ElastigroupNGException
 573552:io.harness.delegate.task.elastigroup.response.SpotInstConfig
 573553:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
@@ -2440,6 +2439,8 @@
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
+9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
+9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2447,4 +2448,6 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
-
+10000112:io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest
+10000113:io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse
+10000114:o.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult

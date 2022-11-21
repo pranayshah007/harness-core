@@ -17,6 +17,7 @@ public class BudgetCostData {
   @GraphQLNonNull long time;
   @GraphQLNonNull long endTime;
   @GraphQLNonNull double actualCost;
+  @GraphQLNonNull double forecastCost;
   @GraphQLNonNull double budgeted;
   @GraphQLNonNull double budgetVariance;
   @GraphQLNonNull double budgetVariancePercentage;

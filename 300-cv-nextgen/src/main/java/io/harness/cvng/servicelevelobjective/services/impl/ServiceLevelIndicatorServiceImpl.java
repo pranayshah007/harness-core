@@ -41,10 +41,13 @@ import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
@@ -97,7 +100,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private OrchestrationService orchestrationService;
   @Inject private SideKickService sideKickService;
   @Inject private MonitoredServiceService monitoredServiceService;
-
+  @Inject private CompositeSLOService compositeSLOService;
+  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Override
   public SLIOnboardingGraphs getOnboardingGraphs(ProjectParams projectParams, String monitoredServiceIdentifier,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String tracingId) {
@@ -266,9 +270,14 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
       } else if (!serviceLevelIndicator.isUpdatable(convertDTOToEntity(projectParams, serviceLevelIndicatorDTO,
                      monitoredServiceIndicator, healthSourceIndicator, serviceLevelIndicator.isEnabled()))) {
         deleteAndCreate(projectParams, newServiceLevelIndicator);
+        List<CompositeServiceLevelObjective> referencedCompositeSLOs =
+            compositeSLOService.getReferencedCompositeSLOs(projectParams, serviceLevelObjectiveIdentifier);
+        for (CompositeServiceLevelObjective compositeServiceLevelObjective : referencedCompositeSLOs) {
+          compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
+        }
       } else {
         updateServiceLevelIndicatorEntity(projectParams, serviceLevelIndicatorDTO, monitoredServiceIndicator,
-            healthSourceIndicator, timePeriod, currentTimePeriod);
+            healthSourceIndicator, timePeriod, currentTimePeriod, serviceLevelObjectiveIdentifier);
       }
       serviceLevelIndicatorIdentifiers.add(serviceLevelIndicatorDTO.getIdentifier());
     }
@@ -315,7 +324,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
 
   private void updateServiceLevelIndicatorEntity(ProjectParams projectParams,
       ServiceLevelIndicatorDTO serviceLevelIndicatorDTO, String monitoredServiceIndicator, String healthSourceIndicator,
-      TimePeriod timePeriod, TimePeriod currentTimePeriod) {
+      TimePeriod timePeriod, TimePeriod currentTimePeriod, String serviceLevelObjectiveIdentifier) {
     UpdatableEntity<ServiceLevelIndicator, ServiceLevelIndicator> updatableEntity =
         serviceLevelIndicatorMapBinder.get(serviceLevelIndicatorDTO.getSpec().getType());
     ServiceLevelIndicator serviceLevelIndicator =
@@ -339,6 +348,13 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         intervalStartTime = intervalEndTime;
       }
       hPersistence.update(serviceLevelIndicator, updateOperations);
+    }
+    if (serviceLevelIndicator.shouldRecalculateReferencedCompositeSLOs(updatableServiceLevelIndicator)) {
+      List<CompositeServiceLevelObjective> referencedCompositeSLOs =
+          compositeSLOService.getReferencedCompositeSLOs(projectParams, serviceLevelObjectiveIdentifier);
+      for (CompositeServiceLevelObjective compositeServiceLevelObjective : referencedCompositeSLOs) {
+        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      }
     }
   }
 

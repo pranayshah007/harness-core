@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CI;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.ACRStepInfo;
+import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
@@ -43,7 +44,7 @@ import java.util.List;
               SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
               SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
               UploadToS3StepInfo.class, UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class,
-              GitCloneStepInfo.class, BackgroundStepInfo.class})
+              GitCloneStepInfo.class, BackgroundStepInfo.class, ActionStepInfo.class})
 @OwnedBy(CI)
 public interface CIStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;

@@ -396,10 +396,13 @@ public enum TaskType {
   FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
   AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
   HELM_FETCH_CHART_VERSIONS_TASK_NG(TaskGroup.HELM, "Fetch Helm Chart Versions Task"),
-  ELASTIGROUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Command Task"),
+  TERRAFORM_TASK_NG_V2(TaskGroup.TERRAFORM_NG, "Terraform Task NG V2"),
+  ELASTIGROUP_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Command Task"),
   ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
   ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task"),
-  ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task");
+  ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task"),
+  ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),
+  ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

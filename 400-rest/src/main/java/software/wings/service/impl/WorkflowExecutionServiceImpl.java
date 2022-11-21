@@ -1734,7 +1734,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Override
   public int getActiveServiceCount(String accountId) {
     long sixtyDays = currentTimeMillis() - SIXTY_DAYS_IN_MILLIS;
-    Query query = wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority);
+    Query query = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority);
     query.filter(WorkflowExecutionKeys.accountId, accountId);
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);

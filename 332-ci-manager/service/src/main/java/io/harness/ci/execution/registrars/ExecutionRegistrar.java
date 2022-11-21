@@ -10,6 +10,7 @@ package io.harness.ci.registrars;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.states.ACRStep;
+import io.harness.ci.states.ActionStep;
 import io.harness.ci.states.BackgroundStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
@@ -66,6 +67,7 @@ public class ExecutionRegistrar {
     engineSteps.put(IntegrationStageStepPMS.STEP_TYPE, IntegrationStageStepPMS.class);
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
+    engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;

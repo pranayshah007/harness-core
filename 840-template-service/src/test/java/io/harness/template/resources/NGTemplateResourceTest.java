@@ -412,7 +412,7 @@ public class NGTemplateResourceTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListRepos() {
-    HashSet<String> repos = new HashSet<>();
+    List<String> repos = new ArrayList<>();
     repos.add("testRepo1");
     repos.add("testRepo2");
 
