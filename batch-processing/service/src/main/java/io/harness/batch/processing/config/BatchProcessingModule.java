@@ -171,7 +171,7 @@ public class BatchProcessingModule extends AbstractModule {
     });
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
-    bind(io.harness.ccm.cluster.ClusterRecordService.class).to(io.harness.ccm.cluster.ClusterRecordService.class);
+    bind(io.harness.ccm.cluster.ClusterRecordService.class).to(io.harness.ccm.cluster.ClusterRecordServiceImpl.class);
     bind(RecommendationCrudService.class).to(RecommendationCrudServiceImpl.class);
     bind(ClusterHelper.class).to(ClusterHelperImpl.class);
     bind(BudgetCostService.class).to(BudgetCostServiceImpl.class);
