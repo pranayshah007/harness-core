@@ -32,56 +32,22 @@ public class InstanceDataReader {
   private Instant endTime;
   private int batchSize;
   private InstanceDataDao instanceDataDao;
-  private ClusterRecordService clusterRecordService;
-  private io.harness.ccm.commons.service.intf.ClusterRecordService eventsClusterRecordService;
-  private BillingDataGenerationValidator billingDataGenerationValidator;
-
-  public InstanceDataReader(InstanceDataDao instanceDataDao, ClusterRecordService clusterRecordService,
-      io.harness.ccm.commons.service.intf.ClusterRecordService eventsClusterRecordService,
-      BillingDataGenerationValidator billingDataGenerationValidator, String accountId, List<InstanceType> instanceTypes,
-      Instant activeInstanceIterator, Instant endTime, int batchSize) {
+  private String clusterId;
+  public InstanceDataReader(InstanceDataDao instanceDataDao, String accountId, String clusterId,
+      List<InstanceType> instanceTypes, Instant activeInstanceIterator, Instant endTime, int batchSize) {
     this.accountId = accountId;
     this.instanceTypes = instanceTypes;
     this.activeInstanceIterator = activeInstanceIterator;
     this.endTime = endTime;
     this.batchSize = batchSize;
     this.instanceDataDao = instanceDataDao;
-    this.clusterRecordService = clusterRecordService;
-    this.eventsClusterRecordService = eventsClusterRecordService;
-    this.billingDataGenerationValidator = billingDataGenerationValidator;
+    this.clusterId = clusterId;
   }
 
   public List<InstanceData> getNext() {
-    Set<String> clusterIds = new HashSet<>();
+    List<InstanceData> instanceDataLists = instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
+        accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId);
 
-    List<ClusterRecord> clusterRecords = clusterRecordService.listCeEnabledClusters(accountId);
-    List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
-        eventsClusterRecordService.getByAccountId(accountId);
-
-    for (ClusterRecord clusterRecord : clusterRecords) {
-      if (billingDataGenerationValidator.shouldGenerateBillingData(
-              accountId, clusterRecord.getUuid(), activeInstanceIterator)) {
-        clusterIds.add(clusterRecord.getUuid());
-      }
-    }
-
-    for (io.harness.ccm.commons.entities.ClusterRecord eventsClusterRecord : eventsClusterRecords) {
-      if (billingDataGenerationValidator.shouldGenerateBillingData(
-              accountId, eventsClusterRecord.getUuid(), activeInstanceIterator)) {
-        clusterIds.add(eventsClusterRecord.getUuid());
-      }
-    }
-
-    log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
-
-    List<InstanceData> instanceDataLists =
-        clusterIds.stream()
-            .map(clusterId
-                -> instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
-                    accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId))
-            .filter(Objects::nonNull)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
       if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {

@@ -43,6 +43,7 @@ import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
 import io.harness.ccm.HarnessServiceInfoNG;
 import io.harness.ccm.cluster.ClusterRecordService;
+import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -70,6 +71,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -106,76 +108,106 @@ public class InstanceBillingDataTasklet implements Tasklet {
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     batchSize = config.getBatchQueryConfig().getInstanceDataBatchSize();
 
+    Set<String> clusterIds = getClusterIdsFromClusterRecords(accountId, startTime);
+
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(
         chunkContext.getStepContext().getStepExecution().getJobParameters());
     // bill PV first
-    List<InstanceBillingData> pvInstanceBillingDataList = billPVInstances(batchJobType, accountId, startTime, endTime);
+    List<InstanceBillingData> pvInstanceBillingDataList =
+        billPVInstances(batchJobType, accountId, startTime, endTime, clusterIds);
+
     Map<String, InstanceBillingData> claimRefToPVInstanceBillingData =
         pvInstanceBillingDataList.stream().collect(Collectors.toMap(e
             -> e.getNamespace() + CLAIM_REF_SEPARATOR + e.getWorkloadName(),
             e -> e, (e1, e2) -> e1.getStartTimestamp() > e2.getStartTimestamp() ? e1 : e2));
 
-    Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
+    Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime, clusterIds);
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, clusterRecordService,
-        eventsClusterRecordService, billingDataGenerationValidator, accountId,
-        ImmutableList.of(
-            ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
-        startTime, endTime, batchSize);
-
-    do {
-      instanceDataLists = instanceDataReader.getNext();
-      try {
-        createBillingData(accountId, startTime, endTime, batchJobType, instanceDataLists,
-            claimRefToPVInstanceBillingData, pvcClaimCount);
-      } catch (Exception ex) {
-        log.error("Exception in billing step", ex);
-        throw ex;
-      }
-    } while (instanceDataLists.size() == batchSize);
+    for (String clusterId : clusterIds) {
+      InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId, clusterId,
+          ImmutableList.of(
+              ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
+          startTime, endTime, batchSize);
+      do {
+        instanceDataLists = instanceDataReader.getNext();
+        try {
+          createBillingData(accountId, startTime, endTime, batchJobType, instanceDataLists,
+              claimRefToPVInstanceBillingData, pvcClaimCount);
+        } catch (Exception ex) {
+          log.error("Exception in billing step", ex);
+          throw ex;
+        }
+      } while (instanceDataLists.size() == batchSize);
+    }
     return null;
   }
 
-  private Map<String, MutableInt> getPvcClaimCount(String accountId, Instant startTime, Instant endTime) {
+  @NotNull
+  private Set<String> getClusterIdsFromClusterRecords(String accountId, Instant startTime) {
+    List<ClusterRecord> clusterRecords = clusterRecordService.listCeEnabledClusters(accountId);
+    List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
+        eventsClusterRecordService.getByAccountId(accountId);
+    Set<String> clusterIds = new HashSet<>();
+
+    for (ClusterRecord clusterRecord : clusterRecords) {
+      if (billingDataGenerationValidator.shouldGenerateBillingData(accountId, clusterRecord.getUuid(), startTime)) {
+        clusterIds.add(clusterRecord.getUuid());
+      }
+    }
+
+    for (io.harness.ccm.commons.entities.ClusterRecord eventsClusterRecord : eventsClusterRecords) {
+      if (billingDataGenerationValidator.shouldGenerateBillingData(
+              accountId, eventsClusterRecord.getUuid(), startTime)) {
+        clusterIds.add(eventsClusterRecord.getUuid());
+      }
+    }
+    log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
+    return clusterIds;
+  }
+
+  private Map<String, MutableInt> getPvcClaimCount(
+      String accountId, Instant startTime, Instant endTime, Set<String> clusterIds) {
     List<InstanceData> instanceDataLists;
     Map<String, MutableInt> result = new HashMap<>();
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, clusterRecordService, eventsClusterRecordService,
-            billingDataGenerationValidator, accountId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
-    do {
-      // TODO change here
-      instanceDataLists = instanceDataReader.getNext();
-      for (InstanceData instanceData : instanceDataLists) {
-        List<String> pvcClaimNames = firstNonNull(instanceData.getPvcClaimNames(), Collections.emptyList());
-        String namespace = getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.NAMESPACE, instanceData);
-        for (String claimName : pvcClaimNames) {
-          String claimRef = namespace + CLAIM_REF_SEPARATOR + claimName;
-          result.computeIfAbsent(claimRef, k -> new MutableInt(0));
-          result.get(claimRef).increment();
+    for (String clusterId : clusterIds) {
+      InstanceDataReader instanceDataReader = new InstanceDataReader(
+          instanceDataDao, accountId, clusterId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
+      do {
+        // TODO change here
+        instanceDataLists = instanceDataReader.getNext();
+        for (InstanceData instanceData : instanceDataLists) {
+          List<String> pvcClaimNames = firstNonNull(instanceData.getPvcClaimNames(), Collections.emptyList());
+          String namespace = getValueForKeyFromInstanceMetaData(InstanceMetaDataConstants.NAMESPACE, instanceData);
+          for (String claimName : pvcClaimNames) {
+            String claimRef = namespace + CLAIM_REF_SEPARATOR + claimName;
+            result.computeIfAbsent(claimRef, k -> new MutableInt(0));
+            result.get(claimRef).increment();
+          }
         }
-      }
-    } while (instanceDataLists.size() == batchSize);
+      } while (instanceDataLists.size() == batchSize);
+    }
 
     return result;
   }
 
   private List<InstanceBillingData> billPVInstances(
-      BatchJobType batchJobType, String accountId, Instant startTime, Instant endTime) {
+      BatchJobType batchJobType, String accountId, Instant startTime, Instant endTime, Set<String> clusterIds) {
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, clusterRecordService, eventsClusterRecordService,
-            billingDataGenerationValidator, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
-    do {
-      instanceDataLists = instanceDataReader.getNext();
-      try {
-        instanceBillingDataList.addAll(createBillingData(
-            accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
-      } catch (Exception ex) {
-        log.error("Exception in billing step", ex);
-        throw ex;
-      }
-    } while (instanceDataLists.size() == batchSize);
+    for (String clusterId : clusterIds) {
+      InstanceDataReader instanceDataReader = new InstanceDataReader(
+          instanceDataDao, accountId, clusterId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
+      do {
+        instanceDataLists = instanceDataReader.getNext();
+        try {
+          instanceBillingDataList.addAll(createBillingData(
+              accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
+        } catch (Exception ex) {
+          log.error("Exception in billing step", ex);
+          throw ex;
+        }
+      } while (instanceDataLists.size() == batchSize);
+    }
     return instanceBillingDataList;
   }
 
