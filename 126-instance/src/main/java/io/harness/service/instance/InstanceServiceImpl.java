@@ -18,7 +18,7 @@ import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
-import io.harness.models.ActiveServiceInstanceInfoWithoutEnvWithServiceDetails;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -208,11 +208,11 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public AggregationResults<ActiveServiceInstanceInfoWithoutEnvWithServiceDetails>
-  getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
-    return instanceRepository.getActiveServiceInstanceInfoWithoutEnvWithServiceDetails(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String tagIdentifier) {
+    return instanceRepository.getActiveServiceInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
   }
 
   @Override
@@ -220,6 +220,13 @@ public class InstanceServiceImpl implements InstanceService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  }
+
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String tagIdentifier) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, tagIdentifier);
   }
 
   /*
