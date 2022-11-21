@@ -6,11 +6,8 @@ RUN apt-get update && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
 
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-
-COPY apt-source-list /etc/apt/sources.list.d/kubernetes.list
-
-RUN apt-get update && apt-get install -y kubectl
+RUN curl -s -L -o client-tools/kubectl/v1.25.3/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.25.3/bin/linux/$ARCH/kubectl
+ENV PATH="/opt/harness-delegate/client-tools/kubectl/v1.25.3:${PATH}"
 
 COPY scripts /opt/harness-delegate/
 
