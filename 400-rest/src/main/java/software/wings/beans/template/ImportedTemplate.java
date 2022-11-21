@@ -14,6 +14,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
+import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
@@ -59,11 +60,6 @@ public class ImportedTemplate implements PersistentEntity, UuidAware, CreatedAtA
                  .field(ImportedTemplateKeys.commandStoreName)
                  .field(ImportedTemplateKeys.commandName)
                  .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("template_idx")
-                 .unique(true)
-                 .field(ImportedTemplateKeys.templateId)
-                 .build())
         .build();
   }
 
@@ -82,7 +78,7 @@ public class ImportedTemplate implements PersistentEntity, UuidAware, CreatedAtA
   @NotEmpty private String name;
   @NotEmpty private String commandStoreName;
   @NotEmpty private String commandName;
-  @NotEmpty private String templateId;
+  @FdUniqueIndex @NotEmpty private String templateId;
   private String description;
   private String imageUrl;
   private String repoUrl;

@@ -28,8 +28,8 @@ public interface MongoIndex {
   boolean isSparse();
   List<String> getFields();
 
-  default void checks(Logger log) {
-    if (getFields().size() == 1 && !getFields().get(0).contains(".")) {
+  default void checks(Logger log, boolean numberOfFieldsCheck) {
+    if (numberOfFieldsCheck && getFields().size() == 1 && !getFields().get(0).contains(".")) {
       log.error("Composite index with only one field {}", getFields().get(0));
     }
 

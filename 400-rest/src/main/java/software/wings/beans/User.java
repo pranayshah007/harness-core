@@ -73,8 +73,6 @@ import org.mongodb.morphia.annotations.Transient;
 public class User extends Base implements Principal {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("accountsIdx").field(UserKeys.accounts).build(),
-            CompoundMongoIndex.builder().name("pendingAccountsIdx").field(UserKeys.pendingAccounts).build())
         .add(CompoundMongoIndex.builder()
                  .name("userIdAccountIdx")
                  .field(UserKeys.accounts)
@@ -105,11 +103,12 @@ public class User extends Base implements Principal {
 
   @Transient private List<UserGroup> userGroups = new ArrayList<>();
 
-  @Reference(idOnly = true, ignoreMissing = true) private List<Account> accounts = new ArrayList<>();
+  @FdIndex @Reference(idOnly = true, ignoreMissing = true) private List<Account> accounts = new ArrayList<>();
 
   @Getter
   @Setter
   @Reference(idOnly = true, ignoreMissing = true)
+  @FdIndex
   private List<Account> pendingAccounts = new ArrayList<>();
 
   @Transient private List<Account> supportAccounts = new ArrayList<>();

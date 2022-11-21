@@ -34,7 +34,7 @@ public class CompoundTextMongoIndex implements MongoIndex {
 
   @Override
   public IndexCreatorBuilder createBuilder(String id) {
-    checks(log);
+    checks(log, true);
     Preconditions.checkState(isNotEmpty(name), name);
     Preconditions.checkState(
         !sortFields.isEmpty() || !rangeFields.isEmpty() || !textFields.isEmpty() || !fields.isEmpty(), name);

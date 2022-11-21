@@ -43,7 +43,7 @@ public class SortCompoundMongoIndex implements MongoIndex {
     Preconditions.checkState(!sortFields.isEmpty() || !rangeFields.isEmpty(), name);
     Preconditions.checkState(!fields.isEmpty(), name);
 
-    checks(logger);
+    checks(logger, false);
 
     BasicDBObject keys = buildBasicDBObject(id);
     BasicDBObject options = buildBasicDBObject();

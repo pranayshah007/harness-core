@@ -33,7 +33,7 @@ public class CompoundMongoIndex implements MongoIndex {
 
   @Override
   public IndexCreatorBuilder createBuilder(String id) {
-    checks(logger);
+    checks(logger, true);
 
     BasicDBObject keys = buildBasicDBObject(id);
     BasicDBObject options = buildBasicDBObject();
