@@ -26,13 +26,16 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.aws.v2.ecs.ElbV2Client;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
-import io.harness.delegate.task.spotinst.request.SpotInstSwapRoutesTaskParameters;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -42,27 +45,31 @@ import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
 
-import software.wings.beans.AwsConfig;
 import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
 
-import com.amazonaws.services.elasticloadbalancingv2.model.Action;
-import com.amazonaws.services.elasticloadbalancingv2.model.DescribeListenersResult;
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersResponse;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
+import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDeployTaskHelper {
   @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   @Inject private AwsElbHelperServiceDelegate awsElbHelperServiceDelegate;
+  @Inject private ElbV2Client elbV2Client;
   @Inject private TimeLimiter timeLimiter;
 
   public void scaleElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
@@ -270,7 +277,8 @@ public class ElastigroupDeployTaskHelper {
   }
 
   public void restoreLoadBalancerRoutesIfNeeded(List<LoadBalancerDetailsForBGDeployment> loadBalancerDetails,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+      AwsInternalConfig awsInternalConfig, String awsRegion, ILogStreamingTaskClient logStreamingTaskClient,
+      CommandUnitsProgress commandUnitsProgress) {
     final LogCallback logCallback =
         getLogCallback(logStreamingTaskClient, SWAP_ROUTES_COMMAND_UNIT, commandUnitsProgress);
 
@@ -281,9 +289,10 @@ public class ElastigroupDeployTaskHelper {
 
     for (LoadBalancerDetailsForBGDeployment lbDetail : loadBalancerDetails) {
       if (lbDetail.isUseSpecificRules()) {
-        restoreSpecificRulesRoutesIfChanged(lbDetail, logCallback, awsConfig, swapRoutesParameters.getAwsRegion());
+        restoreSpecificRulesRoutesIfChanged(
+            lbDetail, logCallback, awsInternalConfig, swapRoutesParameters.getAwsRegion());
       } else {
-        restoreDefaultRulesRoutesIfChanged(lbDetail, logCallback, awsConfig, swapRoutesParameters);
+        restoreDefaultRulesRoutesIfChanged(lbDetail, logCallback, awsInternalConfig, awsRegion);
       }
     }
 
@@ -291,23 +300,68 @@ public class ElastigroupDeployTaskHelper {
   }
 
   private void restoreDefaultRulesRoutesIfChanged(LoadBalancerDetailsForBGDeployment lbDetail, LogCallback logCallback,
-      AwsConfig awsConfig, SpotInstSwapRoutesTaskParameters swapRoutesParameters) {
-    DescribeListenersResult result = awsElbHelperServiceDelegate.describeListenerResult(
-        awsConfig, emptyList(), lbDetail.getProdListenerArn(), swapRoutesParameters.getAwsRegion());
-    Optional<Action> optionalAction =
-        result.getListeners()
-            .get(0)
-            .getDefaultActions()
-            .stream()
-            .filter(action -> "forward".equalsIgnoreCase(action.getType()) && isNotEmpty(action.getTargetGroupArn()))
-            .findFirst();
+      AwsInternalConfig awsInternalConfig, String awsRegion) {
+    getListeners(awsInternalConfig, lbDetail.getProdListenerArn(), awsRegion)
+        .get(0)
+        .defaultActions()
+        .stream()
+        .filter(action -> ActionTypeEnum.FORWARD.equals(action.type()) && isNotEmpty(action.targetGroupArn()))
+        .findFirst()
+        .ifPresent(action -> {
+          if (action.targetGroupArn().equals(lbDetail.getStageTargetGroupArn())) {
+            logCallback.saveExecutionLog(
+                format("Listener: [%s] is forwarding traffic to: [%s]. Swap routes in rollback",
+                    lbDetail.getProdListenerArn(), lbDetail.getStageTargetGroupArn()));
 
-    if (optionalAction.isPresent()
-        && optionalAction.get().getTargetGroupArn().equals(lbDetail.getStageTargetGroupArn())) {
-      logCallback.saveExecutionLog(format("Listener: [%s] is forwarding traffic to: [%s]. Swap routes in rollback",
-          lbDetail.getProdListenerArn(), lbDetail.getStageTargetGroupArn()));
-      awsElbHelperServiceDelegate.updateDefaultListenersForSpotInstBG(awsConfig, emptyList(),
-          lbDetail.getProdListenerArn(), lbDetail.getStageListenerArn(), swapRoutesParameters.getAwsRegion());
+            restoreDefaultListeners(
+                lbDetail.getProdListenerArn(), lbDetail.getStageListenerArn(), awsInternalConfig, awsRegion);
+
+            logCallback.saveExecutionLog("Listeners rolled back successfully");
+          }
+        });
+  }
+
+  private void restoreDefaultListeners(
+      String prodListenerArn, String stageListenerArn, AwsInternalConfig awsInternalConfig, String awsRegion) {
+    try {
+      Listener prodListener = getListeners(awsInternalConfig, prodListenerArn, awsRegion).get(0);
+      Listener stageListener = getListeners(awsInternalConfig, stageListenerArn, awsRegion).get(0);
+
+      elbV2Client.modifyListener(awsInternalConfig,
+          ModifyListenerRequest.builder()
+              .listenerArn(prodListenerArn)
+              .defaultActions(stageListener.defaultActions())
+              .build(),
+          awsRegion);
+
+      elbV2Client.modifyListener(awsInternalConfig,
+          ModifyListenerRequest.builder()
+              .listenerArn(stageListenerArn)
+              .defaultActions(prodListener.defaultActions())
+              .build(),
+          awsRegion);
+
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception while restoring default listeners", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
+  }
+
+  private List<Listener> getListeners(AwsInternalConfig awsInternalConfig, String listenerArn, String awsRegion) {
+    List<Listener> listeners = new ArrayList<>();
+    String nextToken = null;
+    do {
+      DescribeListenersRequest describeListenersRequest =
+          DescribeListenersRequest.builder().listenerArns(listenerArn).marker(nextToken).pageSize(10).build();
+
+      DescribeListenersResponse describeListenersResponse =
+          elbV2Client.describeListener(awsInternalConfig, describeListenersRequest, awsRegion);
+
+      listeners.addAll(describeListenersResponse.listeners());
+      nextToken = describeListenersResponse.nextMarker();
+
+    } while (nextToken != null);
+    return listeners;
   }
 }

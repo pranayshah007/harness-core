@@ -19,17 +19,20 @@ import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.connector.task.spot.SpotConfig;
 import io.harness.connector.task.spot.SpotNgConfigMapper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskParameters;
 import io.harness.delegate.task.spot.elastigroup.rollback.ElastigroupRollbackTaskResponse;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
@@ -53,6 +56,8 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
   @Inject private SpotNgConfigMapper ngConfigMapper;
 
   @Inject private ElastigroupDeployTaskHelper taskHelper;
+
+  @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
 
   public ElastigroupRollbackTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -122,8 +127,14 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
   }
 
   private void rollbackRoutes(ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) {
-    taskHelper.restoreLoadBalancerRoutesIfNeeded(
-        parameters.getLoadBalancerDetailsForBGDeployments(), getLogStreamingTaskClient(), commandUnitsProgress);
+    elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
+        parameters.getAwsConnectorInfo().getConnectorConfig(), parameters.getAwsEncryptedDetails());
+
+    AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig(
+        (AwsConnectorDTO) parameters.getAwsConnectorInfo().getConnectorConfig(), parameters.getAwsRegion());
+
+    taskHelper.restoreLoadBalancerRoutesIfNeeded(parameters.getLoadBalancerDetailsForBGDeployments(), awsInternalConfig,
+        parameters.getAwsRegion(), getLogStreamingTaskClient(), commandUnitsProgress);
   }
 
   private void rollbackNew(ElastigroupRollbackTaskParameters parameters, String spotInstAccountId, String spotInstToken,

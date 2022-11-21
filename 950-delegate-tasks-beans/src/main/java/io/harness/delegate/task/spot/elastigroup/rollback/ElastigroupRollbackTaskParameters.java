@@ -10,6 +10,7 @@ package io.harness.delegate.task.spot.elastigroup.rollback;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCapabilityHelper;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -41,6 +42,9 @@ public class ElastigroupRollbackTaskParameters implements TaskParameters, Execut
   boolean isBlueGreen;
   private String elastigroupNamePrefix;
   private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
+  private String awsRegion;
+  private ConnectorInfoDTO awsConnectorInfo;
+  private List<EncryptedDataDetail> awsEncryptedDetails;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
