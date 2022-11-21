@@ -55,7 +55,6 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  private long timeoutInMillis;
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
@@ -66,8 +65,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     }
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
-
-    timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
         iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_SETUP.toString(), true, commandUnitsProgress);

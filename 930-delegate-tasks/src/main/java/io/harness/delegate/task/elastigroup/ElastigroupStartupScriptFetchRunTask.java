@@ -7,13 +7,13 @@
 
 package io.harness.delegate.task.elastigroup;
 
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
-import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -25,19 +25,15 @@ import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetc
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
-
-import com.google.inject.Inject;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
+
+import java.io.IOException;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
@@ -64,8 +60,7 @@ public class ElastigroupStartupScriptFetchRunTask extends AbstractDelegateRunnab
       ElastigroupStartupScriptFetchRequest elastigroupStartupScriptFetchRequest =
           (ElastigroupStartupScriptFetchRequest) parameters;
 
-      UnitProgressData unitProgressData = getCommandUnitProgressData(
-          ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
+      UnitProgressData unitProgressData = UnitProgressData.builder().build();
 
       return ElastigroupStartupScriptFetchResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
@@ -81,16 +76,7 @@ public class ElastigroupStartupScriptFetchRunTask extends AbstractDelegateRunnab
     }
   }
 
-  public UnitProgressData getCommandUnitProgressData(
-      String commandName, CommandExecutionStatus commandExecutionStatus) {
-    LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap = new LinkedHashMap<>();
-    CommandUnitProgress commandUnitProgress = CommandUnitProgress.builder().status(commandExecutionStatus).build();
-    commandUnitProgressMap.put(commandName, commandUnitProgress);
-    CommandUnitsProgress commandUnitsProgress =
-        CommandUnitsProgress.builder().commandUnitProgressMap(commandUnitProgressMap).build();
-    return UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress);
-  }
-
+  @Override
   public boolean isSupportingErrorFramework() {
     return true;
   }

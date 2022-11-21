@@ -145,11 +145,11 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     } else {
       ElastigroupFixedInstances elastigroupFixedInstances = (ElastigroupFixedInstances) elastigroupInstances.getSpec();
       groupCapacity.setMinimum(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getMin(), ambiance, DEFAULT_ELASTIGROUP_MIN_INSTANCES));
+          elastigroupFixedInstances.getMin(), DEFAULT_ELASTIGROUP_MIN_INSTANCES));
       groupCapacity.setMaximum(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getMax(), ambiance, DEFAULT_ELASTIGROUP_MAX_INSTANCES));
+          elastigroupFixedInstances.getMax(), DEFAULT_ELASTIGROUP_MAX_INSTANCES));
       groupCapacity.setTarget(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getDesired(), ambiance, DEFAULT_ELASTIGROUP_TARGET_INSTANCES));
+          elastigroupFixedInstances.getDesired(), DEFAULT_ELASTIGROUP_TARGET_INSTANCES));
     }
     return elastiGroup;
   }

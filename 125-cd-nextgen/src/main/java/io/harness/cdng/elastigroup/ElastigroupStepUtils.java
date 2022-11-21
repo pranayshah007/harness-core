@@ -117,7 +117,7 @@ public class ElastigroupStepUtils extends CDStepHelper {
           }
           logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           logCallback.saveExecutionLog(
-              color(format("Successfully completed fetching all files"), LogColor.White, LogWeight.Bold), LogLevel.INFO,
+              color("Successfully completed fetching all files", LogColor.White, LogWeight.Bold), LogLevel.INFO,
               CommandExecutionStatus.SUCCESS);
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");

@@ -120,7 +120,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     return gson.fromJson(groupConfigJson, ElastiGroup.class);
   }
 
-  public int renderCount(ParameterField<Integer> field, Ambiance ambiance, int defaultValue) {
+  public int renderCount(ParameterField<Integer> field, int defaultValue) {
     if (field == null || field.isExpression() || field.getValue() == null) {
       return defaultValue;
     } else {

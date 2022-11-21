@@ -20,14 +20,14 @@ import lombok.Data;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupSetupResult {
-  private ElastiGroup newElastiGroup;
+  ElastiGroup newElastiGroup;
   // Will be used during rollback, to restore this group to previous capacity
-  private List<ElastiGroup> groupToBeDownsized;
-  private Integer maxInstanceCount;
-  private ResizeStrategy resizeStrategy;
-  private boolean isBlueGreen;
-  private String elastiGroupNamePrefix;
-  private boolean useCurrentRunningInstanceCount;
-  private Integer currentRunningInstanceCount;
-  private ElastiGroup elastigroupOriginalConfig;
+  List<ElastiGroup> groupToBeDownsized;
+  Integer maxInstanceCount;
+  ResizeStrategy resizeStrategy;
+  boolean isBlueGreen;
+  String elastiGroupNamePrefix;
+  boolean useCurrentRunningInstanceCount;
+  Integer currentRunningInstanceCount;
+  ElastiGroup elastigroupOriginalConfig;
 }
