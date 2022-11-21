@@ -631,7 +631,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.error("Task id {} failed with error {}", task.getUuid(), exception);
+        log.warn("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
@@ -747,7 +747,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.info("Task id {} failed with error {}", task.getUuid(), exception);
+        log.warn("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponseV2(task, exception);
         if (!task.getTaskDataV2().isAsync()) {
