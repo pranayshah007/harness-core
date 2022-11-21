@@ -494,6 +494,10 @@ if [[ "" != "$DELEGATE_DOCKER_IMAGE" ]]; then
   export DELEGATE_DOCKER_IMAGE; yq -i '.portal.delegateDockerImage=env(DELEGATE_DOCKER_IMAGE)' $CONFIG_FILE
 fi
 
+if [[ "" != "UPGRADER_DOCKER_IMAGE" ]]; then
+  export UPGRADER_DOCKER_IMAGE; yq -i '.portal.upgraderDockerImage=env(UPGRADER_DOCKER_IMAGE)' $CONFIG_FILE
+fi
+
 if [[ "" != "$OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT" ]]; then
   export OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT; yq -i '.portal.optionalDelegateTaskRejectAtLimit=env(OPTIONAL_DELEGATE_TASK_REJECT_AT_LIMIT)' $CONFIG_FILE
 fi
