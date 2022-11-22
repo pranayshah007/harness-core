@@ -10,7 +10,6 @@ package software.wings.sm.states.k8s;
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
-import static io.harness.beans.FeatureName.INSTANCE_SYNC_V2_CG;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.beans.FeatureName.PRUNE_KUBERNETES_RESOURCES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -214,10 +213,6 @@ public class K8sRollingDeployRollback extends AbstractK8sState {
       stateExecutionData.setNewInstanceStatusSummaries(
           fetchInstanceStatusSummaries(instanceElementListParam.getInstanceElements(), executionStatus));
       saveInstanceInfoToSweepingOutput(context, fetchInstanceElementList(pods, true), fetchInstanceDetails(pods, true));
-
-      if (featureFlagService.isEnabled(INSTANCE_SYNC_V2_CG, context.getAccountId())) {
-        stateExecutionData.setPodsList(pods);
-      }
 
       return ExecutionResponse.builder()
           .executionStatus(executionStatus)
