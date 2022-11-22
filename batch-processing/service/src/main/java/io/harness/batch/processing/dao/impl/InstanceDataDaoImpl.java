@@ -72,11 +72,13 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
   }
 
   @Override
-  public List<InstanceData> fetchInstanceData(Set<String> instanceIds) {
+  public List<InstanceData> fetchInstanceData(String accountId, Set<String> instanceIds) {
     if (instanceIds.isEmpty()) {
       return Collections.emptyList();
     } else {
       return hPersistence.createQuery(InstanceData.class, excludeAuthorityCount)
+          .field(InstanceDataKeys.accountId)
+          .equal(accountId)
           .field(InstanceDataKeys.instanceId)
           .in(instanceIds)
           .asList();

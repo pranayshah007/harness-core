@@ -22,7 +22,7 @@ public interface InstanceDataDao {
 
   InstanceData fetchInstanceData(String instanceId);
 
-  List<InstanceData> fetchInstanceData(Set<String> instanceIds);
+  List<InstanceData> fetchInstanceData(String accountId, Set<String> instanceIds);
 
   InstanceData fetchActiveInstanceData(
       String accountId, String clusterId, String instanceId, List<InstanceState> instanceState);
