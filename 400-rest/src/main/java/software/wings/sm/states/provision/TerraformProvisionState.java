@@ -923,7 +923,7 @@ public abstract class TerraformProvisionState extends State {
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
-            .sourceType(terraformProvisioner.provisionByGit() ? TerraformSourceType.GIT : TerraformSourceType.S3_URI)
+            .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .activityId(activityId)
