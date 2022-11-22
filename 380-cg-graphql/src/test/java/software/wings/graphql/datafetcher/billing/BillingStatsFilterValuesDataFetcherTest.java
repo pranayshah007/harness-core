@@ -393,7 +393,7 @@ public class BillingStatsFilterValuesDataFetcherTest extends AbstractDataFetcher
   public void testFetchMethodInBillingStatsFilterValuesDataFetcherForNodes() {
     when(instanceDataService.fetchInstanceDataForGivenInstances(anyString(), anyString(), anyList()))
         .thenReturn(Collections.singletonList(mockInstanceData(INSTANCE1_SERVICE1_ENV1_APP1_ACCOUNT1)));
-    when(instanceDataService.fetchInstanceDataForGivenInstances(anyList()))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT1_ID, anyList()))
         .thenReturn(Collections.singletonList(mockInstanceData(INSTANCE1_SERVICE1_ENV1_APP1_ACCOUNT1)));
 
     String[] workloadNameValues = new String[] {WORKLOAD_NAME_ACCOUNT1};
@@ -427,7 +427,7 @@ public class BillingStatsFilterValuesDataFetcherTest extends AbstractDataFetcher
   @Owner(developers = SHUBHANSHU)
   @Category(UnitTests.class)
   public void testFetchMethodInBillingStatsFilterValuesDataFetcherForPods() {
-    when(instanceDataService.fetchInstanceDataForGivenInstances(anyList()))
+    when(instanceDataService.fetchInstanceDataForGivenInstances(ACCOUNT1_ID, anyList()))
         .thenReturn(Collections.singletonList(mockInstanceData(INSTANCE1_SERVICE1_ENV1_APP1_ACCOUNT1)));
 
     String[] workloadNameValues = new String[] {WORKLOAD_NAME_ACCOUNT1};
