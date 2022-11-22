@@ -574,3 +574,4 @@ io.harness.cdng.elastigroup.AwsCloudProviderBasicConfig
 io.harness.cdng.elastigroup.ElastigroupSwapRouteStepInfo
 io.harness.cdng.elastigroup.ElastigroupSwapRouteStepParameters
 io.harness.cdng.elastigroup.ElastigroupSwapRouteStepNode
+io.harness.cdng.gitops.steps.GitOpsEnvOutCome

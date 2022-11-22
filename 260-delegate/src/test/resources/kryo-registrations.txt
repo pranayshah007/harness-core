@@ -2465,4 +2465,9 @@
 10000112:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
+<<<<<<< HEAD
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+=======
+10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+
+>>>>>>> 48b9aa322408392e37fb2969a49e7fb58a5922dd
