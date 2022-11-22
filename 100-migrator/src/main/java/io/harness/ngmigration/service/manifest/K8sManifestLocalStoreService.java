@@ -30,6 +30,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.service.intfc.ApplicationManifestService;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,7 +41,7 @@ public class K8sManifestLocalStoreService implements NgManifestService {
   @Inject ApplicationManifestService applicationManifestService;
 
   @Override
-  public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     if (EmptyPredicate.isEmpty(yamlFileList)) {
@@ -70,12 +71,13 @@ public class K8sManifestLocalStoreService implements NgManifestService {
                                                        .build()))
             .build();
 
-    return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.K8_MANIFEST)
-                      .spec(k8sManifest)
-                      .build())
-        .build();
+    return Collections.singletonList(
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder()
+                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+                          .type(ManifestConfigType.K8_MANIFEST)
+                          .spec(k8sManifest)
+                          .build())
+            .build());
   }
 }

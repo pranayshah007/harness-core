@@ -8,11 +8,12 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/harness/harness-core/queue-service/hsqs/store"
 )
 
 const (

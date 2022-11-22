@@ -75,6 +75,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.UpdateOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -100,6 +101,7 @@ public class TimeSeriesRecordServiceImpl implements TimeSeriesRecordService {
       return true;
     }
     log.info("Saving {} data records", validDataRecords.size());
+    log.info("Records being saved: {}", StringUtils.join(validDataRecords, ","));
     UpdateOptions options = new UpdateOptions();
     options.upsert(true);
     Map<TimeSeriesRecordBucketKey, TimeSeriesRecord> timeSeriesRecordMap = bucketTimeSeriesRecords(validDataRecords);

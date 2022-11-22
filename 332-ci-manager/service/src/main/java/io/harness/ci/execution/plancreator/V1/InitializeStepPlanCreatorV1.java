@@ -29,7 +29,6 @@ import io.harness.licensing.Edition;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -67,8 +66,7 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
   private InitializeStepNode getStepNode(PlanCreationContext ctx, CodeBase codeBase,
       IntegrationStageNodeV1 integrationStageNodeV1, ExecutionSource executionSource,
       List<ExecutionWrapperConfig> executionWrapperConfigs) {
-    PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
-    String accountId = planCreationContextValue.getAccountIdentifier();
+    String accountId = ctx.getAccountIdentifier();
     List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
     Map<String, StrategyExpansionData> strategyExpansionMap = new HashMap<>();
 

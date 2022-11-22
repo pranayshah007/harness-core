@@ -82,6 +82,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   private static final int UNLIMITED_SIZE = 100000;
   private static final int STRINGS_LOGGING_LIMIT = 500;
 
+  public static final String GITOPS_ENV_OUTCOME = "gitopsEnvOutcome";
+
   @Inject private ClusterService clusterService;
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private GitopsResourceClient gitopsResourceClient;
@@ -111,22 +113,51 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     log.info("Starting execution for GitopsClustersStep [{}]", stepParameters);
 
+    // Get Service Variables from sweeping output
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(YAMLFieldNameConstants.SERVICE_VARIABLES));
 
-    final Map<String, Object> variables = optionalSweepingOutput != null && optionalSweepingOutput.isFound()
+    final Map<String, Object> svcVariables = optionalSweepingOutput != null && optionalSweepingOutput.isFound()
         ? ((VariablesSweepingOutput) optionalSweepingOutput.getOutput())
-        : null;
+        : new HashMap<>();
 
-    // TODO: need to have thorough testing. Add unit test also
-    if (isNotEmpty(variables)) {
-      resolveVariables(ambiance, variables);
+    if (isNotEmpty(svcVariables)) {
+      resolveVariables(ambiance, svcVariables);
     }
+
+    // Fetch Environment Variables from GitOpsEnvOutcome
+    OptionalSweepingOutput optionalSweepingOutputForEnvVars = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(GITOPS_ENV_OUTCOME));
+
+    // Resolved environment variables for each environment
+    final Map<String, Map<String, Object>> envVars =
+        optionalSweepingOutputForEnvVars != null && optionalSweepingOutputForEnvVars.isFound()
+        ? ((GitOpsEnvOutCome) optionalSweepingOutputForEnvVars.getOutput()).getEnvToEnvVariables()
+        : new HashMap<>();
+
+    if (isNotEmpty(envVars) && isNotEmpty(envVars.values())) {
+      for (Map<String, Object> env : envVars.values()) {
+        resolveVariables(ambiance, env);
+      }
+    }
+
+    // Resolved environment variables for each environment
+    final Map<String, Map<String, Object>> envSvcOverrideVars =
+        optionalSweepingOutputForEnvVars != null && optionalSweepingOutputForEnvVars.isFound()
+        ? ((GitOpsEnvOutCome) optionalSweepingOutputForEnvVars.getOutput()).getEnvToSvcVariables()
+        : new HashMap<>();
+
+    if (isNotEmpty(envSvcOverrideVars) && isNotEmpty(envSvcOverrideVars.values())) {
+      for (Map<String, Object> svcEnvOverRide : envSvcOverrideVars.values()) {
+        resolveVariables(ambiance, svcEnvOverRide);
+      }
+    }
+
     try {
       final Map<String, IndividualClusterInternal> validatedClusters =
-          validatedClusters(ambiance, stepParameters, logger);
+          validatedClusters(ambiance, stepParameters, logger, envVars);
 
-      final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
+      final GitopsClustersOutcome outcome = toOutcome(validatedClusters, svcVariables, envSvcOverrideVars);
 
       executionSweepingOutputResolver.consume(ambiance, GITOPS_SWEEPING_OUTPUT, outcome, StepOutcomeGroup.STAGE.name());
 
@@ -149,28 +180,28 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     return StepUtils.generateLogKeys(ambiance, null);
   }
 
-  private Map<String, IndividualClusterInternal> validatedClusters(
-      Ambiance ambiance, ClusterStepParameters params, LogCallback logger) {
+  private Map<String, IndividualClusterInternal> validatedClusters(Ambiance ambiance, ClusterStepParameters params,
+      LogCallback logger, Map<String, Map<String, Object>> envVarsMap) {
     final Collection<EnvClusterRefs> envClusterRefs;
     if (params.getEnvGroupRef() != null) {
-      saveExecutionLog(format("Deploying to gitops clusters in environment group %s", params.getEnvGroupRef()), logger);
+      saveExecutionLog(format("Deploying to GitOps clusters in environment group %s", params.getEnvGroupRef()), logger);
     }
 
     envClusterRefs = params.getEnvClusterRefs();
 
     if (isEmpty(envClusterRefs)) {
-      throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
+      throw new InvalidRequestException("No GitOps Cluster is selected with the current environment configuration");
     }
 
     logEnvironments(envClusterRefs, logger);
 
     // clusterId -> IndividualClusterInternal
-    final Map<String, IndividualClusterInternal> individualClusters =
-        fetchClusterRefs(params.getEnvGroupRef(), ambiance, envClusterRefs, logger);
+    final Map<String, IndividualClusterInternal> individualClusters = fetchClusterRefs(
+        params.getEnvGroupRef(), params.getEnvGroupName(), ambiance, envClusterRefs, logger, envVarsMap);
 
     if (isEmpty(individualClusters)) {
-      saveExecutionLog("No gitops cluster is selected", logger);
-      throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
+      saveExecutionLog("No GitOps cluster is selected", logger);
+      throw new InvalidRequestException("No GitOps Cluster is selected with the current environment configuration");
     }
 
     return filterClustersFromGitopsService(ambiance, individualClusters, logger);
@@ -262,23 +293,27 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
   }
 
-  private Map<String, IndividualClusterInternal> fetchClusterRefs(
-      String envGroupRef, Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs, LogCallback logger) {
-    final List<IndividualClusterInternal> clusterRefs = envClusterRefs.stream()
-                                                            .filter(not(EnvClusterRefs::isDeployToAll))
-                                                            .map(ec
-                                                                -> ec.getClusterRefs()
-                                                                       .stream()
-                                                                       .map(c
-                                                                           -> IndividualClusterInternal.builder()
-                                                                                  .envGroupRef(envGroupRef)
-                                                                                  .envName(ec.getEnvName())
-                                                                                  .envRef(ec.getEnvRef())
-                                                                                  .clusterRef(c)
-                                                                                  .build())
-                                                                       .collect(Collectors.toList()))
-                                                            .flatMap(List::stream)
-                                                            .collect(Collectors.toList());
+  private Map<String, IndividualClusterInternal> fetchClusterRefs(String envGroupRef, String envGroupName,
+      Ambiance ambiance, Collection<EnvClusterRefs> envClusterRefs, LogCallback logger,
+      Map<String, Map<String, Object>> envVarsMap) {
+    final List<IndividualClusterInternal> clusterRefs =
+        envClusterRefs.stream()
+            .filter(not(EnvClusterRefs::isDeployToAll))
+            .map(ec
+                -> ec.getClusterRefs()
+                       .stream()
+                       .map(c
+                           -> IndividualClusterInternal.builder()
+                                  .envGroupRef(envGroupRef)
+                                  .envGroupName(envGroupName)
+                                  .envName(ec.getEnvName())
+                                  .envRef(ec.getEnvRef())
+                                  .clusterRef(c)
+                                  .envVariables(envVarsMap.get(ec.getEnvRef()))
+                                  .build())
+                       .collect(Collectors.toList()))
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
 
     // EnvRef -> EnvName
     final Map<String, EnvClusterRefs> envsWithAllClustersAsTarget =
@@ -289,7 +324,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     // Todo: Proper handling for large number of clusters
     if (isNotEmpty(envsWithAllClustersAsTarget)) {
       logIdentifiers(
-          "Deploying to all gitops clusters in environment(s)", envsWithAllClustersAsTarget.keySet(), logger);
+          "Deploying to all GitOps clusters in environment(s)", envsWithAllClustersAsTarget.keySet(), logger);
       clusterRefs.addAll(clusterService
                              .listAcrossEnv(0, UNLIMITED_SIZE, getAccountId(ambiance), getOrgIdentifier(ambiance),
                                  getProjectIdentifier(ambiance), envsWithAllClustersAsTarget.keySet())
@@ -297,11 +332,13 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                              .map(c
                                  -> IndividualClusterInternal.builder()
                                         .envGroupRef(envGroupRef)
+                                        .envGroupName(envGroupName)
                                         .envRef(c.getEnvRef())
                                         .envName(envsWithAllClustersAsTarget.get(c.getEnvRef()) != null
                                                 ? envsWithAllClustersAsTarget.get(c.getEnvRef()).getEnvName()
                                                 : null)
                                         .clusterRef(c.getClusterRef())
+                                        .envVariables(envVarsMap.get(c.getEnvRef()))
                                         .build())
                              .collect(Collectors.toSet()));
     }
@@ -310,15 +347,29 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         Collectors.toMap(IndividualClusterInternal::getClusterRef, Function.identity(), (k1, k2) -> k1));
   }
 
-  private GitopsClustersOutcome toOutcome(
-      Map<String, IndividualClusterInternal> validatedClusters, Map<String, Object> variables) {
+  protected GitopsClustersOutcome toOutcome(Map<String, IndividualClusterInternal> validatedClusters,
+      Map<String, Object> svcVariables, Map<String, Map<String, Object>> envSvcOverrideVars) {
     final GitopsClustersOutcome outcome = new GitopsClustersOutcome(new ArrayList<>());
 
     for (String clusterId : validatedClusters.keySet()) {
       IndividualClusterInternal clusterInternal = validatedClusters.get(clusterId);
+
+      Map<String, Object> mergedVars = new HashMap<>();
+
+      // Merging of service variables, environment variables and service override config is happening here
+      // Note, the order here is important.
+      if (isNotEmpty(svcVariables)) {
+        mergedVars.putAll(svcVariables);
+      }
+      if (isNotEmpty(clusterInternal.getEnvVariables())) {
+        mergedVars.putAll(clusterInternal.getEnvVariables());
+      }
+      if (!envSvcOverrideVars.values().isEmpty() && envSvcOverrideVars.get(clusterInternal.getEnvRef()) != null) {
+        mergedVars.putAll(envSvcOverrideVars.get(clusterInternal.getEnvRef()));
+      }
       outcome.appendCluster(new Metadata(clusterInternal.getEnvGroupRef(), clusterInternal.getEnvGroupName()),
           new Metadata(clusterInternal.getEnvRef(), clusterInternal.getEnvName()),
-          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), variables);
+          new Metadata(clusterInternal.getClusterRef(), clusterInternal.getClusterName()), mergedVars);
     }
 
     return outcome;
@@ -333,6 +384,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envName;
     String clusterRef;
     String clusterName;
+    Map<String, Object> envVariables;
   }
 
   private void resolveVariables(Ambiance ambiance, Map<String, Object> variables) {
@@ -388,7 +440,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     saveExecutionLog(
-        "Following clusters were skipped either because clusters were not linked to the environment or not present in harness gitops",
+        "Following clusters were skipped either because clusters were not linked to the environment or not present in harness GitOps",
         logger);
     Map<String, List<IndividualClusterInternal>> groupedClusters =
         clusterInternals.stream().collect(Collectors.groupingBy(IndividualClusterInternal::getEnvRef));

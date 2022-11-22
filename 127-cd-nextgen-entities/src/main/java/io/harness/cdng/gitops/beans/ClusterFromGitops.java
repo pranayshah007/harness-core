@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.beans;
 
 import io.harness.beans.ScopeLevel;
 
+import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,10 +19,8 @@ import lombok.Data;
 @AllArgsConstructor
 public class ClusterFromGitops {
   String identifier;
-
   String agentIdentifier;
-
   String name;
-
   ScopeLevel scopeLevel;
+  Map<String, String> tags;
 }

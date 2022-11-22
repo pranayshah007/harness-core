@@ -12,6 +12,7 @@ import static io.harness.ng.core.models.Secret.SecretKeys;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
@@ -41,6 +42,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -553,6 +555,14 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, times(2))
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+
+  @Test(expected = EntityNotFoundException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDeleteInvalidIdentifier() {
+    when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    secretCrudService.delete(accountIdentifier, null, null, "identifier", false);
   }
 
   @Test

@@ -31,6 +31,7 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.persistence.PersistentEntity;
 
@@ -52,7 +53,7 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     final List<Class<? extends PersistentEntity>> deleteEntitiesWithDefaultHandler =
         Arrays.asList(VerificationJob.class, Activity.class, MetricPack.class, HeatMap.class, TimeSeriesThreshold.class,
             CVNGStepTask.class, UserJourney.class, Webhook.class, ServiceDependency.class, SLOHealthIndicator.class,
-            SLOErrorBudgetReset.class, NotificationRule.class, AbstractServiceLevelObjective.class);
+            SLOErrorBudgetReset.class, NotificationRule.class);
     ENTITIES_MAP = new LinkedHashMap<>();
     deleteEntitiesWithDefaultHandler.forEach(entity -> ENTITIES_MAP.put(entity, DeleteEntityByHandler.class));
 
@@ -62,6 +63,7 @@ public abstract class EntityChangeEventMessageProcessor implements ConsumerMessa
     ENTITIES_MAP.put(MonitoredService.class, MonitoredServiceService.class);
     ENTITIES_MAP.put(CVConfig.class, CVConfigService.class);
     ENTITIES_MAP.put(ChangeSource.class, ChangeSourceService.class);
+    ENTITIES_MAP.put(AbstractServiceLevelObjective.class, ServiceLevelObjectiveV2Service.class);
 
     EXCEPTIONS = new HashSet<>();
     EXCEPTIONS.add(ServiceLevelIndicator.class);

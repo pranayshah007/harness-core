@@ -27,4 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @Entity(value = "moduleLicenses", noClassnameStored = true)
 @Persistent
 @TypeAlias("io.harness.license.entities.module.CVModuleLicense")
-public class CVModuleLicense extends ModuleLicense {}
+public class CVModuleLicense extends ModuleLicense {
+  Integer numberOfServices;
+}

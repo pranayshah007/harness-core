@@ -17,12 +17,17 @@ import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.AMIArtifactConfig;
 import io.harness.cdng.artifact.resources.ami.AMIResourceService;
+import io.harness.common.NGExpressionUtils;
+import io.harness.delegate.task.artifacts.ami.AMIFilter;
+import io.harness.delegate.task.artifacts.ami.AMITag;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
+
+import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -110,5 +115,62 @@ public class AMIArtifactResource {
     }
 
     return ResponseDTO.newResponse(amiTags);
+  }
+
+  @POST
+  @Path("versions")
+  @ApiOperation(value = "List Versions for AMI Artifacts", nickname = "listVersionsForAMIArtifact")
+  public ResponseDTO<List<BuildDetails>> listVersions(@QueryParam("connectorRef") String awsConnectorRef,
+      @QueryParam("region") String region, @QueryParam("versionRegex") String versionRegex,
+      AMIRequestBody amiRequestBody, @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    List<AMITag> amiTags = new ArrayList<>();
+
+    List<AMIFilter> amiFilters = new ArrayList<>();
+
+    if (isNotEmpty(serviceRef)) {
+      final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactSpecFromService;
+
+      if (StringUtils.isBlank(awsConnectorRef)) {
+        awsConnectorRef = (String) amiArtifactConfig.getConnectorRef().fetchFinalValue();
+      }
+
+      if (StringUtils.isBlank(region)) {
+        region = (String) amiArtifactConfig.getRegion().fetchFinalValue();
+      }
+
+      if (amiArtifactConfig.getTags() != null && amiArtifactConfig.getTags().isExpression()
+          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getTags().getExpressionValue())) {
+        amiTags = amiRequestBody.getTags();
+      }
+
+      if (amiArtifactConfig.getFilters() != null && amiArtifactConfig.getFilters().isExpression()
+          && NGExpressionUtils.isRuntimeField(amiArtifactConfig.getFilters().getExpressionValue())) {
+        amiFilters = amiRequestBody.getFilters();
+      }
+    }
+
+    // Getting the resolved connectorRef  in case of expressions
+    String resolvedAwsConnectorRef =
+        artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+            amiRequestBody.getRuntimeInputYaml(), awsConnectorRef, fqnPath, null, serviceRef);
+
+    // Getting the resolved project  in case of expressions
+    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, amiRequestBody.getRuntimeInputYaml(), region, fqnPath, null, serviceRef);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(resolvedAwsConnectorRef, accountId, orgIdentifier, projectIdentifier);
+
+    List<BuildDetails> builds = amiResourceService.listVersions(
+        connectorRef, accountId, orgIdentifier, projectIdentifier, resolvedRegion, amiTags, amiFilters, versionRegex);
+
+    return ResponseDTO.newResponse(builds);
   }
 }

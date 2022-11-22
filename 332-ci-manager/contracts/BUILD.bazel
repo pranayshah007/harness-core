@@ -8,7 +8,6 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//835-pipeline-ci-commons:module",
         "//878-ng-common-utilities:module",
         "//960-ng-license-usage-beans:module",
         "//999-annotations:module",

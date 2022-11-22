@@ -434,7 +434,7 @@ public class UserServiceImpl implements UserService {
 
   public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
-    User user = get(userId);
+    User user = get(userId, true);
     Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
     for (Account account : userAccounts) {
@@ -3107,7 +3107,8 @@ public class UserServiceImpl implements UserService {
     return query.asList();
   }
 
-  private void loadSupportAccounts(User user) {
+  @Override
+  public void loadSupportAccounts(User user) {
     if (user == null) {
       return;
     }
@@ -3187,7 +3188,7 @@ public class UserServiceImpl implements UserService {
     }
     if (user == null) {
       log.info("User [{}] not found in Cache. Load it from DB", userId);
-      user = get(userId);
+      user = get(userId, true);
       try {
         userCache.put(user.getUuid(), user);
       } catch (Exception ex) {

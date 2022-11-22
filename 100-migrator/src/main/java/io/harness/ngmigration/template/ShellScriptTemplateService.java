@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptTemplateService implements NgTemplateService {
   @Override
@@ -31,18 +32,21 @@ public class ShellScriptTemplateService implements NgTemplateService {
     List<Map<String, String>> outputVariables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getOutputVars())) {
       for (String varName : shellScriptTemplate.getOutputVars().split(",")) {
-        outputVariables.add(ImmutableMap.of("name", varName, "type", "String", "value", varName));
+        outputVariables.add(ImmutableMap.of(
+            "name", valueOrDefaultEmpty(varName), "type", "String", "value", valueOrDefaultEmpty(varName)));
       }
     }
     if (EmptyPredicate.isNotEmpty(shellScriptTemplate.getSecretOutputVars())) {
       for (String varName : shellScriptTemplate.getSecretOutputVars().split(",")) {
-        outputVariables.add(ImmutableMap.of("name", varName, "type", "Secret", "value", varName));
+        outputVariables.add(ImmutableMap.of(
+            "name", valueOrDefaultEmpty(varName), "type", "Secret", "value", valueOrDefaultEmpty(varName)));
       }
     }
     List<Map<String, String>> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(template.getVariables())) {
       template.getVariables().forEach(variable -> {
-        variables.add(ImmutableMap.of("name", variable.getName(), "type", "String", "value", variable.getValue()));
+        variables.add(ImmutableMap.of("name", valueOrDefaultEmpty(variable.getName()), "type", "String", "value",
+            valueOrDefaultEmpty(variable.getValue())));
       });
     }
     Map<String, Object> templateSpec =
@@ -67,5 +71,9 @@ public class ShellScriptTemplateService implements NgTemplateService {
   public String getTimeoutString(Template template) {
     ShellScriptTemplate shellScriptTemplate = (ShellScriptTemplate) template.getTemplateObject();
     return shellScriptTemplate.getTimeoutMillis() < 10000 ? "10s" : shellScriptTemplate.getTimeoutMillis() / 1000 + "s";
+  }
+
+  static String valueOrDefaultEmpty(String val) {
+    return StringUtils.isNotBlank(val) ? val : "";
   }
 }

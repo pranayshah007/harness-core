@@ -36,7 +36,7 @@ public class WingsExceptionMapperV2 implements ExceptionMapper<WingsException> {
 
   @Override
   public Response toResponse(WingsException exception) {
-    ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
+    ExceptionLogger.logProcessedMessages_asWarn(exception, MANAGER, log);
 
     List<ResponseMessage> responseMessages = ExceptionLogger.getResponseMessageList(exception, REST_API);
     ErrorCode errorCode = exception.getCode() != null ? exception.getCode() : ErrorCode.UNKNOWN_ERROR;

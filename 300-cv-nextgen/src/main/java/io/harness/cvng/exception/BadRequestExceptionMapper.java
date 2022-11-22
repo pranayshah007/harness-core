@@ -9,7 +9,6 @@ package io.harness.cvng.exception;
 
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
-import io.harness.exception.ExceptionUtils;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.container.ResourceInfo;
@@ -27,7 +26,6 @@ public class BadRequestExceptionMapper implements ExceptionMapper<BadRequestExce
 
   @Override
   public Response toResponse(BadRequestException exception) {
-    log.error("Exception occurred: " + ExceptionUtils.getMessage(exception), exception);
     return Response.status(Response.Status.BAD_REQUEST)
         .entity(ResponseMessage.builder().message(exception.toString()).code(ErrorCode.INVALID_REQUEST).build())
         .type(MediaType.APPLICATION_JSON)
