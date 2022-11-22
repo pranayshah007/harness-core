@@ -20,6 +20,7 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileData;
 import io.harness.exception.KubernetesValuesException;
 import io.harness.exception.KubernetesYamlException;
 import io.harness.exception.WingsException;
@@ -442,5 +443,17 @@ public class ManifestHelper {
     }
 
     return folderPath.endsWith("/") ? folderPath : folderPath + "/";
+  }
+
+  public static String concatenateFileContents(List<FileData> manifestFiles) {
+    StringBuilder result = new StringBuilder();
+    for (FileData manifestFile : manifestFiles) {
+      String fileContent = manifestFile.getFileContent();
+      if (isNotEmpty(fileContent) && !fileContent.startsWith(YAML_DOCUMENT_DELIMITER)) {
+        result.append(YAML_DOCUMENT_DELIMITER).append(System.lineSeparator());
+      }
+      result.append(fileContent).append(System.lineSeparator());
+    }
+    return result.toString();
   }
 }

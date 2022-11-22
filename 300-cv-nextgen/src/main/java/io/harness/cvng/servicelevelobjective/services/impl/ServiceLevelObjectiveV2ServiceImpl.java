@@ -15,10 +15,15 @@ import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.beans.sidekick.VerificationTaskCleanupSideKickData;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveCreateEvent;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveDeleteEvent;
+import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveUpdateEvent;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -31,11 +36,11 @@ import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
-import io.harness.cvng.servicelevelobjective.beans.SimpleSLODetails;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
@@ -49,7 +54,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveKeys;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOResetRecalculationService;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLOService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
@@ -60,12 +64,14 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -83,6 +89,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -101,11 +108,12 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private CVNGLogService cvngLogService;
-  @Inject private CompositeSLOService compositeSLOService;
-  @Inject private CompositeSLOResetRecalculationService compositeSLOResetRecalculationService;
   @Inject
   private Map<ServiceLevelObjectiveType, AbstractServiceLevelObjectiveUpdatableEntity>
       serviceLevelObjectiveTypeUpdatableEntityTransformerMap;
+  @Inject private OutboxService outboxService;
+  @Inject private CompositeSLOService compositeSLOService;
+  @Inject private SideKickService sideKickService;
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -152,7 +160,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             identifier));
     AbstractServiceLevelObjective serviceLevelObjective =
         checkIfSLOPresent(projectParams, serviceLevelObjectiveDTO.getIdentifier());
-
+    ServiceLevelObjectiveV2DTO existingServiceLevelObjective =
+        sloEntityToSLOResponse(serviceLevelObjective).getServiceLevelObjectiveV2DTO();
     List<String> serviceLevelIndicators = Collections.emptyList();
     if (serviceLevelObjectiveDTO.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       validateSimpleSLO(serviceLevelObjectiveDTO, projectParams);
@@ -193,16 +202,27 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       AbstractServiceLevelObjective newCompositeServiceLevelObjective =
           serviceLevelObjectiveTypeSLOV2TransformerMap.get(ServiceLevelObjectiveType.COMPOSITE)
               .getSLOV2(projectParams, serviceLevelObjectiveDTO, true);
-      if (compositeServiceLevelObjective.shouldReset(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.reset(compositeServiceLevelObjective);
-      } else if (compositeServiceLevelObjective.shouldRecalculate(newCompositeServiceLevelObjective)) {
-        compositeSLOResetRecalculationService.recalculate(compositeServiceLevelObjective);
+      if (compositeSLOService.shouldReset(compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.reset(compositeServiceLevelObjective);
+      } else if (compositeSLOService.shouldRecalculate(
+                     compositeServiceLevelObjective, newCompositeServiceLevelObjective)) {
+        compositeSLOService.recalculate(compositeServiceLevelObjective);
       }
     }
     serviceLevelObjective =
         updateSLOV2Entity(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO, serviceLevelIndicators);
     sloHealthIndicatorService.upsert(serviceLevelObjective);
     sloErrorBudgetResetService.clearErrorBudgetResets(projectParams, identifier);
+
+    outboxService.save(ServiceLevelObjectiveUpdateEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .oldServiceLevelObjectiveDTO(existingServiceLevelObjective)
+                           .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return getSLOResponse(serviceLevelObjectiveDTO.getIdentifier(), projectParams);
   }
 
@@ -272,7 +292,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public boolean delete(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective serviceLevelObjectiveV2 = checkIfSLOPresent(projectParams, identifier);
-
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO =
+        sloEntityToSLOResponse(serviceLevelObjectiveV2).getServiceLevelObjectiveV2DTO();
     if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       List<String> referencedCompositeSLOIdentifiers =
           compositeSLOService.getReferencedCompositeSLOs(projectParams, identifier)
@@ -286,7 +307,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             projectParams.getProjectIdentifier(), referencedCompositeSLOIdentifiers.size() > 1 ? "s" : "",
             String.join(",", referencedCompositeSLOIdentifiers)));
       }
-
       serviceLevelIndicatorService.deleteByIdentifier(
           projectParams, ((SimpleServiceLevelObjective) serviceLevelObjectiveV2).getServiceLevelIndicators());
     }
@@ -297,6 +317,24 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .stream()
             .map(NotificationRuleRef::getNotificationRuleRef)
             .collect(Collectors.toList()));
+    if (serviceLevelObjectiveV2.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
+      String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+          serviceLevelObjectiveV2.getAccountId(), serviceLevelObjectiveV2.getUuid());
+      if (StringUtils.isNotBlank(verificationTaskId)) {
+        sideKickService.schedule(
+            VerificationTaskCleanupSideKickData.builder().verificationTaskId(verificationTaskId).build(),
+            clock.instant().plus(Duration.ofMinutes(15)));
+      }
+    }
+
+    outboxService.save(ServiceLevelObjectiveDeleteEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .oldServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return hPersistence.delete(serviceLevelObjectiveV2);
   }
 
@@ -406,21 +444,28 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Override
   public PageResponse<CVNGLogDTO> getCVNGLogs(
       ProjectParams projectParams, String identifier, SLILogsFilter sliLogsFilter, PageParams pageParams) {
-    SimpleServiceLevelObjective serviceLevelObjective =
-        (SimpleServiceLevelObjective) getEntity(projectParams, identifier);
+    AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (Objects.isNull(serviceLevelObjective)) {
       throw new NotFoundException("SLO with identifier " + identifier + " not found.");
     }
-    List<String> sliIds =
-        serviceLevelIndicatorService.getEntities(projectParams, serviceLevelObjective.getServiceLevelIndicators())
-            .stream()
-            .map(ServiceLevelIndicator::getUuid)
-            .collect(Collectors.toList());
-    List<String> verificationTaskIds =
-        verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
+    if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
+      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
+      List<String> sliIds = serviceLevelIndicatorService
+                                .getEntities(projectParams, simpleServiceLevelObjective.getServiceLevelIndicators())
+                                .stream()
+                                .map(ServiceLevelIndicator::getUuid)
+                                .collect(Collectors.toList());
+      List<String> verificationTaskIds =
+          verificationTaskService.getSLIVerificationTaskIds(projectParams.getAccountIdentifier(), sliIds);
 
-    return cvngLogService.getCVNGLogs(
-        projectParams.getAccountIdentifier(), verificationTaskIds, sliLogsFilter, pageParams);
+      return cvngLogService.getCVNGLogs(
+          projectParams.getAccountIdentifier(), verificationTaskIds, sliLogsFilter, pageParams);
+    } else {
+      String verificationTaskId = verificationTaskService.getCompositeSLOVerificationTaskId(
+          projectParams.getAccountIdentifier(), serviceLevelObjective.getUuid());
+      return cvngLogService.getCVNGLogs(projectParams.getAccountIdentifier(),
+          Collections.singletonList(verificationTaskId), sliLogsFilter, pageParams);
+    }
   }
 
   @Override
@@ -429,13 +474,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     List<String> simpleSLOIdentifiers = Collections.emptyList();
     List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList = Collections.emptyList();
     if (isNotEmpty(filter.getCompositeSLOIdentifier())) {
-      CompositeServiceLevelObjective compositeSLO =
-          (CompositeServiceLevelObjective) checkIfSLOPresent(projectParams, filter.getCompositeSLOIdentifier());
+      CompositeServiceLevelObjective compositeSLO = (CompositeServiceLevelObjective) checkIfSLOPresentWithType(
+          projectParams, filter.getCompositeSLOIdentifier(), ServiceLevelObjectiveType.COMPOSITE);
 
       simpleSLOIdentifiers = compositeSLO.getServiceLevelObjectivesDetails()
                                  .stream()
                                  .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveRef)
                                  .collect(Collectors.toList());
+      serviceLevelObjectivesDetailList = compositeSLO.getServiceLevelObjectivesDetails();
     }
     return getResponse(projectParams, pageParams.getPage(), pageParams.getSize(), serviceLevelObjectivesDetailList,
         Filter.builder()
@@ -587,6 +633,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         serviceLevelObjectiveTypeSLOV2TransformerMap.get(serviceLevelObjectiveDTO.getType())
             .getSLOV2(projectParams, serviceLevelObjectiveDTO, isEnabled);
     hPersistence.save(serviceLevelObjectiveV2);
+    outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
+                           .resourceName(serviceLevelObjectiveDTO.getName())
+                           .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
+                           .accountIdentifier(projectParams.getAccountIdentifier())
+                           .serviceLevelObjectiveIdentifier(serviceLevelObjectiveDTO.getIdentifier())
+                           .orgIdentifier(projectParams.getOrgIdentifier())
+                           .projectIdentifier(projectParams.getProjectIdentifier())
+                           .build());
     return serviceLevelObjectiveV2;
   }
 
@@ -595,7 +649,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                      .stream()
-                     .peek(this::checkIfSLOPresent)
+                     .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
                      .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
                      .sum();
 
@@ -606,22 +660,44 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
   }
 
-  private void checkIfSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO) {
+  private void checkIfValidSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO,
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(serviceLevelObjectiveDetailsDTO.getAccountId())
                                       .projectIdentifier(serviceLevelObjectiveDetailsDTO.getProjectIdentifier())
                                       .orgIdentifier(serviceLevelObjectiveDetailsDTO.getOrgIdentifier())
                                       .build();
-    checkIfSLOPresent(projectParams, serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef());
+    AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresentWithType(
+        projectParams, serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), ServiceLevelObjectiveType.SIMPLE);
+    if (!sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
+             .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
+             .equals(serviceLevelObjective.getSloTarget())) {
+      throw new InvalidRequestException(String.format(
+          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+          serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDetailsDTO.getAccountId(),
+          serviceLevelObjectiveDTO.getOrgIdentifier(), serviceLevelObjectiveDTO.getProjectIdentifier()));
+    }
   }
 
   private AbstractServiceLevelObjective checkIfSLOPresent(ProjectParams projectParams, String identifier) {
     AbstractServiceLevelObjective serviceLevelObjective = getEntity(projectParams, identifier);
     if (serviceLevelObjective == null) {
       throw new InvalidRequestException(String.format(
-          "[SLOV2 Not Found] SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
-          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present", identifier,
+          projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
+    }
+    return serviceLevelObjective;
+  }
+
+  private AbstractServiceLevelObjective checkIfSLOPresentWithType(
+      ProjectParams projectParams, String identifier, ServiceLevelObjectiveType type) {
+    AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresent(projectParams, identifier);
+    if (serviceLevelObjective.getType() != type) {
+      throw new InvalidRequestException(String.format(
+          "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not a %s SLO.",
+          identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier(), type));
     }
     return serviceLevelObjective;
   }
@@ -701,12 +777,8 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       serviceLevelObjectiveList =
           serviceLevelObjectiveList.stream()
               .filter(slo
-                  -> slo.getNotificationRuleRefs()
-                          .stream()
-                          .filter(notificationRuleRef
-                              -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .count()
-                      != 0)
+                  -> slo.getNotificationRuleRefs().stream().anyMatch(notificationRuleRef
+                      -> notificationRuleRef.getNotificationRuleRef().equals(filter.getNotificationRuleRef())))
               .collect(Collectors.toList());
     }
     if (isNotEmpty(filter.getErrorBudgetRisks())) {
@@ -742,12 +814,24 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   private List<AbstractServiceLevelObjective> getSLOsAssociatedWithCompositeSLO(
       List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
       List<AbstractServiceLevelObjective> serviceLevelObjectiveList) {
-    Map<SimpleSLODetails, AbstractServiceLevelObjective> simpleSLODetailsToAbstractServiceLevelObjectiveMap =
-        serviceLevelObjectiveList.stream().collect(
-            Collectors.toMap(slo -> SimpleSLODetails.getSimpleSLODetailsBuilder(slo).build(), slo -> slo));
-    return serviceLevelObjectivesDetailList.stream()
-        .filter(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.containsKey(sloDetail))
-        .map(sloDetail -> simpleSLODetailsToAbstractServiceLevelObjectiveMap.get(sloDetail))
+    Map<ServiceLevelObjectiveDetailsRefDTO, AbstractServiceLevelObjective>
+        sloDetailsToAbstractServiceLevelObjectiveMap = serviceLevelObjectiveList.stream().collect(Collectors.toMap(slo
+            -> ServiceLevelObjectiveDetailsRefDTO.builder()
+                   .accountId(slo.getAccountId())
+                   .orgIdentifier(slo.getOrgIdentifier())
+                   .projectIdentifier(slo.getProjectIdentifier())
+                   .serviceLevelObjectiveRef(slo.getIdentifier())
+                   .build(),
+            slo -> slo));
+
+    List<ServiceLevelObjectiveDetailsRefDTO> sloDetailsList =
+        serviceLevelObjectivesDetailList.stream()
+            .map(ServiceLevelObjectivesDetail::getServiceLevelObjectiveDetailsRefDTO)
+            .collect(Collectors.toList());
+
+    return sloDetailsList.stream()
+        .filter(sloDetailsToAbstractServiceLevelObjectiveMap::containsKey)
+        .map(sloDetailsToAbstractServiceLevelObjectiveMap::get)
         .collect(Collectors.toList());
   }
 

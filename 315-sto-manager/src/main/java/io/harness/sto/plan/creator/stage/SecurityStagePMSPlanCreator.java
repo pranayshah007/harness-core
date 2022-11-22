@@ -45,7 +45,6 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
@@ -247,19 +246,17 @@ public class SecurityStagePMSPlanCreator extends AbstractStagePlanCreator<Securi
   }
 
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, SecurityStageNode stageNode) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-
     CodeBase codeBase = getCICodebase(ctx);
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
       return null;
     }
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
+    ExecutionTriggerInfo triggerInfo = ctx.getTriggerInfo();
+    TriggerPayload triggerPayload = ctx.getTriggerPayload();
 
     return IntegrationStageUtils.buildExecutionSource(triggerInfo, triggerPayload, stageNode.getIdentifier(),
-        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, planCreationContextValue, codeBase);
+        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(

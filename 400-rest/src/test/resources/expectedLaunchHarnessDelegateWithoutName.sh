@@ -14,6 +14,9 @@ sudo docker run -d --restart unless-stopped --hostname="$(hostname -f | head -c 
 -e WATCHER_CHECK_LOCATION=watcherci.txt \
 -e DELEGATE_STORAGE_URL=http://localhost:8888 \
 -e DELEGATE_CHECK_LOCATION=delegateci.txt \
+-e HELM_DESIRED_VERSION= \
+-e CF_PLUGIN_HOME= \
+-e JRE_VERSION=11.0.14 \
 -e DELEGATE_NAME= \
 -e DELEGATE_PROFILE=QFWin33JRlKWKBzpzE5A9A \
 -e DELEGATE_TYPE=DOCKER \
@@ -26,7 +29,4 @@ sudo docker run -d --restart unless-stopped --hostname="$(hostname -f | head -c 
 -e NO_PROXY= \
 -e PROXY_MANAGER=true \
 -e POLL_FOR_TASKS=false \
--e HELM_DESIRED_VERSION= \
--e CF_PLUGIN_HOME= \
--e JRE_VERSION=11.0.14 \
 harness/delegate:latest

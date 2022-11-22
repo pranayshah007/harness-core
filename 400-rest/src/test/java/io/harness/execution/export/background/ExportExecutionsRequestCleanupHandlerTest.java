@@ -27,6 +27,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,7 +49,11 @@ public class ExportExecutionsRequestCleanupHandlerTest extends WingsBaseTest {
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void testRegisterIterators() {
-    exportExecutionsRequestCleanupHandler.registerIterators();
+    exportExecutionsRequestCleanupHandler.createAndStartIterator(PumpExecutorOptions.builder()
+                                                                     .name("ExportExecutionsRequestCleanupHandler")
+                                                                     .interval(Duration.ofHours(1))
+                                                                     .build(),
+        Duration.ofMinutes(45));
     verify(mockPersistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(PumpExecutorOptions.class),
             eq(ExportExecutionsRequestCleanupHandler.class), any(MongoPersistenceIteratorBuilder.class));

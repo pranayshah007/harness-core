@@ -10,6 +10,7 @@ package io.harness.cvng.core.resources;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -46,6 +47,15 @@ public class DebugResource {
   public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getSLODebugResponse(projectParams, identifier));
+  }
+
+  @GET
+  @Timed
+  @Path("composite-slo/{identifier}")
+  @ApiOperation(value = "Gets Composite SLO debug data", nickname = "getCompositeSLODebugData")
+  public RestResponse<CompositeSLODebugResponse> getCompositeSLODebug(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
+    return new RestResponse<>(debugService.getCompositeSLODebugResponse(projectParams, identifier));
   }
 
   @GET

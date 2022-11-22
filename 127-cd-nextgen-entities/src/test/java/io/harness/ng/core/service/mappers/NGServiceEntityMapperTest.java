@@ -52,7 +52,7 @@ public class NGServiceEntityMapperTest {
   public void testToNGServiceConfigWithServiceDefinition() {
     String yaml = "service:\n"
         + "  name: \"sample-service\"\n"
-        + "  identifier: \"sample-service-id\"\n"
+        + "  identifier: \"serviceId\"\n"
         + "  orgIdentifier: \"orgId\"\n"
         + "  projectIdentifier: \"projectId\"\n"
         + "  description: \"desc of service\"\n"
@@ -101,6 +101,33 @@ public class NGServiceEntityMapperTest {
                                .description("sample service")
                                .tags(Arrays.asList(NGTag.builder().key("k1").value("v1").build()))
                                .yaml(invalidYaml)
+                               .build();
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> NGServiceEntityMapper.toNGServiceConfig(entity));
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testToNGServiceConfigIdentifierConflict() {
+    String yaml = "service:\n"
+        + "  name: \"sample-service\"\n"
+        + "  identifier: \"sample-service-id\"\n"
+        + "  orgIdentifier: \"orgId\"\n"
+        + "  projectIdentifier: \"projectId\"\n"
+        + "  description: \"desc of service\"\n"
+        + "  serviceDefinition:\n"
+        + "    type: \"Kubernetes\"\n"
+        + "    spec:\n"
+        + "        variables: []\n";
+    ServiceEntity entity = ServiceEntity.builder()
+                               .name("se")
+                               .identifier("different-service-id")
+                               .orgIdentifier("orgId")
+                               .projectIdentifier("projectId")
+                               .description("sample service")
+                               .tags(Arrays.asList(NGTag.builder().key("k1").value("v1").build()))
+                               .yaml(yaml)
                                .build();
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> NGServiceEntityMapper.toNGServiceConfig(entity));

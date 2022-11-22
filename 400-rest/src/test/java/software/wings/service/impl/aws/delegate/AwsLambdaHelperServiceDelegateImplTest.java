@@ -261,7 +261,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-            .serverSetting(awsSetting)
+            .serverSetting(awsSetting.toDTO())
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -310,7 +310,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-            .serverSetting(awsSetting)
+            .serverSetting(awsSetting.toDTO())
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -369,7 +369,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-            .serverSetting(awsSetting)
+            .serverSetting(awsSetting.toDTO())
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 
@@ -426,7 +426,7 @@ public class AwsLambdaHelperServiceDelegateImplTest extends CategoryTest {
             .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
             .metadataOnly(true)
             .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-            .serverSetting(awsSetting)
+            .serverSetting(awsSetting.toDTO())
             .artifactServerEncryptedDataDetails(Collections.emptyList())
             .build();
 

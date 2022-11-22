@@ -17,6 +17,8 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionStatus;
 import io.harness.exception.InvalidRequestException;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -43,7 +45,13 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class ApprovalPollingHandler implements Handler<ApprovalPollingJobEntity> {
+public class ApprovalPollingHandler extends IteratorPumpModeHandler implements Handler<ApprovalPollingJobEntity> {
+  /*
+   * TARGET_INTERVAL and PUMP_INTERVAL are not being used to start the executor
+   * service for the iterator as its being configured from K8s configMap. Any
+   * other place where the below 2 Macros are being used also need to refer to
+   * the K8s configMap.
+   */
   public static final Duration TARGET_INTERVAL = ofMinutes(1);
   public static final Duration PUMP_INTERVAL = ofSeconds(10);
   @Inject private AccountService accountService;
@@ -55,20 +63,30 @@ public class ApprovalPollingHandler implements Handler<ApprovalPollingJobEntity>
   @Inject private ApprovalPolingService approvalPolingService;
   @Inject private MorphiaPersistenceProvider<ApprovalPollingJobEntity> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder().name("ApprovalPolling").poolSize(5).interval(PUMP_INTERVAL).build(),
-        ApprovalPollingHandler.class,
-        MongoPersistenceIterator.<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>builder()
-            .clazz(ApprovalPollingJobEntity.class)
-            .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
-            .targetInterval(TARGET_INTERVAL)
-            .acceptableNoAlertDelay(ofMinutes(1))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       ApprovalPollingHandler.class,
+                       MongoPersistenceIterator
+                           .<ApprovalPollingJobEntity, MorphiaFilterExpander<ApprovalPollingJobEntity>>builder()
+                           .clazz(ApprovalPollingJobEntity.class)
+                           .fieldName(ApprovalPollingJobEntityKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(1))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "ApprovalPolling";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

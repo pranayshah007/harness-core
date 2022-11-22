@@ -7,6 +7,9 @@
 
 package io.harness.connector.task.azure;
 
+import static io.harness.azure.model.AzureConstants.DEFAULT_CERT_FILE_NAME;
+import static io.harness.filesystem.FileIo.writeFile;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -28,10 +31,12 @@ import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAuthDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
 import java.util.List;
 
 @OwnedBy(HarnessTeam.CI)
@@ -39,13 +44,13 @@ import java.util.List;
 public class AzureNgConfigMapper {
   @Inject private DecryptionHelper decryptionHelper;
 
-  public AzureConfig mapAzureConfigWithDecryption(
-      AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptionDetails) {
+  public AzureConfig mapAzureConfigWithDecryption(AzureConnectorDTO azureConnectorDTO,
+      List<EncryptedDataDetail> encryptionDetails, LazyAutoCloseableWorkingDirectory authWorkingDir)
+      throws IOException {
     AzureCredentialDTO credential = azureConnectorDTO.getCredential();
     AzureCredentialType credentialType = credential.getAzureCredentialType();
     AzureEnvironmentType azureEnvironmentType = azureConnectorDTO.getAzureEnvironmentType();
     AzureConfig azureConfig = AzureConfig.builder().azureEnvironmentType(azureEnvironmentType).build();
-
     boolean executeOnDelegate = azureConnectorDTO.getExecuteOnDelegate();
 
     if (!executeOnDelegate && credentialType == AzureCredentialType.INHERIT_FROM_DELEGATE) {
@@ -69,7 +74,12 @@ public class AzureNgConfigMapper {
         case KEY_CERT:
           azureConfig.setAzureAuthenticationType(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT);
           AzureClientKeyCertDTO cert = (AzureClientKeyCertDTO) azureAuthCredentialDTO;
-          azureConfig.setCert(String.valueOf(cert.getClientCertRef().getDecryptedValue()).getBytes());
+          byte[] certInBytes = String.valueOf(cert.getClientCertRef().getDecryptedValue()).getBytes();
+          String certFilePath = format(
+              "%s%s.pem", authWorkingDir.createDirectory().workingDir().getAbsolutePath(), DEFAULT_CERT_FILE_NAME);
+          writeFile(certFilePath, certInBytes);
+          azureConfig.setCertFilePath(certFilePath);
+          azureConfig.setCert(certInBytes);
           break;
         default:
           throw new IllegalStateException("Unexpected secret type : " + config.getAuthDTO().getAzureSecretType());

@@ -976,8 +976,7 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .serviceInfra(serviceInfraSummary)
                                      .onDemandRollbackAvailable(false)
                                      .build();
-      } else if (stateEI != null) {
-        // if is true, there is a rollback failed
+      } else if (stateEI != null && ExecutionStatus.SUCCESS.equals(stateEI.getStatus())) {
         boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE, false);
         Artifact artifactRollback = lastWE.getArtifacts().get(0);
         artifactSummary = getArtifactSummary(artifactRollback.getDisplayName(), artifactRollback.getUuid(),

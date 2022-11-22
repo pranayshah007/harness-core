@@ -18,6 +18,7 @@ import io.harness.beans.terraform.TerraformPlanParam;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
 import io.harness.exception.FunctorException;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
 import software.wings.service.intfc.FileService;

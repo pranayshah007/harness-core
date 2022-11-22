@@ -26,6 +26,7 @@ public enum NGMigrationEntityType {
   INFRA,
   SECRET_MANAGER,
   SERVICE_VARIABLE,
+  USER_GROUP,
   MANIFEST;
 
   private String yamlFolderName;

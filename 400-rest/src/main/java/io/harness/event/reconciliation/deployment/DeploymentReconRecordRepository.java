@@ -7,22 +7,35 @@
 
 package io.harness.event.reconciliation.deployment;
 
+import static software.wings.app.ManagerCacheRegistrar.DEPLOYMENT_RECONCILIATION_CACHE;
+
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord.DeploymentReconRecordKeys;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import javax.cache.Cache;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Sort;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @Slf4j
 public class DeploymentReconRecordRepository {
   @Inject HPersistence persistence;
+  @Inject
+  @Named(DEPLOYMENT_RECONCILIATION_CACHE)
+  private Cache<String, DeploymentReconRecord> deploymentReconRecordCache;
 
   public DeploymentReconRecord getLatestDeploymentReconRecord(@NotNull String accountId, String entityClass) {
+    DeploymentReconRecord deploymentReconRecord =
+        deploymentReconRecordCache.get(String.join("$$", accountId, entityClass));
+    if (deploymentReconRecord != null) {
+      return deploymentReconRecord;
+    }
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecordKeys.accountId)
@@ -34,7 +47,26 @@ public class DeploymentReconRecordRepository {
       if (!iterator.hasNext()) {
         return null;
       }
-      return iterator.next();
+      deploymentReconRecord = iterator.next();
+      deploymentReconRecordCache.put(
+          String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
+          deploymentReconRecord);
+      return deploymentReconRecord;
     }
+  }
+
+  public String saveDeploymentReconRecord(@NotNull DeploymentReconRecord deploymentReconRecord) {
+    deploymentReconRecordCache.put(
+        String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
+        deploymentReconRecord);
+    return persistence.save(deploymentReconRecord);
+  }
+
+  public void updateDeploymentReconRecord(
+      @NotNull DeploymentReconRecord deploymentReconRecord, UpdateOperations updateOperations) {
+    deploymentReconRecordCache.put(
+        String.join("$$", deploymentReconRecord.getAccountId(), deploymentReconRecord.getEntityClass()),
+        deploymentReconRecord);
+    persistence.update(deploymentReconRecord, updateOperations);
   }
 }

@@ -85,14 +85,15 @@ public class DefaultLicenseServiceImpl implements LicenseService {
   private final ModuleLicenseRepository moduleLicenseRepository;
   private final LicenseObjectConverter licenseObjectConverter;
   private final ModuleLicenseInterface licenseInterface;
-  private final AccountService accountService;
   private final TelemetryReporter telemetryReporter;
   private final CeLicenseClient ceLicenseClient;
   private final LicenseComplianceResolver licenseComplianceResolver;
   private final Cache<String, List> cache;
-  private final LicenseGenerator licenseGenerator;
-  private final LicenseValidator licenseValidator;
-  private final SMPLicenseMapper smpLicenseMapper;
+  protected final LicenseGenerator licenseGenerator;
+  protected final LicenseValidator licenseValidator;
+  protected final SMPLicenseMapper smpLicenseMapper;
+
+  protected final AccountService accountService;
 
   static final String FAILED_OPERATION = "START_TRIAL_ATTEMPT_FAILED";
   static final String SUCCEED_START_FREE_OPERATION = "FREE_PLAN";
@@ -466,8 +467,15 @@ public class DefaultLicenseServiceImpl implements LicenseService {
 
   @Override
   public SMPEncLicenseDTO generateSMPLicense(String accountId, SMPLicenseRequestDTO licenseRequest) {
+    SMPLicense smpLicense = createSmpLicense(accountId);
+    String license = licenseGenerator.generateLicense(smpLicense);
+    return SMPEncLicenseDTO.builder().encryptedLicense(license).build();
+  }
+
+  protected SMPLicense createSmpLicense(String accountId) {
     AccountLicenseDTO accountLicenseDTO = getAccountLicense(accountId);
     AccountDTO accountDTO = accountService.getAccount(accountId);
+
     if (Objects.isNull(accountLicenseDTO) || Objects.isNull(accountLicenseDTO.getAllModuleLicenses())
         || accountLicenseDTO.getAllModuleLicenses().isEmpty() || Objects.isNull(accountDTO)) {
       throw new InvalidRequestException("There might be no account or module license present in db");
@@ -489,10 +497,13 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     licenseMeta.setIssueDate(new Date());
     licenseMeta.setLicenseVersion(0);
     licenseMeta.setLibraryVersion(LibraryVersion.V1);
-    licenseMeta.setAccountOptional(licenseRequest.isAccountOptional());
-    SMPLicense smpLicense = SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicenseDTOS).build();
-    String license = licenseGenerator.generateLicense(smpLicense);
-    return SMPEncLicenseDTO.builder().encryptedLicense(license).build();
+    licenseMeta.setAccountOptional(true);
+    return SMPLicense.builder().licenseMeta(licenseMeta).moduleLicenses(moduleLicenseDTOS).build();
+  }
+
+  @Override
+  public void applySMPLicense(SMPEncLicenseDTO encLicenseDTO) {
+    throw new UnsupportedOperationException("API only available on Self Managed Platform");
   }
 
   private EditionActionDTO toEditionActionDTO(EditionAction editionAction) {

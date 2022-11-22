@@ -42,6 +42,9 @@ public class FQNMapGenerator {
     yamlMap.fieldNames().forEachRemaining(fieldNames::add);
     String topKey = fieldNames.iterator().next();
 
+    if (keepUuidFields && topKey.equals(UUID_FIELD_NAME) && fieldNames.size() > 1) {
+      topKey = fieldNames.stream().filter(o -> !o.equals(UUID_FIELD_NAME)).findAny().get();
+    }
     FQNNode startNode = FQNNode.builder().nodeType(FQNNode.NodeType.KEY).key(topKey).build();
     FQN currentFQN = FQN.builder().fqnList(Collections.singletonList(startNode)).build();
 

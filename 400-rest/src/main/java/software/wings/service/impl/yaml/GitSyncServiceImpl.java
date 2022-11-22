@@ -74,7 +74,7 @@ import software.wings.yaml.gitSync.GitFileActivity.TriggeredBy;
 import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -443,32 +443,32 @@ public class GitSyncServiceImpl implements GitSyncService {
 
   @Override
   public boolean deleteGitCommits(List<String> gitFileActivitySummaryIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivitySummary.class)
-                                       .filter(GitFileActivitySummaryKeys.accountId, accountId)
-                                       .field(GitFileActivitySummaryKeys.uuid)
-                                       .in(gitFileActivitySummaryIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.uuid)
+                                               .in(gitFileActivitySummaryIds));
   }
 
   public boolean deleteGitCommitsBeforeTime(long expiryTime, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivitySummary.class)
-                                       .filter(GitFileActivitySummaryKeys.accountId, accountId)
-                                       .field(GitFileActivitySummaryKeys.createdAt)
-                                       .lessThan(expiryTime));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.createdAt)
+                                               .lessThan(expiryTime));
   }
 
   @Override
   public boolean deleteGitActivity(List<String> gitFileActivityIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivity.class)
-                                       .filter(GitFileActivityKeys.accountId, accountId)
-                                       .field(GitFileActivityKeys.uuid)
-                                       .in(gitFileActivityIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.uuid)
+                                               .in(gitFileActivityIds));
   }
   @Override
   public boolean deleteGitActivityBeforeTime(long time, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivity.class)
-                                       .filter(GitFileActivityKeys.accountId, accountId)
-                                       .field(GitFileActivityKeys.createdAt)
-                                       .lessThan(time));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.createdAt)
+                                               .lessThan(time));
   }
 
   private void populateConnectorNameInGitFileActivitySummaries(
@@ -586,7 +586,7 @@ public class GitSyncServiceImpl implements GitSyncService {
   }
 
   private GitFileActivityBuilder buildBaseGitFileActivity(GitFileChange change, String commitId, String commitMessage) {
-    YamlGitConfig gitConfig = change.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig gitConfig = change.getYamlGitConfig();
     String commitIdToPersist = StringUtils.isEmpty(commitId) ? change.getCommitId() : commitId;
     String processingCommitIdToPersist = StringUtils.isEmpty(commitId) ? change.getProcessingCommitId() : commitId;
     String commitMessageToPersist = StringUtils.isEmpty(commitMessage) ? change.getCommitMessage() : commitMessage;

@@ -334,7 +334,9 @@ public class ApiKeyServiceImpl implements ApiKeyService {
         apiKeyEntry = apiKeyCache.get(getKeyForAPIKeyCache(accountId, apiKey));
         if (apiKeyEntry == null) {
           apiKeyEntry = getByKeyFromDB(apiKey, accountId);
-          notNullCheck("Api-key does not exist", apiKeyEntry, USER);
+          if (apiKeyEntry == null) {
+            return null;
+          }
           apiKeyCache.put(getKeyForAPIKeyCache(accountId, apiKeyEntry.getDecryptedKey()), apiKeyEntry);
         }
       } catch (Exception ex) {

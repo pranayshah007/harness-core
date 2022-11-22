@@ -261,7 +261,7 @@ public class UserResourceNG {
   @GET
   @Path("email/{emailId}")
   public RestResponse<Optional<UserInfo>> getUserByEmailId(@PathParam("emailId") String emailId) {
-    User user = userService.getUserByEmail(emailId);
+    User user = userService.getUserByEmail(emailId, false);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
   }
 

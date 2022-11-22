@@ -139,14 +139,19 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   }
 
   @Override
-  public PageResponse<NotificationRuleResponse> get(ProjectParams projectParams, Integer pageNumber, Integer pageSize) {
+  public PageResponse<NotificationRuleResponse> get(
+      ProjectParams projectParams, List<String> notificationRuleIdentifiers, Integer pageNumber, Integer pageSize) {
     Query<NotificationRule> notificationRuleQuery =
         hPersistence.createQuery(NotificationRule.class)
             .disableValidation()
             .filter(NotificationRuleKeys.accountId, projectParams.getAccountIdentifier())
             .filter(NotificationRuleKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(NotificationRuleKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .order(Sort.descending(NotificationRuleKeys.lastUpdatedAt));
+            .filter(NotificationRuleKeys.projectIdentifier, projectParams.getProjectIdentifier());
+    if (isNotEmpty(notificationRuleIdentifiers)) {
+      notificationRuleQuery =
+          notificationRuleQuery.field(NotificationRuleKeys.identifier).in(notificationRuleIdentifiers);
+    }
+    notificationRuleQuery = notificationRuleQuery.order(Sort.descending(NotificationRuleKeys.lastUpdatedAt));
     List<NotificationRule> notificationRuleList = notificationRuleQuery.asList();
 
     PageResponse<NotificationRule> notificationRuleEntitiesPageResponse =

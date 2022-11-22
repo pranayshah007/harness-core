@@ -33,11 +33,12 @@ public class DebeziumConfigurationTest extends CategoryTest {
   public void testGetDebeziumProperties() {
     DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false",
         "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "rs0/host1", "shop", "", "", "false",
-        "products", "", "2000", 1000, "initial", "document");
+        "products", "", "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "");
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
     expectedProps.setProperty(DebeziumConfiguration.SNAPSHOT_MODE, "initial");
+    expectedProps.setProperty("topic.prefix", debeziumConfig.getMongodbName());
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_NAME, debeziumConfig.getConnectorName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisConfig));
@@ -47,11 +48,15 @@ public class DebeziumConfigurationTest extends CategoryTest {
         DebeziumConfiguration.VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
     expectedProps.setProperty(
         DebeziumConfiguration.OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
+    expectedProps.setProperty(DebeziumConfiguration.HEARTBEAT_INTERVAL_MS, debeziumConfig.getHeartbeatIntervalMs());
 
     /* begin connector properties */
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_CLASS, DebeziumConfiguration.MONGO_DB_CONNECTOR);
     expectedProps.setProperty(DebeziumConfiguration.MONGODB_HOSTS, debeziumConfig.getMongodbHosts());
     expectedProps.setProperty(DebeziumConfiguration.MONGODB_NAME, debeziumConfig.getMongodbName());
+    Optional.ofNullable(debeziumConfig.getFieldExcludeList())
+        .filter(x -> !x.isEmpty())
+        .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.FIELD_EXCLUDE_LIST, x));
     Optional.ofNullable(debeziumConfig.getMongodbUser())
         .filter(x -> !x.isEmpty())
         .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.MONGODB_USER, x));
@@ -71,6 +76,10 @@ public class DebeziumConfigurationTest extends CategoryTest {
     expectedProps.setProperty(
         DebeziumConfiguration.CONNECT_BACKOFF_INITIAL_DELAY_MS, debeziumConfig.getConnectBackoffInitialDelayMillis());
     expectedProps.setProperty(DebeziumConfiguration.SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
+    expectedProps.setProperty(DebeziumConfiguration.POLL_INTERVAL_MS, "1000");
+    expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE_IN_BYTES, "1000");
+    expectedProps.setProperty(DebeziumConfiguration.MAX_QUEUE_SIZE, "4");
+    expectedProps.setProperty(DebeziumConfiguration.MAX_BATCH_SIZE, "1");
     assertEquals(expectedProps, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig));
     expectedProps.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
         DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-"

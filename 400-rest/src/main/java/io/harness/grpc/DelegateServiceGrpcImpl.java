@@ -38,6 +38,8 @@ import io.harness.delegate.SendTaskStatusRequest;
 import io.harness.delegate.SendTaskStatusResponse;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
+import io.harness.delegate.SupportedTaskTypeRequest;
+import io.harness.delegate.SupportedTaskTypeResponse;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
@@ -117,6 +119,23 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   @Override
+  public void isTaskTypeSupported(
+      SupportedTaskTypeRequest request, StreamObserver<SupportedTaskTypeResponse> responseObserver) {
+    try {
+      String accountId = request.getAccountId();
+      String taskType = request.getTaskType();
+
+      boolean isSupported = delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, taskType);
+
+      responseObserver.onNext(SupportedTaskTypeResponse.newBuilder().setIsTaskTypeSupported(isSupported).build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      log.error("Exception occurred during finding supported task type.", ex);
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
+  }
+
+  @Override
   public void submitTask(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
       String taskId = generateUuid();
@@ -183,7 +202,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
     } catch (Exception ex) {
       if (ex instanceof NoDelegatesException) {
-        log.error("No delegate exception found while processing submit task request. reason {}",
+        log.warn("No delegate exception found while processing submit task request. reason {}",
             ExceptionUtils.getMessage(ex));
       } else {
         log.error("Unexpected error occurred while processing submit task request.", ex);
@@ -246,7 +265,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
         delegateTaskServiceClassic.processDelegateTaskV2(task, DelegateTask.Status.PARKED);
       } else {
         if (task.getTaskDataV2().isAsync()) {
-          delegateService.queueTask(task);
+          delegateService.queueTaskV2(task);
         } else {
           delegateService.scheduleSyncTaskV2(task);
         }
@@ -260,7 +279,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
     } catch (Exception ex) {
       if (ex instanceof NoDelegatesException) {
-        log.error("No delegate exception found while processing submit task request. reason {}",
+        log.warn("No delegate exception found while processing submit task request. reason {}",
             ExceptionUtils.getMessage(ex));
       } else {
         log.error("Unexpected error occurred while processing submit task request.", ex);

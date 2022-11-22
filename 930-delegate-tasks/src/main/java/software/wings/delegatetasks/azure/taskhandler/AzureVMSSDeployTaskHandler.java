@@ -36,13 +36,13 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.monitor.models.ScaleCapacity;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.PublicIpAddressDnsSettings;
+import com.azure.resourcemanager.network.models.VirtualMachineScaleSetNetworkInterface;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.monitor.ScaleCapacity;
-import com.microsoft.azure.management.network.PublicIPAddressDnsSettings;
-import com.microsoft.azure.management.network.VirtualMachineScaleSetNetworkInterface;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -256,7 +256,7 @@ public class AzureVMSSDeployTaskHandler extends AzureVMSSTaskHandler {
   }
 
   private AzureVMInstanceData generateVMInstanceData(VirtualMachineScaleSetVM scaleSetVM) {
-    String vmId = scaleSetVM.inner().vmId();
+    String vmId = scaleSetVM.innerModel().vmId();
     String vmName = scaleSetVM.name();
     String privateIP = EMPTY;
     String publicDnsName = EMPTY;
@@ -268,10 +268,10 @@ public class AzureVMSSDeployTaskHandler extends AzureVMSSTaskHandler {
           vmScaleSetNetworkInterfaces.get(0);
       privateIP = virtualMachineScaleSetNetworkInterface.primaryPrivateIP();
 
-      PublicIPAddressInner publicIPAddressInner =
-          virtualMachineScaleSetNetworkInterface.primaryIPConfiguration().inner().publicIPAddress();
+      PublicIpAddressInner publicIPAddressInner =
+          virtualMachineScaleSetNetworkInterface.primaryIPConfiguration().innerModel().publicIpAddress();
       if (publicIPAddressInner != null) {
-        PublicIPAddressDnsSettings publicIPAddressDnsSettings = publicIPAddressInner.dnsSettings();
+        PublicIpAddressDnsSettings publicIPAddressDnsSettings = publicIPAddressInner.dnsSettings();
         publicDnsName = publicIPAddressDnsSettings != null ? publicIPAddressDnsSettings.fqdn() : EMPTY;
       }
     }

@@ -38,6 +38,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.CE_VIEW
 import static software.wings.security.PermissionAttribute.PermissionType.CREATE_CUSTOM_DASHBOARDS;
 import static software.wings.security.PermissionAttribute.PermissionType.DEPLOYMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ENV;
+import static software.wings.security.PermissionAttribute.PermissionType.HIDE_NEXTGEN_BUTTON;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_ALERT_NOTIFICATION_RULES;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_API_KEYS;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
@@ -228,6 +229,8 @@ public class UserGroupPermissionsController {
         return MANAGE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return MANAGE_RESTRICTED_ACCESS;
+      case HIDE_NEXTGEN_BUTTON:
+        return HIDE_NEXTGEN_BUTTON;
 
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
@@ -616,6 +619,8 @@ public class UserGroupPermissionsController {
         return QLAccountPermissionType.CREATE_CUSTOM_DASHBOARDS;
       case MANAGE_RESTRICTED_ACCESS:
         return QLAccountPermissionType.MANAGE_RESTRICTED_ACCESS;
+      case HIDE_NEXTGEN_BUTTON:
+        return QLAccountPermissionType.HIDE_NEXTGEN_BUTTON;
       default:
         log.error("Invalid Account Permission Type {} given by the user", permissionType.toString());
     }

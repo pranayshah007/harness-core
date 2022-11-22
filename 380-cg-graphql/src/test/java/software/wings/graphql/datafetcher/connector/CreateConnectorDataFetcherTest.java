@@ -152,6 +152,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                     .passwordSecretId(RequestField.ofNullable(PASSWORD))
                     .delegateSelectors(RequestField.ofNull())
                     .disableUserGitConfig(RequestField.ofNull())
+                    .providerType(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());
@@ -201,6 +202,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                     .usageScope(RequestField.ofNullable(QLUsageScope.builder().build()))
                     .delegateSelectors(RequestField.ofNull())
                     .disableUserGitConfig(RequestField.ofNull())
+                    .providerType(RequestField.ofNull())
                     .build())
             .build(),
         MutationContext.builder().accountId(ACCOUNT_ID).build());

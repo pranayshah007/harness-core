@@ -33,8 +33,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.implementation.SiteInstanceInner;
+import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -164,13 +164,13 @@ public class AzureAppServiceServiceTest extends CategoryTest {
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     doReturn(DEPLOYMENT_SLOT_ID).when(deploymentSlot).id();
     doReturn(APP_SERVICE_PLAN_ID).when(deploymentSlot).appServicePlanId();
-    doReturn(DEFAULT_HOST_NAME).when(deploymentSlot).defaultHostName();
+    doReturn(DEFAULT_HOST_NAME).when(deploymentSlot).defaultHostname();
 
     doReturn(Optional.of(deploymentSlot))
         .when(mockAzureWebClient)
         .getDeploymentSlotByName(azureWebClientContext, SLOT_NAME);
 
-    SiteInstanceInner siteInstanceInner = mock(SiteInstanceInner.class);
+    WebSiteInstanceStatusInner siteInstanceInner = mock(WebSiteInstanceStatusInner.class);
     doReturn("id").when(siteInstanceInner).id();
     doReturn("name").when(siteInstanceInner).name();
     doReturn("type").when(siteInstanceInner).type();

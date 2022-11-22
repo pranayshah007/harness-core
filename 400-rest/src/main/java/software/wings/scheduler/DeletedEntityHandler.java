@@ -11,10 +11,11 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 
 import static software.wings.utils.TimeUtils.isWeekend;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -27,32 +28,39 @@ import software.wings.beans.DeletedEntity.DeletedEntityType;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class DeletedEntityHandler implements Handler<DeletedEntity> {
+public class DeletedEntityHandler extends IteratorPumpModeHandler implements Handler<DeletedEntity> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<DeletedEntity> persistenceProvider;
   @Inject private DeleteAccountHelper deleteAccountHelper;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("DeletedEntityIterator")
-            .poolSize(2)
-            .interval(ofMinutes(1))
-            .build(),
-        DeletedEntityHandler.class,
-        MongoPersistenceIterator.<DeletedEntity, MorphiaFilterExpander<DeletedEntity>>builder()
-            .clazz(DeletedEntity.class)
-            .fieldName(DeletedEntityKeys.nextIteration)
-            .targetInterval(ofHours(12))
-            .acceptableNoAlertDelay(ofMinutes(Integer.MAX_VALUE))
-            .acceptableExecutionTime(ofSeconds(120))
-            .persistenceProvider(persistenceProvider)
-            .handler(this)
-            .schedulingType(REGULAR)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<DeletedEntity, MorphiaFilterExpander<DeletedEntity>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       DeletedEntityHandler.class,
+                       MongoPersistenceIterator.<DeletedEntity, MorphiaFilterExpander<DeletedEntity>>builder()
+                           .clazz(DeletedEntity.class)
+                           .fieldName(DeletedEntityKeys.nextIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(Integer.MAX_VALUE))
+                           .acceptableExecutionTime(ofSeconds(120))
+                           .persistenceProvider(persistenceProvider)
+                           .handler(this)
+                           .schedulingType(REGULAR)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DeletedEntityIterator";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

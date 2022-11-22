@@ -14,8 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.creator.plan.stage.CDStageMetaDataDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 
@@ -48,7 +49,10 @@ public class DeploymentStageConfigResourceTest extends CategoryTest {
   public static Collection<Object[]> data() {
     return asList(new Object[][] {{"deploymentstage/cdStageWithSvcEnvV1.yaml", "service1a", "environment1a"},
         {"deploymentstage/cdParallelStagesWithInheritedService.yaml", "S1", "EnvFromStage2"},
-        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"}});
+        {"deploymentstage/cdStageWithSvcEnvV2.yaml", "S2", "Env2"},
+        {"deploymentstage/cdStageWithSvcEnvV1WithRuntime.yaml", "<+input>", "environment1a"},
+        {"deploymentstage/cdParallelStagesWithInheritedServiceWithRuntime.yaml", "<+input>", "<+variable>"},
+        {"deploymentstage/cdStageWithSvcEnvV2WithRuntime.yaml", "<+variable>", "Env2"}});
   }
 
   @Test

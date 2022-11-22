@@ -10,14 +10,14 @@ package software.wings.signup;
 import static io.harness.annotations.dev.HarnessModule._950_NG_SIGNUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.AMAN;
+import static io.harness.rule.OwnerRule.KAPIL_GARG;
 
 import static software.wings.beans.UserInvite.UserInviteBuilder.anUserInvite;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -31,12 +31,16 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.app.MainConfiguration;
+import software.wings.beans.Account;
+import software.wings.beans.User;
 import software.wings.beans.UserInvite;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SignupService;
 import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +48,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mongodb.morphia.query.FieldEnd;
+import org.mongodb.morphia.query.Query;
 
 @Slf4j
 @OwnedBy(PL)
@@ -60,6 +66,7 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
   @Mock private EventPublishHelper eventPublishHelper;
   @Mock private MainConfiguration configuration;
   @Mock private AccountService accountService;
+  @Mock private WingsPersistence wingsPersistence;
   @Mock private NgLicenseHttpClient ngLicenseHttpClient;
 
   @InjectMocks @Inject OnpremSignupHandler onpremSignupHandler;
@@ -89,29 +96,71 @@ public class OnpremSignupHandlerTest extends WingsBaseTest {
         .publishTrialUserSignupEvent(anyString(), anyString(), anyString(), anyString());
   }
 
-  @Test
-  @Owner(developers = AMAN)
-  @Category(UnitTests.class)
-  public void testNewUserInviteHandleShouldSucceed() {
-    when(signupService.getUserInviteByEmail(EMAIL)).thenReturn(null);
-    doNothing().when(accountService).updateFeatureFlagsForOnPremAccount();
-
-    // Assertion
-    assertThat(onpremSignupHandler.handle(createUserInvite())).isTrue();
-    verify(userService, Mockito.times(1)).saveUserInvite(any(UserInvite.class));
-    verify(accountService, Mockito.times(1)).updateFeatureFlagsForOnPremAccount();
-  }
-
-  @Test
+  @Test(expected = SignupException.class)
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
   public void testNewUserInviteCompleteShouldFail() {
-    try {
-      assertThat(onpremSignupHandler.completeSignup(null, null));
-      fail("Expcted the above call to fail.");
-    } catch (SignupException se) {
-      log.info("Expected behaviour");
-    }
+    onpremSignupHandler.completeSignup(null, null);
+  }
+
+  @Test
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void handle_noExistingAccount_signupCompleted() {
+    when(accountService.getOnPremAccount()).thenReturn(Optional.empty());
+    UserInvite userInvite = createUserInvite();
+    setupUserAndAccountQueries(0, 0);
+
+    onpremSignupHandler.handle(userInvite);
+    Mockito.verify(userService, times(1)).saveUserInvite(userInvite);
+    Mockito.verify(userService, times(1)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(0)).createNewUserAndSignIn(Mockito.any(), Mockito.anyString());
+  }
+
+  @Test
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void handle_existingAccount_signupCompleted() {
+    Account account = Account.Builder.anAccount().build();
+    account.setUuid("test");
+    when(accountService.getOnPremAccount()).thenReturn(Optional.of(account));
+    UserInvite userInvite = createUserInvite();
+    setupUserAndAccountQueries(0, 1);
+
+    onpremSignupHandler.handle(userInvite);
+    Mockito.verify(userService, times(0)).saveUserInvite(userInvite);
+    Mockito.verify(userService, times(0)).completeTrialSignupAndSignIn(userInvite);
+    Mockito.verify(userService, times(1)).createNewUserAndSignIn(Mockito.any(), Mockito.eq(account.getUuid()));
+  }
+
+  @Test(expected = SignupException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void handle_existingUser_signupFailed() {
+    setupUserAndAccountQueries(1, 0);
+    UserInvite userInvite = createUserInvite();
+    onpremSignupHandler.handle(userInvite);
+  }
+
+  @Test(expected = SignupException.class)
+  @Owner(developers = KAPIL_GARG)
+  @Category(UnitTests.class)
+  public void handle_existingMultipleAccounts_signupFailed() {
+    setupUserAndAccountQueries(0, 2);
+    UserInvite userInvite = createUserInvite();
+    onpremSignupHandler.handle(userInvite);
+  }
+
+  private void setupUserAndAccountQueries(long userCount, long accountCount) {
+    Query mockUserQuery = Mockito.mock(Query.class);
+    Query mockAccountQuery = Mockito.mock(Query.class);
+    FieldEnd accountQueryFieldEnd = Mockito.mock(FieldEnd.class);
+    when(wingsPersistence.createQuery(Account.class)).thenReturn(mockAccountQuery);
+    when(mockAccountQuery.field(Mockito.anyString())).thenReturn(accountQueryFieldEnd);
+    when(accountQueryFieldEnd.notEqual(Mockito.any())).thenReturn(mockAccountQuery);
+    when(mockAccountQuery.count()).thenReturn(accountCount);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(mockUserQuery);
+    when(mockUserQuery.count()).thenReturn(userCount);
   }
 
   private void fail(String message) {

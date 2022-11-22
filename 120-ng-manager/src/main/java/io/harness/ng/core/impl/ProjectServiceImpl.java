@@ -436,30 +436,24 @@ public class ProjectServiceImpl implements ProjectService {
   @Override
   public Page<Project> listPermittedProjects(
       String accountIdentifier, Pageable pageable, ProjectFilterDTO projectFilterDTO) {
-    Criteria criteria = createProjectFilterCriteria(
-        Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
-        projectFilterDTO);
-    List<Scope> projects = projectRepository.findAllProjects(criteria);
-    List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
-
-    if (permittedProjects.isEmpty()) {
+    Criteria criteria = getCriteriaForPermittedProjects(accountIdentifier, projectFilterDTO);
+    if (criteria == null) {
       return Page.empty();
     }
-
-    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier);
-    Criteria[] subCriteria = permittedProjects.stream()
-                                 .map(project
-                                     -> Criteria.where(ProjectKeys.orgIdentifier)
-                                            .is(project.getOrgIdentifier())
-                                            .and(ProjectKeys.identifier)
-                                            .is(project.getProjectIdentifier()))
-                                 .toArray(Criteria[] ::new);
-    criteria.orOperator(subCriteria);
     return projectRepository.findAll(criteria, pageable);
   }
 
   @Override
   public List<ProjectDTO> listPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO) {
+    Criteria criteria = getCriteriaForPermittedProjects(accountIdentifier, projectFilterDTO);
+    if (criteria == null) {
+      return Collections.emptyList();
+    }
+    List<Project> projectsList = projectRepository.findAll(criteria);
+    return projectsList.stream().map(ProjectMapper::writeDTO).collect(Collectors.toList());
+  }
+
+  private Criteria getCriteriaForPermittedProjects(String accountIdentifier, ProjectFilterDTO projectFilterDTO) {
     Criteria criteria = createProjectFilterCriteria(
         Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE),
         projectFilterDTO);
@@ -467,10 +461,10 @@ public class ProjectServiceImpl implements ProjectService {
     List<Scope> permittedProjects = scopeAccessHelper.getPermittedScopes(projects);
 
     if (permittedProjects.isEmpty()) {
-      return Collections.emptyList();
+      return null;
     }
 
-    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier);
+    criteria = Criteria.where(ProjectKeys.accountIdentifier).is(accountIdentifier).and(ProjectKeys.deleted).is(FALSE);
     Criteria[] subCriteria = permittedProjects.stream()
                                  .map(project
                                      -> Criteria.where(ProjectKeys.orgIdentifier)
@@ -479,8 +473,7 @@ public class ProjectServiceImpl implements ProjectService {
                                             .is(project.getProjectIdentifier()))
                                  .toArray(Criteria[] ::new);
     criteria.orOperator(subCriteria);
-    List<Project> projectsList = projectRepository.findAll(criteria);
-    return projectsList.stream().map(ProjectMapper::writeDTO).collect(Collectors.toList());
+    return criteria;
   }
 
   @Override

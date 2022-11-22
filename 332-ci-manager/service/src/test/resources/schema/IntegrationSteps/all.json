@@ -291,6 +291,45 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "BitriseStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CIStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "uses"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringString"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BranchBuildSpec": {
       "allOf": [
         {
@@ -1068,10 +1107,6 @@
         },
         {
           "type": "object",
-          "required": [
-            "connectorRef",
-            "image"
-          ],
           "properties": {
             "connectorRef": {
               "type": "string"
@@ -1156,6 +1191,9 @@
                   "type": "string"
                 }
               ]
+            },
+            "uses": {
+              "type": "string"
             }
           }
         }
