@@ -73,8 +73,8 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
 
     ElastigroupSetupDataOutcome elastigroupSetupOutcome = getElastigroupSetupOutcome(ambiance);
 
-    ElastiGroup newElastigroup = calculateNewForUpsize(elastigroupSetupOutcome.getNewElastiGroupOriginalConfig());
-    ElastiGroup oldElastigroup = calculateOldForDownsize(elastigroupSetupOutcome.getOldElastiGroupOriginalConfig());
+    ElastiGroup newElastigroup = calculateNewForUpsize(elastigroupSetupOutcome.getNewElastigroupOriginalConfig());
+    ElastiGroup oldElastigroup = calculateOldForDownsize(elastigroupSetupOutcome.getOldElastigroupOriginalConfig());
 
     return ElastigroupRollbackTaskParameters.builder()
         .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
@@ -83,7 +83,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         .oldElastigroup(oldElastigroup)
         .timeout(getTimeoutInMin(stepElementParameters))
         .isBlueGreen(elastigroupSetupOutcome.isBlueGreen())
-        .elastigroupNamePrefix(elastigroupSetupOutcome.getElastiGroupNamePrefix())
+        .elastigroupNamePrefix(elastigroupSetupOutcome.getElastigroupNamePrefix())
         .loadBalancerDetailsForBGDeployments(elastigroupSetupOutcome.getLoadBalancerDetailsForBGDeployments())
         .build();
   }
