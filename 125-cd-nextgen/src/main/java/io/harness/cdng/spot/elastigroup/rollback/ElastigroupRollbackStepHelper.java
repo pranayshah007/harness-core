@@ -76,6 +76,8 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
     ElastiGroup newElastigroup = calculateNewForUpsize(elastigroupSetupOutcome.getNewElastigroupOriginalConfig());
     ElastiGroup oldElastigroup = calculateOldForDownsize(elastigroupSetupOutcome.getOldElastigroupOriginalConfig());
 
+    final ConnectorInfoDTO awsConnectorInfo = getConnector(elastigroupSetupOutcome.getAwsConnectorRef(), ambiance);
+
     return ElastigroupRollbackTaskParameters.builder()
         .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
         .encryptionDetails(getEncryptionDetails(ambiance, infrastructureOutcome))
@@ -85,6 +87,9 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         .isBlueGreen(elastigroupSetupOutcome.isBlueGreen())
         .elastigroupNamePrefix(elastigroupSetupOutcome.getElastigroupNamePrefix())
         .loadBalancerDetailsForBGDeployments(elastigroupSetupOutcome.getLoadBalancerDetailsForBGDeployments())
+        .awsRegion(elastigroupSetupOutcome.getAwsRegion())
+        .awsConnectorInfo(awsConnectorInfo)
+        .awsEncryptedDetails(getEncryptionDetails(ambiance, awsConnectorInfo))
         .build();
   }
 
@@ -119,6 +124,10 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
       Ambiance ambiance, InfrastructureOutcome infrastructureOutcome) {
     ConnectorInfoDTO connectorInfoDto =
         entityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), AmbianceUtils.getNgAccess(ambiance));
+    return entityHelper.getEncryptionDataDetails(connectorInfoDto, AmbianceUtils.getNgAccess(ambiance));
+  }
+
+  private List<EncryptedDataDetail> getEncryptionDetails(Ambiance ambiance, ConnectorInfoDTO connectorInfoDto) {
     return entityHelper.getEncryptionDataDetails(connectorInfoDto, AmbianceUtils.getNgAccess(ambiance));
   }
 
