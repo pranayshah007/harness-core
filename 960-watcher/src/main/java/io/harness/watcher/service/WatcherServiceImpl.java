@@ -1433,7 +1433,14 @@ public class WatcherServiceImpl implements WatcherService {
       boolean success = false;
 
       if (process.getProcess().isAlive()) {
-        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
+        log.info("New watcher process is alive, going to watch it");
+        Message message = null;
+        try {
+          message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
+        } catch (Exception e) {
+          log.error("Received exception from message service ", e);
+        }
+        log.info("Either got timeout or received response from message service");
         if (message != null) {
           String newWatcherProcess = message.getParams().get(0);
           log.info("[Old] Got process ID from new watcher: " + newWatcherProcess);
@@ -1459,6 +1466,8 @@ public class WatcherServiceImpl implements WatcherService {
             stop();
           }
         }
+      } else {
+        log.info("proess is not alive");
       }
       if (!success) {
         log.error("[Old] Failed to upgrade watcher");
