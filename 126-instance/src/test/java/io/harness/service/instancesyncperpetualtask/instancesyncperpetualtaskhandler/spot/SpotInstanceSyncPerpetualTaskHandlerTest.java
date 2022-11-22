@@ -47,7 +47,7 @@ public class SpotInstanceSyncPerpetualTaskHandlerTest extends InstancesTestBase 
   private static final String ORG_IDENTIFIER = "org";
   private static final String INFRASTRUCTURE_KEY = "INFRA_KEY";
   private static final String ELASTIGROUP_SERVICE = ServiceSpecType.ELASTIGROUP;
-  private static final String ELASTIGROUP_ID = "elastiGroupId";
+  private static final String ELASTIGROUP_ID = "elastigroupId";
 
   @Mock KryoSerializer kryoSerializer;
   @Mock SshEntityHelper sshEntityHelper;

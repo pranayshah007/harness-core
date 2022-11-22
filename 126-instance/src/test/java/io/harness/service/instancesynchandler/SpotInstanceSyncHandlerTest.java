@@ -37,7 +37,7 @@ import org.mockito.InjectMocks;
 @OwnedBy(HarnessTeam.CDP)
 public class SpotInstanceSyncHandlerTest extends InstancesTestBase {
   private static final String INFRASTRUCTURE_KEY = "INFRA_KEY";
-  private static final String ELASTIGROUP_ID = "elastiGroupId";
+  private static final String ELASTIGROUP_ID = "elastigroupId";
   private static final String ELASTIGROUP_SERVICE = ServiceSpecType.ELASTIGROUP;
   private static final String EC2_INSTANCE_ID = "ec2InstanceId";
 
