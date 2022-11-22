@@ -240,6 +240,7 @@ public class TerraformRollbackState extends TerraformProvisionState {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
+            .sourceType(terraformProvisioner.getSourceType())
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)

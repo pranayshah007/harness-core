@@ -17,6 +17,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
+import io.harness.cdng.provision.terraform.steps.rolllback.TerraformConfigSweepingOutput;
 import io.harness.data.validator.Trimmed;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -41,7 +42,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class TerraformInfrastructureProvisioner extends InfrastructureProvisioner implements TerraGroupProvisioners {
   public static final String VARIABLE_KEY = "terraform";
   @NotEmpty private String sourceRepoSettingId;
-  private String sourceType;
+  private TerraformSourceType sourceType;
   public boolean provisionByS3Uri() {
     return S3_URI.name().equals(sourceType);
   }

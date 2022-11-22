@@ -52,6 +52,7 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.batch.processing.service.impl.AwsS3SyncServiceImpl;
 import io.harness.beans.ExecutionStatus;
 import io.harness.cli.LogCallbackOutputStream;
 import io.harness.data.structure.UUIDGenerator;
@@ -99,11 +100,13 @@ import software.wings.beans.LogHelper;
 import software.wings.beans.LogWeight;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.ServiceVariableType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.yaml.GitFetchFilesRequest;
 import software.wings.delegatetasks.validation.terraform.TerraformTaskUtils;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
@@ -166,6 +169,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   @Inject private AwsHelperService awsHelperService;
   @Inject private TerraformClient terraformClient;
 
+  @Inject AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
+
   private static final String AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID";
   private static final String AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY";
   private static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
@@ -208,26 +213,13 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   }
 
   private TerraformExecutionData run(TerraformProvisionParameters parameters) {
-    GitConfig gitConfig = parameters.getSourceRepo();
-    String sourceRepoSettingId = parameters.getSourceRepoSettingId();
+    String sourceRepoSettingId;
     LogCallback logCallback = getLogCallback(parameters);
     String accountId = parameters.getAccountId();
 
-    GitOperationContext gitOperationContext =
-        GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
-
-    if (isNotEmpty(gitConfig.getBranch())) {
-      saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
-    }
-    saveExecutionLog(
-        "\nNormalized Path: " + parameters.getScriptPath(), CommandExecutionStatus.RUNNING, INFO, logCallback);
-    gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
-
-    if (isNotEmpty(gitConfig.getReference())) {
-      saveExecutionLog(format("%nInheriting git state at commit id: [%s]", gitConfig.getReference()),
-          CommandExecutionStatus.RUNNING, INFO, logCallback);
-    }
-    EncryptedRecordData encryptedTfPlan = parameters.getEncryptedTfPlan();
+    GitOperationContext gitOperationContext = null;
+    GitConfig gitConfig = null;
+    EncryptedRecordData encryptedTfPlan = null;
 
     String baseDir = parameters.isUseActivityIdBasedTfBaseDir()
         ? terraformBaseHelper.activityIdBasedBaseDir(
@@ -237,6 +229,54 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
     String workingDir = Paths.get(baseDir, TF_SCRIPT_DIR).toString();
     String backendConfigsDir = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
+
+    if (parameters.getSourceType() == TerraformSourceType.GIT) {
+      /**
+       * Handle GIT Logic
+       */
+      sourceRepoSettingId = parameters.getSourceRepoSettingId();
+      gitOperationContext =
+          GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
+      gitConfig = parameters.getSourceRepo();
+
+      if (isNotEmpty(gitConfig.getBranch())) {
+        saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+      saveExecutionLog(
+          "\nNormalized Path: " + parameters.getScriptPath(), CommandExecutionStatus.RUNNING, INFO, logCallback);
+      gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
+
+      if (isNotEmpty(gitConfig.getReference())) {
+        saveExecutionLog(format("%nInheriting git state at commit id: [%s]", gitConfig.getReference()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+      }
+      encryptedTfPlan = parameters.getEncryptedTfPlan();
+
+      try {
+        encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
+        if (parameters.isSyncGitCloneAndCopyToDestDir()) {
+          gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, workingDir, logCallback);
+        } else {
+          gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
+          copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
+        }
+      } catch (Exception ex) {
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in cloning and copying files to provisioner specific directory", sanitizedException);
+        FileUtils.deleteQuietly(new File(baseDir));
+        return TerraformExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .build();
+      }
+
+    } else if (parameters.getSourceType() == TerraformSourceType.S3_URI) {
+      /**
+       * Handle S3 Logic
+       */
+      return null;
+    }
 
     if (null != parameters.getTfVarSource()
         && parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.GIT) {
@@ -248,24 +288,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
     }
 
-    try {
-      encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
-      if (parameters.isSyncGitCloneAndCopyToDestDir()) {
-        gitClient.cloneRepoAndCopyToDestDir(gitOperationContext, workingDir, logCallback);
-      } else {
-        gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
-        copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
-      }
-    } catch (Exception ex) {
-      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      log.error("Exception in cloning and copying files to provisioner specific directory", sanitizedException);
-      FileUtils.deleteQuietly(new File(baseDir));
-      return TerraformExecutionData.builder()
-          .executionStatus(ExecutionStatus.FAILED)
-          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
-          .build();
-    }
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
     log.info("Script Directory: " + scriptDirectory);
     saveExecutionLog(
@@ -1048,6 +1070,9 @@ and provisioner
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
+  private void downloadS3Directory(String destinationDir) throws IOException {
+    File destination = new File(destinationDir);
+  }
   @VisibleForTesting
   public void getCommandLineVariableParams(TerraformProvisionParameters parameters, File tfVariablesFile,
       StringBuilder executeParams, StringBuilder uiLogParams) throws IOException {
