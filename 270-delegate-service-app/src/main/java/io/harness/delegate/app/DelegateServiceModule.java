@@ -14,15 +14,13 @@ import com.google.inject.AbstractModule;
 
 @OwnedBy(HarnessTeam.DEL)
 public class DelegateServiceModule extends AbstractModule {
-  private final DelegateServiceConfig config;
-
   /**
    * Delegate Service App Config.
    */
-  public DelegateServiceModule(DelegateServiceConfig config) {
-    this.config = config;
-  }
+  public DelegateServiceModule(DelegateServiceConfig config) {}
 
   @Override
-  protected void configure() {}
+  protected void configure() {
+    // do nothing
+  }
 }
