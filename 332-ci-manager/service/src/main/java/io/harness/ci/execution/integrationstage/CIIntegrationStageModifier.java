@@ -14,7 +14,6 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
@@ -39,15 +38,13 @@ public class CIIntegrationStageModifier implements StageExecutionModifier {
       ExecutionSource executionSource) {
     log.info("Modifying execution plan to prepend initialize step for integration stage {}", stageNode.getIdentifier());
 
-    PlanCreationContextValue planCreationContextValue = context.getGlobalContext().get("metadata");
-
     CIExecutionArgs ciExecutionArgs = CIExecutionArgs.builder().executionSource(executionSource).build();
 
     log.info("Build execution args for integration stage  {}", stageNode.getIdentifier());
     return ExecutionElementConfig.builder()
         .uuid(execution.getUuid())
         .steps(ciStepGroupUtils.createExecutionWrapperWithInitializeStep(
-            stageNode, ciExecutionArgs, ciCodeBase, infrastructure, planCreationContextValue.getAccountIdentifier()))
+            stageNode, ciExecutionArgs, ciCodeBase, infrastructure, context.getAccountIdentifier()))
         .build();
   }
 }

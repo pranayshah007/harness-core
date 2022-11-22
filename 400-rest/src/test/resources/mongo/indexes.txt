@@ -931,6 +931,7 @@ yamlChangeSet {"name": "appId_1", "background": true} {"appId": 1}
 yamlChangeSet {"name": "createdAt_1", "background": true} {"createdAt": 1}
 yamlChangeSet {"name": "searchIdx_1", "background": true} {"accountId": 1, "status": 1, "retryCount": 1}
 yamlChangeSet {"name": "status_1", "background": true} {"status": 1}
+yamlChangeSet {"name": "status_accountId_queuekey_index", "background": true} {"status": 1, "accountId": 1, "queueKey": 1}
 yamlGitConfig {"name": "account_gitconnector_branch", "background": true} {"accountId": 1, "gitConnectorId": 1, "branchName": 1}
 yamlGitConfig {"name": "appId_1", "background": true} {"appId": 1}
 yamlGitConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}

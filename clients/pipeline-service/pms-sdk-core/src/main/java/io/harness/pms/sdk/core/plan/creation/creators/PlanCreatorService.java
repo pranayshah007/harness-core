@@ -242,9 +242,8 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
   // Dependency passed from parent to its children plan creator
   private PlanCreationResponse createPlanForDependencyInternal(
       String currentYaml, YamlField field, PlanCreationContext ctx, Dependency dependency) {
-    try (AutoLogContext ignore =
-             PlanCreatorUtils.autoLogContext(ctx.getMetadata().getMetadata(), ctx.getMetadata().getAccountIdentifier(),
-                 ctx.getMetadata().getOrgIdentifier(), ctx.getMetadata().getProjectIdentifier())) {
+    try (AutoLogContext ignore = PlanCreatorUtils.autoLogContext(ctx.getAccountIdentifier(), ctx.getOrgIdentifier(),
+             ctx.getProjectIdentifier(), ctx.getPipelineIdentifier(), ctx.getExecutionUuid())) {
       try {
         String fullyQualifiedName = YamlUtils.getFullyQualifiedName(field.getNode());
         Optional<PartialPlanCreator<?>> planCreatorOptional =
@@ -256,7 +255,7 @@ public class PlanCreatorService extends PlanCreationServiceImplBase {
         PartialPlanCreator planCreator = planCreatorOptional.get();
         Class<?> cls = planCreator.getFieldClass();
         String executionInputTemplate = "";
-        if (ctx.getGlobalContext().get("metadata").getIsExecutionInputEnabled()) {
+        if (ctx.getMetadata().getIsExecutionInputEnabled()) {
           executionInputTemplate = planCreator.getExecutionInputTemplateAndModifyYamlField(field);
         }
         Object obj = YamlField.class.isAssignableFrom(cls) ? field : YamlUtils.read(field.getNode().toString(), cls);

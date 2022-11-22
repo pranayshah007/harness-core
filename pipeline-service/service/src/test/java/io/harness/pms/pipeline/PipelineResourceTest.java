@@ -300,6 +300,38 @@ public class PipelineResourceTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetPipelineFromFallbackBranch() {
+    PipelineEntity pipelineEntityCreatedInNonDefaultBranch = PipelineEntity.builder()
+                                                                 .accountId(ACCOUNT_ID)
+                                                                 .orgIdentifier(ORG_IDENTIFIER)
+                                                                 .projectIdentifier(PROJ_IDENTIFIER)
+                                                                 .identifier(PIPELINE_IDENTIFIER)
+                                                                 .name(PIPELINE_IDENTIFIER)
+                                                                 .yaml(yaml)
+                                                                 .stageCount(1)
+                                                                 .stageName("qaStage")
+                                                                 .version(1L)
+                                                                 .allowStageExecutions(false)
+                                                                 .build();
+
+    doReturn(Optional.of(pipelineEntityCreatedInNonDefaultBranch))
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false, true);
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(any());
+    ResponseDTO<PMSPipelineResponseDTO> responseDTO = pipelineResource.getPipelineByIdentifier(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, true, true);
+    assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
+    assertThat(responseDTO.getData().getYamlPipeline()).isEqualTo(yaml);
+    assertThat(responseDTO.getData().getYamlSchemaErrorWrapper()).isNull();
+    assertThat(responseDTO.getData().getGovernanceMetadata()).isNull();
+    assertThat(responseDTO.getData().getResolvedTemplatesPipelineYaml()).isEqualTo(yaml);
+  }
+
+  @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetPipelineWithUnresolvedTemplates() {

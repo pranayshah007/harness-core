@@ -232,7 +232,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
       String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
+        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, loadFromFallbackBranch);
     if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));

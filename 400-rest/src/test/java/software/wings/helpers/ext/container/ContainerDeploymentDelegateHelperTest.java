@@ -132,8 +132,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
-    boolean result =
-        containerDeploymentDelegateHelper.useK8sSteadyStateCheck(containerServiceParams, new ExecutionLogCallback());
+    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+        true, containerServiceParams, new ExecutionLogCallback());
     assertThat(result).isTrue();
   }
 
@@ -155,8 +155,8 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
-    boolean result =
-        containerDeploymentDelegateHelper.useK8sSteadyStateCheck(containerServiceParams, new ExecutionLogCallback());
+    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+        true, containerServiceParams, new ExecutionLogCallback());
     assertThat(result).isTrue();
   }
 
@@ -178,8 +178,17 @@ public class ContainerDeploymentDelegateHelperTest extends WingsBaseTest {
     doReturn(kubernetesConfig).when(containerDeploymentDelegateHelper).getKubernetesConfig(containerServiceParams);
     doReturn(version).when(kubernetesContainerService).getVersionAsString(kubernetesConfig);
 
-    boolean result =
-        containerDeploymentDelegateHelper.useK8sSteadyStateCheck(containerServiceParams, new ExecutionLogCallback());
+    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+        true, containerServiceParams, new ExecutionLogCallback());
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ANSHUL)
+  @Category(UnitTests.class)
+  public void testIsK8sVersion116OrAboveWithFeatureFlagDisabled() {
+    boolean result = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
+        false, ContainerServiceParams.builder().build(), new ExecutionLogCallback());
     assertThat(result).isFalse();
   }
 

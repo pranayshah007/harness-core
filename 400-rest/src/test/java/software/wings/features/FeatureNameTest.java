@@ -245,7 +245,7 @@ public class FeatureNameTest extends WingsBaseTest {
     featureNameOrdinalMapping.put(211, "CCM_COMMORCH");
     featureNameOrdinalMapping.put(212, "CCM_SUNSETTING_CG");
     featureNameOrdinalMapping.put(213, "RECOMMENDATION_EFFICIENCY_VIEW_UI");
-    featureNameOrdinalMapping.put(214, "CLOUD_COST_GOVERNANCE_UI");
+    featureNameOrdinalMapping.put(214, "CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI");
     featureNameOrdinalMapping.put(215, "DONT_RESTRICT_PARALLEL_STAGE_COUNT");
     featureNameOrdinalMapping.put(216, "NG_EXECUTION_INPUT");
     featureNameOrdinalMapping.put(217, "SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING");
