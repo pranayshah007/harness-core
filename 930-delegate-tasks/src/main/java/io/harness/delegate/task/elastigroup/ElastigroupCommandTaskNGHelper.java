@@ -243,7 +243,7 @@ public class ElastigroupCommandTaskNGHelper {
     }
   }
 
-  private Listener getListenerByPort(String listenerPort, List<Listener> listeners, String loadBalancer) {
+  public Listener getListenerByPort(String listenerPort, List<Listener> listeners, String loadBalancer) {
     if (EmptyPredicate.isNotEmpty(listeners)) {
       for (Listener listener : listeners) {
         if (isListenerPortMatching(listenerPort, listener)) {
@@ -255,7 +255,7 @@ public class ElastigroupCommandTaskNGHelper {
         "listener with port:" + listenerPort + "is not present in load balancer: " + loadBalancer);
   }
 
-  private String getFirstTargetGroupFromListener(
+  public String getFirstTargetGroupFromListener(
       AwsInternalConfig awsInternalConfig, String region, String listenerArn, String listenerRuleArn) {
     List<Rule> rules = newArrayList();
     String nextToken = null;
@@ -405,7 +405,7 @@ public class ElastigroupCommandTaskNGHelper {
         .build();
   }
 
-  private List<Listener> getElbListenersForLoadBalancer(
+  public List<Listener> getElbListenersForLoadBalancer(
       String loadBalancerName, AwsInternalConfig awsInternalConfig, String region) {
     DescribeLoadBalancersRequest describeLoadBalancersRequest =
         DescribeLoadBalancersRequest.builder().names(loadBalancerName).build();
