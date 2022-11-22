@@ -9,6 +9,7 @@ package io.harness.security;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
@@ -17,6 +18,7 @@ import static javax.ws.rs.Priorities.AUTHENTICATION;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
 import io.harness.NGCommonEntityConstants;
+// import io.harness.account.client.remote.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
@@ -24,6 +26,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
@@ -35,6 +41,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -46,6 +55,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.json.JSONObject;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @OwnedBy(PL)
@@ -56,15 +66,22 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   public static final String X_API_KEY = "X-Api-Key";
   public static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String delimiter = "\\.";
+  private static final String X_API_KEY_OLD_TYPE = "X-Api-Key" + "-OLD";
+  private static final String X_API_KEY_NEW_TYPE = "X-Api-Key" + "-NEW";
+  private static final String JWT_TOKEN_TYPE = "JWT-TOKEN";
 
   private TokenClient tokenClient;
+  private NGSettingsClient settingsClient;
+  // private AccountClient accountClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
-      @Named("PRIVILEGED") TokenClient tokenClient) {
+      @Named("PRIVILEGED") TokenClient tokenClient, @Named("PRIVILEGED") NGSettingsClient settingsClient) {
     super(predicate, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
     this.tokenClient = tokenClient;
+    this.settingsClient = settingsClient;
+    // this.accountClient = accountClient;
   }
 
   @Override
@@ -100,8 +117,16 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     String[] splitToken = apiKey.split(delimiter);
     checkIfTokenLengthMatches(splitToken);
     if (EmptyPredicate.isNotEmpty(splitToken)) {
-      String tokenId = isOldApiKeyToken(splitToken) ? splitToken[1] : splitToken[2];
-      TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
+      boolean isJwtTokenType = isJWTTokenType(splitToken);
+      String tokenId = isOldApiKeyToken(splitToken) ? (isJwtTokenType ? null : splitToken[1]) : splitToken[2];
+      TokenDTO tokenDTO = null;
+      if (isNotEmpty(tokenId)) {
+        tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
+      } else if (isJwtTokenType) {
+        // JWT token flow
+
+        return;
+      }
 
       if (tokenDTO != null) {
         checkIfAccountIdMatches(accountIdentifier, tokenDTO, tokenId);
@@ -224,5 +249,26 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private boolean isNewApiKeyToken(String[] splitToken) {
     return splitToken.length == 4;
+  }
+
+  private boolean isJWTTokenType(String[] splitToken) {
+    if (splitToken.length == 3) {
+      JSONObject header = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[0]), StandardCharsets.UTF_8));
+      String tokenType = header.getString("typ");
+      return "JWT".equals(tokenType);
+      // JSONObject payload = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1]), StandardCharsets.UTF_8));
+    }
+    return false;
+  }
+
+  private void checkIfJwtTokenMatchesSettingConfig(String[] splitToken, String accountIdentifier) {
+    if (splitToken.length == 3) {
+      JSONObject payload = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1]), StandardCharsets.UTF_8));
+      List<SettingResponseDTO> settingsResponse = NGRestUtils.getResponse(settingsClient.listSettings(accountIdentifier, null, null, SettingCategory.SCIM, SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_GROUP_IDENTIFIER));
+      Optional<SettingResponseDTO> matchedSettings = settingsResponse.stream().filter(s ->
+        s.getSetting() != null &&  SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER.equals(s.getSetting().getIdentifier())
+      ).findAny();
+    }
+
   }
 }
