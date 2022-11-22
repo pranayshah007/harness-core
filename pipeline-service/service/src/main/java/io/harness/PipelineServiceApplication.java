@@ -87,7 +87,6 @@ import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.Store;
-import io.harness.plan.consumers.PartialPlanResponseRedisConsumer;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.plancreator.strategy.StrategyMaxConcurrencyRestrictionUsageImpl;
@@ -95,7 +94,6 @@ import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.annotations.PipelineServiceAuthIfHasApiKey;
 import io.harness.pms.approval.ApprovalInstanceExpirationJob;
 import io.harness.pms.approval.ApprovalInstanceHandler;
-import io.harness.pms.async.plan.PlanNotifyEventConsumer;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
@@ -135,7 +133,6 @@ import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsu
 import io.harness.pms.sdk.execution.events.node.resume.NodeResumeEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.start.NodeStartEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEventRedisConsumer;
-import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.json.PmsBeansJacksonModule;
 import io.harness.pms.tags.OrchestrationEndTagsResolveHandler;
@@ -708,12 +705,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getSdkResponse().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(GraphUpdateRedisConsumer.class),
         pipelineServiceConsumersConfig.getGraphUpdate().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(PartialPlanResponseRedisConsumer.class),
-        pipelineServiceConsumersConfig.getPartialPlanResponse().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class),
-        pipelineServiceConsumersConfig.getCreatePlan().getThreads());
-    pipelineEventConsumerController.register(injector.getInstance(PlanNotifyEventConsumer.class),
-        pipelineServiceConsumersConfig.getPlanNotify().getThreads());
+    //    pipelineEventConsumerController.register(injector.getInstance(PartialPlanResponseRedisConsumer.class),
+    //        pipelineServiceConsumersConfig.getPartialPlanResponse().getThreads());
+    //    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class),
+    //        pipelineServiceConsumersConfig.getCreatePlan().getThreads());
+    //    pipelineEventConsumerController.register(injector.getInstance(PlanNotifyEventConsumer.class),
+    //        pipelineServiceConsumersConfig.getPlanNotify().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(PmsNotifyEventConsumerRedis.class),
         pipelineServiceConsumersConfig.getPmsNotify().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(InitiateNodeEventRedisConsumer.class),

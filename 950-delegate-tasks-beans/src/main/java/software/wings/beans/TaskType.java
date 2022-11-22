@@ -399,7 +399,11 @@ public enum TaskType {
   TERRAFORM_TASK_NG_V2(TaskGroup.TERRAFORM_NG, "Terraform Task NG V2"),
   ELASTIGROUP_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Setup Command Task"),
   ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Startup Script Fetch Run Task"),
-  TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task");
+  TERRAFORM_SECRET_CLEANUP_TASK_NG(TaskGroup.TERRAFORM_NG, "Terraform Secret Cleanup Task"),
+  TERRAGRUNT_PLAN_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Plan Task", true),
+  TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", true),
+  TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", true),
+  TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true);
 
   private final TaskGroup taskGroup;
   private final String displayName;

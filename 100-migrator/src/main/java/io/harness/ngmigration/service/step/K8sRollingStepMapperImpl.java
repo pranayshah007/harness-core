@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepNode;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
@@ -16,8 +17,8 @@ import software.wings.yaml.workflow.StepYaml;
 
 public class K8sRollingStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType() {
-    return null;
+  public String getStepType(StepYaml stepYaml) {
+    return StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
   }
 
   @Override

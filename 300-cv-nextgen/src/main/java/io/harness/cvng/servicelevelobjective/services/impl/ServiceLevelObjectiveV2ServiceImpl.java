@@ -649,7 +649,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         (CompositeServiceLevelObjectiveSpec) serviceLevelObjectiveDTO.getSpec();
     double sum = compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
                      .stream()
-                     .peek(this::checkIfSLOPresent)
+                     .peek(sloDetail -> checkIfValidSLOPresent(sloDetail, serviceLevelObjectiveDTO))
                      .mapToDouble(ServiceLevelObjectiveDetailsDTO::getWeightagePercentage)
                      .sum();
 
@@ -660,14 +660,23 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     }
   }
 
-  private void checkIfSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO) {
+  private void checkIfValidSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO,
+      ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(serviceLevelObjectiveDetailsDTO.getAccountId())
                                       .projectIdentifier(serviceLevelObjectiveDetailsDTO.getProjectIdentifier())
                                       .orgIdentifier(serviceLevelObjectiveDetailsDTO.getOrgIdentifier())
                                       .build();
-    checkIfSLOPresentWithType(
+    AbstractServiceLevelObjective serviceLevelObjective = checkIfSLOPresentWithType(
         projectParams, serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef(), ServiceLevelObjectiveType.SIMPLE);
+    if (!sloTargetTypeSLOTargetTransformerMap.get(serviceLevelObjectiveDTO.getSloTarget().getType())
+             .getSLOTarget(serviceLevelObjectiveDTO.getSloTarget().getSpec())
+             .equals(serviceLevelObjective.getSloTarget())) {
+      throw new InvalidRequestException(String.format(
+          "Composite SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s can not be created/updated as the compliance time period of the SLO and the associated SLOs is different.",
+          serviceLevelObjectiveDTO.getIdentifier(), serviceLevelObjectiveDetailsDTO.getAccountId(),
+          serviceLevelObjectiveDTO.getOrgIdentifier(), serviceLevelObjectiveDTO.getProjectIdentifier()));
+    }
   }
 
   private AbstractServiceLevelObjective checkIfSLOPresent(ProjectParams projectParams, String identifier) {

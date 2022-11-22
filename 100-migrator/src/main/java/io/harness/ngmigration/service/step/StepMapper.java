@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
+import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
@@ -14,12 +15,13 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
 
 public interface StepMapper {
-  String getStepType();
+  String getStepType(StepYaml stepYaml);
 
   AbstractStepNode getSpec(StepYaml stepYaml);
 
@@ -50,6 +52,25 @@ public interface StepMapper {
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
       pmsAbstractStepNode.setTimeout(getTimeout(stepYaml));
+    }
+    if (stepNode instanceof CdAbstractStepNode) {
+      CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
+      cdAbstractStepNode.setTimeout(getTimeout(stepYaml));
+    }
+  }
+
+  default void baseSetup(State state, AbstractStepNode stepNode) {
+    stepNode.setIdentifier(MigratorUtility.generateIdentifier(state.getName()));
+    stepNode.setName(state.getName());
+    if (stepNode instanceof PmsAbstractStepNode) {
+      PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
+      pmsAbstractStepNode.setTimeout(
+          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
+    }
+    if (stepNode instanceof CdAbstractStepNode) {
+      CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
+      cdAbstractStepNode.setTimeout(
+          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
     }
   }
 }

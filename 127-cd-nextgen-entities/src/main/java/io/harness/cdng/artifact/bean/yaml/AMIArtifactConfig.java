@@ -76,12 +76,12 @@ public class AMIArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   /**
    * AMI Tags
    */
-  @Wither List<AMITag> tags;
+  @Wither ParameterField<List<AMITag>> tags;
 
   /**
-   * AMI Tags
+   * AMI Filters
    */
-  @Wither List<AMIFilter> filters;
+  @Wither ParameterField<List<AMIFilter>> filters;
 
   /**
    * Version

@@ -280,7 +280,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.18.1")
+go_register_toolchains(version = "1.18.7")
 
 gazelle_dependencies()
 
@@ -4958,17 +4958,17 @@ plain_artifacts = [
     "org.apache.commons:commons-lang3:3.10",
     "org.apache.commons:commons-math3:3.6.1",
     "org.apache.commons:commons-text:1.10.0",
-    "org.apache.cxf:cxf-core:3.4.7",
-    "org.apache.cxf:cxf-rt-bindings-soap:3.3.10",
-    "org.apache.cxf:cxf-rt-bindings-xml:3.3.10",
-    "org.apache.cxf:cxf-rt-databinding-jaxb:3.3.10",
-    "org.apache.cxf:cxf-rt-frontend-jaxws:3.3.10",
-    "org.apache.cxf:cxf-rt-frontend-simple:3.3.10",
-    "org.apache.cxf:cxf-rt-transports-http-hc:3.3.10",
-    "org.apache.cxf:cxf-rt-transports-http:3.3.10",
-    "org.apache.cxf:cxf-rt-ws-addr:3.3.10",
-    "org.apache.cxf:cxf-rt-ws-policy:3.3.10",
-    "org.apache.cxf:cxf-rt-wsdl:3.3.10",
+    "org.apache.cxf:cxf-core:3.5.4",
+    "org.apache.cxf:cxf-rt-bindings-soap:3.5.4",
+    "org.apache.cxf:cxf-rt-bindings-xml:3.5.4",
+    "org.apache.cxf:cxf-rt-databinding-jaxb:3.5.4",
+    "org.apache.cxf:cxf-rt-frontend-jaxws:3.5.4",
+    "org.apache.cxf:cxf-rt-frontend-simple:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http:3.5.4",
+    "org.apache.cxf:cxf-rt-ws-addr:3.5.4",
+    "org.apache.cxf:cxf-rt-ws-policy:3.5.4",
+    "org.apache.cxf:cxf-rt-wsdl:3.5.4",
     "org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1",
     "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.3",
     "org.apache.httpcomponents:fluent-hc:4.5.13",
@@ -5501,15 +5501,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (1.8.0.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.0.0.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:1.8.0.Final",
-        "io.debezium:debezium-connector-mongodb:1.8.0.Final",
-        "io.debezium:debezium-core:1.8.0.Final",
+        "io.debezium:debezium-api:2.0.0.Final",
+        "io.debezium:debezium-connector-mongodb:2.0.0.Final",
+        "io.debezium:debezium-core:2.0.0.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5517,7 +5517,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "1.8.0.Final",
+            version = "2.0.0.Final",
         ),
     ],
     repositories = [

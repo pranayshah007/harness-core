@@ -28,6 +28,7 @@ import io.harness.exception.runtime.TerraformCliRuntimeException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
+import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.terraform.beans.TerraformVersion;
@@ -220,6 +221,23 @@ public class TerraformClientImpl implements TerraformClient {
 
     return executeTerraformCLICommand(
         command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback, command, planLogOutputStream);
+  }
+
+  @Nonnull
+  @Override
+  @VisibleForTesting
+  public CliResponse prepareHumanReadablePlan(String planName, long timeoutInMillis, Map<String, String> envVariables,
+      String scriptDirectory, @Nonnull LogCallback executionLogCallback,
+      @Nonnull PlanHumanReadableOutputStream planHumanReadableOutputStream)
+      throws InterruptedException, TimeoutException, IOException {
+    String command = null;
+    String message = "Generating Human Readable Plan";
+    executionLogCallback.saveExecutionLog(
+        color("\n" + message + "\n", Yellow, Bold), WARN, CommandExecutionStatus.SKIPPED);
+    command = format("terraform show %s", planName);
+
+    return executeTerraformCLICommand(command, timeoutInMillis, envVariables, scriptDirectory, executionLogCallback,
+        command, planHumanReadableOutputStream);
   }
 
   @Nonnull

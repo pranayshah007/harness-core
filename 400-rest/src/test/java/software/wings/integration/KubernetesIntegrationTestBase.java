@@ -46,7 +46,7 @@ public abstract class KubernetesIntegrationTestBase extends CategoryTest {
     GkeClusterServiceImpl gkeClusterService = new GkeClusterServiceImpl();
     KubernetesContainerServiceImpl kubernetesService = new KubernetesContainerServiceImpl();
 
-    List<String> clusters = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING, Collections.emptyList());
+    List<String> clusters = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList());
     log.info("Available clusters: {}", clusters);
 
     //    KubernetesConfig config = gkeClusterService.createCluster(COMPUTE_PROVIDER_SETTING, ZONE_CLUSTER,
@@ -57,8 +57,8 @@ public abstract class KubernetesIntegrationTestBase extends CategoryTest {
     //            .put("masterPwd", "foo!!bar$$")
     //            .build());
 
-    KubernetesConfig config =
-        gkeClusterService.getCluster(COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, NAMESPACE, false);
+    KubernetesConfig config = gkeClusterService.getCluster(
+        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, NAMESPACE, false);
 
     kubernetesService.createOrReplaceController(config,
         new ReplicationControllerBuilder()

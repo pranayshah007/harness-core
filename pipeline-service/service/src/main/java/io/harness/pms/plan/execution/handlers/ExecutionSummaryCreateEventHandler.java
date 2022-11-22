@@ -101,7 +101,7 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
     String pipelineId = metadata.getPipelineIdentifier();
     Optional<PipelineEntity> pipelineEntity =
         pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, false);
-    if (!pipelineEntity.isPresent()) {
+    if (pipelineEntity.isEmpty()) {
       return;
     }
 

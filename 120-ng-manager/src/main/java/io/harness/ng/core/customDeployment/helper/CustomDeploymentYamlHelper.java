@@ -15,6 +15,7 @@ import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.CONN
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityConstants.CUSTOM_DEPLOYMENT_ROOT_FIELD;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -53,8 +54,10 @@ import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -362,7 +365,13 @@ public class CustomDeploymentYamlHelper {
       List<EntityDetailProtoDTO> referredEntities, YamlNode yamlNode, Stack<String> path) {
     if (YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(yamlNode.getCurrJsonNode())) {
       if (!path.empty() && path.lastElement().equals(STEP_TEMPLATE_REFS)) {
+        Set<String> checkForDuplicateSteps = new HashSet<>();
         for (YamlNode arrayElement : yamlNode.asArray()) {
+          if (checkForDuplicateSteps.contains(arrayElement.asText())) {
+            throw new InvalidRequestException(
+                format("Duplicate step %s linked with the template", arrayElement.asText()));
+          }
+          checkForDuplicateSteps.add(arrayElement.asText());
           EntityDetailProtoDTO referredEntity =
               getTemplateReferredEntity(accountId, orgId, projectId, arrayElement.asText());
           if (!isNull(referredEntity)) {

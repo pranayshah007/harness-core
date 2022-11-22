@@ -27,6 +27,7 @@ import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
+import io.harness.ngmigration.service.UsergroupImportService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 
@@ -67,6 +68,7 @@ public class NgMigrationResource {
   @Inject DiscoveryService discoveryService;
   @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
   @Inject MigrationResourceService migrationResourceService;
+  @Inject UsergroupImportService usergroupImportService;
 
   @POST
   @Path("/discover-multi")
@@ -162,6 +164,15 @@ public class NgMigrationResource {
       @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId, ImportDTO importDTO) {
     importDTO.setAccountIdentifier(accountId);
     return new RestResponse<>(migrationResourceService.save(auth, importDTO));
+  }
+
+  @POST
+  @Path("/user-group/save")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<SaveSummaryDTO> saveUserGroups(
+      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId));
   }
 
   @POST

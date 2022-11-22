@@ -80,6 +80,44 @@ public class ExceptionLogger {
 
     return list;
   }
+  // the following method is added to log the exceptions that are coming from wingsExceptionMapperV2
+  // logging them as warn for now and will remove logging after seeing the impact that it has on debugging
+  public static void logProcessedMessages_asWarn(WingsException exception, ExecutionContext context, Logger log) {
+    Exception processedException = null;
+    try (AutoLogContext ignore = new AutoLogContext(exception.calcRecursiveContextObjects(), OVERRIDE_ERROR)) {
+      ReportTarget target = UNIVERSAL;
+
+      switch (context) {
+        case MANAGER:
+          target = LOG_SYSTEM;
+          break;
+        case DELEGATE:
+          target = DELEGATE_LOG_SYSTEM;
+          break;
+        default:
+          unhandled(context);
+      }
+
+      List<ResponseMessage> responseMessages = getResponseMessageList(exception, target);
+      if (responseMessages.stream().anyMatch(responseMessage -> responseMessage.getLevel() == ERROR)) {
+        if (log.isWarnEnabled()) {
+          log.warn(calculateErrorMessage(exception, responseMessages), exception);
+        }
+      } else {
+        if (log.isInfoEnabled()) {
+          responseMessages = getResponseMessageList(exception, UNIVERSAL);
+          log.info(calculateInfoMessage(responseMessages));
+        }
+      }
+    } catch (Exception e) {
+      processedException = e;
+      log.error("Original exception:", exception);
+    }
+
+    if (processedException != null) {
+      log.error("Error processing messages.", processedException);
+    }
+  }
 
   public static void logProcessedMessages(WingsException exception, ExecutionContext context, Logger log) {
     Exception processedException = null;

@@ -1006,6 +1006,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   @Override
   public void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<HeaderConfig> headerConfigs) {
+    if (!pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION)) {
+      return;
+    }
     boolean hasApiKey = false;
     for (HeaderConfig headerConfig : headerConfigs) {
       if (headerConfig.getKey().equalsIgnoreCase(X_API_KEY)) {

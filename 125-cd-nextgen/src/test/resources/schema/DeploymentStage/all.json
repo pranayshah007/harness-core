@@ -120,20 +120,14 @@
               "minLength": 1
             },
             "filters": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AMIFilter"
-              }
+              "$ref": "#/definitions/ParameterFieldListAMIFilter"
             },
             "region": {
               "type": "string",
               "minLength": 1
             },
             "tags": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/AMITag"
-              }
+              "$ref": "#/definitions/ParameterFieldListAMITag"
             },
             "version": {
               "type": "string"
@@ -804,13 +798,16 @@
           ],
           "properties": {
             "connectorRef": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "feed": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "package": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "packageType": {
               "type": "string",
@@ -4637,13 +4634,15 @@
           ],
           "properties": {
             "connectorRef": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "org": {
               "type": "string"
             },
             "packageName": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "packageType": {
               "type": "string",
@@ -7966,6 +7965,84 @@
         },
         "value": {
           "type": "boolean"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListAMIFilter": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AMIFilter"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AMIFilter"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListAMITag": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AMITag"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AMITag"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -11561,6 +11638,16 @@
               }
             ]
           }
+        },
+        "exportTerraformHumanReadablePlan": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "exportTerraformPlanJson": {
           "oneOf": [

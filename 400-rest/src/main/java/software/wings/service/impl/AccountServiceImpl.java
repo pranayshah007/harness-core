@@ -1137,6 +1137,17 @@ public class AccountServiceImpl implements AccountService {
         .asList();
   }
 
+  @Override
+  public List<Account> listAllAccountWithDefaultsWithLicenseInfo() {
+    return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+        .project(ID_KEY2, true)
+        .project(AccountKeys.accountName, true)
+        .project(AccountKeys.companyName, true)
+        .project(AccountKeys.licenseInfo, true)
+        .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
+        .asList();
+  }
+
   public Set<String> getAccountsWithDisabledHarnessUserGroupAccess() {
     return wingsPersistence.createQuery(Account.class, excludeAuthority)
         .project(ID_KEY2, true)

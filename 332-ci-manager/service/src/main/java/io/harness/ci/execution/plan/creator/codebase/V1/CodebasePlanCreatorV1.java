@@ -23,7 +23,6 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -80,9 +79,8 @@ public class CodebasePlanCreatorV1 {
 
   private static boolean isDelegateTask(
       PlanCreationContext ctx, CodeBase codeBase, ExecutionSource executionSource, ConnectorUtils connectorUtils) {
-    PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
-    BaseNGAccess ambiance = IntegrationStageUtils.getBaseNGAccess(planCreationContextValue.getAccountIdentifier(),
-        planCreationContextValue.getOrgIdentifier(), planCreationContextValue.getProjectIdentifier());
+    BaseNGAccess ambiance = IntegrationStageUtils.getBaseNGAccess(
+        ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier());
     if (executionSource != null && executionSource.getType() == ExecutionSource.Type.MANUAL) {
       ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
       if (isNotEmpty(manualExecutionSource.getPrNumber()) || isNotEmpty(manualExecutionSource.getBranch())

@@ -23,6 +23,7 @@ import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.core.beans.change.ChangeTimeline;
 import io.harness.cvng.core.beans.change.ChangeTimeline.TimeRangeDetail;
 import io.harness.cvng.core.beans.monitoredService.DurationDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.ng.beans.PageResponse;
@@ -312,25 +313,34 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
             .eventTime(Instant.ofEpochSecond(300))
             .build()));
 
-    Response response = RESOURCES.client()
-                            .target("http://localhost:9998/change-event/monitored-service-summary")
-                            .queryParam("accountId", builderFactory.getContext().getAccountId())
-                            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
-                            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
-                            .queryParam("monitoredServiceIdentifier",
-                                builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier())
-                            .queryParam("changeCategories", "Deployment", "Alert")
-                            .queryParam("changeSourceTypes", "HarnessCDNextGen", "K8sCluster")
-                            .queryParam("startTime", 100000)
-                            .queryParam("endTime", 400000)
-                            .request(MediaType.APPLICATION_JSON_TYPE)
-                            .get();
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder()
+                                                  .identifier("service_env2")
+                                                  .serviceRef("service")
+                                                  .environmentRef("env2")
+                                                  .build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    Response response =
+        RESOURCES.client()
+            .target("http://localhost:9998/change-event/monitored-service-summary")
+            .queryParam("accountId", builderFactory.getContext().getAccountId())
+            .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+            .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+            .queryParam("monitoredServiceIdentifiers",
+                builderFactory.getContext().getMonitoredServiceParams().getMonitoredServiceIdentifier(), "service_env2")
+            .queryParam("changeCategories", "Deployment", "Alert")
+            .queryParam("changeSourceTypes", "HarnessCDNextGen", "K8sCluster")
+            .queryParam("startTime", 100000)
+            .queryParam("endTime", 400000)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
     ChangeSummaryDTO changeSummaryDTO =
         response.readEntity(new GenericType<RestResponse<ChangeSummaryDTO>>() {}).getResource();
 
-    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(1);
+    assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(2);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
         .isEqualTo(1);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.ALERTS).getCount()).isEqualTo(0);

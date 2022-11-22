@@ -48,6 +48,7 @@ public class CDPipelineEndEventHandler implements OrchestrationEventHandler {
           helper.getAllPipelineTFPlanExecutionDetails(fFPlanExecutionDetailsKey);
       helper.cleanupTerraformVaultSecret(ambiance, terraformPlanExecutionDetailsList, planExecutionId);
       helper.cleanupTfPlanJson(terraformPlanExecutionDetailsList);
+      helper.cleanupTfPlanHumanReadable(terraformPlanExecutionDetailsList);
       helper.cleanupAllTerraformPlanExecutionDetails(fFPlanExecutionDetailsKey);
     } catch (Exception e) {
       log.error("Failure in cleaning up the TF plan Json files from the GCS Bucket: {}", e.getMessage());

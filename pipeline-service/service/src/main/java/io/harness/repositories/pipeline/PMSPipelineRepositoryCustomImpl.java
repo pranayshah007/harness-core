@@ -36,8 +36,9 @@ import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
-import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.pipeline.service.PipelineEntityReadHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
@@ -74,6 +75,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final OutboxService outboxService;
   private final GitSyncSdkService gitSyncSdkService;
+  private final PipelineEntityReadHelper pipelineEntityReadHelper;
 
   @Override
   public Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier,
@@ -93,16 +95,16 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public Long countAllPipelines(Criteria criteria) {
-    Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.count(query, PipelineEntity.class);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override
   public Long countAllPipelinesInAccount(String accountId) {
     Criteria criteria =
         Criteria.where(PipelineEntityKeys.accountId).is(accountId).and(PipelineEntityKeys.deleted).is(false);
-    Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.count(query, PipelineEntity.class);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override
@@ -434,7 +436,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public Long countFileInstances(String accountId, String repoURL, String filePath) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountId, repoURL, filePath);
-    return countAllPipelines(criteria);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override

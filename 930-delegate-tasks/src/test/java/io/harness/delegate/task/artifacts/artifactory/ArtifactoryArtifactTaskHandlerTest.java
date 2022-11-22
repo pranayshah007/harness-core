@@ -509,6 +509,41 @@ public class ArtifactoryArtifactTaskHandlerTest extends CategoryTest {
     assertThat(attributes.getLabel()).isEqualTo(labels);
   }
 
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetSuccessTaskExecutionResponseGeneric() {
+    List<ArtifactoryGenericArtifactDelegateResponse> artifactDelegateResponses = new ArrayList<>();
+
+    ArtifactoryGenericArtifactDelegateResponse artifactoryGenericArtifactDelegateResponse =
+        ArtifactoryGenericArtifactDelegateResponse.builder().build();
+
+    artifactDelegateResponses.add(artifactoryGenericArtifactDelegateResponse);
+
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        artifactoryArtifactService.getSuccessTaskExecutionResponseGeneric(artifactDelegateResponses);
+
+    assertThat(artifactTaskExecutionResponse.isArtifactSourceValid()).isTrue();
+
+    assertThat(artifactTaskExecutionResponse.isArtifactServerValid()).isTrue();
+
+    assertThat(artifactTaskExecutionResponse.getArtifactDelegateResponses()).isEqualTo(artifactDelegateResponses);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testdecryptRequestDTOs() {
+    ArtifactoryArtifactDelegateRequest artifactoryArtifactDelegateRequest =
+        ArtifactoryArtifactDelegateRequest.builder()
+            .artifactoryConnectorDTO(
+                ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build())
+            .build();
+
+    artifactoryArtifactService.decryptRequestDTOs(artifactoryArtifactDelegateRequest);
+
+    verify(secretDecryptionService).decrypt(any(), any());
+  }
+
   private ArtifactoryUsernamePasswordAuthDTO createArtifactoryCredentials() {
     return ArtifactoryUsernamePasswordAuthDTO.builder()
         .username(ARTIFACTORY_USERNAME)

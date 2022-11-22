@@ -36,8 +36,8 @@ import software.wings.beans.AzureKubernetesInfrastructureMapping;
 import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.Environment;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
@@ -230,8 +230,9 @@ public class ContainerInstanceSyncPerpetualTaskClient implements PerpetualTaskSe
 
   private SettingAttribute getSettingAttribute(
       boolean isK8sContainerType, ContainerInfrastructureMapping containerInfrastructureMapping) {
-    return !isK8sContainerType ? settingsService.get(containerInfrastructureMapping.getComputeProviderSettingId())
-                               : null;
+    return !isK8sContainerType
+        ? settingsService.get(containerInfrastructureMapping.getComputeProviderSettingId()).toDTO()
+        : null;
   }
   private K8sClusterConfig getK8sClusterConfig(
       boolean isK8sContainerType, ContainerInfrastructureMapping containerInfrastructureMapping, String clusterName) {

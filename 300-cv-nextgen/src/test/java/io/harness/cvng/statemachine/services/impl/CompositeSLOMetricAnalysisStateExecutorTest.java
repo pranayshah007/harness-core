@@ -24,6 +24,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsD
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
@@ -55,6 +56,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
+import org.mongodb.morphia.query.UpdateOperations;
 
 public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBase {
   @Inject Map<StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap;
@@ -136,11 +138,17 @@ public class CompositeSLOMetricAnalysisStateExecutorTest extends CvNextGenTestBa
                       .build())
             .build();
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
+    endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+    UpdateOperations<CompositeServiceLevelObjective> updateOperations =
+        hPersistence.createUpdateOperations(CompositeServiceLevelObjective.class)
+            .set(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.startedAt, startTime.toEpochMilli());
     compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
         builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
     verificationTaskId = compositeServiceLevelObjective.getUuid();
-    startTime = TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES);
-    endTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
+    hPersistence.update(compositeServiceLevelObjective, updateOperations);
     AnalysisInput input =
         AnalysisInput.builder().verificationTaskId(verificationTaskId).startTime(startTime).endTime(endTime).build();
 

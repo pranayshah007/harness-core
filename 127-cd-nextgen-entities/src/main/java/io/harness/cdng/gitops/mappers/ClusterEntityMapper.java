@@ -19,6 +19,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,6 +95,8 @@ public class ClusterEntityMapper {
         return ClusterResponse.builder()
             .name(
                 clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getName())
+            .tags(
+                clusterFromGitops.getOrDefault("project." + clusterRef, ClusterFromGitops.builder().build()).getTags())
             .orgIdentifier(cluster.getOrgIdentifier())
             .projectIdentifier(cluster.getProjectIdentifier())
             .agentIdentifier(cluster.getAgentIdentifier())
@@ -105,6 +108,7 @@ public class ClusterEntityMapper {
       case ACCOUNT:
         return ClusterResponse.builder()
             .name(gitOpsCluster.getName())
+            .tags(gitOpsCluster.getTags())
             .clusterRef(scopeFromClusterRef.getOriginalRef())
             .accountIdentifier(cluster.getAccountId())
             .agentIdentifier(cluster.getAgentIdentifier())
@@ -115,6 +119,7 @@ public class ClusterEntityMapper {
       case ORGANIZATION:
         return ClusterResponse.builder()
             .name(gitOpsCluster.getName())
+            .tags(gitOpsCluster.getTags())
             .orgIdentifier(cluster.getOrgIdentifier())
             .accountIdentifier(cluster.getAccountId())
             .agentIdentifier(cluster.getAgentIdentifier())
@@ -134,6 +139,7 @@ public class ClusterEntityMapper {
         .agentIdentifier(cluster.getAgentIdentifier())
         .name(cluster.name())
         .scopeLevel(scopeLevel)
+        .tags(cluster.getTags() == null ? Collections.emptyMap() : cluster.getTags())
         .build();
   }
   public String getScopedClusterRef(ScopeLevel scopeLevel, String ref) {

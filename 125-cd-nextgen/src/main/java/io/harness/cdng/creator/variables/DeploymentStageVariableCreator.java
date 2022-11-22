@@ -36,6 +36,8 @@ import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -294,8 +296,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
 
       final List<InfraStructureDefinitionYaml> infrastructures =
-          environmentYamlV2.getInfrastructureDefinitions()
-              .getValue()
+          CollectionUtils.emptyIfNull(environmentYamlV2.getInfrastructureDefinitions().getValue())
               .stream()
               .filter(infra -> !infra.getIdentifier().isExpression())
               .collect(Collectors.toList());
@@ -374,7 +375,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         NGServiceOverrideConfig serviceOverrideConfig =
             NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity.get());
         List<NGVariable> variableOverrides = serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
-        variables.addAll(variableOverrides.stream().map(NGVariable::getName).collect(Collectors.toSet()));
+        if (EmptyPredicate.isNotEmpty(variableOverrides)) {
+          variables.addAll(variableOverrides.stream()
+                               .map(NGVariable::getName)
+                               .filter(EmptyPredicate::isNotEmpty)
+                               .collect(Collectors.toSet()));
+        }
       }
     }
     return variables;

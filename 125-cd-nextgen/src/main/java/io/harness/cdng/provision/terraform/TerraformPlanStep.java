@@ -14,6 +14,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
@@ -133,6 +134,8 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
     ParameterField<Boolean> exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
+    ParameterField<Boolean> exportTfHumanReadablePlanField =
+        planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
     TerraformTaskNGParameters terraformTaskNGParameters =
         builder.taskType(TFTaskType.PLAN)
             .terraformCommandUnit(TerraformCommandUnit.Plan)
@@ -150,6 +153,8 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
             .backendConfigFileInfo(helper.toTerraformBackendFileInfo(configuration.getBackendConfig(), ambiance))
             .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
             .saveTerraformStateJson(!ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
+            .saveTerraformHumanReadablePlan(
+                !ParameterField.isNull(exportTfHumanReadablePlanField) && exportTfHumanReadablePlanField.getValue())
             .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
                     ? new HashMap<>()
                     : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
@@ -226,16 +231,36 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
           planStepParameters.getConfiguration().getExportTerraformPlanJson();
       boolean exportTfPlanJson = !ParameterField.isNull(exportTfPlanJsonField)
           && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
-      if (exportTfPlanJson) {
-        String planJsonOutputName =
-            helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+      ParameterField<Boolean> exportTfHumanReadablePlanField =
+          planStepParameters.getConfiguration().getExportTerraformHumanReadablePlan();
+      boolean exportHumanReadablePlan = !ParameterField.isNull(exportTfHumanReadablePlanField)
+          && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfHumanReadablePlanField);
+
+      if (exportHumanReadablePlan || exportTfPlanJson) {
+        // First we save the terraform plan execution detail
 
         helper.saveTerraformPlanExecutionDetails(
             ambiance, terraformTaskNGResponse, provisionerIdentifier, planStepParameters);
 
-        if (planJsonOutputName != null) {
-          tfPlanOutcomeBuilder.jsonFilePath(
-              TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+        if (exportHumanReadablePlan) {
+          String humanReadableOutputName =
+              helper.saveTerraformPlanHumanReadableOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+          if (humanReadableOutputName != null) {
+            tfPlanOutcomeBuilder.humanReadableFilePath(TerraformHumanReadablePlanFunctor.getExpression(
+                planStepParameters.getStepFqn(), humanReadableOutputName));
+          }
+        }
+
+        if (exportTfPlanJson) {
+          String planJsonOutputName =
+              helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+          if (planJsonOutputName != null) {
+            tfPlanOutcomeBuilder.jsonFilePath(
+                TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+          }
         }
       }
 

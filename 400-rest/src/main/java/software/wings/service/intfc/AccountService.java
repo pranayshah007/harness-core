@@ -124,6 +124,8 @@ public interface AccountService {
 
   List<Account> listAllAccountWithDefaultsWithoutLicenseInfo();
 
+  List<Account> listAllAccountWithDefaultsWithLicenseInfo();
+
   PageResponse<Account> getAccounts(PageRequest<Account> pageRequest);
 
   Account getByAccountName(String accountName);
