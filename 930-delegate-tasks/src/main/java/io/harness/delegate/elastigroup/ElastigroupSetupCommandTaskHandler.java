@@ -79,7 +79,7 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
       String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
       List<ElastiGroup> elastiGroups = spotInstHelperServiceDelegate.listAllElastiGroups(
