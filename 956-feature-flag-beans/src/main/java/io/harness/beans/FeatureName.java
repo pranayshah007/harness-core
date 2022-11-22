@@ -463,7 +463,9 @@ public enum FeatureName {
   SPG_LIVE_DASHBOARD_STATS_DEBUGGING("Live debugging for dashboard stats in CG", HarnessTeam.SPG),
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
-      HarnessTeam.PL);
+      HarnessTeam.PL),
+  GITOPS_ONPREM_ENABLED("Enable the gitops tab in the UI in case of ONPREM/SMP", HarnessTeam.GITOPS);
+
 
   @Deprecated
   FeatureName() {
