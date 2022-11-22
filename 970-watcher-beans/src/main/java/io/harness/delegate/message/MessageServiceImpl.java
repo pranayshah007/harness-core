@@ -140,7 +140,6 @@ public class MessageServiceImpl implements MessageService {
       }
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeout), () -> {
         String line="";
-        try {
           while (true) {
             LineIterator reader = FileUtils.lineIterator(channel);
             while (reader.hasNext()) {
@@ -182,10 +181,6 @@ public class MessageServiceImpl implements MessageService {
             reader.close();
             Thread.sleep(200L);
           }
-        } catch (Exception ex) {
-          log.error("Encountered error while reading from channel line:{}", line, ex);
-        }
-        return null;
       });
     } catch (UncheckedTimeoutException e) {
       log.debug("Timed out reading message from channel {} {}", sourceType, sourceProcessId);
