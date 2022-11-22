@@ -563,3 +563,4 @@ io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.cdng.environment.filters.TagsFilter
 io.harness.cdng.environment.filters.FilterYaml
 io.harness.cdng.environment.filters.AllowAllFilter
+io.harness.cdng.gitops.steps.GitOpsEnvOutCome
