@@ -7,9 +7,6 @@ RUN apt-get update && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
 
-RUN curl -s -L -o client-tools/kubectl/v1.19.2/kubectl https://app.harness.io/public/shared/tools/kubectl/release/v1.25.3/bin/linux/amd64/kubectl
-ENV PATH="/opt/harness-delegate/client-tools/kubectl/v1.25.3:${PATH}"
-
 RUN useradd --no-log-init -r -u 1000560000 harness
 
 COPY scripts /opt/harness-delegate/
