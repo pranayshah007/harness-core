@@ -197,16 +197,18 @@ public abstract class WorkflowHandler {
     }
     return stepYamls.stream()
         .map(stepYaml
-            -> ExecutionWrapperConfig.builder()
-                   .step(JsonPipelineUtils.asTree(getStepElementConfig(
-                       stepMapperFactory, stepYaml, skipStrategies.getOrDefault(stepYaml.getName(), null))))
-                   .build())
+            -> getStepElementConfig(stepMapperFactory, stepYaml, skipStrategies.getOrDefault(stepYaml.getName(), null)))
+        .filter(Objects::nonNull)
+        .map(stepNode -> ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(stepNode)).build())
         .collect(Collectors.toList());
   }
 
   AbstractStepNode getStepElementConfig(StepMapperFactory stepMapperFactory, StepYaml step, String skipCondition) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
     AbstractStepNode stepNode = stepMapper.getSpec(step);
+    if (stepNode == null) {
+      return null;
+    }
     if (StringUtils.isNotBlank(skipCondition)) {
       stepNode.setWhen(StepWhenCondition.builder()
                            .condition(ParameterField.createValueField(skipCondition))

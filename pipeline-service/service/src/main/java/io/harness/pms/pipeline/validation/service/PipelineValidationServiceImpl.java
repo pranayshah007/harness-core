@@ -2,10 +2,10 @@ package io.harness.pms.pipeline.validation.service;
 
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
-import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -26,8 +26,10 @@ public class PipelineValidationServiceImpl implements PipelineValidationService 
 
   @Override
   public boolean validateYaml(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String yamlWithTemplatesResolved, PipelineEntity pipelineEntity) {
-    checkIfRootNodeIsPipeline(pipelineEntity.getYaml());
+      String yamlWithTemplatesResolved, String pipelineYaml, String harnessVersion) {
+    if (harnessVersion.equals(PipelineVersion.V0)) {
+      checkIfRootNodeIsPipeline(pipelineYaml);
+    }
     pmsYamlSchemaService.validateYamlSchema(
         accountIdentifier, orgIdentifier, projectIdentifier, yamlWithTemplatesResolved);
     // validate unique fqn in resolveTemplateRefsInPipeline

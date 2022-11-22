@@ -48,8 +48,13 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.rule.Owner;
+import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
@@ -158,6 +163,24 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     assertThat(filter.toJson())
         .isEqualTo(
             "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"my-env\"],\"serviceNames\":[\"my-service\"],\"infrastructureTypes\":[]}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigEnvGroup")
+  public void getFiltersEnvGroup(DeploymentStageNode node) {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .build();
+    PipelineFilter filter = filterCreator.getFilter(ctx, node);
+    assertThat(filter.toJson())
+        .isEqualTo("{\"deploymentTypes\":[],\"environmentNames\":[],\"serviceNames\":[],\"infrastructureTypes\":[]}");
   }
 
   @Test
@@ -472,5 +495,13 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .build());
 
     return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}};
+  }
+  private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    // Case1
+    final URL testFile = classLoader.getResource("deployStageWithEnvironmentGroupAndFilters.yaml");
+    String stageYaml = Resources.toString(testFile, Charsets.UTF_8);
+    final DeploymentStageNode node1 = YamlPipelineUtils.read(stageYaml, DeploymentStageNode.class);
+    return new Object[][] {{node1}};
   }
 }

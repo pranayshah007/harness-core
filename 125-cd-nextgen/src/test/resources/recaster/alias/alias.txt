@@ -560,3 +560,6 @@ io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
 io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig
 io.harness.beans.yaml.extended.ImagePullPolicy
+io.harness.cdng.environment.filters.TagsFilter
+io.harness.cdng.environment.filters.FilterYaml
+io.harness.cdng.environment.filters.AllowAllFilter

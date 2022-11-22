@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.cdng.k8s.K8sApplyStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepNode;
+import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
@@ -24,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 public class K8sApplyStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(StepYaml stepYaml) {
-    return null;
+    return StepSpecTypeConstants.K8S_APPLY;
   }
 
   @Override

@@ -201,6 +201,7 @@ public class K8sRollingStep extends TaskChainExecutableWithRollbackAndRbac imple
     K8sRollingDeployResponse k8sTaskResponse =
         (K8sRollingDeployResponse) k8sTaskExecutionResponse.getK8sNGTaskResponse();
     K8sRollingStepParameters k8sRollingStepParameters = (K8sRollingStepParameters) stepElementParameters.getSpec();
+
     boolean pruningEnabled = CDStepHelper.getParameterFieldBooleanValue(
         k8sRollingStepParameters.getPruningEnabled(), K8sRollingBaseStepInfoKeys.pruningEnabled, stepElementParameters);
     K8sRollingOutcome k8sRollingOutcome = k8sRollingOutcomeBuilder.releaseNumber(k8sTaskResponse.getReleaseNumber())

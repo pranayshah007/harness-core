@@ -274,8 +274,8 @@ public class PMSPipelineServiceHelper {
     }
     pipelineEntity.setTemplateModules(templateModuleInfo);
 
-    pipelineValidationService.validateYaml(
-        accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline, pipelineEntity);
+    pipelineValidationService.validateYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline,
+        pipelineEntity.getYaml(), pipelineEntity.getHarnessVersion());
     return pipelineGovernanceService.validateGovernanceRules(
         accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
   }

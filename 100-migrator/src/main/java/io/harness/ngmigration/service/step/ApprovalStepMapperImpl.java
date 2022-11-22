@@ -8,23 +8,43 @@
 package io.harness.ngmigration.service.step;
 
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.approval.step.beans.Condition;
+import io.harness.steps.approval.step.beans.CriteriaSpecType;
+import io.harness.steps.approval.step.beans.CriteriaSpecWrapper;
+import io.harness.steps.approval.step.beans.JexlCriteriaSpec;
+import io.harness.steps.approval.step.beans.KeyValuesCriteriaSpec;
+import io.harness.steps.approval.step.beans.Operator;
+import io.harness.steps.approval.step.custom.CustomApprovalStepInfo;
 import io.harness.steps.approval.step.custom.CustomApprovalStepNode;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepInfo;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepInfo.HarnessApprovalStepInfoBuilder;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
 import io.harness.steps.approval.step.harness.beans.ApproverInputInfo;
 import io.harness.steps.approval.step.harness.beans.Approvers;
+import io.harness.steps.approval.step.jira.JiraApprovalStepInfo;
+import io.harness.steps.approval.step.jira.JiraApprovalStepInfo.JiraApprovalStepInfoBuilder;
 import io.harness.steps.approval.step.jira.JiraApprovalStepNode;
+import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepInfo;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepNode;
+import io.harness.steps.shellscript.ShellScriptInlineSource;
+import io.harness.steps.shellscript.ShellScriptSourceWrapper;
+import io.harness.steps.shellscript.ShellType;
+import io.harness.yaml.core.timeout.Timeout;
 
+import software.wings.beans.approval.JiraApprovalParams;
+import software.wings.beans.approval.ServiceNowApprovalParams;
+import software.wings.beans.approval.ShellScriptApprovalParams;
 import software.wings.sm.states.ApprovalState;
 import software.wings.yaml.workflow.StepYaml;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.StringUtils;
 
 public class ApprovalStepMapperImpl implements StepMapper {
   @Override
@@ -97,14 +117,103 @@ public class ApprovalStepMapperImpl implements StepMapper {
   }
 
   private JiraApprovalStepNode buildJiraApproval(ApprovalState state) {
-    return null;
+    JiraApprovalStepNode stepNode = new JiraApprovalStepNode();
+    baseSetup(state, stepNode);
+
+    JiraApprovalParams approvalParams = state.getApprovalStateParams().getJiraApprovalParams();
+    CriteriaSpecWrapper approval = getRuntimeJexl();
+
+    if (StringUtils.isNoneBlank(approvalParams.getApprovalField(), approvalParams.getApprovalValue())) {
+      approval = getKeyValueCriteria(approvalParams.getApprovalField(), approvalParams.getApprovalValue());
+    }
+
+    CriteriaSpecWrapper rejection = getRuntimeJexl();
+    if (StringUtils.isNoneBlank(approvalParams.getRejectionField(), approvalParams.getRejectionValue())) {
+      rejection = getKeyValueCriteria(approvalParams.getRejectionField(), approvalParams.getRejectionValue());
+    }
+
+    JiraApprovalStepInfoBuilder stepInfoBuilder =
+        JiraApprovalStepInfo.builder()
+            .connectorRef(MigratorUtility.RUNTIME_INPUT)
+            .issueKey(ParameterField.createValueField(approvalParams.getIssueId()))
+            .projectKey(approvalParams.getProject())
+            .approvalCriteria(approval)
+            .rejectionCriteria(rejection);
+
+    stepNode.setJiraApprovalStepInfo(stepInfoBuilder.build());
+    return stepNode;
   }
 
   private ServiceNowApprovalStepNode buildServiceNowApproval(ApprovalState state) {
-    return null;
+    ServiceNowApprovalStepNode stepNode = new ServiceNowApprovalStepNode();
+    baseSetup(state, stepNode);
+
+    ServiceNowApprovalParams approvalParams = state.getApprovalStateParams().getServiceNowApprovalParams();
+
+    ServiceNowApprovalStepInfo stepInfo =
+        ServiceNowApprovalStepInfo.builder()
+            .connectorRef(MigratorUtility.RUNTIME_INPUT)
+            .delegateSelectors(null)
+            .ticketNumber(ParameterField.createValueField(approvalParams.getIssueNumber()))
+            .ticketType(ParameterField.createValueField(approvalParams.getTicketType().getDisplayName()))
+            .changeWindow(null)
+            .approvalCriteria(null)
+            .rejectionCriteria(null)
+            .build();
+    stepNode.setServiceNowApprovalStepInfo(stepInfo);
+    return stepNode;
   }
 
   private CustomApprovalStepNode buildCustomApproval(ApprovalState state) {
-    return null;
+    CustomApprovalStepNode stepNode = new CustomApprovalStepNode();
+    baseSetup(state, stepNode);
+
+    ShellScriptApprovalParams approvalParams = state.getApprovalStateParams().getShellScriptApprovalParams();
+
+    CriteriaSpecWrapper approval = getKeyValueCriteria("HARNESS_APPROVAL_STATUS", "APPROVED");
+    CriteriaSpecWrapper rejection = getKeyValueCriteria("HARNESS_APPROVAL_STATUS", "REJECTED");
+
+    CustomApprovalStepInfo stepInfo =
+        CustomApprovalStepInfo.builder()
+            .source(ShellScriptSourceWrapper.builder()
+                        .spec(ShellScriptInlineSource.builder()
+                                  .script(ParameterField.createValueField(approvalParams.getScriptString()))
+                                  .build())
+                        .type("Inline")
+                        .build())
+            .scriptTimeout(ParameterField.createValueField(Timeout.builder().timeoutString("10m").build()))
+            .retryInterval(ParameterField.createValueField(
+                Timeout.builder().timeoutInMillis(approvalParams.getRetryInterval()).build()))
+            .outputVariables(Collections.emptyList())
+            .environmentVariables(Collections.emptyList())
+            .shell(ShellType.Bash)
+            .delegateSelectors(MigratorUtility.getDelegateSelectors(approvalParams.fetchDelegateSelectors()))
+            .approvalCriteria(approval)
+            .rejectionCriteria(rejection)
+            .build();
+
+    stepNode.setCustomApprovalStepInfo(stepInfo);
+    return stepNode;
+  }
+
+  private static CriteriaSpecWrapper getRuntimeJexl() {
+    CriteriaSpecWrapper criteria = new CriteriaSpecWrapper();
+    criteria.setType(CriteriaSpecType.JEXL);
+    criteria.setCriteriaSpec(JexlCriteriaSpec.builder().expression(MigratorUtility.RUNTIME_INPUT).build());
+    return criteria;
+  }
+
+  private static CriteriaSpecWrapper getKeyValueCriteria(String key, String value) {
+    CriteriaSpecWrapper criteria = new CriteriaSpecWrapper();
+    criteria.setType(CriteriaSpecType.KEY_VALUES);
+    criteria.setCriteriaSpec(
+        KeyValuesCriteriaSpec.builder()
+            .conditions(Collections.singletonList(Condition.builder()
+                                                      .key(key)
+                                                      .operator(Operator.EQ)
+                                                      .value(ParameterField.createValueField(value))
+                                                      .build()))
+            .build());
+    return criteria;
   }
 }
