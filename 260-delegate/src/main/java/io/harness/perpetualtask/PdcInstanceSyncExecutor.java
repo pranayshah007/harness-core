@@ -20,7 +20,7 @@ import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 

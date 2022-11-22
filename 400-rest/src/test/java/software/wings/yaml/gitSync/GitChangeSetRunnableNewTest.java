@@ -31,6 +31,7 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.service.impl.yaml.YamlChangeSetServiceImpl;
 import software.wings.service.intfc.yaml.YamlGitService;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import java.util.Collections;

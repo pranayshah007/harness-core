@@ -254,6 +254,8 @@ timescaledb:
   deploymentDataMigrationRowLimit: 1000
   deploymentDataMigrationQueryBatchSize: 100
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 grpcServerConfig:
   connectors:
@@ -331,7 +333,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 14bbb1d2
+scmVersion: 91df8e76
 
 ngAuthUIEnabled: false
 
@@ -381,6 +383,8 @@ cfClientConfig:
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
+  streamEnabled: true
+  sseReadTimeout: 5
   connectionTimeout: 10000
   readTimeout: 45000
   bufferSize: 10240
@@ -695,7 +699,7 @@ secretsConfiguration:
   gcpSecretManagerProject: harness-playground
 
 ldapSyncJobConfig:
-  poolSize: 3
+  poolSize: 8
   syncInterval: 15
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 

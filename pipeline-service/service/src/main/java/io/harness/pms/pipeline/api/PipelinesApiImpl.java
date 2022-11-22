@@ -82,7 +82,7 @@ public class PipelinesApiImpl implements PipelinesApi {
         PipelinesApiUtils.mapCreateToRequestInfoDTO(requestBody), account, org, project, null);
     log.info(String.format("Creating a Pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), project, org, account));
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
     PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
@@ -110,14 +110,16 @@ public class PipelinesApiImpl implements PipelinesApi {
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
-      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied) {
-    GitAwareContextHelper.populateGitDetails(GitEntityInfo.builder().branch(branch).build());
+      @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
+      String connectorRef, String repoName, Boolean loadFromCache, Boolean loadFromFallbackBranch) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
         "Retrieving Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     try {
-      pipelineEntity = pmsPipelineService.get(account, org, project, pipeline, false);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false);
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
@@ -210,7 +212,8 @@ public class PipelinesApiImpl implements PipelinesApi {
         "Updating Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(
         PipelinesApiUtils.mapUpdateToRequestInfoDTO(requestBody), account, org, project, null);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.MODIFY);
+    PipelineCRUDResult pipelineCRUDResult =
+        pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.MODIFY);
     PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
@@ -219,6 +222,6 @@ public class PipelinesApiImpl implements PipelinesApi {
     }
     PipelineCreateResponseBody responseBody = new PipelineCreateResponseBody();
     responseBody.setSlug(updatedEntity.getIdentifier());
-    return Response.status(201).entity(responseBody).build();
+    return Response.ok().entity(responseBody).build();
   }
 }

@@ -256,13 +256,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
     try {
       TemplateMergeResponseDTO templateMergeResponseDTO = null;
-      if (TemplateRefHelper.hasTemplateRef(templateEntity.getYaml())) {
-        templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
-            templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
-        populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
-        checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
-      }
+      templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
+          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
+      populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
+      checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+          templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
 
       // validate schema on resolved yaml to validate template inputs value as well.
       ngTemplateSchemaService.validateYamlSchemaInternal(templateMergeResponseDTO == null
@@ -867,7 +865,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       log.error(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
       throw new InternalServerErrorException(String.format(REPO_LIST_SIZE_EXCEPTION, MAX_LIST_SIZE));
     }
-    return TemplateListRepoResponse.builder().repositories(new HashSet<>(uniqueRepos)).build();
+    return TemplateListRepoResponse.builder().repositories(uniqueRepos).build();
   }
 
   private void checkGitXEnabled(String accountIdentifier, String orgIdentifier, String projectIdentifier) {

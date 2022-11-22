@@ -10,7 +10,7 @@ package io.harness.cvng.events.servicelevelobjective;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.ng.core.Resource;
 import io.harness.ng.core.ResourceConstants;
 
@@ -31,9 +31,9 @@ public class ServiceLevelObjectiveCreateEvent extends AbstractServiceLevelObject
 
   private String serviceLevelObjectiveIdentifier;
 
-  private ServiceLevelObjectiveDTO newServiceLevelObjectiveDTO;
+  private ServiceLevelObjectiveV2DTO newServiceLevelObjectiveDTO;
 
-  private ServiceLevelObjectiveDTO oldServiceLevelObjectiveDTO;
+  private ServiceLevelObjectiveV2DTO oldServiceLevelObjectiveDTO;
 
   @Override
   public Resource getResource() {

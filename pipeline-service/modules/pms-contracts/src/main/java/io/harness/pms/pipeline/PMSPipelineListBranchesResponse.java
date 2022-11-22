@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.HashSet;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -28,5 +28,5 @@ import lombok.Value;
 @Schema(name = "PMSPipelineListBranchesResponse", description = "This is the list of branches for a given pipelines")
 @OwnedBy(PL)
 public class PMSPipelineListBranchesResponse {
-  @Hidden @Schema(description = "Contains the list of branches for a given pipeline") HashSet<String> branches;
+  @Hidden @Schema(description = "Contains the list of branches for a given pipeline") List<String> branches;
 }

@@ -108,7 +108,7 @@ public interface AccountService {
    */
   List<Account> list(@NotNull PageRequest<Account> request);
 
-  List<Account> listAccounts(Set<String> excludedAccountIds);
+  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
@@ -123,6 +123,8 @@ public interface AccountService {
   List<Account> listAllActiveAccounts();
 
   List<Account> listAllAccountWithDefaultsWithoutLicenseInfo();
+
+  List<Account> listAllAccountWithDefaultsWithLicenseInfo();
 
   PageResponse<Account> getAccounts(PageRequest<Account> pageRequest);
 
@@ -250,4 +252,6 @@ public interface AccountService {
   AuthenticationInfo getAuthenticationInfo(String accountId);
 
   boolean isAccountActivelyUsed(String accountId);
+
+  boolean isImmutableDelegateEnabled(String accountId);
 }

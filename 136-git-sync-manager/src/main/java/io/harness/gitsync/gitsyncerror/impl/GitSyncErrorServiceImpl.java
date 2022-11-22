@@ -416,9 +416,6 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
                                       .and(GitSyncErrorKeys.projectIdentifier)
                                       .is(projectIdentifier);
     gitSyncErrorRepository.updateError(criteriaForProject, update);
-    Criteria criteria =
-        Criteria.where(GitSyncErrorKeys.accountIdentifier).is(accountIdentifier).and(GitSyncErrorKeys.scopes).size(0);
-    gitSyncErrorRepository.deleteAll(criteria);
   }
 
   @Override

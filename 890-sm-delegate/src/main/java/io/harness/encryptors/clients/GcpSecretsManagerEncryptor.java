@@ -249,6 +249,9 @@ public class GcpSecretsManagerEncryptor implements VaultEncryptor {
   @Override
   public EncryptedRecord renameSecret(
       String accountId, SecretText secretText, EncryptedRecord existingRecord, EncryptionConfig encryptionConfig) {
+    if (existingRecord.getName().equals(secretText.getName())) {
+      return existingRecord;
+    }
     throw new UnsupportedOperationException("Renaming Secrets in GCP Secret Manager is not supported");
   }
 

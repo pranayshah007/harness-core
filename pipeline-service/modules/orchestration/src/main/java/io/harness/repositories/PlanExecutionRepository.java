@@ -17,4 +17,4 @@ import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(CDC)
 @HarnessRepo
-public interface PlanExecutionRepository extends CrudRepository<PlanExecution, String> {}
+public interface PlanExecutionRepository extends CrudRepository<PlanExecution, String>, PlanExecutionRepositoryCustom {}

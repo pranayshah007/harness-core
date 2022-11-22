@@ -8,7 +8,6 @@
 package software.wings.sm.states;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
 
@@ -38,16 +37,11 @@ import io.harness.serializer.YamlUtils;
 
 import software.wings.api.ContextElementParamMapperFactory;
 import software.wings.api.HostElement;
-import software.wings.api.PhaseElement;
-import software.wings.api.ServiceElement;
-import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.ApmMetricCollectionInfo;
 import software.wings.beans.ApmResponseMapping;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.apm.Method;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.apm.APMMetricInfo;
-import software.wings.service.impl.apm.CustomAPMDataCollectionInfo;
 import software.wings.service.intfc.MetricDataAnalysisService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.sm.ExecutionContextImpl;
@@ -62,13 +56,11 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -477,85 +469,5 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
     apmVerificationState.setMetricCollectionInfos(mcInfo);
 
     assertThat(apmVerificationState.isHistoricalAnalysis(accountId)).isFalse();
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  @Ignore("CI-6025: TI team to follow up")
-  public void testCreateDataCollectionInfo_withoutExpressions() throws Exception {
-    Map<String, String> hosts = new HashMap<>();
-    ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
-    FieldUtils.writeField(
-        context, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
-
-    hosts.put("host1", "default");
-    String analysisServerConfigId = generateUuid();
-    apmVerificationState.setAnalysisServerConfigId(analysisServerConfigId);
-    String yamlStr =
-        Resources.toString(APMVerificationStateTest.class.getResource("/apm/apm_config.yml"), Charsets.UTF_8);
-    List<ApmMetricCollectionInfo> mcInfo =
-        yamlUtils.read(yamlStr, new TypeReference<List<ApmMetricCollectionInfo>>() {});
-    apmVerificationState.setMetricCollectionInfos(mcInfo);
-    APMVerificationConfig apmVerificationConfig = new APMVerificationConfig();
-    apmVerificationConfig.setValidationUrl("/validation");
-    apmVerificationConfig.setValidationMethod(Method.GET);
-
-    SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute()
-                                            .withAccountId(accountId)
-                                            .withName("apm-verification-config")
-                                            .withValue(apmVerificationConfig)
-                                            .build();
-    when(settingsService.get(anyString())).thenReturn(settingAttribute);
-    PhaseElement phaseElement =
-        PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(generateUuid()).build()).build();
-    when(executionContext.getContextElement(any(), any())).thenReturn(phaseElement);
-
-    CustomAPMDataCollectionInfo customAPMDataCollectionInfo =
-        (CustomAPMDataCollectionInfo) apmVerificationState.createDataCollectionInfo(executionContext, hosts);
-    assertThat(customAPMDataCollectionInfo.getAccountId()).isEqualTo(context.getAccountId());
-    assertThat(customAPMDataCollectionInfo.getConnectorId()).isEqualTo(analysisServerConfigId);
-  }
-
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  @Ignore("CI-6025: TI team to follow up")
-  public void testCreateDataCollectionInfo_withoutResolvedExpression() throws Exception {
-    Map<String, String> hosts = new HashMap<>();
-    ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
-    FieldUtils.writeField(
-        executionContext, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
-
-    hosts.put("host1", "default");
-    String analysisServerConfigId = "${workflow.variables.APM_Server}";
-    apmVerificationState.setAnalysisServerConfigId(analysisServerConfigId);
-    String yamlStr =
-        Resources.toString(APMVerificationStateTest.class.getResource("/apm/apm_config.yml"), Charsets.UTF_8);
-    List<ApmMetricCollectionInfo> mcInfo =
-        yamlUtils.read(yamlStr, new TypeReference<List<ApmMetricCollectionInfo>>() {});
-    apmVerificationState.setMetricCollectionInfos(mcInfo);
-    APMVerificationConfig apmVerificationConfig = new APMVerificationConfig();
-    apmVerificationConfig.setValidationUrl("/validation");
-    apmVerificationConfig.setValidationMethod(Method.GET);
-
-    SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute()
-                                            .withUuid(generateUuid())
-                                            .withAccountId(accountId)
-                                            .withName("apm-verification-config")
-                                            .withValue(apmVerificationConfig)
-                                            .build();
-    when(executionContext.renderExpression("${workflow.variables.APM_Server}")).thenReturn("apm-verification-config");
-    when(settingsService.getSettingAttributeByName(executionContext.getAccountId(), settingAttribute.getName()))
-        .thenReturn(settingAttribute);
-    when(settingsService.get(settingAttribute.getUuid())).thenReturn(settingAttribute);
-    PhaseElement phaseElement =
-        PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(generateUuid()).build()).build();
-    when(executionContext.getContextElement(any(), any())).thenReturn(phaseElement);
-
-    CustomAPMDataCollectionInfo customAPMDataCollectionInfo =
-        (CustomAPMDataCollectionInfo) apmVerificationState.createDataCollectionInfo(executionContext, hosts);
-    assertThat(customAPMDataCollectionInfo.getAccountId()).isEqualTo(context.getAccountId());
-    assertThat(customAPMDataCollectionInfo.getConnectorId()).isEqualTo(settingAttribute.getUuid());
   }
 }

@@ -32,6 +32,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.FeatureName;
+import io.harness.beans.SweepingOutputInstance;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HIterator;
@@ -46,6 +47,7 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig;
 import software.wings.beans.infrastructure.CloudFormationRollbackConfig.CloudFormationRollbackConfigKeys;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
+import software.wings.helpers.ext.cloudformation.CloudFormationRollbackCompletionFlag;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCommandRequest.CloudFormationCommandType;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest;
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest.CloudFormationCreateStackRequestBuilder;
@@ -79,6 +81,7 @@ import org.mongodb.morphia.query.Sort;
 @BreakDependencyOn("software.wings.service.intfc.DelegateService")
 public class CloudFormationRollbackStackState extends CloudFormationState {
   private static final String COMMAND_UNIT = "Rollback Stack";
+  private static final String CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG = "CloudFormationRollbackCompletionFlag";
 
   public CloudFormationRollbackStackState(String name) {
     super(name, StateType.CLOUD_FORMATION_ROLLBACK_STACK.name());
@@ -148,6 +151,7 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
     if (!rollbackElement.isPresent()) {
       return emptyList();
     }
+    saveRollbackCompletionFlag(context);
     CloudFormationRollbackInfoElement stackElement = rollbackElement.get();
     if (stackElement.isStackExisted()) {
       updateInfraMappings(commandResponse, context, stackElement.getProvisionerId());
@@ -339,9 +343,18 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
 
   @Override
   protected ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
-    CloudFormationCompletionFlag cloudFormationCompletionFlag = getCloudFormationCompletionFlag(context);
-    if (cloudFormationCompletionFlag == null || !cloudFormationCompletionFlag.isCreateStackCompleted()) {
+    SweepingOutputInstance completionFlagSweepingOutputInstance =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_COMPLETION_FLAG);
+    if (completionFlagSweepingOutputInstance == null
+        || !((CloudFormationCompletionFlag) completionFlagSweepingOutputInstance.getValue()).isCreateStackCompleted()) {
       return ExecutionResponse.builder().executionStatus(SKIPPED).errorMessage("Skipping rollback").build();
+    } else {
+      if (isRollbackAlreadyDone(context)) {
+        return ExecutionResponse.builder()
+            .executionStatus(SKIPPED)
+            .errorMessage("Rollback done in a previous step, skipping")
+            .build();
+      }
     }
 
     ExecutionResponse executionResponse = executeInternalWithSavedElement(context, activityId);
@@ -455,5 +468,25 @@ public class CloudFormationRollbackStackState extends CloudFormationState {
         .delegateTaskId(delegateTaskId)
         .stateExecutionData(ScriptStateExecutionData.builder().activityId(activityId).build())
         .build();
+  }
+
+  private boolean isRollbackAlreadyDone(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationRollbackCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG);
+    return cloudFormationRollbackCompletionFlag != null
+        && ((CloudFormationRollbackCompletionFlag) cloudFormationRollbackCompletionFlag.getValue())
+               .isRollbackCompleted();
+  }
+
+  private void saveRollbackCompletionFlag(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG);
+    if (cloudFormationCompletionFlag == null || cloudFormationCompletionFlag.getValue() == null) {
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+              .name(getCompletionStatusFlagSweepingOutputName(CLOUDFORMATION_ROLLBACK_COMPLETION_FLAG, context))
+              .value(CloudFormationRollbackCompletionFlag.builder().rollbackCompleted(true).build())
+              .build());
+    }
   }
 }

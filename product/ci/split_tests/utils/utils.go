@@ -196,7 +196,7 @@ func SplitFiles(fileTimesMap map[string]float64, splitTotal int) ([][]string, []
 	bucketTimes := make([]float64, splitTotal)
 
 	// Build a sorted list of files
-	fileTimesList := make(fileTimesList, len(fileTimesMap))
+	fileTimesList := make(fileTimesList, 0)
 	for file, time := range fileTimesMap {
 		fileTimesList = append(fileTimesList, fileTimesListItem{file, time})
 	}

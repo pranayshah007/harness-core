@@ -9,11 +9,11 @@ package io.harness.azure.client;
 
 import io.harness.azure.model.AzureConfig;
 
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.LoadBalancerBackend;
-import com.microsoft.azure.management.network.LoadBalancerProbe;
-import com.microsoft.azure.management.network.LoadBalancerTcpProbe;
-import com.microsoft.azure.management.network.LoadBalancingRule;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.LoadBalancerBackend;
+import com.azure.resourcemanager.network.models.LoadBalancerProbe;
+import com.azure.resourcemanager.network.models.LoadBalancerTcpProbe;
+import com.azure.resourcemanager.network.models.LoadBalancingRule;
 import java.util.List;
 import java.util.Optional;
 

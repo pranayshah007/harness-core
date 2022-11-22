@@ -13,10 +13,12 @@ import static io.harness.event.reconciliation.service.DeploymentReconServiceHelp
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.event.reconciliation.ReconciliationStatus;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecordRepository;
 import io.harness.event.timeseries.processor.DeploymentEventProcessor;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -35,9 +37,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -51,9 +55,12 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   @Inject private DeploymentEventProcessor deploymentEventProcessor;
   @Inject private DataFetcherUtils utils;
   @Inject private DeploymentReconRecordRepository deploymentReconRecordRepository;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final String FIND_DEPLOYMENT_IN_TSDB =
       "SELECT EXECUTIONID,STARTTIME FROM DEPLOYMENT WHERE EXECUTIONID=?";
+
+  private static final String HINT_CONCILIATION = "accountId_status_pipelineExecutionId_endTs";
 
   @Override
   public ReconciliationStatus performReconciliation(
@@ -63,33 +70,41 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   }
 
   public long getWFExecCountFromMongoDB(String accountId, long durationStartTs, long durationEndTs) {
-    long finishedWFExecutionCount = persistence.createQuery(WorkflowExecution.class)
-                                        .field(WorkflowExecutionKeys.accountId)
-                                        .equal(accountId)
-                                        .field(WorkflowExecutionKeys.startTs)
-                                        .exists()
-                                        .field(WorkflowExecutionKeys.endTs)
-                                        .greaterThanOrEq(durationStartTs)
-                                        .field(WorkflowExecutionKeys.endTs)
-                                        .lessThanOrEq(durationEndTs)
-                                        .field(WorkflowExecutionKeys.pipelineExecutionId)
-                                        .doesNotExist()
-                                        .field(WorkflowExecutionKeys.status)
-                                        .in(ExecutionStatus.finalStatuses())
-                                        .count();
+    Query<WorkflowExecution> finishedWFExecutionCountQuery = persistence.createQuery(WorkflowExecution.class)
+                                                                 .field(WorkflowExecutionKeys.accountId)
+                                                                 .equal(accountId)
+                                                                 .field(WorkflowExecutionKeys.startTs)
+                                                                 .exists()
+                                                                 .field(WorkflowExecutionKeys.endTs)
+                                                                 .greaterThanOrEq(durationStartTs)
+                                                                 .field(WorkflowExecutionKeys.endTs)
+                                                                 .lessThanOrEq(durationEndTs)
+                                                                 .field(WorkflowExecutionKeys.status)
+                                                                 .in(ExecutionStatus.finalStatuses());
 
-    long runningWFExecutionCount = persistence.createQuery(WorkflowExecution.class)
-                                       .field(WorkflowExecutionKeys.accountId)
-                                       .equal(accountId)
-                                       .field(WorkflowExecutionKeys.startTs)
-                                       .greaterThanOrEq(durationStartTs)
-                                       .field(WorkflowExecutionKeys.startTs)
-                                       .lessThanOrEq(durationEndTs)
-                                       .field(WorkflowExecutionKeys.pipelineExecutionId)
-                                       .doesNotExist()
-                                       .field(WorkflowExecutionKeys.status)
-                                       .in(ExecutionStatus.persistedActiveStatuses())
-                                       .count();
+    Query<WorkflowExecution> runningWFExecutionCountQuery = persistence.createQuery(WorkflowExecution.class)
+                                                                .field(WorkflowExecutionKeys.accountId)
+                                                                .equal(accountId)
+                                                                .field(WorkflowExecutionKeys.startTs)
+                                                                .greaterThanOrEq(durationStartTs)
+                                                                .field(WorkflowExecutionKeys.startTs)
+                                                                .lessThanOrEq(durationEndTs)
+                                                                .field(WorkflowExecutionKeys.status)
+                                                                .in(ExecutionStatus.persistedActiveStatuses());
+
+    CountOptions countOptions = new CountOptions();
+    if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_CONCILIATION_QUERY, accountId)) {
+      finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
+      runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
+      countOptions.hint(HINT_CONCILIATION);
+    } else {
+      finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
+      runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
+    }
+
+    long finishedWFExecutionCount = finishedWFExecutionCountQuery.count(countOptions);
+    long runningWFExecutionCount = runningWFExecutionCountQuery.count(countOptions);
+
     return finishedWFExecutionCount + runningWFExecutionCount;
   }
 
@@ -116,7 +131,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
   public void updateRunningWFsFromTSDB(WorkflowExecution workflowExecution) {
     DeploymentTimeSeriesEvent deploymentTimeSeriesEvent = usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
-        workflowExecution.getAccountId(), workflowExecution);
+        workflowExecution.getAccountId(), workflowExecution, Collections.emptyMap());
     log.info("UPDATING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
         deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
     try {
@@ -158,7 +173,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
         } else {
           DeploymentTimeSeriesEvent deploymentTimeSeriesEvent =
               usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
-                  workflowExecution.getAccountId(), workflowExecution);
+                  workflowExecution.getAccountId(), workflowExecution, Collections.emptyMap());
           log.info("ADDING MISSING RECORD for WorkflowExecution accountID:[{}], [{}]", workflowExecution.getAccountId(),
               deploymentTimeSeriesEvent.getTimeSeriesEventInfo());
           deploymentEventProcessor.processEvent(deploymentTimeSeriesEvent.getTimeSeriesEventInfo());

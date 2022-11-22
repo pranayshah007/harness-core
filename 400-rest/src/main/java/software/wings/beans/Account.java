@@ -185,6 +185,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
 
   @FdIndex @Getter @Setter boolean globalDelegateAccount;
 
+  @Getter @Setter private boolean immutableDelegateEnabled = true;
+
   private transient Map<String, String> defaults = new HashMap<>();
   /**
    * Default mechanism is USER_PASSWORD
@@ -588,6 +590,8 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private String ringName;
     private boolean backgroundJobsDisabled;
     private boolean isHarnessSupportAccessAllowed = true;
+
+    private boolean immutableDelegateEnabled = true;
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;

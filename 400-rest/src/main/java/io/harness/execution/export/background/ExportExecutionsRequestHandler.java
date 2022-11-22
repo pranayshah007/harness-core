@@ -19,6 +19,8 @@ import io.harness.execution.export.ExportExecutionsRequestLogContext;
 import io.harness.execution.export.request.ExportExecutionsRequest;
 import io.harness.execution.export.request.ExportExecutionsRequest.ExportExecutionsRequestKeys;
 import io.harness.execution.export.request.ExportExecutionsRequest.Status;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
 import io.harness.logging.AccountLogContext;
@@ -32,13 +34,13 @@ import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Slf4j
-public class ExportExecutionsRequestHandler implements Handler<ExportExecutionsRequest> {
-  private static final int ASSIGNMENT_INTERVAL_MINUTES = 1;
-  private static final int REASSIGNMENT_INTERVAL_MINUTES = 30;
+public class ExportExecutionsRequestHandler
+    extends IteratorPumpModeHandler implements Handler<ExportExecutionsRequest> {
   private static final int ACCEPTABLE_DELAY_MINUTES = 10;
 
   @Inject private AccountService accountService;
@@ -47,25 +49,32 @@ public class ExportExecutionsRequestHandler implements Handler<ExportExecutionsR
   @Inject private ExportExecutionsNotificationHelper exportExecutionsNotificationHelper;
   @Inject private MorphiaPersistenceProvider<ExportExecutionsRequest> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PumpExecutorOptions.builder()
-            .name("ExportExecutionsRequestHandler")
-            .poolSize(3)
-            .interval(ofMinutes(ASSIGNMENT_INTERVAL_MINUTES))
-            .build(),
-        ExportExecutionsRequestHandler.class,
-        MongoPersistenceIterator.<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>builder()
-            .clazz(ExportExecutionsRequest.class)
-            .fieldName(ExportExecutionsRequestKeys.nextIteration)
-            .targetInterval(ofMinutes(REASSIGNMENT_INTERVAL_MINUTES))
-            .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_DELAY_MINUTES))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(query -> query.field(ExportExecutionsRequestKeys.status).equal(Status.QUEUED))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                ExportExecutionsRequestHandler.class,
+                MongoPersistenceIterator
+                    .<ExportExecutionsRequest, MorphiaFilterExpander<ExportExecutionsRequest>>builder()
+                    .clazz(ExportExecutionsRequest.class)
+                    .fieldName(ExportExecutionsRequestKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofMinutes(ACCEPTABLE_DELAY_MINUTES))
+                    .handler(this)
+                    .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                    .filterExpander(query -> query.field(ExportExecutionsRequestKeys.status).equal(Status.QUEUED))
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "ExportExecutionsRequestHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

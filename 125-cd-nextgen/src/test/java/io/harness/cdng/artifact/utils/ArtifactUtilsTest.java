@@ -354,4 +354,48 @@ public class ArtifactUtilsTest extends CategoryTest {
         + "connectorRef: account.gcp \n"
         + "registryType: docker\n");
   }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testJenkinsLog() {
+    // Jenkins Primary Artifact
+    JenkinsArtifactConfig primaryArtifact =
+        JenkinsArtifactConfig.builder()
+            .artifactPath(ParameterField.<String>builder().value("artifactPath").build())
+            .build(ParameterField.<String>builder().value("build").build())
+            .jobName(ParameterField.<String>builder().value("jobName").build())
+            .connectorRef(ParameterField.<String>builder().value("jenkins").build())
+            .build();
+
+    // Jenkins side car Artifact
+    JenkinsArtifactConfig sidecarArtifact =
+        JenkinsArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT12").build();
+
+    // List of artifacts
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(
+                PrimaryArtifact.builder().sourceType(primaryArtifact.getSourceType()).spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+
+    // artifactList
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+
+    String log = ArtifactUtils.getLogInfo(
+        artifactListConfig.getPrimary().getSpec(), artifactListConfig.getPrimary().getSourceType());
+
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+
+    // Comparing the generated the log
+    assertThat(log).isEqualTo("\n"
+        + "type: Jenkins \n"
+        + "JobName: jobName \n"
+        + "ArtifactPath: artifactPath \n"
+        + "Build: build \n"
+        + "ConnectorRef: jenkins\n");
+  }
 }

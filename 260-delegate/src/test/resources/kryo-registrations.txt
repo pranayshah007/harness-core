@@ -227,7 +227,7 @@
 5005:software.wings.beans.TaskType
 5006:io.harness.delegate.beans.DelegateTaskResponse
 5007:software.wings.beans.artifact.ArtifactStreamAttributes
-5008:software.wings.beans.SettingAttribute
+5008:software.wings.beans.dto.SettingAttribute
 5009:software.wings.beans.BambooConfig
 5010:software.wings.beans.DockerConfig
 5011:software.wings.beans.EcrConfig
@@ -277,7 +277,6 @@
 5065:io.harness.delegate.beans.ChecksumType
 5066:software.wings.beans.artifact.ArtifactFile
 5067:software.wings.beans.infrastructure.Host
-5069:software.wings.beans.SettingAttribute.SettingCategory
 5070:software.wings.beans.HostConnectionAttributes
 5071:software.wings.beans.HostConnectionAttributes.ConnectionType
 5072:io.harness.shell.AccessType
@@ -1683,6 +1682,10 @@
 40113:com.amazonaws.services.cloudformation.model.StackStatus
 40114:software.wings.beans.CustomSecretNGManagerConfig
 40115:io.harness.delegate.utils.NexusVersion
+40116:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters
+40117:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse
+40118:io.harness.exception.TerraformSecretCleanupFailureException
+40119:io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails
 50002:software.wings.api.RancherClusterElement
 50004:software.wings.delegatetasks.rancher.RancherResolveClustersTaskParameters
 50005:software.wings.delegatetasks.rancher.RancherResolveClustersResponse
@@ -2313,6 +2316,19 @@
 573542:io.harness.delegate.task.ecs.request.EcsRunTaskRequest
 573543:io.harness.delegate.task.ecs.response.EcsRunTaskResponse
 573544:io.harness.delegate.beans.ecs.EcsRunTaskResult
+573545:io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest
+573546:io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse
+573547:io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest
+573548:io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse
+573549:io.harness.delegate.beans.elastigroup.ElastigroupSetupResult
+573550:io.harness.delegate.beans.storeconfig.InlineFileConfig
+573551:io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig
+573552:io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType
+573553:io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration
+573554:io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters
+573555:io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
+573556:io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse
+573557:io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2429,6 +2445,8 @@
 9800005:io.harness.delegate.task.ssh.artifact.ArtifactoryDockerArtifactDelegateConfig
 9800006:io.harness.delegate.task.ssh.artifact.NexusDockerArtifactDelegateConfig
 9800007:io.harness.delegate.task.ssh.artifact.AwsS3ArtifactDelegateConfig
+9800008:io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo
+9800009:io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo
 10000001:io.harness.delegate.beans.connector.elkconnector.ELKConnectorDTO
 10000002:io.harness.delegate.beans.connector.elkconnector.ELKAuthType
 10000101:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO
@@ -2436,4 +2454,8 @@
 10000103:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationType
 10000109:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenticationDTO
 10000111:io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO
+10000112:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO
+10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
+10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
+10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
 

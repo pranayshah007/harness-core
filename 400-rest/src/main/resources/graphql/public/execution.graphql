@@ -254,7 +254,7 @@ type WorkflowStageExecution implements PipelineStageExecution {
   status: ExecutionStatus
   # List of runtime variables
   runtimeInputVariables: [Variable]
-  inputVariables: [Variable]
+  inputVariables: [InputVariable]
 }
 
 enum ApprovalStepType {

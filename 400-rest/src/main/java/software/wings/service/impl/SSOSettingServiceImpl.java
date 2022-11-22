@@ -381,7 +381,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public boolean deleteSamlSettings(SamlSettings samlSettings) {
-    if (userGroupService.existsLinkedUserGroup(samlSettings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
@@ -498,7 +498,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public LdapSettings deleteLdapSettings(@NotNull LdapSettings settings) {
-    if (userGroupService.existsLinkedUserGroup(settings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(settings.getAccountId(), settings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }

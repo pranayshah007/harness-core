@@ -613,7 +613,7 @@ public class ServiceResourceV2 {
 
   @POST
   @Path("/mergeServiceInputs/{serviceIdentifier}")
-  @ApiOperation(value = "This api merges old and new service inputs YAML", nickname = "mergeServiceInputs")
+  @ApiOperation(value = "This api merges old and new service inputs YAML", nickname = "mergeInputs")
   @Hidden
   public ResponseDTO<ServiceInputsMergedResponseDto> mergeServiceInputs(
       @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(

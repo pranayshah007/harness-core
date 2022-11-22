@@ -35,8 +35,8 @@ public enum CIStepInfoType {
   SAVE_CACHE_S3(CI_LITE_ENGINE, "SaveCacheS3"),
   RESTORE_CACHE_S3(CI_LITE_ENGINE, "RestoreCacheS3"),
   UPLOAD_ARTIFACTORY(CI_LITE_ENGINE, "ArtifactoryUpload"),
+  ACTION(CI_LITE_ENGINE, "Action"),
   SECURITY(CI_LITE_ENGINE, "Security"),
-
   AQUA_TRIVY(CI_LITE_ENGINE, "AquaTrivy"),
   AWS_ECR(CI_LITE_ENGINE, "AWSECR"),
   BANDIT(CI_LITE_ENGINE, "Bandit"),
@@ -70,7 +70,10 @@ public enum CIStepInfoType {
   SYSDIG(CI_LITE_ENGINE, "Sysdig"),
   TENABLE(CI_LITE_ENGINE, "Tenable"),
   VERACODE(CI_LITE_ENGINE, "Veracode"),
-  ZAP(CI_LITE_ENGINE, "Zap");
+  ZAP(CI_LITE_ENGINE, "Zap"),
+  BITRISE(CI_LITE_ENGINE, "Bitrise"),
+  SCRIPT(CI_LITE_ENGINE, "script"),
+  RUN_TESTS_V1(CI_LITE_ENGINE, "run_tests");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

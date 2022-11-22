@@ -697,7 +697,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
 
         if (featureFlagService.isEnabled(FeatureName.SPG_PIPELINE_ROLLBACK, stateExecutionInstance.getAccountId())) {
           Pipeline pipeline = pipelineService.getPipeline(stateExecutionInstance.getAppId(), pipelineId);
-          if (pipeline.isRollbackPreviousStages()) {
+          if (pipeline != null && pipeline.isRollbackPreviousStages()) {
             return null;
           }
         }
@@ -1018,7 +1018,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         selectTopMatchingStrategyInternal(failureStrategies, failureTypes, stateName, phaseElement, level);
 
     if (failureStrategy != null && isNotEmpty(failureStrategy.getFailureTypes()) && isEmpty(failureTypes)) {
-      log.error("Defaulting to accepting the action. "
+      log.warn("Defaulting to accepting the action. "
               + "the propagated failure types for state {} are unknown. ",
           stateName);
     }

@@ -119,7 +119,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     pipelineRequestBody.setPipelineYaml(yaml);
     pipelineRequestBody.setSlug(slug);
     pipelineRequestBody.setName(name);
-    when(pmsPipelineService.create(any()))
+    when(pmsPipelineService.validateAndCreatePipeline(any()))
         .thenReturn(PipelineCRUDResult.builder()
                         .pipelineEntity(entity)
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
@@ -157,7 +157,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
-    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
@@ -179,7 +179,7 @@ public class PipelinesApiImplTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(true).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
-    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
@@ -201,8 +201,9 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPipelineGetNoTemplates() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
-    doReturn(optional).when(pmsPipelineService).get(account, org, project, slug, false);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, false);
+    doReturn(optional).when(pmsPipelineService).getAndValidatePipeline(account, org, project, slug, false);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, false, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
@@ -216,12 +217,12 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPipelineGetWithTemplates() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
-    doReturn(optional).when(pmsPipelineService).get(account, org, project, slug, false);
+    doReturn(optional).when(pmsPipelineService).getAndValidatePipeline(account, org, project, slug, false);
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
     doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, true);
+    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, true, null, null, false, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
     assertEquals(slug, responseBody.getSlug());
@@ -234,9 +235,13 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineGetFailPolicyEvaluation() {
-    doThrow(PolicyEvaluationFailureException.class).when(pmsPipelineService).get(account, org, project, slug, false);
+    doThrow(PolicyEvaluationFailureException.class)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl
+            .getPipeline(org, project, slug, account, null, false, null, null, false, false)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 
@@ -244,9 +249,13 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineGetFailInvalidYaml() {
-    doThrow(InvalidYamlException.class).when(pmsPipelineService).get(account, org, project, slug, false);
+    doThrow(InvalidYamlException.class)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl
+            .getPipeline(org, project, slug, account, null, false, null, null, false, false)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 
@@ -254,7 +263,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineList() {
-    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
     Page<PipelineEntity> pipelineEntities = new PageImpl<>(Collections.singletonList(entityModified), pageable, 1);
     doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), any());
     doReturn(Collections.emptyMap())

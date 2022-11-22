@@ -21,7 +21,7 @@ import io.harness.delegate.task.azure.resource.operation.AzureResourceOperationR
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.exception.InvalidRequestException;
 
-import com.microsoft.azure.management.containerregistry.Registry;
+import com.azure.resourcemanager.containerregistry.models.Registry;
 import java.util.List;
 import java.util.Objects;
 import javax.validation.constraints.NotNull;

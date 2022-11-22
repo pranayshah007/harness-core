@@ -96,6 +96,7 @@ public class ApprovalInstanceResponseMapper {
                                                                           .map(ApproverInput::toApproverInputInfoDTO)
                                                                           .collect(Collectors.toList()))
                 .orElse(instance.getApproverInputs()))
+        .validatedApprovalUserGroups(instance.getValidatedApprovalUserGroups())
         .build();
   }
 

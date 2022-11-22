@@ -22,7 +22,6 @@ import io.harness.shell.CommandExecutionData;
 import software.wings.beans.AppContainer;
 import software.wings.beans.ExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactFile;
@@ -32,6 +31,7 @@ import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.ContainerResizeParams;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.dto.Command;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.infrastructure.Host;
 
 import java.util.List;

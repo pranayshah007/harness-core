@@ -68,6 +68,7 @@ import io.harness.cvng.core.jobs.EntityCRUDStreamConsumer;
 import io.harness.cvng.core.jobs.MonitoringSourcePerpetualTaskHandler;
 import io.harness.cvng.core.jobs.PersistentLockCleanup;
 import io.harness.cvng.core.jobs.SLIDataCollectionTaskCreateNextTaskHandler;
+import io.harness.cvng.core.jobs.SLORecalculationFailureHandler;
 import io.harness.cvng.core.jobs.ServiceGuardDataCollectionTaskCreateNextTaskHandler;
 import io.harness.cvng.core.jobs.ServiceLevelObjectiveV2VerifyTaskHandler;
 import io.harness.cvng.core.jobs.StatemachineEventConsumer;
@@ -462,6 +463,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerCreateNextSLIDataCollectionTaskIterator(injector);
     registerCreateNextDataCollectionTaskIterator(injector);
     registerCVNGDemoPerpetualTaskIterator(injector);
+    registerSLORecalculationFailure(injector);
     registerDataCollectionTasksPerpetualTaskStatusUpdateIterator(injector);
     registerServiceLevelObjectiveV2VerifyTaskIterator(injector);
     registerCompositeSLODataExecutorTaskIterator(injector);
@@ -807,6 +809,38 @@ public class VerificationApplication extends Application<VerificationConfigurati
         () -> sliDataCollectionTaskRecoverHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
   }
 
+  private void registerSLORecalculationFailure(Injector injector) {
+    ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
+        3, new ThreadFactoryBuilder().setNameFormat("sli-recalculation-failure").build());
+    SLORecalculationFailureHandler sloRecalculationFailureHandler =
+        injector.getInstance(SLORecalculationFailureHandler.class);
+    PersistenceIterator sloRecalculationFailureHandlerIterator =
+        MongoPersistenceIterator
+            .<AbstractServiceLevelObjective, MorphiaFilterExpander<AbstractServiceLevelObjective>>builder()
+            .mode(PersistenceIterator.ProcessMode.PUMP)
+            .iteratorName("SloRecalculationFailureHandlerIterator")
+            .clazz(AbstractServiceLevelObjective.class)
+            .fieldName(ServiceLevelObjectiveV2Keys.recordMetricIteration)
+            .targetInterval(ofMinutes(5))
+            .acceptableNoAlertDelay(ofMinutes(1))
+            .executorService(dataCollectionExecutor)
+            .semaphore(new Semaphore(3))
+            .handler(sloRecalculationFailureHandler)
+            .schedulingType(REGULAR)
+            .filterExpander(query
+                -> query.and(
+                    query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
+                        .greaterThan(
+                            injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()),
+                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE)))
+            .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
+            .redistribute(true)
+            .build();
+    injector.injectMembers(sloRecalculationFailureHandlerIterator);
+    dataCollectionExecutor.scheduleWithFixedDelay(
+        () -> sloRecalculationFailureHandlerIterator.process(), 0, 1, TimeUnit.MINUTES);
+  }
+
   private void registerCVNGDemoPerpetualTaskIterator(Injector injector) {
     ScheduledThreadPoolExecutor cvngDemoPerpetualTaskExecutor = new ScheduledThreadPoolExecutor(
         3, new ThreadFactoryBuilder().setNameFormat("create-cvng-perpetual-task-iterator").build());
@@ -933,8 +967,10 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .semaphore(new Semaphore(2))
             .handler(compositeSLODataExecutorTaskHandler)
             .schedulingType(REGULAR)
-            .filterExpander(
-                query -> query.filter(ServiceLevelObjectiveV2Keys.type, ServiceLevelObjectiveType.COMPOSITE))
+            .filterExpander(query
+                -> query.and(
+                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.COMPOSITE),
+                    query.criteria(ServiceLevelObjectiveV2Keys.createNextTaskIteration).equal(0L)))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

@@ -64,8 +64,8 @@ public class AMIArtifactInfo implements ArtifactInfo {
     return AMIArtifactConfig.builder()
         .connectorRef(ParameterField.<String>builder().value(connectorRef).build())
         .region(ParameterField.<String>builder().value(region).build())
-        .tags(tags)
-        .filters(filters)
+        .tags(ParameterField.<List<AMITag>>builder().value(tags).build())
+        .filters(ParameterField.<List<AMIFilter>>builder().value(filters).build())
         .versionRegex(ParameterField.<String>builder().value(versionRegex).build())
         .version(ParameterField.<String>builder().value(version).build())
         .build();

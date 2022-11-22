@@ -36,7 +36,6 @@ import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.yaml.YamlGitService;
 import software.wings.service.intfc.yaml.sync.GitSyncService;
 import software.wings.yaml.gitSync.GitFileActivity;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Iterables;
@@ -143,7 +142,8 @@ public class GitChangeSetProcesser {
     return applications.stream().map(app -> app.getName()).collect(toSet());
   }
 
-  private void addYamlChangeSetToFilesCommited(List<GitFileChange> gitFileChanges, YamlGitConfig yamlGitConfig) {
+  private void addYamlChangeSetToFilesCommited(
+      List<GitFileChange> gitFileChanges, software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     if (isEmpty(gitFileChanges)) {
       return;
     }

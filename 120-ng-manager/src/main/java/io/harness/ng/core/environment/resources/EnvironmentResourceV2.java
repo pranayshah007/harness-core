@@ -58,6 +58,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
 import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadataInput;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
@@ -491,6 +492,24 @@ public class EnvironmentResourceV2 {
   // do not delete this.
   public ResponseDTO<NGEnvironmentConfig> getNGEnvironmentConfig() {
     return ResponseDTO.newResponse(NGEnvironmentConfig.builder().build());
+  }
+
+  @POST
+  @Path("/mergeEnvironmentInputs/{environmentIdentifier}")
+  @ApiOperation(value = "This api merges old and new environment inputs YAML", nickname = "mergeEnvironmentInputs")
+  @Hidden
+  public ResponseDTO<EnvironmentInputsMergedResponseDto> mergeEnvironmentInputs(
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @PathParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      String oldEnvironmentInputsYaml) {
+    return ResponseDTO.newResponse(environmentService.mergeEnvironmentInputs(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, oldEnvironmentInputsYaml));
   }
 
   @POST

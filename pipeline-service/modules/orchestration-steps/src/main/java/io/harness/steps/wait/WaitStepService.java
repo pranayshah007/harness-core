@@ -18,7 +18,8 @@ import java.util.Optional;
 public interface WaitStepService {
   WaitStepInstance save(WaitStepInstance waitStepInstance);
   Optional<WaitStepInstance> findByNodeExecutionId(String nodeExecutionId);
-  void markAsFailOrSuccess(String nodeExecutionId, WaitStepAction waitStepAction);
+  void markAsFailOrSuccess(String planExecutionId, String nodeExecutionId, WaitStepAction waitStepAction);
+  void updatePlanStatus(String planExecutionId, String nodeExecutionId);
 
   WaitStepInstance getWaitStepExecutionDetails(String nodeExecutionId);
 }

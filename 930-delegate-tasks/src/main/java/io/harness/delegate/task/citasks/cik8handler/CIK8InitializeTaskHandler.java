@@ -41,6 +41,7 @@ import io.harness.delegate.beans.ci.pod.ContainerParams;
 import io.harness.delegate.beans.ci.pod.PodParams;
 import io.harness.delegate.beans.ci.pod.SecretParams;
 import io.harness.delegate.beans.ci.pod.SecretVarParams;
+import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.citasks.CIInitializeTaskHandler;
@@ -228,7 +229,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         servicePodParams.getSelectorMap(), servicePodParams.getPorts());
   }
 
-  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams) {
+  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams)
+      throws IOException {
     log.info("Creating image secrets for pod name: {}", podParams.getName());
     Stopwatch timer = Stopwatch.createStarted();
     List<CIK8ContainerParams> containerParamsList = new ArrayList<>();
@@ -298,14 +300,15 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       List<V1KeyToPath> l = new ArrayList<>();
       destPaths.forEach(path
           -> l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(path)).build()));
+      // All certs get mounted to the lite engine certs directory
+      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
+      l.add(new V1KeyToPathBuilder().withKey(secretKey).withPath(secretVolumesHelper.getName(liteEnginePath)).build());
 
       V1SecretVolumeSource secretVolumeSource =
           new V1SecretVolumeSourceBuilder().withSecretName(secretKey).withItems(l).build();
 
       podVolumes.add(new V1VolumeBuilder().withSecret(secretVolumeSource).withName(secretKey).build());
 
-      // All certs get mounted to the lite engine certs directory
-      String liteEnginePath = LITE_ENGINE_CERTS_DIR + secretVolumesHelper.getName(srcPath);
       liteEngineVolumeMounts.add(new V1VolumeMountBuilder()
                                      .withName(secretKey)
                                      .withMountPath(liteEnginePath)
@@ -362,6 +365,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     Map<String, String> gitSecretData =
         getAndUpdateGitSecretData(gitConnectorDetails, containerParamsList, k8SecretName);
 
+    Map<String, SecretVariableDTO> customSecretCache = new HashMap<>();
     Map<String, String> secretData = new HashMap<>();
     for (CIK8ContainerParams containerParams : containerParamsList) {
       log.info(
@@ -400,8 +404,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       if (isNotEmpty(secretVariableDetails)) {
         log.info("Creating custom secret env variables for container {} present on pod: {}", containerParams.getName(),
             podParams.getName());
-        Map<String, String> customVarSecretData =
-            getAndUpdateCustomVariableSecretData(secretVariableDetails, containerParams, k8SecretName);
+        Map<String, String> customVarSecretData = getAndUpdateCustomVariableSecretData(
+            secretVariableDetails, containerParams, k8SecretName, customSecretCache);
         secretData.putAll(customVarSecretData);
       }
       if (isNotEmpty(plainTextSecretsByName)) {
@@ -492,10 +496,10 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
     }
   }
 
-  private Map<String, String> getAndUpdateCustomVariableSecretData(
-      List<SecretVariableDetails> secretVariableDetails, CIK8ContainerParams containerParams, String secretName) {
+  private Map<String, String> getAndUpdateCustomVariableSecretData(List<SecretVariableDetails> secretVariableDetails,
+      CIK8ContainerParams containerParams, String secretName, Map<String, SecretVariableDTO> cache) {
     Map<String, SecretParams> customVarSecretData =
-        secretSpecBuilder.decryptCustomSecretVariables(secretVariableDetails);
+        secretSpecBuilder.decryptCustomSecretVariables(secretVariableDetails, cache);
     if (isNotEmpty(customVarSecretData)) {
       updateContainer(containerParams, secretName, customVarSecretData);
       return customVarSecretData.values().stream().collect(

@@ -62,7 +62,7 @@ public class AzureContainerRegistrySettingsProvider extends AbstractAzureRegistr
             azureAuthorizationClient
                 .getUserAccessToken(azureConfig,
                     AzureUtils.convertToScope(
-                        AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint()))
+                        AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
                 .getAccessToken();
       } else {
         // only MSI connection will/should reach here

@@ -52,7 +52,7 @@ public class MigrateApplicationsToTimeScaleDB implements TimeScaleEntityMigratio
       findOptions_applications.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<Application> iterator =
-               new HIterator<>(wingsPersistence.createQuery(Application.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Application.class, excludeAuthority)
                                    .field(ApplicationKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_applications))) {

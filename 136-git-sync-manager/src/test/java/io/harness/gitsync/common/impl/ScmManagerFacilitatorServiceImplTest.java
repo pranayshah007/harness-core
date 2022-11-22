@@ -26,6 +26,8 @@ import io.harness.beans.IdentifierRef;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitFilePathDetails;
+import io.harness.beans.request.GitFileRequest;
+import io.harness.beans.response.GitFileResponse;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -93,6 +95,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   String commitId = "commitId";
   String defaultBranch = "default";
   FileContent fileContent = FileContent.newBuilder().build();
+  String content = "content";
   GithubConnectorDTO githubConnector;
   ConnectorInfoDTO connectorInfo;
   Scope scope;
@@ -306,6 +309,28 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
     final UpdateFileResponse updateFileResponse = scmManagerFacilitatorService.updateFile(updateGitFileRequestDTO);
     assertThat(updateFileResponse.getStatus()).isEqualTo(200);
     assertThat(updateFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFile() {
+    when(scmClient.getFile(any(), any()))
+        .thenReturn(GitFileResponse.builder()
+                        .statusCode(200)
+                        .branch(branch)
+                        .commitId(commitId)
+                        .content(content)
+                        .filepath(filePath)
+                        .build());
+    GitFileRequest gitFileRequest = GitFileRequest.builder().filepath(filePath).branch(branch).build();
+    final GitFileResponse gitFileResponse =
+        scmManagerFacilitatorService.getFile(scope, (ScmConnector) connectorInfo.getConnectorConfig(), gitFileRequest);
+    assertThat(gitFileResponse.getBranch()).isEqualTo(branch);
+    assertThat(gitFileResponse.getCommitId()).isEqualTo(commitId);
+    assertThat(gitFileResponse.getFilepath()).isEqualTo(filePath);
+    assertThat(gitFileResponse.getContent()).isEqualTo(content);
+    assertThat(gitFileResponse.getError()).isEqualTo(null);
   }
 
   @Test

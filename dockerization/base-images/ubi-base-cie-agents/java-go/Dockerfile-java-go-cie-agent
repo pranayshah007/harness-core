@@ -43,7 +43,7 @@ ARG HELM_VERSION=2.17.0
 ARG SONARQUBE_VERSION=4.7.0.2747
 
 ##TODO: google-cloud-cli can be removed, update pipelines for the same
-RUN yum install -y mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel yum-utils --nodocs --skip-broken \
+RUN yum install -y nodejs python mongodb-org-shell google-cloud-cli autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build wget git gcc gcc-c++ jq bc zlib-devel yum-utils --nodocs --skip-broken \
     && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo\
     && yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin \
     && git --version \

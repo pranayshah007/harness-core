@@ -38,13 +38,13 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploym
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 
+import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.WebApp;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.appservice.implementation.SiteInstanceInner;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -146,7 +146,7 @@ public class AzureAppServiceService {
       }
       deploySlotId = azureApp.get().id();
       appServicePlanId = azureApp.get().appServicePlanId();
-      hostName = azureApp.get().defaultHostName();
+      hostName = azureApp.get().defaultHostname();
     } else {
       Optional<DeploymentSlot> deploymentSlot = azureWebClient.getDeploymentSlotByName(azureWebClientContext, slotName);
 
@@ -156,10 +156,10 @@ public class AzureAppServiceService {
       }
       deploySlotId = deploymentSlot.get().id();
       appServicePlanId = deploymentSlot.get().appServicePlanId();
-      hostName = deploymentSlot.get().defaultHostName();
+      hostName = deploymentSlot.get().defaultHostname();
     }
 
-    List<SiteInstanceInner> siteInstanceInners =
+    List<WebSiteInstanceStatusInner> siteInstanceInners =
         azureWebClient.listInstanceIdentifiersSlot(azureWebClientContext, slotName);
 
     return siteInstanceInners.stream()

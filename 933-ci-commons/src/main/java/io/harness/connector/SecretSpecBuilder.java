@@ -104,7 +104,8 @@ public class SecretSpecBuilder {
   @Inject private ImageSecretBuilder imageSecretBuilder;
   @Inject private GitTokenRetriever gitTokenRetriever;
 
-  public Map<String, SecretParams> decryptCustomSecretVariables(List<SecretVariableDetails> secretVariableDetails) {
+  public Map<String, SecretParams> decryptCustomSecretVariables(
+      List<SecretVariableDetails> secretVariableDetails, Map<String, SecretVariableDTO> cache) {
     Map<String, SecretParams> data = new HashMap<>();
     if (isNotEmpty(secretVariableDetails)) {
       for (SecretVariableDetails secretVariableDetail : secretVariableDetails) {
@@ -112,8 +113,15 @@ public class SecretSpecBuilder {
             secretVariableDetail.getSecretVariableDTO().getName(),
             secretVariableDetail.getSecretVariableDTO().getType(),
             secretVariableDetail.getSecretVariableDTO().getSecret().toSecretRefStringValue());
-        SecretVariableDTO secretVariableDTO = (SecretVariableDTO) secretDecryptor.decrypt(
-            secretVariableDetail.getSecretVariableDTO(), secretVariableDetail.getEncryptedDataDetailList());
+        SecretVariableDTO secretVariableDTO;
+
+        if (cache.containsKey(secretVariableDetail.getSecretVariableDTO().getName())) {
+          secretVariableDTO = cache.get(secretVariableDetail.getSecretVariableDTO().getName());
+        } else {
+          secretVariableDTO = (SecretVariableDTO) secretDecryptor.decrypt(
+              secretVariableDetail.getSecretVariableDTO(), secretVariableDetail.getEncryptedDataDetailList());
+          cache.put(secretVariableDetail.getSecretVariableDTO().getName(), secretVariableDTO);
+        }
 
         log.info("Decrypted custom variable name:[{}], type:[{}], secretRef:[{}]",
             secretVariableDetail.getSecretVariableDTO().getName(),

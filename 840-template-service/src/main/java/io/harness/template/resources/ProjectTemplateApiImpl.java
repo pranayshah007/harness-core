@@ -38,8 +38,9 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
       TemplateCreateRequestBody templateCreateRequestBody, @AccountIdentifier String account) {
     GitCreateDetails gitCreateDetails = templateCreateRequestBody.getGitDetails();
     String templateYaml = templateCreateRequestBody.getTemplateYaml();
-    return templateResourceApiUtils.createTemplate(account, org, project, gitCreateDetails, templateYaml,
-        templateCreateRequestBody.isIsStable(), templateCreateRequestBody.getComments());
+    Boolean isStable = Boolean.TRUE.equals(templateCreateRequestBody.isIsStable());
+    return templateResourceApiUtils.createTemplate(
+        account, org, project, gitCreateDetails, templateYaml, isStable, templateCreateRequestBody.getComments());
   }
 
   @Override
@@ -71,9 +72,9 @@ public class ProjectTemplateApiImpl implements ProjectTemplateApi {
   public Response getTemplatesListProject(@OrgIdentifier String org, @ProjectIdentifier String project,
       @AccountIdentifier String account, Integer page, Integer limit, String sort, String order, String searchTerm,
       String listType, Boolean recursive, List<String> names, List<String> identifiers, String description,
-      List<String> entityTypes, List<String> child_types) {
+      List<String> entityTypes, List<String> childTypes) {
     return templateResourceApiUtils.getTemplates(account, org, project, page, limit, sort, order, searchTerm, listType,
-        recursive, names, identifiers, description, entityTypes, child_types);
+        recursive, names, identifiers, description, entityTypes, childTypes);
   }
 
   @Override

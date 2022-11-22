@@ -58,14 +58,17 @@ stomanager-mongo:
 enableAuth: false
 
 logServiceConfig:
-  baseUrl: https://qa.harness.io/log-service/
+  internalUrl: http://localhost:8079
+  baseUrl: http://localhost:8079
   globalToken: "c76e567a-b341-404d-a8dd-d9738714eb82"
 
 tiServiceConfig:
+  internalUrl: http://localhost:8078
   baseUrl: http://localhost:8078
   globalToken: "78d16b66-4b4c-11eb-8377-acde48001122"
 
 stoServiceConfig:
+  internalUrl: http://localhost:4000
   baseUrl: http://localhost:4000
   globalToken: "551715ea-ca71-11ec-9d64-0242ac120002"
 
@@ -93,8 +96,8 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.18
-  liteEngineImage: harness/ci-lite-engine:1.14.18
+  addonImage: harness/ci-addon:1.14.19
+  liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
   stepConfig:
     # The below config is for K8 steps

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 
 	cg "github.com/harness/harness-core/product/ci/common/avro/schema/callgraph"
+	cgold "github.com/harness/harness-core/product/ci/common/avro/schema/callgraph_old"
 )
 
 //Serialzer is the interface for encoding and decoding structs
@@ -35,12 +36,16 @@ const (
 
 // NewCgphSerialzer returns new CgphSerialzer object with the codec
 // based on the schema received in the input
-func NewCgphSerialzer(typ string) (*CgphSerialzer, error) {
+func NewCgphSerialzer(typ string, useOld bool) (*CgphSerialzer, error) {
 	var schema []byte
 	var err error
 	switch typ {
 	case cgType:
-		schema, err = cg.Asset(cgSrcFile)
+		if !useOld {
+			schema, err = cg.Asset(cgSrcFile)
+		} else {
+			schema, err = cgold.Asset(cgSrcFile)
+		}
 	default:
 		return nil, fmt.Errorf("type %s is not supported", typ)
 	}

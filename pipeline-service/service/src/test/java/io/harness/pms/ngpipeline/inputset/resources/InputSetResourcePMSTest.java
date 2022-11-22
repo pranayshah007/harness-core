@@ -375,7 +375,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testCreateInputSet() {
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(false));
+        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), eq(false));
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
@@ -405,7 +405,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   public void testUpdateInputSet() {
     doReturn(Optional.of(pipelineEntity))
         .when(pipelineService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(false));
+        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), eq(false));
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);

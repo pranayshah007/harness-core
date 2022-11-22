@@ -73,6 +73,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -426,7 +427,7 @@ public class ServiceStepV3Test {
   }
 
   @Test
-  @Owner(developers = OwnerRule.YOGESH)
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void testExecuteFreezePart() {
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
@@ -454,6 +455,29 @@ public class ServiceStepV3Test {
     assertThat(freezeOutcome.isFrozen()).isEqualTo(true);
     assertThat(freezeOutcome.getGlobalFreezeConfigs()).isEqualTo(freezeSummaryResponseDTOList);
     assertThat(childrenExecutableResponse.getChildrenCount()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV_MITTAL)
+  @Category(UnitTests.class)
+  public void testExecuteFreezePartWithEmptyFreezeList() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
+    List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Collections.emptyList();
+    doReturn(freezeSummaryResponseDTOList)
+        .when(freezeEvaluateService)
+        .anyGlobalFreezeActive(anyString(), anyString(), anyString());
+    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
+             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+        .thenReturn(false);
+    Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
+
+    ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
+    ArgumentCaptor<ExecutionSweepingOutput> captor = ArgumentCaptor.forClass(ExecutionSweepingOutput.class);
+    ArgumentCaptor<String> stringCaptor = ArgumentCaptor.forClass(String.class);
+
+    verify(sweepingOutputService, times(0))
+        .consume(any(Ambiance.class), stringCaptor.capture(), captor.capture(), anyString());
+    assertThat(childrenExecutableResponse).isNull();
   }
 
   @Test

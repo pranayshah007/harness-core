@@ -32,6 +32,7 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
@@ -161,6 +162,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                               .map(id -> ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(id).build())
                               .collect(Collectors.toList()))
           .build();
+    } catch (WingsException wingsException) {
+      throw wingsException;
     } catch (Exception ex) {
       throw new RuntimeException(ex);
     }
@@ -416,6 +419,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
 
+    if (ngServiceV2InfoConfig.getServiceDefinition() == null) {
+      throw new InvalidRequestException(
+          "Service Definition is not defined for service : " + serviceEntity.getIdentifier());
+    }
+
     serviceStepsHelper.validateResources(ambiance, ngServiceConfig);
 
     entityMap.put(FreezeEntityType.ORG, Lists.newArrayList(serviceEntity.getOrgIdentifier()));
@@ -525,6 +533,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
       manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
+        log.info("Deployment Freeze is Active for the given service.");
         sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
             FreezeOutcome.builder()
                 .frozen(true)
@@ -532,12 +541,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                 .globalFreezeConfigs(globalFreezeConfigs)
                 .build(),
             "");
+        log.info("Adding Children as empty.");
+        return ChildrenExecutableResponse.newBuilder()
+            .addAllLogKeys(CollectionUtils.emptyIfNull(
+                StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+            .addAllChildren(Collections.emptyList())
+            .build();
       }
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(CollectionUtils.emptyIfNull(
-              StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
-          .addAllChildren(Collections.emptyList())
-          .build();
     }
     return null;
   }

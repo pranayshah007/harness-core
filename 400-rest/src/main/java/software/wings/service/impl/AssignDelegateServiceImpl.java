@@ -47,7 +47,6 @@ import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
 import io.harness.delegate.beans.DelegateScope;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
-import io.harness.delegate.beans.DelegateTaskInvalidRequestException;
 import io.harness.delegate.beans.NgSetupFields;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.TaskGroup;
@@ -889,7 +888,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       if (isEmpty(delegates)) {
         task.getNonAssignableDelegates().put(CAN_NOT_ASSIGN_OWNER, Collections.emptyList());
         delegateTaskServiceClassic.addToTaskActivityLog(task, CAN_NOT_ASSIGN_OWNER);
-        throw new DelegateTaskInvalidRequestException(task.getUuid());
+        return eligibleDelegateIds;
       }
 
       eligibleDelegateIds =

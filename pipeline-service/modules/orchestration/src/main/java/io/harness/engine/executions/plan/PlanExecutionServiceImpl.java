@@ -38,6 +38,7 @@ import io.harness.repositories.PlanExecutionRepository;
 import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.EnumSet;
@@ -142,6 +143,12 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   public PlanExecution get(String planExecutionId) {
     return planExecutionRepository.findById(planExecutionId)
         .orElseThrow(() -> new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId));
+  }
+
+  @Override
+  public PlanExecution getStatus(String planExecutionId) {
+    return planExecutionRepository.getWithProjectionsWithoutUuid(
+        planExecutionId, Lists.newArrayList(PlanExecutionKeys.status));
   }
 
   @Override

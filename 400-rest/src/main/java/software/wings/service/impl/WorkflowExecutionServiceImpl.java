@@ -1205,10 +1205,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     PageRequest pageRequest = aPageRequest()
-                                  .addFilter("appId", EQ, workflowExecution.getAppId())
-                                  .addFilter("workflowId", EQ, workflowExecution.getWorkflowId())
-                                  .addFilter("status", EQ, SUCCESS)
-                                  .addOrder("endTs", OrderType.DESC)
+                                  .addFilter(WorkflowExecutionKeys.appId, EQ, workflowExecution.getAppId())
+                                  .addFilter(WorkflowExecutionKeys.workflowId, EQ, workflowExecution.getWorkflowId())
+                                  .addFilter(WorkflowExecutionKeys.status, EQ, SUCCESS)
+                                  .addOrder(WorkflowExecutionKeys.endTs, OrderType.DESC)
                                   .withLimit("5")
                                   .build();
     List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);
@@ -1734,7 +1734,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Override
   public int getActiveServiceCount(String accountId) {
     long sixtyDays = currentTimeMillis() - SIXTY_DAYS_IN_MILLIS;
-    Query query = wingsPersistence.createQuery(WorkflowExecution.class, excludeAuthority);
+    Query query = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class, excludeAuthority);
     query.filter(WorkflowExecutionKeys.accountId, accountId);
     query.field(WorkflowExecutionKeys.startTs).greaterThanOrEq(sixtyDays);
     query.project("serviceIds", true);

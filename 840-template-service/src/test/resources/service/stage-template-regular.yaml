@@ -1,0 +1,24 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: template2
+  versionLabel: version1
+  name: stage template
+  type: Stage
+  spec:
+    type: Approval
+    spec:
+      service:
+        serviceRef: my_service
+      environment:
+        environmentRef: my_env
+        infrastructureDefinition:
+          identifier: k8s_infra
+      execution:
+        steps:
+          - step:
+            name: shell
+            identifier: shell
+            type: K8sRollingDeploy
+            spec:
+              skipDryRun: false

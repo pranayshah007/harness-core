@@ -167,6 +167,7 @@ java_library(
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
         "@maven//:org_jooq_joor",
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mockito_mockito_inline",
         "@maven//:org_powermock_powermock_api_mockito2",

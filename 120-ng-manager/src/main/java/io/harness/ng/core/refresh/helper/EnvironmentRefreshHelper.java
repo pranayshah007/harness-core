@@ -14,6 +14,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -157,6 +158,11 @@ public class EnvironmentRefreshHelper {
       log.warn("Env node in Resolved templates yaml is null");
       return;
     }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
+        || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
+      return;
+    }
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     JsonNode envRefInResolvedTemplatesYaml =
@@ -215,12 +221,12 @@ public class EnvironmentRefreshHelper {
       return true;
     }
     if (checkIfInfraDefsToBeValidated(infraDefsNode, infraDefsNodeInResolvedTemplatesYaml, mapper)) {
-      JsonNode envRefNode =
-          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
-      if (envRefNode == null) {
+      if (envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
         log.warn("Skipping because couldn't find envRef value");
         return true;
       }
+      JsonNode envRefNode =
+          envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF).getNode().getCurrJsonNode();
       String envRefValue = envRefNode.asText();
       return validateInfraDefsInput(context, errorNodeSummary, envRefValue, mapper, infraDefsNode);
     }
@@ -350,6 +356,11 @@ public class EnvironmentRefreshHelper {
       log.warn("Env node in Resolved templates yaml is null");
       return;
     }
+    if (serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF) == null
+        || envNodeInResolvedTemplatesYaml.getField(YamlTypes.ENVIRONMENT_REF) == null) {
+      log.warn("Service ref or env ref in yaml is null. Exiting.");
+      return;
+    }
     JsonNode serviceRefInResolvedTemplatesYaml =
         serviceNodeInResolvedTemplatesYaml.getField(YamlTypes.SERVICE_REF).getNode().getCurrJsonNode();
     JsonNode envRefInResolvedTemplatesYaml =
@@ -398,8 +409,9 @@ public class EnvironmentRefreshHelper {
       return;
     }
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
-      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
-          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
+      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYaml(context.getAccountId(),
+          context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false,
+          NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
       if (EmptyPredicate.isEmpty(infraInputs)) {
         envObjectNode.remove(YamlTypes.INFRASTRUCTURE_DEFS);
         return;
@@ -452,8 +464,9 @@ public class EnvironmentRefreshHelper {
     }
 
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
-      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
-          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
+      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYaml(context.getAccountId(),
+          context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false,
+          NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
       if (EmptyPredicate.isEmpty(infraInputs)) {
         errorNodeSummary.setValid(false);
         return false;

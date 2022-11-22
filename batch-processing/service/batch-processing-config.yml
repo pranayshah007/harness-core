@@ -24,6 +24,8 @@ timescaledb:
   logUnclosedConnections: false
   loggerLevel: OFF
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 batchQueryConfig:
   queryBatchSize: 4000

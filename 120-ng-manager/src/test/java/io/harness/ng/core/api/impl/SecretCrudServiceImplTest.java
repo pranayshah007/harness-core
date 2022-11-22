@@ -492,7 +492,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   public void testDelete() {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
-    when(encryptedDataService.delete(any(), any(), any(), any())).thenReturn(true);
+    when(encryptedDataService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
     doNothing()
         .when(secretEntityReferenceHelper)
@@ -501,14 +501,37 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     when(ngSecretServiceV2.get(any(), any(), any(), any()))
         .thenReturn(Optional.of(
             Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
-    boolean success = secretCrudService.delete(accountIdentifier, null, null, "identifier");
+    boolean success = secretCrudService.delete(accountIdentifier, null, null, "identifier", false);
 
     assertThat(success).isTrue();
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
-    verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
     verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, atLeastOnce())
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue() {
+    NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
+    when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(encryptedDataService.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+
+    doNothing()
+        .when(secretEntityReferenceHelper)
+        .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+    doNothing().when(secretEntityReferenceHelper).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
+    when(ngSecretServiceV2.get(any(), any(), any(), any()))
+        .thenReturn(Optional.of(
+            Secret.builder().type(SecretType.SecretText).secretSpec(SecretTextSpec.builder().build()).build()));
+    boolean success = secretCrudService.delete(accountIdentifier, null, null, "identifier", true);
+    assertThat(success).isTrue();
+    verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
+    verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
+    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(secretEntityReferenceHelper, times(0)).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
   }
 
   @Test

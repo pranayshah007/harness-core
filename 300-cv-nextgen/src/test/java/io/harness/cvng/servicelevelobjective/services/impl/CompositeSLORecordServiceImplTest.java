@@ -19,6 +19,7 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
+import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -284,11 +285,12 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     List<Double> runningGoodCount = Arrays.asList(0.75, 1.25, 1.5, 2.25, 2.75);
     List<Double> runningBadCount = Arrays.asList(0.25, 0.75, 1.5, 1.75, 2.25);
     createSLORecords(startTime, endTime, runningGoodCount, runningBadCount);
-    assertThat(sloRecordService
-                   .getGraphData(compositeServiceLevelObjective, startTime.minus(Duration.ofHours(1)),
-                       endTime.plus(Duration.ofMinutes(11)), 10, 0)
-                   .getSloPerformanceTrend())
-        .hasSize(5);
+    SLODashboardWidget.SLOGraphData sloGraphData = sloRecordService.getGraphData(compositeServiceLevelObjective,
+        startTime.minus(Duration.ofHours(1)), endTime.plus(Duration.ofMinutes(11)), 10, 0);
+    assertThat(sloGraphData.getSloPerformanceTrend()).hasSize(5);
+    assertThat(sloGraphData.getSloPerformanceTrend().get(0).getValue()).isEqualTo(75);
+    assertThat(sloGraphData.getErrorBudgetBurndown()).hasSize(5);
+    assertThat(sloGraphData.getErrorBudgetBurndown().get(0).getValue()).isEqualTo(97.5);
   }
 
   private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {

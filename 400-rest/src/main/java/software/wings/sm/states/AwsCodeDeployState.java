@@ -228,7 +228,7 @@ public class AwsCodeDeployState extends State {
                                                           .serviceName(service.getName())
                                                           .deploymentType(deploymentType.name())
                                                           .activityId(activity.getUuid())
-                                                          .cloudProviderSetting(cloudProviderSetting)
+                                                          .cloudProviderSetting(cloudProviderSetting.toDTO())
                                                           .cloudProviderCredentials(encryptedDataDetails)
                                                           .codeDeployParams(codeDeployParams)
                                                           .build();

@@ -27,6 +27,9 @@ public interface CVNGMetricsUtils {
   String API_CALL_RESPONSE_SIZE = "api_call_response_size";
   String ANALYSIS_STATE_MACHINE_RETRY_COUNT = "analysis_state_machine_retry_count";
   String ORCHESTRATOR_STATE_MACHINE_QUEUE_COUNT_ABOVE_FIVE = "orchestrator_state_machine_queue_size_above_five_count";
+  String SLO_DATA_ANALYSIS_METRIC = "slo_data_analysis_metric";
+  String RECALCULATION_FAILURE = "recalculation_failure";
+  String CALCULATION_FAILURE = "calculation_failure";
 
   static String getApiCallLogResponseCodeMetricName(String responseCode) {
     return String.format("api_call_response_code_%sxx", responseCode.charAt(0));

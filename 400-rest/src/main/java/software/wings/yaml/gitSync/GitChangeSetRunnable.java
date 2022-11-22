@@ -120,7 +120,7 @@ public class GitChangeSetRunnable implements Runnable {
     return YamlProcessingLogContext.builder()
         .changeSetQueueKey(yamlChangeSet.getQueueKey())
         .changeSetId(yamlChangeSet.getUuid())
-        .build(OVERRIDE_ERROR);
+        .build(OVERRIDE_NESTS);
   }
 
   private void processChangeSet(YamlChangeSet yamlChangeSet) {
@@ -178,7 +178,7 @@ public class GitChangeSetRunnable implements Runnable {
   private YamlChangeSet getQueuedChangeSetForWaitingQueueKey(String accountId, String queueKey) {
     try (
         AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_NESTS);
-        AutoLogContext ignore2 = YamlProcessingLogContext.builder().changeSetQueueKey(queueKey).build(OVERRIDE_ERROR)) {
+        AutoLogContext ignore2 = YamlProcessingLogContext.builder().changeSetQueueKey(queueKey).build(OVERRIDE_NESTS)) {
       return yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(
           accountId, queueKey, getMaxRunningChangesetsForAccount());
     } catch (Exception ex) {
