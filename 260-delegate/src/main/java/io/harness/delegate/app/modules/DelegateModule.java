@@ -925,8 +925,8 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("k8sSteadyStateExecutor")
   public ExecutorService k8sSteadyStateExecutor() {
-    return Executors.newCachedThreadPool(
-        new ThreadFactoryBuilder().setNameFormat("k8sEventWatch-%d").setPriority(Thread.MIN_PRIORITY).build());
+    return ThreadPool.create(5, 50, 5, TimeUnit.SECONDS,
+        new ThreadFactoryBuilder().setNameFormat("k8s-event-watch-%d").setPriority(Thread.MIN_PRIORITY).build());
   }
 
   @Provides
