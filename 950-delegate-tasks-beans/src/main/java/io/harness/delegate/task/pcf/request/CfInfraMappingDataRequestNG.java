@@ -12,12 +12,23 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class CfInstanceSyncRequestNG implements CfCommandRequestNG {
+public class CfInfraMappingDataRequestNG implements CfCommandRequestNG {
   String accountId;
   CfCommandTypeNG cfCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   TasInfraConfig tasInfraConfig;
   Integer timeoutIntervalInMin;
-  String applicationName;
+  String host;
+  String domain;
+  String path;
+  Integer port;
+  boolean useRandomPort;
+  boolean tcpRoute;
+  String applicationNamePrefix;
+  CfDataFetchActionType actionType;
+  @Override
+  public TasInfraConfig getTasInfraConfig() {
+    return tasInfraConfig;
+  }
 }

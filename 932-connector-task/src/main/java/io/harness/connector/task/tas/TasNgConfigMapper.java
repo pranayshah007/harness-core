@@ -34,7 +34,7 @@ public class TasNgConfigMapper {
       TasManualDetailsDTO tasManualDetailsDTO =
           (TasManualDetailsDTO) decryptionHelper.decrypt(tasManualDetailsForDecryption, encryptionDetails);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(tasManualDetailsDTO, encryptionDetails);
-      cfConfig.setEndpointUrl(tasManualDetailsDTO.getEndpointUrl());
+      cfConfig.setEndpointUrl(reformatEndpointURL(tasManualDetailsDTO.getEndpointUrl()));
       cfConfig.setUserName(
           getValueFromPlainTextOrSecretRef(tasManualDetailsDTO.getUsername(), tasManualDetailsDTO.getUsernameRef()));
       cfConfig.setPassword(getDecryptedValueWithNullCheck(tasManualDetailsDTO.getPasswordRef()));
@@ -49,5 +49,12 @@ public class TasNgConfigMapper {
       return passwordRef.getDecryptedValue();
     }
     return null;
+  }
+  private String reformatEndpointURL(String endpointUrl) {
+    int colonIndex = endpointUrl.indexOf("://");
+    if (colonIndex > 0) {
+      return endpointUrl.substring(colonIndex + 3);
+    }
+    return endpointUrl;
   }
 }

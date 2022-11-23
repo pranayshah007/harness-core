@@ -107,6 +107,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String AUTHENTICATION_SETTINGS_PACKAGE = "io.harness.ng.authenticationsettings.resources";
   public static final String SERVICE_PACKAGE = "io.harness.ng.core.service.resources";
   public static final String CUSTOM_DEPLOYMENT_PACKAGE = "io.harness.ng.core.customDeployment.resources";
+  public static final String TAS_PACKAGE = "io.harness.ng.core.tas.resources";
   public static final String VARIABLE_RESOURCE_PACKAGE = "io.harness.ng.core.variable.resources";
   public static final String CD_OVERVIEW_PACKAGE = "io.harness.ng.overview.resource";
   public static final String ACTIVITY_HISTORY_PACKAGE = "io.harness.ng.core.activityhistory.resource";
@@ -290,7 +291,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.SETTINGS_RESOURCE_PACKAGE, NextGenConfiguration.AGENT_PACKAGE,
                 NextGenConfiguration.CUSTOM_DEPLOYMENT_PACKAGE, NextGenConfiguration.FREEZE_RESOURCE_PACKAGE,
                 NextGenConfiguration.REFRESH_RESOURCE_PACKAGE, DEPLOYMENT_STAGE_PACKAGE,
-                NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE))
+                NextGenConfiguration.MANIFEST_RESOURCE_PACKAGE, NextGenConfiguration.TAS_PACKAGE))
         .collect(Collectors.toSet());
   }
 
