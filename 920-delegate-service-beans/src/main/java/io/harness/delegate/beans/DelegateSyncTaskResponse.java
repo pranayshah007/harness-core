@@ -28,6 +28,7 @@ import org.mongodb.morphia.annotations.Id;
 public class DelegateSyncTaskResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private byte[] responseData;
+  private boolean usingKryoWithoutReference;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
 }
