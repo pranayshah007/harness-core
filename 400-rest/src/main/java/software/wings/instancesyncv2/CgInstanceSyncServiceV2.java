@@ -90,10 +90,6 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
-    List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
-
-    deploymentSummaries = deploymentSummaries.stream().filter(this::hasDeploymentKey).collect(Collectors.toList());
-
     event.getDeploymentSummaries()
         .parallelStream()
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
