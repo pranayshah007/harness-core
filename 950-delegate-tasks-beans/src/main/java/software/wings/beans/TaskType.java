@@ -404,7 +404,8 @@ public enum TaskType {
   TERRAGRUNT_APPLY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Apply Task", true),
   TERRAGRUNT_DESTROY_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Destroy Task", true),
   TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true),
-  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task");
+  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
+  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service");
 
   private final TaskGroup taskGroup;
   private final String displayName;

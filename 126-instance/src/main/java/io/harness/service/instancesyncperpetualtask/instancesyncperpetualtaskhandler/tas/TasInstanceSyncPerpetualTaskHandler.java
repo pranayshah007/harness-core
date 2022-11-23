@@ -3,7 +3,7 @@ package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskha
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
-import io.harness.cdng.pcf.TasEntityHelper;
+import io.harness.cdng.tas.TasEntityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.pcf.TasDeploymentReleaseData;
 import io.harness.delegate.task.pcf.request.CfInstanceSyncRequestNG;
