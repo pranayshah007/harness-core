@@ -1,0 +1,132 @@
+execution:
+  steps:
+    - parallel:
+        - step:
+            type: ShellScript
+            name: s0
+            identifier: s0
+            spec:
+              shell: Bash
+              onDelegate: true
+              source:
+                type: Inline
+                spec:
+                  script: echo "Hello"
+              environmentVariables: []
+              outputVariables: []
+            timeout: 10m
+        - step:
+            type: ShellScript
+            name: s00
+            identifier: s00
+            spec:
+              shell: Bash
+              onDelegate: true
+              source:
+                type: Inline
+                spec:
+                  script: echo "Hello"
+              environmentVariables: []
+              outputVariables: []
+            timeout: 10m
+    - stepGroup:
+        name: s1
+        identifier: s1
+        steps:
+          - parallel:
+              - step:
+                  type: ShellScript
+                  name: ss
+                  identifier: ss
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Hello"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - stepGroup:
+                  name: s3
+                  identifier: s3
+                  steps:
+                    - step:
+                        type: ShellScript
+                        name: ss3
+                        identifier: ss3
+                        spec:
+                          shell: Bash
+                          onDelegate: true
+                          source:
+                            type: Inline
+                            spec:
+                              script: echo "Hello"
+                          environmentVariables: []
+                          outputVariables: []
+                        timeout: 10m
+          - parallel:
+              - stepGroup:
+                  name: ss2
+                  identifier: ss2
+                  steps:
+                    - parallel:
+                        - step:
+                            type: ShellScript
+                            name: sss2
+                            identifier: sss2
+                            spec:
+                              shell: Bash
+                              onDelegate: true
+                              source:
+                                type: Inline
+                                spec:
+                                  script: echo "Hello"
+                              environmentVariables: []
+                              outputVariables: []
+                            timeout: 10m
+                        - step:
+                            type: ShellScript
+                            name: ss22
+                            identifier: ss22
+                            spec:
+                              shell: Bash
+                              onDelegate: true
+                              source:
+                                type: Inline
+                                spec:
+                                  script: echo "Hello"
+                              environmentVariables: []
+                              outputVariables: []
+                            timeout: 10m
+              - step:
+                  type: ShellScript
+                  name: ss4
+                  identifier: ss4
+                  spec:
+                    shell: Bash
+                    onDelegate: true
+                    source:
+                      type: Inline
+                      spec:
+                        script: echo "Hello"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+    - step:
+        name: Rollout Deployment
+        identifier: rolloutDeployment
+        type: K8sRollingDeploy
+        timeout: 10m
+        spec:
+          skipDryRun: false
+          pruningEnabled: false
+  rollbackSteps:
+    - step:
+        name: Rollback Rollout Deployment
+        identifier: rollbackRolloutDeployment
+        type: K8sRollingRollback
+        timeout: 10m
+        spec:
+          pruningEnabled: false

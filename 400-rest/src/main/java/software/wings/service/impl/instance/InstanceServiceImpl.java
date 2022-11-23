@@ -131,10 +131,10 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public Instance saveOrUpdate(@Valid Instance instance) {
     Query<Instance> query = wingsPersistence.createQuery(Instance.class);
-    query.filter("accountId", instance.getAccountId());
     query.filter("appId", instance.getAppId());
     query.filter("isDeleted", false);
     InstanceKey instanceKey = addInstanceKeyFilterToQuery(query, instance);
+    query.project(InstanceKeys.uuid, true);
 
     try (AcquiredLock acquiredLock =
              persistentLocker.waitToAcquireLock(instanceKey.toString(), Duration.ofMinutes(1), Duration.ofMinutes(2))) {

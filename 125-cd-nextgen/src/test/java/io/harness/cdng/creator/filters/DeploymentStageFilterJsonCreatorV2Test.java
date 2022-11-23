@@ -79,7 +79,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                                   .name("my-service")
                                                   .yaml("service:\n"
                                                       + "    name: my-service\n"
-                                                      + "    identifier: my-service\n"
+                                                      + "    identifier: service-id\n"
                                                       + "    tags: {}\n"
                                                       + "    serviceDefinition:\n"
                                                       + "        type: Kubernetes\n"

@@ -424,9 +424,11 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SETUP)
   ELASTIGROUP_SETUP_STEP(
       ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
+  @JsonProperty(EntityTypeConstants.BITRISE_STEP)
+  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP);
+          EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP);
 
   private final ModuleType moduleType;
   String yamlName;

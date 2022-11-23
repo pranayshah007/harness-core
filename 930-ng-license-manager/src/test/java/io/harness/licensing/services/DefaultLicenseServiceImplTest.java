@@ -105,10 +105,10 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
   @Mock TelemetryReporter telemetryReporter;
   @Mock CeLicenseClient ceLicenseClient;
   @Mock LicenseComplianceResolver licenseComplianceResolver;
-  @Mock Cache<String, List> cache;
   @Mock LicenseGenerator licenseGenerator;
   @Mock LicenseValidator licenseValidator;
   @Mock SMPLicenseMapper smpLicenseMapper;
+  @Mock Cache<String, List> cache;
   @InjectMocks DefaultLicenseServiceImpl licenseService;
 
   private StartTrialDTO startTrialRequestDTO;
@@ -655,7 +655,6 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     SMPEncLicenseDTO licenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
     SMPLicenseValidationResult validationResult = SMPLicenseValidationResult.builder().isValid(true).build();
 
-    when(smpLicenseMapper.toSMPLicenseEnc(licenseDTO)).thenCallRealMethod();
     when(smpLicenseMapper.toSMPValidationResultDTO(validationResult)).thenCallRealMethod();
     when(licenseValidator.validate(Mockito.any(), Mockito.eq(licenseDTO.isDecrypt())))
         .thenThrow(RuntimeException.class);
@@ -671,7 +670,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
     CDModuleLicense cdModuleLicense = CDModuleLicense.builder().workloads(Integer.valueOf(UNLIMITED)).build();
     cdModuleLicense.setId("id");
     cdModuleLicense.setAccountIdentifier(ACCOUNT_IDENTIFIER);
-    cdModuleLicense.setModuleType(DEFAULT_MODULE_TYPE);
+    cdModuleLicense.setModuleType(ModuleType.CD);
     cdModuleLicense.setEdition(Edition.FREE);
     cdModuleLicense.setStatus(LicenseStatus.ACTIVE);
     cdModuleLicense.setStartTime(1);

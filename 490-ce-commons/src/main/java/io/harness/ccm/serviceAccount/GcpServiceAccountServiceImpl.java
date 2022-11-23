@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.annotations.retry.RetryOnException;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
@@ -44,6 +45,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CE)
 public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
   public static final String CE_GCP_CREDENTIALS_PATH = "CE_GCP_CREDENTIALS_PATH";
+  public static final int RETRY_COUNT = 6;
+  private static final int SLEEP_DURATION_MS = 10000;
   private Iam iamService;
 
   @Inject private GcpResourceManagerService gcpResourceManagerService;
@@ -85,6 +88,7 @@ public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
   }
 
   @Override
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION_MS)
   public void setIamPolicies(String serviceAccountEmail) throws IOException {
     initService();
     String resource = format("projects/-/serviceAccounts/%s", serviceAccountEmail);

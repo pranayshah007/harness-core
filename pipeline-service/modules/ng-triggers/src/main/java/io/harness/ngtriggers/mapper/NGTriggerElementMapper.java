@@ -492,6 +492,7 @@ public class NGTriggerElementMapper {
   public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
       boolean throwExceptionIfYamlConversionFails, boolean isPipelineInputOutdated) {
     String webhookUrl = EMPTY;
+    String webhookCurlCommand = EMPTY;
     if (ngTriggerEntity.getType() == WEBHOOK) {
       WebhookMetadata webhookMetadata = ngTriggerEntity.getMetadata().getWebhook();
       if (webhookMetadata.getGit() != null) {
@@ -500,6 +501,7 @@ public class NGTriggerElementMapper {
         webhookUrl = WebhookHelper.generateCustomWebhookUrl(webhookConfigProvider, ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getIdentifier());
+        webhookCurlCommand = WebhookHelper.generateCustomWebhookCurlCommand(webhookUrl);
       }
     }
 
@@ -515,7 +517,8 @@ public class NGTriggerElementMapper {
             .enabled(ngTriggerEntity.getEnabled() == null || ngTriggerEntity.getEnabled())
             .triggerStatus(ngTriggerEntity.getTriggerStatus())
             .isPipelineInputOutdated(isPipelineInputOutdated)
-            .webhookUrl(webhookUrl);
+            .webhookUrl(webhookUrl)
+            .webhookCurlCommand(webhookCurlCommand);
 
     // Webhook Details
     if (ngTriggerEntity.getType() == WEBHOOK) {

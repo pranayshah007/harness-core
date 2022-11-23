@@ -61,7 +61,6 @@ import io.harness.beans.PageResponse.PageResponseBuilder;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.cdlicense.impl.CgCdLicenseUsageService;
-import io.harness.configuration.DeployMode;
 import io.harness.cvng.beans.ServiceGuardLimitDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
@@ -492,10 +491,6 @@ public class AccountServiceImpl implements AccountService {
       featureFlagService.enableAccount(FeatureName.CVNG_ENABLED, account.getUuid());
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
-    }
-
-    if (!DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-      featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
     }
   }
 
@@ -943,8 +938,12 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public Optional<Account> getOnPremAccount() {
-    List<Account> accounts = listAccounts(Sets.newHashSet(GLOBAL_ACCOUNT_ID));
-    return isNotEmpty(accounts) ? Optional.of(accounts.get(0)) : Optional.empty();
+    Account account =
+        wingsPersistence.createQuery(Account.class, excludeAuthority).field("_id").notEqual(GLOBAL_ACCOUNT_ID).get();
+    if (account == null) {
+      return Optional.empty();
+    }
+    return Optional.of(account);
   }
 
   @Override
@@ -960,17 +959,17 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listAccounts(Set<String> excludedAccountIds) {
-    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority);
-    if (isNotEmpty(excludedAccountIds)) {
-      query.field("_id").notIn(excludedAccountIds);
-    }
+  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds) {
+    Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
+                               .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
       for (Account account : iterator) {
         LicenseUtils.decryptLicenseInfo(account, false);
-        accountList.add(account);
+        if (!excludedAccountIds.contains(account.getUuid())) {
+          accountList.add(account);
+        }
       }
     }
     return accountList;
@@ -1134,6 +1133,17 @@ public class AccountServiceImpl implements AccountService {
         .project(ID_KEY2, true)
         .project(AccountKeys.accountName, true)
         .project(AccountKeys.companyName, true)
+        .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
+        .asList();
+  }
+
+  @Override
+  public List<Account> listAllAccountWithDefaultsWithLicenseInfo() {
+    return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
+        .project(ID_KEY2, true)
+        .project(AccountKeys.accountName, true)
+        .project(AccountKeys.companyName, true)
+        .project(AccountKeys.licenseInfo, true)
         .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
         .asList();
   }
@@ -2021,6 +2031,12 @@ public class AccountServiceImpl implements AccountService {
   public boolean isAccountActivelyUsed(String accountId) {
     Account account = getFromCacheWithFallback(accountId);
     return account.isAccountActivelyUsed();
+  }
+
+  @Override
+  public boolean isImmutableDelegateEnabled(String accountId) {
+    Account account = getFromCacheWithFallback(accountId);
+    return account != null && account.isImmutableDelegateEnabled();
   }
 
   @Override

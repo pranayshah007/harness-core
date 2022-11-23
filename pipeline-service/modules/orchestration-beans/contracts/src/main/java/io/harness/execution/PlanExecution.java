@@ -69,6 +69,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @CreatedDate Long createdAt;
   String planId;
   Map<String, String> setupAbstractions;
+  // TTL index
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   Status status;
@@ -111,9 +112,11 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   }
 
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("id_status_idx").field("_id").field(NodeExecutionKeys.status).build())
+    return ImmutableList
+        .<MongoIndex>builder()
+        // PlanExecutionMonitorService
         .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
+        // findPrevUnTerminatedPlanExecutionsByExecutionTag
         .add(SortCompoundMongoIndex.builder()
                  .name("exec_tag_status_idx")
                  .field(ExecutionMetadataKeys.tagExecutionKey)

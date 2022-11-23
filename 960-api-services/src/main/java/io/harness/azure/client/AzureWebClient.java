@@ -13,19 +13,22 @@ import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.WebAppHostingOS;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.appservice.implementation.SiteConfigResourceInner;
-import com.microsoft.azure.management.appservice.implementation.SiteInstanceInner;
-import com.microsoft.rest.ServiceCallback;
-import com.microsoft.rest.ServiceFuture;
+import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
+import com.azure.resourcemanager.appservice.fluent.models.SiteConfigResourceInner;
+import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.appservice.models.WebAppBasic;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import rx.Completable;
-import rx.Observable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface AzureWebClient {
   /**
@@ -34,7 +37,7 @@ public interface AzureWebClient {
    * @param context
    * @return
    */
-  List<WebApp> listWebAppsByResourceGroupName(AzureClientContext context);
+  List<WebAppBasic> listWebAppsByResourceGroupName(AzureClientContext context);
 
   /**
    * List deployment slots by web application name.
@@ -42,7 +45,7 @@ public interface AzureWebClient {
    * @param context
    * @return
    */
-  List<DeploymentSlot> listDeploymentSlotsByWebAppName(AzureWebClientContext context);
+  List<WebDeploymentSlotBasic> listDeploymentSlotsByWebAppName(AzureWebClientContext context);
 
   /**
    * Get Web Application by name.
@@ -78,11 +81,20 @@ public interface AzureWebClient {
    * @param slotName
    * @return
    */
-  Completable startDeploymentSlotAsync(AzureWebClientContext context, String slotName);
+  Mono<Response<Void>> startDeploymentSlotAsync(AzureWebClientContext context, String slotName);
 
-  void startDeploymentSlotAsync(AzureWebClientContext context, String slotName, ServiceCallback<Void> callback);
+  /**
+   * Start deployment slot async.
+   *
+   * @param context
+   * @param slotName
+   * @param webAppsClient
+   * @return
+   */
+  Mono<Response<Void>> startDeploymentSlotAsync(
+      AzureWebClientContext context, String slotName, WebAppsClient webAppsClient);
 
-  void startWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback);
+  Mono<Response<Void>> startWebAppAsync(AzureWebClientContext context, WebAppsClient webAppsClient);
 
   /**
    * Start deployment slot.
@@ -97,7 +109,7 @@ public interface AzureWebClient {
    * @param slot
    * @return
    */
-  Completable startDeploymentSlotAsync(DeploymentSlot slot);
+  Mono<Void> startDeploymentSlotAsync(DeploymentSlot slot);
 
   /**
    * Stop deployment slot.
@@ -114,11 +126,20 @@ public interface AzureWebClient {
    * @param slotName
    * @return
    */
-  Completable stopDeploymentSlotAsync(AzureWebClientContext context, String slotName);
+  Mono<Response<Void>> stopDeploymentSlotAsync(AzureWebClientContext context, String slotName);
 
-  void stopDeploymentSlotAsync(AzureWebClientContext context, String slotName, ServiceCallback<Void> callback);
+  /**
+   * Stop deployment slot async.
+   *
+   * @param context
+   * @param slotName
+   * @param webAppsClient
+   * @return
+   */
+  Mono<Response<Void>> stopDeploymentSlotAsync(
+      AzureWebClientContext context, String slotName, WebAppsClient webAppsClient);
 
-  void stopWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback);
+  Mono<Response<Void>> stopWebAppAsync(AzureWebClientContext context, WebAppsClient webAppsClient);
 
   /**
    * Stop deployment slot.
@@ -133,7 +154,7 @@ public interface AzureWebClient {
    * @param slot
    * @return
    */
-  Completable stopDeploymentSlotAsync(DeploymentSlot slot);
+  Mono<Void> stopDeploymentSlotAsync(DeploymentSlot slot);
 
   /**
    * Get deployment slot state.
@@ -277,7 +298,7 @@ public interface AzureWebClient {
    * @param sourceSlotName
    * @return
    */
-  Observable<Void> swapDeploymentSlotWithProductionAsync(AzureWebClientContext context, String sourceSlotName);
+  Mono<Void> swapDeploymentSlotWithProductionAsync(AzureWebClientContext context, String sourceSlotName);
 
   /**
    * Swap deployment slots async.
@@ -287,11 +308,9 @@ public interface AzureWebClient {
    * @param targetSlotName
    * @return
    */
-  Observable<Void> swapDeploymentSlotsAsync(
-      AzureWebClientContext context, String sourceSlotName, String targetSlotName);
 
-  ServiceFuture<Void> swapDeploymentSlotsAsync(
-      AzureWebClientContext context, String sourceSlotName, String targetSlotName, ServiceCallback<Void> callback);
+  Mono<Response<Flux<ByteBuffer>>> swapDeploymentSlotsAsync(
+      AzureWebClientContext context, String sourceSlotName, String targetSlotName);
   /**
    * Get Web App hosting operating system.
    *
@@ -362,9 +381,9 @@ public interface AzureWebClient {
    * @param slotName
    * @return
    */
-  List<SiteInstanceInner> listInstanceIdentifiersSlot(AzureWebClientContext context, String slotName);
+  List<WebSiteInstanceStatusInner> listInstanceIdentifiersSlot(AzureWebClientContext context, String slotName);
 
-  List<SiteInstanceInner> listInstanceIdentifiers(AzureWebClientContext context);
+  List<WebSiteInstanceStatusInner> listInstanceIdentifiers(AzureWebClientContext context, WebAppsClient webAppsClient);
 
   /**
    * Deploying ZIP to deployment slot.
@@ -383,9 +402,9 @@ public interface AzureWebClient {
    * @param file
    * @return
    */
-  Completable deployZipToSlotAsync(AzureWebClientContext context, String slotName, File file);
+  Mono<Void> deployZipToSlotAsync(AzureWebClientContext context, String slotName, File file);
 
-  Completable deployZipToWebAppAsync(AzureWebClientContext context, File file);
+  Mono<Void> deployZipToWebAppAsync(AzureWebClientContext context, File file);
 
   /**
    * Deploying WAR to deployment slot.
@@ -404,9 +423,9 @@ public interface AzureWebClient {
    * @param file
    * @return
    */
-  Completable deployWarToSlotAsync(AzureWebClientContext context, String slotName, File file);
+  Mono<Void> deployWarToSlotAsync(AzureWebClientContext context, String slotName, File file);
 
-  Completable deployWarToWebAppAsync(AzureWebClientContext context, File file);
+  Mono<Void> deployWarToWebAppAsync(AzureWebClientContext context, File file);
 
   /**
    * Stream deployment logs on slot.
@@ -424,9 +443,9 @@ public interface AzureWebClient {
    * @param slotName
    * @return
    */
-  Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context, String slotName);
+  Flux<String> streamDeploymentLogsAsync(AzureWebClientContext context, String slotName);
 
-  Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context);
+  Flux<String> streamDeploymentLogsAsync(AzureWebClientContext context);
 
   /**
    * Update slot configuration with app command line script.

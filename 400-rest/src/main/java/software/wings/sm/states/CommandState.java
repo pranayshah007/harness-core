@@ -750,7 +750,7 @@ public class CommandState extends State {
             format("Unable to find Connector/Cloud Provider for artifact stream %s", artifactStream.getSourceName()),
             WingsException.USER);
       }
-      artifactStreamAttributes.setServerSetting(settingAttribute);
+      artifactStreamAttributes.setServerSetting(settingAttribute.toDTO());
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));
@@ -820,7 +820,7 @@ public class CommandState extends State {
                                          artifactStream.getSourceName()),
                 WingsException.USER);
           }
-          artifactStreamAttributes.setServerSetting(settingAttribute);
+          artifactStreamAttributes.setServerSetting(settingAttribute.toDTO());
           List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
               (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
               context.getWorkflowExecutionId());
@@ -888,7 +888,7 @@ public class CommandState extends State {
       ExecutionContext context, Host host, CommandParametersBuilder commandParametersBuilder) {
     if (isNotEmpty(host.getHostConnAttr())) {
       SettingAttribute hostConnectionAttribute = settingsService.get(host.getHostConnAttr());
-      commandParametersBuilder.hostConnectionAttributes(hostConnectionAttribute);
+      commandParametersBuilder.hostConnectionAttributes(hostConnectionAttribute.toDTO());
       commandParametersBuilder.hostConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) hostConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));
@@ -901,7 +901,7 @@ public class CommandState extends State {
     }
     if (isNotEmpty(host.getBastionConnAttr())) {
       SettingAttribute bastionConnectionAttribute = settingsService.get(host.getBastionConnAttr());
-      commandParametersBuilder.bastionConnectionAttributes(bastionConnectionAttribute);
+      commandParametersBuilder.bastionConnectionAttributes(bastionConnectionAttribute.toDTO());
       commandParametersBuilder.bastionConnectionCredentials(
           secretManager.getEncryptionDetails((EncryptableSetting) bastionConnectionAttribute.getValue(),
               context.getAppId(), context.getWorkflowExecutionId()));

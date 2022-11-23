@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
@@ -254,6 +255,34 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
                        startTime.plus(Duration.ofMinutes(11)), 10, SLIMissingDataType.GOOD, 0)
                    .getSloPerformanceTrend())
         .hasSize(6);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetGraphData_withAllStates_WithRangedErrorBudgetBurned() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(15));
+    List<SLIState> sliStates =
+        Arrays.asList(BAD, GOOD, GOOD, BAD, NO_DATA, NO_DATA, BAD, BAD, BAD, BAD, GOOD, NO_DATA, BAD, BAD, GOOD);
+    createData(startTime, sliStates);
+
+    SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
+        startTime.minus(Duration.ofHours(1)), startTime.plus(Duration.ofMinutes(16)), 15, SLIMissingDataType.GOOD, 0,
+        TimeRangeParams.builder()
+            .startTime(startTime.plus(Duration.ofMinutes(2)))
+            .endTime(startTime.plus(Duration.ofMinutes(12)))
+            .build());
+    assertThat(sloGraphData.getSloPerformanceTrend()).hasSize(6);
+    assertThat(sloGraphData.getErrorBudgetBurned())
+        .isEqualTo(5); // as sliRecord last in range timestamp is less than the filter end time
+
+    sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator, startTime.minus(Duration.ofHours(1)),
+        startTime.plus(Duration.ofMinutes(11)), 10, SLIMissingDataType.GOOD, 0,
+        TimeRangeParams.builder()
+            .startTime(startTime.plus(Duration.ofSeconds(121)))
+            .endTime(startTime.plus(Duration.ofSeconds(750)))
+            .build());
+    assertThat(sloGraphData.getErrorBudgetBurned()).isEqualTo(5);
   }
 
   @Test

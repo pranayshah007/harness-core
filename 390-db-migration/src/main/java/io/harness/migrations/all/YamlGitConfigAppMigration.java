@@ -21,8 +21,8 @@ import software.wings.beans.Application;
 import software.wings.beans.EntityType;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.yaml.YamlGitService;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

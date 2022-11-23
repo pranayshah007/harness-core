@@ -191,14 +191,14 @@ public class SSOSettingServiceTest extends WingsBaseTest {
         .isInstanceOf(InvalidRequestException.class);
 
     // Mocking the userGroupService to return true when existsLinkedUserGroup is checked.
-    when(userGroupService.existsLinkedUserGroup(samlSettings.getUuid())).thenReturn(true);
+    when(userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())).thenReturn(true);
 
     // Because there is a linked user group with this SsoId, the deleteSamlSetting should not succeed.
     assertThatThrownBy(() -> ssoSettingService.deleteSamlSettings("TestAccountID"))
         .isInstanceOf(InvalidRequestException.class);
 
     // Mocking the userGroupService to return false when existsLinkedUserGroup is checked.
-    when(userGroupService.existsLinkedUserGroup(samlSettings.getUuid())).thenReturn(false);
+    when(userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())).thenReturn(false);
 
     assertThat(ssoSettingService.deleteSamlSettings("TestAccountID")).isTrue();
     assertThat(ssoSettingService.getSamlSettingsByAccountId("TestAccountID")).isNull();

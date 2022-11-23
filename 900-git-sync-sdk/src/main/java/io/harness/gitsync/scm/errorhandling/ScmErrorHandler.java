@@ -19,28 +19,36 @@ import io.harness.exception.ScmException;
 import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.exceptions.GitErrorMetadataDTO;
 import io.harness.gitsync.scm.beans.ScmErrorDetails;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 
 import groovy.lang.Singleton;
 
 @Singleton
 @OwnedBy(HarnessTeam.PL)
 public class ScmErrorHandler {
-  public final void processAndThrowException(int statusCode, ScmErrorDetails errorDetails) {
-    handleError(statusCode, errorDetails);
+  public final void processAndThrowException(
+      int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
+    handleError(statusCode, errorDetails, errorMetadata);
   }
 
-  void handleError(int statusCode, ScmErrorDetails errorDetails) {
+  void handleError(int statusCode, ScmErrorDetails errorDetails, ScmGitMetaData errorMetadata) {
     switch (statusCode) {
       case 400:
       case 401:
-        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
+        throw addMetadata(
+            prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
       case 409:
-        throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
+        throw addMetadata(
+            prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
       case 500:
-        throw prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails);
+        throw addMetadata(
+            prepareException(new ScmInternalServerErrorException(errorDetails.getErrorMessage()), errorDetails),
+            errorMetadata);
       default:
-        throw prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails);
+        throw addMetadata(
+            prepareException(new ScmUnexpectedException(errorDetails.getErrorMessage()), errorDetails), errorMetadata);
     }
   }
 
@@ -53,5 +61,11 @@ public class ScmErrorHandler {
       finalException = new HintException(scmErrorDetails.getHintMessage(), finalException);
     }
     return finalException;
+  }
+
+  private WingsException addMetadata(WingsException wingsException, ScmGitMetaData errorMetadata) {
+    wingsException.setMetadata(GitErrorMetadataDTO.builder().branch(errorMetadata.getBranchName()).build());
+
+    return wingsException;
   }
 }

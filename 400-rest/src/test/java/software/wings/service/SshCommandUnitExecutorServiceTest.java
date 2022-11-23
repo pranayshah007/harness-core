@@ -199,8 +199,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                              .build();
 
     when(sshExecutorFactory.getExecutor(expectedSshConfig)).thenReturn(scriptSshExecutor);
-    sshCommandUnitExecutorService.execute(
-        EXEC_COMMAND_UNIT, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD).build());
+    sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
+        commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
     verify(sshExecutorFactory).getExecutor(expectedSshConfig);
   }
 
@@ -222,7 +222,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     when(shellExecutorFactory.getExecutor(expectedSshConfig)).thenReturn(scriptProcessExecutor);
     sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .executeOnDelegate(true)
             .build());
     verify(shellExecutorFactory).getExecutor(expectedSshConfig);
@@ -243,7 +243,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                                 .environment(new HashMap<>())
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .executeOnDelegate(true)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -269,7 +269,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                                 .environment(new HashMap<>())
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .executeOnDelegate(true)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -296,7 +296,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                                 .environment(new HashMap<>())
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .executeOnDelegate(true)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -323,7 +323,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                                 .environment(new HashMap<>())
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .executeOnDelegate(true)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);
@@ -354,8 +354,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                              .build();
 
     when(sshExecutorFactory.getExecutor(expectedSshConfig)).thenReturn(scriptSshExecutor);
-    sshCommandUnitExecutorService.execute(
-        EXEC_COMMAND_UNIT, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_KEY).build());
+    sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
+        commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_KEY.toDTO()).build());
     verify(sshExecutorFactory).getExecutor(expectedSshConfig);
   }
 
@@ -386,8 +386,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     when(sshExecutorFactory.getExecutor(expectedSshConfig)).thenReturn(scriptSshExecutor);
     sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
-            .bastionConnectionAttributes(BASTION_HOST_ATTR)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
+            .bastionConnectionAttributes(BASTION_HOST_ATTR.toDTO())
             .build());
     verify(sshExecutorFactory).getExecutor(expectedSshConfig);
   }
@@ -401,8 +401,8 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
   public void shouldExecuteExecCommand() {
     Host host = builder.withHostConnAttr(HOST_CONN_ATTR_PWD.getUuid()).build();
     when(sshExecutorFactory.getExecutor(any(SshSessionConfig.class))).thenReturn(scriptSshExecutor);
-    sshCommandUnitExecutorService.execute(
-        EXEC_COMMAND_UNIT, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD).build());
+    sshCommandUnitExecutorService.execute(EXEC_COMMAND_UNIT,
+        commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
     verify(scriptSshExecutor).executeCommandString(EXEC_COMMAND_UNIT.getPreparedCommand(), false);
   }
 
@@ -425,7 +425,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder().metadataOnly(false).build();
     sshCommandUnitExecutorService.execute(commandUnit,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .artifactStreamAttributes(artifactStreamAttributes)
             .build());
     verify(fileBasedSshScriptExecutor)
@@ -459,7 +459,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     sshCommandUnitExecutorService.execute(
-        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD).build());
+        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
     verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false);
 
     String actualLauncherScript =
@@ -503,7 +503,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
 
     sshCommandUnitExecutorService.execute(commandUnit,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .inlineSshCommand(true)
             .build());
     verify(scriptSshExecutor).executeCommandString("mkdir -p /tmp/ACTIVITY_ID", false);
@@ -543,7 +543,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     when(fileBasedSshScriptExecutor.copyFiles(anyString(), anyListOf(String.class)))
         .thenReturn(CommandExecutionStatus.SUCCESS);
     sshCommandUnitExecutorService.execute(
-        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD).build());
+        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
 
     String expectedExecCommandUnitScript =
         new File(System.getProperty("java.io.tmpdir"), "harness" + DigestUtils.md5Hex("dolsACTIVITY_ID"))
@@ -600,7 +600,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
     when(scriptSshExecutor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
     sshCommandUnitExecutorService.execute(commandUnit,
         commandExecutionContextBuider.but()
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .inlineSshCommand(true)
             .build());
 
@@ -644,7 +644,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
             .stagingPath(badSubstitutionPathName)
             .runtimePath(badSubstitutionPathName)
             .backupPath(badSubstitutionPathName)
-            .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+            .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
             .build());
 
     assertThat(commandUnit.getExecutionStagingDir()).isEqualTo("/tmp/ACTIVITY_ID");
@@ -680,7 +680,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
         .thenReturn(CommandExecutionStatus.SUCCESS);
 
     sshCommandUnitExecutorService.execute(
-        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD).build());
+        commandUnit, commandExecutionContextBuider.but().hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO()).build());
 
     assertThat(commandUnit.getExecutionStagingDir()).isEqualTo("/tmp/ACTIVITY_ID");
     assertThat(commandUnit.fetchEnvVariables().get("WINGS_RUNTIME_PATH")).isEqualTo("/tmp/runtime");
@@ -699,7 +699,7 @@ public class SshCommandUnitExecutorServiceTest extends WingsBaseTest {
                                                 .environment(new HashMap<>())
                                                 .build();
     CommandExecutionContext commandExecutionContext = commandExecutionContextBuider.but()
-                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD)
+                                                          .hostConnectionAttributes(HOST_CONN_ATTR_PWD.toDTO())
                                                           .executeOnDelegate(true)
                                                           .build();
     CommandUnit commandUnit = mock(CommandUnit.class);

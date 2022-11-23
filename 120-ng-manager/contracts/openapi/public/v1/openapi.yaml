@@ -8,26 +8,6 @@ info:
 servers:
   - url: 'http://app.harness.io'
     description: Harness host url
-x-tagGroups:
-  - name: Organization
-    tags:
-      - Organization
-  - name: Project
-    tags:
-      - Org Project
-  - name: Secret
-    tags:
-      - Account Secret
-      - Org Secret
-      - Project Secret
-  - name: Services
-    tags:
-      - Project Services
-  - name: Connector
-    tags:
-      - Account Connector
-      - Org Connector
-      - Project Connector
 tags:
   - name: Organization
     description: Everything about organization

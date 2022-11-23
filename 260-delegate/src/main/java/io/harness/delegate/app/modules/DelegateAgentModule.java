@@ -112,5 +112,6 @@ public class DelegateAgentModule extends AbstractModule {
     }
     final Config appenderConfig = Config.builder().queueFilePath(configuration.getQueueFilePath()).build();
     install(new AppenderModule(appenderConfig, () -> getDelegateId().orElse("UNREGISTERED")));
+    install(new EventPublisherModule());
   }
 }

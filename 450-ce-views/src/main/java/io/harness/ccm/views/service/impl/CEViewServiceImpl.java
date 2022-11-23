@@ -292,6 +292,11 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
+  public void updateBusinessMappingName(String accountId, String buinessMappingUuid, String newBusinessMappingName) {
+    ceViewDao.updateBusinessMappingName(accountId, buinessMappingUuid, newBusinessMappingName);
+  }
+
+  @Override
   public CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName) {
     if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
       List<QLCEViewAggregation> totalCostAggregationFunction = Collections.singletonList(

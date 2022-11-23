@@ -44,6 +44,12 @@ public class DebeziumConfiguration {
   public static final String SNAPSHOT_FETCH_SIZE = "snapshot.fetch.size";
   public static final String SNAPSHOT_MODE = "snapshot.mode";
   public static final String TRANSFORMS_UNWRAP_ARRAY_ENCODING = "transforms.unwrap.array.encoding";
+  public static final String MAX_QUEUE_SIZE = "max.queue.size";
+  public static final String MAX_BATCH_SIZE = "max.batch.size";
+  public static final String MAX_QUEUE_SIZE_IN_BYTES = "max.queue.size.in.bytes";
+  public static final String POLL_INTERVAL_MS = "poll.interval.ms";
+  public static final String FIELD_EXCLUDE_LIST = "field.exclude.list";
+  public static final String HEARTBEAT_INTERVAL_MS = "heartbeat.interval.ms";
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
@@ -55,6 +61,15 @@ public class DebeziumConfiguration {
     props.setProperty(VALUE_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getValueConverterSchemasEnable());
     props.setProperty(OFFSET_FLUSH_INTERVAL_MS, debeziumConfig.getOffsetFlushIntervalMillis());
     props.setProperty(TRANSFORMS_UNWRAP_ARRAY_ENCODING, debeziumConfig.getTransformsUnwrapArrayEncoding());
+    props.setProperty(MAX_BATCH_SIZE, debeziumConfig.getMaxBatchSize());
+    props.setProperty(MAX_QUEUE_SIZE, debeziumConfig.getMaxQueueSize());
+    props.setProperty(MAX_QUEUE_SIZE_IN_BYTES, String.valueOf(debeziumConfig.getMaxQueueSizeInBytes()));
+    props.setProperty(POLL_INTERVAL_MS, debeziumConfig.getPollIntervalMs());
+    props.setProperty(HEARTBEAT_INTERVAL_MS, debeziumConfig.getHeartbeatIntervalMs());
+    props.setProperty("topic.prefix", debeziumConfig.getMongodbName());
+    Optional.ofNullable(debeziumConfig.getFieldExcludeList())
+        .filter(x -> !x.isEmpty())
+        .ifPresent(x -> props.setProperty(FIELD_EXCLUDE_LIST, x));
 
     /* begin connector properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);

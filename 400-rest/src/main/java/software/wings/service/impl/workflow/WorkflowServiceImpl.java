@@ -10,6 +10,7 @@ package software.wings.service.impl.workflow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
+import static io.harness.beans.FeatureName.SPG_WFE_OPTIMIZE_WORKFLOW_LISTING;
 import static io.harness.beans.FeatureName.TIMEOUT_FAILURE_SUPPORT;
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
@@ -126,6 +127,7 @@ import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.RepairActionCode;
+import io.harness.beans.SearchFilter;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
@@ -325,6 +327,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -683,19 +686,43 @@ public class WorkflowServiceImpl implements WorkflowService {
     if (workflows != null && previousExecutionsCount != null && previousExecutionsCount > 0) {
       for (Workflow workflow : workflows) {
         try {
-          PageRequest<WorkflowExecution> workflowExecutionPageRequest =
-              aPageRequest()
-                  .withLimit(previousExecutionsCount.toString())
-                  .addFilter("workflowId", EQ, workflow.getUuid())
-                  .addFilter("appId", EQ, workflow.getAppId())
-                  .build();
+          List<WorkflowExecution> workflowExecutions;
 
-          List<WorkflowExecution> workflowExecutions =
-              workflowExecutionService
-                  .listExecutions(workflowExecutionPageRequest, false, false, false, false, false, true)
-                  .getResponse();
+          Optional<String> accountId =
+              pageRequest.getFilters()
+                  .stream()
+                  .filter(searchFilter -> WorkflowExecutionKeys.accountId.equals(searchFilter.getFieldName()))
+                  .map(SearchFilter::getFieldValues)
+                  .map(object -> object[0].toString())
+                  .findFirst();
+          if (accountId.isPresent()
+              && featureFlagService.isEnabled(SPG_WFE_OPTIMIZE_WORKFLOW_LISTING, accountId.get())) {
+            FindOptions findOptions = new FindOptions();
+            findOptions.limit(previousExecutionsCount);
+            workflowExecutions = wingsPersistence.createAnalyticsQuery(WorkflowExecution.class)
+                                     .filter(WorkflowExecutionKeys.workflowId, workflow.getUuid())
+                                     .filter(WorkflowExecutionKeys.appId, workflow.getAppId())
+                                     .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+                                     .project(WorkflowExecutionKeys.stateMachine, false)
+                                     .project(WorkflowExecutionKeys.serviceExecutionSummaries, false)
+                                     .project(WorkflowExecutionKeys.rollbackArtifacts, false)
+                                     .project(WorkflowExecutionKeys.artifacts, false)
+                                     .asList(findOptions);
+          } else {
+            PageRequest<WorkflowExecution> workflowExecutionPageRequest =
+                aPageRequest()
+                    .withLimit(previousExecutionsCount.toString())
+                    .addFilter("workflowId", EQ, workflow.getUuid())
+                    .addFilter("appId", EQ, workflow.getAppId())
+                    .build();
 
-          workflowExecutions.forEach(we -> we.setStateMachine(null));
+            workflowExecutions =
+                workflowExecutionService
+                    .listExecutions(workflowExecutionPageRequest, false, false, false, false, false, true)
+                    .getResponse();
+            workflowExecutions.forEach(we -> we.setStateMachine(null));
+          }
+
           workflow.setWorkflowExecutions(workflowExecutions);
         } catch (Exception e) {
           log.error("Failed to fetch recent executions for workflow {}", workflow.getUuid(), e);

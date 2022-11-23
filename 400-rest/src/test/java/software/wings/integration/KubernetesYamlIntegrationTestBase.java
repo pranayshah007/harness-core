@@ -54,7 +54,7 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
     GkeClusterServiceImpl gkeClusterService = new GkeClusterServiceImpl();
     KubernetesContainerServiceImpl kubernetesService = new KubernetesContainerServiceImpl();
 
-    List<String> clusters = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING, Collections.emptyList());
+    List<String> clusters = gkeClusterService.listClusters(COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList());
     log.info("Available clusters: {}", clusters);
 
     //    KubernetesConfig config = gkeClusterService.createCluster(COMPUTE_PROVIDER_SETTING, ZONE_CLUSTER,
@@ -65,8 +65,8 @@ public abstract class KubernetesYamlIntegrationTestBase extends CategoryTest {
     //            .put("masterPwd", "foo!!bar$$")
     //            .build());
 
-    KubernetesConfig config =
-        gkeClusterService.getCluster(COMPUTE_PROVIDER_SETTING, Collections.emptyList(), ZONE_CLUSTER, "default", false);
+    KubernetesConfig config = gkeClusterService.getCluster(
+        COMPUTE_PROVIDER_SETTING.toDTO(), Collections.emptyList(), ZONE_CLUSTER, "default", false);
 
     String yaml = "---\n"
         + "apiVersion: \"v1\"\n"

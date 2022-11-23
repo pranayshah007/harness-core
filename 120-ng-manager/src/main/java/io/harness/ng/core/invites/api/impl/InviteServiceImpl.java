@@ -583,10 +583,8 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, true);
-      } else if (scimLdapArray[1]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, true);
-      } else if (isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false);
+      } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false);
       }
       updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);
@@ -724,7 +722,7 @@ public class InviteServiceImpl implements InviteService {
   }
 
   private String generateOtpUrl(String companyName, String userEmailAddress, String secret) {
-    return format(TOTP_URL_PREFIX, companyName.replace(" ", "-"), userEmailAddress, secret);
+    return format(TOTP_URL_PREFIX, "Harness_" + companyName.replace(" ", "-"), userEmailAddress, secret);
   }
 
   private void ngAuditUserInviteCreateEvent(Invite invite) {

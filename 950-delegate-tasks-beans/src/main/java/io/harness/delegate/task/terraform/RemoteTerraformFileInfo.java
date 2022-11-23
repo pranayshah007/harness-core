@@ -12,13 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 
-import lombok.Data;
-import lombok.experimental.SuperBuilder;
-
-@Data
 @OwnedBy(HarnessTeam.CDP)
-@SuperBuilder
-public class RemoteTerraformFileInfo {
-  GitFetchFilesConfig gitFetchFilesConfig;
-  FileStoreFetchFilesConfig filestoreFetchFilesConfig;
+public interface RemoteTerraformFileInfo {
+  GitFetchFilesConfig getGitFetchFilesConfig();
+  FileStoreFetchFilesConfig getFilestoreFetchFilesConfig();
 }

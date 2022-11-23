@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import java.util.Map;
 import java.util.Map.Entry;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -35,7 +34,6 @@ public class CiBeansComponentTest extends CiBeansTestBase {
   @Owner(developers = AMAN)
   @Category(UnitTests.class)
   @HarnessHierarchy(TestExecution.class)
-  @Ignore("CI-6025: TI team to follow up")
   public void componentCiBeansTests() {
     for (Entry<String, TestExecution> test : tests.entrySet()) {
       assertThatCode(() -> test.getValue().run()).as(test.getKey()).doesNotThrowAnyException();

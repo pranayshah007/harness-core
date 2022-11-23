@@ -102,8 +102,12 @@ public class ValidateAndMergeHelper {
             accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
+      long start = System.currentTimeMillis();
       optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
           accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      log.info(
+          "[PMS_ValidateMerger] fetching and validating pipeline when update to new branch is false, took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
     if (optionalPipelineEntity.isPresent()) {
       StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
@@ -165,8 +169,8 @@ public class ValidateAndMergeHelper {
 
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> stageIdentifiers) {
-    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity =
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (optionalPipelineEntity.isPresent()) {
       String pipelineYaml = optionalPipelineEntity.get().getYaml();
       if (EmptyPredicate.isEmpty(stageIdentifiers)) {

@@ -346,7 +346,7 @@ cg:
   envPath: ""
 
   kubectlVersion: v1.13.2
-  scmVersion: 14bbb1d2
+  scmVersion: 91df8e76
 
   ngAuthUIEnabled: false
 

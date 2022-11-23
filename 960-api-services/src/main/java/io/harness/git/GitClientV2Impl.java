@@ -39,6 +39,7 @@ import static org.eclipse.jgit.transport.RemoteRefUpdate.Status.UP_TO_DATE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.GeneralException;
 import io.harness.exception.GitClientException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -378,7 +379,7 @@ public class GitClientV2Impl implements GitClientV2 {
               .build();
         }
       }
-      throw new InvalidRequestException("Access denied. Please provide valid credentials.");
+      throw new GeneralException(e.getMessage(), e);
     }
   }
 
@@ -1137,6 +1138,43 @@ public class GitClientV2Impl implements GitClientV2 {
         }
 
         resetWorkingDir(request);
+      } catch (WingsException e) {
+        tryResetWorkingDir(request);
+        throw e;
+      } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
+        tryResetWorkingDir(request);
+        throw new YamlException(new StringBuilder()
+                                    .append("Failed while fetching files ")
+                                    .append(request.useBranch() ? "for Branch: " : "for CommitId: ")
+                                    .append(request.useBranch() ? request.getBranch() : request.getCommitId())
+                                    .append(", FilePaths: ")
+                                    .append(request.getFilePaths())
+                                    .append(". Reason: ")
+                                    .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
+                                    .toString(),
+            e, USER);
+      }
+    }
+  }
+
+  @Override
+  public void cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
+    final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock ignored = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
+        ensureRepoLocallyClonedAndUpdated(request);
+        String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
+        File src = new File(repoPath);
+        File dest = new File(request.getDestinationDirectory());
+        deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+        FileUtils.copyDirectory(src, dest);
+        FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;

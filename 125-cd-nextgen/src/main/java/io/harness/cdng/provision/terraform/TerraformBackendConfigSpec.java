@@ -23,6 +23,4 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value = InlineTerraformBackendConfigSpec.class, name = TerraformVarFileTypes.Inline)
   , @JsonSubTypes.Type(value = RemoteTerraformBackendConfigSpec.class, name = TerraformVarFileTypes.Remote)
 })
-public interface TerraformBackendConfigSpec {
-  String getType();
-}
+public interface TerraformBackendConfigSpec {}

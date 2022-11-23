@@ -32,6 +32,8 @@ import io.harness.delegate.RegisterCallbackResponse;
 import io.harness.delegate.ResetPerpetualTaskRequest;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
+import io.harness.delegate.SupportedTaskTypeRequest;
+import io.harness.delegate.SupportedTaskTypeResponse;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskExecutionStage;
 import io.harness.delegate.TaskId;
@@ -501,5 +503,19 @@ public class DelegateServiceGrpcClient {
 
   public ObtainDocumentResponse obtainDocument(ObtainDocumentRequest request) {
     return delegateServiceBlockingStub.obtainDocument(request);
+  }
+
+  public boolean isTaskTypeSupported(AccountId accountId, TaskType taskType) {
+    try {
+      SupportedTaskTypeResponse response = delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+                                               .isTaskTypeSupported(SupportedTaskTypeRequest.newBuilder()
+                                                                        .setAccountId(accountId.getId())
+                                                                        .setTaskType(taskType.getType())
+                                                                        .build());
+
+      return response.getIsTaskTypeSupported();
+    } catch (StatusRuntimeException ex) {
+      throw new DelegateServiceDriverException("Unexpected error occurred while checking if task is supported.", ex);
+    }
   }
 }

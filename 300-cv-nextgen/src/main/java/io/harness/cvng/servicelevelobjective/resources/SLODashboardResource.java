@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.MSDropdownResponse;
+import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
@@ -151,6 +152,26 @@ public class SLODashboardResource {
       @NotNull @Valid @BeanParam ProjectParams projectParams) {
     return ResponseDTO.newResponse(
         sloDashboardService.getSloDashboardDetail(projectParams, identifier, startTime, endTime));
+  }
+
+  @GET
+  @Path("widget/{identifier}/consumption")
+  @ExceptionMetered
+  @ApiOperation(value = "get SLO consumption breakdown", nickname = "getSloConsumptionBreakdownView")
+  @Operation(operationId = "getSloConsumptionBreakdownView", summary = "Get SLO consumption breakdown",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Gets the SLO's details")
+      })
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<SLOConsumptionBreakdown>>
+  getSloConsumptionBreakdownView(@Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true)
+                                 @NotNull @PathParam("identifier") @ResourceIdentifier String identifier,
+      @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime,
+      @NotNull @Valid @BeanParam ProjectParams projectParams) {
+    return ResponseDTO.newResponse(
+        sloDashboardService.getSLOConsumptionBreakdownView(projectParams, identifier, startTime, endTime));
   }
 
   @GET

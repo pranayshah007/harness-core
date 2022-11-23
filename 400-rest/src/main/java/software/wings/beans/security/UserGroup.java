@@ -96,6 +96,12 @@ public class UserGroup extends Base implements NotificationReceiverInfo, Account
                 .field(UserGroupKeys.accountId)
                 .field(UserGroupKeys.appFilterType)
                 .field(UserGroupKeys.appIds)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("accountId_linkedSsoId_isSsoLinked")
+                .field(UserGroupKeys.accountId)
+                .field(UserGroupKeys.linkedSsoId)
+                .field(UserGroupKeys.isSsoLinked)
                 .build())
         .build();
   }

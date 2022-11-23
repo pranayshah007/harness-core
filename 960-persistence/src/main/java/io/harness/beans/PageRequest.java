@@ -265,6 +265,10 @@ public class PageRequest<T> {
           isOr = true;
         }
       } else if (!(key.startsWith("search") || key.startsWith("sort") || mappedClass.getMappedField(key) == null)) {
+        Operator op = Operator.IN;
+        if (map.get(key).size() == 1) {
+          op = Operator.EQ;
+        }
         if (mappedClass.getMappedField(key).isReference()) {
           try {
             Class type;
@@ -278,16 +282,16 @@ public class PageRequest<T> {
             }
             Object referenceObject = constructor.getDeclaringClass().newInstance();
             String collection = mapper.getCollectionName(referenceObject);
-            addFilter(key, Operator.IN,
-                map.get(key).stream().map(s -> new Key(referenceObject.getClass(), collection, s)).toArray());
+            addFilter(
+                key, op, map.get(key).stream().map(s -> new Key(referenceObject.getClass(), collection, s)).toArray());
           } catch (IllegalAccessException | InstantiationException | NoSuchMethodException e) {
-            addFilter(key, Operator.IN, map.get(key).toArray());
+            addFilter(key, op, map.get(key).toArray());
           }
         } else {
           if (asList(Boolean.TYPE).contains(mappedClass.getMappedField(key).getType())) {
-            addFilter(key, Operator.IN, map.get(key).stream().map(Boolean::parseBoolean).toArray());
+            addFilter(key, op, map.get(key).stream().map(Boolean::parseBoolean).toArray());
           } else {
-            addFilter(key, Operator.IN, map.get(key).toArray());
+            addFilter(key, op, map.get(key).toArray());
           }
         }
       }

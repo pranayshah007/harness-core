@@ -7,6 +7,10 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.analysis.CVAnalysisConstants.AFTER;
+import static io.harness.cvng.analysis.CVAnalysisConstants.BEFORE;
+import static io.harness.cvng.analysis.CVAnalysisConstants.CANARY;
+import static io.harness.cvng.analysis.CVAnalysisConstants.PRIMARY;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -144,8 +148,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("primary");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("canary");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(PRIMARY);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(CANARY);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(1);
     List<HostSummaryInfo> primaryHosts = new ArrayList<>(canaryBlueGreenAdditionalInfo.getPrimary());
     assertThat(primaryHosts.get(0).getHostName()).contains("node1");
@@ -175,8 +179,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("before");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("after");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary()).isEmpty();
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEmpty();
   }
@@ -196,8 +200,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("before");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("after");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEmpty();
     assertThat(canaryBlueGreenAdditionalInfo.getCanary()).isEmpty();
     assertThat(canaryBlueGreenAdditionalInfo.getTrafficSplitPercentage()).isNull();
@@ -228,8 +232,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("primary");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("canary");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(PRIMARY);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(CANARY);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(0);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary()).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(1);
@@ -265,8 +269,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("primary");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("canary");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(PRIMARY);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(CANARY);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(1);
     List<HostSummaryInfo> primaryHosts = new ArrayList<>(canaryBlueGreenAdditionalInfo.getPrimary());
     assertThat(primaryHosts.get(0).getHostName()).contains("node1");
@@ -320,8 +324,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("before");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("after");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEqualTo(canaryBlueGreenAdditionalInfo.getCanary());
@@ -378,8 +382,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("before");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("after");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEqualTo(canaryBlueGreenAdditionalInfo.getCanary());
@@ -404,8 +408,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.BLUE_GREEN);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("blue");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("green");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEmpty();
     assertThat(canaryBlueGreenAdditionalInfo.getCanary()).isEmpty();
     assertThat(canaryBlueGreenAdditionalInfo.getTrafficSplitPercentage()).isNull();
@@ -436,8 +440,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.BLUE_GREEN);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("blue");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("green");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(0);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary()).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(1);
@@ -489,8 +493,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.BLUE_GREEN);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("blue");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("green");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(2);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary()).isEqualTo(canaryBlueGreenAdditionalInfo.getCanary());
@@ -537,8 +541,8 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
 
     assertThat(canaryBlueGreenAdditionalInfo).isNotNull();
     assertThat(canaryBlueGreenAdditionalInfo.getType()).isEqualTo(VerificationJobType.CANARY);
-    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo("before");
-    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo("after");
+    assertThat(canaryBlueGreenAdditionalInfo.getPrimaryInstancesLabel()).isEqualTo(BEFORE);
+    assertThat(canaryBlueGreenAdditionalInfo.getCanaryInstancesLabel()).isEqualTo(AFTER);
     assertThat(canaryBlueGreenAdditionalInfo.getPrimary().size()).isEqualTo(3);
     assertThat(canaryBlueGreenAdditionalInfo.getCanary().size()).isEqualTo(1);
     // verifies that primary nodes no longer contain riskScore

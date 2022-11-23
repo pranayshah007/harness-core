@@ -26,8 +26,10 @@ import io.harness.steps.barriers.BarrierStep;
 import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
+import io.harness.steps.container.ContainerStep;
 import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.email.EmailStep;
+import io.harness.steps.group.GroupStepV1;
 import io.harness.steps.http.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
@@ -84,6 +86,8 @@ public class OrchestrationStepsModuleStepRegistrar {
 
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     engineSteps.put(WaitStep.STEP_TYPE, WaitStep.class);
+    engineSteps.put(GroupStepV1.STEP_TYPE, GroupStepV1.class);
+    engineSteps.put(ContainerStep.STEP_TYPE, ContainerStep.class);
 
     return engineSteps;
   }

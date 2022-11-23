@@ -24,8 +24,8 @@ import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.ClusterConfiguration;
 
 import com.amazonaws.services.ecs.model.ContainerDefinition;
@@ -91,8 +91,7 @@ public class AwsClusterServiceImpl implements AwsClusterService {
           format("Service [%s] in cluster [%s] stays at %s instances", serviceName, clusterName, previousCount));
     }
     return ecsContainerService.provisionTasks(region, cloudProviderSetting, encryptedDataDetails, clusterName,
-        serviceName, previousCount, desiredCount, serviceSteadyStateTimeout, executionLogCallback,
-        timeoutErrorSupported);
+        serviceName, previousCount, desiredCount, serviceSteadyStateTimeout, executionLogCallback);
   }
 
   @Override

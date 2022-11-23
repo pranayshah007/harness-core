@@ -7,6 +7,8 @@
 
 package io.harness.connector.task.azure;
 
+import static io.harness.azure.model.AzureConstants.AZURE_AUTH_CERT_DIR_PATH;
+import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -16,17 +18,16 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
-import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureValidationParams;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
-import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 
 import com.google.inject.Inject;
-import java.util.List;
+import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,25 +40,27 @@ public class AzureValidationHandler implements ConnectorValidationHandler {
   @Override
   public ConnectorValidationResult validate(
       ConnectorValidationParams connectorValidationParams, String accountIdentifier) {
-    try {
+    try (LazyAutoCloseableWorkingDirectory authWorkingDirectory =
+             new LazyAutoCloseableWorkingDirectory(REPOSITORY_DIR_PATH, AZURE_AUTH_CERT_DIR_PATH)) {
       final AzureValidationParams azureValidationParams = (AzureValidationParams) connectorValidationParams;
-      final AzureConnectorDTO azureConnectorDTO = azureValidationParams.getAzureConnectorDTO();
-      final List<EncryptedDataDetail> encryptedDataDetails = azureValidationParams.getEncryptedDataDetails();
-      return validateInternal(azureConnectorDTO, encryptedDataDetails);
+      AzureConfigContext azureConfigContext = AzureConfigContext.builder()
+                                                  .azureConnector(azureValidationParams.getAzureConnectorDTO())
+                                                  .encryptedDataDetails(azureValidationParams.getEncryptedDataDetails())
+                                                  .certificateWorkingDirectory(authWorkingDirectory)
+                                                  .build();
+      return validateInternal(azureConfigContext);
     } catch (Exception e) {
       throw exceptionManager.processException(e, MANAGER, log);
     }
   }
 
-  public ConnectorValidationResult validate(AzureTaskParams azureTaskParams) {
-    final AzureConnectorDTO azureConnectorDTO = azureTaskParams.getAzureConnector();
-    final List<EncryptedDataDetail> encryptedDataDetails = azureTaskParams.getEncryptionDetails();
-    return validateInternal(azureConnectorDTO, encryptedDataDetails);
+  public ConnectorValidationResult validate(AzureConfigContext azureConfigContext) throws IOException {
+    return validateInternal(azureConfigContext);
   }
 
-  private ConnectorValidationResult validateInternal(
-      AzureConnectorDTO azureConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails) {
-    AzureConfig azureConfig = azureNgConfigMapper.mapAzureConfigWithDecryption(azureConnectorDTO, encryptedDataDetails);
+  private ConnectorValidationResult validateInternal(AzureConfigContext azureConfigContext) throws IOException {
+    AzureConfig azureConfig = azureNgConfigMapper.mapAzureConfigWithDecryption(azureConfigContext.getAzureConnector(),
+        azureConfigContext.getEncryptedDataDetails(), azureConfigContext.getCertificateWorkingDirectory());
     if (azureAuthorizationClient.validateAzureConnection(azureConfig)) {
       return ConnectorValidationResult.builder()
           .status(ConnectivityStatus.SUCCESS)
