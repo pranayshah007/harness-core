@@ -29,8 +29,7 @@ public interface SubscriptionService {
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   void payInvoice(String invoiceId);
 
-  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  SubscriptionDetailDTO createFfSubscription(SubscriptionCreateParams subscriptionParams);
+  SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionCreateParams subscriptionCreateParams);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId);

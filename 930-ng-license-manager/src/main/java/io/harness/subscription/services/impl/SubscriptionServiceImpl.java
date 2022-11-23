@@ -141,8 +141,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable();
 
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
-        accountIdentifier, subscriptionDTO.getCustomerId());
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Cannot preview. Please finish customer information firstly");
     }
@@ -211,32 +210,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
             .build();
   }
 
-  @Override
-  public SubscriptionDetailDTO createFfSubscription(SubscriptionCreateParams subscriptionCreateParams) {
-    isSelfServiceEnable();
-
-    // TODO: transaction control in case any race condition
-    StripeCustomer stripeCustomer = getOrCreateCustomer(subscriptionCreateParams.getAccountId(), subscriptionCreateParams.getCustomer());
-
-    deleteIncompleteSubscriptionIfExists(subscriptionCreateParams.getAccountId(), subscriptionCreateParams.getModuleType());
-
-    SubscriptionParams params = buildSubscriptionParams(subscriptionCreateParams, stripeCustomer.getCustomerId());
-
-    SubscriptionDetailDTO subscription = stripeHelper.createSubscription(params);
-
-    // Save locally with basic information after succeed
-    subscriptionDetailRepository.save(SubscriptionDetail.builder()
-                                          .accountIdentifier(subscriptionCreateParams.getAccountId())
-                                          .customerId(stripeCustomer.getCustomerId())
-                                          .subscriptionId(subscription.getSubscriptionId())
-                                          .status("incomplete")
-                                          .latestInvoice(subscription.getLatestInvoice())
-                                          .moduleType(ModuleType.CF)
-                                          .build());
-
-    return subscription;
-  }
-
   private void checkEdition(String accountId, String edition) {
     List<ModuleLicense> licenses = licenseRepository.findByAccountIdentifier(accountId);
     String editionToCheck =
@@ -249,7 +222,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
+  public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionCreateParams subscriptionCreateParams) {
     sendTelemetryEvent(
         "Subscription Creation Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
 
@@ -258,15 +231,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     // TODO: transaction control in case any race condition
 
     // verify customer exists
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
-        accountIdentifier, subscriptionDTO.getCustomerId());
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Cannot create subscription. Please finish customer information firstly");
+    } else {
+      updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
+
 
     // Not allowed for creation if active subscriptionId exists
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
-        accountIdentifier, subscriptionDTO.getModuleType());
+        accountIdentifier, subscriptionCreateParams.getModuleType());
     if (subscriptionDetail != null) {
       if (!subscriptionDetail.isIncomplete()) {
         throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
@@ -277,13 +252,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     // create Subscription
-    SubscriptionParams param = SubscriptionParams.builder()
-                                   .accountIdentifier(accountIdentifier)
-                                   .moduleType(subscriptionDTO.getModuleType().name())
-                                   .customerId(stripeCustomer.getCustomerId())
-                                   .paymentMethodId(subscriptionDTO.getPaymentMethodId())
-                                   .items(subscriptionDTO.getItems())
-                                   .build();
+    SubscriptionParams param = buildSubscriptionParams(subscriptionCreateParams, stripeCustomer.getCustomerId());
     SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
 
     // Save locally with basic information after succeed
@@ -293,7 +262,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .subscriptionId(subscription.getSubscriptionId())
                                           .status(subscription.getStatus())
                                           .latestInvoice(subscription.getLatestInvoice())
-                                          .moduleType(subscriptionDTO.getModuleType())
+                                          .moduleType(subscriptionCreateParams.getModuleType())
                                           .build());
     return subscription;
   }

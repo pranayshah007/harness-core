@@ -25,7 +25,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SubscriptionDTO {
-  private String customerId;
+  private CustomerDTO customer;
   private ModuleType moduleType;
   private String paymentMethodId;
   private List<ItemParams> items;
