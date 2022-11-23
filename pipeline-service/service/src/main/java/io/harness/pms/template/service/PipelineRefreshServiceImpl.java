@@ -20,8 +20,6 @@ import io.harness.ng.core.template.refresh.YamlFullRefreshResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
-import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
-import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
@@ -42,16 +40,10 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     RefreshResponseDTO refreshResponseDTO = pmsPipelineTemplateHelper.getRefreshedYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
     if (refreshResponseDTO != null) {
-      updatePipelineWithYaml(pipelineEntity, refreshResponseDTO.getRefreshedYaml());
+      pmsPipelineService.validateAndUpdatePipeline(
+          pipelineEntity.withYaml(refreshResponseDTO.getRefreshedYaml()), ChangeType.MODIFY, true);
     }
     return true;
-  }
-
-  private void updatePipelineWithYaml(PipelineEntity pipelineEntity, String refreshedYaml) {
-    PipelineEntity updatedPipelineEntity = pipelineEntity.withYaml(refreshedYaml);
-    PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(updatedPipelineEntity, ChangeType.MODIFY);
-    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
   }
 
   @Override
@@ -101,7 +93,8 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
     if (refreshResponse != null && refreshResponse.isShouldRefreshYaml()) {
-      updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
+      pmsPipelineService.validateAndUpdatePipeline(
+          pipelineEntity.withYaml(refreshResponse.getRefreshedYaml()), ChangeType.MODIFY, true);
     }
     return true;
   }

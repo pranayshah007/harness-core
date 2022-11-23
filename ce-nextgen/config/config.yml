@@ -1,4 +1,4 @@
-# main setup configs
+#main setup configs
 server:
   rootPath: /ccm/api
   applicationConnectors:
@@ -92,7 +92,7 @@ eventsFramework:
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
 
-# feature configs
+#feature configs
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
   connectTimeOutSeconds: 15
@@ -110,7 +110,7 @@ grpcClient:
   target: localhost:9880
   authority: localhost
 
-# has to be comma ',' delimited flags
+#has to be comma ',' delimited flags
 featureFlagsEnabled: ""
 deployMode: KUBERNETES
 
@@ -230,3 +230,24 @@ lightwingAutoCUDClientConfig:
   readTimeOutSeconds: 15
 
 enableOpentelemetry: false
+
+dkronClientConfig:
+  baseUrl: http://localhost:8080/
+  connectTimeOutSeconds: 50
+  readTimeOutSeconds: 50
+
+governanceConfig:
+  useDkron: true
+  callbackApiEndpoint: http://localhost:7340/ccm/api/governance/enqueue
+  dkronJobEnabled: true
+  awsFaktoryJobType: aws-governance # This should match with worker
+  awsFaktoryQueueName: aws-governance # This should match with worker
+  OOTBAccount: wFHXHD0RRQWoO8tIZT5YVw
+  tagsKey: dc
+  tagsValue: dc1:1
+  policyPerAccountLimit: 300
+  accountLimit: 100
+  regionLimit: 5
+  packsInEnforcement: 30
+  policiesInEnforcement: 30
+  policiesInPack: 30

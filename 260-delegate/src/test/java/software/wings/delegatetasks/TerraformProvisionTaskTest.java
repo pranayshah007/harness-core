@@ -614,6 +614,23 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     FileIo.deleteDirectoryAndItsContentIfExists("./terraform-working-dir");
   }
 
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void TC1_testRollbackRunDestroy() throws IOException, TimeoutException, InterruptedException {
+    setupForDestroyTests();
+    TerraformProvisionParameters terraformProvisionParameters = createTerraformProvisionParameters(
+        false, false, null, TerraformCommandUnit.Rollback, TerraformCommand.DESTROY, false, false);
+    terraformProvisionParameters.getVariables().remove("var3");
+    TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(terraformProvisionParameters);
+    verify(terraformExecutionData, TerraformCommand.DESTROY);
+    verifyCommandExecuted("terraform init", "terraform workspace", "terraform refresh", "terraform destroy");
+    assertThat(terraformExecutionData.getOutputs()).isNull();
+
+    FileIo.deleteDirectoryAndItsContentIfExists(GIT_REPO_DIRECTORY);
+    FileIo.deleteDirectoryAndItsContentIfExists("./terraform-working-dir");
+  }
+
   /**
    * Should not skip refresh even because not using approved plan
    */

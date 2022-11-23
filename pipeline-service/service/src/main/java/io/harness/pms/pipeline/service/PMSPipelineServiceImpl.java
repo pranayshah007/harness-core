@@ -100,6 +100,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
   @Inject private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
+  @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
+
   @Inject private final PipelineGovernanceService pipelineGovernanceService;
   @Inject private final PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
   @Inject private final GitSyncSdkService gitSyncSdkService;
@@ -119,7 +121,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity) {
+  public PipelineCRUDResult validateAndCreatePipeline(
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails) {
     checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
@@ -128,7 +131,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
     try {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
@@ -188,7 +192,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
             clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
 
-    PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (destGovernanceMetadata.getDeny()) {
       return PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build();
@@ -251,7 +255,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
               .build();
       throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO);
     }
-    pmsPipelineServiceHelper.validatePipelineFromRemote(pipelineEntity);
+    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
     return optionalPipelineEntity;
   }
 
@@ -294,7 +298,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType) {
+  public PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails) {
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
@@ -303,7 +308,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
     if (governanceMetadata.getDeny()) {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }

@@ -17,6 +17,7 @@ import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -38,6 +39,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
                          .envName(env.getName())
                          .clusterName(cluster.getName())
                          .clusterId(scopedAndRefForCluster.getRef())
+                         .variables(Collections.emptyMap())
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .build());
     return this;
@@ -54,6 +56,7 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
                          .clusterId(scopedAndRefForCluster.getRef())
                          .scope(scopedAndRefForCluster.getScope().toString())
                          .clusterName(cluster.getName())
+                         .variables(Collections.emptyMap())
                          .build());
     return this;
   }

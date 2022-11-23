@@ -13,6 +13,7 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 public class K8sRollingStepMapperImpl implements StepMapper {
@@ -22,11 +23,21 @@ public class K8sRollingStepMapperImpl implements StepMapper {
   }
 
   @Override
+  public State getState(StepYaml stepYaml) {
+    return null;
+  }
+
+  @Override
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     K8sRollingStepNode k8sRollingStepNode = new K8sRollingStepNode();
     baseSetup(stepYaml, k8sRollingStepNode);
     k8sRollingStepNode.setK8sRollingStepInfo(
         K8sRollingStepInfo.infoBuilder().skipDryRun(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

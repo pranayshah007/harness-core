@@ -14,7 +14,6 @@ import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
 import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.data.validator.NGEntityName;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
@@ -42,7 +41,7 @@ public class MonitoredServiceDTO {
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String orgIdentifier;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String projectIdentifier;
   @ApiModelProperty(required = true) @NotNull String identifier;
-  @ApiModelProperty(required = true) @NotNull @NGEntityName String name;
+  @ApiModelProperty(required = true) @NotNull String name;
   @ApiModelProperty(required = true) @NotNull MonitoredServiceType type;
   String description;
   @ApiModelProperty(required = true) @NotNull @EntityIdentifier String serviceRef;
