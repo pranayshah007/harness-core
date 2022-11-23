@@ -97,6 +97,8 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
+import io.harness.cdng.tas.TasBGAppSetupStep;
+import io.harness.cdng.tas.TasCanaryAppSetupStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -193,6 +195,8 @@ public class NgStepRegistrar {
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
     engineSteps.put(AzureARMRollbackStep.STEP_TYPE, AzureARMRollbackStep.class);
     engineSteps.put(FetchInstanceScriptStep.STEP_TYPE, FetchInstanceScriptStep.class);
+    engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
+    engineSteps.put(TasBGAppSetupStep.STEP_TYPE, TasBGAppSetupStep.class);
     engineSteps.put(ShellScriptProvisionStep.STEP_TYPE, ShellScriptProvisionStep.class);
 
     // Chaos

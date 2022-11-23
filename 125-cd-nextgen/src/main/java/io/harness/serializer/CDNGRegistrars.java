@@ -65,6 +65,8 @@ import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode;
 import io.harness.cdng.ssh.CommandStepNode;
+import io.harness.cdng.tas.TasBGAppSetupStepNode;
+import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;
@@ -557,6 +559,30 @@ public class CDNGRegistrars {
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TAS_CANARY_APP_SETUP_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TasCanaryAppSetupStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.TAS_BG_APP_SETUP_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(TasBGAppSetupStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

@@ -107,6 +107,7 @@ import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
@@ -179,6 +180,7 @@ public class CDStepHelper {
   @Inject private EngineExpressionService engineExpressionService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private TasEntityHelper tasEntityHelper;
   @Inject private SshEntityHelper sshEntityHelper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -625,6 +627,11 @@ public class CDStepHelper {
   public K8sInfraDelegateConfig getK8sInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return k8sEntityHelper.getK8sInfraDelegateConfig(infrastructure, ngAccess);
+  }
+
+  public TasInfraConfig getTasInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return tasEntityHelper.getTasInfraConfig(infrastructure, ngAccess);
   }
 
   public SshInfraDelegateConfig getSshInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
