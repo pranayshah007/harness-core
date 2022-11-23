@@ -13,9 +13,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.pcf.model.CfCliVersion;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -25,12 +27,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @OwnedBy(CDP)
 @TypeAlias("tasManifestOutcome")
-@JsonTypeName(ManifestType.TasManifest)
+@JsonTypeName(ManifestType.TAS_MANIFEST)
 @FieldNameConstants(innerTypeName = "TasManifestOutcomeKeys")
 @RecasterAlias("io.harness.cdng.manifest.yaml.TasManifestOutcome")
 public class TasManifestOutcome implements ManifestOutcome {
   String identifier;
-  String type = ManifestType.TasManifest;
+  String type = ManifestType.TAS_MANIFEST;
   StoreConfig store;
-  ParameterField<Boolean> skipResourceVersioning;
+  CfCliVersion cfCliVersion;
+  ParameterField<List<String>> varsPaths;
+  ParameterField<List<String>> autoScalerPath;
 }

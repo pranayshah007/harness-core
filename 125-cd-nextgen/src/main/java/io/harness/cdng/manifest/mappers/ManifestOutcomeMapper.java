@@ -8,7 +8,7 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.cdng.manifest.ManifestType.AutoScaler;
+import static io.harness.cdng.manifest.ManifestType.AUTOSCALER;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
@@ -21,9 +21,9 @@ import static io.harness.cdng.manifest.ManifestType.OpenshiftParam;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
 import static io.harness.cdng.manifest.ManifestType.ReleaseRepo;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
-import static io.harness.cdng.manifest.ManifestType.TasManifest;
+import static io.harness.cdng.manifest.ManifestType.TAS_MANIFEST;
 import static io.harness.cdng.manifest.ManifestType.VALUES;
-import static io.harness.cdng.manifest.ManifestType.Vars;
+import static io.harness.cdng.manifest.ManifestType.VARS;
 
 import static java.lang.String.format;
 
@@ -88,11 +88,11 @@ public class ManifestOutcomeMapper {
         return getK8sOutcome(manifestAttributes);
       case VALUES:
         return getValuesOutcome(manifestAttributes, order);
-      case TasManifest:
+      case TAS_MANIFEST:
         return getTasOutcome(manifestAttributes);
-      case AutoScaler:
+      case AUTOSCALER:
         return getAutoScalerOutcome(manifestAttributes);
-      case Vars:
+      case VARS:
         return getVarsOutcome(manifestAttributes, order);
       case HelmChart:
         return getHelmChartOutcome(manifestAttributes);
@@ -147,7 +147,9 @@ public class ManifestOutcomeMapper {
     return TasManifestOutcome.builder()
         .identifier(tasManifest.getIdentifier())
         .store(tasManifest.getStoreConfig())
-        .skipResourceVersioning(tasManifest.getSkipResourceVersioning())
+        .cfCliVersion(tasManifest.getCfCliVersion())
+        .varsPaths(tasManifest.getVarsPaths())
+        .autoScalerPath(tasManifest.getAutoScalerPath())
         .build();
   }
 
@@ -157,7 +159,6 @@ public class ManifestOutcomeMapper {
     return AutoScalerManifestOutcome.builder()
         .identifier(autoScalerManifest.getIdentifier())
         .store(autoScalerManifest.getStoreConfig())
-        .skipResourceVersioning(autoScalerManifest.getSkipResourceVersioning())
         .build();
   }
 

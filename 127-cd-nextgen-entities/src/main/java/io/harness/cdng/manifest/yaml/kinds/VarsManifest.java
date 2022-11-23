@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName(ManifestType.Vars)
+@JsonTypeName(ManifestType.VARS)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SimpleVisitorHelper(helperClass = VarsManifestVisitorHelper.class)
 @TypeAlias("varsManifest")
@@ -73,7 +73,7 @@ public class VarsManifest implements ManifestAttributes, Visitable {
 
   @Override
   public String getKind() {
-    return ManifestType.Vars;
+    return ManifestType.VARS;
   }
 
   @Override

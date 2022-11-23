@@ -13,7 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -25,12 +24,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @OwnedBy(CDP)
 @TypeAlias("autoScalerManifestOutcome")
-@JsonTypeName(ManifestType.AutoScaler)
+@JsonTypeName(ManifestType.AUTOSCALER)
 @FieldNameConstants(innerTypeName = "AutoScalerManifestOutcomeKeys")
 @RecasterAlias("io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome")
 public class AutoScalerManifestOutcome implements ManifestOutcome {
   String identifier;
-  String type = ManifestType.AutoScaler;
+  String type = ManifestType.AUTOSCALER;
   StoreConfig store;
-  ParameterField<Boolean> skipResourceVersioning;
 }
