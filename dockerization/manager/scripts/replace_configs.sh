@@ -760,18 +760,14 @@ if [[ "" != "$REDIS_NETTY_THREADS" ]]; then
   export REDIS_NETTY_THREADS; yq -i '.redisLockConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.redisAtmosphereConfig.nettyThreads=env(REDIS_NETTY_THREADS)' $CONFIG_FILE
   export REDIS_NETTY_THREADS; yq -i '.nettyThreads=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
+
+  export REDIS_NETTY_THREADS; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_NETTY_THREADS)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_CONNECTION_POOL_SIZE" ]]; then
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisLockConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.redisAtmosphereConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $CONFIG_FILE
   export REDIS_CONNECTION_POOL_SIZE; yq -i '.singleServerConfig.connectionPoolSize=env(REDIS_CONNECTION_POOL_SIZE)' $REDISSON_CACHE_FILE
-fi
-
-if [[ "" != "$REDIS_CONNECTION_MINIMUM_IDLE_SIZE" ]]; then
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisLockConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.redisAtmosphereConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $CONFIG_FILE
-  export REDIS_CONNECTION_MINIMUM_IDLE_SIZE; yq -i '.singleServerConfig.connectionMinimumIdleSize=env(REDIS_CONNECTION_MINIMUM_IDLE_SIZE)' $REDISSON_CACHE_FILE
 fi
 
 if [[ "" != "$REDIS_RETRY_INTERVAL" ]]; then

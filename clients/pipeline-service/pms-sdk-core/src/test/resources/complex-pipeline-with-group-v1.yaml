@@ -1,0 +1,42 @@
+stages:
+  - type: Custom
+    spec:
+      steps:
+        - type: group
+          spec:
+            steps:
+              - type: Http
+                name: HttpStepWithStrategy
+                spec:
+                  method: GET
+                  url: http://www.google.com
+                timeout: 10s
+              - type: Http
+                name: HttpStepWithStrategy
+                spec:
+                  method: GET
+                  url: http://www.google.com
+        - type: Http
+          name: HttpStepWithStrategy2
+          spec:
+            method: GET
+            url: http://www.google.com
+  - type: group
+    spec:
+      stages:
+        - type: custom
+          spec:
+            steps:
+              - type: Http
+                name: HttpStepWithStrategy
+                spec:
+                  method: GET
+                  url: http://www.google.com
+        - type: custom
+          spec:
+            steps:
+              - type: Http
+                name: HttpStepWithStrategy
+                spec:
+                  method: GET
+                  url: http://www.google.com

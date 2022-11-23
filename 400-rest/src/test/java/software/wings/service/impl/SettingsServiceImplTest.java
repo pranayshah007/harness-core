@@ -80,6 +80,9 @@ import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.yaml.YamlGitService;
+import software.wings.settings.SettingVariableTypes;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -127,6 +130,7 @@ public class SettingsServiceImplTest extends WingsBaseTest {
   @Mock private FeatureFlagService featureFlagService;
   @Mock @Named(GitOpsFeature.FEATURE_NAME) private UsageLimitedFeature gitOpsFeature;
   @Mock @Named(CeCloudAccountFeature.FEATURE_NAME) private UsageLimitedFeature ceCloudAccountFeature;
+  @Mock YamlGitService yamlGitService;
 
   @Spy @InjectMocks private SettingsServiceImpl settingsService;
   @Inject private HPersistence persistence;
@@ -552,5 +556,21 @@ public class SettingsServiceImplTest extends WingsBaseTest {
 
     settingAttribute = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
     assertThat(settingsService.getDelegateSelectors(settingAttribute)).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ABHINAV)
+  @Category(UnitTests.class)
+  public void testEnsureGitConnectorSafeToDelete() throws IllegalAccessException {
+    FieldUtils.writeField(settingsService, "wingsPersistence", persistence, true);
+
+    when(yamlGitService.getYamlGitConfigByConnector(any(), any()))
+        .thenReturn(Collections.singletonList(YamlGitConfig.builder().appId("appId").build()));
+    GitConfig gitconfig = GitConfig.builder().urlType(GitConfig.UrlType.ACCOUNT).build();
+    gitconfig.setType(SettingVariableTypes.GIT.name());
+    SettingAttribute accountSetting =
+        aSettingAttribute().withCategory(SettingCategory.CONNECTOR).withValue(gitconfig).build();
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> settingsService.ensureSettingAttributeSafeToDelete(accountSetting));
   }
 }

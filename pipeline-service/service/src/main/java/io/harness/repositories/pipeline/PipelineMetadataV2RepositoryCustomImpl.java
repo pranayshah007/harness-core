@@ -14,6 +14,7 @@ import static org.springframework.data.mongodb.core.query.Query.query;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineMetadata;
+import io.harness.pms.pipeline.PipelineMetadata.PipelineMetadataKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.PipelineMetadataV2.PipelineMetadataV2Keys;
 
@@ -94,9 +95,10 @@ public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV
                             .and(PipelineMetadataV2Keys.identifier)
                             .is(identifier);
     update.inc(PipelineMetadataV2Keys.runSequence);
+    Query query = new Query(criteria);
+    query.fields().include(PipelineMetadataKeys.runSequence);
     PipelineMetadata pipelineMetadata = mongoTemplate.findOne(
-        new Query(criteria).with(Sort.by(Sort.Direction.DESC, PipelineMetadataV2Keys.runSequence)),
-        PipelineMetadata.class);
+        query.with(Sort.by(Sort.Direction.DESC, PipelineMetadataV2Keys.runSequence)), PipelineMetadata.class);
     if (pipelineMetadata == null) {
       return Optional.of(mongoTemplate.save(PipelineMetadataV2.builder()
                                                 .accountIdentifier(accountId)

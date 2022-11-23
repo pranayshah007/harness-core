@@ -26,9 +26,4 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.cdng.provision.terraform.RemoteTerraformBackendConfigSpec")
 public class RemoteTerraformBackendConfigSpec implements TerraformBackendConfigSpec {
   @NotNull StoreConfigWrapper store;
-
-  @Override
-  public String getType() {
-    return TerraformVarFileTypes.Remote;
-  }
 }

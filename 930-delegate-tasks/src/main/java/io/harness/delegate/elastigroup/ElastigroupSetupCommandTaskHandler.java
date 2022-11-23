@@ -55,11 +55,10 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  private long timeoutInMillis;
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSetupCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSetupCommandRequest"));
@@ -67,10 +66,8 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
 
-    timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
-
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_SETUP.toString(), true, commandUnitsProgress);
     try {
       // Handle canary and basic
       String prefix = format("%s__", elastigroupSetupCommandRequest.getElastigroupNamePrefix());
@@ -82,9 +79,9 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
       List<ElastiGroup> elastiGroups = spotInstHelperServiceDelegate.listAllElastiGroups(
           spotInstApiTokenRef, spotInstAccountId, elastigroupSetupCommandRequest.getElastigroupNamePrefix());
       if (isNotEmpty(elastiGroups)) {
@@ -157,7 +154,6 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
               .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
               .useCurrentRunningInstanceCount(
                   ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
-              .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
               .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
               .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
               .build();

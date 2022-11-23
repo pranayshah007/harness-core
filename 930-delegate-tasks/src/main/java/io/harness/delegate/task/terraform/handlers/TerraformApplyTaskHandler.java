@@ -37,6 +37,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.terraform.TerraformHelperUtils;
@@ -132,7 +133,8 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
           configFileInfo, scriptDirectory, logCallback, taskParameters.getAccountId(), tfBackendConfigDirectory);
     }
     try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream();
-         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
+         PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream();
+         PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream()) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
               .tfBackendConfigsFile(backendConfigFile)
@@ -147,6 +149,8 @@ public class TerraformApplyTaskHandler extends TerraformAbstractTaskHandler {
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
               .planJsonLogOutputStream(planJsonLogOutputStream)
+              .isSaveTerraformHumanReadablePlan(taskParameters.isSaveTerraformHumanReadablePlan())
+              .planHumanReadableOutputStream(planHumanReadableOutputStream)
               .planLogOutputStream(planLogOutputStream)
               .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be
                                            // sent from manager side

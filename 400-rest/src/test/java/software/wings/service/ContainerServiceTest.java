@@ -94,12 +94,13 @@ public class ContainerServiceTest extends WingsBaseTest {
 
   private ContainerServiceParams gcpParams =
       ContainerServiceParams.builder()
-          .settingAttribute(aSettingAttribute()
+          .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                 .withValue(GcpConfig.builder()
                                                .serviceAccountKeyFileContent("keyFileContent".toCharArray())
                                                .accountId(ACCOUNT_ID)
                                                .build())
-                                .build())
+                                .build()
+                                .toDTO())
           .encryptionDetails(emptyList())
           .clusterName(CLUSTER_NAME)
           .namespace("default")
@@ -108,13 +109,14 @@ public class ContainerServiceTest extends WingsBaseTest {
 
   private ContainerServiceParams awsParams =
       ContainerServiceParams.builder()
-          .settingAttribute(aSettingAttribute()
+          .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                 .withValue(AwsConfig.builder()
                                                .accessKey("accessKey".toCharArray())
                                                .secretKey("secretKey".toCharArray())
                                                .accountId(ACCOUNT_ID)
                                                .build())
-                                .build())
+                                .build()
+                                .toDTO())
           .encryptionDetails(emptyList())
           .clusterName(CLUSTER_NAME)
           .containerServiceName(ECS_SERVICE_NAME)
@@ -123,7 +125,11 @@ public class ContainerServiceTest extends WingsBaseTest {
 
   private ContainerServiceParams kubernetesConfigParams =
       ContainerServiceParams.builder()
-          .settingAttribute(aSettingAttribute().withValue(kubernetesClusterConfig).build())
+          .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
+                                .aSettingAttribute()
+                                .withValue(kubernetesClusterConfig)
+                                .build()
+                                .toDTO())
           .encryptionDetails(emptyList())
           .clusterName(CLUSTER_NAME)
           .namespace("default")
@@ -189,9 +195,9 @@ public class ContainerServiceTest extends WingsBaseTest {
                               .build();
     SettingAttribute awsSettingAttribute = aSettingAttribute().withValue(awsConfig).build();
     when(awsClusterService.getServices(
-             Regions.US_EAST_1.getName(), awsSettingAttribute, Collections.emptyList(), CLUSTER_NAME))
+             Regions.US_EAST_1.getName(), awsSettingAttribute.toDTO(), Collections.emptyList(), CLUSTER_NAME))
         .thenReturn(singletonList(ecsService));
-    when(awsHelperService.validateAndGetAwsConfig(eq(awsSettingAttribute), anyObject(), eq(false)))
+    when(awsHelperService.validateAndGetAwsConfig(eq(awsSettingAttribute.toDTO()), anyObject(), eq(false)))
         .thenReturn(awsConfig);
     when(awsHelperService.listTasks(eq("us-east-1"), eq(awsConfig), anyObject(), anyObject(), eq(false)))
         .thenReturn(listTasksResult);

@@ -45,27 +45,21 @@ public class PlanExecutionMonitorServiceImplTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void testRegisterActiveExecutionMetrics() {
     List<PlanExecution> planExecutions = new ArrayList<>();
-    planExecutions.add(
-        PlanExecution.builder()
-            .uuid("UUID1")
-            .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId1",
-                SetupAbstractionKeys.orgIdentifier, "orgId1", SetupAbstractionKeys.projectIdentifier, "projId1"))
-            .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD1").build())
-            .build());
-    planExecutions.add(
-        PlanExecution.builder()
-            .uuid("UUID2")
-            .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId2",
-                SetupAbstractionKeys.orgIdentifier, "orgId2", SetupAbstractionKeys.projectIdentifier, "projId2"))
-            .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD2").build())
-            .build());
-    planExecutions.add(
-        PlanExecution.builder()
-            .uuid("UUID1")
-            .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId3",
-                SetupAbstractionKeys.orgIdentifier, "orgId3", SetupAbstractionKeys.projectIdentifier, "projId3"))
-            .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD3").build())
-            .build());
+    planExecutions.add(PlanExecution.builder()
+                           .uuid("UUID1")
+                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId1"))
+                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD1").build())
+                           .build());
+    planExecutions.add(PlanExecution.builder()
+                           .uuid("UUID2")
+                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId2"))
+                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD2").build())
+                           .build());
+    planExecutions.add(PlanExecution.builder()
+                           .uuid("UUID1")
+                           .setupAbstractions(ImmutableMap.of(SetupAbstractionKeys.accountId, "accId3"))
+                           .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("PiD3").build())
+                           .build());
     doReturn(planExecutions).when(planExecutionService).findByStatusWithProjections(any(), any());
     planExecutionMonitorService.registerActiveExecutionMetrics();
     verify(metricService, times(3)).recordMetric(anyString(), anyDouble());

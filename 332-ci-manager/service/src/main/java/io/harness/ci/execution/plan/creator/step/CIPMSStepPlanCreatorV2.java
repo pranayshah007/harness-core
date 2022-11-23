@@ -28,6 +28,7 @@ import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.govern.Switch;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
 import io.harness.plancreator.steps.AbstractStepPlanCreator;
@@ -35,6 +36,7 @@ import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.strategy.StrategyUtils;
+import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -52,6 +54,7 @@ import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviser;
 import io.harness.pms.sdk.core.adviser.marksuccess.OnMarkSuccessAdviserParameters;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -60,6 +63,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -72,8 +76,10 @@ import io.harness.yaml.core.failurestrategy.NGFailureActionType;
 import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventionFailureActionConfig;
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.timeout.Timeout;
+import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -431,5 +437,115 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     rollbackStrategyStringMap.put(
         RollbackStrategy.PIPELINE_ROLLBACK, GenericPlanCreatorUtils.getRollbackStageNodeId(currentField));
     return rollbackStrategyStringMap;
+  }
+
+  protected PlanCreationResponse createPlanForFieldV2(PlanCreationContext ctx, T stepElement) {
+    StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
+    YamlField field = ctx.getCurrentField();
+
+    StrategyUtilsV1.addStrategyFieldDependencyIfPresent(
+        kryoSerializer, ctx, field.getUuid(), dependenciesNodeMap, metadataMap, buildAdviserV1(ctx.getDependency()));
+
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
+            .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, getName(stepElement)))
+            .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, stepElement.getIdentifier()))
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(FacilitatorType.newBuilder()
+                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
+                                                    .build())
+                                       .build())
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode());
+    if (field.getNode().getField(YAMLFieldNameConstants.SPEC).getNode().getField(YAMLFieldNameConstants.STRATEGY)
+        == null) {
+      builder.adviserObtainments(buildAdviserV1(ctx.getDependency()));
+    }
+    return PlanCreationResponse.builder()
+        .planNode(builder.build())
+        .dependencies(
+            DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                .toBuilder()
+                .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                .build())
+        .build();
+  }
+
+  protected PlanCreationResponse createInternalStepPlan(PlanCreationContext ctx, T stepElement, String childID) {
+    StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    PlanNodeBuilder builder =
+        PlanNode.builder()
+            .uuid(stepElement.getUuid())
+            .name(stepElement.getName())
+            .identifier(stepElement.getIdentifier())
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(FacilitatorType.newBuilder()
+                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
+                                                    .build())
+                                       .build())
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
+            .adviserObtainments(Collections.singleton(
+                AdviserObtainment.newBuilder()
+                    .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+                    .setParameters(ByteString.copyFrom(
+                        kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(childID).build())))
+                    .build()));
+    return PlanCreationResponse.builder()
+        .planNode(builder.build())
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap).toBuilder().build())
+        .build();
+  }
+
+  private List<AdviserObtainment> buildAdviserV1(Dependency dependency) {
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (dependency == null || EmptyPredicate.isEmpty(dependency.getMetadataMap())
+        || !dependency.getMetadataMap().containsKey("nextId")) {
+      return adviserObtainments;
+    }
+
+    String nextId = (String) kryoSerializer.asObject(dependency.getMetadataMap().get("nextId").toByteArray());
+    adviserObtainments.add(
+        AdviserObtainment.newBuilder()
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
+            .setParameters(ByteString.copyFrom(
+                kryoSerializer.asBytes(NextStepAdviserParameters.builder().nextNodeId(nextId).build())))
+            .build());
+    return adviserObtainments;
+  }
+
+  protected JsonNode getJsonNode(CIAbstractStepNode stepNode) {
+    try {
+      String jsonString = JsonPipelineUtils.writeJsonString(stepNode);
+      return JsonPipelineUtils.getMapper().readTree(jsonString);
+    } catch (IOException e) {
+      throw new CIStageExecutionException("Failed to create gitclone step", e);
+    }
   }
 }

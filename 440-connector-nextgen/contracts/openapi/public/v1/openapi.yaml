@@ -8,12 +8,6 @@ info:
 servers:
   - url: 'http://app.harness.io'
     description: Harness host url
-x-tagGroups:
-  - name: Connector
-    tags:
-      - Account Connector
-      - Org Connector
-      - Project Connector
 tags:
   - name: Account Connector
     description: Everything about account scoped connector

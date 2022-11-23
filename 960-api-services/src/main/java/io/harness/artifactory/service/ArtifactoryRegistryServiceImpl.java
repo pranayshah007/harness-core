@@ -22,7 +22,9 @@ import software.wings.utils.RepositoryFormat;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -113,5 +115,22 @@ public class ArtifactoryRegistryServiceImpl implements ArtifactoryRegistryServic
   @Override
   public boolean validateCredentials(ArtifactoryConfigRequest artifactoryConfig) {
     return artifactoryClient.validateArtifactServer(artifactoryConfig);
+  }
+
+  @Override
+  public List<Map<String, String>> getLabels(
+      ArtifactoryConfigRequest artifactoryConfig, String imageName, String repositoryName, String buildNos) {
+    // Calling getLabels implemented from cg side.
+
+    try {
+      return artifactoryClient.getLabels(artifactoryConfig, imageName, repositoryName, buildNos);
+
+    } catch (Exception e) {
+      // Catching this exception because artifactory repository api is returning 404 for some open source images
+
+      log.error("Error occurred while fetching artifactory labels", e);
+
+      return Collections.emptyList();
+    }
   }
 }

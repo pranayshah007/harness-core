@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -23,16 +24,17 @@ import lombok.Value;
 public class SLODashboardWidget {
   @NotNull String sloIdentifier;
   @NotNull String title;
-  @NotNull String monitoredServiceIdentifier;
-  @NotNull String monitoredServiceName;
-  @NotNull String healthSourceIdentifier;
-  @NotNull String healthSourceName;
-  @NotNull String serviceIdentifier;
-  @NotNull String environmentIdentifier;
-  @NotNull String environmentName;
-  @NotNull String serviceName;
+  String monitoredServiceIdentifier;
+  String monitoredServiceName;
+  String healthSourceIdentifier;
+  String healthSourceName;
+  String serviceIdentifier;
+  String serviceName;
+  String environmentIdentifier;
+  String environmentName;
   Map<String, String> tags;
-  @NotNull ServiceLevelIndicatorType type;
+  ServiceLevelIndicatorType type;
+  @NotNull ServiceLevelObjectiveType sloType;
   @NotNull BurnRate burnRate;
   @NotNull int timeRemainingDays;
   @NotNull double errorBudgetRemainingPercentage;
@@ -73,6 +75,7 @@ public class SLODashboardWidget {
         .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
         .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
   }
+
   @Value
   @Builder
   public static class SLOGraphData {
@@ -82,6 +85,8 @@ public class SLODashboardWidget {
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
+    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore double sliStatusPercentage;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }

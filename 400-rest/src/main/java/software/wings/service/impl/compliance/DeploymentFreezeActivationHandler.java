@@ -18,6 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.governance.GovernanceFreezeConfig;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorLoopModeHandler;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -34,6 +36,7 @@ import software.wings.service.intfc.AccountService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,45 +49,53 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._953_EVENTS_API)
-public class DeploymentFreezeActivationHandler implements Handler<GovernanceConfig> {
-  private static final int POOL_SIZE = 3;
+public class DeploymentFreezeActivationHandler extends IteratorLoopModeHandler implements Handler<GovernanceConfig> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject DeploymentFreezeUtils deploymentFreezeUtils;
-  PersistenceIterator<GovernanceConfig> iterator;
   @Inject private MorphiaPersistenceRequiredProvider<GovernanceConfig> persistenceProvider;
   @Inject private AccountService accountService;
 
-  private static ExecutorService executor = Executors.newSingleThreadExecutor(
-      new ThreadFactoryBuilder().setNameFormat("deployment-freeze-activation-handler").build());
-  private static final ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(
-      POOL_SIZE, new ThreadFactoryBuilder().setNameFormat("Iterator-DeploymentFreezeActivationThread").build());
-
-  public void registerIterators() {
-    iterator = persistenceIteratorFactory.createIterator(DeploymentFreezeActivationHandler.class,
-        MongoPersistenceIterator.<GovernanceConfig, MorphiaFilterExpander<GovernanceConfig>>builder()
-            .mode(PersistenceIterator.ProcessMode.LOOP)
-            .iteratorName("DeploymentFreezeActivities")
-            .clazz(GovernanceConfig.class)
-            .fieldName(GovernanceConfigKeys.nextIterations)
-            .acceptableNoAlertDelay(ofSeconds(60))
-            .maximumDelayForCheck(ofHours(6))
-            .executorService(executorService)
-            .semaphore(new Semaphore(10))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .persistenceProvider(persistenceProvider)
-            .schedulingType(IRREGULAR_SKIP_MISSED)
-            .filterExpander(query
-                -> query.field(GovernanceConfigKeys.nextIterations)
-                       .exists()
-                       .field(GovernanceConfigKeys.nextIterations)
-                       .notEqual(null)
-                       .field(GovernanceConfigKeys.nextIterations)
-                       .not()
-                       .sizeEq(0))
-            .throttleInterval(ofSeconds(45)));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration throttleInterval) {
+    executor = Executors.newSingleThreadExecutor(
+        new ThreadFactoryBuilder().setNameFormat("deployment-freeze-activation-handler").build());
+    ExecutorService executorService = new ScheduledThreadPoolExecutor(executorOptions.getPoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("Iterator-DeploymentFreezeActivationThread").build());
+    iterator = (MongoPersistenceIterator<GovernanceConfig, MorphiaFilterExpander<GovernanceConfig>>)
+                   persistenceIteratorFactory.createIterator(DeploymentFreezeActivationHandler.class,
+                       MongoPersistenceIterator.<GovernanceConfig, MorphiaFilterExpander<GovernanceConfig>>builder()
+                           .mode(PersistenceIterator.ProcessMode.LOOP)
+                           .iteratorName(iteratorName)
+                           .clazz(GovernanceConfig.class)
+                           .fieldName(GovernanceConfigKeys.nextIterations)
+                           .acceptableNoAlertDelay(ofSeconds(60))
+                           .maximumDelayForCheck(ofHours(6))
+                           .executorService(executorService)
+                           .semaphore(new Semaphore(10))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .persistenceProvider(persistenceProvider)
+                           .schedulingType(IRREGULAR_SKIP_MISSED)
+                           .filterExpander(query
+                               -> query.field(GovernanceConfigKeys.nextIterations)
+                                      .exists()
+                                      .field(GovernanceConfigKeys.nextIterations)
+                                      .notEqual(null)
+                                      .field(GovernanceConfigKeys.nextIterations)
+                                      .not()
+                                      .sizeEq(0))
+                           .throttleInterval(throttleInterval));
 
     executor.submit(() -> iterator.process());
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DeploymentFreezeActivities";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   public void wakeup() {

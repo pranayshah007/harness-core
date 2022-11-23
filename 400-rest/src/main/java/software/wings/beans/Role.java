@@ -46,6 +46,11 @@ public class Role extends Base implements AccountAccess {
                  .field(RoleKeys.roleType)
                  .field(RoleKeys.accountId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_roleType_1")
+                 .field(RoleKeys.accountId)
+                 .field(RoleKeys.roleType)
+                 .build())
         .build();
   }
 

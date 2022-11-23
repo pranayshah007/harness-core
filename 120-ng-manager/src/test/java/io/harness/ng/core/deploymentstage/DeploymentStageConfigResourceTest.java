@@ -14,8 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.creator.plan.stage.CDStageMetaDataDTO;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 

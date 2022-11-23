@@ -28,7 +28,7 @@ public class ParallelismStrategyConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
     Integer parallelism = 0;
     if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
-      parallelism = strategyConfig.getParallelism().getValue();
+      parallelism = Integer.valueOf(String.valueOf(strategyConfig.getParallelism().getValue()));
     }
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {

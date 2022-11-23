@@ -78,11 +78,17 @@ public class InputSetSanitizerTest extends CategoryTest {
     String inputSetWrongFile = "input-set-all-fields-wrong.yml";
     String inputSetWrongYaml = readFile(inputSetWrongFile);
 
-    String emptyAfterSanitised = sanitizeInputSet(yaml, inputSetWrongYaml);
-    assertThat(emptyAfterSanitised).isNullOrEmpty();
+    String inputSetWrongFileMatch = "input-set-all-fields-wrong-match.yml";
+    String inputSetWrongYamlMatch = readFile(inputSetWrongFileMatch).replace("\"", "");
 
+    String emptyAfterSanitised = sanitizeInputSet(yaml, inputSetWrongYaml);
+    assertThat(emptyAfterSanitised.replace("\"", "").trim()).isEqualTo(inputSetWrongYamlMatch.trim());
+
+    String fullInputSetWrongFileMatch = "input-set-yaml-all-fields-wrong-match.yml";
+    String fullInputSetWrongYamlMatch = readFile(fullInputSetWrongFileMatch).replace("\"", "");
     emptyAfterSanitised = sanitizeInputSetAndUpdateInputSetYAML(yaml, inputSetWrongYaml);
-    assertThat(emptyAfterSanitised).isNullOrEmpty();
+
+    assertThat(emptyAfterSanitised.replace("\"", "").trim()).isEqualTo(fullInputSetWrongYamlMatch.trim());
   }
 
   @Test

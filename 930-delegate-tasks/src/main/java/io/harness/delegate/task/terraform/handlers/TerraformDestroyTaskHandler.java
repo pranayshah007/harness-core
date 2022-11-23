@@ -142,6 +142,7 @@ public class TerraformDestroyTaskHandler extends TerraformAbstractTaskHandler {
               .envVars(taskParameters.getEnvironmentVariables())
               .isSaveTerraformJson(taskParameters.isSaveTerraformStateJson())
               .logCallback(logCallback)
+              .isSaveTerraformHumanReadablePlan(taskParameters.isSaveTerraformHumanReadablePlan())
               .planJsonLogOutputStream(planJsonLogOutputStream)
               .planLogOutputStream(planLogOutputStream)
               .analyseTfPlanSummary(false) // this only temporary until the logic for NG is implemented - FF should be

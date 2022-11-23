@@ -9,14 +9,17 @@ package io.harness.ng.serviceaccounts.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,6 +27,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.AccountOrgProjectValidator;
 import io.harness.ng.serviceaccounts.entities.ServiceAccount;
+import io.harness.ng.serviceaccounts.service.ServiceAccountDTOMapper;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.repositories.ng.serviceaccounts.ServiceAccountRepository;
 import io.harness.rule.Owner;
@@ -90,7 +94,6 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
         .when(serviceAccountRepository)
         .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-
     ServiceAccountDTO serviceAccountRequestDTO = ServiceAccountDTO.builder()
                                                      .identifier(null)
                                                      .name(name)
@@ -106,6 +109,33 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
                            -> serviceAccountService.createServiceAccount(
                                accountIdentifier, orgIdentifier, projectIdentifier, serviceAccountRequestDTO))
         .isInstanceOf(JerseyViolationException.class);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testCreateServiceAccount_WithoutDescription() {
+    doReturn(ServiceAccount.builder().build())
+        .when(serviceAccountRepository)
+        .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    ServiceAccountDTO serviceAccountRequestDTO = ServiceAccountDTO.builder()
+                                                     .identifier(identifier)
+                                                     .name(name)
+                                                     .email(name + "@harness.io")
+                                                     .tags(new HashMap<>())
+                                                     .accountIdentifier(accountIdentifier)
+                                                     .orgIdentifier(orgIdentifier)
+                                                     .projectIdentifier(projectIdentifier)
+                                                     .build();
+    when(transactionTemplate.execute(any())).thenReturn(serviceAccountRequestDTO);
+    ServiceAccount serviceAccount = ServiceAccountDTOMapper.getServiceAccountFromDTO(serviceAccountRequestDTO);
+    doReturn(serviceAccount).when(serviceAccountRepository).save(any());
+
+    ServiceAccountDTO serviceAccountResponse = serviceAccountService.createServiceAccount(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceAccountRequestDTO);
+    assertThat(serviceAccountResponse.getDescription()).isNull();
   }
 
   @Test

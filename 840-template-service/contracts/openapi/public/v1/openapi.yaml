@@ -10,12 +10,6 @@ info:
 servers:
   - url: 'http://app.harness.io'
     description: Harness host url
-x-tagGroups:
-  - name: Templates
-    tags:
-      - Account Template
-      - Org Template
-      - Project Template
 tags:
   - name: Account Template
     description: This contains APIs for performing CRUD operations on Templates at account scope.

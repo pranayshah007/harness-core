@@ -555,6 +555,7 @@ github.com/harness/harness-core/product/ci/engine v0.0.0-20201207122533-21c5c138
 github.com/harness/harness-core/product/ci/engine v0.0.0-20210601143423-52a763a1cb90 h1:eOtsdQuKARhv/ZJFLqZno3RpHSIz82XWSU3ulfc8cg8=
 github.com/harness/harness-core/product/ci/engine v0.0.0-20210601143423-52a763a1cb90/go.mod h1:AaYx1KGNE3d32GE7T0WHyIymIqrkPxfnthjyP2pAgM4=
 github.com/harness/harness-core/product/ci/engine v0.0.0-20220222141117-7659b7eca599/go.mod h1:3gpSHoEvr/ENxpfPYpLl8KK2drv6E7ay11deKEh9G2k=
+github.com/harness/harness-core/product/ci/engine v0.0.0-20220526003445-374c61227e45/go.mod h1:r2CTprnVVdaD5hjeuYkrBXkG1VgR6mQbrO0hW6ZQGBM=
 github.com/harness/harness-core/product/ci/ti-service v0.0.0-20210601143423-52a763a1cb90 h1:Ab/+/I07y4bPTjJrl3Lg07Owz4m4CuEe8FLE6ebELWg=
 github.com/harness/harness-core/product/ci/ti-service v0.0.0-20210601143423-52a763a1cb90/go.mod h1:YwLUOI6BPp2wLFR+LFa4GLYghSbM7ng4+FeA2q28u7k=
 github.com/hashicorp/consul/api v1.1.0/go.mod h1:VmuI/Lkw1nC05EYQWNKwWGbkg+FbDBtguAZLlVdkD9Q=

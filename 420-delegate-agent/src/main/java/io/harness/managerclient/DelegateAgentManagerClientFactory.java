@@ -35,6 +35,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import okhttp3.Request.Builder;
 import org.apache.commons.lang3.StringUtils;
@@ -54,6 +55,7 @@ public class DelegateAgentManagerClientFactory implements Provider<DelegateAgent
   private final String clientCertificateKeyFilePath;
   private final boolean trustAllCertificates;
   private final OkHttpClient httpClient;
+  private static final ConnectionPool connectionPool = new ConnectionPool(16, 5, TimeUnit.MINUTES);
 
   @Inject
   public DelegateAgentManagerClientFactory(final DelegateConfiguration configuration,
@@ -126,7 +128,7 @@ public class DelegateAgentManagerClientFactory implements Provider<DelegateAgent
     return Http.getOkHttpClientWithProxyAuthSetup()
         .hostnameVerifier(new NoopHostnameVerifier())
         .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
-        .connectionPool(Http.connectionPool)
+        .connectionPool(connectionPool)
         .retryOnConnectionFailure(true)
         .addInterceptor(new io.harness.managerclient.DelegateAuthInterceptor(this.tokenGenerator))
         .addInterceptor(chain -> {

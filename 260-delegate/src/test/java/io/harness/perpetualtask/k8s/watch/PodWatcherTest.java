@@ -150,7 +150,7 @@ public class PodWatcherTest extends CategoryTest {
             .cloudProviderId("cloud-provider-id")
             .kubeSystemUid("cluster-uid")
             .build(),
-        controllerFetcher, sharedInformerFactory, pvcFetcher, namespaceFetcher, eventPublisher, "test-account_id");
+        controllerFetcher, sharedInformerFactory, pvcFetcher, namespaceFetcher, eventPublisher);
   }
 
   @Test

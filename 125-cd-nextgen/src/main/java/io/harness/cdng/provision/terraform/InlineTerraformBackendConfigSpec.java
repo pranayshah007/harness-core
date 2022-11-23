@@ -27,8 +27,4 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec")
 public class InlineTerraformBackendConfigSpec implements TerraformBackendConfigSpec {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> content;
-  @Override
-  public String getType() {
-    return TerraformVarFileTypes.Inline;
-  }
 }

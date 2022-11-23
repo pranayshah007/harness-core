@@ -18,6 +18,10 @@ import io.harness.ccm.cluster.entities.EcsCluster;
 import io.harness.ccm.license.CeLicenseInfo;
 import io.harness.ccm.license.CeLicenseType;
 import io.harness.cvng.state.CVNGVerificationTask;
+import io.harness.event.reconciliation.DetectionStatus;
+import io.harness.event.reconciliation.ReconcilationAction;
+import io.harness.event.reconciliation.ReconciliationStatus;
+import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.ARMStateExecutionData;
@@ -196,6 +200,7 @@ import software.wings.delegatetasks.event.EventsDeliveryCallback;
 import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ShellScriptEnvironmentVariables;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
+import software.wings.helpers.ext.cloudformation.CloudFormationRollbackCompletionFlag;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.AwsEcsInfrastructure;
@@ -596,5 +601,10 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sCanaryDeleteServiceElement.class, 50016);
     kryo.register(AzureVMSSDeployStateExecutionData.class, 50017);
     kryo.register(AzureVMSSSwitchRouteStateExecutionData.class, 50018);
+    kryo.register(CloudFormationRollbackCompletionFlag.class, 50019);
+    kryo.register(DeploymentReconRecord.class, 50020);
+    kryo.register(DetectionStatus.class, 50021);
+    kryo.register(ReconciliationStatus.class, 50022);
+    kryo.register(ReconcilationAction.class, 50023);
   }
 }

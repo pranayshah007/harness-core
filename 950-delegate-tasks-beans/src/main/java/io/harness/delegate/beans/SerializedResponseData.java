@@ -21,8 +21,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SerializedResponseData implements SerializableResponseData, DelegateResponseData {
   byte[] data;
-  TaskType taskType;
+  @Deprecated TaskType taskType;
   @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
+  String taskTypeAsString;
 
   @Override
   public byte[] serialize() {

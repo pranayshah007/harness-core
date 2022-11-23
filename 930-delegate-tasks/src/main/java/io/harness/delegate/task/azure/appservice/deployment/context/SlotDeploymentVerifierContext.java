@@ -12,9 +12,11 @@ import io.harness.azure.context.AzureWebClientContext;
 import io.harness.delegate.task.azure.appservice.deployment.StreamPackageDeploymentLogsTask;
 import io.harness.logging.LogCallback;
 
+import com.azure.core.http.rest.Response;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
+import reactor.core.publisher.Mono;
 
 public class SlotDeploymentVerifierContext extends StatusVerifierContext {
   @Getter private final StreamPackageDeploymentLogsTask logStreamer;
@@ -22,8 +24,8 @@ public class SlotDeploymentVerifierContext extends StatusVerifierContext {
   @Builder
   public SlotDeploymentVerifierContext(@NonNull LogCallback logCallback, @NonNull String slotName,
       @NonNull AzureWebClient azureWebClient, @NonNull AzureWebClientContext azureWebClientContext,
-      @NonNull StreamPackageDeploymentLogsTask logStreamer) {
-    super(logCallback, slotName, azureWebClient, azureWebClientContext, null);
+      @NonNull StreamPackageDeploymentLogsTask logStreamer, Mono<Response<Void>> responseMono) {
+    super(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
     this.logStreamer = logStreamer;
   }
 }

@@ -278,7 +278,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageId()).isEqualTo("stageId");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageName()).isEqualTo("stageName");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsArch()).isEqualTo("Amd64");
-    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("Linux");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("MacOS");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
     assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);

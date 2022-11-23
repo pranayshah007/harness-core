@@ -11,8 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.refresh.NodeInfo;
@@ -28,7 +26,9 @@ import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Inject private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
@@ -101,7 +101,6 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     YamlFullRefreshResponseDTO refreshResponse = pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, pipelineEntity.getYaml(), pipelineEntity);
     if (refreshResponse != null && refreshResponse.isShouldRefreshYaml()) {
-      GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
     }
     return true;

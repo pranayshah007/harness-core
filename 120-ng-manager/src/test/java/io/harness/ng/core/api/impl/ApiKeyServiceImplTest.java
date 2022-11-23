@@ -9,6 +9,7 @@ package io.harness.ng.core.api.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -122,6 +123,31 @@ public class ApiKeyServiceImplTest extends NgManagerTestBase {
     assertThatThrownBy(() -> apiKeyService.createApiKey(apiKeyDTO))
         .isInstanceOf(DuplicateFieldException.class)
         .hasMessage(String.format("Try using different Key name, [%s] already exists", identifier));
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testCreateApiKey_noDescription() {
+    ApiKeyDTO dto = ApiKeyDTO.builder()
+                        .accountIdentifier(accountIdentifier)
+                        .orgIdentifier(orgIdentifier)
+                        .projectIdentifier(projectIdentifier)
+                        .identifier("createApiKey_noDescription")
+                        .parentIdentifier(parentIdentifier)
+                        .apiKeyType(SERVICE_ACCOUNT)
+                        .name(randomAlphabetic(10))
+                        .defaultTimeToExpireToken(Instant.now().toEpochMilli())
+                        .tags(new HashMap<>())
+                        .build();
+    doReturn(AccountDTO.builder()
+                 .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
+                 .build())
+        .when(accountService)
+        .getAccount(any());
+    when(transactionTemplate.execute(any())).thenReturn(dto);
+    ApiKeyDTO apiKey = apiKeyService.createApiKey(dto);
+    assertThat(apiKey.getDescription()).isNull();
   }
 
   @Test

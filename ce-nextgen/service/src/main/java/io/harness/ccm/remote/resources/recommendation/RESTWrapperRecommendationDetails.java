@@ -15,6 +15,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.commons.utils.TimeUtils;
+import io.harness.ccm.graphql.dto.recommendation.EC2RecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.ECSRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.NodeRecommendationDTO;
 import io.harness.ccm.graphql.dto.recommendation.WorkloadRecommendationDTO;
@@ -201,5 +202,32 @@ public class RESTWrapperRecommendationDetails {
         ResourceType.ECS_SERVICE, TimeUtils.toOffsetDateTime(startTime.getMillis()),
         TimeUtils.toOffsetDateTime(endTime.getMillis()), bufferPercentage, env);
     return ResponseDTO.newResponse(ecsRecommendation);
+  }
+
+  @GET
+  @Path("ec2-instance")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @Consumes(MediaType.APPLICATION_JSON)
+  @ApiOperation(value = "EC2 Recommendation Details", nickname = "ec2RecommendationDetail")
+  @Operation(operationId = "ec2RecommendationDetail",
+      description = "Returns EC2 Recommendation details for the given Recommendation identifier.",
+      summary = "Return EC2 Recommendation",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the EC2 Recommendation for the given identifier.",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<EC2RecommendationDTO>
+  ec2RecommendationDetail(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @Parameter(required = true, description = "EC2 Recommendation identifier.") @QueryParam(
+          "id") @NotNull @Valid String id) {
+    final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
+    EC2RecommendationDTO ec2Recommendation =
+        (EC2RecommendationDTO) detailsQuery.recommendationDetails(id, ResourceType.EC2_INSTANCE, null, null, null, env);
+    return ResponseDTO.newResponse(ec2Recommendation);
   }
 }

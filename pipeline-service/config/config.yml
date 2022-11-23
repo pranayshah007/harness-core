@@ -326,17 +326,17 @@ pipelineEventConsumersConfig:
   facilitatorEvent:
     threads: 1
   nodeStart:
-    threads: 2
+    threads: 1
   progress:
     threads: 1
   advise:
-    threads: 2
+    threads: 1
   resume:
-    threads: 2
+    threads: 1
   sdkResponse:
-    threads: 3
+    threads: 1
   graphUpdate:
-    threads: 3
+    threads: 1
   partialPlanResponse:
     threads: 1
   createPlan:
@@ -348,9 +348,9 @@ pipelineEventConsumersConfig:
   webhookEvent:
     threads: 1
   initiateNode:
-    threads: 2
+    threads: 1
   pollingEvent:
-    threads: 5
+    threads: 1
 
 delegatePollingConfig:
   syncDelay: 2000

@@ -72,7 +72,6 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.PhysicalDataCenterConfig;
 import software.wings.beans.PrometheusConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
@@ -104,7 +103,6 @@ import software.wings.helpers.ext.helm.response.HelmInstallCommandResponse;
 import software.wings.sm.states.JenkinsExecutionResponse;
 import software.wings.sm.states.KubernetesSteadyStateCheckResponse;
 import software.wings.sm.states.KubernetesSwapServiceSelectorsResponse;
-import software.wings.yaml.gitSync.YamlGitConfig;
 
 import java.util.Set;
 
@@ -117,8 +115,6 @@ public class DelegateTasksBeansMorphiaRegistrar implements MorphiaRegistrar {
     set.add(HDelegateTask.class);
     set.add(ExecutionCapabilityDemander.class);
     set.add(ExecutionCapability.class);
-    set.add(SettingAttribute.class);
-    set.add(YamlGitConfig.class);
     set.add(ArtifactSourceable.class);
   }
 

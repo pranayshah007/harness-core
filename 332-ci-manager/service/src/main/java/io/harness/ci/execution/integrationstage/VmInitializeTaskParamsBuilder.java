@@ -124,7 +124,8 @@ public class VmInitializeTaskParamsBuilder {
   public DliteVmInitializeTaskParams getHostedVmInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
     HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
-    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform());
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String poolId = getHostedPoolId(hostedVmInfraYaml.getSpec().getPlatform(), accountId);
 
     CIVmInitializeTaskParams params = getVmInitializeParams(initializeStepInfo, ambiance, poolId);
     SetupVmRequest setupVmRequest = convertHostedSetupParams(params);
@@ -483,16 +484,23 @@ public class VmInitializeTaskParamsBuilder {
     return LogStreamingHelper.generateLogBaseKey(logAbstractions);
   }
 
-  public String getHostedPoolId(ParameterField<Platform> platform) {
+  public String getHostedPoolId(ParameterField<Platform> platform, String accountId) {
     OSType os = OSType.Linux;
     ArchType arch = ArchType.Amd64;
     if (platform != null && platform.getValue() != null) {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
     }
+    boolean isLinuxAmd = os == OSType.Linux && arch == ArchType.Amd64;
+    boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
 
-    if (os != OSType.Linux || arch != ArchType.Amd64) {
-      throw new CIStageExecutionException("Only linux amd64 platform is supported for hosted builds");
+    if (isLinuxAmd || isMacArm) {
+      if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
+        throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
+      }
+      log.info(format("%s %s platform is supported for hosted builds", os, arch));
+    } else {
+      throw new CIStageExecutionException(format("%s %s platform is not supported for hosted builds", os, arch));
     }
 
     return format("%s-%s", os.toString().toLowerCase(), arch.toString().toLowerCase());

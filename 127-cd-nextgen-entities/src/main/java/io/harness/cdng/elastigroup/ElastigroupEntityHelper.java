@@ -69,7 +69,6 @@ public class ElastigroupEntityHelper {
     }
   }
 
-  // todo: refactor it
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {
     IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
         connectorId, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());

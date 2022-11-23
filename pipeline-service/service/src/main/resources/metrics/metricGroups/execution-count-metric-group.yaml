@@ -1,6 +1,4 @@
 name: Group by fields for metrics
-identifier: execution_count_metric_group
+identifier: plan_execution_count_metric_group
 labels:
   - accountId
-  - orgIdentifier
-  - projectIdentifier

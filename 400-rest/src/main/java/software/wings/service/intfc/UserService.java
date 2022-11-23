@@ -225,6 +225,8 @@ public interface UserService extends OwnedByAccount {
    */
   User get(@NotEmpty String accountId, @NotEmpty String userId);
 
+  void loadSupportAccounts(User user);
+
   /**
    * Gets user from cache or db.
    *
@@ -258,6 +260,8 @@ public interface UserService extends OwnedByAccount {
    * @return the account
    */
   Account addAccount(Account account, User user, boolean addUser);
+
+  User getUserByEmail(String email, boolean loadSupportAccounts);
 
   /**
    * Retrieve an user by its email.

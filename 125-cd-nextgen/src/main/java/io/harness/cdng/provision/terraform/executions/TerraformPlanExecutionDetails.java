@@ -16,6 +16,8 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
+import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.EncryptionConfig;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -55,8 +57,16 @@ public class TerraformPlanExecutionDetails implements PersistentEntity, UuidAwar
   @NotNull private String pipelineExecutionId;
   @NotNull private String stageExecutionId;
   @NotNull private String provisionerId;
-  @NotNull private String tfPlanJsonFieldId;
+  private String tfPlanJsonFieldId;
   @NotNull private String tfPlanFileBucket;
+  private String tfHumanReadablePlanId;
+  @NotNull private String tfHumanReadablePlanFileBucket;
+  @NotNull private EncryptionConfig encryptionConfig;
+  /**
+   * Currently, encryptedTfPlan is storing only one element. But in future encryptedTfPlan will be broken in multiple
+   * parts and stored in vault, because one element can exceed the allowed size limit.
+   */
+  @NotNull private List<EncryptedRecordData> encryptedTfPlan;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

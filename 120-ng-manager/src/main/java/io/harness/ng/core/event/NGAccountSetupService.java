@@ -190,11 +190,30 @@ public class NGAccountSetupService {
   }
 
   private void setupAllLevelRBAC(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    setupRBAC(accountIdentifier, orgIdentifier);
-
     Collection<UserInfo> cgUsers = getCGUsers(accountIdentifier);
     Collection<String> cgAdmins =
         cgUsers.stream().filter(UserInfo::isAdmin).map(UserInfo::getUuid).collect(Collectors.toSet());
+
+    Scope accountScope = Scope.of(accountIdentifier, null, null);
+    if (!hasAdmin(accountScope)) {
+      cgUsers.forEach(user -> upsertUserMembership(accountScope, user.getUuid()));
+      assignAdminRoleToUsers(accountScope, cgAdmins);
+      if (shouldAssignAdmins && !hasAdmin(accountScope)) {
+        throw new GeneralException(String.format("No Admin could be assigned in scope %s", accountScope));
+      }
+      accessControlMigrationService.save(AccessControlMigration.builder().accountIdentifier(accountIdentifier).build());
+    }
+
+    Scope orgScope = Scope.of(accountIdentifier, orgIdentifier, null);
+    if (!hasAdmin(orgScope)) {
+      cgAdmins.forEach(user -> upsertUserMembership(orgScope, user));
+      assignAdminRoleToUsers(orgScope, cgAdmins);
+      if (shouldAssignAdmins && !hasAdmin(orgScope)) {
+        throw new GeneralException(String.format("No Admin could be assigned in scope %s", orgScope));
+      }
+      accessControlMigrationService.save(
+          AccessControlMigration.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
+    }
 
     Scope projectScope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
     if (!hasAdmin(projectScope)) {
@@ -209,6 +228,7 @@ public class NGAccountSetupService {
                                              .projectIdentifier(projectIdentifier)
                                              .build());
     }
+    log.info(String.format("[NGAccountSetupService]: Rbac setup completed for account: %s", accountIdentifier));
   }
 
   private void setupRBAC(String accountIdentifier, String orgIdentifier) {
