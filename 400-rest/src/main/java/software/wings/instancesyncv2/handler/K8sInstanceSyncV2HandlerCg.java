@@ -97,6 +97,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -107,17 +108,17 @@ import org.apache.groovy.util.Maps;
 @Singleton
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
-  private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
-  private InfrastructureMappingService infrastructureMappingService;
-  private KryoSerializer kryoSerializer;
-  private InstanceUtils instanceUtil;
-  private ServiceResourceService serviceResourceService;
-  private EnvironmentService environmentService;
-  private transient K8sStateHelper k8sStateHelper;
-  private AppService appService;
-  private WingsMongoPersistence wingsPersistence;
-  private ContainerSync containerSync;
-  private InstanceService instanceService;
+  @NonNull private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
+  @NonNull private InfrastructureMappingService infrastructureMappingService;
+  @NonNull private KryoSerializer kryoSerializer;
+  @NonNull private InstanceUtils instanceUtil;
+  @NonNull private ServiceResourceService serviceResourceService;
+  @NonNull private EnvironmentService environmentService;
+  @NonNull private transient K8sStateHelper k8sStateHelper;
+  @NonNull private AppService appService;
+  @NonNull private WingsMongoPersistence wingsPersistence;
+  @NonNull private ContainerSync containerSync;
+  @NonNull private InstanceService instanceService;
 
   @Override
   public PerpetualTaskExecutionBundle fetchInfraConnectorDetails(SettingAttribute cloudProvider) {

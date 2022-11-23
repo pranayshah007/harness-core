@@ -52,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -62,14 +63,14 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class CgInstanceSyncServiceV2 {
-  private CgInstanceSyncV2HandlerFactory handlerFactory;
-  private DelegateServiceGrpcClient delegateServiceClient;
-  private CgInstanceSyncTaskDetailsService taskDetailsService;
-  private InfrastructureMappingService infrastructureMappingService;
-  private SettingsServiceImpl cloudProviderService;
-  private KryoSerializer kryoSerializer;
-  private InstanceService instanceService;
-  private DeploymentService deploymentService;
+  @NonNull private CgInstanceSyncV2HandlerFactory handlerFactory;
+  @NonNull private DelegateServiceGrpcClient delegateServiceClient;
+  @NonNull private CgInstanceSyncTaskDetailsService taskDetailsService;
+  @NonNull private InfrastructureMappingService infrastructureMappingService;
+  @NonNull private SettingsServiceImpl cloudProviderService;
+  @NonNull private KryoSerializer kryoSerializer;
+  @NonNull private InstanceService instanceService;
+  @NonNull private DeploymentService deploymentService;
 
   public static final String AUTO_SCALE = "AUTO_SCALE";
   public static final int PERPETUAL_TASK_INTERVAL = 10;
