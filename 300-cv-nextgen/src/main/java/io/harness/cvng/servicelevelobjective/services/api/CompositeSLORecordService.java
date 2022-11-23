@@ -30,4 +30,5 @@ public interface CompositeSLORecordService {
   CompositeSLORecord getLatestCompositeSLORecord(String sloId);
   CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion);
   List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp);
+  List<CompositeSLORecord> getLatestCountSLORecords(String sloId, int count);
 }

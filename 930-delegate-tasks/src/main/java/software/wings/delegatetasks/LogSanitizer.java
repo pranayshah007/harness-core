@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks;
 
+import static io.harness.NGConstants.JWT_REGEX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 
 import static org.apache.commons.lang3.StringUtils.replaceEach;
@@ -19,6 +21,7 @@ import io.harness.data.structure.EmptyPredicate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,9 @@ import java.util.stream.Collectors;
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public abstract class LogSanitizer {
   public static Set<String> calculateSecretLines(Set<String> secrets) {
+    if (isEmpty(secrets)) {
+      return new HashSet<>();
+    }
     return secrets.stream()
         .flatMap(secret -> {
           String[] split = secret.split("\\r?\\n");
@@ -48,12 +54,23 @@ public abstract class LogSanitizer {
   public abstract String sanitizeLog(String activityId, String message);
 
   protected String sanitizeLogInternal(String message, Set<String> secrets) {
-    ArrayList<String> secretMasks = new ArrayList<>();
-    ArrayList<String> secretValues = new ArrayList<>();
-    for (String secret : secrets) {
-      secretMasks.add(SECRET_MASK);
-      secretValues.add(secret);
+    String sanitizedLogMessage = message;
+    if (!secrets.isEmpty()) {
+      ArrayList<String> secretMasks = new ArrayList<>();
+      ArrayList<String> secretValues = new ArrayList<>();
+      for (String secret : secrets) {
+        secretMasks.add(SECRET_MASK);
+        secretValues.add(secret);
+      }
+      sanitizedLogMessage =
+          replaceEach(message, secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
     }
-    return replaceEach(message, secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
+
+    // JWT sanitization
+    return sanitizeRegex(sanitizedLogMessage, JWT_REGEX);
+  }
+
+  private String sanitizeRegex(String message, String regex) {
+    return message.replaceAll(regex, SECRET_MASK);
   }
 }

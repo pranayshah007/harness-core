@@ -302,7 +302,7 @@ public class AzureWebAppSlotRollbackTest extends WingsBaseTest {
 
     ArtifactStreamAttributes artifactStreamAttributes = ArtifactStreamAttributes.builder().build();
     artifactStreamAttributes.setArtifactStreamType(ArtifactStreamType.ARTIFACTORY.name());
-    artifactStreamAttributes.setServerSetting(serverSetting);
+    artifactStreamAttributes.setServerSetting(serverSetting.toDTO());
     Map<String, String> metadata = new HashMap<>();
     metadata.put("buildNo", "artifact-builder-number");
     metadata.put("url", "artifact-job-name/random-guid/artifact-name");

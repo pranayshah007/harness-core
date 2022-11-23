@@ -454,6 +454,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
   public void testCheckAuthorizationSuccessWhenXApiKeyIsPresent() {
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION))).thenReturn(true);
     List<HeaderConfig> headerConfigs = Collections.singletonList(
         HeaderConfig.builder().key(X_API_KEY).values(Collections.singletonList(API_KEY)).build());
     doNothing()
@@ -470,6 +471,7 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Owner(developers = VINICIUS)
   @Category(UnitTests.class)
   public void testCheckAuthorizationFailureWhenXApiKeyIsPresent() {
+    when(pmsFeatureFlagService.isEnabled(any(), eq(FeatureName.SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION))).thenReturn(true);
     List<HeaderConfig> headerConfigs = Collections.singletonList(
         HeaderConfig.builder().key(X_API_KEY).values(Collections.singletonList(API_KEY)).build());
     doThrow(new AccessDeniedException("Error msg", USER))

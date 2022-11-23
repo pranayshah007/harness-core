@@ -202,7 +202,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
     } catch (Exception ex) {
       if (ex instanceof NoDelegatesException) {
-        log.error("No delegate exception found while processing submit task request. reason {}",
+        log.warn("No delegate exception found while processing submit task request. reason {}",
             ExceptionUtils.getMessage(ex));
       } else {
         log.error("Unexpected error occurred while processing submit task request.", ex);
@@ -279,7 +279,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
 
     } catch (Exception ex) {
       if (ex instanceof NoDelegatesException) {
-        log.error("No delegate exception found while processing submit task request. reason {}",
+        log.warn("No delegate exception found while processing submit task request. reason {}",
             ExceptionUtils.getMessage(ex));
       } else {
         log.error("Unexpected error occurred while processing submit task request.", ex);

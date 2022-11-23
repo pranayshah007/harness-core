@@ -26,7 +26,6 @@ import io.harness.gitsync.entityInfo.AbstractGitSdkEntityHandler;
 import io.harness.gitsync.entityInfo.GitSdkEntityHandlerInterface;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
-import io.harness.governance.GovernanceMetadata;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
@@ -89,8 +88,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig save(String accountIdentifier, String yaml) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(entity);
-    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndCreatePipeline(entity, true);
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
@@ -98,15 +96,9 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(entity, changeType);
-    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.validateAndUpdatePipeline(entity, changeType, true);
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
-  }
-
-  private void validate(PipelineEntity entity) {
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(entity);
-    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(governanceMetadata);
   }
 
   @Override
@@ -158,7 +150,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   protected PipelineConfig updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(entity);
+    pipelineServiceHelper.resolveTemplatesAndValidatePipeline(entity, true);
     PipelineEntity pipelineEntity = pmsPipelineService.updateGitFilePath(entity, newFilePath);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }

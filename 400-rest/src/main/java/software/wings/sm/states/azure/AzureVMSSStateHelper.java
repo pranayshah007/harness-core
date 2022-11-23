@@ -686,11 +686,10 @@ public class AzureVMSSStateHelper {
     ArtifactStreamAttributes artifactStreamAttributes =
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     Service service = getServiceByAppId(context, context.getAppId());
-
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
     artifactStreamAttributes.setArtifactName(artifact.getDisplayName());
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
-    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+    artifactStreamAttributes.setServerSetting(settingsService.get(artifact.getSettingId()).toDTO());
     artifactStreamAttributes.setMetadataOnly(onlyMetaForArtifactType(artifactStream));
     artifactStreamAttributes.setArtifactStreamType(artifactStream.getArtifactStreamType());
     artifactStreamAttributes.setArtifactType(service.getArtifactType());

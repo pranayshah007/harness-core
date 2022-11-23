@@ -41,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 
 public class CompositeSLORecordServiceImpl implements CompositeSLORecordService {
@@ -337,5 +338,13 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .get();
+  }
+
+  @Override
+  public List<CompositeSLORecord> getLatestCountSLORecords(String sloId, int count) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .asList(new FindOptions().limit(count));
   }
 }

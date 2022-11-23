@@ -16,7 +16,7 @@ import org.apache.kafka.connect.source.SourceRecord;
  * This class is a copy of EmbeddedEngineChangeEvent from debezium-embedded library.
  * Weirdly, they have not made the class public, and we have to get sourceRecord from the event to get '__op' field
  * Hence, we have made a copy of the class and made it public.
- * Please change this class if you change the version of Debezium in the future, right now it is 1.8.0.Final
+ * Please change this class if you change the version of Debezium in the future, right now it is 2.0.0.Final
  */
 
 @ToString

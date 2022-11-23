@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ShellScriptStepMapperImpl implements StepMapper {
   @Override
-  public String getStepType() {
+  public String getStepType(StepYaml stepYaml) {
     return StepSpecTypeConstants.SHELL_SCRIPT;
   }
 
@@ -61,6 +61,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     List<NGVariable> outputVars = new ArrayList<>();
     if (StringUtils.isNotBlank(state.getOutputVars())) {
       outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .filter(StringUtils::isNotBlank)
                             .map(str
                                 -> StringNGVariable.builder()
                                        .name(str)
@@ -71,6 +72,7 @@ public class ShellScriptStepMapperImpl implements StepMapper {
     }
     if (StringUtils.isNotBlank(state.getSecretOutputVars())) {
       outputVars.addAll(Arrays.stream(state.getSecretOutputVars().split("\\s*,\\s*"))
+                            .filter(StringUtils::isNotBlank)
                             .map(str
                                 -> StringNGVariable.builder()
                                        .name(str)

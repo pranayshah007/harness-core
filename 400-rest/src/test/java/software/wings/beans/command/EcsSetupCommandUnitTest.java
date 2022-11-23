@@ -85,7 +85,7 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
           .build();
   private SettingAttribute computeProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
   private CommandExecutionContext context = aCommandExecutionContext()
-                                                .cloudProviderSetting(computeProvider)
+                                                .cloudProviderSetting(computeProvider.toDTO())
                                                 .containerSetupParams(setupParams)
                                                 .cloudProviderCredentials(emptyList())
                                                 .build();
@@ -100,8 +100,8 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     taskDefinition.setFamily(TASK_FAMILY);
     taskDefinition.setRevision(TASK_REVISION);
 
-    when(awsClusterService.createTask(eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(),
-             any(RegisterTaskDefinitionRequest.class)))
+    when(awsClusterService.createTask(eq(Regions.US_EAST_1.getName()),
+             any(software.wings.beans.dto.SettingAttribute.class), any(), any(RegisterTaskDefinitionRequest.class)))
         .thenReturn(taskDefinition);
   }
 
@@ -114,8 +114,8 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     ecsService.setCreatedAt(new Date());
 
     when(awsClusterService.createTask(anyString(), any(), anyList(), any())).thenReturn(new TaskDefinition());
-    when(awsClusterService.getServices(
-             Regions.US_EAST_1.getName(), computeProvider, Collections.emptyList(), WingsTestConstants.CLUSTER_NAME))
+    when(awsClusterService.getServices(Regions.US_EAST_1.getName(), computeProvider.toDTO(), Collections.emptyList(),
+             WingsTestConstants.CLUSTER_NAME))
         .thenReturn(Lists.newArrayList(ecsService));
     doReturn(List.of(new Service().withServiceName("servicenm")))
         .when(awsEcsHelperServiceDelegate)
@@ -124,10 +124,10 @@ public class EcsSetupCommandUnitTest extends WingsBaseTest {
     CommandExecutionStatus status = ecsSetupCommandUnit.execute(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(awsClusterService)
-        .createTask(eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(),
+        .createTask(eq(Regions.US_EAST_1.getName()), any(software.wings.beans.dto.SettingAttribute.class), any(),
             any(RegisterTaskDefinitionRequest.class));
     verify(awsClusterService)
-        .createService(
-            eq(Regions.US_EAST_1.getName()), any(SettingAttribute.class), any(), any(CreateServiceRequest.class));
+        .createService(eq(Regions.US_EAST_1.getName()), any(software.wings.beans.dto.SettingAttribute.class), any(),
+            any(CreateServiceRequest.class));
   }
 }

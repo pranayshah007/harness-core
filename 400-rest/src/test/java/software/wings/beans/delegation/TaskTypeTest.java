@@ -399,6 +399,10 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(359, "ELASTIGROUP_SETUP_COMMAND_TASK_NG");
     taskTypeOrdinalMapping.put(360, "ELASTIGROUP_STARTUP_SCRIPT_FETCH_RUN_TASK_NG");
     taskTypeOrdinalMapping.put(361, "TERRAFORM_SECRET_CLEANUP_TASK_NG");
+    taskTypeOrdinalMapping.put(362, "TERRAGRUNT_PLAN_TASK_NG");
+    taskTypeOrdinalMapping.put(363, "TERRAGRUNT_APPLY_TASK_NG");
+    taskTypeOrdinalMapping.put(364, "TERRAGRUNT_DESTROY_TASK_NG");
+    taskTypeOrdinalMapping.put(365, "TERRAGRUNT_ROLLBACK_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

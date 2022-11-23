@@ -7,8 +7,10 @@
 
 package software.wings.delegatetasks;
 
+import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.rule.OwnerRule.AMAN;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -115,5 +117,20 @@ public class LogSanitizerTest extends CategoryTest {
     assertThat(result).isEqualTo("sanitize this log: **************\n"
         + "      **************\n"
         + "       **************");
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testGenericSanitize_ShouldReplaceJwtTokens() {
+    LogSanitizer logSanitizer = new GenericLogSanitizer(null);
+    String message =
+        "JWT: a1c.x2z.123 \n JWT2: 123.123.123 JWT3: abc.abc.abc \n JWT4: xyz.xyz JWT5: xyz.xyz.xyz.xyz \n JWT6: xyz.xyz.xyz. xyz \n JWT7: xyz.xyz.xyz;xyz.xyz.xyz";
+    String sanitizedMessage =
+        String.format("JWT: %s \n JWT2: %s JWT3: %s \n JWT4: xyz.xyz JWT5: %s.xyz \n JWT6: %s. xyz \n JWT7: %s;%s",
+            SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK);
+
+    String result = logSanitizer.sanitizeLog("", message);
+    assertThat(result).isEqualTo(sanitizedMessage);
   }
 }

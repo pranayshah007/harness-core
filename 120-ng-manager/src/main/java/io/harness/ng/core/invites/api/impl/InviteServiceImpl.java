@@ -583,10 +583,8 @@ public class InviteServiceImpl implements InviteService {
       String email = invite.getEmail().trim();
 
       if (scimLdapArray[0]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, true);
-      } else if (scimLdapArray[1]) {
-        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, true);
-      } else if (isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
+        createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, true, false);
+      } else if (scimLdapArray[1] || isAutoInviteAcceptanceEnabled || isPLNoEmailForSamlAccountInvitesEnabled) {
         createAndInviteNonPasswordUser(accountId, invite.getInviteToken(), email, false, false);
       }
       updateUserTwoFactorAuthInfo(email, twoFactorAuthSettingsInfo);

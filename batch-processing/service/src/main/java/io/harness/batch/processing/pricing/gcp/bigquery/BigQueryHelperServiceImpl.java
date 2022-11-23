@@ -20,7 +20,9 @@ import io.harness.batch.processing.config.BillingDataPipelineConfig;
 import io.harness.batch.processing.entities.ClusterDataDetails;
 import io.harness.batch.processing.pricing.gcp.bigquery.VMInstanceServiceBillingData.VMInstanceServiceBillingDataBuilder;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.graphql.datafetcher.billing.CloudBillingHelper;
 
@@ -55,15 +57,19 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private CloudBillingHelper cloudBillingHelper;
   private int clusterDetailsCount;
   private double billingSum;
+
+  private FeatureFlagService featureFlagService;
   private static final String preAggregated = "preAggregated";
   private static final String clusterData = "clusterData";
   private static final String countConst = "count";
   private static final String cloudProviderConst = "cloudProvider";
 
   @Autowired
-  public BigQueryHelperServiceImpl(BatchMainConfig mainConfig, CloudBillingHelper cloudBillingHelper) {
+  public BigQueryHelperServiceImpl(
+      BatchMainConfig mainConfig, CloudBillingHelper cloudBillingHelper, FeatureFlagService featureFlagService) {
     this.mainConfig = mainConfig;
     this.cloudBillingHelper = cloudBillingHelper;
+    this.featureFlagService = featureFlagService;
   }
 
   private static final String GOOGLE_CREDENTIALS_PATH = "GOOGLE_CREDENTIALS_PATH";
@@ -75,12 +81,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
 
   @Override
   public Map<String, VMInstanceBillingData> getAwsEC2BillingData(
-      List<String> resourceId, Instant startTime, Instant endTime, String dataSetId) {
+      List<String> resourceId, Instant startTime, Instant endTime, String dataSetId, String accountId) {
     String query = BQConst.AWS_EC2_BILLING_QUERY;
     String resourceIds = String.join("','", resourceId);
     String projectTableName = getAwsProjectTableName(startTime, dataSetId);
     String formattedQuery = format(query, projectTableName, resourceIds, startTime, endTime);
-    return query(formattedQuery, "AWS");
+    return query(formattedQuery, "AWS", accountId);
   }
 
   @Override
@@ -146,7 +152,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     return String.join(" OR ", resourceIdConditions);
   }
 
-  private Map<String, VMInstanceBillingData> query(String formattedQuery, String cloudProviderType) {
+  private Map<String, VMInstanceBillingData> query(String formattedQuery, String cloudProviderType, String accountId) {
     log.debug("Formatted query for {} : {}", cloudProviderType, formattedQuery);
     BigQuery bigQueryService = getBigQueryService();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(formattedQuery).build();
@@ -155,7 +161,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       result = bigQueryService.query(queryConfig);
       switch (cloudProviderType) {
         case "AWS":
-          return convertToAwsInstanceBillingData(result);
+          return convertToAwsInstanceBillingData(result, accountId);
         case "AZURE":
           return convertToAzureInstanceBillingData(result);
         case "GCP":
@@ -356,7 +362,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String query = BQConst.AWS_BILLING_DATA;
     String projectTableName = getAwsProjectTableName(startTime, dataSetId);
     String formattedQuery = format(query, projectTableName, startTime, endTime);
-    return query(formattedQuery, "AWS");
+    return query(formattedQuery, "AWS", null);
   }
 
   @Override
@@ -399,7 +405,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceId = String.join("','", resourceIds);
     String projectTableName = getAzureProjectTableName(dataSetId);
     String formattedQuery = format(query, projectTableName, resourceId, startTime, endTime);
-    return query(formattedQuery, "AZURE");
+    return query(formattedQuery, "AZURE", null);
   }
 
   @Override
@@ -411,7 +417,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String formattedQuery =
         format(query, GCP_PRODUCT_FAMILY_CASE_CONDITION, projectTableName, startTime.minus(1, ChronoUnit.DAYS),
             endTime.plus(7, ChronoUnit.DAYS), resourceIdSubQuery, startTime, endTime, GCP_DESCRIPTION_CONDITION);
-    return query(formattedQuery, "GCP");
+    return query(formattedQuery, "GCP", null);
   }
 
   private static String createSubQuery(List<String> resourceIds) {
@@ -467,6 +473,12 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
           case BQConst.effectiveCost:
             dataBuilder.effectiveCost(getDoubleValue(row, field));
             break;
+          case BQConst.amortisedCost:
+            dataBuilder.amortisedCost(getDoubleValue(row, field));
+            break;
+          case BQConst.netAmortisedCost:
+            dataBuilder.netAmortisedCost(getDoubleValue(row, field));
+            break;
           default:
             break;
         }
@@ -481,7 +493,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     return arn.substring(arn.lastIndexOf('/') + 1);
   }
 
-  private Map<String, VMInstanceBillingData> convertToAwsInstanceBillingData(TableResult result) {
+  private Map<String, VMInstanceBillingData> convertToAwsInstanceBillingData(TableResult result, String accountId) {
     List<VMInstanceServiceBillingData> vmInstanceServiceBillingDataList =
         convertToAwsInstanceServiceBillingData(result);
     Map<String, VMInstanceBillingData> vmInstanceBillingDataMap = new HashMap<>();
@@ -500,8 +512,18 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
       if (BQConst.computeProductFamily.equals(vmInstanceServiceBillingData.getProductFamily())
           || vmInstanceServiceBillingData.getProductFamily() == null) {
         double cost = vmInstanceServiceBillingData.getCost();
-        if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
+
+        boolean netAmortisedCostCalculationEnabled =
+            featureFlagService.isEnabled(FeatureName.CE_NET_AMORTISED_COST_ENABLED, accountId);
+
+        if ((netAmortisedCostCalculationEnabled || accountId.equals("CYVS6BRkSPKdIE5FZThNRQ"))
+            && null != vmInstanceServiceBillingData.getNetAmortisedCost()) {
+          cost = vmInstanceServiceBillingData.getNetAmortisedCost();
+          log.info("accountId: {} - net amortisedCost: {}", accountId, cost);
+        } else if (null != vmInstanceServiceBillingData.getEffectiveCost()) {
           cost = vmInstanceServiceBillingData.getEffectiveCost();
+          log.info("netAmortisedCostCalculationEnabled: {}, accountId: {} - effectiveCost: {}",
+              netAmortisedCostCalculationEnabled, accountId, cost);
         }
         vmInstanceBillingData = vmInstanceBillingData.toBuilder().computeCost(cost).build();
       }

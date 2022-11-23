@@ -9,9 +9,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/rs/zerolog"
 	"net/http"
 	"os"
+
+	"github.com/rs/zerolog"
 
 	"github.com/harness/harness-core/queue-service/hsqs/config"
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
@@ -73,7 +74,7 @@ func startServer(c *config.Config) {
 
 	g := r.Group("v1")
 
-	store := redis.NewRedisStore(c.Redis.Endpoint)
+	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath)
 	h := handler.NewHandler(store)
 	h.Register(g)
 

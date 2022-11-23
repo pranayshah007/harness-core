@@ -23,6 +23,7 @@ import io.harness.ccm.config.GcpBillingAccount;
 import io.harness.ccm.config.GcpOrganization;
 import io.harness.ccm.config.GcpServiceAccount;
 import io.harness.dashboard.DashboardSettings;
+import io.harness.event.MigratedAccountTracker;
 import io.harness.event.reconciliation.deployment.DeploymentReconRecord;
 import io.harness.event.reconciliation.looker.LookerEntityReconRecord;
 import io.harness.execution.export.request.ExportExecutionsRequest;
@@ -195,6 +196,8 @@ import software.wings.beans.Schema;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
+import software.wings.beans.ServiceVariable;
+import software.wings.beans.SettingAttribute;
 import software.wings.beans.SystemCatalog;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
@@ -857,7 +860,10 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ArtifactView.class);
     set.add(LookerEntityReconRecord.class);
     set.add(InstanceSyncTaskDetails.class);
+    set.add(MigratedAccountTracker.class);
     set.add(YamlGitConfig.class);
+    set.add(SettingAttribute.class);
+    set.add(ServiceVariable.class);
   }
 
   @Override

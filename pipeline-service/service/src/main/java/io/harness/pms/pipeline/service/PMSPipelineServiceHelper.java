@@ -40,7 +40,6 @@ import io.harness.governance.GovernanceMetadata;
 import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
@@ -54,6 +53,7 @@ import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -73,7 +73,6 @@ import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -130,6 +129,17 @@ public class PMSPipelineServiceHelper {
     return criteria;
   }
 
+  public static Criteria buildCriteriaForRepoListing(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = new Criteria();
+
+    criteria.and(PipelineEntityKeys.accountId).is(accountIdentifier);
+    criteria.and(PipelineEntityKeys.orgIdentifier).is(orgIdentifier);
+    criteria.and(PipelineEntityKeys.projectIdentifier).is(projectIdentifier);
+
+    return criteria;
+  }
+
   public PipelineEntity updatePipelineInfo(PipelineEntity pipelineEntity, String pipelineVersion) throws IOException {
     switch (pipelineVersion) {
       case PipelineVersion.V1:
@@ -139,31 +149,6 @@ public class PMSPipelineServiceHelper {
       default:
         throw new IllegalStateException("version not supported");
     }
-  }
-
-  private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
-    FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
-    PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
-                                   .withStageNames(filtersAndStageCount.getStageNames());
-    newEntity.getFilters().clear();
-    try {
-      if (isNotEmpty(filtersAndStageCount.getFilters())) {
-        filtersAndStageCount.getFilters().forEach(
-            (key, value)
-                -> newEntity.getFilters().put(key, isNotEmpty(value) ? Document.parse(value) : Document.parse("{}")));
-      }
-
-      if (isNotEmpty(pipelineEntity.getTemplateModules())) {
-        for (String module : pipelineEntity.getTemplateModules()) {
-          if (!newEntity.getFilters().containsKey(module)) {
-            newEntity.getFilters().put(module, Document.parse("{}"));
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.error("Unable to parse the Filter value", e);
-    }
-    return newEntity;
   }
 
   public void populateFilterUsingIdentifier(Criteria criteria, String accountIdentifier, String orgIdentifier,
@@ -199,9 +184,9 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
+  public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity) {
     long start = System.currentTimeMillis();
-    GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
+    GovernanceMetadata governanceMetadata = resolveTemplatesAndValidatePipeline(pipelineEntity);
     log.info("[PMS_PipelineService] validating pipeline took {}ms for projectId {}, orgId {}, accountId {}",
         System.currentTimeMillis() - start, pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getAccountIdentifier());
@@ -217,13 +202,62 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity) {
-    boolean governanceEnabled =
-        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
-    return validatePipelineYaml(pipelineEntity, governanceEnabled);
+  @VisibleForTesting
+  static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
+    YamlField pipelineYamlField;
+    try {
+      pipelineYamlField = YamlUtils.readTree(importedPipeline);
+    } catch (IOException e) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+    YamlField pipelineInnerField = pipelineYamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE);
+    if (pipelineInnerField == null) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAPipelineYAML(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+
+    Map<String, String> changedFields = new HashMap<>();
+
+    String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
+    if (!pipelineIdentifier.equals(identifierFromGit)) {
+      changedFields.put(YAMLMetadataFieldNameConstants.IDENTIFIER, identifierFromGit);
+    }
+
+    String nameFromGit = pipelineInnerField.getNode().getName();
+    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
+      changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
+    }
+
+    String orgIdentifierFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
+    if (!orgIdentifier.equals(orgIdentifierFromGit)) {
+      changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
+    }
+
+    String projectIdentifierFromGit =
+        pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
+    if (!projectIdentifier.equals(projectIdentifierFromGit)) {
+      changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
+    }
+
+    if (!changedFields.isEmpty()) {
+      InvalidFieldsDTO invalidFields = InvalidFieldsDTO.builder().expectedValues(changedFields).build();
+      throw new InvalidRequestException(
+          "Requested metadata params do not match the values found in the YAML on Git for these fields: "
+              + changedFields.keySet(),
+          invalidFields);
+    }
   }
 
-  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public GovernanceMetadata resolveTemplatesAndValidatePipeline(PipelineEntity pipelineEntity) {
+    return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+  }
+
+  public GovernanceMetadata resolveTemplatesAndValidatePipeline(
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -235,10 +269,10 @@ public class PMSPipelineServiceHelper {
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
+          return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
         }
       } else {
-        return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
+        return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
@@ -256,28 +290,69 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  GovernanceMetadata validatePipelineYamlInternal(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public GovernanceMetadata validatePipeline(PipelineEntity pipelineEntity,
+      TemplateMergeResponseDTO templateMergeResponseDTO, boolean throwExceptionIfGovernanceRulesFails) {
+    try {
+      GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+      if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
+        GitSyncBranchContext gitSyncBranchContext =
+            GitSyncBranchContext.builder()
+                .gitBranchInfo(GitEntityInfo.builder()
+                                   .branch(gitEntityInfo.getBaseBranch())
+                                   .yamlGitConfigId(gitEntityInfo.getYamlGitConfigId())
+                                   .build())
+                .build();
+        try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
+          return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
+              .getGovernanceMetadata();
+        }
+      } else {
+        return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
+            .getGovernanceMetadata();
+      }
+    } catch (io.harness.yaml.validator.InvalidYamlException ex) {
+      ex.setYaml(pipelineEntity.getData());
+      throw ex;
+    } catch (NGTemplateResolveExceptionV2 ex) {
+      throw ex;
+    } catch (Exception ex) {
+      YamlSchemaErrorWrapperDTO errorWrapperDTO =
+          YamlSchemaErrorWrapperDTO.builder()
+              .schemaErrors(Collections.singletonList(
+                  YamlSchemaErrorDTO.builder().message(ex.getMessage()).fqn("$.pipeline").build()))
+              .build();
+      throw new io.harness.yaml.validator.InvalidYamlException(
+          HarnessStringUtils.emptyIfNull(ex.getMessage()), ex, errorWrapperDTO, pipelineEntity.getData());
+    }
+  }
+
+  GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
+    boolean getMergedTemplateWithTemplateReferences =
+        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    // Apply all the templateRefs(if any) then check for schema validation.
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, getMergedTemplateWithTemplateReferences);
+    // Add Template Module Info temporarily to Pipeline Entity
+    pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
+    return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
+        .getGovernanceMetadata();
+  }
+
+  PipelineValidationResponse validateYaml(PipelineEntity pipelineEntity,
+      TemplateMergeResponseDTO templateMergeResponseDTO, boolean throwExceptionIfGovernanceRulesFails) {
     String accountId = pipelineEntity.getAccountId();
     String orgIdentifier = pipelineEntity.getOrgIdentifier();
     String projectIdentifier = pipelineEntity.getProjectIdentifier();
-    // Apply all the templateRefs(if any) then check for schema validation.
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
 
-    // Add Template Module Info temporarily to Pipeline Entity
-    HashSet<String> templateModuleInfo = new HashSet<>();
-    if (isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
-      for (TemplateReferenceSummary templateReferenceSummary :
-          templateMergeResponseDTO.getTemplateReferenceSummaries()) {
-        templateModuleInfo.addAll(templateReferenceSummary.getModuleInfo());
-      }
+    if (throwExceptionIfGovernanceRulesFails) {
+      return pipelineValidationService.validateYamlAndGovernanceRules(accountId, orgIdentifier, projectIdentifier,
+          resolveTemplateRefsInPipeline, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef(),
+          pipelineEntity);
     }
-    pipelineEntity.setTemplateModules(templateModuleInfo);
-
-    pipelineValidationService.validateYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
-    return pipelineGovernanceService.validateGovernanceRules(
-        accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
+    return pipelineValidationService.validateYamlAndGetGovernanceMetadata(accountId, orgIdentifier, projectIdentifier,
+        resolveTemplateRefsInPipeline, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef(), pipelineEntity);
   }
 
   public Criteria formCriteria(String accountId, String orgId, String projectId, String filterIdentifier,
@@ -403,56 +478,6 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  @VisibleForTesting
-  static void checkAndThrowMismatchInImportedPipelineMetadataInternal(String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
-    YamlField pipelineYamlField;
-    try {
-      pipelineYamlField = YamlUtils.readTree(importedPipeline);
-    } catch (IOException e) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-    YamlField pipelineInnerField = pipelineYamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE);
-    if (pipelineInnerField == null) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAPipelineYAML(
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-
-    Map<String, String> changedFields = new HashMap<>();
-
-    String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
-    if (!pipelineIdentifier.equals(identifierFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.IDENTIFIER, identifierFromGit);
-    }
-
-    String nameFromGit = pipelineInnerField.getNode().getName();
-    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
-    }
-
-    String orgIdentifierFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
-    if (!orgIdentifier.equals(orgIdentifierFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.ORG_IDENTIFIER, orgIdentifierFromGit);
-    }
-
-    String projectIdentifierFromGit =
-        pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
-    if (!projectIdentifier.equals(projectIdentifierFromGit)) {
-      changedFields.put(YAMLMetadataFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifierFromGit);
-    }
-
-    if (!changedFields.isEmpty()) {
-      InvalidFieldsDTO invalidFields = InvalidFieldsDTO.builder().expectedValues(changedFields).build();
-      throw new InvalidRequestException(
-          "Requested metadata params do not match the values found in the YAML on Git for these fields: "
-              + changedFields.keySet(),
-          invalidFields);
-    }
-  }
-
   public String getRepoUrlAndCheckForFileUniqueness(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, Boolean isForceImport) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
@@ -474,14 +499,28 @@ public class PMSPipelineServiceHelper {
     return totalInstancesOfYAML > 0;
   }
 
-  public static Criteria buildCriteriaForRepoListing(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = new Criteria();
+  private PipelineEntity updatePipelineInfoInternal(PipelineEntity pipelineEntity) throws IOException {
+    FilterCreatorMergeServiceResponse filtersAndStageCount = filterCreatorMergeService.getPipelineInfo(pipelineEntity);
+    PipelineEntity newEntity = pipelineEntity.withStageCount(filtersAndStageCount.getStageCount())
+                                   .withStageNames(filtersAndStageCount.getStageNames());
+    newEntity.getFilters().clear();
+    try {
+      if (isNotEmpty(filtersAndStageCount.getFilters())) {
+        filtersAndStageCount.getFilters().forEach(
+            (key, value)
+                -> newEntity.getFilters().put(key, isNotEmpty(value) ? Document.parse(value) : Document.parse("{}")));
+      }
 
-    criteria.and(PipelineEntityKeys.accountId).is(accountIdentifier);
-    criteria.and(PipelineEntityKeys.orgIdentifier).is(orgIdentifier);
-    criteria.and(PipelineEntityKeys.projectIdentifier).is(projectIdentifier);
-
-    return criteria;
+      if (isNotEmpty(pipelineEntity.getTemplateModules())) {
+        for (String module : pipelineEntity.getTemplateModules()) {
+          if (!newEntity.getFilters().containsKey(module)) {
+            newEntity.getFilters().put(module, Document.parse("{}"));
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Unable to parse the Filter value", e);
+    }
+    return newEntity;
   }
 }

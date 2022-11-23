@@ -45,7 +45,7 @@ public class WingsExceptionMapperTest extends WingsBaseTest implements MockableT
     final WingsExceptionMapper mapper = new WingsExceptionMapper();
 
     Logger mockLogger = mock(Logger.class);
-    when(mockLogger.isErrorEnabled()).thenReturn(true);
+    when(mockLogger.isWarnEnabled()).thenReturn(true);
     when(mockLogger.isInfoEnabled()).thenReturn(true);
 
     setStaticFieldValue(WingsExceptionMapper.class, "log", mockLogger);
@@ -54,7 +54,7 @@ public class WingsExceptionMapperTest extends WingsBaseTest implements MockableT
 
     InOrder inOrder = inOrder(mockLogger);
     inOrder.verify(mockLogger)
-        .error("Response message: An error has occurred. Please contact the Harness support team.\n"
+        .warn("Response message: An error has occurred. Please contact the Harness support team.\n"
                 + "Exception occurred: DEFAULT_ERROR_CODE",
             exception);
   }
@@ -83,7 +83,7 @@ public class WingsExceptionMapperTest extends WingsBaseTest implements MockableT
     final WingsExceptionMapper mapper = new WingsExceptionMapper();
 
     Logger mockLogger = mock(Logger.class);
-    when(mockLogger.isErrorEnabled()).thenReturn(true);
+    when(mockLogger.isWarnEnabled()).thenReturn(true);
     when(mockLogger.isInfoEnabled()).thenReturn(true);
     setStaticFieldValue(WingsExceptionMapper.class, "log", mockLogger);
     setStaticFieldValue(MessageManager.class, "log", mockLogger);
@@ -92,7 +92,7 @@ public class WingsExceptionMapperTest extends WingsBaseTest implements MockableT
 
     InOrder inOrder = inOrder(mockLogger);
     inOrder.verify(mockLogger)
-        .error("Response message: An error has occurred. Please contact the Harness support team.\n"
+        .warn("Response message: An error has occurred. Please contact the Harness support team.\n"
                 + "Exception occurred: Override message",
             exception);
   }

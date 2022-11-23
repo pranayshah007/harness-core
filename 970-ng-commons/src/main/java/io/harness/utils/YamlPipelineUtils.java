@@ -92,6 +92,10 @@ public class YamlPipelineUtils {
     return writeString(value).replaceFirst("---\n", "");
   }
 
+  /***
+   * @param value
+   * @return "--null" in case, value is null else the yaml string
+   */
   public String writeYamlString(Object value) {
     try {
       return writeString(value).replaceFirst("---\n", "");

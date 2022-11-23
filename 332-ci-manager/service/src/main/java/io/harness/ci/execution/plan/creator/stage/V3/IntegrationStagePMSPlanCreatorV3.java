@@ -207,7 +207,7 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
         GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
         return CodeBase.builder()
             .uuid(clone.getUuid())
-            .connectorRef(ParameterField.createValueField(ctx.getMetadata().getMetadata().getPipelineConnectorRef()))
+            .connectorRef(ParameterField.createValueField(ctx.getPipelineConnectorRef()))
             .repoName(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName()))
             .build(ParameterField.createValueField(getBuild(ctx, optionalRepository)))
             .depth(ParameterField.createValueField(GIT_CLONE_MANUAL_DEPTH))

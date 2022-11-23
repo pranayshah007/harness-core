@@ -306,7 +306,7 @@ public class PcfSetupState extends State {
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
-    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+    artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()).toDTO());
     artifactStreamAttributes.setArtifactServerEncryptedDataDetails(
         secretManager.getEncryptionDetails((EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(),
             context.getAppId(), context.getWorkflowExecutionId()));

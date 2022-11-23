@@ -139,6 +139,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -838,11 +839,13 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public boolean existsLinkedUserGroup(String ssoId) {
+  public boolean existsLinkedUserGroup(String accountId, String ssoId) {
     return 0
         != wingsPersistence.createQuery(UserGroup.class, excludeAuthority)
+               .filter(UserGroupKeys.accountId, accountId)
+               .filter(UserGroupKeys.isSsoLinked, TRUE)
                .filter(UserGroupKeys.linkedSsoId, ssoId)
-               .count();
+               .count(new CountOptions().limit(1));
   }
 
   private UserGroup update(UserGroup userGroup, UpdateOperations<UserGroup> operations) {

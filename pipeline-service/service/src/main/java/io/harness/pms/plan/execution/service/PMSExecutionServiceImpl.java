@@ -177,19 +177,21 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     if (gitEntityInfo != null) {
       //      Adding the branch filter if the branch is not null or default
-      if (gitEntityInfo.getBranch() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
+      if (EmptyPredicate.isNotEmpty(gitEntityInfo.getBranch())
+          && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getBranch())) {
         gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsBranch).is(gitEntityInfo.getBranch());
       }
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId)) {
         //     Adding the repoIdentifier for the old git sync flow
-        if (gitEntityInfo.getYamlGitConfigId() != null
+        if (EmptyPredicate.isNotEmpty(gitEntityInfo.getYamlGitConfigId())
             && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getYamlGitConfigId())) {
           gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoIdentifier)
               .is(gitEntityInfo.getYamlGitConfigId());
         }
       } else {
         //     Adding the repoName for the new git experience flow
-        if (gitEntityInfo.getRepoName() != null && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
+        if (EmptyPredicate.isNotEmpty(gitEntityInfo.getRepoName())
+            && !GitAwareEntityHelper.DEFAULT.equals(gitEntityInfo.getRepoName())) {
           gitCriteria.and(PlanExecutionSummaryKeys.entityGitDetailsRepoName).is(gitEntityInfo.getRepoName());
         }
       }

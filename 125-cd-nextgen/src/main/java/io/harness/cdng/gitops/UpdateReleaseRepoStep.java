@@ -13,6 +13,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -191,14 +192,19 @@ public class UpdateReleaseRepoStep extends TaskExecutableWithRollbackAndRbac<NGG
       GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
       List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
 
-      String file = filePath;
+      String file;
 
       for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
-        if (filePath.contains("<+cluster.name>")) {
-          file = filePath.replaceAll("<\\+cluster.name>", cluster.getClusterName());
+        file = filePath;
+        if (filePath.contains("<+envgroup.name>")) {
+          file = filePath.replaceAll(
+              "<\\+envgroup.name>/", cluster.getEnvGroupName() == null ? EMPTY : cluster.getEnvGroupName() + "/");
         }
         if (filePath.contains("<+env.name>")) {
           file = file.replaceAll("<\\+env.name>", cluster.getEnvName());
+        }
+        if (filePath.contains("<+cluster.name>")) {
+          file = file.replaceAll("<\\+cluster.name>", cluster.getClusterName());
         }
         List<String> files = new ArrayList<>();
         files.add(file);
@@ -226,13 +232,17 @@ public class UpdateReleaseRepoStep extends TaskExecutableWithRollbackAndRbac<NGG
                                              .value(p.getValue())
                                              .build();
           if (copyParameter.isExpression()) {
-            if (copyParameter.getExpressionValue().contains("<+cluster.name>")) {
-              copyParameter.setExpressionValue(
-                  copyParameter.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
+            if (copyParameter.getExpressionValue().contains("<+envgroup.name>")) {
+              copyParameter.setExpressionValue(copyParameter.getExpressionValue().replaceAll(
+                  "<\\+envgroup.name>", cluster.getEnvGroupName() == null ? EMPTY : cluster.getEnvGroupName()));
             }
             if (copyParameter.getExpressionValue().contains("<+env.name>")) {
               copyParameter.setExpressionValue(
                   copyParameter.getExpressionValue().replaceAll("<\\+env.name>", cluster.getEnvName()));
+            }
+            if (copyParameter.getExpressionValue().contains("<+cluster.name>")) {
+              copyParameter.setExpressionValue(
+                  copyParameter.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
             }
           }
 

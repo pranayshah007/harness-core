@@ -32,10 +32,12 @@ public interface PMSPipelineService {
   /**
    * Create pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param pipelineEntity
+   * @param throwExceptionIfGovernanceFails
    * @return
    */
-  PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity);
+  PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails);
 
   /**
    * Clone pipeline (inline/remote) and do validation - template resolution,
@@ -83,11 +85,14 @@ public interface PMSPipelineService {
   /**
    * Update pipeline (inline/remote) after doing validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param pipelineEntity
    * @param changeType
+   * @param throwExceptionIfGovernanceFails
    * @return
    */
-  PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType);
+  PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

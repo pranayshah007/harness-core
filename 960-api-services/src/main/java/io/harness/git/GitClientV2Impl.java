@@ -1160,6 +1160,43 @@ public class GitClientV2Impl implements GitClientV2 {
     }
   }
 
+  @Override
+  public void cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
+    final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
+    synchronized (lockFile) {
+      log.info("Trying to acquire lock on {}", lockFile);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(lockFile);
+           FileLock ignored = fileOutputStream.getChannel().lock()) {
+        log.info("Successfully acquired lock on {}", lockFile);
+        ensureRepoLocallyClonedAndUpdated(request);
+        String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
+        File src = new File(repoPath);
+        File dest = new File(request.getDestinationDirectory());
+        deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
+        FileUtils.copyDirectory(src, dest);
+        FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+      } catch (WingsException e) {
+        tryResetWorkingDir(request);
+        throw e;
+      } catch (Exception e) {
+        logPossibleFileLockRelatedExceptions(e);
+        tryResetWorkingDir(request);
+        throw new YamlException(new StringBuilder()
+                                    .append("Failed while fetching files ")
+                                    .append(request.useBranch() ? "for Branch: " : "for CommitId: ")
+                                    .append(request.useBranch() ? request.getBranch() : request.getCommitId())
+                                    .append(", FilePaths: ")
+                                    .append(request.getFilePaths())
+                                    .append(". Reason: ")
+                                    .append(e.getMessage())
+                                    .append(", ")
+                                    .append(e.getCause() != null ? e.getCause().getMessage() : "")
+                                    .toString(),
+            e, USER);
+      }
+    }
+  }
+
   private void tryResetWorkingDir(GitBaseRequest request) {
     try {
       resetWorkingDir(request);

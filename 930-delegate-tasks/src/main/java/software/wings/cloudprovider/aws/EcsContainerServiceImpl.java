@@ -46,8 +46,8 @@ import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.UpdateServiceCountRequestData;
 import software.wings.service.impl.AwsHelperService;
 
@@ -1061,8 +1061,7 @@ public class EcsContainerServiceImpl implements EcsContainerService {
   @Override
   public List<ContainerInfo> provisionTasks(String region, SettingAttribute connectorConfig,
       List<EncryptedDataDetail> encryptedDataDetails, String clusterName, String serviceName, int previousCount,
-      int desiredCount, int serviceSteadyStateTimeout, ExecutionLogCallback executionLogCallback,
-      boolean timeoutErrorSupported) {
+      int desiredCount, int serviceSteadyStateTimeout, ExecutionLogCallback executionLogCallback) {
     AwsConfig awsConfig = awsHelperService.validateAndGetAwsConfig(connectorConfig, encryptedDataDetails, false);
 
     try {
@@ -1073,35 +1072,35 @@ public class EcsContainerServiceImpl implements EcsContainerService {
 
       Service service = services.get(0);
 
-      // Even if service task count is already equal to desired count, try to resize
-      // This should help retry step in case of timeouts or ECS provisioning issue
-      if (service.getDesiredCount() != desiredCount
-          || (timeoutErrorSupported && !isServiceStable(desiredCount, service))) {
-        List<ServiceEvent> serviceEvents = new ArrayList<>();
-        if (isNotEmpty(service.getEvents())) {
-          serviceEvents.addAll(service.getEvents());
-        }
+      List<ServiceEvent> serviceEvents = new ArrayList<>();
+      if (isNotEmpty(service.getEvents())) {
+        serviceEvents.addAll(service.getEvents());
+      }
 
-        UpdateServiceCountRequestData serviceCountRequestData =
-            UpdateServiceCountRequestData.builder()
-                .region(region)
-                .encryptedDataDetails(encryptedDataDetails)
-                .cluster(clusterName)
-                .serviceName(serviceName)
-                .desiredCount(desiredCount)
-                .executionLogCallback(executionLogCallback)
-                .awsConfig(awsConfig)
-                .serviceEvents(serviceEvents)
-                .timeOut(serviceSteadyStateTimeout < 10 ? 10 : serviceSteadyStateTimeout)
-                .build();
+      UpdateServiceCountRequestData serviceCountRequestData =
+          UpdateServiceCountRequestData.builder()
+              .region(region)
+              .encryptedDataDetails(encryptedDataDetails)
+              .cluster(clusterName)
+              .serviceName(serviceName)
+              .desiredCount(desiredCount)
+              .executionLogCallback(executionLogCallback)
+              .awsConfig(awsConfig)
+              .serviceEvents(serviceEvents)
+              .timeOut(serviceSteadyStateTimeout < 10 ? 10 : serviceSteadyStateTimeout)
+              .build();
 
+      // do not send update service desired count request if it is equal to previous value as in this case AWS updates
+      // the deployment time of service but
+      // does not send "service ready state" message again. Thus, the steady state checking code keeps on waiting and
+      // ultimately results in timeout error.
+      if (desiredCount != service.getDesiredCount()) {
         updateServiceCount(serviceCountRequestData);
         executionLogCallback.saveExecutionLog("Service update request successfully submitted.", LogLevel.INFO);
-        waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
-        if (desiredCount > service.getDesiredCount()) { // don't do it for downsize.
-          waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
-        }
       }
+
+      waitForTasksToBeInRunningStateWithHandledExceptions(serviceCountRequestData);
+      waitForServiceToReachSteadyState(serviceSteadyStateTimeout, serviceCountRequestData);
 
       return getContainerInfosAfterEcsWait(
           region, awsConfig, encryptedDataDetails, clusterName, serviceName, originalTaskArns, executionLogCallback);

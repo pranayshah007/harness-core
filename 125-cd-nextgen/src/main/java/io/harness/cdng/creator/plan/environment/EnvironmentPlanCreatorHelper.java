@@ -37,12 +37,12 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.DependenciesUtils;
@@ -88,13 +88,12 @@ public class EnvironmentPlanCreatorHelper {
         .build();
   }
 
-  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContextValue metadata,
-      EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled, String serviceRef,
-      ServiceOverrideService serviceOverrideService, EnvironmentService environmentService,
-      InfrastructureEntityService infrastructure) {
-    String accountIdentifier = metadata.getAccountIdentifier();
-    String orgIdentifier = metadata.getOrgIdentifier();
-    String projectIdentifier = metadata.getProjectIdentifier();
+  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContext ctx, EnvironmentYamlV2 environmentV2,
+      boolean gitOpsEnabled, String serviceRef, ServiceOverrideService serviceOverrideService,
+      EnvironmentService environmentService, InfrastructureEntityService infrastructure) {
+    String accountIdentifier = ctx.getAccountIdentifier();
+    String orgIdentifier = ctx.getOrgIdentifier();
+    String projectIdentifier = ctx.getProjectIdentifier();
 
     // TODO: check the case when its a runtime value if its possible for it to have here
     Optional<Environment> environment = environmentService.get(

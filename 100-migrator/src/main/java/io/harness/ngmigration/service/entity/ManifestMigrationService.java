@@ -354,9 +354,9 @@ public class ManifestMigrationService extends NgMigrationService {
       List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
       NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest);
 
-      ManifestConfigWrapper manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
+      List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
           applicationManifest, entities, migratedEntities, entitySpec, files);
-      ngManifests.add(manifestConfigWrapper);
+      ngManifests.addAll(manifestConfigWrapper);
     }
     return ngManifests;
   }

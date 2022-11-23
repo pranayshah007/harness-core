@@ -1,0 +1,19 @@
+environmentInputs:
+  identifier: ENV_ID
+  type: Production
+  variables:
+    - name: envV2
+      type: String
+      value: <+input>
+  overrides:
+    manifests:
+      - manifest:
+          identifier: manifest1
+          type: Values
+          spec:
+            store:
+              type: Github
+              spec:
+                connectorRef: <+input>
+                repoName: <+input>
+                branch: <+input>

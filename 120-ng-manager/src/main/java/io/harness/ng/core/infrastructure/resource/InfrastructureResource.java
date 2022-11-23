@@ -44,11 +44,13 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.ng.core.infrastructure.dto.InfrastructureInputsMergedResponseDto;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.dto.InfrastructureResponse;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadata;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadataApiInput;
 import io.harness.ng.core.infrastructure.dto.InfrastructureYamlMetadataDTO;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.mappers.InfrastructureFilterHelper;
@@ -159,7 +161,7 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENVIRONMENT_KEY, required = true) @NotNull @QueryParam(
-          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @AccountIdentifier String envIdentifier,
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
       @Parameter(description = "Specify whether Infrastructure is deleted or not") @QueryParam(
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
@@ -274,7 +276,7 @@ public class InfrastructureResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE, required = true) @QueryParam(
-          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ProjectIdentifier String envIdentifier) {
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, envIdentifier);
     checkForAccessOrThrow(
@@ -436,8 +438,9 @@ public class InfrastructureResource {
           NGCommonEntityConstants.INFRA_IDENTIFIERS) List<String> infraIdentifiers,
       @Parameter(description = "Specify whether Deploy to all infrastructures in the environment") @QueryParam(
           NGCommonEntityConstants.DEPLOY_TO_ALL) @DefaultValue("false") boolean deployToAll) {
-    String infrastructureInputsYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
-        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, infraIdentifiers, deployToAll);
+    String infrastructureInputsYaml =
+        infrastructureEntityService.createInfrastructureInputsFromYaml(accountId, orgIdentifier, projectIdentifier,
+            environmentIdentifier, infraIdentifiers, deployToAll, NoInputMergeInputAction.RETURN_EMPTY);
     return ResponseDTO.newResponse(
         NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(infrastructureInputsYaml).build());
   }
@@ -507,6 +510,26 @@ public class InfrastructureResource {
             environmentIdentifier, infrastructureYamlMetadata.getInfrastructureIdentifiers());
     return ResponseDTO.newResponse(
         InfrastructureYamlMetadataDTO.builder().infrastructureYamlMetadataList(infrastructureYamlMetadataList).build());
+  }
+
+  @POST
+  @Path("/mergeInfrastructureInputs/{infraIdentifier}")
+  @ApiOperation(value = "This api merges old and new infrastructure inputs YAML", nickname = "mergeInfraInputs")
+  @Hidden
+  public ResponseDTO<InfrastructureInputsMergedResponseDto> mergeInfrastructureInputs(
+      @Parameter(description = INFRA_PARAM_MESSAGE) @PathParam(
+          "infraIdentifier") @ResourceIdentifier String infraIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY, required = true) @NotNull
+      @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String envIdentifier,
+      String oldInfrastructureInputsYaml) {
+    return ResponseDTO.newResponse(infrastructureEntityService.mergeInfraStructureInputs(
+        accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, oldInfrastructureInputsYaml));
   }
 
   private void mustBeAtProjectLevel(InfrastructureRequestDTO requestDTO) {
