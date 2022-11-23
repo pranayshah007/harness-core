@@ -31,6 +31,8 @@ import io.harness.metrics.MetricRegistryModule;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.exception.NotificationExceptionMapper;
 import io.harness.platform.audit.AuditServiceModule;
 import io.harness.platform.audit.AuditServiceSetup;
@@ -45,6 +47,8 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -169,6 +173,14 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         Guice.createInjector(new TokenClientModule(appConfig.getRbacServiceConfig(),
             appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
             AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
+    godInjector.put(PLATFORM_SERVICE,
+        Guice.createInjector(new NGSettingsClientModule(appConfig.getRbacServiceConfig(),
+            appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
+            AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
+    godInjector.put(PLATFORM_SERVICE,
+        Guice.createInjector(new ServiceAccountPrincipalClientModule(appConfig.getRbacServiceConfig(),
+            appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
+            AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
 
     registerCommonResources(appConfig, environment, godInjector);
     registerCorsFilter(appConfig, environment);
@@ -282,7 +294,10 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         IDENTITY_SERVICE.getServiceId(), configuration.getPlatformSecrets().getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getPlatformSecrets().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.get(PLATFORM_SERVICE).getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.get(PLATFORM_SERVICE).getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.get(PLATFORM_SERVICE).getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.get(PLATFORM_SERVICE)
+            .getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerInternalApiAuthFilter(PlatformConfiguration configuration, Environment environment) {

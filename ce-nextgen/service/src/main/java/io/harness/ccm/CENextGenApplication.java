@@ -45,6 +45,7 @@ import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.request.RequestContextFilter;
@@ -54,6 +55,7 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -293,7 +295,9 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
         AuthorizationServiceHeader.DEFAULT.getServiceId(), configuration.getNgManagerServiceSecret());
 
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerInternalApiAuthFilter(CENextGenConfiguration configuration, Environment environment) {

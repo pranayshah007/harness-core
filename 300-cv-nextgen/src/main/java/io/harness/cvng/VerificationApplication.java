@@ -142,6 +142,8 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.Team;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -183,6 +185,8 @@ import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.token.TokenClientModule;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifyEvent;
@@ -434,6 +438,12 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new CvPersistenceModule());
     modules.add(new CacheModule(configuration.getCacheConfig()));
     modules.add(new TokenClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
+        configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
+    modules.add(new NGSettingsClientModule(
+        ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
+        configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
+    modules.add(new ServiceAccountPrincipalClientModule(
         ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
         configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
     YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
@@ -1025,7 +1035,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
     serviceToSecretMapping.put(
         DEFAULT.getServiceId(), configuration.getNgManagerServiceConfig().getManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
     environment.jersey().register(injector.getInstance(CVNGAuthenticationFilter.class));
   }
 

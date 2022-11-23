@@ -63,6 +63,7 @@ import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.CharsetResponseFilter;
@@ -71,6 +72,7 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
@@ -350,7 +352,9 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     serviceToSecretMapping.put(ACCESS_CONTROL_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(IDENTITY_SERVICE.getServiceId(), configuration.getIdentityServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerInternalApiAuthFilter(AccessControlConfiguration configuration, Environment environment) {

@@ -122,6 +122,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -136,6 +137,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.CENextGenModuleRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -281,6 +283,10 @@ public class CENextGenModule extends AbstractModule {
         configuration.getAccessControlAdminClientConfiguration(), CE_NEXT_GEN.getServiceId()));
 
     install(new SecretNGManagerClientModule(configuration.getNgManagerClientConfig(),
+        configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new NGSettingsClientModule(configuration.getNgManagerClientConfig(),
+        configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
+    install(new ServiceAccountPrincipalClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());

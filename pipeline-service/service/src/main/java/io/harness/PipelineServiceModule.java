@@ -169,6 +169,7 @@ import io.harness.serializer.NGTriggerRegistrars;
 import io.harness.serializer.OrchestrationStepsModuleRegistrars;
 import io.harness.serializer.PipelineServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.custom.CustomApprovalHelperService;
@@ -359,6 +360,8 @@ public class PipelineServiceModule extends AbstractModule {
     });
     install(new VariableClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
+    install(new ServiceAccountPrincipalClientModule(this.configuration.getNgManagerServiceHttpClientConfig(),
+        this.configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(PMSOutboxEventHandler.class);
     bind(HPersistence.class).to(MongoPersistence.class);

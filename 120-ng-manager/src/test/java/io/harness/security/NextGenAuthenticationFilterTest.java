@@ -38,10 +38,12 @@ import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
 import io.harness.ng.scim.resource.NGScimUserResource;
 import io.harness.ng.serviceaccounts.resource.ServiceAccountResource;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.rule.Owner;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.token.remote.TokenClient;
 
 import java.lang.reflect.Method;
@@ -79,6 +81,8 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
   private static final String accountIdentifier = "accountIdentifier";
   private static final String incorrectAccountIdentifier = "incorrectAccountIdentifier";
   private TokenClient tokenClient;
+  private NGSettingsClient ngSettingsClient;
+  private ServiceAccountPrincipalClient serviceAccountClient;
   private ContainerRequestContext containerRequestContext;
   private String apiKey;
   private String newApiKey;
@@ -99,9 +103,11 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     when(resourceInfo.getResourceClass()).thenReturn(getDefaultMockResourceClass());
     when(resourceInfo.getResourceMethod()).thenReturn(getDefaultMockResourceMethod());
     Map<String, String> serviceToSecretMapping = new HashMap<>();
+    ngSettingsClient = Mockito.mock(NGSettingsClient.class);
+    serviceAccountClient = Mockito.mock(ServiceAccountPrincipalClient.class);
     serviceToSecretMapping.put("Bearer", apiKey);
-    authenticationFilter =
-        Mockito.spy(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping, tokenClient));
+    authenticationFilter = Mockito.spy(new NextGenAuthenticationFilter(
+        predicate, null, serviceToSecretMapping, tokenClient, ngSettingsClient, serviceAccountClient));
     authenticationFilter.setResourceInfo(resourceInfo);
     tokenClient = Mockito.mock(TokenClient.class);
     containerRequestContext = Mockito.mock(ContainerRequestContext.class);

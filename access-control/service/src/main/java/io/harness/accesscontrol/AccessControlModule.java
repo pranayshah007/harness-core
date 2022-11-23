@@ -110,6 +110,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.migration.NGMigrationSdkModule;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -120,6 +121,7 @@ import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.serviceaccount.ServiceAccountClientModule;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
 import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.AccountRolesApi;
 import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
@@ -307,6 +309,14 @@ public class AccessControlModule extends AbstractModule {
 
     install(new TransactionOutboxModule(config.getOutboxPollConfig(), ACCESS_CONTROL_SERVICE.getServiceId(),
         config.getAggregatorConfiguration().isExportMetricsToStackDriver()));
+
+    install(new NGSettingsClientModule(config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
+        config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
+        ACCESS_CONTROL_SERVICE.getServiceId()));
+    install(new ServiceAccountPrincipalClientModule(
+        config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
+        config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
+        ACCESS_CONTROL_SERVICE.getServiceId()));
     install(NGMigrationSdkModule.getInstance());
 
     install(AccessControlPersistenceModule.getInstance(config.getMongoConfig()));

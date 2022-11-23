@@ -18,10 +18,12 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.overviewdashboard.GenerateOpenApiSpecCommand;
 import io.harness.request.RequestContextFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -142,7 +144,9 @@ public class DashboardApplication extends Application<DashboardServiceConfig> {
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerCorsFilter(DashboardServiceConfig appConfig, Environment environment) {

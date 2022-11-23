@@ -57,6 +57,7 @@ import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.manage.ManagedScheduledExecutorService;
 import io.harness.mongo.MongoPersistence;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
@@ -66,6 +67,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -243,6 +245,12 @@ public class STOManagerServiceModule extends AbstractModule {
         stoManagerConfiguration.getManagerTarget(), stoManagerConfiguration.getManagerAuthority(), true));
 
     install(new TokenClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
+    install(new TokenClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
+    install(new NGSettingsClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
+        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
+    install(new ServiceAccountPrincipalClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
 

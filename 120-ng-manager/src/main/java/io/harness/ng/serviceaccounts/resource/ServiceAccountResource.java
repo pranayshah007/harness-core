@@ -36,6 +36,7 @@ import io.harness.ng.core.dto.ServiceAccountFilterDTO;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.serviceaccounts.dto.ServiceAccountAggregateDTO;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
+import io.harness.security.annotations.InternalApi;
 import io.harness.serviceaccount.ServiceAccountDTO;
 
 import com.google.common.collect.ImmutableList;
@@ -45,6 +46,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -267,5 +269,17 @@ public class ServiceAccountResource {
     ServiceAccountAggregateDTO aggregateDTO = serviceAccountService.getServiceAccountAggregateDTO(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     return ResponseDTO.newResponse(aggregateDTO);
+  }
+
+  @GET
+  @Path("{identifier}")
+  @Hidden
+  @InternalApi
+  @ApiOperation(value = "Get Service Account by Id", nickname = "getServiceAccountByIdAndAccountId")
+  public ResponseDTO<ServiceAccountDTO> getServiceAccountByIdAndAccountId(
+      @NotNull @PathParam(IDENTIFIER) @ResourceIdentifier String identifier,
+      @NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return ResponseDTO.newResponse(
+        serviceAccountService.getServiceAccountDTO(accountIdentifier, null, null, identifier));
   }
 }

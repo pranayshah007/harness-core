@@ -83,6 +83,7 @@ import io.harness.ng.core.exceptionmappers.NotAllowedExceptionMapper;
 import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.ng.core.filter.ApiResponseFilter;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
@@ -152,6 +153,7 @@ import io.harness.serializer.jackson.PipelineServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
@@ -558,7 +560,9 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         AuthorizationServiceHeader.IDENTITY_SERVICE.getServiceId(), config.getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(AuthorizationServiceHeader.DEFAULT.getServiceId(), config.getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
   }
 
   /**------------------API auth telemetry -----------------------------------------------*/

@@ -63,6 +63,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
@@ -102,6 +103,7 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.telemetry.CiTelemetryRecordsJob;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -497,7 +499,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       serviceToSecretMapping.put(
           AuthorizationServiceHeader.DEFAULT.getServiceId(), configuration.getNgManagerServiceSecret());
       environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
-          injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));
+          injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+          injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+          injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
     }
   }
 

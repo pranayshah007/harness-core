@@ -33,7 +33,7 @@ import io.harness.SCMGrpcClientModule;
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.accesscontrol.filter.NGScopeAccessCheckFilter;
-//import io.harness.account.client.remote.AccountClient;
+// import io.harness.account.client.remote.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
 import io.harness.cdng.creator.CDNGModuleInfoProvider;
@@ -188,6 +188,7 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsIteratorHandler;
+import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.telemetry.NGTelemetryRecordsJob;
 import io.harness.telemetry.TelemetryReporter;
@@ -877,8 +878,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerAuthFilters(NextGenConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.isEnableAuth()) {
-      registerNextGenAuthFilter(
-          configuration, environment, injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))), injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))));
+      registerNextGenAuthFilter(configuration, environment,
+          injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
+          injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
+          injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED"))));
       registerInternalApiAuthFilter(configuration, environment);
     }
   }
@@ -905,7 +908,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
   }
 
   private void registerNextGenAuthFilter(NextGenConfiguration configuration, Environment environment,
-      TokenClient tokenClient, NGSettingsClient ngSettingsClient) {
+      TokenClient tokenClient, NGSettingsClient ngSettingsClient,
+      ServiceAccountPrincipalClient serviceAccountPrincipalClient) {
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate =
         (getAuthenticationExemptedRequestsPredicate().negate())
             .and((getAuthFilterPredicate(InternalApi.class)).negate());
@@ -915,7 +919,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
         IDENTITY_SERVICE.getServiceId(), configuration.getNextGenConfig().getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNextGenConfig().getNgManagerServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(
-        predicate, null, serviceToSecretMapping, tokenClient, ngSettingsClient));
+        predicate, null, serviceToSecretMapping, tokenClient, ngSettingsClient, serviceAccountPrincipalClient));
   }
 
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {

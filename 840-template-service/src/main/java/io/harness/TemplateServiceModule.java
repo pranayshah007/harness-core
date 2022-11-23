@@ -49,6 +49,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.ngsettings.client.remote.NGSettingsClientModule;
 import io.harness.organization.OrganizationClientModule;
 import io.harness.outbox.TransactionOutboxModule;
 import io.harness.outbox.api.OutboxEventHandler;
@@ -64,6 +65,7 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
+import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -190,6 +192,11 @@ public class TemplateServiceModule extends AbstractModule {
     install(new TemplateEventsFrameworkModule(this.templateServiceConfiguration.getEventsFrameworkConfiguration()));
     install(new AccountClientModule(templateServiceConfiguration.getManagerClientConfig(),
         templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.toString()));
+    install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
+    install(
+        new ServiceAccountPrincipalClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+            this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(YamlSdkModule.getInstance());
     Map<String, YamlSchemaHttpClientConfig> yamlSchemaHttpClientConfigMap = new HashMap<>();
     yamlSchemaHttpClientConfigMap.put("cd",
