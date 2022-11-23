@@ -968,7 +968,8 @@ public abstract class TerraformProvisionState extends State {
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
-    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
+    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())
+        || terraformProvisioner.getSourceType() == TerraformSourceType.S3_URI) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     return createAndRunTask(
@@ -1220,7 +1221,7 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
-            .sourceType(terraformProvisioner.provisionByGit() ? TerraformSourceType.GIT : TerraformSourceType.S3_URI)
+            .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
             .timeoutInMillis(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
@@ -1268,7 +1269,8 @@ public abstract class TerraformProvisionState extends State {
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
-    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
+    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())
+        || terraformProvisioner.getSourceType() == TerraformSourceType.S3_URI) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     return createAndRunTask(activityId, executionContext, terraformProvisionParametersBuilder.build(), delegateTag);

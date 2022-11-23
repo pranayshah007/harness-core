@@ -92,6 +92,7 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 import software.wings.api.TerraformExecutionData;
 import software.wings.api.TerraformExecutionData.TerraformExecutionDataBuilder;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.LogColor;
@@ -274,7 +275,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       /**
        * Handle S3 Logic
        */
-      return null;
+      try {
+        awsS3HelperServiceDelegate.downloadS3Directory(
+            parameters.getAwsConfig(), parameters.getS3URI(), new File(workingDir));
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
 
     if (null != parameters.getTfVarSource()
@@ -1057,8 +1063,8 @@ and provisioner
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
-  private void downloadS3Directory(String destinationDir) throws IOException {
-    File destination = new File(destinationDir);
+  private void downloadS3Directory(AwsConfig awsConfig, String s3URI, String destinationDirPath) throws IOException {
+    File destinationDir = new File(destinationDirPath);
   }
   @VisibleForTesting
   public void getCommandLineVariableParams(TerraformProvisionParameters parameters, File tfVariablesFile,

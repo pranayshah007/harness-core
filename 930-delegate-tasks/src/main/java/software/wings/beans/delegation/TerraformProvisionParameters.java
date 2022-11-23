@@ -54,7 +54,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   public static final long TIMEOUT_IN_MINUTES = 100;
   public static final String TERRAFORM = "terraform";
   private TerraformSourceType sourceType;
-
+  private final String s3URI;
   private String accountId;
   private final String activityId;
   private final String appId;

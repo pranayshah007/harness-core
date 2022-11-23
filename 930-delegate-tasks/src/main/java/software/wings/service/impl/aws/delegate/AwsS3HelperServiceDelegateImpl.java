@@ -173,11 +173,13 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
    * @return
    */
   @Override
-  public boolean downloadS3Directory(AwsConfig awsConfig, String bucketName, String key, File destinationDirectory)
+  public boolean downloadS3Directory(AwsConfig awsConfig, String s3URI, File destinationDirectory)
       throws InterruptedException {
+    AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
     TransferManager transferManager =
         TransferManagerBuilder.standard().withS3Client(getAmazonS3Client(awsConfig)).build();
-    MultipleFileDownload download = transferManager.downloadDirectory(bucketName, key, destinationDirectory);
+    MultipleFileDownload download =
+        transferManager.downloadDirectory(amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationDirectory);
     try {
       download.waitForCompletion();
     } catch (InterruptedException e) {
@@ -192,33 +194,6 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     }
 
     return true;
-  }
-
-  @Override
-  public boolean downloadS3DirectoryUsingS3URI(AwsConfig awsConfig, String s3URI, File destinationDirectory)
-      throws InterruptedException {
-    /**
-     *
-     *    Example of s3URI = "s3://iis-website-quickstart/foo/bar/baz";
-     *    thus,
-     *    String bucket = substr(5, length) = "iis-website-quickstart/foo/bar/baz";
-     *    String key = s3URI.substring(bucket.length()+1, s3URI.length()) = "foo/bar/baz";
-     *
-     */
-    AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
-    boolean downloadSuccess = false;
-    try {
-      downloadSuccess =
-          downloadS3Directory(awsConfig, amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationDirectory);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new InterruptedException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
-    } catch (AmazonServiceException amazonServiceException) {
-      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
-    } catch (AmazonClientException amazonClientException) {
-      awsApiHelperService.handleAmazonClientException(amazonClientException);
-    }
-    return downloadSuccess;
   }
 
   private AmazonS3Client getAmazonS3Client(String region, AwsConfig awsConfig) {
