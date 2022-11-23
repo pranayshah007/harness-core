@@ -89,11 +89,7 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
   @Override
   public List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds) {
-    Set<String> notSupportedAccounts = accountService.getAccountsWithDisabledHarnessUserGroupAccess();
-
-    notSupportedAccounts.addAll(excludeAccountIds);
-
-    List<Account> supportedAccounts = accountService.listAccounts(notSupportedAccounts);
+    List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds);
     supportedAccounts.sort(new AccountComparator());
     return supportedAccounts;
   }

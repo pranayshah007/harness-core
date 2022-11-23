@@ -31,10 +31,9 @@ import software.wings.service.intfc.BuildSourceService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.security.SecretManager;
 
+import com.azure.core.management.Region;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -121,7 +120,8 @@ public class AzureResourceServiceImpl implements AzureResourceService {
   }
 
   public List<NameValuePair> listAzureRegions() {
-    return Arrays.stream(Region.values())
+    return Region.values()
+        .stream()
         .filter(nonGovernmentAzureRegionsNamesFilter())
         .map(toNameValuePair())
         .collect(Collectors.toList());

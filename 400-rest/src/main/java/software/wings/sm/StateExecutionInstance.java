@@ -95,6 +95,12 @@ public class StateExecutionInstance implements PersistentEntity, AccountDataRete
                  .field(StateExecutionInstanceKeys.appId)
                  .ascSortField(StateExecutionInstanceKeys.endTs)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_status_stateType")
+                 .field(StateExecutionInstanceKeys.accountId)
+                 .field(StateExecutionInstanceKeys.status)
+                 .field(StateExecutionInstanceKeys.stateType)
+                 .build())
         .build();
   }
   @Id private String uuid;

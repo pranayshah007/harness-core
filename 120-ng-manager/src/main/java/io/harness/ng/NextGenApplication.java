@@ -45,11 +45,13 @@ import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
+import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
 import io.harness.cf.CfClientConfig;
 import io.harness.cf.CfMigrationConfig;
+import io.harness.configuration.DeployMode;
 import io.harness.configuration.DeployVariant;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.entities.Connector;
@@ -87,7 +89,9 @@ import io.harness.gitsync.server.GitSyncServiceConfiguration;
 import io.harness.govern.ProviderModule;
 import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
 import io.harness.licensing.migrations.LicenseManagerMigrationProvider;
+import io.harness.licensing.services.LicenseService;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
@@ -459,6 +463,19 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     } else {
       log.info("NextGenApplication DEPLOY_VERSION is not COMMUNITY");
     }
+    if (shouldCheckForSMPLicense()) {
+      log.info("Applying smp license");
+      LicenseService licenseService = injector.getInstance(LicenseService.class);
+      String license = System.getenv("SMP_LICENSE");
+      SMPEncLicenseDTO encLicenseDTO = SMPEncLicenseDTO.builder().encryptedLicense(license).decrypt(true).build();
+      licenseService.applySMPLicense(encLicenseDTO);
+    }
+  }
+
+  // ToDo-SMP: enable for future releases only for now (add condition on release tag)
+  private boolean shouldCheckForSMPLicense() {
+    return DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))
+        && Boolean.parseBoolean(System.getenv("ENABLE_SMP_LICENSING"));
   }
 
   private void registerNotificationTemplates(Injector injector) {
@@ -686,6 +703,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
+    sdkFunctorMap.put(
+        TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     return sdkFunctorMap;
   }

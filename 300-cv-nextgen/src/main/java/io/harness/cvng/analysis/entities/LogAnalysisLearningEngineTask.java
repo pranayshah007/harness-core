@@ -9,8 +9,10 @@ package io.harness.cvng.analysis.entities;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
+@SuperBuilder
 @NoArgsConstructor
 public abstract class LogAnalysisLearningEngineTask extends LearningEngineTask {
   private String controlDataUrl;

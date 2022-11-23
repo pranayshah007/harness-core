@@ -13,6 +13,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
@@ -26,21 +28,27 @@ import io.harness.exception.runtime.azure.AzureARMDeploymentException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentOperationInner;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
 import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
 public class ARMDeploymentSteadyStateCheckerTest extends CategoryTest {
   @Mock private LogCallback mockLogCallback;
@@ -72,62 +80,36 @@ public class ARMDeploymentSteadyStateCheckerTest extends CategoryTest {
                                                   .steadyCheckTimeoutInMinutes(10)
                                                   .build();
 
-    doReturn("Succeeded").when(azureManagementClient).getARMDeploymentStatus(eq(context));
-    doReturn(getPageList()).when(azureManagementClient).getDeploymentOperations(eq(context));
-    armSteadyStateChecker.waitUntilCompleteWithTimeout(context, azureManagementClient, mockLogCallback);
-    verify(azureManagementClient).getARMDeploymentStatus(eq(context));
+    List<DeploymentOperationInner> responseList = new ArrayList<>();
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
+    doReturn(getPagedIterable(simpleResponse)).when(azureManagementClient).getDeploymentOperations(eq(context));
+    LongRunningOperationStatus longRunningOperationStatus1 = LongRunningOperationStatus.SUCCESSFULLY_COMPLETED;
+    SyncPoller syncPoller1 = mock(SyncPoller.class);
+    PollResponse syncPollResponse = mock(PollResponse.class);
+    doReturn(syncPollResponse).when(syncPoller1).poll();
+    doReturn(longRunningOperationStatus1).when(syncPollResponse).getStatus();
+    armSteadyStateChecker.waitUntilCompleteWithTimeout(context, azureManagementClient, mockLogCallback, syncPoller1);
+    verify(syncPoller1, times(1)).poll();
 
-    doReturn("Failed").when(azureManagementClient).getARMDeploymentStatus(eq(context));
-    assertThatThrownBy(
-        () -> armSteadyStateChecker.waitUntilCompleteWithTimeout(context, azureManagementClient, mockLogCallback))
+    LongRunningOperationStatus longRunningOperationStatus2 = LongRunningOperationStatus.FAILED;
+    SyncPoller syncPoller2 = mock(SyncPoller.class);
+    PollResponse syncPollResponse2 = mock(PollResponse.class);
+    doReturn(syncPollResponse2).when(syncPoller2).poll();
+    doReturn(longRunningOperationStatus2).when(syncPollResponse2).getStatus();
+    PollResult pollResult2 = mock(PollResult.class);
+    PollResult.Error pollResultError2 = mock(PollResult.Error.class);
+    doReturn("ARM Deployment failed for deployment").when(pollResultError2).getMessage();
+    doReturn(pollResultError2).when(pollResult2).getError();
+    doReturn(pollResult2).when(syncPollResponse2).getValue();
+    assertThatThrownBy(()
+                           -> armSteadyStateChecker.waitUntilCompleteWithTimeout(
+                               context, azureManagementClient, mockLogCallback, syncPoller2))
         .isInstanceOf(AzureARMDeploymentException.class)
         .hasMessageContaining("ARM Deployment failed for deployment");
-
-    doReturn("Accepted").when(azureManagementClient).getARMDeploymentStatus(eq(context));
-    doReturn(getPageList()).when(azureManagementClient).getDeploymentOperations(eq(context));
-    ExecutorService executorService = Executors.newFixedThreadPool(1);
-    executorService.submit(new ARMStatusChanger(context, azureManagementClient));
-    executorService.shutdown();
-    armSteadyStateChecker.waitUntilCompleteWithTimeout(context, azureManagementClient, mockLogCallback);
-    verify(azureManagementClient, Mockito.atLeast(1)).getARMDeploymentStatus(eq(context));
-  }
-
-  private static class ARMStatusChanger implements Runnable {
-    private final ARMDeploymentSteadyStateContext context;
-    private final AzureManagementClientImpl azureManagementClient;
-    ARMStatusChanger(ARMDeploymentSteadyStateContext context, AzureManagementClientImpl azureManagementClient) {
-      this.context = context;
-      this.azureManagementClient = azureManagementClient;
-    }
-
-    @Override
-    public void run() {
-      try {
-        doReturn("Accepted").when(azureManagementClient).getARMDeploymentStatus(eq(context));
-        Thread.sleep(3000);
-        doReturn("Succeeded").when(azureManagementClient).getARMDeploymentStatus(eq(context));
-      } catch (InterruptedException exception) {
-        exception.printStackTrace();
-      }
-    }
   }
 
   @NotNull
-  public <T> PagedList<T> getPageList() {
-    return new PagedList<T>() {
-      @Override
-      public Page<T> nextPage(String s) {
-        return new Page<T>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<T> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 }

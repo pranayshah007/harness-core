@@ -15,15 +15,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.beans.summary.ArtifactStreamSummary;
 import io.harness.ngmigration.beans.summary.BaseSummary;
-import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 
 import software.wings.beans.artifact.ArtifactStream;
@@ -121,18 +117,6 @@ public class ArtifactStreamMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return false;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    ArtifactStream stream = (ArtifactStream) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(stream.getName())))
-        .name(BaseInputDefinition.buildName(stream.getName()))
-        .spec(null)
-        .build();
   }
 
   @Override

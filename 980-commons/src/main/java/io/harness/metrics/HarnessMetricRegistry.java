@@ -58,6 +58,13 @@ public class HarnessMetricRegistry {
     // this.collectorRegistry.register(new CustomDropWizardExports(metricRegistry));
   }
 
+  public HarnessMetricRegistry(
+      MetricRegistry metricRegistry, MetricRegistry threadPoolMetricRegistry, CollectorRegistry collectorRegistry) {
+    this.metricRegistry = metricRegistry;
+    this.collectorRegistry = collectorRegistry;
+    this.threadPoolMetricRegistry = threadPoolMetricRegistry;
+  }
+
   public MetricRegistry getMetricRegistry() {
     return metricRegistry;
   }

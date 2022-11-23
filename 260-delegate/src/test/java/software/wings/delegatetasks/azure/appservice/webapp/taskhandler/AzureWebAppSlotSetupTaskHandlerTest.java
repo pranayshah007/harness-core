@@ -51,8 +51,8 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
 
-import com.microsoft.azure.management.containerregistry.AccessKeyType;
-import com.microsoft.azure.management.containerregistry.RegistryCredentials;
+import com.azure.resourcemanager.containerregistry.models.AccessKeyType;
+import com.azure.resourcemanager.containerregistry.models.RegistryCredentials;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

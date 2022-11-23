@@ -36,8 +36,12 @@ import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -71,6 +75,7 @@ public class GarResourceServiceImplTest extends CategoryTest {
   @Mock SecretManagerClientService secretManagerClientService;
   @Mock DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Spy @InjectMocks GARResourceServiceImpl garResourceService;
+  @Mock ExceptionManager exceptionManager;
 
   @Before
   public void setup() {
@@ -178,5 +183,66 @@ public class GarResourceServiceImplTest extends CategoryTest {
                                version, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isInstanceOf(ArtifactServerException.class)
         .hasMessage("Unexpected error during authentication to Google Artifact Registry server " + obj);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testDelegateServiceDriverException() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    Object obj = new Object();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
+
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenThrow(new WingsException("wings exception message"));
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(connectorRef, REGION, repositoryName, project, pkg,
+                               version, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("wings exception message");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testFailureExecution() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .build();
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                .errorCode(ErrorCode.DEFAULT_ERROR_CODE)
+                .errorMessage("Test failed")
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(new ArrayList<>()).build())
+                .build());
+
+    assertThatThrownBy(()
+                           -> garResourceService.getBuildDetails(connectorRef, REGION, repositoryName, project, pkg,
+                               version, "", ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(WingsException.class)
+        .hasMessage(
+            "Google Artifact Registry Get Builds task failure due to error - Test failed with error code: DEFAULT_ERROR_CODE");
   }
 }

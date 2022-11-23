@@ -166,6 +166,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
       columnValueMapping.put("env_name", "");
       columnValueMapping.put("env_id", "");
       columnValueMapping.put("env_type", "");
+      columnValueMapping.put("rollback_duration", "");
 
       DBObject moduleInfoObject = (DBObject) ((DBObject) iteratorObject.getValue()).get("moduleInfo");
       if (moduleInfoObject != null) {
@@ -263,7 +264,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
           }
 
           // rollback_duration
-          if (cdObject.get("rollbackDuration") != null) {
+          if (cdObject.get("rollbackDuration") != null && !cdObject.get("rollbackDuration").toString().isEmpty()) {
             String rollbackDuration = cdObject.get("rollbackDuration").toString();
             columnValueMapping.put("rollback_duration", rollbackDuration);
           }

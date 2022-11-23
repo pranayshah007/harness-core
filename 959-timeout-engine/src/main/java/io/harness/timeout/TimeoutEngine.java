@@ -18,9 +18,9 @@ import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.iterator.PersistenceIterator;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorLoopModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
@@ -53,7 +53,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
-public class TimeoutEngine implements Handler<TimeoutInstance> {
+public class TimeoutEngine extends IteratorLoopModeHandler implements Handler<TimeoutInstance> {
   private static final Duration MAX_CALLBACK_PROCESSING_TIME = Duration.ofMinutes(1);
 
   @Inject private TimeoutInstanceRepository timeoutInstanceRepository;
@@ -61,11 +61,6 @@ public class TimeoutEngine implements Handler<TimeoutInstance> {
   @Inject private MongoTemplate mongoTemplate;
   @Inject private Injector injector;
   @Inject private TimeoutRegistry timeoutRegistry;
-
-  private PersistenceIterator<TimeoutInstance> iterator;
-
-  private static final ExecutorService executor =
-      Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("timeout-engine-iterator").build());
 
   public TimeoutInstance registerTimeout(@NotNull Dimension dimension, @NotNull TimeoutParameters timeoutParameters,
       @NotNull TimeoutCallback timeoutCallback) {
@@ -120,25 +115,38 @@ public class TimeoutEngine implements Handler<TimeoutInstance> {
     }
   }
 
-  public void registerIterators(IteratorConfig iteratorConfig) {
-    ExecutorService executorService =
-        ThreadPool.create(iteratorConfig.getThreadPoolCount(), iteratorConfig.getThreadPoolCount(), 30,
-            TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("TimeoutEngineHandler-%d").build());
-    iterator = persistenceIteratorFactory.createIterator(TimeoutEngine.class,
-        MongoPersistenceIterator.<TimeoutInstance, SpringFilterExpander>builder()
-            .mode(LOOP)
-            .iteratorName("TimeoutEngine")
-            .clazz(TimeoutInstance.class)
-            .fieldName(TimeoutInstanceKeys.nextIteration)
-            .targetInterval(ofSeconds(iteratorConfig.getTargetIntervalInSeconds()))
-            .acceptableNoAlertDelay(ofSeconds(10))
-            .acceptableExecutionTime(ofSeconds(10))
-            .executorService(executorService)
-            .semaphore(new Semaphore(iteratorConfig.getThreadPoolCount()))
-            .handler(this)
-            .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
-            .schedulingType(REGULAR));
+  @Override
+  public void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    executor =
+        Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("timeout-engine-iterator").build());
+    ExecutorService executorService = ThreadPool.create(executorOptions.getPoolSize(), executorOptions.getPoolSize(),
+        30, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("TimeoutEngineHandler-%d").build());
+    iterator =
+        (MongoPersistenceIterator<TimeoutInstance, SpringFilterExpander>) persistenceIteratorFactory.createIterator(
+            TimeoutEngine.class,
+            MongoPersistenceIterator.<TimeoutInstance, SpringFilterExpander>builder()
+                .mode(LOOP)
+                .iteratorName(iteratorName)
+                .clazz(TimeoutInstance.class)
+                .fieldName(TimeoutInstanceKeys.nextIteration)
+                .targetInterval(targetInterval)
+                .acceptableNoAlertDelay(ofSeconds(10))
+                .acceptableExecutionTime(ofSeconds(10))
+                .executorService(executorService)
+                .semaphore(new Semaphore(executorOptions.getPoolSize()))
+                .handler(this)
+                .persistenceProvider(new SpringPersistenceRequiredProvider<>(mongoTemplate))
+                .schedulingType(REGULAR));
     executor.submit(() -> iterator.process());
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "TimeoutEngine";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

@@ -1205,10 +1205,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     PageRequest pageRequest = aPageRequest()
-                                  .addFilter("appId", EQ, workflowExecution.getAppId())
-                                  .addFilter("workflowId", EQ, workflowExecution.getWorkflowId())
-                                  .addFilter("status", EQ, SUCCESS)
-                                  .addOrder("endTs", OrderType.DESC)
+                                  .addFilter(WorkflowExecutionKeys.appId, EQ, workflowExecution.getAppId())
+                                  .addFilter(WorkflowExecutionKeys.workflowId, EQ, workflowExecution.getWorkflowId())
+                                  .addFilter(WorkflowExecutionKeys.status, EQ, SUCCESS)
+                                  .addOrder(WorkflowExecutionKeys.endTs, OrderType.DESC)
                                   .withLimit("5")
                                   .build();
     List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);

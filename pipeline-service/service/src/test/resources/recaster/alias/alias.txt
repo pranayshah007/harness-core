@@ -69,6 +69,7 @@ io.harness.steps.shellscript.HarnessFileStoreSource
 parameterField
 io.harness.steps.approval.step.harness.HarnessApprovalOutcome
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.steps.approval.step.jira.beans.JexlCriteriaSpec
 io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters
 io.harness.pms.yaml.ParameterFieldValueWrapper
@@ -148,3 +149,16 @@ io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
+io.harness.steps.plugin.ContainerStepNode
+io.harness.steps.plugin.ContainerStepInfo
+io.harness.steps.plugin.ContainerStepInitOutcome
+io.harness.beans.yaml.extended.ImagePullPolicy
+io.harness.steps.plugin.ContainerStepParameters
+io.harness.beans.yaml.extended.volumes.EmptyDirYaml
+io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext
+io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities
+io.harness.beans.yaml.extended.volumes.HostPathYaml
+io.harness.steps.plugin.infrastructure.ContainerK8sInfra
+io.harness.beans.yaml.extended.infrastrucutre.OSType
+io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml
+io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration

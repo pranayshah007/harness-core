@@ -47,8 +47,8 @@ import static software.wings.service.impl.yaml.YamlProcessingLogContext.BRANCH_N
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.CHANGESET_ID;
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.GIT_CONNECTOR_ID;
 import static software.wings.service.impl.yaml.YamlProcessingLogContext.WEBHOOK_TOKEN;
-import static software.wings.yaml.gitSync.YamlGitConfig.BRANCH_NAME_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.BRANCH_NAME_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
@@ -151,9 +151,9 @@ import software.wings.yaml.gitSync.GitSyncWebhook.GitSyncWebhookKeys;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
-import software.wings.yaml.gitSync.YamlGitConfig.YamlGitConfigKeys;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.YamlGitConfigKeys;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.annotations.VisibleForTesting;
@@ -274,14 +274,14 @@ public class YamlGitServiceImpl implements YamlGitService {
         gitConfig.setBranch(ygs.getBranchName());
         if (EmptyPredicate.isNotEmpty(gitConfig.getSshSettingId())) {
           SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(gitConfig.getSshSettingId());
-          gitConfig.setSshSettingAttribute(settingAttributeForSshKey);
+          gitConfig.setSshSettingAttribute(settingAttributeForSshKey.toDTO());
         }
       }
     } else {
       // This is to support backward compatibility. Should be removed once we move to using gitConnector completely
       if (EmptyPredicate.isNotEmpty(ygs.getSshSettingId())) {
         SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(ygs.getSshSettingId());
-        gitConfig = ygs.getGitConfig(settingAttributeForSshKey);
+        gitConfig = ygs.getGitConfig(settingAttributeForSshKey.toDTO());
       } else {
         gitConfig = ygs.getGitConfig(null);
       }
@@ -676,7 +676,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                                         .gitFileChanges(gitFileChanges)
                                                         .forcePush(true)
                                                         .yamlChangeSetIds(yamlChangeSetIds)
-                                                        .yamlGitConfig(yamlGitConfig)
+                                                        .yamlGitConfig(yamlGitConfig.toDTO())
                                                         .lastProcessedGitCommit(lastProcessedGitCommitId)
                                                         .pushOnlyIfHeadSeen(pushOnlyIfHeadSeen)
                                                         .build()})
@@ -934,6 +934,14 @@ public class YamlGitServiceImpl implements YamlGitService {
   }
 
   @Override
+  public List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId) {
+    return wingsPersistence.createQuery(YamlGitConfig.class)
+        .filter(YamlGitConfigKeys.accountId, accountId)
+        .filter(GIT_CONNECTOR_ID_KEY, connectorId)
+        .asList();
+  }
+
+  @Override
   public List<String> getYamlGitConfigIds(
       String accountId, String gitConnectorId, String branchName, String repositoryName) {
     List<String> yamlGitConfigIds = new ArrayList<>();
@@ -1001,7 +1009,7 @@ public class YamlGitServiceImpl implements YamlGitService {
                                                     GitDiffRequest.builder()
                                                         .lastProcessedCommitId(processedCommit)
                                                         .endCommitId(getEndCommitId(headCommitId, accountId))
-                                                        .yamlGitConfig(yamlGitConfig)
+                                                        .yamlGitConfig(yamlGitConfig.toDTO())
                                                         .build(),
                                                     true /*excludeFilesOutsideSetupFolder */})
                                                 .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)

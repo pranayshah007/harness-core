@@ -23,7 +23,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.KmsConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -71,7 +71,7 @@ public class TerraformProvisionParametersTest extends WingsBaseTest {
   private void testWithGitConfigSSHConnection() {
     HostConnectionAttributes hostConnectionAttributes = new HostConnectionAttributes();
     hostConnectionAttributes.setSshPort(22);
-    SettingAttribute sshSettingAttribute = new SettingAttribute();
+    SettingAttribute sshSettingAttribute = SettingAttribute.builder().build();
     sshSettingAttribute.setValue(hostConnectionAttributes);
     TerraformProvisionParameters parameters =
         getTerraformProvisionParameters(true, "git@github.com:abc", sshSettingAttribute, null);

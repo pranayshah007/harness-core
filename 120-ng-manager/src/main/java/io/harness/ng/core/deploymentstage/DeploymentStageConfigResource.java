@@ -13,13 +13,14 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.stage.CDStageMetaDataDTO;
-import io.harness.cdng.creator.plan.stage.CDStageMetaDataDTO.CDStageMetaDataDTOBuilder;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CDStageMetaDataDTO.CDStageMetaDataDTOBuilder;
+import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;

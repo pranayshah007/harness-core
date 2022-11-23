@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import java.util.concurrent.Future;
 

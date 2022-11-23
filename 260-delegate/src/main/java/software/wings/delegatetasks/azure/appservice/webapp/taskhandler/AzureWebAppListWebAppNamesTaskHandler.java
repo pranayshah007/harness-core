@@ -20,9 +20,9 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppList
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
+import com.azure.resourcemanager.appservice.models.WebAppBasic;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.appservice.WebApp;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -45,13 +45,13 @@ public class AzureWebAppListWebAppNamesTaskHandler extends AbstractAzureWebAppTa
 
     AzureClientContext azureClientContext = new AzureClientContext(azureConfig, subscriptionId, resourceGroupName);
 
-    List<WebApp> webApps = azureWebClient.listWebAppsByResourceGroupName(azureClientContext);
+    List<WebAppBasic> webAppsBasic = azureWebClient.listWebAppsByResourceGroupName(azureClientContext);
 
-    return AzureWebAppListWebAppNamesResponse.builder().webAppNames(toWebAppNames(webApps)).build();
+    return AzureWebAppListWebAppNamesResponse.builder().webAppNames(toWebAppNames(webAppsBasic)).build();
   }
 
   @NotNull
-  private List<String> toWebAppNames(List<WebApp> webApps) {
-    return webApps.stream().map(WebApp::name).collect(Collectors.toList());
+  private List<String> toWebAppNames(List<WebAppBasic> webAppsBasic) {
+    return webAppsBasic.stream().map(WebAppBasic::name).collect(Collectors.toList());
   }
 }

@@ -29,6 +29,7 @@ import io.harness.batch.processing.config.BillingDataPipelineConfig;
 import io.harness.batch.processing.pricing.gcp.bigquery.BigQueryHelperServiceImpl;
 import io.harness.batch.processing.pricing.vmpricing.VMInstanceBillingData;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import com.google.cloud.bigquery.BigQuery;
@@ -64,6 +65,7 @@ public class BigQueryHelperServiceImplTest extends CategoryTest {
   @Mock BigQuery bigQuery;
   @Mock FieldValueList row;
   @Mock TableResult tableResult;
+  @Mock FeatureFlagService featureFlagService;
 
   private final String DATA_SET_ID = "dataSetId";
   private final String RESOURCE_ID = "resourceId1";
@@ -78,6 +80,8 @@ public class BigQueryHelperServiceImplTest extends CategoryTest {
   private final Instant NOW = Instant.now();
   private final Instant START_TIME = NOW.minus(1, ChronoUnit.HOURS);
   private final Instant END_TIME = NOW;
+
+  private final String ACCOUNT_ID = "AAAAAS6BRkSPKdIE5F";
 
   @Test
   @Owner(developers = HITESH)
@@ -120,7 +124,7 @@ public class BigQueryHelperServiceImplTest extends CategoryTest {
     resourceBillingData.put(RESOURCE_ID,
         VMInstanceBillingData.builder().resourceId(RESOURCE_ID).networkCost(10.0).computeCost(20.0).build());
     Map<String, VMInstanceBillingData> awsEC2BillingData =
-        bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID);
+        bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID, ACCOUNT_ID);
     assertThat(awsEC2BillingData).isEqualTo(resourceBillingData);
   }
 
@@ -165,7 +169,7 @@ public class BigQueryHelperServiceImplTest extends CategoryTest {
     resourceBillingData.put(RESOURCE_ID,
         VMInstanceBillingData.builder().resourceId(RESOURCE_ID).networkCost(10.0).computeCost(30.0).build());
     Map<String, VMInstanceBillingData> awsEC2BillingData =
-        bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID);
+        bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID, ACCOUNT_ID);
     assertThat(awsEC2BillingData).isEqualTo(resourceBillingData);
   }
 

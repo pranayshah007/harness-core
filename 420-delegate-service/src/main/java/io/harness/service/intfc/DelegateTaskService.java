@@ -17,6 +17,7 @@ import javax.validation.Valid;
 import org.mongodb.morphia.query.Query;
 
 public interface DelegateTaskService {
+  boolean isTaskTypeSupportedByAllDelegates(String accountId, String taskType);
   void touchExecutingTasks(String accountId, String delegateId, List<String> delegateTaskIds);
 
   void processDelegateResponse(

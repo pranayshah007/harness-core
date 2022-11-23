@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.ng.core.common.beans.ApiKeyType.SERVICE_ACCOUNT;
 import static io.harness.ng.core.common.beans.ApiKeyType.USER;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -159,6 +160,38 @@ public class TokenServiceImplTest extends NgManagerTestBase {
     assertThat(tokenString).startsWith(SERVICE_ACCOUNT.getValue());
     assertThat(tokenString.split("\\.")[1]).isEqualTo(token.getAccountIdentifier());
     assertThat(tokenString.split("\\.")[2]).isEqualTo(token.getUuid());
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testCreateToken_noDescription() {
+    TokenDTO dto = TokenDTO.builder()
+                       .accountIdentifier(accountIdentifier)
+                       .orgIdentifier(orgIdentifier)
+                       .name(randomAlphabetic(10))
+                       .projectIdentifier(projectIdentifier)
+                       .identifier(identifier)
+                       .parentIdentifier(parentIdentifier)
+                       .apiKeyIdentifier(randomAlphabetic(10))
+                       .apiKeyType(SERVICE_ACCOUNT)
+                       .scheduledExpireTime(Instant.now().toEpochMilli())
+                       .tags(new HashMap<>())
+                       .build();
+    ApiKey apiKey = ApiKey.builder().defaultTimeToExpireToken(Duration.ofDays(2).toMillis()).build();
+    apiKey.setUuid(randomAlphabetic(10));
+    doReturn(apiKey).when(apiKeyService).getApiKey(any(), any(), any(), any(), any(), any());
+    AccountDTO accountDTO =
+        AccountDTO.builder()
+            .serviceAccountConfig(ServiceAccountConfig.builder().apiKeyLimit(5).tokenLimit(5).build())
+            .build();
+    doReturn(accountDTO).when(accountService).getAccount(any());
+    Token newToken = TokenDTOMapper.getTokenFromDTO(dto, Duration.ofDays(2).toMillis());
+    newToken.setUuid(randomAlphabetic(10));
+    doReturn(newToken).when(tokenRepository).save(any());
+    String tokenString = tokenService.createToken(dto);
+    assertThat(tokenString).isNotEmpty();
+    assertThat(newToken.getDescription()).isNull();
   }
 
   @Test

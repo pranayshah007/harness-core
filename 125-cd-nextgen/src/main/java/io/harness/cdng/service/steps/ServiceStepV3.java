@@ -533,6 +533,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
       manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
+        log.info("Deployment Freeze is Active for the given service.");
         sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
             FreezeOutcome.builder()
                 .frozen(true)
@@ -540,12 +541,13 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                 .globalFreezeConfigs(globalFreezeConfigs)
                 .build(),
             "");
+        log.info("Adding Children as empty.");
+        return ChildrenExecutableResponse.newBuilder()
+            .addAllLogKeys(CollectionUtils.emptyIfNull(
+                StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
+            .addAllChildren(Collections.emptyList())
+            .build();
       }
-      return ChildrenExecutableResponse.newBuilder()
-          .addAllLogKeys(CollectionUtils.emptyIfNull(
-              StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
-          .addAllChildren(Collections.emptyList())
-          .build();
     }
     return null;
   }

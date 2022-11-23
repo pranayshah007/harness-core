@@ -15,7 +15,7 @@ public class BQConst {
   private BQConst() {}
 
   public static final String AWS_EC2_BILLING_QUERY =
-      "SELECT SUM(unblendedcost) as cost, sum(effectivecost) as effectivecost, resourceid, servicecode, productfamily  "
+      "SELECT SUM(unblendedcost) as cost, sum(effectivecost) as effectivecost, sum(amortisedCost) as amortisedCost, sum(netAmortisedCost) as netAmortisedCost, resourceid, servicecode, productfamily  "
       + "FROM `%s` "
       + "WHERE resourceid IN "
       + "( '%s' )  AND "
@@ -78,6 +78,8 @@ public class BQConst {
   public static final String azureRate = "azureRate";
   public static final String gcpRate = "gcpRate";
   public static final String effectiveCost = "effectivecost";
+  public static final String amortisedCost = "amortisedCost";
+  public static final String netAmortisedCost = "netAmortisedCost";
   public static final String resourceId = "resourceid";
   public static final String count = "count";
   public static final String billingAmountSum = "billingamountsum";

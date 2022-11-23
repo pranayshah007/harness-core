@@ -149,6 +149,12 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
     } catch (Exception ex) {
+      if (ex instanceof NullPointerException) {
+        log.error(format(
+            "Schema validation thrown NullPointerException. Please check the generated schema for account: %s, org: %s, project: %s",
+            accountIdentifier, orgId, projectId));
+        return;
+      }
       log.error(ex.getMessage(), ex);
       throw new JsonSchemaValidationException(ex.getMessage(), ex);
     }

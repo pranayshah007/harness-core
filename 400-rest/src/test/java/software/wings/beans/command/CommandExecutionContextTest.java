@@ -72,7 +72,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesK8sWithDelegate() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.KUBERNETES.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(true))
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(true).toDTO())
             .build();
 
     List<ExecutionCapability> executionCapabilities = executionContext.fetchRequiredExecutionCapabilities(null);
@@ -86,7 +86,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesWinrm() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.WINRM.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute())
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute().toDTO())
             .build();
 
     List<ExecutionCapability> executionCapabilities = executionContext.fetchRequiredExecutionCapabilities(null);
@@ -100,7 +100,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesWithDelegateSelectorsWinrm() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.WINRM.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute())
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainWinrmSettingAttribute().toDTO())
             .delegateSelectors(Arrays.asList("selector1", "selector2", "selector3"))
             .executeOnDelegate(false)
             .build();
@@ -117,7 +117,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesSSH() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.SSH.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute())
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute().toDTO())
             .executionCredential(aSSHExecutionCredential().withSshUser(USER_NAME).withSshPassword(PASSWORD).build())
             .build();
 
@@ -132,7 +132,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void shouldFetchRequiredExecutionCapabilitiesWithDelegateSelectorsSSH() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.SSH.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute())
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainSshSettingAttribute().toDTO())
             .executionCredential(aSSHExecutionCredential().withSshUser(USER_NAME).withSshPassword(PASSWORD).build())
             .delegateSelectors(Arrays.asList("selector1", "selector2", "selector3"))
             .executeOnDelegate(true)
@@ -208,7 +208,7 @@ public class CommandExecutionContextTest extends WingsBaseTest {
   public void testFetchRequiredExecutionCapabilitiesK8sWithParams() {
     CommandExecutionContext executionContext =
         contextBuilder.deploymentType(DeploymentType.KUBERNETES.name())
-            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(false))
+            .cloudProviderSetting(SettingAttributeTestHelper.obtainKubernetesClusterSettingAttribute(false).toDTO())
             .containerSetupParams(aKubernetesSetupParams().withMasterUrl(MASTER_URL).build())
             .build();
 

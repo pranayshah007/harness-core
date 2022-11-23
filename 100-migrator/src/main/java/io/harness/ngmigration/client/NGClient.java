@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.service.dto.ServiceResponse;
@@ -84,4 +85,8 @@ public interface NGClient {
   @POST("variables")
   Call<ResponseDTO<ConnectorResponseDTO>> createVariable(@Header("Authorization") String auth,
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body JsonNode variableRequestDTO);
+
+  @POST("user-groups")
+  Call<ResponseDTO<UserGroupDTO>> createUserGroup(@Header("Authorization") String auth,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier, @Body UserGroupDTO userGroupDTO);
 }

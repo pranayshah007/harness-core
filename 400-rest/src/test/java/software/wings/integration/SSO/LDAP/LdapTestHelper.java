@@ -61,7 +61,7 @@ import javax.ws.rs.client.WebTarget;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 public class LdapTestHelper {
-  static LdapSettings buildLdapSettings() {
+  public static LdapSettings buildLdapSettings() {
     LdapSettings ldapSettings;
     LdapConnectionSettings connectionSettings;
     LdapUserSettings ldapUserSettings;

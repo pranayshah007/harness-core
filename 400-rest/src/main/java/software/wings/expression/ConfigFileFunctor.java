@@ -12,7 +12,7 @@ import static software.wings.expression.SecretManagerFunctorInterface.obtainConf
 import io.harness.data.encoding.EncodingUtils;
 import io.harness.exception.FunctorException;
 import io.harness.expression.ExpressionEvaluatorUtils;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import software.wings.beans.ConfigFile;
 import software.wings.service.intfc.ConfigService;

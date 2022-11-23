@@ -74,7 +74,7 @@ import software.wings.yaml.gitSync.GitFileActivity.TriggeredBy;
 import software.wings.yaml.gitSync.GitFileProcessingSummary;
 import software.wings.yaml.gitSync.GitWebhookRequestAttributes;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -586,7 +586,7 @@ public class GitSyncServiceImpl implements GitSyncService {
   }
 
   private GitFileActivityBuilder buildBaseGitFileActivity(GitFileChange change, String commitId, String commitMessage) {
-    YamlGitConfig gitConfig = change.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig gitConfig = change.getYamlGitConfig();
     String commitIdToPersist = StringUtils.isEmpty(commitId) ? change.getCommitId() : commitId;
     String processingCommitIdToPersist = StringUtils.isEmpty(commitId) ? change.getProcessingCommitId() : commitId;
     String commitMessageToPersist = StringUtils.isEmpty(commitMessage) ? change.getCommitMessage() : commitMessage;

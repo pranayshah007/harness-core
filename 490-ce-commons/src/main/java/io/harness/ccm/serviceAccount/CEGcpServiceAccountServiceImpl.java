@@ -73,7 +73,7 @@ public class CEGcpServiceAccountServiceImpl implements CEGcpServiceAccountServic
     if (gcpServiceAccount == null) {
       log.info("Creating gcpServiceAccount");
       CEGcpServiceAccount ceGcpServiceAccount = create(accountId, ccmProjectId);
-      log.info("Created gcpServiceAccount");
+      log.info("Created gcpServiceAccount.");
       gcpServiceAccountService.setIamPolicies(ceGcpServiceAccount.getEmail());
       // https://cloud.google.com/pubsub/docs/access-control
       String[] roles = {"roles/bigquery.admin", "roles/pubsub.admin"};

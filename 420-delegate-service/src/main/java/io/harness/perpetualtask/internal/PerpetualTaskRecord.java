@@ -73,6 +73,12 @@ public class PerpetualTaskRecord
                  .field(PerpetualTaskRecordKeys.state)
                  .field(PerpetualTaskRecordKeys.assignIteration)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("state_assignIteration_assignAfterMs")
+                 .field(PerpetualTaskRecordKeys.state)
+                 .field(PerpetualTaskRecordKeys.assignIteration)
+                 .field(PerpetualTaskRecordKeys.assignAfterMs)
+                 .build())
         .build();
   }
 

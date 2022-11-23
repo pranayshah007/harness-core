@@ -168,7 +168,7 @@ public class ContainerDeploymentManagerHelper {
         secretManager.getEncryptionDetails((EncryptableSetting) settingAttribute.getValue(),
             containerInfraMapping.getAppId(), context != null ? context.getWorkflowExecutionId() : null);
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .containerServiceName(containerServiceName)
         .encryptionDetails(encryptionDetails)
         .clusterName(clusterName)

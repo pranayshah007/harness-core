@@ -68,15 +68,15 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldListApplication() {
-    awsCodeDeployService.listApplications(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList())
+    awsCodeDeployService.listApplications(Regions.US_EAST_1.getName(), cloudProvider.toDTO(), Collections.emptyList())
         .forEach(application -> { log.info(application.toString()); });
 
     awsCodeDeployService
-        .listDeploymentGroup(Regions.US_EAST_1.getName(), "todolistwar", cloudProvider, Collections.emptyList())
+        .listDeploymentGroup(Regions.US_EAST_1.getName(), "todolistwar", cloudProvider.toDTO(), Collections.emptyList())
         .forEach(dg -> { log.info(dg.toString()); });
 
     awsCodeDeployService
-        .listDeploymentConfiguration(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList())
+        .listDeploymentConfiguration(Regions.US_EAST_1.getName(), cloudProvider.toDTO(), Collections.emptyList())
         .forEach(dc -> { log.info(dc.toString()); });
 
     CreateDeploymentRequest createDeploymentRequest =
@@ -90,8 +90,8 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
                     .withBundleType("zip")
                     .withKey("todolist_war/19/codedeploysample.zip")));
     CodeDeployDeploymentInfo codeDeployDeploymentInfo =
-        awsCodeDeployService.deployApplication(Regions.US_EAST_1.getName(), cloudProvider, Collections.emptyList(),
-            createDeploymentRequest, new ExecutionLogCallback(), 10);
+        awsCodeDeployService.deployApplication(Regions.US_EAST_1.getName(), cloudProvider.toDTO(),
+            Collections.emptyList(), createDeploymentRequest, new ExecutionLogCallback(), 10);
     log.info(codeDeployDeploymentInfo.toString());
   }
 
@@ -101,8 +101,8 @@ public class AwsCodeDeployServiceTest extends WingsBaseTest {
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldListApplicationRevisions() {
     log.info(awsCodeDeployService
-                 .getApplicationRevisionList(Regions.US_EAST_1.getName(), "todolistwar", "todolistwarDG", cloudProvider,
-                     Collections.emptyList())
+                 .getApplicationRevisionList(Regions.US_EAST_1.getName(), "todolistwar", "todolistwarDG",
+                     cloudProvider.toDTO(), Collections.emptyList())
                  .toString());
   }
 }
