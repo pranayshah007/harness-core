@@ -46,8 +46,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class TasConnectorValidationParamsProviderTest extends CategoryTest {
   public static final HashSet<String> DELEGATE_SELECTORS = Sets.newHashSet("delegateGroup1, delegateGroup2");
-  private static final String accountId = "accountId";
-  private static final String apiTokenRef = "apiTokenRef";
   private static final String URL = "endpoint_url";
 
   @InjectMocks private TasConnectorValidationParamsProvider tasConnectorValidationParamsProvider;
