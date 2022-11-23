@@ -10,13 +10,14 @@ package io.harness.subscription.services;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.entities.StripeCustomer;
+import io.harness.subscription.params.SubscriptionCreateParams;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
@@ -29,7 +30,7 @@ public interface SubscriptionService {
   void payInvoice(String invoiceId);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
-  SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO);
+  SubscriptionDetailDTO createFfSubscription(SubscriptionCreateParams subscriptionParams);
   SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId);
@@ -38,6 +39,7 @@ public interface SubscriptionService {
   boolean checkSubscriptionExists(String subscriptionId);
   List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
 
+  StripeCustomer getOrCreateCustomer(String accountIdentifier, CustomerDTO customer);
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
   CustomerDetailDTO getStripeCustomer(String accountIdentifier);
