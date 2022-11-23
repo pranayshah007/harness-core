@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.azure.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.VM_PROVISIONING_SUCCEEDED_STATUS;
 import static io.harness.delegate.task.azure.request.AzureVMSSTaskParameters.AzureVMSSTaskType.AZURE_VMSS_SWITCH_ROUTE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.IVAN;
@@ -42,6 +43,8 @@ import software.wings.beans.command.ExecutionLogCallback;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.Response;
 import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.compute.models.InstanceViewStatus;
+import com.azure.resourcemanager.compute.models.VirtualMachineInstanceView;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVMs;
@@ -118,10 +121,10 @@ public class AzureVMSSSwitchRouteTaskHandlerTest extends WingsBaseTest {
     VirtualMachineScaleSet newVirtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
     VirtualMachineScaleSetVM newVirtualMachineScaleSetVM = mock(VirtualMachineScaleSetVM.class);
     doReturn("1").when(newVirtualMachineScaleSetVM).instanceId();
+
     VirtualMachineScaleSetVMs newVirtualMachineScaleSetVMs = mock(VirtualMachineScaleSetVMs.class);
 
     List<VirtualMachineScaleSetVM> responseList = new ArrayList<>();
-    responseList.add(newVirtualMachineScaleSetVM);
     Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
     doReturn(newVirtualMachineScaleSetVMs).when(newVirtualMachineScaleSet).virtualMachines();
     doReturn("VM-1").when(newVirtualMachineScaleSetVM).name();
@@ -132,6 +135,15 @@ public class AzureVMSSSwitchRouteTaskHandlerTest extends WingsBaseTest {
     VirtualMachineScaleSet oldVirtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
     VirtualMachineScaleSetVM oldVirtualMachineScaleSetVM = mock(VirtualMachineScaleSetVM.class);
     doReturn("old1").when(oldVirtualMachineScaleSetVM).instanceId();
+
+    VirtualMachineInstanceView mockOldVirtualMachineInstanceView = mock(VirtualMachineInstanceView.class);
+    doReturn(mockOldVirtualMachineInstanceView).when(oldVirtualMachineScaleSetVM).instanceView();
+    List<InstanceViewStatus> mockOldStatuses = new ArrayList<>();
+    InstanceViewStatus mockOldInstanceViewStatus = mock(InstanceViewStatus.class);
+    doReturn(VM_PROVISIONING_SUCCEEDED_STATUS).when(mockOldInstanceViewStatus).displayStatus();
+    mockOldStatuses.add(mockOldInstanceViewStatus);
+    doReturn(mockOldStatuses).when(mockOldVirtualMachineInstanceView).statuses();
+
     doReturn("/subscription/old-vm-is/-1").when(oldVirtualMachineScaleSetVM).id();
     VirtualMachineScaleSetVMs oldVirtualMachineScaleSetVMs = mock(VirtualMachineScaleSetVMs.class);
     List<VirtualMachineScaleSetVM> oldPageList = new ArrayList<>();
