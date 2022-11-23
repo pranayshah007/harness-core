@@ -43,13 +43,6 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
   public static final String VARIABLE_KEY = "terraform";
   @NotEmpty private String sourceRepoSettingId;
   private TerraformSourceType sourceType;
-  public boolean provisionByS3Uri() {
-    return S3_URI.name().equals(sourceType);
-  }
-  public boolean provisionByGit() {
-    return GIT.name().equals(sourceType);
-  }
-
   /**
    * This could be either a branch or a commit id or any other reference which
    * can be checked out.
