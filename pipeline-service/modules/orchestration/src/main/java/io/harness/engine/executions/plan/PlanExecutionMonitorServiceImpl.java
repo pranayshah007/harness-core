@@ -26,7 +26,7 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String ACTIVE_EXECUTION_COUNT_METRIC_NAME = "active_execution_count";
+  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private MetricService metricService;
@@ -35,29 +35,25 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
   public void registerActiveExecutionMetrics() {
     List<PlanExecution> planExecutions = planExecutionService.findByStatusWithProjections(
         StatusUtils.activeStatuses(), ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata));
-    Map<PlanExecutionMetric, Integer> metricMap = new HashMap<>();
+    Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
 
     for (PlanExecution planExecution : planExecutions) {
-      PlanExecutionMetric planExecutionMetric =
-          PlanExecutionMetric.builder()
+      PipelineExecutionMetric planExecutionMetric =
+          PipelineExecutionMetric.builder()
               .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-              .orgIdentifier(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.orgIdentifier))
-              .projectId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.projectIdentifier))
               .build();
 
       metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
     }
 
-    for (Map.Entry<PlanExecutionMetric, Integer> entry : metricMap.entrySet()) {
+    for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
               .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
-              .put(PmsEventMonitoringConstants.ORG_ID, entry.getKey().getOrgIdentifier())
-              .put(PmsEventMonitoringConstants.PROJECT_ID, entry.getKey().getProjectId())
               .build();
 
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.recordMetric(ACTIVE_EXECUTION_COUNT_METRIC_NAME, entry.getValue());
+        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
       }
     }
   }

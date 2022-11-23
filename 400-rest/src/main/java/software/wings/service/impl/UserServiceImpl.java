@@ -434,7 +434,7 @@ public class UserServiceImpl implements UserService {
 
   public io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm) {
-    User user = get(userId);
+    User user = get(userId, true);
     Account defaultAccount = null;
     List<Account> userAccounts = user.getAccounts();
     for (Account account : userAccounts) {
@@ -1027,6 +1027,25 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
+  public User getUserByEmail(String email, boolean loadSupportAccounts) {
+    User user = null;
+    if (isNotEmpty(email)) {
+      user = wingsPersistence.createQuery(User.class).filter(UserKeys.email, email.trim().toLowerCase()).get();
+      if (loadSupportAccounts) {
+        loadSupportAccounts(user);
+      }
+      if (user != null && isEmpty(user.getAccounts())) {
+        user.setAccounts(newArrayList());
+      }
+      if (user != null && isEmpty(user.getPendingAccounts())) {
+        user.setPendingAccounts(newArrayList());
+      }
+    }
+
+    return user;
+  }
+
+  @Override
   public User getUserByEmail(String email) {
     User user = null;
     if (isNotEmpty(email)) {
@@ -1465,6 +1484,7 @@ public class UserServiceImpl implements UserService {
 
     if (!isInviteAcceptanceRequired || isPLNoEmailForSamlAccountInvitesEnabled) {
       addUserToUserGroups(accountId, user, userGroups, false, true);
+      userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     }
     boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
 
@@ -3087,7 +3107,8 @@ public class UserServiceImpl implements UserService {
     return query.asList();
   }
 
-  private void loadSupportAccounts(User user) {
+  @Override
+  public void loadSupportAccounts(User user) {
     if (user == null) {
       return;
     }
@@ -3167,7 +3188,7 @@ public class UserServiceImpl implements UserService {
     }
     if (user == null) {
       log.info("User [{}] not found in Cache. Load it from DB", userId);
-      user = get(userId);
+      user = get(userId, true);
       try {
         userCache.put(user.getUuid(), user);
       } catch (Exception ex) {

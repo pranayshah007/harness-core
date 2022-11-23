@@ -205,7 +205,7 @@ public class S3BucketResource {
   @Path("v2/getFilePaths")
   @ApiOperation(value = "Gets s3 file paths", nickname = "getFilePathsV2ForS3")
   public ResponseDTO<List<FilePathDTO>> getFilePathsForServiceV2(@QueryParam("region") String region,
-      @QueryParam("connectorRef") String awsConnectorIdentifier, @NotNull @QueryParam("bucketName") String bucketName,
+      @QueryParam("connectorRef") String awsConnectorIdentifier, @QueryParam("bucketName") String bucketName,
       @QueryParam("filePathRegex") String filePathRegex,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

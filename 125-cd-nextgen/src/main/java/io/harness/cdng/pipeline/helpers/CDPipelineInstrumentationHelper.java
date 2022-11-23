@@ -31,28 +31,20 @@ import static io.harness.cdng.instrumentation.ServiceInstrumentationConstants.SE
 import static io.harness.cdng.instrumentation.ServiceInstrumentationConstants.SERVICE_USED_SERVICE_ID;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
-import static org.jooq.impl.DSL.row;
-
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.dtos.InstanceDTO;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.service.instance.InstanceService;
 import io.harness.telemetry.TelemetryReporter;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.Row3;
 
 @Slf4j
 @Singleton
@@ -60,63 +52,8 @@ public class CDPipelineInstrumentationHelper {
   @Inject InstanceService instanceService;
   @Inject TelemetryReporter telemetryReporter;
 
-  public long getTotalNumberOfActiveServices(List<InstanceDTO> serviceInstances) {
-    return getActiveServices(serviceInstances).length;
-  }
-
-  public List<InstanceDTO> getServiceInstancesInInterval(
-      String accountIdentifier, long startInterval, long endInterval) {
-    return getServiceInstancesInInterval(accountIdentifier, null, null, startInterval, endInterval);
-  }
-
-  public List<InstanceDTO> getServiceInstancesInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startInterval, long endInterval) {
-    List<InstanceDTO> totalServiceInstances = new ArrayList<>();
-    try {
-      if (EmptyPredicate.isEmpty(organizationId) && EmptyPredicate.isEmpty(projectId)) {
-        totalServiceInstances.addAll(
-            instanceService.getInstancesDeployedInInterval(accountIdentifier, startInterval, endInterval));
-      } else {
-        totalServiceInstances.addAll(instanceService.getInstancesDeployedInInterval(
-            accountIdentifier, organizationId, projectId, startInterval, endInterval));
-      }
-    } catch (Exception e) {
-      log.error("Problem with retrieving service instances list.", e);
-    }
-
-    return totalServiceInstances;
-  }
-
-  public Row3<String, String, String>[] getActiveServices(List<InstanceDTO> serviceInstances) {
-    return getOrgProjectServiceRows(serviceInstances);
-  }
-
-  Row3<String, String, String>[] getOrgProjectServiceRows(List<InstanceDTO> instanceDTOList) {
-    try {
-      Map<String, UniqueServiceEntityId> uniqueServiceEntityIdMap =
-          instanceDTOList.stream().collect(Collectors.toMap(this::getUniqueServiceOrgProjectId,
-              instanceDTO1
-              -> new UniqueServiceEntityId(instanceDTO1.getServiceIdentifier(), instanceDTO1.getProjectIdentifier(),
-                  instanceDTO1.getOrgIdentifier()),
-              (entry1, entry2) -> entry1));
-
-      Row3<String, String, String>[] orgProjectServiceRows = new Row3[uniqueServiceEntityIdMap.size()];
-
-      int index = 0;
-      for (UniqueServiceEntityId uniqueServiceEntityId : uniqueServiceEntityIdMap.values()) {
-        orgProjectServiceRows[index++] = row(uniqueServiceEntityId.getOrgIdentifier(),
-            uniqueServiceEntityId.getProjectIdentifier(), uniqueServiceEntityId.getServiceIdentifier());
-      }
-      return orgProjectServiceRows;
-    } catch (Exception e) {
-      log.error("Problem with handling service instances list.", e);
-    }
-    return new Row3[0];
-  }
-
-  private String getUniqueServiceOrgProjectId(InstanceDTO instanceDTO) {
-    return String.join(
-        "&", instanceDTO.getOrgIdentifier(), instanceDTO.getProjectIdentifier(), instanceDTO.getServiceIdentifier());
+  public long getCountOfServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return getCountOfServiceInstancesDeployedInInterval(accountId, null, null, startTS, endTS);
   }
 
   public long getCountOfServiceInstancesDeployedInInterval(
@@ -127,21 +64,13 @@ public class CDPipelineInstrumentationHelper {
     return instanceService.countServiceInstancesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
   }
 
+  public long getCountOfDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS) {
+    return instanceService.countDistinctActiveServicesDeployedInInterval(accountId, startTS, endTS);
+  }
+
   public long getCountOfDistinctActiveServicesDeployedInInterval(
       String accountId, String orgId, String projectId, long startTS, long endTS) {
     return instanceService.countDistinctActiveServicesDeployedInInterval(accountId, orgId, projectId, startTS, endTS);
-  }
-
-  private class UniqueServiceEntityId {
-    @Getter private final String serviceIdentifier;
-    @Getter private final String projectIdentifier;
-    @Getter private final String orgIdentifier;
-
-    private UniqueServiceEntityId(String serviceIdentifier, String projectIdentifier, String orgIdentifier) {
-      this.serviceIdentifier = serviceIdentifier;
-      this.projectIdentifier = projectIdentifier;
-      this.orgIdentifier = orgIdentifier;
-    }
   }
 
   public void sendCountOfDistinctActiveServicesEvent(String pipelineId, String identity, String accountId,

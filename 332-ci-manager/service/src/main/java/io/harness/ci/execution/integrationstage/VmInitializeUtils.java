@@ -250,9 +250,13 @@ public class VmInitializeUtils {
   }
 
   public static OSType getOS(Infrastructure infrastructure) {
-    // Only linux is supported now for runs on infrastructure
     Infrastructure.Type infraType = infrastructure.getType();
     if (infraType == Infrastructure.Type.HOSTED_VM) {
+      HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) infrastructure;
+      ParameterField<Platform> platform = hostedVmInfraYaml.getSpec().getPlatform();
+      if (platform != null && platform.getValue() != null) {
+        return resolveOSType(platform.getValue().getOs());
+      }
       return OSType.Linux;
     }
 

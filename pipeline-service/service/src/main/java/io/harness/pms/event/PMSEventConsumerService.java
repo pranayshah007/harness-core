@@ -12,9 +12,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.pms.event.entitycrud.PMSEntityCRUDStreamConsumer;
-import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
@@ -31,10 +29,8 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PMSEventConsumerService implements Managed {
   @Inject private PMSEntityCRUDStreamConsumer entityCRUDStreamConsumer;
-  @Inject private PollingEventStreamConsumer pollingEventStreamConsumer;
 
   private ExecutorService entityCRUDConsumerService;
-  private ExecutorService pollingEventConsumerService;
 
   @Override
   public void start() {
@@ -47,9 +43,5 @@ public class PMSEventConsumerService implements Managed {
   public void stop() throws InterruptedException {
     entityCRUDConsumerService.shutdownNow();
     entityCRUDConsumerService.awaitTermination(ENTITY_CRUD_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
-
-    pollingEventConsumerService.shutdownNow();
-    pollingEventConsumerService.awaitTermination(
-        EventsFrameworkConstants.POLLING_EVENTS_STREAM_MAX_PROCESSING_TIME.getSeconds(), TimeUnit.SECONDS);
   }
 }

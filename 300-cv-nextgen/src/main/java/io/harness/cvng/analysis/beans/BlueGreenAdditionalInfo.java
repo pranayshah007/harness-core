@@ -7,6 +7,9 @@
 
 package io.harness.cvng.analysis.beans;
 
+import static io.harness.cvng.analysis.CVAnalysisConstants.AFTER;
+import static io.harness.cvng.analysis.CVAnalysisConstants.BEFORE;
+
 import io.harness.cvng.beans.job.VerificationJobType;
 
 import lombok.Data;
@@ -22,7 +25,7 @@ public class BlueGreenAdditionalInfo extends CanaryBlueGreenAdditionalInfo {
 
   @Override
   public void setFieldNames() {
-    this.setCanaryInstancesLabel("green");
-    this.setPrimaryInstancesLabel("blue");
+    this.setCanaryInstancesLabel(AFTER);
+    this.setPrimaryInstancesLabel(BEFORE);
   }
 }

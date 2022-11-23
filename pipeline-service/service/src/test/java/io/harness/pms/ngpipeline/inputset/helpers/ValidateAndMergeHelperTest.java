@@ -68,7 +68,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
     doReturn(Optional.of(pipelineEntity))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     String pipelineTemplate = validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId, pipelineId, null);
     assertThat(pipelineTemplate).isEqualTo(pipelineYaml);
 
@@ -78,7 +78,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
 
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     assertThatThrownBy(() -> validateAndMergeHelper.getPipelineTemplate(accountId, orgId, projectId, pipelineId, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist or has been deleted.",

@@ -59,8 +59,13 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
+  //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
+  Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean loadFromFallbackBranch);
+
   /**
    * Get pipeline whether inline or remote (old/new git exp)
+   *
    * @param accountId
    * @param orgIdentifier
    * @param projectIdentifier
@@ -71,6 +76,9 @@ public interface PMSPipelineService {
    */
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnly);
+
+  Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch);
 
   /**
    * Update pipeline (inline/remote) after doing validation - template resolution,

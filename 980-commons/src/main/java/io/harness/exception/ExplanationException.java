@@ -53,6 +53,7 @@ public class ExplanationException extends WingsException {
   public static String AZURE_SM_VAULT_ENGINE_FETCH_ERROR =
       "One or more of Client Id, Subscription, Tenant ID and Secret key is/are invalid.";
   public static String INVALID_PARAMETER = "The credentials provided are incorrect.";
+  public static String AZURE_INVALID = "There was an issue with Azure.";
 
   // GIT
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";

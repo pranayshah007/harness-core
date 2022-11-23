@@ -9,6 +9,7 @@ package io.harness.eventpublisherclient;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.exception.KeyManagerBuilderException;
 import io.harness.exception.SslContextBuilderException;
 import io.harness.managerclient.DelegateAuthInterceptor;
@@ -46,10 +47,11 @@ import retrofit2.converter.protobuf.ProtoConverterFactory;
 @Singleton
 @OwnedBy(HarnessTeam.CE)
 public class EventPublisherClientFactory implements Provider<EventPublisherClient> {
-  @Inject private VersionInfoManager versionInfoManager;
-  @Inject private DelegateKryoConverterFactory kryoConverterFactory;
   private static final String CCM_EVENT_SERVICE_ENDPOINT = "ccmevent/";
+  private static final String SUBSTRING_TO_REMOVE_FROM_MANAGER_URL = "api";
 
+  private final VersionInfoManager versionInfoManager;
+  private final DelegateKryoConverterFactory kryoConverterFactory;
   private final String baseUrl;
   private final TokenGenerator tokenGenerator;
   private final String clientCertificateFilePath;
@@ -57,13 +59,17 @@ public class EventPublisherClientFactory implements Provider<EventPublisherClien
   private final boolean trustAllCertificates;
   private final OkHttpClient httpClient;
 
-  public EventPublisherClientFactory(String managerBaseUrl, TokenGenerator tokenGenerator,
-      String clientCertificateFilePath, String clientCertificateKeyFilePath, boolean trustAllCertificates) {
-    this.baseUrl = getCcmEventServiceEndpoint(managerBaseUrl);
+  @Inject
+  public EventPublisherClientFactory(final DelegateConfiguration configuration,
+      final VersionInfoManager versionInfoManager, final DelegateKryoConverterFactory kryoConverterFactory,
+      final TokenGenerator tokenGenerator) {
+    this.versionInfoManager = versionInfoManager;
+    this.kryoConverterFactory = kryoConverterFactory;
+    this.baseUrl = getCcmEventServiceEndpoint(configuration.getManagerUrl());
     this.tokenGenerator = tokenGenerator;
-    this.clientCertificateFilePath = clientCertificateFilePath;
-    this.clientCertificateKeyFilePath = clientCertificateKeyFilePath;
-    this.trustAllCertificates = trustAllCertificates;
+    this.clientCertificateFilePath = configuration.getClientCertificateFilePath();
+    this.clientCertificateKeyFilePath = configuration.getClientCertificateKeyFilePath();
+    this.trustAllCertificates = configuration.isTrustAllCertificates();
     this.httpClient = this.trustAllCertificates ? this.getUnsafeOkHttpClient() : this.getSafeOkHttpClient();
   }
 
@@ -139,7 +145,16 @@ public class EventPublisherClientFactory implements Provider<EventPublisherClien
         .build();
   }
 
-  private String getCcmEventServiceEndpoint(String managerBaseUrl) {
-    return managerBaseUrl.substring(0, managerBaseUrl.lastIndexOf('/')) + CCM_EVENT_SERVICE_ENDPOINT;
+  // This is added because we don't want to have an entry in delegate config for CCMEventService
+  private static String getCcmEventServiceEndpoint(String managerBaseUrl) {
+    int lastIndex = managerBaseUrl.lastIndexOf(SUBSTRING_TO_REMOVE_FROM_MANAGER_URL);
+    if (lastIndex == -1) {
+      if (!managerBaseUrl.endsWith("/")) {
+        managerBaseUrl += "/";
+      }
+    } else {
+      managerBaseUrl = managerBaseUrl.substring(0, lastIndex);
+    }
+    return managerBaseUrl + CCM_EVENT_SERVICE_ENDPOINT;
   }
 }

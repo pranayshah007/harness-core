@@ -7,6 +7,11 @@
 
 package io.harness.delegate.task.artifacts.mappers;
 
+import static io.harness.azure.model.AzureConstants.DEFAULT_CERT_FILE_NAME;
+import static io.harness.filesystem.FileIo.writeFile;
+
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.beans.BuildDetailsInternal;
@@ -26,28 +31,32 @@ import io.harness.delegate.beans.connector.azureconnector.AzureUserAssignedMSIAu
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import java.io.IOException;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class AcrRequestResponseMapper {
-  public AzureConfig toAzureInternalConfig(
-      AcrArtifactDelegateRequest acrArtifactDelegateRequest, SecretDecryptionService secretDecryptionService) {
+  public AzureConfig toAzureInternalConfig(AcrArtifactDelegateRequest acrArtifactDelegateRequest,
+      SecretDecryptionService secretDecryptionService, LazyAutoCloseableWorkingDirectory workingDir)
+      throws IOException {
     AzureCredentialDTO credential = acrArtifactDelegateRequest.getAzureConnectorDTO().getCredential();
     List<EncryptedDataDetail> encryptedDataDetails = acrArtifactDelegateRequest.getEncryptedDataDetails();
     AzureCredentialType azureCredentialType = credential.getAzureCredentialType();
     AzureEnvironmentType azureEnvironmentType =
         acrArtifactDelegateRequest.getAzureConnectorDTO().getAzureEnvironmentType();
-    return toAzureInternalConfig(
-        credential, encryptedDataDetails, azureCredentialType, azureEnvironmentType, secretDecryptionService);
+    return toAzureInternalConfig(credential, encryptedDataDetails, azureCredentialType, azureEnvironmentType,
+        secretDecryptionService, workingDir);
   }
   public AzureConfig toAzureInternalConfig(AzureCredentialDTO credential,
       List<EncryptedDataDetail> encryptedDataDetails, AzureCredentialType azureCredentialType,
-      AzureEnvironmentType azureEnvironmentType, SecretDecryptionService secretDecryptionService) {
+      AzureEnvironmentType azureEnvironmentType, SecretDecryptionService secretDecryptionService,
+      LazyAutoCloseableWorkingDirectory workingDir) throws IOException {
     AzureConfig azureConfig = AzureConfig.builder().azureEnvironmentType(azureEnvironmentType).build();
     switch (azureCredentialType) {
       case INHERIT_FROM_DELEGATE: {
@@ -84,7 +93,12 @@ public class AcrRequestResponseMapper {
           case KEY_CERT:
             azureConfig.setAzureAuthenticationType(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT);
             AzureClientKeyCertDTO cert = (AzureClientKeyCertDTO) azureManualDetailsDTO.getAuthDTO().getCredentials();
-            azureConfig.setCert(String.valueOf(cert.getClientCertRef().getDecryptedValue()).getBytes());
+            byte[] certInBytes = String.valueOf(cert.getClientCertRef().getDecryptedValue()).getBytes();
+            String certFilePath =
+                format("%s%s.pem", workingDir.createDirectory().workingDir().getAbsolutePath(), DEFAULT_CERT_FILE_NAME);
+            writeFile(certFilePath, certInBytes);
+            azureConfig.setCertFilePath(certFilePath);
+            azureConfig.setCert(certInBytes);
             break;
           default:
             throw new IllegalStateException(

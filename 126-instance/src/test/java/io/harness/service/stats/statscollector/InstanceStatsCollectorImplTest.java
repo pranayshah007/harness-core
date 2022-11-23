@@ -7,7 +7,6 @@
 
 package io.harness.service.stats.statscollector;
 
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,18 +20,19 @@ import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.dtos.InstanceDTO;
+import io.harness.entities.Instance;
+import io.harness.entities.InstanceType;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
-import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.entities.Project;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
 
 import java.time.Instant;
 import java.util.Collections;
-import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -45,73 +45,81 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final String ORG_ID = "org";
   private static final String PROJECT_ID = "proj";
   private static final String SERVICE_ID = "svc";
+  private static final String ENV_ID = "env";
   private static final int SYNC_INTERVAL_MINUTES = 30;
 
   @Mock private InstanceStatsService instanceStatsService;
   @Mock private InstanceService instanceService;
   @Mock private HPersistence persistence;
   @Mock private UsageMetricsEventPublisher usageMetricsEventPublisher;
-  @Mock(answer = RETURNS_SELF) private Query<ServiceEntity> servicesQuery;
-  @Mock private MorphiaIterator<ServiceEntity, ServiceEntity> serviceEntityIterator;
+  @Mock(answer = RETURNS_SELF) private Query<Project> projectsQuery;
+  @Mock private MorphiaIterator<Project, Project> projectIterator;
   @InjectMocks InstanceStatsCollectorImpl instanceStatsCollector;
 
   @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
+  @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void createStatsTest() {
-    Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES + 5) * 60L);
-    InstanceDTO instanceDTO = InstanceDTO.builder().build();
-    mockServices();
-    when(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(lastSnapshot);
-    when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
-             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
-        .thenReturn(Collections.singletonList(instanceDTO));
+  public void createStatsTest() throws Exception {
+    Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES * 2 + 5) * 60L);
+    Project mockProject = mockProject();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv();
+    when(instanceStatsService.getLastSnapshotTime(mockProject)).thenReturn(lastSnapshot);
+    when(instanceService.getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong()))
+        .thenReturn(Collections.singletonList(instanceCountByServiceAndEnv));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
-    verify(instanceService, times(1))
-        .getActiveInstancesByAccountOrgProjectAndService(
-            eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
+    verify(instanceService, times(2)).getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong());
   }
 
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void createStatsTestForANewService() {
-    InstanceDTO instanceDTO = InstanceDTO.builder().build();
-    mockServices();
-    when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
-             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
-        .thenReturn(Collections.singletonList(instanceDTO));
+  public void createStatsTestForANewProject() {
+    Project mockProject = mockProject();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv();
+    when(instanceService.getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong()))
+        .thenReturn(Collections.singletonList(instanceCountByServiceAndEnv));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
-    verify(instanceService, times(1))
-        .getActiveInstancesByAccountOrgProjectAndService(
-            eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
+    verify(instanceService, times(1)).getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong());
   }
 
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
   public void createStatsTestException() {
-    List<InstanceDTO> instances = Collections.singletonList(InstanceDTO.builder().build());
-    mockServices();
-    when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
-             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
-        .thenReturn(instances);
+    Project mockProject = mockProject();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv();
+    when(instanceService.getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong()))
+        .thenReturn(Collections.singletonList(instanceCountByServiceAndEnv));
     doThrow(new EventsFrameworkDownException("Cannot connect to redis stream"))
         .when(usageMetricsEventPublisher)
-        .publishInstanceStatsTimeSeries(eq(ACCOUNT_ID), anyLong(), eq(instances));
+        .publishInstanceStatsTimeSeries(
+            eq(mockProject), anyLong(), eq(Collections.singletonList(instanceCountByServiceAndEnv)));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isFalse();
   }
 
-  private void mockServices() {
-    when(persistence.createQuery(ServiceEntity.class)).thenReturn(servicesQuery);
-    when(servicesQuery.fetch()).thenReturn(serviceEntityIterator);
-    when(serviceEntityIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(serviceEntityIterator.next())
-        .thenReturn(ServiceEntity.builder()
-                        .accountId(ACCOUNT_ID)
-                        .orgIdentifier(ORG_ID)
-                        .projectIdentifier(PROJECT_ID)
-                        .identifier(SERVICE_ID)
-                        .build());
+  private Project mockProject() {
+    Project mockProject =
+        Project.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).identifier(PROJECT_ID).build();
+    when(persistence.createQuery(Project.class)).thenReturn(projectsQuery);
+    when(projectsQuery.fetch(persistence.analyticNodePreferenceOptions())).thenReturn(projectIterator);
+    when(projectIterator.hasNext()).thenReturn(true).thenReturn(false);
+    when(projectIterator.next()).thenReturn(mockProject);
+    return mockProject;
+  }
+
+  private InstanceCountByServiceAndEnv mockInstanceCountByServiceAndEnv() {
+    return InstanceCountByServiceAndEnv.builder()
+        .serviceIdentifier(SERVICE_ID)
+        .envIdentifier(ENV_ID)
+        .count(5)
+        .firstDocument(Instance.builder()
+                           .accountIdentifier(ACCOUNT_ID)
+                           .orgIdentifier(ORG_ID)
+                           .projectIdentifier(PROJECT_ID)
+                           .serviceIdentifier(SERVICE_ID)
+                           .envIdentifier(ENV_ID)
+                           .instanceType(InstanceType.KUBERNETES_CONTAINER_INSTANCE)
+                           .build())
+        .build();
   }
 }

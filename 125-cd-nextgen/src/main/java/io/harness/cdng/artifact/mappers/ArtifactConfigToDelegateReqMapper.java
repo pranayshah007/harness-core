@@ -184,9 +184,9 @@ public class ArtifactConfigToDelegateReqMapper {
       throw new InvalidRequestException("Please specify version or versionRegex. Both cannot be empty.");
     }
 
-    return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags(),
-        artifactConfig.getFilters(), artifactConfig.getRegion().getValue(), version, versionRegex, connectorRef,
-        connectorDTO, encryptedDataDetails, ArtifactSourceType.AMI);
+    return ArtifactDelegateRequestUtils.getAMIArtifactDelegateRequest(artifactConfig.getTags().getValue(),
+        artifactConfig.getFilters().getValue(), artifactConfig.getRegion().getValue(), version, versionRegex,
+        connectorRef, connectorDTO, encryptedDataDetails, ArtifactSourceType.AMI);
   }
 
   public JenkinsArtifactDelegateRequest getJenkinsDelegateRequest(JenkinsArtifactConfig artifactConfig,

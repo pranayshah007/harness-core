@@ -16,6 +16,8 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorLoopModeHandler;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
@@ -33,6 +35,7 @@ import software.wings.service.intfc.TriggerService;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
@@ -46,49 +49,59 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
-public class ScheduledTriggerHandler implements Handler<Trigger> {
+public class ScheduledTriggerHandler extends IteratorLoopModeHandler implements Handler<Trigger> {
   private static final int POOL_SIZE = 8;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private TriggerService triggerService;
-  PersistenceIterator<Trigger> iterator;
   @Inject private MorphiaPersistenceRequiredProvider<Trigger> persistenceProvider;
   @Inject private AccountService accountService;
 
-  private static ExecutorService executor =
-      Executors.newSingleThreadExecutor(new ThreadFactoryBuilder().setNameFormat("scheduled-trigger-handler").build());
-  private static final ScheduledThreadPoolExecutor executorService = new ScheduledThreadPoolExecutor(
-      POOL_SIZE, new ThreadFactoryBuilder().setNameFormat("Iterator-ScheduledTriggerThread").build());
-
-  public void registerIterators() {
-    iterator = persistenceIteratorFactory.createIterator(ScheduledTriggerHandler.class,
-        MongoPersistenceIterator.<Trigger, MorphiaFilterExpander<Trigger>>builder()
-            .mode(PersistenceIterator.ProcessMode.LOOP)
-            .iteratorName("ScheduledTrigger")
-            .clazz(Trigger.class)
-            .fieldName(TriggerKeys.nextIterations)
-            .acceptableNoAlertDelay(ofSeconds(60))
-            .maximumDelayForCheck(ofHours(6))
-            .executorService(executorService)
-            .semaphore(new Semaphore(10))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .persistenceProvider(persistenceProvider)
-            .schedulingType(IRREGULAR_SKIP_MISSED)
-            .filterExpander(query
-                -> query.field(TriggerKeys.triggerConditionType)
-                       .equal(TriggerConditionType.SCHEDULED)
-                       .field(TriggerKeys.nextIterations)
-                       .exists()
-                       .field(TriggerKeys.nextIterations)
-                       .notEqual(null)
-                       .field(TriggerKeys.nextIterations)
-                       .notEqual(Collections.emptyList())
-                       .field(TriggerKeys.nextIterations)
-                       .not()
-                       .sizeEq(0))
-            .throttleInterval(ofSeconds(45)));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration throttleInterval) {
+    executor = Executors.newSingleThreadExecutor(
+        new ThreadFactoryBuilder().setNameFormat("scheduled-trigger-handler").build());
+    ExecutorService executorService = new ScheduledThreadPoolExecutor(executorOptions.getPoolSize(),
+        new ThreadFactoryBuilder().setNameFormat("Iterator-ScheduledTriggerThread").build());
+    iterator =
+        (MongoPersistenceIterator<Trigger, MorphiaFilterExpander<Trigger>>) persistenceIteratorFactory.createIterator(
+            ScheduledTriggerHandler.class,
+            MongoPersistenceIterator.<Trigger, MorphiaFilterExpander<Trigger>>builder()
+                .mode(PersistenceIterator.ProcessMode.LOOP)
+                .iteratorName(iteratorName)
+                .clazz(Trigger.class)
+                .fieldName(TriggerKeys.nextIterations)
+                .acceptableNoAlertDelay(ofSeconds(60))
+                .maximumDelayForCheck(ofHours(6))
+                .executorService(executorService)
+                .semaphore(new Semaphore(10))
+                .handler(this)
+                .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                .persistenceProvider(persistenceProvider)
+                .schedulingType(IRREGULAR_SKIP_MISSED)
+                .filterExpander(query
+                    -> query.field(TriggerKeys.triggerConditionType)
+                           .equal(TriggerConditionType.SCHEDULED)
+                           .field(TriggerKeys.nextIterations)
+                           .exists()
+                           .field(TriggerKeys.nextIterations)
+                           .notEqual(null)
+                           .field(TriggerKeys.nextIterations)
+                           .notEqual(Collections.emptyList())
+                           .field(TriggerKeys.nextIterations)
+                           .not()
+                           .sizeEq(0))
+                .throttleInterval(throttleInterval));
 
     executor.submit(() -> iterator.process());
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "ScheduledTrigger";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   public void wakeup() {

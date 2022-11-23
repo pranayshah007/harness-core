@@ -51,6 +51,8 @@ java_library(
         "@maven//:com_amazonaws_aws_java_sdk_route53",
         "@maven//:com_amazonaws_aws_java_sdk_secretsmanager",
         "@maven//:com_amazonaws_aws_java_sdk_servicediscovery",
+        "@maven//:com_azure_azure_security_keyvault_keys",
+        "@maven//:com_azure_azure_security_keyvault_secrets",
         "@maven//:com_github_allbegray_slack_api",
         "@maven//:com_google_apis_google_api_services_compute",
         "@maven//:com_google_apis_google_api_services_logging",

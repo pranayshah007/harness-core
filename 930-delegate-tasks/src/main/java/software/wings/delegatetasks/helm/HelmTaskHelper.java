@@ -340,7 +340,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, false, cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {
         chartmuseumClient.stop(chartMuseumServer);
@@ -468,8 +468,7 @@ public class HelmTaskHelper {
       String repoName = String.format(REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
-          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis,
-          helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (!helmChartConfigParams.isUseCache()) {
         try {
@@ -509,7 +508,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (isNotEmpty(cacheDir) && !helmChartConfigParams.isUseCache()) {
         try {
@@ -580,7 +579,7 @@ public class HelmTaskHelper {
             helmChartConfigParams.getHelmVersion(), helmCommandFlag);
       }
       helmTaskHelperBase.executeFetchChartFromRepo(helmChartConfigParams.getChartName(), chartDirectory,
-          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "", false);
+          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "");
 
     } finally {
       if (isNotBlank(helmChartConfigParams.getChartUrl())) {

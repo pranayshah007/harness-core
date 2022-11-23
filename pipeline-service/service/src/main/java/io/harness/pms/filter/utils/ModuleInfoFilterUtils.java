@@ -38,4 +38,17 @@ public class ModuleInfoFilterUtils {
       }
     }
   }
+
+  // This function is created to apply OR conditions on different modules in filterProperties.
+  public void processNodeOROperator(JsonNode jsonNode, String parentPath, List<Criteria> criteriaList) {
+    if (jsonNode.isObject()) {
+      Iterator<Map.Entry<String, JsonNode>> fields = jsonNode.fields();
+      while (fields.hasNext()) {
+        Criteria criteriaModules = new Criteria();
+        Map.Entry<String, JsonNode> jsonField = fields.next();
+        processNode(jsonField.getValue(), String.join(".", parentPath, jsonField.getKey()), criteriaModules);
+        criteriaList.add(criteriaModules);
+      }
+    }
+  }
 }

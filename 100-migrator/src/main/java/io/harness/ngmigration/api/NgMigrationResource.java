@@ -21,13 +21,13 @@ import io.harness.beans.MigrationAsyncTracker;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.DiscoveryInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigrationInputResult;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
 import io.harness.ngmigration.service.AsyncDiscoveryHandler;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
+import io.harness.ngmigration.service.UsergroupImportService;
 import io.harness.ngmigration.utils.NGMigrationConstants;
 import io.harness.rest.RestResponse;
 
@@ -68,6 +68,7 @@ public class NgMigrationResource {
   @Inject DiscoveryService discoveryService;
   @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
   @Inject MigrationResourceService migrationResourceService;
+  @Inject UsergroupImportService usergroupImportService;
 
   @POST
   @Path("/discover-multi")
@@ -166,6 +167,15 @@ public class NgMigrationResource {
   }
 
   @POST
+  @Path("/user-group/save")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<SaveSummaryDTO> saveUserGroups(
+      @HeaderParam("Authorization") String auth, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(usergroupImportService.importUserGroups(auth, accountId));
+  }
+
+  @POST
   @Path("/export-yaml")
   @Timed
   @ExceptionMetered
@@ -199,16 +209,5 @@ public class NgMigrationResource {
     return Response.ok(migrationResourceService.exportYaml(auth, importDTO))
         .header("content-disposition", format("attachment; filename = %s_%s.zip", accountId, filename))
         .build();
-  }
-
-  @GET
-  @Path("/input")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<MigrationInputResult> getInputs(@QueryParam("entityId") String entityId,
-      @QueryParam("appId") String appId, @QueryParam("accountId") String accountId,
-      @QueryParam("entityType") NGMigrationEntityType entityType) {
-    DiscoveryResult result = discoveryService.discover(accountId, appId, entityId, entityType, null);
-    return new RestResponse<>(discoveryService.migrationInput(result));
   }
 }

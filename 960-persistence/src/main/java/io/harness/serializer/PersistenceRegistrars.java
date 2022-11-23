@@ -10,7 +10,6 @@ package io.harness.serializer;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.persistence.converters.DurationConverter;
 import io.harness.persistence.converters.ObjectArrayConverter;
-import io.harness.persistence.converters.TaskDataV2Convertor;
 import io.harness.serializer.kryo.PersistenceKryoRegistrar;
 import io.harness.serializer.morphia.PersistenceMorphiaRegistrar;
 
@@ -37,6 +36,5 @@ public class PersistenceRegistrars {
       ImmutableSet.<Class<? extends TypeConverter>>builder()
           .add(DurationConverter.class)
           .add(ObjectArrayConverter.class)
-          .add(TaskDataV2Convertor.class)
           .build();
 }

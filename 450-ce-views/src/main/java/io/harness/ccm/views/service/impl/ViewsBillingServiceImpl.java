@@ -411,12 +411,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     QLCEViewGridData gridData = null;
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
-    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      ViewQueryParams queryParamsForGrid = viewsQueryHelper.buildQueryParams(
-          queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-      gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
-          cloudProviderTableName, limit, 0, queryParamsForGrid);
-    }
+
+    ViewQueryParams queryParamsForGrid =
+        viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
+    gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
+        cloudProviderTableName, limit, 0, queryParamsForGrid);
+
     SelectQuery query = getQuery(getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
         groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();

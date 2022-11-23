@@ -10,9 +10,9 @@ package software.wings.expression;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionFunctor;
 import io.harness.expression.LateBindingValue;
 import io.harness.expression.SecretString;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.shell.ScriptType;
 
 import lombok.Builder;

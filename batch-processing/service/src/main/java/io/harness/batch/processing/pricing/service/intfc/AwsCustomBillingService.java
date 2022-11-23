@@ -16,7 +16,8 @@ import java.util.List;
 public interface AwsCustomBillingService {
   VMInstanceBillingData getComputeVMPricingInfo(InstanceData instanceData, Instant startTime, Instant endTime);
 
-  void updateAwsEC2BillingDataCache(List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
+  void updateAwsEC2BillingDataCache(
+      List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId, String accountId);
 
   void updateEksFargateDataCache(List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
 

@@ -38,10 +38,10 @@ public class PermissionAttributeTest extends WingsBaseTest {
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
   public void testAddedPermissionsAreInSync() {
-    assertThat(PermissionAttribute.PermissionType.values().length).isEqualTo(47);
-    assertThat(QLAccountPermissionType.values().length).isEqualTo(31);
-    assertThat(PermissionAttribute.PermissionType.values().length - 43)
-        .isEqualTo(QLAccountPermissionType.values().length - 27);
+    assertThat(PermissionAttribute.PermissionType.values().length).isEqualTo(48);
+    assertThat(QLAccountPermissionType.values().length).isEqualTo(32);
+    assertThat(PermissionAttribute.PermissionType.values().length - 48)
+        .isEqualTo(QLAccountPermissionType.values().length - 32);
   }
 
   @Test

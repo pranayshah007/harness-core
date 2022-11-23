@@ -472,7 +472,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             TaskType.valueOf(task.getTaskDataV2().getTaskType()).getTaskGroup().name(), task.getRank(), OVERRIDE_NESTS);
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       log.info("Queueing async task {} of type {} ", task.getUuid(), task.getTaskDataV2().getTaskType());
-      processDelegateTask(task, QUEUED);
+      processDelegateTaskV2(task, QUEUED);
       broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
     return task.getUuid();
@@ -956,9 +956,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1006,9 +1007,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();

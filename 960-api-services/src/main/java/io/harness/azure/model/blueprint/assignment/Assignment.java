@@ -9,8 +9,8 @@ package io.harness.azure.model.blueprint.assignment;
 
 import io.harness.azure.model.blueprint.ParameterValue;
 
+import com.azure.resourcemanager.network.models.ManagedServiceIdentity;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.microsoft.azure.management.network.ManagedServiceIdentity;
 import java.util.Map;
 import lombok.Data;
 

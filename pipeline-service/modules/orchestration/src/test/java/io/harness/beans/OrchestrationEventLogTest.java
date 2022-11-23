@@ -31,7 +31,7 @@ public class OrchestrationEventLogTest extends OrchestrationTestBase {
   public void shouldTestMongoIndexes() {
     List<MongoIndex> mongoIndices = OrchestrationEventLog.mongoIndexes();
 
-    assertThat(mongoIndices.size()).isEqualTo(2);
-    assertThat(mongoIndices.stream().map(MongoIndex::getName).collect(Collectors.toSet()).size()).isEqualTo(2);
+    assertThat(mongoIndices.size()).isEqualTo(1);
+    assertThat(mongoIndices.stream().map(MongoIndex::getName).collect(Collectors.toSet()).size()).isEqualTo(1);
   }
 }

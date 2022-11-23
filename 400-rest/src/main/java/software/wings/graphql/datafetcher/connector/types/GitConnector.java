@@ -68,6 +68,9 @@ public class GitConnector extends Connector {
     if (gitConnectorInput.getDisableUserGitConfig().isPresent()) {
       gitConnectorInput.getDisableUserGitConfig().getValue().ifPresent(gitConfig::setDisableUserGitConfig);
     }
+    if (gitConnectorInput.getProviderType().isPresent()) {
+      gitConnectorInput.getProviderType().getValue().ifPresent(gitConfig::setProviderType);
+    }
 
     SettingAttribute.Builder settingAttributeBuilder =
         SettingAttribute.Builder.aSettingAttribute().withValue(gitConfig).withAccountId(accountId).withCategory(

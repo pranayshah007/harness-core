@@ -74,6 +74,7 @@ import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -114,6 +115,8 @@ public class TriggerExecutionHelper {
   private final PMSPipelineService pmsPipelineService;
   private final PipelineMetadataService pipelineMetadataService;
   private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
+
+  private final PipelineGovernanceService pipelineGovernanceService;
   private final PlanExecutionService planExecutionService;
   private final PMSExecutionService pmsExecutionService;
   private final PmsGitSyncHelper pmsGitSyncHelper;
@@ -162,8 +165,8 @@ public class TriggerExecutionHelper {
       ByteString gitSyncBranchContextByteString;
       if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
           && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
-        pipelineEntityToExecute = pmsPipelineService.getAndValidatePipeline(ngTriggerEntity.getAccountId(),
-            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
+        pipelineEntityToExecute = pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(),
+            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
         if (!pipelineEntityToExecute.isPresent()) {
           throw new TriggerException("Unable to continue trigger execution. Pipeline with identifier: "
                   + ngTriggerEntity.getTargetIdentifier() + ", with org: " + ngTriggerEntity.getOrgIdentifier()
@@ -199,11 +202,12 @@ public class TriggerExecutionHelper {
 
         try (PmsGitSyncBranchContextGuard ignore =
                  pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
-          pipelineEntityToExecute = pmsPipelineService.getAndValidatePipeline(ngTriggerEntity.getAccountId(),
-              ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
+          pipelineEntityToExecute =
+              pmsPipelineService.getPipeline(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+                  ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false, false);
         }
 
-        if (!pipelineEntityToExecute.isPresent()) {
+        if (pipelineEntityToExecute.isEmpty()) {
           throw new TriggerException("Unable to continue trigger execution. Pipeline with identifier: "
                   + ngTriggerEntity.getTargetIdentifier() + ", with org: " + ngTriggerEntity.getOrgIdentifier()
                   + ", with ProjectId: " + ngTriggerEntity.getProjectIdentifier()
@@ -314,7 +318,7 @@ public class TriggerExecutionHelper {
 
         pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
-        String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
+        String expandedJson = pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef,
             true);
 

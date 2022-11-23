@@ -104,7 +104,7 @@ public class GcpClusterSetup extends State {
             KubernetesConvention.getControllerNamePrefix(app.getName(), serviceName, env));
     String zoneCluster = zone + "/" + clusterName;
 
-    gkeClusterService.createCluster(computeProviderSetting, encryptionDetails, zoneCluster,
+    gkeClusterService.createCluster(computeProviderSetting.toDTO(), encryptionDetails, zoneCluster,
         context.renderExpression(gcpInfraMapping.getNamespace()),
         ImmutableMap.<String, String>builder()
             .put("nodeCount", Integer.toString(nodeCount))

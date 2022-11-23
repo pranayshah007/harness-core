@@ -75,6 +75,8 @@ public interface NgUserService {
   void addServiceAccountToScope(
       String serviceAccountId, Scope scope, RoleBinding roleBinding, UserMembershipUpdateSource source);
 
+  List<UserMetadataDTO> getUserMetadataByEmails(List<String> emailIds);
+
   Page<UserMembership> listUserMemberships(Criteria criteria, Pageable pageable);
 
   void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,

@@ -79,6 +79,9 @@ public interface NodeExecutionService {
   Page<NodeExecution> fetchNodeExecutionsByStatus(
       String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable);
 
+  Page<NodeExecution> fetchAllNodeExecutionsByStatus(
+      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable);
+
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded);

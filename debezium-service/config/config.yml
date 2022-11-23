@@ -45,11 +45,17 @@ debeziumConfigs:
     connect.backoff.max.delay.ms: ${CONNECT_BACKOFF_MAX_DELAY_MS:-10000}
     connect.max.attempts: ${CONNECT_MAX_ATTEMPTS:-3}
     snapshot.fetch.size: ${SNAPSHOT_FETCH_SIZE:-2000}
-    sleepInterval: ${SLEEP_INTERVAL:-60}
+    sleepInterval: ${SLEEP_INTERVAL:-0}
     producingCountPerBatch: ${PRODUCING_COUNT_PER_BATCH:-1000}
     redisStreamSize: ${REDIS_STREAM_SIZE:-10000}
-    snapshot.mode: ${SNAPSHOT_MODE:-initial}
+    snapshot.mode: ${SNAPSHOT_MODE:-never}
     transforms.unwrap.array.encoding: ${TRANSFORMS_UNWRAP_ARRAY_ENCODING:-document}
+    max.queue.size: ${MAX_QUEUE_SIZE:-8192}
+    max.batch.size: ${MAX_BATCH_SIZE:-2048}
+    max.queue.size.in.bytes: ${MAX_QUEUE_SIZE_IN_BYTES:-1000000000}
+    poll.interval.ms: ${POLL_INTERVAL_MS:-3000}
+    field.exclude.list: ${FIELD_EXCLUDE_LIST:-pms-harness.planExecutionsSummary.layoutNodeMap}
+    heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS:-10000}
 
 eventsFramework:
   redis:

@@ -15,7 +15,7 @@ import io.harness.delegate.task.azure.resource.operation.AzureResourceOperation;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceOperationResponse;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Builder;

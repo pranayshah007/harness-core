@@ -14,7 +14,8 @@ import lombok.Getter;
 public enum CEFeatures {
   BILLING("Cost Management And Billing Export"),
   OPTIMIZATION("Lightwing Cost Optimization"),
-  VISIBILITY("Receive Events For Cloud Accounts");
+  VISIBILITY("Receive Events For Cloud Accounts"),
+  GOVERNANCE("Cloud asset governance");
 
   @Getter private final String description;
   CEFeatures(String description) {

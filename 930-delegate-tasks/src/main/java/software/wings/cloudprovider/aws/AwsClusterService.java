@@ -16,8 +16,8 @@ import io.harness.container.ContainerInfo;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.ClusterConfiguration;
 
 import com.amazonaws.services.ecs.model.CreateServiceRequest;

@@ -11,9 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.AsyncExecutableWithRollback;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -27,14 +30,17 @@ import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.approval.ApprovalNotificationHandler;
 import io.harness.steps.approval.step.ApprovalInstanceService;
+import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @OwnedBy(CDC)
 public class HarnessApprovalStep extends AsyncExecutableWithRollback {
@@ -51,6 +57,14 @@ public class HarnessApprovalStep extends AsyncExecutableWithRollback {
     ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     logStreamingStepClient.openStream(ShellScriptTaskNG.COMMAND_UNIT);
     HarnessApprovalInstance approvalInstance = HarnessApprovalInstance.fromStepParameters(ambiance, stepParameters);
+
+    List<UserGroupDTO> validatedUserGroups = approvalNotificationHandler.getUserGroups(approvalInstance);
+    if (EmptyPredicate.isEmpty(validatedUserGroups)) {
+      throw new InvalidRequestException("At least 1 valid user group is required");
+    }
+    approvalInstance.setValidatedUserGroups(validatedUserGroups);
+    approvalInstance.setValidatedApprovalUserGroups(
+        validatedUserGroups.stream().map(ApprovalUserGroupDTO::toApprovalUserGroupDTO).collect(Collectors.toList()));
     HarnessApprovalInstance savedApprovalInstance =
         (HarnessApprovalInstance) approvalInstanceService.save(approvalInstance);
     executorService.submit(() -> approvalNotificationHandler.sendNotification(savedApprovalInstance, ambiance));

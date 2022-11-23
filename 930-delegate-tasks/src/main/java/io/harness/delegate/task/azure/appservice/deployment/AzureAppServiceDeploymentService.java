@@ -77,7 +77,6 @@ import static io.harness.logging.LogLevel.INFO;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
@@ -102,29 +101,29 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.runtime.azure.AzureAppServicesDeployArtifactFileException;
 import io.harness.logging.LogCallback;
 
-import software.wings.delegatetasks.azure.AzureTimeLimiter;
 import software.wings.utils.ArtifactType;
 
+import com.azure.core.http.rest.Response;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import rx.Completable;
+import reactor.core.publisher.Mono;
 
 @Singleton
 @NoArgsConstructor
@@ -132,7 +131,6 @@ import rx.Completable;
 @OwnedBy(CDP)
 public class AzureAppServiceDeploymentService {
   @Inject private AzureWebClient azureWebClient;
-  @Inject private AzureTimeLimiter azureTimeLimiter;
   @Inject private SlotSteadyStateChecker slotSteadyStateChecker;
   @Inject private AzureMonitorClient azureMonitorClient;
 
@@ -422,8 +420,8 @@ public class AzureAppServiceDeploymentService {
     String slotName = deploymentContext.getSlotName();
     deployLogCallback.saveExecutionLog(format(REQUEST_START_SLOT, slotName));
     try {
-      AzureServiceCallBack restCallBack = new AzureServiceCallBack(deployLogCallback, START_DEPLOYMENT_SLOT);
-      azureWebClient.startDeploymentSlotAsync(deploymentContext.getAzureWebClientContext(), slotName, restCallBack);
+      Mono<Response<Void>> response =
+          azureWebClient.startDeploymentSlotAsync(deploymentContext.getAzureWebClientContext(), slotName);
 
       SlotStatusVerifierContext statusVerifierContext =
           SlotStatusVerifierContext.builder()
@@ -431,7 +429,7 @@ public class AzureAppServiceDeploymentService {
               .slotName(slotName)
               .azureWebClient(azureWebClient)
               .azureWebClientContext(deploymentContext.getAzureWebClientContext())
-              .restCallBack(restCallBack)
+              .responseMono(response)
               .build();
 
       SlotStatusVerifier statusVerifier =
@@ -452,8 +450,8 @@ public class AzureAppServiceDeploymentService {
     updateSlotLog.saveExecutionLog(format(REQUEST_STOP_SLOT, slotName));
 
     try {
-      AzureServiceCallBack restCallBack = new AzureServiceCallBack(updateSlotLog, STOP_DEPLOYMENT_SLOT);
-      azureWebClient.stopDeploymentSlotAsync(deploymentContext.getAzureWebClientContext(), slotName, restCallBack);
+      Mono<Response<Void>> responseMono =
+          azureWebClient.stopDeploymentSlotAsync(deploymentContext.getAzureWebClientContext(), slotName);
 
       SlotStatusVerifierContext statusVerifierContext =
           SlotStatusVerifierContext.builder()
@@ -461,7 +459,7 @@ public class AzureAppServiceDeploymentService {
               .slotName(slotName)
               .azureWebClient(azureWebClient)
               .azureWebClientContext(deploymentContext.getAzureWebClientContext())
-              .restCallBack(restCallBack)
+              .responseMono(responseMono)
               .build();
 
       SlotStatusVerifier statusVerifier =
@@ -492,7 +490,6 @@ public class AzureAppServiceDeploymentService {
     int steadyStateTimeoutInMinutes = azureAppServiceDeploymentContext.getSteadyStateTimeoutInMin();
     AzureWebClientContext webClientContext = azureAppServiceDeploymentContext.getAzureWebClientContext();
     LogCallback slotSwapLogCallback = logCallbackProvider.obtainLogCallback(SLOT_SWAP);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(slotSwapLogCallback, SLOT_SWAP);
 
     SwapSlotStatusVerifierContext context =
         SwapSlotStatusVerifierContext.builder()
@@ -501,14 +498,13 @@ public class AzureAppServiceDeploymentService {
             .azureWebClient(azureWebClient)
             .azureMonitorClient(azureMonitorClient)
             .azureWebClientContext(azureAppServiceDeploymentContext.getAzureWebClientContext())
-            .restCallBack(restCallBack)
             .build();
 
     SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(SWAP_VERIFIER.name(), context);
 
     ExecutorService executorService = Executors.newFixedThreadPool(1);
-    executorService.submit(new SwapSlotTask(
-        sourceSlotName, targetSlotName, azureWebClient, webClientContext, restCallBack, slotSwapLogCallback));
+    executorService.submit(
+        new SwapSlotTask(sourceSlotName, targetSlotName, azureWebClient, webClientContext, slotSwapLogCallback));
     executorService.shutdown();
 
     try {
@@ -530,9 +526,9 @@ public class AzureAppServiceDeploymentService {
     try {
       deployLog.saveExecutionLog(START_ARTIFACT_DEPLOY);
       uploadStartupScript(context.getAzureWebClientContext(), slotName, context.getStartupCommand(), deployLog);
-      Completable deployment = deployPackage(context.getAzureWebClientContext(), slotName, context.getArtifactFile(),
+      Mono deployment = deployPackage(context.getAzureWebClientContext(), slotName, context.getArtifactFile(),
           context.getArtifactType(), deployLog, isWindowsServicePlan);
-      deployment.await(context.getSteadyStateTimeoutInMin(), TimeUnit.MINUTES);
+      deployment.block(Duration.ofMinutes(context.getSteadyStateTimeoutInMin()));
     } catch (Exception exception) {
       deployLog.saveExecutionLog(String.format(FAIL_DEPLOYMENT, exception.getMessage()), ERROR, FAILURE);
       throw new AzureAppServicesDeployArtifactFileException(
@@ -547,7 +543,7 @@ public class AzureAppServiceDeploymentService {
     logCallback.saveExecutionLog(SUCCESS_UPDATE_STARTUP_COMMAND);
   }
 
-  private Completable deployPackage(AzureWebClientContext azureWebClientContext, final String slotName,
+  private Mono deployPackage(AzureWebClientContext azureWebClientContext, final String slotName,
       final File artifactFile, ArtifactType artifactType, LogCallback logCallback, boolean isWindowsServicePlan) {
     switch (artifactType) {
       case ZIP:
@@ -562,7 +558,7 @@ public class AzureAppServiceDeploymentService {
     }
   }
 
-  private Completable deployJarToSlot(AzureWebClientContext azureWebClientContext, final String slotName,
+  private Mono deployJarToSlot(AzureWebClientContext azureWebClientContext, final String slotName,
       final File artifactFile, LogCallback logCallback, boolean isWindowsServicePlan) {
     try {
       File zipFile = convertJarToZip(artifactFile, logCallback, isWindowsServicePlan);
@@ -618,21 +614,21 @@ public class AzureAppServiceDeploymentService {
     return newFile;
   }
 
-  private Completable deployZipToSlotAndLog(
+  private Mono deployZipToSlotAndLog(
       AzureWebClientContext azureWebClientContext, String slotName, File artifactFile, LogCallback logCallback) {
     logCallback.saveExecutionLog(
         format(ZIP_DEPLOY, artifactFile.getAbsolutePath(), azureWebClientContext.getAppName(), slotName));
-    Completable deployment = azureWebClient.deployZipToSlotAsync(azureWebClientContext, slotName, artifactFile);
+    Mono deployment = azureWebClient.deployZipToSlotAsync(azureWebClientContext, slotName, artifactFile);
     logCallback.saveExecutionLog(ARTIFACT_DEPLOY_STARTED);
 
     return deployment;
   }
 
-  private Completable deployWarToSlotAndLog(
+  private Mono deployWarToSlotAndLog(
       AzureWebClientContext azureWebClientContext, String slotName, File artifactFile, LogCallback logCallback) {
     logCallback.saveExecutionLog(
         format(WAR_DEPLOY, artifactFile.getAbsolutePath(), azureWebClientContext.getAppName(), slotName));
-    Completable deployment = azureWebClient.deployWarToSlotAsync(azureWebClientContext, slotName, artifactFile);
+    Mono deployment = azureWebClient.deployWarToSlotAsync(azureWebClientContext, slotName, artifactFile);
     logCallback.saveExecutionLog(ARTIFACT_DEPLOY_STARTED);
 
     return deployment;

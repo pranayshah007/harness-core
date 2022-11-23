@@ -46,6 +46,7 @@ public class WebhookEventStreamListener extends PmsAbstractMessageListener<Facil
   public boolean handleMessage(Message message) {
     if (message != null && message.hasMessage()) {
       try {
+        log.info("Started processing webhook event for message id {}", message.getId());
         WebhookDTO webhookDTO = WebhookDTO.parseFrom(message.getMessage().getData());
         triggerWebhookExecutionServiceV2.processEvent(webhookDTO);
       } catch (InvalidProtocolBufferException e) {

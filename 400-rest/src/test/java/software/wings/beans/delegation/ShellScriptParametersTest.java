@@ -48,7 +48,7 @@ public class ShellScriptParametersTest extends CategoryTest {
   public void fetchRequiredExecutionCapabilitiesWithoutInfraSelectors() {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute);
+    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute.toDTO());
     when(containerServiceParams.fetchRequiredExecutionCapabilities(null))
         .thenReturn(Arrays.asList(SelectorCapability.builder().build()));
     ShellScriptParameters shellScriptParameters = ShellScriptParameters.builder()
@@ -69,7 +69,7 @@ public class ShellScriptParametersTest extends CategoryTest {
   public void fetchRequiredExecutionCapabilitiesWithInfraSelectors() {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute);
+    when(containerServiceParams.getSettingAttribute()).thenReturn(settingAttribute.toDTO());
     when(containerServiceParams.fetchRequiredExecutionCapabilities(null))
         .thenReturn(Arrays.asList(SelectorCapability.builder().build()));
     ShellScriptParameters shellScriptParameters = ShellScriptParameters.builder()

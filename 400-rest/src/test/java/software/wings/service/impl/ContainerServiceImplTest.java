@@ -110,7 +110,7 @@ public class ContainerServiceImplTest extends WingsBaseTest {
   private ContainerServiceParams buildContainerSvcParams(String containerSvcName, SettingValue value) {
     return ContainerServiceParams.builder()
         .containerServiceName(containerSvcName)
-        .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(value).build())
+        .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(value).build().toDTO())
         .releaseName("release-name")
         .clusterName("test")
         .namespace("default")
@@ -136,14 +136,17 @@ public class ContainerServiceImplTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     doNothing().when(kubernetesContainerService).validate(any(KubernetesConfig.class), eq(false));
     assertThat(containerService.validate(containerServiceParams, false)).isTrue();
 
-    containerServiceParams.setSettingAttribute(
-        SettingAttribute.Builder.aSettingAttribute().withValue(KubernetesClusterConfig.builder().build()).build());
+    containerServiceParams.setSettingAttribute(SettingAttribute.Builder.aSettingAttribute()
+                                                   .withValue(KubernetesClusterConfig.builder().build())
+                                                   .build()
+                                                   .toDTO());
     doNothing().when(kubernetesContainerService).validate(any(KubernetesConfig.class), eq(true));
     assertThat(containerService.validate(containerServiceParams, true)).isTrue();
   }
@@ -156,7 +159,8 @@ public class ContainerServiceImplTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     doNothing().when(kubernetesContainerService).validateCEPermissions(any(KubernetesConfig.class));
@@ -172,7 +176,8 @@ public class ContainerServiceImplTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     doThrow(new InvalidRequestException(MESSAGE))
@@ -199,7 +204,8 @@ public class ContainerServiceImplTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     Set<String> controllerNames = containerService.getControllerNames(containerServiceParams, emptyMap());
@@ -214,7 +220,8 @@ public class ContainerServiceImplTest extends WingsBaseTest {
         ContainerServiceParams.builder()
             .settingAttribute(SettingAttribute.Builder.aSettingAttribute()
                                   .withValue(KubernetesClusterConfig.builder().build())
-                                  .build())
+                                  .build()
+                                  .toDTO())
             .build();
 
     when(kubernetesContainerService.validateMetricsServer(any())).thenReturn(null);

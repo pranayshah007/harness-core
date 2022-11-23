@@ -68,7 +68,6 @@ import software.wings.beans.ContainerInfrastructureMapping;
 import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.Variable;
@@ -78,6 +77,7 @@ import software.wings.beans.command.CommandType;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.delegation.ShellScriptParameters;
 import software.wings.beans.delegation.ShellScriptParameters.ShellScriptParametersBuilder;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.template.TemplateUtils;
 import software.wings.common.TemplateExpressionProcessor;
 import software.wings.exception.ShellScriptException;
@@ -397,10 +397,10 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
           throw new ShellScriptException("Valid SSH Connection Attribute not provided in Shell Script Step",
               ErrorCode.SSH_CONNECTION_ERROR, Level.ERROR, WingsException.USER);
         }
-        SettingAttribute keySettingAttribute = settingsService.get(sshKeyRef);
+        SettingAttribute keySettingAttribute = settingsService.get(sshKeyRef).toDTO();
         if (keySettingAttribute == null) {
           keySettingAttribute =
-              settingsService.getSettingAttributeByName(executionContext.getApp().getAccountId(), sshKeyRef);
+              settingsService.getSettingAttributeByName(executionContext.getApp().getAccountId(), sshKeyRef).toDTO();
         }
 
         if (keySettingAttribute == null) {
@@ -645,10 +645,10 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
           ErrorCode.SSH_CONNECTION_ERROR, Level.ERROR, WingsException.USER);
     }
 
-    SettingAttribute keySettingAttribute = settingsService.get(connectionAttributes);
+    SettingAttribute keySettingAttribute = settingsService.get(connectionAttributes).toDTO();
     if (keySettingAttribute == null) {
       keySettingAttribute =
-          settingsService.getSettingAttributeByName(context.getApp().getAccountId(), connectionAttributes);
+          settingsService.getSettingAttributeByName(context.getApp().getAccountId(), connectionAttributes).toDTO();
     }
 
     winRmConnectionAttributes = (WinRmConnectionAttributes) keySettingAttribute.getValue();

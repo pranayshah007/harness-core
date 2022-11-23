@@ -28,8 +28,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
+import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
+import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
 import io.harness.cdng.artifact.resources.googleartifactregistry.service.GARResourceService;
 import io.harness.exception.InvalidRequestException;
@@ -72,6 +75,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock ServiceEntityService serviceEntityService;
   @Mock EnvironmentService environmentService;
   @Mock GARResourceService garResourceService;
+  @Mock ArtifactoryResourceService artifactoryResourceService;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";
@@ -392,6 +396,40 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(spyartifactResourceUtils.getBuildDetailsV2GAR(null, null, null, null, null, "accountId", "orgId",
                    "projectId", "pipeId", "version", "versionRegex", "", "", "serviceref", null))
         .isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testArtifactoryImagePaths() throws IOException {
+    // spy for ArtifactResourceUtils
+    ArtifactResourceUtils spyartifactResourceUtils = spy(artifactResourceUtils);
+
+    // Creating ArtifactoryRegistryArtifactConfig for mock
+
+    ArtifactoryRegistryArtifactConfig artifactoryRegistryArtifactConfig =
+        ArtifactoryRegistryArtifactConfig.builder()
+            .connectorRef(ParameterField.<String>builder().value("connectorref").build())
+            .repository(ParameterField.<String>builder().value("repository").build())
+            .build();
+
+    // Creating IdentifierRef for mock
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef("connectorref", "accountId", "orgId", "projectId");
+
+    ArtifactoryImagePathsDTO result = ArtifactoryImagePathsDTO.builder().build();
+
+    doReturn(artifactoryRegistryArtifactConfig)
+        .when(spyartifactResourceUtils)
+        .locateArtifactInService(any(), any(), any(), any(), any());
+
+    doReturn(result)
+        .when(artifactoryResourceService)
+        .getImagePaths("", identifierRef, "orgId", "projectId", "repository");
+
+    assertThat(spyartifactResourceUtils.getArtifactoryImagePath("", "connectorref", "accountId", "orgId", "projectId",
+                   "repository", "fqnPath", "runtimeInputYaml", "pipelineIdentifier", "serviceRef", null))
+        .isEqualTo(result);
   }
 
   @Test

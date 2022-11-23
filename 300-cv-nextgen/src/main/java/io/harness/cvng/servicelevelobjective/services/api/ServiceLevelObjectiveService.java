@@ -33,7 +33,7 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
       ProjectParams projectParams, String identifier, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO);
 
   boolean delete(ProjectParams accountId, String identifier);
-
+  boolean deleteSLOV1(ProjectParams accountId, String identifier);
   PageResponse<ServiceLevelObjectiveResponse> get(ProjectParams projectParams, Integer offset, Integer pageSize,
       ServiceLevelObjectiveFilter serviceLevelObjectiveFilter);
   List<ServiceLevelObjective> getAllSLOs(ProjectParams projectParams);

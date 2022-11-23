@@ -159,6 +159,8 @@ public interface WingsTestConstants {
 
   String CLONED_PIPELINE_ID = "CLONED_PIPELINE_ID";
 
+  String ORIGINAL_EXECUTION_ID = "ORIGINAL_EXECUTION_ID";
+
   String PIPELINE_NAME = "PIPELINE_NAME";
 
   String PIPELINE_URL = "PIPELINE_URL";

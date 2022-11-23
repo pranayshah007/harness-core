@@ -84,6 +84,9 @@ public class NotifyEventListenerHelper {
     responseMap.forEach((k, v) -> {
       final Supplier<ResponseData> responseDataSupplier = () -> {
         if (v instanceof ErrorResponseData) {
+          if (((ErrorResponseData) v).getException() == null) {
+            log.info("Exception is null for responseMap {}", v, new Exception());
+          }
           throw((ErrorResponseData) v).getException();
         } else {
           return v;
