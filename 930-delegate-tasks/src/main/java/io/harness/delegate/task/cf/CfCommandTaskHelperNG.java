@@ -15,8 +15,11 @@ import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
+import io.harness.delegate.cf.apprenaming.AppRenamingOperator;
+import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.utils.CFLogCallbackFormatter;
@@ -36,6 +39,15 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.pcf.PcfUtils.encodeColor;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
 
 @OwnedBy(CDP)
 @Singleton
@@ -251,6 +263,10 @@ public class CfCommandTaskHelperNG {
         pcfCommandTaskBaseHelper.mapRouteMaps(applicationName, urls, cfRequestConfig, executionLogCallback);
     }
 
+    public void unmapRouteMaps(String applicationName, List<String> urls, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+        pcfCommandTaskBaseHelper.unmapRouteMaps(applicationName, urls, cfRequestConfig, executionLogCallback);
+    }
+
     public void unmapExistingRouteMaps(ApplicationDetail appDetail, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
         pcfCommandTaskBaseHelper.unmapExistingRouteMaps(appDetail, cfRequestConfig, executionLogCallback);
     }
@@ -266,5 +282,37 @@ public class CfCommandTaskHelperNG {
         throws PivotalClientApiException {
       pcfCommandTaskBaseHelper.resetState(releases, activeApplication, inactiveApplication, cfAppNamePrefix,
           cfRequestConfig, b, (Deque<CfAppRenameInfo>) o, activeAppRevision, logCallback, updateValues);
+    }
+
+    public boolean disableAutoscalar(CfAppAutoscalarRequestData pcfAppAutoscalarRequestData,
+                                     LogCallback executionLogCallback) throws PivotalClientApiException {
+        return cfDeploymentManager.changeAutoscalarState(pcfAppAutoscalarRequestData, executionLogCallback, false);
+    }
+
+    public boolean disableAutoscalarSafe(
+            CfAppAutoscalarRequestData pcfAppAutoscalarRequestData, LogCallback executionLogCallback) {
+        boolean autoscalarStateChanged = false;
+        try {
+            autoscalarStateChanged = disableAutoscalar(pcfAppAutoscalarRequestData, executionLogCallback);
+        } catch (PivotalClientApiException e) {
+            executionLogCallback.saveExecutionLog(
+                    new StringBuilder()
+                            .append("# Error while disabling autoscaling for: ")
+                            .append(encodeColor(pcfAppAutoscalarRequestData.getApplicationName()))
+                            .append(", ")
+                            .append(e)
+                            .append(", Continuing with the deployment, please disable autoscaler from the pcf portal\n")
+                            .toString(),
+                    ERROR);
+        }
+        return autoscalarStateChanged;
+    }
+
+    public CfInBuiltVariablesUpdateValues performAppRenaming(AppRenamingOperator.NamingTransition transition,
+                                                              CfRouteUpdateRequestConfigData cfRouteUpdateConfigData, CfRequestConfig cfRequestConfig,
+                                                              LogCallback executionLogCallback) throws PivotalClientApiException {
+        AppRenamingOperator renamingOperator = AppRenamingOperator.of(transition);
+        return renamingOperator.renameApp(
+                cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback, cfDeploymentManager, pcfCommandTaskBaseHelper);
     }
 }
