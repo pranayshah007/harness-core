@@ -22,12 +22,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("varsManifestOutcome")
-@JsonTypeName(ManifestType.Vars)
+@JsonTypeName(ManifestType.VARS)
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.manifest.yaml.VarsManifestOutcome")
 public class VarsManifestOutcome implements ManifestOutcome {
   String identifier;
-  String type = ManifestType.Vars;
+  String type = ManifestType.VARS;
   StoreConfig store;
   int order;
 }

@@ -46,7 +46,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeName(ManifestType.AutoScaler)
+@JsonTypeName(ManifestType.AUTOSCALER)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @FieldNameConstants(innerTypeName = "AutoScalerManifestKeys")
 @SimpleVisitorHelper(helperClass = AutoScalerManifestVisitorHelper.class)
@@ -78,16 +78,13 @@ public class AutoScalerManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withStore(
           ParameterField.createValueField(store.getValue().applyOverrides(autoScalerManifest.getStore().getValue())));
     }
-    if (autoScalerManifest.getSkipResourceVersioning() != null) {
-      resultantManifest = resultantManifest.withSkipResourceVersioning(autoScalerManifest.getSkipResourceVersioning());
-    }
 
     return resultantManifest;
   }
 
   @Override
   public String getKind() {
-    return ManifestType.AutoScaler;
+    return ManifestType.AUTOSCALER;
   }
 
   @Override
@@ -105,13 +102,12 @@ public class AutoScalerManifest implements ManifestAttributes, Visitable {
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
     return new AutoScalerManifestStepParameters(
-        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning);
+        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
   }
 
   @Value
   public static class AutoScalerManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
     StoreConfigWrapperParameters store;
-    ParameterField<Boolean> skipResourceVersioning;
   }
 }
