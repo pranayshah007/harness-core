@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Harness Inc. All rights reserved.
+ * Copyright 2021 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Shield 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
@@ -26,7 +26,6 @@ public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
-  public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -180,12 +179,7 @@ public class EntityYamlRootNames {
   public static final String CHAOS_STEP = "Chaos";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
-  public static final String IACM_STAGE = "IACMStage";
-  public static final String IACM_STEP = "IACMStep";
-  public static final String IACM = "IACM";
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
-  public static final String TERRAGRUNT_PLAN = "TerragruntPlan";
-  public static final String TERRAGRUNT_APPLY = "TerragruntApply";
-  public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
-  public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
+  public static final String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
 }

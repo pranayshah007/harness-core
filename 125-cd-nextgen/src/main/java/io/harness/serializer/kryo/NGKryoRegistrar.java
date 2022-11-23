@@ -29,8 +29,6 @@ import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
-import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
-import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -76,10 +74,6 @@ import io.harness.cdng.provision.cloudformation.CloudformationDeleteStackStepInf
 import io.harness.cdng.provision.cloudformation.CloudformationRollbackStepInfo;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepParameters;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
@@ -94,6 +88,10 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepParameters;
+import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -203,11 +201,10 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ElastigroupDeployStepInfo.class, 12617);
     kryo.register(ElastigroupRollbackStepInfo.class, 12618);
     kryo.register(ElastigroupSetupStepInfo.class, 12619);
-    kryo.register(FetchLinkedAppsStepParams.class, 12620);
-    kryo.register(GitOpsLinkedAppsOutcome.class, 12621);
-    kryo.register(TerragruntPlanStepInfo.class, 12622);
-    kryo.register(TerragruntApplyStepInfo.class, 12623);
-    kryo.register(TerragruntDestroyStepInfo.class, 12624);
-    kryo.register(TerragruntRollbackStepInfo.class, 12625);
+
+    kryo.register(TasCanaryAppSetupStepInfo.class, 12620);
+    kryo.register(TasCanaryAppSetupStepParameters.class, 12621);
+    kryo.register(TasBGAppSetupStepInfo.class, 12622);
+    kryo.register(TasBGAppSetupStepParameters.class, 12623);
   }
 }

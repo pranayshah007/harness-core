@@ -51,18 +51,13 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
-import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
-import io.harness.cdng.tas.TasAppResizeStep;
-import io.harness.cdng.tas.TasAppResizeStepInfo;
-import io.harness.cdng.tas.TasSwapRoutesStep;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -73,61 +68,23 @@ import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
 
-@ApiModel(subTypes =
-              {
-                  CreatePRStepInfo.class,
-                  MergePRStepInfo.class,
-                  K8sApplyStepInfo.class,
-                  K8sBlueGreenStepInfo.class,
-                  K8sCanaryStepInfo.class,
-                  K8sRollingStepInfo.class,
-                  K8sRollingRollbackStepInfo.class,
-                  K8sScaleStepInfo.class,
-                  K8sDeleteStepInfo.class,
-                  K8sBGSwapServicesStepInfo.class,
-                  K8sCanaryDeleteStepInfo.class,
-                  TerraformApplyStepInfo.class,
-                  TerraformPlanStepInfo.class,
-                  TerraformDestroyStepInfo.class,
-                  TerraformRollbackStepInfo.class,
-                  HelmDeployStepInfo.class,
-                  HelmRollbackStepInfo.class,
-                  CloudformationCreateStackStepInfo.class,
-                  CloudformationDeleteStackStepInfo.class,
-                  ServerlessAwsLambdaDeployStepInfo.class,
-                  ServerlessAwsLambdaRollbackStepInfo.class,
-                  CloudformationRollbackStepInfo.class,
-                  CommandStepInfo.class,
-                  AzureWebAppSlotDeploymentStepInfo.class,
-                  AzureWebAppTrafficShiftStepInfo.class,
-                  AzureWebAppSwapSlotStepInfo.class,
-                  AzureWebAppRollbackStepInfo.class,
-                  JenkinsBuildStepInfo.class,
-                  AzureCreateARMResourceStepInfo.class,
-                  AzureCreateBPStepInfo.class,
-                  AzureARMRollbackStepInfo.class,
-                  EcsRollingDeployStepInfo.class,
-                  EcsRollingRollbackStepInfo.class,
-                  EcsCanaryDeployStepInfo.class,
-                  EcsCanaryDeleteStepInfo.class,
-                  EcsBlueGreenCreateServiceStepInfo.class,
-                  EcsBlueGreenSwapTargetGroupsStepInfo.class,
-                  EcsBlueGreenRollbackStepInfo.class,
-                  FetchInstanceScriptStepInfo.class,
-                  ShellScriptProvisionStepInfo.class,
-                  UpdateReleaseRepoStepInfo.class,
-                  EcsRunTaskStepInfo.class,
-                  ElastigroupDeployStepInfo.class,
-                  ElastigroupRollbackStepInfo.class,
-                  ElastigroupSetupStepInfo.class,
-                  TerragruntPlanStepInfo.class,
-                  TerragruntApplyStepInfo.class,
-                  TerragruntDestroyStepInfo.class,
-                  TerragruntRollbackStepInfo.class,
-                  TasAppResizeStep.class,
-                  TasSwapRoutesStep.class,
-                  TasAppResizeStep.class,
-              })
+@ApiModel(
+    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class,
+        K8sCanaryStepInfo.class, K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class,
+        K8sDeleteStepInfo.class, K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class,
+        TerraformApplyStepInfo.class, TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class,
+        TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class,
+        CloudformationCreateStackStepInfo.class, CloudformationDeleteStackStepInfo.class,
+        ServerlessAwsLambdaDeployStepInfo.class, ServerlessAwsLambdaRollbackStepInfo.class,
+        CloudformationRollbackStepInfo.class, CommandStepInfo.class, AzureWebAppSlotDeploymentStepInfo.class,
+        AzureWebAppTrafficShiftStepInfo.class, AzureWebAppSwapSlotStepInfo.class, AzureWebAppRollbackStepInfo.class,
+        JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class,
+        AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
+        EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
+        EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
+        FetchInstanceScriptStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
+        ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class, EcsRunTaskStepInfo.class,
+        ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
