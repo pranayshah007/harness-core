@@ -672,7 +672,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .awsRoleArn(parameters.getAwsRoleArn())
               .awsRegion(parameters.getAwsRegion());
 
-      if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy && !parameters.isRunPlanOnly()) {
+      if (!isDestroy(parameters) && !parameters.isRunPlanOnly()) {
         terraformExecutionDataBuilder.outputs(new String(Files.readAllBytes(tfOutputsFile.toPath()), Charsets.UTF_8));
       }
 
@@ -716,6 +716,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
         }
       }
     }
+  }
+
+  private boolean isDestroy(TerraformProvisionParameters parameters) {
+    return parameters.getCommandUnit() == TerraformCommandUnit.Destroy || parameters.getCommand() == DESTROY;
   }
 
   private void fetchTfPlanSummaryVars(List<NameValuePair> environmentVars, TerraformPlanSummary terraformPlanSummary) {

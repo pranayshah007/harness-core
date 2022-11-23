@@ -10,6 +10,7 @@ package io.harness.connector.events;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.connector.ConnectorEvent.CONNECTOR_CREATED;
 import static io.harness.connector.ConnectorEvent.CONNECTOR_DELETED;
+import static io.harness.connector.ConnectorEvent.CONNECTOR_FORCE_DELETED;
 import static io.harness.connector.ConnectorEvent.CONNECTOR_UPDATED;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
@@ -54,12 +55,32 @@ public class ConnectorEventHandler implements OutboxEventHandler {
           return handleConnectorUpdateEvent(outboxEvent);
         case CONNECTOR_DELETED:
           return handleConnectorDeleteEvent(outboxEvent);
+        case CONNECTOR_FORCE_DELETED:
+          return handleConnectorForceDeleteEvent(outboxEvent);
         default:
           return false;
       }
     } catch (IOException ex) {
       return false;
     }
+  }
+
+  private boolean handleConnectorForceDeleteEvent(OutboxEvent outboxEvent) throws IOException {
+    GlobalContext globalContext = outboxEvent.getGlobalContext();
+    ConnectorForceDeleteEvent connectorDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), ConnectorForceDeleteEvent.class);
+    AuditEntry auditEntry =
+        AuditEntry.builder()
+            .action(Action.FORCE_DELETE)
+            .module(ModuleType.CORE)
+            .oldYaml(NGYamlUtils.getYamlString(
+                ConnectorDTO.builder().connectorInfo(connectorDeleteEvent.getConnectorDTO()).build(), objectMapper))
+            .timestamp(outboxEvent.getCreatedAt())
+            .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
+            .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
+            .insertId(outboxEvent.getId())
+            .build();
+    return auditClientService.publishAudit(auditEntry, globalContext);
   }
 
   private boolean handleConnectorDeleteEvent(OutboxEvent outboxEvent) throws IOException {

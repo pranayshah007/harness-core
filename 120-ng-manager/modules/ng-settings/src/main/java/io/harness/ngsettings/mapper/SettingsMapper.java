@@ -33,6 +33,7 @@ public class SettingsMapper {
         .value(setting.getValue())
         .settingSource(SettingUtils.getSettingSource(setting))
         .isSettingEditable(isSettingEditable)
+        .allowedScopes(settingConfiguration.getAllowedScopes())
         .build();
   }
 
@@ -52,6 +53,7 @@ public class SettingsMapper {
         .value(setting.getValue())
         .settingSource(SettingUtils.getSettingSource(setting))
         .isSettingEditable(isSettingEditable)
+        .allowedScopes(settingConfiguration.getAllowedScopes())
         .build();
   }
 
@@ -68,6 +70,7 @@ public class SettingsMapper {
         .allowOverrides(settingConfiguration.getAllowOverrides())
         .settingSource(SettingSource.DEFAULT)
         .isSettingEditable(isSettingEditable)
+        .allowedScopes(settingConfiguration.getAllowedScopes())
         .build();
   }
 
@@ -108,6 +111,7 @@ public class SettingsMapper {
         .defaultValue(settingConfiguration.getDefaultValue())
         .isSettingEditable(isSettingEditable)
         .settingSource(SettingUtils.getSettingSource(setting))
+        .allowedScopes(settingConfiguration.getAllowedScopes())
         .build();
   }
 
@@ -127,6 +131,7 @@ public class SettingsMapper {
         .defaultValue(settingConfiguration.getDefaultValue())
         .isSettingEditable(isSettingEditable)
         .settingSource(SettingUtils.getSettingSourceFromOrgAndProject(orgIdentifier, projectIdentifier))
+        .allowedScopes(settingConfiguration.getAllowedScopes())
         .build();
   }
 

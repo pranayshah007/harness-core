@@ -113,6 +113,12 @@ import retrofit2.http.Body;
       @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
     })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Not Found",
+    content =
+    {
+      @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
+      , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
+    })
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")

@@ -31,6 +31,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -40,7 +41,7 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
-  public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
@@ -72,12 +73,13 @@ public class K8sManifestHelmSourceRepoStoreService implements NgManifestService 
 
     helmChartManifest.setCommandFlags(getCommandFlags(applicationManifest));
 
-    return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.HELM_CHART)
-                      .spec(helmChartManifest)
-                      .build())
-        .build();
+    return Collections.singletonList(
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder()
+                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+                          .type(ManifestConfigType.HELM_CHART)
+                          .spec(helmChartManifest)
+                          .build())
+            .build());
   }
 }

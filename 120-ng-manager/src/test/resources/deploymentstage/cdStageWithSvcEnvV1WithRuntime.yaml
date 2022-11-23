@@ -1,0 +1,164 @@
+pipeline:
+  name: P1
+  identifier: P1
+  projectIdentifier: TcSvcOverrideTest
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: S1
+        identifier: S1
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: <+input>
+            serviceDefinition:
+              spec:
+                variables: [ ]
+              type: Kubernetes
+          infrastructure:
+            environmentRef: <+variable>
+            infrastructureDefinition:
+              type: KubernetesDirect
+              provisioner:
+                steps:
+                  - step:
+                      type: TerraformPlan
+                      name: tf
+                      identifier: tf
+                      timeout: 10m
+                      spec:
+                        provisionerIdentifier: tf1
+                        configuration:
+                          command: Apply
+                          configFiles:
+                            store:
+                              spec:
+                                connectorRef: account.GitConnectorJZhAN
+                                repoName: terraform
+                                gitFetchType: Branch
+                                branch: master
+                                folderPath: automationVerification/dummy
+                              type: Git
+                          secretManagerRef: harnessSecretManager
+                        delegateSelectors:
+                          - cdp-workload-identity-gcp
+                      failureStrategies: [ ]
+                  - step:
+                      type: HarnessApproval
+                      name: approval
+                      identifier: approval
+                      timeout: 1d
+                      spec:
+                        approvalMessage: na
+                        includePipelineExecutionHistory: true
+                        approvers:
+                          userGroups:
+                            - account.AccAdmin
+                            - account.testPrat
+                            - account.pipelinetest
+                            - account.synctest
+                            - account.AdmunTest
+                          minimumCount: 1
+                          disallowPipelineExecutor: true
+                        approverInputs: [ ]
+                  - step:
+                      type: TerraformApply
+                      name: tf2
+                      identifier: tf2
+                      timeout: 10m
+                      spec:
+                        provisionerIdentifier: tf1
+                        configuration:
+                          type: InheritFromPlan
+                rollbackSteps:
+                  - step:
+                      type: TerraformRollback
+                      name: tfrb
+                      identifier: tfrb
+                      timeout: 10m
+                      spec:
+                        provisionerIdentifier: tf1
+              spec:
+                connectorRef: account.KubernetesAutomation
+                namespace: default
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec: { }
+        tags: { }
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+    - stage:
+        name: S2
+        identifier: S2
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            useFromStage:
+              stage: S1
+          environment:
+            environmentRef: environment1a
+            deployToAll: false
+            environmentInputs:
+              identifier: environment1a
+              type: Production
+              overrides:
+                manifests:
+                  - manifest:
+                      identifier: manifestEnv
+                      type: Values
+                      spec:
+                        store:
+                          type: Git
+                          spec:
+                            connectorRef: <+input>
+                            repoName: <+input>
+            infrastructureDefinitions:
+              - identifier: Infra
+          execution:
+            steps:
+              - step:
+                  name: Rollout Deployment
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  timeout: 10m
+                  spec:
+                    skipDryRun: false
+                    pruningEnabled: false
+            rollbackSteps:
+              - step:
+                  name: Rollback Rollout Deployment
+                  identifier: rollbackRolloutDeployment
+                  type: K8sRollingRollback
+                  timeout: 10m
+                  spec:
+                    pruningEnabled: false
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
