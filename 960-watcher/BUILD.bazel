@@ -26,6 +26,7 @@ java_binary(
         "//970-grpc:module",
         "//970-watcher-beans:module",
         "//999-annotations:module",
+        "@maven//:com_google_guava_guava",
         "@maven//:com_squareup_retrofit2_converter_jackson",
         "@maven//:org_codehaus_janino_commons_compiler",
         "@maven//:org_codehaus_janino_janino",
