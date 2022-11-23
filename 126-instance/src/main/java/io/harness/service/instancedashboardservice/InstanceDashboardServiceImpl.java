@@ -8,7 +8,6 @@
 package io.harness.service.instancedashboardservice;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.System.in;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
