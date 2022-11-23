@@ -254,7 +254,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
       EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
       ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
-      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
+      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam,
+      ManifestType.TAS_MANIFEST, ManifestType.VARS, ManifestType.AUTOSCALER);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
