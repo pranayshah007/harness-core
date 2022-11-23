@@ -13,14 +13,13 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
+import io.harness.beans.SecretChangeLog;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.KmsSetupAlert;
-import software.wings.beans.dto.SecretChangeLog;
-
 
 import java.util.List;
 

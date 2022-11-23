@@ -75,15 +75,4 @@ public class SecretChangeLog implements PersistentEntity, UuidAware, CreatedAtAw
   // Secret change log could be retrieved from external system such as Vault (secret versions metadata)
   // This flag is used to denote if this log entry is originated from external system.
   private boolean external;
-
-
-  public software.wings.beans.dto.SecretChangeLog toDto(){
-    return  software.wings.beans.dto.SecretChangeLog.builder()
-            .accountId(this.accountId)
-            .encryptedDataId(encryptedDataId)
-            .description(description)
-            .external(true)
-            .user(user)
-            .build();
-  }
 }

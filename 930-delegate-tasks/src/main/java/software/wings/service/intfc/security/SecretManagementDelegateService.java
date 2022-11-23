@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.SecretChangeLog;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
@@ -22,7 +23,6 @@ import software.wings.beans.HostConnectionAttributes;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
-import software.wings.beans.dto.SecretChangeLog;
 import software.wings.delegatetasks.DelegateTaskType;
 
 import java.util.List;

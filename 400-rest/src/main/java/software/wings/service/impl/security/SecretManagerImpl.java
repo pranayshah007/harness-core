@@ -509,11 +509,6 @@ public class SecretManagerImpl implements SecretManager, SecretManagerCore, Encr
       if (encryptionType == EncryptionType.VAULT && isNotEmpty(encryptedData.getPath())) {
         VaultConfig vaultConfig = (VaultConfig) secretManagerConfigService.getSecretManager(
             accountId, encryptedData.getKmsId(), encryptedData.getEncryptionType());
-        List<software.wings.beans.dto.SecretChangeLog> secretChangeLogList =
-            vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig)
-                .stream()
-                .map(SecretChangeLog::toDto)
-                .collect(Collectors.toList());
         secretChangeLogs.addAll(vaultService.getVaultSecretChangeLogs(encryptedData, vaultConfig));
         // Sort the change log by change time in descending order.
         secretChangeLogs.sort(

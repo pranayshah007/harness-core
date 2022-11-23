@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedDataParent;
+import io.harness.beans.SecretChangeLog;
 import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.SplunkValidationResponse;
 import io.harness.delegate.beans.ldap.LDAPTestAuthenticationRequest;
@@ -189,7 +190,6 @@ import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.dto.KubernetesContainerTask;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.dto.ManifestFile;
-import software.wings.beans.dto.SecretChangeLog;
 import software.wings.beans.jira.JiraTaskParameters;
 import software.wings.beans.servicenow.ServiceNowFieldType;
 import software.wings.beans.servicenow.ServiceNowMetaDTO;
