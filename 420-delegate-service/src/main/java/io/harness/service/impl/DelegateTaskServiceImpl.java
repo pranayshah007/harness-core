@@ -137,8 +137,11 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
           }
         }
         log.info("Response received for task: {} from Delegate: {}", taskId, delegateId);
-        handleResponse(delegateTask, taskQuery, response);
-
+        if (response.isUsingKryoWithoutReference()) {
+          handleResponseV2(delegateTask, taskQuery, response);
+        } else {
+          handleResponse(delegateTask, taskQuery, response);
+        }
         retryObserverSubject.fireInform(DelegateTaskRetryObserver::onTaskResponseProcessed, delegateTask, delegateId);
         remoteObserverInformer.sendEvent(ReflectionUtils.getMethod(DelegateTaskRetryObserver.class,
                                              "onTaskResponseProcessed", DelegateTask.class, String.class),
