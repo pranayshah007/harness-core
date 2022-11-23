@@ -331,11 +331,11 @@ public class IndexManagerSession {
       }
 
       if (creator.isSubsequence(newCreator)) {
-        log.error("Index {} is a subsequence of index {}", newCreator.getOptions().toString(),
+        log.warn("Index {} is a subsequence of index {}", newCreator.getOptions().toString(),
             creator.getOptions().toString());
       }
       if (newCreator.isSubsequence(creator)) {
-        log.error("Index {} is a subsequence of index {}", creator.getOptions().toString(),
+        log.warn("Index {} is a subsequence of index {}", creator.getOptions().toString(),
             newCreator.getOptions().toString());
       }
     }
