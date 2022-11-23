@@ -251,6 +251,14 @@ public class StripeHelperImpl implements StripeHelper {
     return toPriceCollectionDTO(priceCollection);
   }
 
+
+//
+//  int maxDevelopers = Integer.parseInt(developerPriceId.getMetadata().getOrDefault("max", "0"));
+//
+//    if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopers) {
+//    throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
+//  }
+
   @Override
   public SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams) {
     SubscriptionCreateParams.Builder creationParamsBuilder = SubscriptionCreateParams.builder();
