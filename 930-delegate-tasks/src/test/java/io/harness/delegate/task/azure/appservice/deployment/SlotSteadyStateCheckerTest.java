@@ -8,7 +8,6 @@
 package io.harness.delegate.task.azure.appservice.deployment;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.azure.model.AzureConstants.SLOT_SWAP;
 import static io.harness.azure.model.AzureConstants.START_DEPLOYMENT_SLOT;
 import static io.harness.azure.model.AzureConstants.STOP_DEPLOYMENT_SLOT;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatus.RUNNING;
@@ -17,6 +16,7 @@ import static io.harness.delegate.task.azure.appservice.deployment.verifier.Slot
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.STOP_VERIFIER;
 import static io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier.SlotStatusVerifierType.SWAP_VERIFIER;
 import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.MLUKIC;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,12 +26,12 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
@@ -43,12 +43,15 @@ import io.harness.exception.runtime.azure.AzureAppServicesSlotSteadyStateExcepti
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
+import com.azure.core.http.HttpHeaders;
+import com.azure.core.http.HttpRequest;
+import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.monitor.models.EventData;
+import com.azure.resourcemanager.monitor.models.LocalizableString;
 import com.google.common.util.concurrent.FakeTimeLimiter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.monitor.EventData;
-import com.microsoft.azure.management.monitor.LocalizableString;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -61,6 +64,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class SlotSteadyStateCheckerTest extends CategoryTest {
@@ -84,11 +88,11 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
   public void testStopSlotSteadyState() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
+
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
 
     SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(STOP_VERIFIER.name(), mockLogCallback,
-        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack);
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, null);
 
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     doReturn(Optional.of(deploymentSlot))
@@ -100,8 +104,51 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     executorService.submit(new SlotStopStatusTask(deploymentSlot));
     executorService.shutdown();
 
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(10, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
     verify(deploymentSlot, Mockito.atLeast(1)).state();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testStopSlotSteadyStateWithMonoResponse() {
+    AzureWebClient azureWebClient = mock(AzureWebClient.class);
+    AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
+
+    AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
+
+    Response<Void> response = new Response<Void>() {
+      @Override
+      public int getStatusCode() {
+        return 200;
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public HttpRequest getRequest() {
+        return null;
+      }
+
+      @Override
+      public Void getValue() {
+        return null;
+      }
+    };
+
+    Mono<Response<Void>> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doReturn(response).when(responseMono).block(any());
+
+    SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(STOP_VERIFIER.name(), mockLogCallback,
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, responseMono);
+
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
+    verify(responseMono, Mockito.times(1)).block(any());
   }
 
   @Test
@@ -110,54 +157,114 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
   public void testStartSlotSteadyState() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
 
     SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(START_VERIFIER.name(), mockLogCallback,
-        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack);
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, null);
 
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     doReturn(Optional.of(deploymentSlot))
         .when(azureWebClient)
         .getDeploymentSlotByName(eq(azureWebClientContext), eq(SOURCE_SLOT));
     doReturn(RUNNING.name()).when(deploymentSlot).state();
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier);
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier);
     verify(deploymentSlot, Mockito.atLeast(1)).state();
 
     // Failure
     doAnswer(invocation -> { throw new UncheckedTimeoutException(); }).when(deploymentSlot).state();
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
-                               10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
+                               1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
         .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Timed out waiting for executing operation");
 
     doAnswer(invocation -> { throw new Exception(); }).when(deploymentSlot).state();
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
-                               10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
+                               1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
         .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Error while waiting for executing operation");
 
     doReturn(Optional.empty()).when(azureWebClient).getDeploymentSlotByName(eq(azureWebClientContext), eq(SOURCE_SLOT));
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
-                               10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
+                               1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
         .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
         .hasMessageContaining("Unable to find deployment slot with name");
   }
 
   @Test
-  @Owner(developers = ANIL)
+  @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testStartSlotSteadyStateCallbackFailed() {
+  public void testStartSlotSteadyStateWithMonoResponse() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
 
+    Response<Void> response = new Response<Void>() {
+      @Override
+      public int getStatusCode() {
+        return 200;
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public HttpRequest getRequest() {
+        return null;
+      }
+
+      @Override
+      public Void getValue() {
+        return null;
+      }
+    };
+
+    Mono<Response<Void>> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doReturn(response).when(responseMono).block(any());
+
     SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(START_VERIFIER.name(), mockLogCallback,
-        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack);
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, responseMono);
+
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier);
+    verify(responseMono, Mockito.times(1)).block(any());
+
+    // Failure
+    doAnswer(invocation -> { throw new UncheckedTimeoutException(); }).when(responseMono).block(any());
+    assertThatThrownBy(()
+                           -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
+                               1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
+        .hasMessageContaining("Timed out waiting for executing operation");
+
+    doAnswer(invocation -> { throw new RuntimeException(); }).when(responseMono).block(any());
+    assertThatThrownBy(()
+                           -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
+                               1, 5, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
+        .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
+        .hasMessageContaining("Error while waiting for executing operation");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testStartSlotSteadyStateFailed() {
+    AzureWebClient azureWebClient = mock(AzureWebClient.class);
+    AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
+    AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
+
+    Mono<Response<Void>> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doThrow(new RuntimeException("some response error")).when(responseMono).block(any());
+
+    SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(START_VERIFIER.name(), mockLogCallback,
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, responseMono);
 
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
     doReturn(Optional.of(deploymentSlot))
@@ -165,15 +272,11 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
         .getDeploymentSlotByName(eq(azureWebClientContext), eq(SOURCE_SLOT));
     doReturn(STOPPED.name()).when(deploymentSlot).state();
 
-    ExecutorService executorService = Executors.newFixedThreadPool(1);
-    executorService.submit(new MarkFailureTask(restCallBack));
-    executorService.shutdown();
-
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 1, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
         .isInstanceOf(AzureAppServicesSlotSteadyStateException.class)
-        .hasMessageContaining("Call back failed");
+        .hasMessageContaining("some response error");
   }
 
   @Test
@@ -182,7 +285,6 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
   public void testSwapSlotSteadyState() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
 
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
@@ -199,13 +301,68 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     doNothing().when(mockLogCallback).saveExecutionLog(any());
 
     SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(SWAP_VERIFIER.name(), mockLogCallback,
-        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack);
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, null);
 
-    slotSteadyStateChecker.waitUntilCompleteWithTimeout(10, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
     verify(azureMonitorClient, Mockito.atLeast(1))
         .listEventDataWithAllPropertiesByResourceId(eq(azureWebClientContext.getAzureConfig()),
             eq(azureWebClientContext.getSubscriptionId()), any(), any(), eq(SLOT_ID));
     assertThat(statusVerifier.getSteadyState().equalsIgnoreCase(RUNNING.name())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testSwapSlotSteadyStateWithMonoResponse() {
+    AzureWebClient azureWebClient = mock(AzureWebClient.class);
+    AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
+    AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
+
+    DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
+    doReturn(Optional.of(deploymentSlot))
+        .when(azureWebClient)
+        .getDeploymentSlotByName(eq(azureWebClientContext), eq(SOURCE_SLOT));
+    doReturn(SLOT_ID).when(deploymentSlot).id();
+
+    doReturn(createEventData())
+        .when(azureMonitorClient)
+        .listEventDataWithAllPropertiesByResourceId(eq(azureWebClientContext.getAzureConfig()),
+            eq(azureWebClientContext.getSubscriptionId()), any(), any(), eq(SLOT_ID));
+
+    doNothing().when(mockLogCallback).saveExecutionLog(any());
+
+    Response<Void> response = new Response<Void>() {
+      @Override
+      public int getStatusCode() {
+        return 200;
+      }
+
+      @Override
+      public HttpHeaders getHeaders() {
+        return null;
+      }
+
+      @Override
+      public HttpRequest getRequest() {
+        return null;
+      }
+
+      @Override
+      public Void getValue() {
+        return null;
+      }
+    };
+
+    Mono<Response<Void>> responseMono = mock(Mono.class);
+    doReturn(responseMono).when(responseMono).doOnError(any());
+    doReturn(responseMono).when(responseMono).doOnSuccess(any());
+    doReturn(response).when(responseMono).block(any());
+
+    SlotStatusVerifier statusVerifier = SlotStatusVerifier.getStatusVerifier(SWAP_VERIFIER.name(), mockLogCallback,
+        SOURCE_SLOT, azureWebClient, azureMonitorClient, azureWebClientContext, responseMono);
+
+    slotSteadyStateChecker.waitUntilCompleteWithTimeout(1, 1, mockLogCallback, STOP_DEPLOYMENT_SLOT, statusVerifier);
+    verify(responseMono, Mockito.times(1)).block(any());
   }
 
   @Test
@@ -214,11 +371,9 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
   public void testSlotSwapper() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
-    restCallBack.failure(mock(Throwable.class));
 
-    SwapSlotTask swapper = new SwapSlotTask(
-        SOURCE_SLOT, TARGET_SLOT, azureWebClient, azureWebClientContext, restCallBack, mockLogCallback);
+    SwapSlotTask swapper =
+        new SwapSlotTask(SOURCE_SLOT, TARGET_SLOT, azureWebClient, azureWebClientContext, mockLogCallback);
 
     ExecutorService executorService = Executors.newFixedThreadPool(1);
     executorService.submit(swapper);
@@ -229,8 +384,7 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     } catch (InterruptedException exception) {
       exception.printStackTrace();
     }
-    verify(azureWebClient)
-        .swapDeploymentSlotsAsync(eq(azureWebClientContext), eq(SOURCE_SLOT), eq(TARGET_SLOT), eq(restCallBack));
+    verify(azureWebClient).swapDeploymentSlotsAsync(eq(azureWebClientContext), eq(SOURCE_SLOT), eq(TARGET_SLOT));
   }
 
   @Test
@@ -239,12 +393,11 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
   public void testSlotStatusVerifierFail() {
     AzureWebClient azureWebClient = mock(AzureWebClient.class);
     AzureMonitorClient azureMonitorClient = mock(AzureMonitorClient.class);
-    AzureServiceCallBack restCallBack = new AzureServiceCallBack(mockLogCallback, SLOT_SWAP);
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
 
     assertThatThrownBy(()
                            -> SlotStatusVerifier.getStatusVerifier("verifierType", mockLogCallback, SOURCE_SLOT,
-                               azureWebClient, azureMonitorClient, azureWebClientContext, restCallBack))
+                               azureWebClient, azureMonitorClient, azureWebClientContext, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("No slot status verifier defined for");
   }
@@ -308,26 +461,6 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     eventDataList.add(slotSwap);
 
     return eventDataList;
-  }
-
-  private static class MarkFailureTask implements Runnable {
-    private final AzureServiceCallBack restCallBack;
-
-    MarkFailureTask(AzureServiceCallBack restCallBack) {
-      this.restCallBack = restCallBack;
-    }
-
-    @Override
-    public void run() {
-      try {
-        Thread.sleep(5000);
-        Throwable throwable = mock(Throwable.class);
-        doReturn("Call back failed").when(throwable).getMessage();
-        restCallBack.failure(throwable);
-      } catch (InterruptedException exception) {
-        exception.printStackTrace();
-      }
-    }
   }
 
   private static class SlotStopStatusTask implements Runnable {

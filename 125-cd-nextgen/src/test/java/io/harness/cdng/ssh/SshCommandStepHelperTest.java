@@ -9,6 +9,7 @@ package io.harness.cdng.ssh;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ANIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -44,11 +45,13 @@ import io.harness.delegate.task.shell.CommandTaskParameters;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
 import io.harness.delegate.task.shell.WinrmTaskParameters;
 import io.harness.delegate.task.ssh.CopyCommandUnit;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.NGCommandUnitType;
 import io.harness.delegate.task.ssh.NgCommandUnit;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.ArtifactoryArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
@@ -58,6 +61,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -436,6 +440,47 @@ public class SshCommandStepHelperTest extends CategoryTest {
                 StepElementParameters.builder().spec(buildScriptCommandStepParams(Collections.emptyMap())).build(),
                 taskNGDataException))
         .isInstanceOf(TaskNGDataException.class);
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testBuildCommandTaskParametersCustomDeployment() {
+    Map<String, Object> env = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    Map<String, String> taskEnv = new LinkedHashMap<>();
+    env.put("key", "val");
+
+    CommandStepParameters stepParameters = buildCopyCommandStepParams(env);
+
+    doReturn(
+        ServiceStepOutcome.builder().type(ServiceSpecType.CUSTOM_DEPLOYMENT).name("DeploymentTemplateService").build())
+        .when(outcomeService)
+        .resolve(eq(ambiance), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE)));
+
+    EmptyHostDelegateConfig emptyHostDelegateConfig = EmptyHostDelegateConfig.builder().build();
+    OptionalSweepingOutput optionalSweepingOutput =
+        OptionalSweepingOutput.builder()
+            .found(true)
+            .output(SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(emptyHostDelegateConfig).build())
+            .build();
+
+    doReturn(optionalSweepingOutput)
+        .when(executionSweepingOutputService)
+        .resolveOptional(eq(ambiance),
+            eq(RefObjectUtils.getSweepingOutputRefObject(
+                OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME)));
+    PowerMockito.when(CommandStepUtils.mergeEnvironmentVariables(eq(env), any())).thenReturn(taskEnv);
+    CommandTaskParameters taskParameters = helper.buildCommandTaskParameters(ambiance, stepParameters);
+    assertThat(taskParameters).isInstanceOf(SshCommandTaskParameters.class);
+    SshCommandTaskParameters sshTaskParameters = (SshCommandTaskParameters) taskParameters;
+    assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isNotNull();
+    SshInfraDelegateConfig sshInfraDelegateConfig = sshTaskParameters.getSshInfraDelegateConfig();
+    assertThat(sshInfraDelegateConfig).isInstanceOf(EmptyHostDelegateConfig.class);
+
+    assertCopyTaskParameters(taskParameters, taskEnv);
+    assertThat(sshTaskParameters.getSshInfraDelegateConfig()).isEqualTo(emptyHostDelegateConfig);
   }
 
   private void assertScriptTaskParameters(CommandTaskParameters taskParameters, Map<String, String> taskEnv) {

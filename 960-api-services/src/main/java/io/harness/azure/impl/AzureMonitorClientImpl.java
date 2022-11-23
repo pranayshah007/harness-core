@@ -15,11 +15,13 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureMonitorClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.utils.DateTimeUtils;
 
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.monitor.models.EventData;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.monitor.EventData;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.joda.time.DateTime;
 
@@ -33,17 +35,19 @@ public class AzureMonitorClientImpl extends AzureClient implements AzureMonitorC
       throw new IllegalArgumentException(RESOURCE_ID_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing activity log event data with all properties for resourceId {}, startTime {}, endTime: {}",
         resourceId, startTime.toDateTime(), endTime.toDateTime());
     return azure.activityLogs()
         .defineQuery()
-        .startingFrom(startTime)
-        .endsBefore(endTime)
+        .startingFrom(DateTimeUtils.fromJodaDateTime2OffestDateTime(startTime))
+        .endsBefore(DateTimeUtils.fromJodaDateTime2OffestDateTime(endTime))
         .withAllPropertiesInResponse()
         .filterByResource(resourceId)
-        .execute();
+        .execute()
+        .stream()
+        .collect(Collectors.toList());
   }
 
   public List<EventData> listEventDataWithAllPropertiesByResourceGroupName(
@@ -52,17 +56,19 @@ public class AzureMonitorClientImpl extends AzureClient implements AzureMonitorC
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug(
         "Start listing activity log event data with all properties by resourceGroupName {}, startTime {}, endTime: {}",
         resourceGroupName, startTime.toDateTime(), endTime.toDateTime());
     return azure.activityLogs()
         .defineQuery()
-        .startingFrom(startTime)
-        .endsBefore(endTime)
+        .startingFrom(DateTimeUtils.fromJodaDateTime2OffestDateTime(startTime))
+        .endsBefore(DateTimeUtils.fromJodaDateTime2OffestDateTime(endTime))
         .withAllPropertiesInResponse()
         .filterByResourceGroup(resourceGroupName)
-        .execute();
+        .execute()
+        .stream()
+        .collect(Collectors.toList());
   }
 }

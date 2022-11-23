@@ -407,7 +407,8 @@ public class HelmDeployStateTest extends CategoryTest {
                                                .delegateSelectors(new HashSet<>(singletonList("delegateSelectors")))
                                                .useKubernetesDelegate(true)
                                                .build())
-                                .build())
+                                .build()
+                                .toDTO())
           .build();
   private ExecutionContextImpl context;
 
@@ -1753,7 +1754,9 @@ public class HelmDeployStateTest extends CategoryTest {
   private void testGetPreviousReleaseVersionInvalidResponse(
       HelmVersion version, GitConfig gitConfig, SettingValue settingValue, String expectedMessage) throws Exception {
     ContainerServiceParams params =
-        ContainerServiceParams.builder().settingAttribute(aSettingAttribute().withValue(settingValue).build()).build();
+        ContainerServiceParams.builder()
+            .settingAttribute(SettingAttribute.Builder.aSettingAttribute().withValue(settingValue).build().toDTO())
+            .build();
     assertThatThrownBy(()
                            -> helmDeployState.getPreviousReleaseVersion(context, app, RELEASE_NAME, params, gitConfig,
                                emptyList(), "", version, 0, HelmDeployStateExecutionData.builder(), null, null))

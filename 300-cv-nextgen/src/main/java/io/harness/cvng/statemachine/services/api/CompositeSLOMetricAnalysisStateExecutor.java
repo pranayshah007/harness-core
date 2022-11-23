@@ -10,6 +10,7 @@ package io.harness.cvng.statemachine.services.api;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -26,7 +27,10 @@ import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,15 +49,33 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
   @Inject private VerificationTaskService verificationTaskService;
+
+  @Inject private OrchestrationService orchestrationService;
+
+  @Inject private Clock clock;
+
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
-    Instant startTime = analysisState.getInputs().getStartTime();
-    Instant endTime = analysisState.getInputs().getEndTime();
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
     // here startTime will be the prv Data endTime and endTime will be the current time.
     String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
     CompositeServiceLevelObjective compositeServiceLevelObjective =
         (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
+    CompositeSLORecord lastSLORecord = compositeSLORecordService.getLatestCompositeSLORecordWithVersion(
+        compositeServiceLevelObjective.getUuid(), compositeServiceLevelObjective.getVersion());
+    LocalDateTime currentLocalDate =
+        LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
+    Instant startTimeForCurrentRange = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate)
+                                           .getStartTime(compositeServiceLevelObjective.getZoneOffset());
+    Instant startedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
+    Instant startTime = (startTimeForCurrentRange.isAfter(startedAtTime)) ? startTimeForCurrentRange : startedAtTime;
+    if (lastSLORecord != null) {
+      startTime = Instant.ofEpochSecond(lastSLORecord.getEpochMinute() * 60 + 60);
+    }
+    Instant endTime = clock.instant();
+    if (endTime.isAfter(startTime.plus(12, ChronoUnit.HOURS))) {
+      endTime = startTime.plus(12, ChronoUnit.HOURS);
+    }
     Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
     Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
     for (ServiceLevelObjectivesDetail objectivesDetail :
@@ -76,7 +98,8 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
               .build(),
           simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
       String sliId = serviceLevelIndicator.getUuid();
-      List<SLIRecord> sliRecords = sliRecordService.getSLIRecords(sliId, startTime, endTime);
+      int sliVersion = serviceLevelIndicator.getVersion();
+      List<SLIRecord> sliRecords = sliRecordService.getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
       serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
       objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
     }
@@ -97,6 +120,13 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
 
   @Override
   public AnalysisState handleRerun(CompositeSLOMetricAnalysisState analysisState) {
+    // increment the retryCount without caring for the max
+    // clean up state in underlying worker and then execute
+    analysisState.setRetryCount(analysisState.getRetryCount() + 1);
+    log.info("In composite slo analysis for Inputs {}, cleaning up worker task. Old taskID: {}",
+        analysisState.getInputs(), analysisState.getWorkerTaskId());
+    analysisState.setWorkerTaskId(null);
+    execute(analysisState);
     return analysisState;
   }
 
@@ -118,6 +148,21 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
 
   @Override
   public AnalysisState handleRetry(CompositeSLOMetricAnalysisState analysisState) {
+    if (analysisState.getRetryCount() >= getMaxRetry()) {
+      analysisState.setStatus(AnalysisStatus.FAILED);
+    } else {
+      return handleRerun(analysisState);
+    }
     return analysisState;
+  }
+
+  @Override
+  public void handleFinalStatuses(CompositeSLOMetricAnalysisState analysisState) {
+    String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
+    String sloId = verificationTaskService.getCompositeSLOId(verificationTaskId);
+    CompositeServiceLevelObjective compositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.get(sloId);
+    orchestrationService.queueAnalysisWithoutEventPublish(
+        verificationTaskId, compositeServiceLevelObjective.getAccountId(), Instant.now(), Instant.now());
   }
 }

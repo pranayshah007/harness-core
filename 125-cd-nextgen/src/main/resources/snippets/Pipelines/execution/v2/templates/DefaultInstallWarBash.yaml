@@ -12,11 +12,7 @@ template:
   spec:
     type: Command
     timeout: 10m
-    strategy:
-      repeat:
-        items: <+stage.output.hosts>
     spec:
-      host: <+repeat.item>
       onDelegate: false
       environmentVariables:
         - name: DestinationDirectory

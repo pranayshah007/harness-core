@@ -45,7 +45,9 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +60,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-import rx.Completable;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
@@ -116,9 +118,10 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .connSettingsToRemove(connSettingsToRemove)
             .build();
 
+    Mono<Response<Void>> responseMono = Mono.just(new SimpleResponse<>(null, 200, null, null));
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
-    doReturn(Completable.complete()).when(deploymentSlot).stopAsync();
-    doReturn(Completable.complete()).when(deploymentSlot).startAsync();
+    doReturn(responseMono).when(deploymentSlot).stopAsync();
+    doReturn(responseMono).when(deploymentSlot).startAsync();
     doReturn(Optional.of(deploymentSlot))
         .when(mockAzureWebClient)
         .getDeploymentSlotByName(azureWebClientContext, SLOT_NAME);
@@ -188,18 +191,14 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
         .isInstanceOf(Exception.class);
 
     reset(mockAzureWebClient);
-    doAnswer(invocation -> { throw new Exception(); })
-        .when(mockAzureWebClient)
-        .stopDeploymentSlotAsync(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(mockAzureWebClient).stopDeploymentSlotAsync(any(), any());
     assertThatThrownBy(()
                            -> azureAppServiceDeploymentService.deployDockerImage(azureAppServiceDockerDeploymentContext,
                                AzureAppServicePreDeploymentData.builder().build()))
         .isInstanceOf(Exception.class);
 
     reset(mockAzureWebClient);
-    doAnswer(invocation -> { throw new Exception(); })
-        .when(mockAzureWebClient)
-        .startDeploymentSlotAsync(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(mockAzureWebClient).startDeploymentSlotAsync(any(), any());
     assertThatThrownBy(()
                            -> azureAppServiceDeploymentService.deployDockerImage(azureAppServiceDockerDeploymentContext,
                                AzureAppServicePreDeploymentData.builder().build()))
@@ -231,9 +230,10 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .azureWebClientContext(azureWebClientContext)
             .build();
 
+    Mono<Response<Void>> responseMono = Mono.just(new SimpleResponse<>(null, 200, null, null));
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
-    doReturn(Completable.complete()).when(deploymentSlot).stopAsync();
-    doReturn(Completable.complete()).when(deploymentSlot).startAsync();
+    doReturn(responseMono).when(deploymentSlot).stopAsync();
+    doReturn(responseMono).when(deploymentSlot).startAsync();
     doReturn(Optional.of(deploymentSlot))
         .when(mockAzureWebClient)
         .getDeploymentSlotByName(azureWebClientContext, SLOT_NAME);

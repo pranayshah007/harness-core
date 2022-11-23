@@ -108,7 +108,7 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
                                                   .build();
   private SettingAttribute computeProvider = aSettingAttribute().withValue(GcpConfig.builder().build()).build();
   private CommandExecutionContext context = aCommandExecutionContext()
-                                                .cloudProviderSetting(computeProvider)
+                                                .cloudProviderSetting(computeProvider.toDTO())
                                                 .containerSetupParams(setupParams)
                                                 .cloudProviderCredentials(emptyList())
                                                 .build();
@@ -187,8 +187,8 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
                                                                     .endStatus()
                                                                     .build();
 
-    when(gkeClusterService.getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class),
-             nullable(String.class), nullable(Boolean.class)))
+    when(gkeClusterService.getCluster(nullable(software.wings.beans.dto.SettingAttribute.class), eq(emptyList()),
+             nullable(String.class), nullable(String.class), nullable(Boolean.class)))
         .thenReturn(kubernetesConfig);
     when(kubernetesContainerService.createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class)))
         .thenReturn(replicationController);
@@ -219,8 +219,8 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
     CommandExecutionStatus status = kubernetesSetupCommandUnit.execute(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(gkeClusterService)
-        .getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class), nullable(String.class),
-            nullable(Boolean.class));
+        .getCluster(nullable(software.wings.beans.dto.SettingAttribute.class), eq(emptyList()), nullable(String.class),
+            nullable(String.class), nullable(Boolean.class));
     verify(kubernetesContainerService).createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class));
   }
 
@@ -472,8 +472,8 @@ public class KubernetesSetupCommandUnitTest extends WingsBaseTest {
 
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(gkeClusterService)
-        .getCluster(nullable(SettingAttribute.class), eq(emptyList()), nullable(String.class), nullable(String.class),
-            nullable(Boolean.class));
+        .getCluster(nullable(software.wings.beans.dto.SettingAttribute.class), eq(emptyList()), nullable(String.class),
+            nullable(String.class), nullable(Boolean.class));
     verify(kubernetesContainerService).createOrReplaceController(eq(kubernetesConfig), nullable(HasMetadata.class));
 
     verify(kubernetesContainerService)

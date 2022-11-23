@@ -17,7 +17,10 @@ import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -50,22 +53,30 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
     log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
-    // Add the batch records to the stream(s)
+    Collections.reverse(records);
+    Map<String, ChangeEvent<String, String>> recordsMap = new HashMap<>();
     for (ChangeEvent<String, String> record : records) {
+      if (!recordsMap.containsKey(record.key())) {
+        recordsMap.put(record.key(), record);
+      }
+    }
+    // Add the batch records to the stream(s)
+    for (ChangeEvent<String, String> record : recordsMap.values()) {
       cnt++;
       Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
-
-      DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
-                                                    .setKey(getKeyOrDefault(record))
-                                                    .setValue(getValueOrDefault(record))
-                                                    .setOptype(opType.get().toString())
-                                                    .setTimestamp(System.currentTimeMillis())
-                                                    .build();
-      boolean debeziumEnabled =
-          cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
-      Producer producer = producerFactory.get(record.destination(), redisStreamSize);
-      if (debeziumEnabled) {
-        producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+      if (!opType.isEmpty()) {
+        DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
+                                                      .setKey(getKeyOrDefault(record))
+                                                      .setValue(getValueOrDefault(record))
+                                                      .setOptype(opType.get().toString())
+                                                      .setTimestamp(System.currentTimeMillis())
+                                                      .build();
+        boolean debeziumEnabled =
+            cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
+        Producer producer = producerFactory.get(record.destination(), redisStreamSize);
+        if (debeziumEnabled) {
+          producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+        }
       }
       try {
         recordCommitter.markProcessed(record);

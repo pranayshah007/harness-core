@@ -31,8 +31,8 @@ import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.yaml.YamlGitService;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -150,7 +150,7 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
 
       updatedApplication = appService.update(current);
     } else {
-      YamlGitConfig yamlGitConfig = null;
+      software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = null;
 
       if (changeContext.getChange() instanceof GitFileChange) {
         yamlGitConfig = ((GitFileChange) changeContext.getChange()).getYamlGitConfig();
@@ -174,7 +174,8 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
     return yamlHelper.getApp(accountId, yamlFilePath);
   }
 
-  private YamlGitConfig createAppYamlGitConfig(String accountId, YamlGitConfig yamlGitConfig) {
+  private YamlGitConfig createAppYamlGitConfig(
+      String accountId, software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     if (yamlGitConfig == null) {
       return null;
     }

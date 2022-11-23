@@ -15,9 +15,9 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.GitCommit.Status.COMPLETED;
 import static software.wings.beans.GitCommit.Status.COMPLETED_WITH_ERRORS;
 import static software.wings.service.impl.GitConfigHelperService.matchesRepositoryName;
-import static software.wings.yaml.gitSync.YamlGitConfig.BRANCH_NAME_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.REPOSITORY_NAME_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.BRANCH_NAME_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.GIT_CONNECTOR_ID_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.REPOSITORY_NAME_KEY;
 
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptySet;
@@ -46,7 +46,7 @@ import software.wings.service.intfc.yaml.sync.YamlService;
 import software.wings.yaml.gitSync.GitFileActivity;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import com.mongodb.DuplicateKeyException;
@@ -144,8 +144,8 @@ public class GitChangeSetHandler {
     return !ofNullable(gitFileChange.isChangeFromAnotherCommit()).orElse(FALSE);
   }
 
-  private void populatateYamlGitconfigInError(
-      Map<String, ChangeWithErrorMsg> failedYamlFileChangeMap, YamlGitConfig yamlGitConfig) {
+  private void populatateYamlGitconfigInError(Map<String, ChangeWithErrorMsg> failedYamlFileChangeMap,
+      software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     emptyIfNull(failedYamlFileChangeMap)
         .values()
         .stream()
@@ -184,7 +184,7 @@ public class GitChangeSetHandler {
   }
 
   private List<GitFileChange> obtainValidGitFileChangesBasedOnYamlGitConfig(
-      YamlGitConfig yamlGitConfig, List<GitFileChange> gitFileChanges, String accountId) {
+      software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig, List<GitFileChange> gitFileChanges, String accountId) {
     List<GitFileChange> gitFileChangeList = new ArrayList<>();
     Map<String, YamlGitConfig> appMap = new HashMap<>();
 
@@ -267,7 +267,7 @@ public class GitChangeSetHandler {
 
   private void saveCommitFromGit(
       GitDiffResult gitDiffResult, List<String> yamlGitConfigIds, String accountId, GitCommit.Status gitCommitStatus) {
-    YamlGitConfig yamlGitConfig = gitDiffResult.getYamlGitConfig();
+    software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = gitDiffResult.getYamlGitConfig();
     String commitId = gitDiffResult.getCommitId();
     if (yamlGitConfig == null) {
       throw new UnexpectedException(

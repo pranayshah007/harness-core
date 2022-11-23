@@ -929,9 +929,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateRetryWithPipelineDeleted() {
-    doReturn(Optional.empty())
-        .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty()).when(pipelineService).getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     RetryInfo retryInfo = retryExecuteHelper.validateRetry(accountId, orgId, projectId, pipelineId, planExecId);
     assertThat(retryInfo.isResumable()).isFalse();
     assertThat(retryInfo.getErrorMessage())
@@ -944,7 +942,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenNotTheLatestExecution() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder().isLatestExecution(false).build())
         .when(executionService)
         .getPipelineExecutionSummaryEntity(accountId, orgId, projectId, planExecId, false);
@@ -961,7 +959,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenThirtyDaysHavePassed() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - 60 * DAY_IN_MS)
@@ -979,7 +977,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
   public void testValidateRetryWhenPlanExecutionDoesNotExist() {
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1002,7 +1000,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1030,7 +1028,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(originalYaml).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)
@@ -1066,7 +1064,7 @@ public class RetryExecuteHelperTest extends CategoryTest {
 
     doReturn(Optional.of(PipelineEntity.builder().yaml(pipelineYaml).build()))
         .when(pipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(PipelineExecutionSummaryEntity.builder()
                  .isLatestExecution(true)
                  .createdAt(System.currentTimeMillis() - DAY_IN_MS)

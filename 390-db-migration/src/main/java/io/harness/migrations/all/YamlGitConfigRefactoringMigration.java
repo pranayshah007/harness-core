@@ -26,7 +26,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.security.UsageRestrictions;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.UsageRestrictionsService;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import com.google.inject.Inject;
 import java.lang.reflect.Field;

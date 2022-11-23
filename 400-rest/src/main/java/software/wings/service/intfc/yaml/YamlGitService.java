@@ -32,7 +32,7 @@ import software.wings.service.impl.yaml.sync.GitSyncFailureAlertDetails;
 import software.wings.yaml.errorhandling.GitSyncError;
 import software.wings.yaml.gitSync.GitSyncWebhook;
 import software.wings.yaml.gitSync.YamlChangeSet;
-import software.wings.yaml.gitSync.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
 
 import java.util.List;
 import java.util.Map;
@@ -118,6 +118,8 @@ public interface YamlGitService {
 
   List<YamlGitConfig> getYamlGitConfigs(
       String accountId, String gitConnectorId, String branchName, String repositoryName);
+
+  List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId);
 
   List<String> getYamlGitConfigIds(String accountId, String gitConnectorId, String branchName, String repositoryName);
 

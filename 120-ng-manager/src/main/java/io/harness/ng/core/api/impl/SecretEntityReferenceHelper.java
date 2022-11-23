@@ -26,7 +26,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.DeleteSetupUsageDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -147,7 +147,7 @@ public class SecretEntityReferenceHelper {
       throw new UnexpectedException("Error while deleting the secret");
     }
     if (isEntityReferenced) {
-      throw new InvalidRequestException(
+      throw new ReferencedEntityException(
           String.format("Could not delete the secret %s as it is referenced by other entities", secretIdentifier));
     }
   }

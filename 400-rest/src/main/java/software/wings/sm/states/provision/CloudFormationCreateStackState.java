@@ -543,7 +543,7 @@ public class CloudFormationCreateStackState extends CloudFormationState {
     } else if (responseData instanceof FetchS3FilesExecutionResponse) {
       return handleFetchS3FilesExecutionResponse(response, context);
     } else {
-      saveCompletionFlag(context);
+      saveCreateStackCompletionFlag(context);
       return super.handleAsyncResponse(context, response);
     }
   }
@@ -645,13 +645,15 @@ public class CloudFormationCreateStackState extends CloudFormationState {
     return executeInternal(context, ((ScriptStateExecutionData) context.getStateExecutionData()).getActivityId());
   }
 
-  private void saveCompletionFlag(ExecutionContext context) {
-    CloudFormationCompletionFlag cloudFormationCompletionFlag = getCloudFormationCompletionFlag(context);
-    if (cloudFormationCompletionFlag == null) {
-      sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
-                                     .name(getCompletionStatusFlagSweepingOutputName())
-                                     .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-                                     .build());
+  private void saveCreateStackCompletionFlag(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_COMPLETION_FLAG);
+    if (cloudFormationCompletionFlag == null || cloudFormationCompletionFlag.getValue() == null) {
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+              .name(getCompletionStatusFlagSweepingOutputName(CLOUDFORMATION_COMPLETION_FLAG, context))
+              .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+              .build());
     }
   }
 

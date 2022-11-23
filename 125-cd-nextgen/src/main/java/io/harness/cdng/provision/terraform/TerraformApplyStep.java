@@ -161,6 +161,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
             .backendConfigFileInfo(helper.toTerraformBackendFileInfo(spec.getBackendConfig(), ambiance))
             .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()))
             .saveTerraformStateJson(false)
+            .saveTerraformHumanReadablePlan(false)
             .environmentVariables(helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()) == null
                     ? new HashMap<>()
                     : helper.getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
@@ -210,6 +211,7 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
                 inheritOutput.getBackendConfigurationFileConfig(), ambiance))
             .targets(inheritOutput.getTargets())
             .saveTerraformStateJson(false)
+            .saveTerraformHumanReadablePlan(false)
             .encryptionConfig(inheritOutput.getEncryptionConfig())
             .encryptedTfPlan(inheritOutput.getEncryptedTfPlan())
             .planName(inheritOutput.getPlanName())

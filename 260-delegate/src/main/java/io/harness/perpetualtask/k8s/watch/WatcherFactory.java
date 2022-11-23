@@ -17,8 +17,7 @@ import io.kubernetes.client.openapi.ApiClient;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 public interface WatcherFactory {
   PodWatcher createPodWatcher(ApiClient apiClient, ClusterDetails params, K8sControllerFetcher controllerFetcher,
-      SharedInformerFactory sharedInformerFactory, PVCFetcher pvcFetcher, NamespaceFetcher namespaceFetcher,
-      String accountId);
+      SharedInformerFactory sharedInformerFactory, PVCFetcher pvcFetcher, NamespaceFetcher namespaceFetcher);
 
   NodeWatcher createNodeWatcher(
       ApiClient apiClient, ClusterDetails params, SharedInformerFactory sharedInformerFactory);

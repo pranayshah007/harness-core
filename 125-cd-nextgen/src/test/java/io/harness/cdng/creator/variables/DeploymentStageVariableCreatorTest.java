@@ -30,6 +30,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.persistence.HIterator;
 import io.harness.pms.contracts.plan.YamlProperties;
@@ -332,7 +333,8 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
     when(iteratorMock.iterator()).thenReturn(List.of(infrastructureEntity).iterator());
     when(infrastructureEntityService.get(any(), any(), any(), any(), any()))
         .thenReturn(Optional.of(infrastructureEntity));
-    when(serviceOverrideService.get(any(), any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(serviceOverrideService.get(any(), any(), any(), any(), any()))
+        .thenReturn(Optional.of(NGServiceOverridesEntity.builder().build()));
 
     YamlField fullYamlField = YamlUtils.readTree(pipelineJson);
 
@@ -426,13 +428,14 @@ public class DeploymentStageVariableCreatorTest extends CategoryTest {
             .serviceYamlFile("ServiceWithArtifactSourcesButFixedPrimaryRef.yaml")
             .envYamlFile("environmentV2.yaml")
             .infraYamlFile("k8sDirectInfrastructure.yaml")
-            .expectedSvcFqn(List.of("service.identifier", "service.name", "service.description", "service.type",
-                "service.tags", "service.gitOpsEnabled", "artifacts.primary.connectorRef",
-                "artifacts.primary.repositoryName", "artifacts.primary.artifactPath",
-                "artifacts.primary.repositoryFormat", "artifacts.primary.tag", "artifacts.primary.tagRegex",
-                "artifacts.primary.identifier", "artifacts.primary.type", "artifacts.primary.primaryArtifact",
-                "artifacts.primary.image", "artifacts.primary.imagePullSecret", "artifacts.primary.registryHostname",
-                "artifacts.primary.metadata", "serviceVariables.envVar1", "serviceVariables.svar1"))
+            .expectedSvcFqn(
+                List.of("service.identifier", "service.name", "service.description", "service.type", "service.tags",
+                    "service.gitOpsEnabled", "artifacts.primary.connectorRef", "artifacts.primary.repositoryName",
+                    "artifacts.primary.artifactPath", "artifacts.primary.repositoryFormat", "artifacts.primary.tag",
+                    "artifacts.primary.tagRegex", "artifacts.primary.identifier", "artifacts.primary.type",
+                    "artifacts.primary.primaryArtifact", "artifacts.primary.image", "artifacts.primary.imagePullSecret",
+                    "artifacts.primary.registryHostname", "artifacts.primary.metadata", "artifacts.primary.label",
+                    "serviceVariables.envVar1", "serviceVariables.svar1"))
             .expectedEnvFqn(List.of("env.name", "env.identifier", "env.description", "env.type", "env.tags",
                 "env.environmentRef", "env.variables.envVar1", "env.variables.svar1"))
             .expectedInfraFqn(List.of("infra.connectorRef", "infra.namespace", "infra.releaseName",

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.approval.step.beans.ApprovalInstanceDetailsDTO;
+import io.harness.steps.approval.step.beans.ApprovalUserGroupDTO;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,4 +34,5 @@ public class HarnessApprovalInstanceDetailsDTO implements ApprovalInstanceDetail
   @NotNull ApproversDTO approvers;
   List<HarnessApprovalActivity> approvalActivities;
   List<ApproverInputInfoDTO> approverInputs;
+  List<ApprovalUserGroupDTO> validatedApprovalUserGroups;
 }

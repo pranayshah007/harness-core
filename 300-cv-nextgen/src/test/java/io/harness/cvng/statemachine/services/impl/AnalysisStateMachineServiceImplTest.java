@@ -622,7 +622,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     when(featureFlagService.isFeatureFlagEnabled(
              eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
         .thenReturn(true);
-    FieldUtils.writeField(stateMachineService, "featureFlagService", featureFlagService, true);
+    FieldUtils.writeField(taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT),
+        "featureFlagService", featureFlagService, true);
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
@@ -648,7 +649,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
     assertThat(stateMachine).isNotNull();
   }

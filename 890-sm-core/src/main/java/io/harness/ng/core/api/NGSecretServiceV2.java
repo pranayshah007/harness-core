@@ -46,5 +46,5 @@ public interface NGSecretServiceV2 {
 
   List<Secret> getPermitted(Collection<Secret> secrets);
 
-  Page<Secret> list(List<Secret> secrets, int page, int size);
+  Page<Secret> getPaginatedResult(List<Secret> unpagedSecrets, int page, int size);
 }

@@ -23,6 +23,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,7 @@ import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.AzureConstants;
 import io.harness.azure.model.AzureHostConnectionType;
 import io.harness.azure.model.AzureOSType;
 import io.harness.azure.model.VirtualMachineData;
@@ -48,6 +50,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
@@ -80,6 +83,8 @@ import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.filesystem.FileIo;
+import io.harness.filesystem.LazyAutoCloseableWorkingDirectory;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
@@ -88,26 +93,34 @@ import io.harness.security.encryption.SecretDecryptionService;
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedResponse;
+import com.azure.core.http.rest.PagedResponseBase;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.containerregistry.models.Registry;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.common.io.Resources;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
-import com.microsoft.azure.management.resources.Subscription;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.assertj.core.util.Lists;
+import java.util.function.Supplier;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureAsyncTaskHelperTest extends CategoryTest {
@@ -136,12 +149,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
+    MockedStatic<FileIo> fileIoMocked = mockStatic(FileIo.class);
+    fileIoMocked.when(() -> FileIo.writeFile(any(String.class), any())).thenAnswer((Answer<Void>) invocation -> null);
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testValidateSuccessConnectionWithSecretKey() {
+  public void testValidateSuccessConnectionWithSecretKey() throws IOException {
     testValidateSuccessConnectionWithServicePrincipal(
         getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
@@ -149,7 +164,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testValidateSuccessConnectionWithCert() {
+  public void testValidateSuccessConnectionWithCert() throws IOException {
     testValidateSuccessConnectionWithServicePrincipal(
         getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
@@ -166,7 +181,10 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .when(azureAuthorizationClient)
         .validateAzureConnection(azureConfig);
 
-    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO))
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(azureConfigContextMock))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
@@ -180,14 +198,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnection() {
+  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnection() throws IOException {
     testValidateSuccessConnectionWithManagedIdentity(getAzureConfigUserAssignedMSI(), CLIENT_ID);
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnection() {
+  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnection() throws IOException {
     testValidateSuccessConnectionWithManagedIdentity(getAzureConfigSystemAssignedMSI(), null);
   }
 
@@ -209,42 +227,47 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testGetSubscriptionUsingServicePrincipalWithSecret() {
+  public void testGetSubscriptionUsingServicePrincipalWithSecret() throws IOException {
     testGetSubscriptions(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetSubscriptionUsingServicePrincipalWithCertificate() {
+  public void testGetSubscriptionUsingServicePrincipalWithCertificate() throws IOException {
     testGetSubscriptions(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testGetSubscriptionsWithUserAssignedManagedIdentity() {
+  public void testGetSubscriptionsWithUserAssignedManagedIdentity() throws IOException {
     testGetSubscriptions(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetSubscriptionsWithSystemAssignedManagedIdentity() {
+  public void testGetSubscriptionsWithSystemAssignedManagedIdentity() throws IOException {
     testGetSubscriptions(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test(expected = RuntimeException.class)
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testGetSubscriptionsThrowException() {
+  public void testGetSubscriptionsThrowException() throws IOException {
     AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
 
     doThrow(new RuntimeException(ERROR)).when(azureComputeClient).listSubscriptions(any());
     when(ngErrorHelper.getErrorSummary(ERROR)).thenReturn(ERROR);
 
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
     AzureSubscriptionsResponse azureSubscriptionsResponse =
-        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
+        azureAsyncTaskHelper.listSubscriptions(azureConfigContextMock);
 
     assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     assertThat(azureSubscriptionsResponse.getSubscriptions()).isNull();
@@ -254,63 +277,63 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testListResourceGroupUsingServicePrincipalWithSecret() {
+  public void testListResourceGroupUsingServicePrincipalWithSecret() throws IOException {
     testListResourceGroups(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListResourceGroupUsingServicePrincipalWithCertificate() {
+  public void testListResourceGroupUsingServicePrincipalWithCertificate() throws IOException {
     testListResourceGroups(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListResourceGroupUsingUserAssignedManagedIdentity() {
+  public void testListResourceGroupUsingUserAssignedManagedIdentity() throws IOException {
     testListResourceGroups(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListResourceGroupUsingSystemAssignedManagedIdentity() {
+  public void testListResourceGroupUsingSystemAssignedManagedIdentity() throws IOException {
     testListResourceGroups(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppNamesUsingServicePrincipalWithSecret() {
+  public void testListWebAppNamesUsingServicePrincipalWithSecret() throws IOException {
     testListWebAppNames(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppNamesUsingServicePrincipalWithCertificate() {
+  public void testListWebAppNamesUsingServicePrincipalWithCertificate() throws IOException {
     testListWebAppNames(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppNamesUsingUserAssignedManagedIdentity() {
+  public void testListWebAppNamesUsingUserAssignedManagedIdentity() throws IOException {
     testListWebAppNames(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppNamesUsingSystemAssignedManagedIdentity() {
+  public void testListWebAppNamesUsingSystemAssignedManagedIdentity() throws IOException {
     testListWebAppNames(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithSecret() {
+  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithSecret() throws IOException {
     testListWebAppDeploymentSlots(
         getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
@@ -318,112 +341,112 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithCertificate() {
+  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithCertificate() throws IOException {
     testListWebAppDeploymentSlots(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppDeploymentSlotsUsingUserAssignedManagedIdentity() {
+  public void testListWebAppDeploymentSlotsUsingUserAssignedManagedIdentity() throws IOException {
     testListWebAppDeploymentSlots(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
-  public void testListWebAppDeploymentSlotsUsingSystemAssignedManagedIdentity() {
+  public void testListWebAppDeploymentSlotsUsingSystemAssignedManagedIdentity() throws IOException {
     testListWebAppDeploymentSlots(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testListClustersUsingServicePrincipalWithSecret() {
+  public void testListClustersUsingServicePrincipalWithSecret() throws IOException {
     testListClusters(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListClustersUsingServicePrincipalWithCertificate() {
+  public void testListClustersUsingServicePrincipalWithCertificate() throws IOException {
     testListClusters(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListClustersUsingUserAssignedManagedIdentity() {
+  public void testListClustersUsingUserAssignedManagedIdentity() throws IOException {
     testListClusters(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListClustersUsingSystemAssignedManagedIdentity() {
+  public void testListClustersUsingSystemAssignedManagedIdentity() throws IOException {
     testListClusters(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testListRegistriesUsingServicePrincipalWithSecret() {
+  public void testListRegistriesUsingServicePrincipalWithSecret() throws IOException {
     testListRegistries(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRegistriesUsingServicePrincipalWithCertificate() {
+  public void testListRegistriesUsingServicePrincipalWithCertificate() throws IOException {
     testListRegistries(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRegistriesUsingUserAssignedManagedIdentity() {
+  public void testListRegistriesUsingUserAssignedManagedIdentity() throws IOException {
     testListRegistries(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRegistriesUsingSystemAssignedManagedIdentity() {
+  public void testListRegistriesUsingSystemAssignedManagedIdentity() throws IOException {
     testListRegistries(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testListRepositoriesUsingServicePrincipalWithSecret() {
+  public void testListRepositoriesUsingServicePrincipalWithSecret() throws IOException {
     testListRepositories(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRepositoriesUsingServicePrincipalWithCertificate() {
+  public void testListRepositoriesUsingServicePrincipalWithCertificate() throws IOException {
     testListRepositories(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRepositoriesUsingUserAssignedManagedIdentity() {
+  public void testListRepositoriesUsingUserAssignedManagedIdentity() throws IOException {
     testListRepositories(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testListRepositoriesUsingSystemAssignedManagedIdentity() {
+  public void testListRepositoriesUsingSystemAssignedManagedIdentity() throws IOException {
     testListRepositories(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
-  public void testClusterConfigUsingServicePrincipalWithSecret() {
+  public void testClusterConfigUsingServicePrincipalWithSecret() throws IOException {
     testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
     testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
@@ -431,7 +454,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingServicePrincipalWithCertificate() {
+  public void testClusterConfigUsingServicePrincipalWithCertificate() throws IOException {
     testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
     testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
@@ -439,7 +462,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingUserAssignedManagedIdentity() {
+  public void testClusterConfigUsingUserAssignedManagedIdentity() throws IOException {
     testAdminClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
     testUserClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
@@ -447,7 +470,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testClusterConfigUsingSystemAssignedManagedIdentity() {
+  public void testClusterConfigUsingSystemAssignedManagedIdentity() throws IOException {
     testAdminClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
     testUserClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
@@ -483,18 +506,31 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
-  public void testListTags() {
+  public void testListTags() throws IOException {
     // Given
     TagDetails tag1 = new TagDetails();
     tag1.setTagName("tag-name-1");
     TagDetails tag2 = new TagDetails();
     tag2.setTagName("tag-name-2");
+    List<TagDetails> tagDetailsList = new ArrayList<>();
+    tagDetailsList.add(tag1);
+    tagDetailsList.add(tag2);
 
-    when(azureManagementClient.listTags(any(), eq("subscriptionId"))).thenReturn(Arrays.asList(tag1, tag2));
+    PagedFlux<TagDetails> pagedFlux =
+        new PagedFlux<>((Supplier<Mono<PagedResponse<TagDetails>>>) ()
+                            -> Mono.just(new PagedResponseBase(null, 200, null, tagDetailsList, null, null)));
+
+    when(azureManagementClient.listTags(any(), eq("subscriptionId"))).thenReturn(pagedFlux);
+
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
 
     // When
-    AzureTagsResponse response = azureAsyncTaskHelper.listTags(
-        Collections.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), "subscriptionId");
+    AzureTagsResponse response = azureAsyncTaskHelper.listTags(azureConfigContextMock);
 
     // Then
     assertThat(response).isNotNull();
@@ -505,7 +541,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
-  public void testGetServicePrincipalCertificateAcrLoginToken() {
+  public void testGetServicePrincipalCertificateAcrLoginToken() throws IOException {
     String azureAccessToken = "AzureAccessJWTToken";
     String acrRefreshToken = "ACRRefreshJWTToken";
 
@@ -516,8 +552,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(azureContainerRegistryClient.getAcrRefreshToken(REGISTRY, azureIdentityAccessTokenResponse.getAccessToken()))
         .thenReturn(acrRefreshToken);
 
-    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse = azureAsyncTaskHelper.getAcrLoginToken(
-        REGISTRY, Lists.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT));
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn(REGISTRY).when(azureConfigContextMock).getContainerRegistry();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse = azureAsyncTaskHelper.getAcrLoginToken(azureConfigContextMock);
 
     assertThat(azureAcrTokenTaskResponse).isNotNull();
     assertThat(azureAcrTokenTaskResponse.getToken()).isNotNull();
@@ -527,16 +569,24 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
-  public void testListHosts() {
+  public void testListHosts() throws IOException {
     // Given
     when(azureComputeClient.listHosts(any(), eq("subscriptionId"), eq("resourceGroup"), eq(AzureOSType.LINUX), any(),
              eq(AzureHostConnectionType.HOSTNAME)))
         .thenReturn(Collections.singletonList(VirtualMachineData.builder().hostName("vm-hostname").build()));
 
     // When
-    AzureHostsResponse response = azureAsyncTaskHelper.listHosts(Collections.emptyList(),
-        getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), "subscriptionId", "resourceGroup",
-        AzureOSType.LINUX, Collections.emptyMap(), AzureHostConnectionType.HOSTNAME);
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+    doReturn("resourceGroup").when(azureConfigContextMock).getResourceGroup();
+    doReturn(AzureOSType.LINUX).when(azureConfigContextMock).getAzureOSType();
+    doReturn(AzureHostConnectionType.HOSTNAME).when(azureConfigContextMock).getAzureHostConnectionType();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureHostsResponse response = azureAsyncTaskHelper.listHosts(azureConfigContextMock);
 
     // Then
     assertThat(response).isNotNull();
@@ -586,22 +636,33 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   }
 
   private void testValidateSuccessConnectionWithServicePrincipal(
-      AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+      AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     doReturn(true).when(azureAuthorizationClient).validateAzureConnection(azureConfig);
 
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(azureConfigContextMock);
 
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
     verify(secretDecryptionService).decrypt(any(), any());
     verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
   }
 
-  private void testValidateSuccessConnectionWithManagedIdentity(AzureConfig azureConfig, String clientId) {
+  private void testValidateSuccessConnectionWithManagedIdentity(AzureConfig azureConfig, String clientId)
+      throws IOException {
     AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(clientId);
 
     doReturn(true).when(azureAuthorizationClient).validateAzureConnection(any());
 
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(azureConfigContextMock);
 
     assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
 
@@ -616,7 +677,10 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .when(azureAuthorizationClient)
         .validateAzureConnection(azureConfig);
 
-    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO))
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(azureConfigContextMock))
         .isInstanceOf(HintException.class)
         .getCause()
         .isInstanceOf(ExplanationException.class)
@@ -626,14 +690,19 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
   }
 
-  private void testGetSubscriptions(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testGetSubscriptions(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     Subscription subscription = mock(Subscription.class);
     when(azureComputeClient.listSubscriptions(any())).thenReturn(Collections.singletonList(subscription));
     when(subscription.subscriptionId()).thenReturn(SUBSCRIPTION_ID);
     when(subscription.displayName()).thenReturn(SUBSCRIPTION_NAME);
 
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
     AzureSubscriptionsResponse azureSubscriptionsResponse =
-        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
+        azureAsyncTaskHelper.listSubscriptions(azureConfigContextMock);
 
     verify(azureComputeClient).listSubscriptions(azureConfig);
     assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -641,12 +710,17 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(azureSubscriptionsResponse.getSubscriptions().get(SUBSCRIPTION_ID)).isEqualTo(SUBSCRIPTION_NAME);
   }
 
-  private void testListResourceGroups(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListResourceGroups(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     when(azureComputeClient.listResourceGroupsNamesBySubscriptionId(any(), any()))
         .thenReturn(Collections.singletonList("resource-group"));
 
-    AzureResourceGroupsResponse resourceGroups =
-        azureAsyncTaskHelper.listResourceGroups(null, azureConnectorDTO, "subscriptionId");
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureResourceGroupsResponse resourceGroups = azureAsyncTaskHelper.listResourceGroups(azureConfigContextMock);
 
     verify(azureComputeClient).listResourceGroupsNamesBySubscriptionId(azureConfig, "subscriptionId");
     assertThat(resourceGroups.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -654,12 +728,18 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(resourceGroups.getResourceGroups().get(0)).isEqualTo("resource-group");
   }
 
-  private void testListWebAppNames(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListWebAppNames(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     when(azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(any(), any(), any()))
         .thenReturn(Arrays.asList("test-web-app-1", "test-web-app-2"));
 
-    AzureWebAppNamesResponse resourceGroups =
-        azureAsyncTaskHelper.listWebAppNames(null, azureConnectorDTO, "subscriptionId", "resourceGroup");
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+    doReturn("resourceGroup").when(azureConfigContextMock).getResourceGroup();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureWebAppNamesResponse resourceGroups = azureAsyncTaskHelper.listWebAppNames(azureConfigContextMock);
 
     verify(azureComputeClient)
         .listWebAppNamesBySubscriptionIdAndResourceGroup(azureConfig, "subscriptionId", "resourceGroup");
@@ -670,7 +750,8 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(resourceGroups.getWebAppNames().get(1)).isEqualTo("test-web-app-2");
   }
 
-  private void testListWebAppDeploymentSlots(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListWebAppDeploymentSlots(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig)
+      throws IOException {
     DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
 
     when(azureComputeClient.listWebAppDeploymentSlots(any(), any(), any(), any()))
@@ -678,8 +759,16 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
     when(deploymentSlot.name()).thenReturn("test-qa-name");
 
-    AzureDeploymentSlotsResponse deploymentSlotsResponse = azureAsyncTaskHelper.listDeploymentSlots(
-        null, azureConnectorDTO, "subscriptionId", "resourceGroup", "webAppName");
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+    doReturn("resourceGroup").when(azureConfigContextMock).getResourceGroup();
+    doReturn("webAppName").when(azureConfigContextMock).getWebAppName();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureDeploymentSlotsResponse deploymentSlotsResponse =
+        azureAsyncTaskHelper.listDeploymentSlots(azureConfigContextMock);
 
     verify(azureComputeClient).listWebAppDeploymentSlots(azureConfig, "subscriptionId", "resourceGroup", "webAppName");
     assertThat(deploymentSlotsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -690,15 +779,22 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(deploymentSlotsResponse.getDeploymentSlots().get(1).getType()).isEqualTo("production");
   }
 
-  private void testListClusters(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListClusters(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     KubernetesCluster cluster = mock(KubernetesCluster.class);
 
     when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
     when(cluster.name()).thenReturn(CLUSTER);
     when(cluster.resourceGroupName()).thenReturn(RESOURCE_GROUP);
 
-    AzureClustersResponse clustersResponse =
-        azureAsyncTaskHelper.listClusters(null, azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn(SUBSCRIPTION_ID).when(azureConfigContextMock).getSubscriptionId();
+    doReturn(CLUSTER).when(azureConfigContextMock).getCluster();
+    doReturn(RESOURCE_GROUP).when(azureConfigContextMock).getResourceGroup();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureClustersResponse clustersResponse = azureAsyncTaskHelper.listClusters(azureConfigContextMock);
 
     verify(azureKubernetesClient).listKubernetesClusters(azureConfig, SUBSCRIPTION_ID);
     assertThat(clustersResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -706,15 +802,20 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(clustersResponse.getClusters().get(0)).isEqualTo(CLUSTER);
   }
 
-  private void testListRegistries(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListRegistries(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     Registry registry = mock(Registry.class);
 
     when(azureContainerRegistryClient.listContainerRegistries(any(), any()))
         .thenReturn(Collections.singletonList(registry));
     when(registry.name()).thenReturn("registry");
 
-    AzureRegistriesResponse registriesResponse =
-        azureAsyncTaskHelper.listContainerRegistries(null, azureConnectorDTO, "subscriptionId");
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureRegistriesResponse registriesResponse = azureAsyncTaskHelper.listContainerRegistries(azureConfigContextMock);
 
     verify(azureContainerRegistryClient).listContainerRegistries(azureConfig, "subscriptionId");
     assertThat(registriesResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -722,7 +823,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(registriesResponse.getContainerRegistries().get(0)).isEqualTo("registry");
   }
 
-  private void testListRepositories(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testListRepositories(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     Registry registry = mock(Registry.class);
 
     when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), any(), any()))
@@ -732,8 +833,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(registry.name()).thenReturn("registry");
     when(registry.loginServerUrl()).thenReturn("registry.azurecr.io");
 
-    AzureRepositoriesResponse azureRepositoriesResponse =
-        azureAsyncTaskHelper.listRepositories(null, azureConnectorDTO, "subscriptionId", "registry");
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn("subscriptionId").when(azureConfigContextMock).getSubscriptionId();
+    doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    AzureRepositoriesResponse azureRepositoriesResponse = azureAsyncTaskHelper.listRepositories(azureConfigContextMock);
 
     verify(azureContainerRegistryClient)
         .findFirstContainerRegistryByNameOnSubscription(azureConfig, "subscriptionId", "registry");
@@ -743,7 +850,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(azureRepositoriesResponse.getRepositories().get(0)).isEqualTo("repository");
   }
 
-  private void testAdminClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testAdminClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     String accessToken = "1234567890987654321";
 
     AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
@@ -751,7 +858,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
       when(azureAuthorizationClient.getUserAccessToken(azureConfig,
                AzureUtils.convertToScope(
-                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint())))
+                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
           .thenReturn(azureIdentityAccessTokenResponse);
     } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
         == AzureCredentialType.INHERIT_FROM_DELEGATE) {
@@ -761,8 +868,18 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
         .thenReturn(readResourceFileContent("azure/adminKubeConfigContent.yaml"));
 
-    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
-        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null, true);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn(SUBSCRIPTION_ID).when(azureConfigContextMock).getSubscriptionId();
+    doReturn(RESOURCE_GROUP).when(azureConfigContextMock).getResourceGroup();
+    doReturn(CLUSTER).when(azureConfigContextMock).getCluster();
+    doReturn("default").when(azureConfigContextMock).getNamespace();
+    doReturn(true).when(azureConfigContextMock).isUseClusterAdminCredentials();
+    doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock);
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-test-a-cdp-test-rg-20d6a9-19a8a771.hcp.eastus.azmk8s.io:443");
@@ -783,7 +900,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(clusterConfig.getAzureConfig()).isNull();
   }
 
-  private void testUserClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+  private void testUserClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) throws IOException {
     String accessToken = "1234567890987654321";
     String aadToken = "poiuytrewqwertyuiop";
 
@@ -796,7 +913,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
       when(azureAuthorizationClient.getUserAccessToken(azureConfig,
                AzureUtils.convertToScope(
-                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).managementEndpoint())))
+                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
           .thenReturn(azureIdentityAccessTokenResponse);
     } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
         == AzureCredentialType.INHERIT_FROM_DELEGATE) {
@@ -814,8 +931,18 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     when(azureAuthorizationClient.getUserAccessToken(azureConfig, scope))
         .thenReturn(azureIdentityAccessTokenResponseAADToken);
 
-    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
-        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null, false);
+    AzureConfigContext azureConfigContextMock = mock(AzureConfigContext.class);
+    doReturn(azureConnectorDTO).when(azureConfigContextMock).getAzureConnector();
+    doReturn(SUBSCRIPTION_ID).when(azureConfigContextMock).getSubscriptionId();
+    doReturn(RESOURCE_GROUP).when(azureConfigContextMock).getResourceGroup();
+    doReturn(CLUSTER).when(azureConfigContextMock).getCluster();
+    doReturn("default").when(azureConfigContextMock).getNamespace();
+    doReturn(false).when(azureConfigContextMock).isUseClusterAdminCredentials();
+    doReturn("registry").when(azureConfigContextMock).getContainerRegistry();
+
+    mockLazyAutoCLosableWorkingDirectory(azureConfigContextMock);
+
+    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(azureConfigContextMock);
 
     assertThat(clusterConfig.getMasterUrl())
         .isEqualTo("https://cdp-azure-test-aks-dns-baa4bbdc.hcp.eastus.azmk8s.io:443");
@@ -920,6 +1047,9 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .clientId(CLIENT_ID)
         .tenantId(TENANT_ID)
         .cert(PASS.getBytes())
+        //        .certFilePath(workingDirectory.workingDir().getAbsolutePath() + AzureConstants.DEFAULT_CERT_FILE_NAME
+        //        + ".pem")
+        .certFilePath(AzureConstants.DEFAULT_CERT_FILE_NAME + ".pem")
         .azureEnvironmentType(AzureEnvironmentType.AZURE)
         .azureAuthenticationType(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)
         .build();
@@ -953,5 +1083,14 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
       Assert.fail("Failed reading the file from " + resourceFilePath + " with error " + ex.getMessage());
     }
     return null;
+  }
+
+  private void mockLazyAutoCLosableWorkingDirectory(AzureConfigContext azureConfigContextMock) {
+    LazyAutoCloseableWorkingDirectory lazyAutoCloseableWorkingDirectory = mock(LazyAutoCloseableWorkingDirectory.class);
+    doReturn(lazyAutoCloseableWorkingDirectory).when(azureConfigContextMock).getCertificateWorkingDirectory();
+    doReturn(lazyAutoCloseableWorkingDirectory).when(lazyAutoCloseableWorkingDirectory).createDirectory();
+    File certFile = mock(File.class);
+    doReturn(certFile).when(lazyAutoCloseableWorkingDirectory).workingDir();
+    doReturn("").when(certFile).getAbsolutePath();
   }
 }

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
@@ -26,7 +27,11 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.encryption.SecretRefData;
@@ -76,7 +81,7 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector()));
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(false)));
     when(secretManagerClientService.getEncryptionDetails(any(), any()))
         .thenReturn(Lists.newArrayList(EncryptedDataDetail.builder().build()));
   }
@@ -165,7 +170,26 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     assertThat(parameters.getTicketType()).isEqualTo("CHANGE_REQUEST");
   }
 
-  private ConnectorResponseDTO getConnector() {
+  private ConnectorResponseDTO getConnector(boolean updatedYAML) {
+    if (updatedYAML) {
+      ConnectorInfoDTO connectorInfoDTO =
+          ConnectorInfoDTO.builder()
+              .connectorType(ConnectorType.SERVICENOW)
+              .connectorConfig(ServiceNowConnectorDTO.builder()
+                                   .serviceNowUrl("url")
+                                   .username("username")
+                                   .passwordRef(SecretRefData.builder().build())
+                                   .auth(ServiceNowAuthenticationDTO.builder()
+                                             .authType(ServiceNowAuthType.USER_PASSWORD)
+                                             .credentials(ServiceNowUserNamePasswordDTO.builder()
+                                                              .username("username")
+                                                              .passwordRef(SecretRefData.builder().build())
+                                                              .build())
+                                             .build())
+                                   .build())
+              .build();
+      return ConnectorResponseDTO.builder().connector(connectorInfoDTO).build();
+    }
     ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
                                             .connectorType(ConnectorType.SERVICENOW)
                                             .connectorConfig(ServiceNowConnectorDTO.builder()
@@ -227,9 +251,36 @@ public class ServiceNowResourceServiceTest extends CategoryTest {
     assertThat(serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
         .isEqualTo(serviceNowStagingTableList);
     ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
     verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
     ServiceNowTaskNGParameters parameters =
         (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowConnectorDTO).isTrue();
+    assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetStagingTableListWithUpdatedConnectorFlow() {
+    List<ServiceNowStagingTable> serviceNowStagingTableList =
+        Arrays.asList(ServiceNowStagingTable.builder().name("name1").label("label1").build(),
+            ServiceNowStagingTable.builder().name("name2").label("label2").build());
+    when(connectorService.get(any(), any(), any(), any())).thenReturn(Optional.of(getConnector(true)));
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ServiceNowTaskNGResponse.builder().serviceNowStagingTableList(serviceNowStagingTableList).build());
+    assertThat(serviceNowResourceService.getStagingTableList(identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isEqualTo(serviceNowStagingTableList);
+    ArgumentCaptor<DelegateTaskRequest> requestArgumentCaptor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
+    ArgumentCaptor<DecryptableEntity> requestArgumentCaptorForSecretService =
+        ArgumentCaptor.forClass(DecryptableEntity.class);
+    verify(delegateGrpcClientWrapper).executeSyncTask(requestArgumentCaptor.capture());
+    ServiceNowTaskNGParameters parameters =
+        (ServiceNowTaskNGParameters) requestArgumentCaptor.getValue().getTaskParameters();
+    verify(secretManagerClientService).getEncryptionDetails(any(), requestArgumentCaptorForSecretService.capture());
+    assertThat(requestArgumentCaptorForSecretService.getValue() instanceof ServiceNowAuthCredentialsDTO).isTrue();
     assertThat(parameters.getAction()).isEqualTo(ServiceNowActionNG.GET_IMPORT_SET_STAGING_TABLES);
   }
 }

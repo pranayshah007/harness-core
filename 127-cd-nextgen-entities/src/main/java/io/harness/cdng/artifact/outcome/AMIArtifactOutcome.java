@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.AMIArtifactSummary;
 import io.harness.cdng.artifact.ArtifactSummary;
-import io.harness.cdng.artifact.AzureArtifactsSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
@@ -76,7 +76,7 @@ public class AMIArtifactOutcome implements ArtifactOutcome {
 
   @Override
   public ArtifactSummary getArtifactSummary() {
-    return AzureArtifactsSummary.builder().version(version).build();
+    return AMIArtifactSummary.builder().version(version).build();
   }
 
   @Override

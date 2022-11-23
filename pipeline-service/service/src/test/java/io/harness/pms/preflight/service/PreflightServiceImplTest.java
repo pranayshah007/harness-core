@@ -141,14 +141,14 @@ public class PreflightServiceImplTest extends CategoryTest {
   public void testStartPreflightCheck() {
     doReturn(Optional.empty())
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     assertThatThrownBy(() -> preflightService.startPreflightCheck(accountId, orgId, projectId, pipelineId, ""))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("The given pipeline id [basichttpFail] does not exist");
 
     doReturn(Optional.of(pipelineEntity))
         .when(pmsPipelineService)
-        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
+        .getPipeline(accountId, orgId, projectId, pipelineId, false, false);
     doReturn(entityDetails)
         .when(pipelineSetupUsageHelper)
         .getReferencesOfPipeline(accountId, orgId, projectId, pipelineId, pipelineYaml, null);

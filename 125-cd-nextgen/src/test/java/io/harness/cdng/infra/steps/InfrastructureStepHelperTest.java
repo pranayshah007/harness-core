@@ -116,6 +116,46 @@ public class InfrastructureStepHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ACASIAN)
   @Category(UnitTests.class)
+  public void testGetAndValidateConnectorUnresolvedRuntimeInput() {
+    ParameterField connectorRef = ParameterField.createExpressionField(true, "<+input>", null, true);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
+                            .build();
+
+    doReturn(Optional.empty()).when(connectorService).get(any(), any(), any(), eq("connectorRef"));
+
+    assertThatThrownBy(() -> infrastructureStepHelper.validateAndGetConnector(connectorRef, ambiance, ngLogCallback))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Connector ref is a runtime input but its value is not provided in the infrastructure");
+
+    verify(ngLogCallback, times(1)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testGetAndValidateConnectorUnresolvedExpression() {
+    ParameterField connectorRef = ParameterField.createExpressionField(true, "<+my.var>", null, true);
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_ID)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_ID)
+                            .build();
+
+    doReturn(Optional.empty()).when(connectorService).get(any(), any(), any(), eq("connectorRef"));
+
+    assertThatThrownBy(() -> infrastructureStepHelper.validateAndGetConnector(connectorRef, ambiance, ngLogCallback))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Connector ref [<+my.var>] could not be resolved in infrastructure");
+
+    verify(ngLogCallback, times(1)).saveExecutionLog(any());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
   public void testGetAndValidateConnectorNoRef() {
     ParameterField connectorRef = ParameterField.ofNull();
     Ambiance ambiance = Ambiance.newBuilder()

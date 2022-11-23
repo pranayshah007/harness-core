@@ -306,8 +306,9 @@ public class K8InitializeStepUtils {
   }
 
   public void validateStepType(CIStepInfoType stepType, OSType os) {
-    if (stepType == CIStepInfoType.ACTION) {
-      throw new CIStageExecutionException("Action step is only applicable for builds on cloud infrastructure");
+    if (stepType == CIStepInfoType.ACTION || stepType == CIStepInfoType.BITRISE) {
+      throw new CIStageExecutionException(
+          format("%s step is only applicable for builds on cloud infrastructure", stepType));
     }
 
     if (os != OSType.Windows) {

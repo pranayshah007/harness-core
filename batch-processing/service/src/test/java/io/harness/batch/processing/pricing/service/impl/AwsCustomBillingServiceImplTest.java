@@ -49,6 +49,8 @@ public class AwsCustomBillingServiceImplTest extends CategoryTest {
   @Mock InstanceDataService instanceDataService;
   @InjectMocks CloudResourceIdHelper cloudResourceIdHelper;
 
+  private final String ACCOUNT_ID = "AAAAAS6BRkSPKdIE5F";
+
   @Before
   public void setUp() {
     cloudResourceIdHelper = Mockito.spy(new CloudResourceIdHelper());
@@ -76,9 +78,9 @@ public class AwsCustomBillingServiceImplTest extends CategoryTest {
                                                       .build();
     vmInstanceBillingDataMap.put(RESOURCE_ID, vmInstanceBillingData);
     List<String> resourceIds = Collections.singletonList("resourceId1");
-    when(bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID))
+    when(bigQueryHelperService.getAwsEC2BillingData(resourceIds, START_TIME, END_TIME, DATA_SET_ID, ACCOUNT_ID))
         .thenReturn(vmInstanceBillingDataMap);
-    awsCustomBillingService.updateAwsEC2BillingDataCache(resourceIds, START_TIME, END_TIME, DATA_SET_ID);
+    awsCustomBillingService.updateAwsEC2BillingDataCache(resourceIds, START_TIME, END_TIME, DATA_SET_ID, ACCOUNT_ID);
     Map<String, String> metaData = new HashMap<>();
     metaData.put(InstanceMetaDataConstants.CLOUD_PROVIDER_INSTANCE_ID, RESOURCE_ID);
     InstanceData instanceData = InstanceData.builder().metaData(metaData).build();

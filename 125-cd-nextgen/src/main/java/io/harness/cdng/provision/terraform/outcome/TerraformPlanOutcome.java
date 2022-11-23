@@ -24,4 +24,5 @@ public class TerraformPlanOutcome implements Outcome {
 
   Integer detailedExitCode;
   String jsonFilePath;
+  String humanReadableFilePath;
 }

@@ -7,6 +7,7 @@
 
 package io.harness.expression;
 
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.serializer.XmlUtils;
 
 import java.io.IOException;
