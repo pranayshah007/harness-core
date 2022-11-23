@@ -925,8 +925,8 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("k8sSteadyStateExecutor")
   public ExecutorService k8sSteadyStateExecutor() {
-    return ThreadPool.create(5, 50, 5, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("k8s-event-watch-%d").setPriority(Thread.MIN_PRIORITY).build());
+    return Executors.newCachedThreadPool(
+        new ThreadFactoryBuilder().setNameFormat("k8sEventWatch-%d").setPriority(Thread.MIN_PRIORITY).build());
   }
 
   @Provides
@@ -948,7 +948,7 @@ public class DelegateModule extends AbstractModule {
     log.info(
         "Starting Delegate process with {} MB of Xmx and {} number of execution threads", delegateXmx, maxPoolSize);
     return ThreadPool.create(10, maxPoolSize, 1, TimeUnit.SECONDS,
-        new ThreadFactoryBuilder().setNameFormat("task-exec-%d").setPriority(Thread.MIN_PRIORITY).build());
+        new ThreadFactoryBuilder().setNameFormat("task-exec-%d").setPriority(Thread.NORM_PRIORITY).build());
   }
 
   @Provides
