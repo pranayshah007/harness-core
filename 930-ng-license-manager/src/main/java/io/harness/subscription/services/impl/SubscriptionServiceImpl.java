@@ -7,7 +7,6 @@
 
 package io.harness.subscription.services.impl;
 
-import com.stripe.model.Price;
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -46,6 +45,7 @@ import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Event;
+import com.stripe.model.Price;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -156,49 +156,40 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     stripeHelper.payInvoice(invoiceId);
   }
 
-  private SubscriptionParams buildSubscriptionParams(SubscriptionCreateParams subscriptionCreateParams, String customerId) {
-
+  private SubscriptionParams buildSubscriptionParams(
+      SubscriptionCreateParams subscriptionCreateParams, String customerId) {
     ArrayList<ItemParams> subscriptionItems = new ArrayList<>();
 
     subscriptionCreateParams.getItems().forEach(item -> {
-      Price price = stripeHelper.getPrice(
-              subscriptionCreateParams.getModuleType(),
-              item.getType(),
-              subscriptionCreateParams.getEdition(),
-              subscriptionCreateParams.getPaymentFreq(),
-              item.getQuantity());
+      Price price = null;
+      if (item.isPriceIncludeQuantity()) {
+        price = stripeHelper.getPrice(subscriptionCreateParams.getModuleType(), item.getType(),
+            subscriptionCreateParams.getEdition(), subscriptionCreateParams.getPaymentFreq(), item.getQuantity());
 
-        if(price == null) {
-          price = stripeHelper.getPrice(
-                  subscriptionCreateParams.getModuleType(),
-                  item.getType(),
-                  subscriptionCreateParams.getEdition(),
-                  subscriptionCreateParams.getPaymentFreq());
-        }
+        subscriptionItems.add(ItemParams.builder().priceId(price.getId()).quantity(1L).build());
+      } else {
+        price = stripeHelper.getPrice(subscriptionCreateParams.getModuleType(), item.getType(),
+            subscriptionCreateParams.getEdition(), subscriptionCreateParams.getPaymentFreq());
 
-        if(price == null) {
-          throw new InvalidArgumentsException(String.format("Cannot find price for module type: %s, type: %s, edition: %s, payment frequency: %s, quantity: %d",
-                  subscriptionCreateParams.getModuleType(),
-                  item.getType(),
-                  subscriptionCreateParams.getEdition(),
-                  subscriptionCreateParams.getPaymentFreq(),
-                  item.getQuantity()));
-        }
-        subscriptionItems.add(ItemParams.builder()
-                .priceId(price.getId())
-                .quantity(item.getQuantity())
-                .build());
+        subscriptionItems.add(ItemParams.builder().priceId(price.getId()).quantity(item.getQuantity()).build());
+      }
+
+      if (price == null) {
+        throw new InvalidArgumentsException(String.format(
+            "Cannot find price for module type: %s, type: %s, edition: %s, payment frequency: %s, quantity: %d",
+            subscriptionCreateParams.getModuleType(), item.getType(), subscriptionCreateParams.getEdition(),
+            subscriptionCreateParams.getPaymentFreq(), item.getQuantity()));
+      }
     });
-
 
     // create Subscription
     return SubscriptionParams.builder()
-            .accountIdentifier(subscriptionCreateParams.getAccountId())
-            .moduleType(subscriptionCreateParams.getModuleType().toString())
-            .customerId(customerId)
-            .items(subscriptionItems)
-            .paymentFrequency(subscriptionCreateParams.getPaymentFreq())
-            .build();
+        .accountIdentifier(subscriptionCreateParams.getAccountId())
+        .moduleType(subscriptionCreateParams.getModuleType().toString())
+        .customerId(customerId)
+        .items(subscriptionItems)
+        .paymentFrequency(subscriptionCreateParams.getPaymentFreq())
+        .build();
   }
 
   private void checkEdition(String accountId, String edition) {
@@ -213,7 +204,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionCreateParams subscriptionCreateParams) {
+  public SubscriptionDetailDTO createSubscription(
+      String accountIdentifier, SubscriptionCreateParams subscriptionCreateParams) {
     isSelfServiceEnable();
 
     // TODO: transaction control in case any race condition
@@ -225,7 +217,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     } else {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
-
 
     // Not allowed for creation if active subscriptionId exists
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
@@ -315,7 +306,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   private void deleteIncompleteSubscriptionIfExists(String accountIdentifier, ModuleType moduleType) {
     SubscriptionDetail subscriptionDetail =
-            subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
+        subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
     if (subscriptionDetail != null) {
       if (!subscriptionDetail.isIncomplete()) {
         throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
