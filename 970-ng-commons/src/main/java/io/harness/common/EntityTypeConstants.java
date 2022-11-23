@@ -60,6 +60,9 @@ public interface EntityTypeConstants {
   String K8S_DELETE = "K8sDelete";
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
+
+  String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
+  String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
   String RUN_STEP = "Run";
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";

@@ -44,6 +44,7 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT, StepSpecTypeConstants.SHELL_SCRIPT_PROVISION,
         StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.ECS_RUN_TASK,
         StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
-        StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP);
+        StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
+        StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP);
   }
 }

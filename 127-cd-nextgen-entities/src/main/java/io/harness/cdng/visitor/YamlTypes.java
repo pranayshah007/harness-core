@@ -58,6 +58,9 @@ public interface YamlTypes {
   String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
   String ELASTIGROUP_ROLLBACK = StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
 
+  String TAS_CANARY_APP_SETUP = StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+  String TAS_BG_APP_SETUP = StepSpecTypeConstants.TAS_BG_APP_SETUP;
+
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
