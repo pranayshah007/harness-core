@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,6 +40,7 @@ import software.wings.beans.DirectKubernetesInfrastructureMapping;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
@@ -46,12 +48,15 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
 import software.wings.service.intfc.InfrastructureMappingService;
+import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 
 import com.google.protobuf.Any;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,8 +81,88 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private SettingsServiceImpl cloudProviderService;
   @Mock private KryoSerializer kryoSerializer;
-
+  @Mock private DeploymentService deploymentService;
   @Mock private InstanceService instanceService;
+
+  @Before
+  public void setup() {
+    initMocks(this);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testHandleInstanceSyncRollbackDeployment() {
+    DeploymentSummary deploymentSummaryRollback =
+        DeploymentSummary.builder()
+            .appId("appId")
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
+            .infraMappingId("infraMappingId")
+            .accountId("accountId")
+            .deploymentInfo(K8sDeploymentInfo.builder()
+                                .releaseName("releaseName")
+                                .namespace("namespace")
+                                .clusterName("clusterName")
+                                .build())
+            .build();
+    DeploymentSummary prevDeploymentSummary =
+        DeploymentSummary.builder()
+            .appId("appId")
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
+            .infraMappingId("infraMappingId")
+            .accountId("accountId")
+            .deploymentInfo(K8sDeploymentInfo.builder()
+                                .releaseName("releaseName")
+                                .namespace("namespace")
+                                .clusterName("clusterName")
+                                .build())
+            .build();
+    DeploymentEvent deploymentEvent = DeploymentEvent.builder()
+                                          .deploymentSummaries(Collections.singletonList(deploymentSummaryRollback))
+                                          .isRollback(true)
+                                          .build();
+
+    InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
+    infraMapping.setComputeProviderSettingId("varID");
+    doReturn(Optional.of(prevDeploymentSummary)).when(deploymentService).get(any(DeploymentSummary.class));
+    doReturn(infraMapping).when(infrastructureMappingService).get(anyString(), anyString());
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+
+    doReturn(InstanceSyncTaskDetails.builder()
+                 .perpetualTaskId("perpetualTaskId")
+                 .accountId("accountId")
+                 .appId("appId")
+                 .cloudProviderId("cpID")
+                 .build())
+        .when(taskDetailsService)
+        .getForInfraMapping(anyString(), anyString());
+
+    doReturn(InstanceSyncTaskDetails.builder()
+                 .perpetualTaskId("perpetualTaskId")
+                 .accountId("accountId")
+                 .appId("appId")
+                 .cloudProviderId("cpID")
+                 .build())
+        .when(taskDetailsService)
+        .fetchForCloudProvider(anyString(), anyString());
+
+    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+
+    ArgumentCaptor<PerpetualTaskId> captor = ArgumentCaptor.forClass(PerpetualTaskId.class);
+    cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
+
+    verify(delegateServiceClient, times(1)).resetPerpetualTask(any(), captor.capture(), any());
+
+    PerpetualTaskId perpetualTaskId = captor.getValue();
+    assertThat(perpetualTaskId.getId()).isEqualTo("perpetualTaskId");
+  }
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
@@ -85,16 +170,19 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   public void testHandleInstanceSync() {
     DeploymentEvent deploymentEvent =
         DeploymentEvent.builder()
-            .deploymentSummaries(Collections.singletonList(DeploymentSummary.builder()
-                                                               .appId("appId")
-                                                               .infraMappingId("infraMappingId")
-                                                               .accountId("accountId")
-                                                               .deploymentInfo(K8sDeploymentInfo.builder()
-                                                                                   .releaseName("releaseName")
-                                                                                   .namespace("namespace")
-                                                                                   .clusterName("clusterName")
-                                                                                   .build())
-                                                               .build()))
+            .deploymentSummaries(Collections.singletonList(
+                DeploymentSummary.builder()
+                    .appId("appId")
+                    .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
+                    .infraMappingId("infraMappingId")
+                    .accountId("accountId")
+                    .deploymentInfo(K8sDeploymentInfo.builder()
+                                        .releaseName("releaseName")
+                                        .namespace("namespace")
+                                        .clusterName("clusterName")
+                                        .build())
+                    .build()))
+            .isRollback(false)
             .build();
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();
@@ -150,12 +238,14 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     // unsupported Deployment info
     DeploymentEvent deploymentEvent =
         DeploymentEvent.builder()
-            .deploymentSummaries(Collections.singletonList(DeploymentSummary.builder()
-                                                               .appId("appId")
-                                                               .infraMappingId("infraMappingId")
-                                                               .accountId("accountId")
-                                                               .deploymentInfo(PcfDeploymentInfo.builder().build())
-                                                               .build()))
+            .deploymentSummaries(Collections.singletonList(
+                DeploymentSummary.builder()
+                    .appId("appId")
+                    .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
+                    .infraMappingId("infraMappingId")
+                    .accountId("accountId")
+                    .deploymentInfo(PcfDeploymentInfo.builder().build())
+                    .build()))
             .build();
 
     InfrastructureMapping infraMapping = new DirectKubernetesInfrastructureMapping();

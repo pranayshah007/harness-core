@@ -73,7 +73,9 @@ import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.beans.infrastructure.instance.info.KubernetesContainerInfo;
 import software.wings.beans.infrastructure.instance.key.ContainerInstanceKey;
 import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
+import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.dl.WingsMongoPersistence;
+import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
@@ -142,6 +144,8 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
   @Mock ServiceResourceService serviceResourceService;
   @Mock private InstanceService instanceService;
   @Mock private DeploymentService deploymentService;
+
+  @Mock private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
 
   @Before
   public void setUp() {
@@ -414,21 +418,24 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
     doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
 
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-    DeploymentSummary deploymentSummary = DeploymentSummary.builder()
-                                              .artifactId("newArtifactId")
-                                              .artifactStreamId("artifactStreamId")
-                                              .workflowExecutionId("newWorkflow")
-                                              .workflowExecutionName("workflowName")
-                                              .artifactBuildNum("1.0")
-                                              .appId("appId")
-                                              .accountId("accountId")
-                                              .infraMappingId("infraMappingId")
-                                              .deploymentInfo(K8sDeploymentInfo.builder()
-                                                                  .namespaces(singleton("namespace"))
-                                                                  .clusterName("clusterName")
-                                                                  .releaseName("releaseName")
-                                                                  .build())
-                                              .build();
+    DeploymentSummary deploymentSummary =
+        DeploymentSummary.builder()
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
+
+            .artifactId("newArtifactId")
+            .artifactStreamId("artifactStreamId")
+            .workflowExecutionId("newWorkflow")
+            .workflowExecutionName("workflowName")
+            .artifactBuildNum("1.0")
+            .appId("appId")
+            .accountId("accountId")
+            .infraMappingId("infraMappingId")
+            .deploymentInfo(K8sDeploymentInfo.builder()
+                                .namespaces(singleton("namespace"))
+                                .clusterName("clusterName")
+                                .releaseName("releaseName")
+                                .build())
+            .build();
 
     DeploymentEvent deploymentEvent =
         DeploymentEvent.builder().deploymentSummaries(asList(deploymentSummary)).isRollback(true).build();
@@ -526,6 +533,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
 
     DeploymentSummary deploymentSummary =
         DeploymentSummary.builder()
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
             .artifactId("newArtifactId")
             .artifactStreamId("artifactStreamId")
             .workflowExecutionId("newWorkflow")
@@ -549,6 +557,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
 
     DeploymentSummary deploymentSummary2 =
         DeploymentSummary.builder()
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
             .artifactId("newArtifactId")
             .artifactStreamId("artifactStreamId")
             .workflowExecutionId("newWorkflow")
@@ -579,6 +588,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                  DeploymentSummary.builder()
                      .deploymentInfo(ContainerDeploymentInfoWithNames.builder().containerSvcName("service_a_1").build())
                      .accountId("accountId")
+                     .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
                      .infraMappingId("infraMappingId")
                      .workflowExecutionId("newWorkflow")
                      .stateExecutionInstanceId("stateExecutionInstanceId")
@@ -608,6 +618,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
     DeploymentSummary deploymentSummary =
         DeploymentSummary.builder()
             .artifactId("newArtifactId")
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
             .artifactStreamId("artifactStreamId")
             .workflowExecutionId("newWorkflow")
             .workflowExecutionName("workflowName")
@@ -680,6 +691,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
             .artifactStreamId("artifactStreamId")
             .workflowExecutionId("newWorkflow")
             .workflowExecutionName("workflowName")
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
             .artifactBuildNum("1.0")
             .appId("appId")
             .accountId("accountId")
@@ -815,6 +827,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
 
     doReturn(DeploymentSummary.builder()
                  .appId("appId")
+                 .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName(releaseName).releaseNumber(1).build())
                  .infraMappingId("infraMappingId")
                  .accountId("accountId")
                  .deploymentInfo(K8sDeploymentInfo.builder()
@@ -842,23 +855,25 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void shouldNotUpdateExistingArtifactIdOnNewDeployment() throws Exception {
-    DeploymentSummary deploymentSummary = DeploymentSummary.builder()
-                                              .artifactId("newArtifactId")
-                                              .artifactStreamId("artifactStreamId")
-                                              .workflowExecutionId("newWorkflow")
-                                              .workflowExecutionName("workflowName")
-                                              .artifactBuildNum("1.0")
-                                              .appId("appId")
-                                              .accountId("accountId")
-                                              .infraMappingId("infraMappingId")
-                                              .deploymentInfo(K8sDeploymentInfo.builder()
-                                                                  .namespace("default")
-                                                                  .clusterName("clusterName")
-                                                                  .blueGreenStageColor("blue")
-                                                                  .releaseName("releaseName")
-                                                                  .releaseNumber(2)
-                                                                  .build())
-                                              .build();
+    DeploymentSummary deploymentSummary =
+        DeploymentSummary.builder()
+            .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(2).build())
+            .artifactId("newArtifactId")
+            .artifactStreamId("artifactStreamId")
+            .workflowExecutionId("newWorkflow")
+            .workflowExecutionName("workflowName")
+            .artifactBuildNum("1.0")
+            .appId("appId")
+            .accountId("accountId")
+            .infraMappingId("infraMappingId")
+            .deploymentInfo(K8sDeploymentInfo.builder()
+                                .namespace("default")
+                                .clusterName("clusterName")
+                                .blueGreenStageColor("blue")
+                                .releaseName("releaseName")
+                                .releaseNumber(2)
+                                .build())
+            .build();
 
     DeploymentEvent deploymentEvent =
         DeploymentEvent.builder().deploymentSummaries(singletonList(deploymentSummary)).isRollback(false).build();
@@ -1359,6 +1374,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
 
     doReturn(DeploymentSummary.builder()
                  .appId("appId")
+                 .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName("releaseName").releaseNumber(1).build())
                  .infraMappingId("infraMappingId")
                  .accountId("accountId")
                  .deploymentInfo(K8sDeploymentInfo.builder()
@@ -1425,6 +1441,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
 
     doReturn(DeploymentSummary.builder()
                  .appId("appId")
+                 .k8sDeploymentKey(K8sDeploymentKey.builder().releaseName(releaseName).releaseNumber(1).build())
                  .infraMappingId("infraMappingId")
                  .accountId("accountId")
                  .deploymentInfo(ContainerDeploymentInfoWithLabels.builder()

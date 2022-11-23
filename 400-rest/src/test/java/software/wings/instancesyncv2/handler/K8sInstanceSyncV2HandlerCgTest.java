@@ -62,6 +62,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.instance.InstanceService;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
 import com.google.protobuf.ByteString;
@@ -94,6 +95,7 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
   @Mock private K8sStateHelper k8sStateHelper;
   @Mock private WingsMongoPersistence wingsPersistence;
   @Mock private ContainerSync containerSync;
+  @Mock private InstanceService instanceService;
 
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
