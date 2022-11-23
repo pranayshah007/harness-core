@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.api;
 
+import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -17,5 +18,6 @@ public interface DebugService {
 
   VerifyStepDebugResponse getVerifyStepDebugResponse(ProjectParams projectParams, String identifier);
 
+  CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier);
   DataCollectionTask retryDataCollectionTask(ProjectParams projectParams, String identifier);
 }

@@ -53,6 +53,7 @@ import io.harness.connector.entities.Connector;
 import io.harness.connector.entities.Connector.ConnectorKeys;
 import io.harness.connector.events.ConnectorCreateEvent;
 import io.harness.connector.events.ConnectorDeleteEvent;
+import io.harness.connector.events.ConnectorForceDeleteEvent;
 import io.harness.connector.events.ConnectorUpdateEvent;
 import io.harness.connector.helper.CatalogueHelper;
 import io.harness.connector.helper.HarnessManagedConnectorHelper;
@@ -752,9 +753,15 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     existingConnector.setDeleted(true);
     Supplier<OutboxEvent> supplier = null;
     if (!gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
-      supplier = ()
-          -> outboxService.save(
-              new ConnectorDeleteEvent(accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      if (forceDelete) {
+        supplier = ()
+            -> outboxService.save(new ConnectorForceDeleteEvent(
+                accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      } else {
+        supplier = ()
+            -> outboxService.save(new ConnectorDeleteEvent(
+                accountIdentifier, connectorMapper.writeDTO(existingConnector).getConnector()));
+      }
     }
 
     connectorRepository.delete(existingConnector, null, changeType, supplier);

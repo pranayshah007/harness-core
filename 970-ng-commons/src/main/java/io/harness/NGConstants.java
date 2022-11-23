@@ -55,4 +55,5 @@ public class NGConstants {
   public static final String DEFAULT_ORGANIZATION_LEVEL_USER_GROUP_IDENTIFIER = "_organization_all_users";
   public static final String DEFAULT_PROJECT_LEVEL_USER_GROUP_IDENTIFIER = "_project_all_users";
   public static final String X_API_KEY = "X-Api-Key";
+  public static final String JWT_REGEX = "[\\w-]*\\.[\\w-]*\\.[\\w-]*";
 }

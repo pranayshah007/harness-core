@@ -50,8 +50,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -321,9 +323,14 @@ public class ConnectorFilterServiceImpl implements ConnectorFilterService {
   }
 
   private void populateAwsFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {
+    Set<String> unionOfArrays = new HashSet<>();
     if (ccmConnectorFilter.getAwsAccountId() != null) {
-      populateInFilter(criteria, CEAwsConfigKeys.awsAccountId, Arrays.asList(ccmConnectorFilter.getAwsAccountId()));
+      unionOfArrays.addAll(Arrays.asList(ccmConnectorFilter.getAwsAccountId())); // For backword compatibility
     }
+    if (ccmConnectorFilter.getAwsAccountIds() != null) {
+      unionOfArrays.addAll(ccmConnectorFilter.getAwsAccountIds());
+    }
+    populateInFilter(criteria, CEAwsConfigKeys.awsAccountId, Arrays.asList(unionOfArrays.toArray()));
   }
 
   private void populateGcpFilters(Criteria criteria, CcmConnectorFilter ccmConnectorFilter) {

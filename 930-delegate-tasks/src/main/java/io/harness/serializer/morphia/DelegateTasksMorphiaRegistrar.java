@@ -88,7 +88,6 @@ import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.ServiceNowConfig;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
@@ -206,7 +205,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EmailData.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
-    set.add(ServiceVariable.class);
     set.add(CustomSecretNGManagerConfig.class);
   }
 

@@ -15,6 +15,7 @@ import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.CustomSecretManagerValues;
@@ -26,6 +27,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.NgAutoLogContext;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -40,9 +42,11 @@ import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
@@ -219,7 +223,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   public SecretResponseWrapper create(String accountIdentifier, SecretDTOV2 dto) {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       if ((((SecretTextSpecDTO) dto.getSpec()).getValueType()).equals(CustomSecretManagerValues)) {
-        log.info(format("Secret %s does not have any path for custom secret manager: %s", dto.getIdentifier(),
+        log.info(format("Secret [%s] does not have any path for custom secret manager: [%s]", dto.getIdentifier(),
             ((SecretTextSpecDTO) dto.getSpec()).getSecretManagerIdentifier()));
       } else {
         throw new InvalidRequestException("value cannot be empty for a secret text.");
@@ -442,42 +446,48 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
       boolean forceDelete) {
-    Optional<SecretResponseWrapper> optionalSecret =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    if (optionalSecret.isPresent()) {
-      if (!forceDelete) {
-        secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
-            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    try (AutoLogContext ignore1 =
+             new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
+      Optional<SecretResponseWrapper> optionalSecret =
+          get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      if (optionalSecret.isPresent()) {
+        if (!forceDelete) {
+          secretEntityReferenceHelper.validateSecretIsNotUsedByOthers(
+              accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        }
+      } else {
+        log.error(format("Secret with identifier [%s] could not be deleted as it does not exist", identifier));
+        throw new EntityNotFoundException(
+            format("Secret with identifier [%s] does not exist in the specified scope", identifier));
       }
-    } else {
-      return false;
-    }
 
-    NGEncryptedData encryptedData =
-        encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      NGEncryptedData encryptedData =
+          encryptedDataService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
 
-    boolean remoteDeletionSuccess = true;
-    boolean localDeletionSuccess = false;
-    if (encryptedData != null) {
-      remoteDeletionSuccess =
-          encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
-    }
+      boolean remoteDeletionSuccess = true;
+      boolean localDeletionSuccess = false;
+      if (encryptedData != null) {
+        remoteDeletionSuccess =
+            encryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
+      }
 
-    if (remoteDeletionSuccess) {
-      localDeletionSuccess = ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-    }
-    if (remoteDeletionSuccess && localDeletionSuccess) {
-      secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
-          projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
+      if (remoteDeletionSuccess) {
+        localDeletionSuccess = ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+      }
+      if (remoteDeletionSuccess && localDeletionSuccess) {
+        secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
+            projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));
 
-      publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
-          EventsFrameworkMetadataConstants.DELETE_ACTION);
-      return true;
-    }
-    if (!remoteDeletionSuccess) {
-      throw new InvalidRequestException("Unable to delete secret remotely.", USER);
-    } else {
-      throw new InvalidRequestException("Unable to delete secret locally, data might be inconsistent", USER);
+        publishEvent(accountIdentifier, orgIdentifier, projectIdentifier, identifier,
+            EventsFrameworkMetadataConstants.DELETE_ACTION);
+        return true;
+      }
+      if (!remoteDeletionSuccess) {
+        throw new InvalidRequestException(format("Unable to delete secret: [%s] remotely.", identifier), USER);
+      } else {
+        throw new InvalidRequestException(
+            format("Unable to delete secret: [%s] locally, data might be inconsistent", identifier), USER);
+      }
     }
   }
 
@@ -759,8 +769,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
         ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
 
     if (!secretOptional.isPresent()) {
-      throw new InvalidRequestException(
-          format("No such secret found '%s', please check identifier/scope and try again.", secretRef.getIdentifier()));
+      throw new EntityNotFoundException(
+          format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
     }
   }
 }

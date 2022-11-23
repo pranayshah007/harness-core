@@ -798,13 +798,16 @@
           ],
           "properties": {
             "connectorRef": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "feed": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "package": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "packageType": {
               "type": "string",
@@ -4631,13 +4634,15 @@
           ],
           "properties": {
             "connectorRef": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "org": {
               "type": "string"
             },
             "packageName": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "packageType": {
               "type": "string",

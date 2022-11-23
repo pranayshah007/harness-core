@@ -16,6 +16,7 @@ import io.harness.cdng.service.beans.EcsServiceSpec;
 import io.harness.cdng.service.beans.EcsServiceSpec.EcsServiceSpecBuilder;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -38,6 +39,9 @@ public class EcsServiceV2Mapper implements ServiceV2Mapper {
     EcsServiceSpecBuilder ecsServiceSpecBuilder = EcsServiceSpec.builder();
     if (primaryArtifact != null) {
       ecsServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
+    }
+    if (EmptyPredicate.isNotEmpty(manifests)) {
+      ecsServiceSpecBuilder.manifests(manifests);
     }
     ecsServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
     return ServiceDefinition.builder()

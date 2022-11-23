@@ -475,4 +475,11 @@ public class GithubPackagesArtifactTaskNGTest extends CategoryTest {
 
     verify(githubPackagesArtifactTaskHelper).getArtifactCollectResponse(artifactTaskParameters);
   }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsSupportingErrorFramework() {
+    assertThat(githubPackagesArtifactTaskNG.isSupportingErrorFramework()).isEqualTo(true);
+  }
 }

@@ -17,6 +17,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_PROJECTS;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
 import static io.harness.ng.core.remote.ProjectMapper.toProject;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
@@ -29,6 +30,7 @@ import static io.harness.utils.PageUtils.getNGPageResponse;
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.newAggregation;
@@ -36,6 +38,7 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.proj
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
 
 import io.harness.ModuleType;
+import io.harness.NgAutoLogContext;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -46,10 +49,12 @@ import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.DefaultOrganization;
@@ -171,13 +176,13 @@ public class ProjectServiceImpl implements ProjectService {
         return savedProject;
       }));
       setupProject(Scope.of(accountIdentifier, orgIdentifier, projectDTO.getIdentifier()));
-      log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully created",
+      log.info(String.format("Project with identifier [%s] and orgIdentifier [%s] was successfully created",
           project.getIdentifier(), projectDTO.getOrgIdentifier()));
       instrumentationHelper.sendProjectCreateEvent(createdProject, accountIdentifier);
       return createdProject;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
-          String.format("A project with identifier [%s] and orgIdentifier [%s] is already present or was deleted",
+          String.format("A project with identifier [%s] and orgIdentifier [%s] is already present",
               project.getIdentifier(), orgIdentifier),
           USER_SRE, ex);
     }
@@ -412,7 +417,7 @@ public class ProjectServiceImpl implements ProjectService {
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Project updatedProject = projectRepository.save(project);
         log.info(String.format(
-            "Project with identifier %s and orgIdentifier %s was successfully updated", identifier, orgIdentifier));
+            "Project with identifier [%s] and orgIdentifier [%s] was successfully updated", identifier, orgIdentifier));
         outboxService.save(new ProjectUpdateEvent(project.getAccountIdentifier(),
             ProjectMapper.writeDTO(updatedProject), ProjectMapper.writeDTO(existingProject)));
         return updatedProject;
@@ -555,24 +560,29 @@ public class ProjectServiceImpl implements ProjectService {
   @DefaultOrganization
   public boolean delete(String accountIdentifier, @OrgIdentifier String orgIdentifier,
       @ProjectIdentifier String projectIdentifier, Long version) {
-    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      Project deletedProject =
-          projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
-      boolean delete = deletedProject != null;
+    try (AutoLogContext ignore1 =
+             new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        Project deletedProject =
+            projectRepository.hardDelete(accountIdentifier, orgIdentifier, projectIdentifier, version);
 
-      if (delete) {
-        log.info(String.format("Project with identifier %s and orgIdentifier %s was successfully deleted",
+        if (isNull(deletedProject)) {
+          log.error(String.format("Project with identifier [%s] could not be deleted as it does not exist",
+              projectIdentifier, orgIdentifier));
+          throw new EntityNotFoundException(
+              String.format("Project with identifier [%s] does not exist in the specified scope", projectIdentifier));
+        }
+
+        log.info(String.format("Project with identifier [%s] and orgIdentifier [%s] was successfully deleted",
             projectIdentifier, orgIdentifier));
         yamlGitConfigService.deleteAll(accountIdentifier, orgIdentifier, projectIdentifier);
         outboxService.save(
             new ProjectDeleteEvent(deletedProject.getAccountIdentifier(), ProjectMapper.writeDTO(deletedProject)));
         instrumentationHelper.sendProjectDeleteEvent(deletedProject, accountIdentifier);
-      } else {
-        log.error(String.format(
-            "Project with identifier %s and orgIdentifier %s could not be deleted", projectIdentifier, orgIdentifier));
-      }
-      return delete;
-    }));
+
+        return true;
+      }));
+    }
   }
 
   @Override

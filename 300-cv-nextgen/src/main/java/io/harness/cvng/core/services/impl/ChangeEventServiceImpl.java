@@ -282,10 +282,13 @@ public class ChangeEventServiceImpl implements ChangeEventService {
 
   @Override
   public ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, String monitoredServiceIdentifier,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
-      Instant endTime) {
-    return getChangeSummary(projectParams, Collections.singletonList(monitoredServiceIdentifier), changeCategories,
-        changeSourceTypes, startTime, endTime);
+      List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime) {
+    if (isEmpty(monitoredServiceIdentifiers)) {
+      monitoredServiceIdentifiers = Collections.singletonList(monitoredServiceIdentifier);
+    }
+    return getChangeSummary(
+        projectParams, monitoredServiceIdentifiers, changeCategories, changeSourceTypes, startTime, endTime);
   }
 
   private ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,

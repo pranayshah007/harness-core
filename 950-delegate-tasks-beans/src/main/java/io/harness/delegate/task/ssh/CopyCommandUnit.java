@@ -12,6 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
+import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.ssh.FileSourceType;
 
 import lombok.Builder;
@@ -20,7 +21,7 @@ import lombok.Value;
 @Value
 @Builder
 @OwnedBy(CDP)
-public class CopyCommandUnit implements NgCommandUnit {
+public class CopyCommandUnit implements NgCommandUnit, NestedAnnotationResolver {
   String name;
   @Expression(ALLOW_SECRETS) String destinationPath;
   FileSourceType sourceType;

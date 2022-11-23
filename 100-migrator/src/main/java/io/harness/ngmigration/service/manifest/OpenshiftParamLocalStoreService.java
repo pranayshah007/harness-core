@@ -26,6 +26,7 @@ import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +36,7 @@ public class OpenshiftParamLocalStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
-  public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     String name = StringUtils.isBlank(applicationManifest.getName()) ? applicationManifest.getUuid()
@@ -49,12 +50,12 @@ public class OpenshiftParamLocalStoreService implements NgManifestService {
                                                        .spec(manifestMigrationService.getHarnessStore(yamlFileList))
                                                        .build()))
             .build();
-    return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(identifier)
-                      .type(ManifestConfigType.OPEN_SHIFT_PARAM)
-                      .spec(openshiftParamManifest)
-                      .build())
-        .build();
+    return Collections.singletonList(ManifestConfigWrapper.builder()
+                                         .manifest(ManifestConfig.builder()
+                                                       .identifier(identifier)
+                                                       .type(ManifestConfigType.OPEN_SHIFT_PARAM)
+                                                       .spec(openshiftParamManifest)
+                                                       .build())
+                                         .build());
   }
 }

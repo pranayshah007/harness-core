@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 public class NotificationExceptionMapper implements ExceptionMapper<NotificationException> {
   @Override
   public Response toResponse(NotificationException exception) {
-    log.error("Exception occurred: {}", exception.getMessage(), exception);
     ErrorDTO errorDTO = ErrorDTO.newError(Status.ERROR, ErrorCode.UNKNOWN_ERROR, exception.getMessage());
     return Response.status(Response.Status.BAD_REQUEST).entity(errorDTO).type(MediaType.APPLICATION_JSON).build();
   }
