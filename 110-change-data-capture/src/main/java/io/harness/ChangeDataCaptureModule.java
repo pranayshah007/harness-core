@@ -13,6 +13,7 @@ import io.harness.entities.AccountEntity;
 import io.harness.entities.CDCEntity;
 import io.harness.entities.CECloudAccountCDCEntity;
 import io.harness.entities.EnvironmentCDCEntity;
+import io.harness.entities.GitopsInstanceCDCEntity;
 import io.harness.entities.InfrastructureEntityTimeScale;
 import io.harness.entities.OrganizationEntity;
 import io.harness.entities.PipelineCDCEntity;
@@ -92,6 +93,7 @@ public class ChangeDataCaptureModule extends AbstractModule {
     cdcEntityMultibinder.addBinding().to(ServiceCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(EnvironmentCDCEntity.class);
     cdcEntityMultibinder.addBinding().to(InfrastructureEntityTimeScale.class);
+    cdcEntityMultibinder.addBinding().to(GitopsInstanceCDCEntity.class);
   }
 
   @Provides

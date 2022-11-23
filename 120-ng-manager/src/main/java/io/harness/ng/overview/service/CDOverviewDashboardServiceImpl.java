@@ -2113,14 +2113,21 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Set<String> envIdsWithInfra = new HashSet<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
 
-    String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    List<ActiveServiceDeploymentsInfo> deploymentsInfo = getActiveServiceDeploymentsInfo(query);
+    List<ActiveServiceDeploymentsInfo> deploymentsInfo = new ArrayList<>();
+    if (!isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId)) {
+      String query = queryActiveServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+      deploymentsInfo = getActiveServiceDeploymentsInfo(query);
+    } else {
+      String query =
+          queryActiveGitopsServiceDeploymentsInfo(accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+      deploymentsInfo = getActiveGitopsServiceDeploymentsInfo(query);
+    }
 
     List<String> pipelineExecutionIdList = new ArrayList<>();
 
     deploymentsInfo.forEach(deploymentInfo -> {
       pipelineExecutionIdList.add(deploymentInfo.getPipelineExecutionId());
-      if (deploymentInfo.getInfrastructureIdentifier() != null) {
+      if (deploymentInfo.getInfrastructureIdentifier() != null || deploymentInfo.getClusterIdentifier() != null) {
         envIdsWithInfra.add(deploymentInfo.getEnvId());
       }
     });
@@ -2135,6 +2142,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       final String infrastructureIdentifier = deploymentInfo.getInfrastructureIdentifier();
       final String infrastructureName = deploymentInfo.getInfrastructureName();
       final String artifactPath = deploymentInfo.getArtifactPath();
+      final String clusterIdentifier = deploymentInfo.getClusterIdentifier();
+      final String agentIdentifier = deploymentInfo.getAgentIdentifier();
       String lastPipelineExecutionId = null;
       String lastPipelineExecutionName = null;
       String lastDeployedAt = null;
@@ -2153,9 +2162,11 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               .lastDeployedAt(lastDeployedAt)
               .infraIdentifier(infrastructureIdentifier)
               .infraName(infrastructureName)
+              .clusterIdentifier(clusterIdentifier)
+              .agentIdentifier(agentIdentifier)
               .build();
 
-      if (infrastructureIdentifier != null || !envIdsWithInfra.contains(envId)) {
+      if (infrastructureIdentifier != null || clusterIdentifier != null || !envIdsWithInfra.contains(envId)) {
         buildEnvInfraMap.putIfAbsent(artifact, new HashMap<>());
         buildEnvInfraMap.get(artifact).putIfAbsent(envId, new ArrayList<>());
 
@@ -2169,6 +2180,13 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         groupedByArtifacts(buildEnvInfraMap, envIdToEnvNameMap, buildIdToArtifactPathMap);
 
     return InstanceGroupedByArtifactList.builder().instanceGroupedByArtifactList(instanceGroupedByArtifactList).build();
+  }
+
+  private Boolean isGitopsEnabled(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return ServiceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId)
+        .get()
+        .getGitOpsEnabled();
   }
 
   public String queryBuilderDeploymentsWithArtifactsDetails(
@@ -2186,6 +2204,15 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         + String.format("orgidentifier='%s' and ", orgId) + String.format("projectidentifier='%s' and ", projectId)
         + String.format("service_id='%s'", serviceId)
         + " and service_status = 'SUCCESS' AND tag is not null order by env_id , infrastructureIdentifier, service_endts DESC;";
+  }
+
+  public String queryActiveGitopsServiceDeploymentsInfo(
+      String accountId, String orgId, String projectId, String serviceId) {
+    return "select distinct on (env_id,cluster_identifier) tag, env_id, env_name, cluster_identifier, agent_identifier, artifact_image, pipeline_execution_summary_cd_id"
+        + " from " + tableNameServiceAndInfra + " where " + String.format("accountid='%s' and ", accountId)
+        + String.format("orgidentifier='%s' and ", orgId) + String.format("projectidentifier='%s' and ", projectId)
+        + String.format("service_id='%s'", serviceId)
+        + " and service_status = 'SUCCESS' AND tag is not null order by env_id , cluster_identifier, service_startts DESC;";
   }
 
   public List<EnvironmentInfoByServiceId> getEnvironmentWithArtifactDetails(String queryStatus) {
@@ -2238,6 +2265,39 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                   .pipelineExecutionId(resultSet.getString("pipeline_execution_summary_cd_id"))
                   .infrastructureIdentifier(resultSet.getString("infrastructureIdentifier"))
                   .infrastructureName(resultSet.getString("infrastructureName"))
+                  .artifactPath(resultSet.getString("artifact_image"))
+                  .build();
+          activeServiceDeploymentsInfoList.add(activeServiceDeploymentsInfo);
+        }
+        successfulOperation = true;
+      } catch (SQLException ex) {
+        totalTries++;
+      } finally {
+        DBUtils.close(resultSet);
+      }
+    }
+    return activeServiceDeploymentsInfoList;
+  }
+
+  public List<ActiveServiceDeploymentsInfo> getActiveGitopsServiceDeploymentsInfo(String queryStatus) {
+    List<ActiveServiceDeploymentsInfo> activeServiceDeploymentsInfoList = new ArrayList<>();
+
+    int totalTries = 0;
+    boolean successfulOperation = false;
+    while (!successfulOperation && totalTries <= MAX_RETRY_COUNT) {
+      ResultSet resultSet = null;
+      try (Connection connection = timeScaleDBService.getDBConnection();
+           PreparedStatement statement = connection.prepareStatement(queryStatus)) {
+        resultSet = statement.executeQuery();
+        while (resultSet != null && resultSet.next()) {
+          ActiveServiceDeploymentsInfo activeServiceDeploymentsInfo =
+              ActiveServiceDeploymentsInfo.builder()
+                  .envId(resultSet.getString("env_id"))
+                  .envName(resultSet.getString("env_name"))
+                  .tag(resultSet.getString("tag"))
+                  .pipelineExecutionId(resultSet.getString("pipeline_execution_summary_cd_id"))
+                  .clusterIdentifier(resultSet.getString("cluster_identifier"))
+                  .agentIdentifier(resultSet.getString("agent_identifier"))
                   .artifactPath(resultSet.getString("artifact_image"))
                   .build();
           activeServiceDeploymentsInfoList.add(activeServiceDeploymentsInfo);

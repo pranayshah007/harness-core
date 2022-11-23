@@ -7,6 +7,7 @@
 
 package io.harness.entities;
 
+import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +17,7 @@ import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
@@ -39,7 +41,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Document("instanceNG")
 @OwnedBy(HarnessTeam.DX)
-public class Instance {
+@ChangeDataCapture(
+    table = "service_infra_info", dataStore = "ng-harness", fields = {}, handler = "GitopsInstanceServiceAndCluster")
+public class Instance implements PersistentEntity {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
