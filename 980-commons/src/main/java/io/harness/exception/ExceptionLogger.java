@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.logging;
+package io.harness.exception;
 
 import static io.harness.eraro.Level.ERROR;
 import static io.harness.exception.WingsException.ReportTarget.DELEGATE_LOG_SYSTEM;
@@ -22,10 +22,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCodeName;
 import io.harness.eraro.MessageManager;
 import io.harness.eraro.ResponseMessage;
-import io.harness.exception.FrameworkBaseException;
-import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ExecutionContext;
 import io.harness.exception.WingsException.ReportTarget;
+import io.harness.logging.AutoLogContext;
 
 import java.util.ArrayList;
 import java.util.List;

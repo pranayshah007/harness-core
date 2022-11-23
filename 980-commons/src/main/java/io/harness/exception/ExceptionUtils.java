@@ -17,7 +17,6 @@ import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
-import io.harness.logging.ExceptionLogger;
 
 import java.util.EnumSet;
 import javax.validation.ConstraintViolationException;

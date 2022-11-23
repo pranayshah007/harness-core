@@ -139,7 +139,6 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     PipelineStageSweepingOutput pipelineStageSweepingOutput = (PipelineStageSweepingOutput) sweepingOutput.getOutput();
     PipelineStageResponseData pipelineStageResponseData =
         (PipelineStageResponseData) responseDataMap.get(pipelineStageSweepingOutput.getChildExecutionId());
-    // TODO: need to publish outcomes
     return StepResponse.builder().status(pipelineStageResponseData.getStatus()).build();
   }
 }

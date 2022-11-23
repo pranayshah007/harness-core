@@ -14,10 +14,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import java.util.List;
 import lombok.experimental.UtilityClass;

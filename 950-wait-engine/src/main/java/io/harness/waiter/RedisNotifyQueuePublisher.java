@@ -15,7 +15,7 @@ import io.harness.waiter.notify.NotifyEventProto;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class RedisNotifyQueuePublisher implements NotifyQueuePublisher {
-  private Producer producer;
+  private final Producer producer;
 
   public RedisNotifyQueuePublisher(Producer producer) {
     this.producer = producer;

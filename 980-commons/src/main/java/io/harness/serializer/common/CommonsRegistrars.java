@@ -5,9 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.serializer;
+package io.harness.serializer.common;
 
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.kryo.CommonsKryoRegistrar;
 import io.harness.serializer.morphia.CommonMorphiaRegistrar;
 

@@ -229,14 +229,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
-    return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
+    return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, false);
   }
 
   @Override
   public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
-      String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, loadFromFallbackBranch);
+      String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
+    Optional<PipelineEntity> optionalPipelineEntity = getPipeline(
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, loadFromFallbackBranch, loadFromCache);
     if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
@@ -263,12 +264,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
     return getPipeline(
-        accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnlyIfApplicable, false);
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnlyIfApplicable, false, false);
   }
 
   @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
-      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
     Optional<PipelineEntity> optionalPipelineEntity;
     long start = System.currentTimeMillis();
     try {
@@ -276,8 +278,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         optionalPipelineEntity =
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
-        optionalPipelineEntity = pmsPipelineRepository.find(
-            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnly, loadFromFallbackBranch);
+        optionalPipelineEntity = pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier,
+            !deleted, getMetadataOnly, loadFromFallbackBranch, loadFromCache);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);

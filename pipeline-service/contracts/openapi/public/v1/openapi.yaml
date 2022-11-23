@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: bfet7n314xd4i
+  id: dlx56eyqljwug
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -220,6 +220,25 @@ paths:
                 example-resp:
                   value: |
                     {}
+  '/v1/orgs/{org}/projects/{project}/pipelines/validate/{uuid}':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/UuidParam'
+    get:
+      summary: Get Pipeline Validation Result
+      operationId: get-pipeline-validate-result
+      security:
+        - x-api-key: []
+      description: Get Pipeline Validation Result for given UUID
+      x-internal: true
+      tags:
+        - Pipelines
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      responses:
+        '200':
+          $ref: '#/components/responses/PipelineValidationResponseBody'
 components:
   schemas:
     GitDetails:
@@ -373,6 +392,20 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+    PipelineValidationResponseBody:
+      title: Pipeline Validation Response Body
+      description: Pipeline Validation Response Body
+      x-examples:
+        example-get:
+          status: IN_PROGRESS
+      type: object
+      x-stoplight:
+        id: 6c15cb29289e9
+      properties:
+        status:
+          type: string
+          description: Status of the Pipeline Validation Event
+      x-internal: true
     PipelineListResponseBody:
       title: Pipeline List Response Body
       x-stoplight:
@@ -1105,6 +1138,13 @@ components:
           - ASC
           - DESC
       description: Order on the basis of which sorting is done.
+    UuidParam:
+      name: uuid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: UUID
   responses:
     PipelineCreateResponseBody:
       description: Pipeline response body
@@ -1123,6 +1163,15 @@ components:
             example-pipeline:
               value: |
                 slug: example_pipeline
+    PipelineValidationResponseBody:
+      description: Pipeline Validation response body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineValidationResponseBody'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/PipelineValidationResponseBody'
     PipelineGetResponseBody:
       description: Pipeline response body
       content:

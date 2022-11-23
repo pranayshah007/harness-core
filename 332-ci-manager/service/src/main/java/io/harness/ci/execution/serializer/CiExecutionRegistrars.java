@@ -14,7 +14,6 @@ import io.harness.ci.serializer.morphia.CIExecutionMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.ApiServicesRegistrars;
 import io.harness.serializer.CiBeansRegistrars;
-import io.harness.serializer.CommonsRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.DelegateTasksBeansRegistrars;
 import io.harness.serializer.KryoRegistrar;
@@ -22,6 +21,7 @@ import io.harness.serializer.NGCommonModuleRegistrars;
 import io.harness.serializer.NGCoreRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.SMCoreRegistrars;
+import io.harness.serializer.common.CommonsRegistrars;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;

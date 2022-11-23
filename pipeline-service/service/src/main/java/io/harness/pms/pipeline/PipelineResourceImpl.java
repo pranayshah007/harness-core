@@ -188,7 +188,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     Optional<PipelineEntity> pipelineEntity;
     try {
       pipelineEntity = pmsPipelineService.getAndValidatePipeline(
-          accountId, orgId, projectId, pipelineId, false, loadFromFallbackBranch);
+          accountId, orgId, projectId, pipelineId, false, loadFromFallbackBranch, loadFromCache);
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
