@@ -129,7 +129,7 @@ public class ServiceEnvironmentV2MigrationService {
 
         checkInfraExistence(accountId, stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier(),
                 environmentRef, stageRequestDto.getInfraIdentifier());
-        InfrastructureEntity infrastructureEntity = evaluateInfraV2(infrastructure, stageRequestDto, serviceConfig, accountId);
+        InfrastructureEntity infrastructureEntity = evaluateInfraV2(infrastructure, stageRequestDto, serviceConfig, accountId, stageField);
 
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, stageRequestDto.getOrgIdentifier()
                         , stageRequestDto.getProjectIdentifier()),
@@ -145,16 +145,12 @@ public class ServiceEnvironmentV2MigrationService {
         ServiceEntity updatedService = serviceEntityService.update(serviceEntity);
 
         ObjectMapper objectMapper = new ObjectMapper();
-        YamlField serviceV2Field = new YamlField(new YamlNode("service",
-                objectMapper.createObjectNode().set("service", objectMapper.createObjectNode())));
-        ObjectNode serviceNode = (ObjectNode) serviceV2Field.getNode().getField("service").getNode().getCurrJsonNode();
+        ObjectNode serviceNode = objectMapper.createObjectNode();
         serviceNode.put("serviceRef", updatedService.getIdentifier());
 
         JsonNode infraNode = objectMapper.createObjectNode().put("identifier",createdInfrastructure.getIdentifier());
         ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
-        YamlField envV2Field = new YamlField(new YamlNode("environment",
-                objectMapper.createObjectNode().set("environment", objectMapper.createObjectNode())));
-        ObjectNode envNode = (ObjectNode) envV2Field.getNode().getField("environment").getNode().getCurrJsonNode();
+        ObjectNode envNode = objectMapper.createObjectNode();
         envNode.put("environmentRef", createdInfrastructure.getEnvIdentifier());
         envNode.put("deployToAll", false);
         envNode.set("infrastructureDefinitions",infraArrayNode);
@@ -163,8 +159,8 @@ public class ServiceEnvironmentV2MigrationService {
         stageSpecNode.remove("serviceConfig");
         stageSpecNode.remove("infrastructure");
         stageSpecNode.put("deploymentType", updatedService.getType().getYamlName());
-        stageSpecNode.set("service", serviceV2Field.getNode().getField("service").getNode().getCurrJsonNode());
-        stageSpecNode.set("environment", envV2Field.getNode().getField("environment").getNode().getCurrJsonNode());
+        stageSpecNode.set("service", serviceNode);
+        stageSpecNode.set("environment", envNode);
 
         return StageResponseDto.builder()
                 .yaml(YamlPipelineUtils.writeYamlString(stageField.getNode().getCurrJsonNode()))
@@ -181,30 +177,34 @@ public class ServiceEnvironmentV2MigrationService {
     }
 
     private InfrastructureEntity evaluateInfraV2(PipelineInfrastructure infrastructure, StageRequestDto stageRequestDto,
-                                                 ServiceConfig serviceConfig, String accountId) {
-        InfrastructureDefinitionConfig infrastructureDefinitionConfig = InfrastructureDefinitionConfig.builder()
+                                                 ServiceConfig serviceConfig, String accountId, YamlField stageField) {
+
+        YamlField infrastructureField = stageField.getNode().getField("spec").getNode().getField("infrastructure");
+        YamlField infrastructureSpecField = infrastructureField.getNode().getField("infrastructureDefinition")
+                .getNode().getField("spec");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        ObjectNode parentInfraNode = objectMapper.createObjectNode().set("infrastructureDefinition", objectMapper.createObjectNode());
+        ObjectNode infraNode = (ObjectNode) parentInfraNode.get("infrastructureDefinition");
+        infraNode.put("identifier", stageRequestDto.getInfraIdentifier());
+        infraNode.put("name", stageRequestDto.getInfraIdentifier()); // name is same as identifier as of now
+        infraNode.put("orgIdentifier", stageRequestDto.getOrgIdentifier());
+        infraNode.put("projectIdentifier", stageRequestDto.getProjectIdentifier());
+        infraNode.put("environmentRef", infrastructure.getEnvironmentRef().getValue());
+        infraNode.put("deploymentType", serviceConfig.getServiceDefinition().getType().getYamlName());
+        infraNode.put("type", infrastructure.getInfrastructureDefinition().getType().getDisplayName());
+        infraNode.put("allowSimultaneousDeployments",isAllowSimultaneousDeployments(infrastructure.getAllowSimultaneousDeployments()));
+        infraNode.set("spec", infrastructureSpecField.getNode().getCurrJsonNode());
+
+        InfrastructureRequestDTO infrastructureRequestDTO = InfrastructureRequestDTO.builder()
                 .identifier(stageRequestDto.getInfraIdentifier())
-                .name(stageRequestDto.getInfraIdentifier()) // name is same as identifier as of now
+                .name(stageRequestDto.getInfraIdentifier())
                 .orgIdentifier(stageRequestDto.getOrgIdentifier())
                 .projectIdentifier(stageRequestDto.getProjectIdentifier())
                 .environmentRef(infrastructure.getEnvironmentRef().getValue())
-                .allowSimultaneousDeployments(isAllowSimultaneousDeployments(infrastructure.getAllowSimultaneousDeployments()))
-                .deploymentType(serviceConfig.getServiceDefinition().getType())
                 .type(infrastructure.getInfrastructureDefinition().getType())
-                .spec(infrastructure.getInfrastructureDefinition().getSpec())
-                .build();
-
-        InfrastructureConfig infrastructureConfig = InfrastructureConfig.builder()
-                .infrastructureDefinitionConfig(infrastructureDefinitionConfig)
-                .build();
-        InfrastructureRequestDTO infrastructureRequestDTO = InfrastructureRequestDTO.builder()
-                .identifier(infrastructureDefinitionConfig.getIdentifier())
-                .name(infrastructureDefinitionConfig.getName())
-                .orgIdentifier(infrastructureDefinitionConfig.getOrgIdentifier())
-                .projectIdentifier(infrastructureDefinitionConfig.getProjectIdentifier())
-                .environmentRef(infrastructureDefinitionConfig.getEnvironmentRef())
-                .type(infrastructureDefinitionConfig.getType())
-                .yaml(InfrastructureEntityConfigMapper.toYaml(infrastructureConfig))
+                .yaml(YamlPipelineUtils.writeYamlString(parentInfraNode))
                 .build();
         InfrastructureEntity infrastructureEntity = InfrastructureMapper.toInfrastructureEntity(accountId,
                 infrastructureRequestDTO);
@@ -223,11 +223,9 @@ public class ServiceEnvironmentV2MigrationService {
         YamlField serviceConfigField = stageField.getNode().getField("spec").getNode().getField("serviceConfig");
         YamlField serviceDefinitionField = serviceConfigField.getNode().getField("serviceDefinition");
 
-
         ObjectMapper objectMapper = new ObjectMapper();
-        YamlField serviceV2Field = new YamlField(new YamlNode("service",
-                objectMapper.createObjectNode().set("service", objectMapper.createObjectNode())));
-        ObjectNode serviceNode = (ObjectNode) serviceV2Field.getNode().getField("service").getNode().getCurrJsonNode();
+        ObjectNode parentServiceNode = objectMapper.createObjectNode().set("service", objectMapper.createObjectNode());
+        ObjectNode serviceNode = (ObjectNode) parentServiceNode.get("service");
         serviceNode.put("name", serviceEntity.getName());
         serviceNode.put("identifier", serviceEntity.getIdentifier());
         serviceNode.put("description", serviceEntity.getDescription());
@@ -235,8 +233,7 @@ public class ServiceEnvironmentV2MigrationService {
         serviceNode.putPOJO("tags", TagMapper.convertToMap(serviceEntity.getTags()));
         serviceNode.set("serviceDefinition", serviceDefinitionField.getNode().getCurrJsonNode());
 
-        String serviceYaml = YamlPipelineUtils.writeYamlString(serviceV2Field.getNode().getCurrJsonNode());
-        serviceEntity.setYaml(serviceYaml);
+        serviceEntity.setYaml(YamlPipelineUtils.writeYamlString(parentServiceNode));
         serviceEntity.setType(serviceConfig.getServiceDefinition().getType());
         // gitops is not considered here as of now
 
