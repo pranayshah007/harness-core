@@ -91,7 +91,7 @@ public class ServiceEnvironmentV2MigrationService {
     }
 
     public StageResponseDto createServiceInfraV2(StageRequestDto stageRequestDto, String accountId) {
-        // will refactor this method for readability
+        // add check to see cd stage
         if(isEmpty(stageRequestDto.getYaml())){
             throw new InvalidRequestException("stage yaml can't be empty");
         }
@@ -144,20 +144,20 @@ public class ServiceEnvironmentV2MigrationService {
         InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
         ServiceEntity updatedService = serviceEntityService.update(serviceEntity);
 
-        YamlField serviceV2Field = new YamlField(new YamlNode("service", new ObjectNode(null)));
-        ObjectNode serviceParentNode = (ObjectNode) serviceV2Field.getNode().getCurrJsonNode();
-        serviceParentNode.set("service", (new ObjectMapper()).createObjectNode());
+        ObjectMapper objectMapper = new ObjectMapper();
+        YamlField serviceV2Field = new YamlField(new YamlNode("service",
+                objectMapper.createObjectNode().set("service", objectMapper.createObjectNode())));
         ObjectNode serviceNode = (ObjectNode) serviceV2Field.getNode().getField("service").getNode().getCurrJsonNode();
         serviceNode.put("serviceRef", updatedService.getIdentifier());
 
-
-        YamlField envV2Field = new YamlField(new YamlNode("environment", new ObjectNode(null)));
-        ObjectNode envParentNode = (ObjectNode) envV2Field.getNode().getCurrJsonNode();
-        envParentNode.set("environment", (new ObjectMapper()).createObjectNode());
+        JsonNode infraNode = objectMapper.createObjectNode().put("identifier",createdInfrastructure.getIdentifier());
+        ArrayNode infraArrayNode = objectMapper.createArrayNode().add(infraNode);
+        YamlField envV2Field = new YamlField(new YamlNode("environment",
+                objectMapper.createObjectNode().set("environment", objectMapper.createObjectNode())));
         ObjectNode envNode = (ObjectNode) envV2Field.getNode().getField("environment").getNode().getCurrJsonNode();
         envNode.put("environmentRef", createdInfrastructure.getEnvIdentifier());
         envNode.put("deployToAll", false);
-//        envNode.set("infrastructureDefinitions",);
+        envNode.set("infrastructureDefinitions",infraArrayNode);
 
         ObjectNode  stageSpecNode = (ObjectNode) stageField.getNode().getField("spec").getNode().getCurrJsonNode();
         stageSpecNode.remove("serviceConfig");
@@ -224,9 +224,9 @@ public class ServiceEnvironmentV2MigrationService {
         YamlField serviceDefinitionField = serviceConfigField.getNode().getField("serviceDefinition");
 
 
-        YamlField serviceV2Field = new YamlField(new YamlNode("service", new ObjectNode(null)));
-        ObjectNode serviceParentNode = (ObjectNode) serviceV2Field.getNode().getCurrJsonNode();
-        serviceParentNode.set("service", (new ObjectMapper()).createObjectNode());
+        ObjectMapper objectMapper = new ObjectMapper();
+        YamlField serviceV2Field = new YamlField(new YamlNode("service",
+                objectMapper.createObjectNode().set("service", objectMapper.createObjectNode())));
         ObjectNode serviceNode = (ObjectNode) serviceV2Field.getNode().getField("service").getNode().getCurrJsonNode();
         serviceNode.put("name", serviceEntity.getName());
         serviceNode.put("identifier", serviceEntity.getIdentifier());
