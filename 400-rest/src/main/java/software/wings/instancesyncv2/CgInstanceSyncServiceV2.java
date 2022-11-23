@@ -7,6 +7,8 @@
 
 package software.wings.instancesyncv2;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -39,6 +41,7 @@ import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.instance.DeploymentService;
 import software.wings.service.intfc.instance.InstanceService;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -87,13 +90,20 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
+    List<DeploymentSummary> deploymentSummaries = event.getDeploymentSummaries();
+
+    deploymentSummaries = deploymentSummaries.stream().filter(this::hasDeploymentKey).collect(Collectors.toList());
+
     event.getDeploymentSummaries()
         .parallelStream()
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
+        .filter(this::hasDeploymentKey)
         .forEach(deploymentSummary -> {
           if (event.isRollback()) {
             deploymentSummary = getDeploymentSummaryForRollback(deploymentSummary);
           }
+
+          saveDeploymentSummary(deploymentSummary, event.isRollback());
 
           SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
 
@@ -136,6 +146,38 @@ public class CgInstanceSyncServiceV2 {
                 instanceSyncHandler);
           }
         });
+  }
+
+  @VisibleForTesting
+  boolean hasDeploymentKey(DeploymentSummary deploymentSummary) {
+    return deploymentSummary.getPcfDeploymentKey() != null || deploymentSummary.getK8sDeploymentKey() != null
+        || deploymentSummary.getContainerDeploymentKey() != null || deploymentSummary.getAwsAmiDeploymentKey() != null
+        || deploymentSummary.getAwsCodeDeployDeploymentKey() != null
+        || deploymentSummary.getSpotinstAmiDeploymentKey() != null
+        || deploymentSummary.getAwsLambdaDeploymentKey() != null
+        || deploymentSummary.getAzureVMSSDeploymentKey() != null
+        || deploymentSummary.getAzureWebAppDeploymentKey() != null
+        || deploymentSummary.getCustomDeploymentKey() != null;
+  }
+
+  @VisibleForTesting
+  DeploymentSummary saveDeploymentSummary(DeploymentSummary deploymentSummary, boolean rollback) {
+    if (shouldSaveDeploymentSummary(deploymentSummary, rollback)) {
+      return deploymentService.save(deploymentSummary);
+    }
+    return deploymentSummary;
+  }
+
+  @VisibleForTesting
+  boolean shouldSaveDeploymentSummary(DeploymentSummary summary, boolean isRollback) {
+    if (summary == null) {
+      return false;
+    }
+    if (!isRollback) {
+      return true;
+    }
+    // save rollback for lambda deployments
+    return summary.getAwsLambdaDeploymentKey() != null;
   }
   protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
     Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);

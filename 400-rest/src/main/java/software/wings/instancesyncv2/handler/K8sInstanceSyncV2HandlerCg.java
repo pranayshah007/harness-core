@@ -134,7 +134,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                 Any.pack(CgInstanceSyncTaskParams.newBuilder()
                              .setAccountId(cloudProvider.getAccountId())
                              .setCloudProviderType(cloudProvider.getValue().getType())
-                             .setCloudProviderDetails(ByteString.copyFrom(kryoSerializer.asBytes(cloudProvider)))
+                             .setCloudProviderDetails(ByteString.copyFrom(new byte[0])) // Todo: to be removed later
                              .build()))
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
@@ -547,20 +547,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       instancesMap.put(cgK8sReleaseIdentifier, instances);
     }
     return instancesMap;
-  }
-
-  public List<Instance> handleExistingInstances(List<Instance> newInstances, List<Instance> instancesFromDb) {
-    Map<String, Instance> newInstancesKeyMap = getInstanceKeyMap(newInstances);
-    Map<String, Instance> dbInstancesKeyMap = getInstanceKeyMap(instancesFromDb);
-
-    Set<String> commonInstances = Sets.intersection(newInstancesKeyMap.keySet(), dbInstancesKeyMap.keySet());
-    commonInstances.forEach(instanceKey -> {
-      Instance instanceFromDb = dbInstancesKeyMap.get(instanceKey);
-      instanceFromDb.setInstanceInfo(newInstancesKeyMap.get(instanceKey).getInstanceInfo());
-      newInstancesKeyMap.put(instanceKey, instanceFromDb);
-    });
-
-    return new ArrayList<>(newInstancesKeyMap.values());
   }
 
   @Override
