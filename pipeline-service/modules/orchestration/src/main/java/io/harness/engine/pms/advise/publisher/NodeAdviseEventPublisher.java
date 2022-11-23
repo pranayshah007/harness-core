@@ -18,5 +18,6 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 public interface NodeAdviseEventPublisher {
   String publishEvent(NodeExecution nodeExecutionId, PlanNode node, Status fromStatus);
 
+  String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, Status toStatus, Status fromStatus);
   String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus);
 }

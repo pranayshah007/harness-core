@@ -23,6 +23,11 @@ public class NodeAdviseHelper {
   }
 
   public void queueAdvisingEvent(
+      NodeExecution nodeExecution, FailureInfo failureInfo, Status toStatus, Status fromStatus) {
+    nodeAdviseEventPublisher.publishEvent(nodeExecution, failureInfo, toStatus, fromStatus);
+  }
+
+  public void queueAdvisingEvent(
       NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus) {
     nodeAdviseEventPublisher.publishEvent(nodeExecution, failureInfo, planNode, fromStatus);
   }

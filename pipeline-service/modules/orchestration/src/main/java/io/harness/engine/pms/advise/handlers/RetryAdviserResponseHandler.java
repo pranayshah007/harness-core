@@ -17,6 +17,7 @@ import io.harness.engine.interrupts.InterruptPackage;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.resume.EngineWaitRetryCallback;
 import io.harness.execution.NodeExecution;
+import io.harness.plan.NodeType;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.advisers.RetryAdvise;
@@ -44,7 +45,8 @@ public class RetryAdviserResponseHandler implements AdviserResponseHandler {
   @Override
   public void handleAdvise(NodeExecution nodeExecution, AdviserResponse adviserResponse) {
     RetryAdvise advise = adviserResponse.getRetryAdvise();
-    if (advise.getWaitInterval() > 0) {
+    // Do not register waitInterval if its called from IdentityNodeExecutionStrategy.
+    if (advise.getWaitInterval() > 0 && nodeExecution.getNode().getNodeType() != NodeType.IDENTITY_PLAN_NODE) {
       log.info("Retry Wait Interval : {}", advise.getWaitInterval());
       String resumeId = delayEventHelper.delay(advise.getWaitInterval(), Collections.emptyMap());
       waitNotifyEngine.waitForAllOn(publisherName,

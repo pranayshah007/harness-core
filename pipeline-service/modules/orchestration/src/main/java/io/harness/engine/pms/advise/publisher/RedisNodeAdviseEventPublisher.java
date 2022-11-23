@@ -33,6 +33,23 @@ public class RedisNodeAdviseEventPublisher implements NodeAdviseEventPublisher {
   }
 
   @Override
+  public String publishEvent(NodeExecution nodeExecution, FailureInfo failureInfo, Status toStatus, Status fromStatus) {
+    AdviseEvent adviseEvent =
+        AdviseEvent.newBuilder()
+            .setAmbiance(nodeExecution.getAmbiance())
+            .setFailureInfo(failureInfo)
+            .addAllAdviserObtainments(nodeExecution.getNode().getAdviserObtainments())
+            .setIsPreviousAdviserExpired(isPreviousAdviserExpired(nodeExecution.getInterruptHistories()))
+            .addAllRetryIds(nodeExecution.getRetryIds())
+            .setNotifyId(generateUuid())
+            .setToStatus(toStatus)
+            .setFromStatus(fromStatus)
+            .build();
+
+    return eventSender.sendEvent(nodeExecution.getAmbiance(), adviseEvent.toByteString(), PmsEventCategory.NODE_ADVISE,
+        nodeExecution.getModule(), true);
+  }
+  @Override
   public String publishEvent(
       NodeExecution nodeExecution, FailureInfo failureInfo, PlanNode planNode, Status fromStatus) {
     AdviseEvent adviseEvent =

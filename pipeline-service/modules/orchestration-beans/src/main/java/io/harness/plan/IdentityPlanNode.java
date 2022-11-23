@@ -9,10 +9,12 @@ package io.harness.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
 
+import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -38,6 +40,7 @@ public class IdentityPlanNode implements Node {
   String originalNodeExecutionId;
   String serviceName;
   String executionInputTemplate;
+  List<AdviserObtainment> adviserObtainments;
 
   @Override
   public String getStageFqn() {
@@ -90,6 +93,7 @@ public class IdentityPlanNode implements Node {
         .group(node.getGroup())
         .skipGraphType(node.getSkipGraphType())
         .stepType(stepType)
+        .adviserObtainments(node.getAdviserObtainments())
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
@@ -109,6 +113,7 @@ public class IdentityPlanNode implements Node {
         .isSkipExpressionChain(node.isSkipExpressionChain())
         .serviceName(node.getServiceName())
         .stageFqn(node.getStageFqn())
+        .adviserObtainments(node.getAdviserObtainments())
         .whenCondition(node.getWhenCondition())
         .originalNodeExecutionId(originalNodeExecutionUuid)
         .build();

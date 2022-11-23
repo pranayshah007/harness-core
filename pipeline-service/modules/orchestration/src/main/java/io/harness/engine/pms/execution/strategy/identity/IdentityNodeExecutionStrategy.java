@@ -7,6 +7,7 @@
 
 package io.harness.engine.pms.execution.strategy.identity;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.ModuleType;
@@ -14,11 +15,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.pms.advise.AdviseHandlerFactory;
 import io.harness.engine.pms.advise.AdviserResponseHandler;
-import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
-import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
-import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
+import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -30,6 +30,7 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.IdentityPlanNode;
+import io.harness.plan.Node;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -68,6 +69,8 @@ public class IdentityNodeExecutionStrategy
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
   @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
+  @Inject private NodeAdviseHelper nodeAdviseHelper;
+  @Inject private PlanService planService;
 
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
@@ -134,7 +137,7 @@ public class IdentityNodeExecutionStrategy
       // If this is one of the leaf modes then just clone and copy everything and we should be good
       // This is an optimization/hack to not do any actual work
       if (ExecutionModeUtils.isLeafMode(originalExecution.getMode())) {
-        handleLeafNodes(ambiance, newNodeExecution, originalExecution.getStatus());
+        handleLeafNodes(ambiance, originalExecution, newNodeExecution);
         return;
       }
 
@@ -159,17 +162,20 @@ public class IdentityNodeExecutionStrategy
   }
 
   @VisibleForTesting
-  void handleLeafNodes(Ambiance ambiance, NodeExecution nodeExecution, Status status) {
+  void handleLeafNodes(Ambiance ambiance, NodeExecution originalNodeExecution, NodeExecution newNodeExecution) {
     transactionHelper.performTransaction(() -> {
       // Copy outcomes
-      pmsOutcomeService.cloneForRetryExecution(ambiance, nodeExecution.getOriginalNodeExecutionId());
+      pmsOutcomeService.cloneForRetryExecution(ambiance, newNodeExecution.getOriginalNodeExecutionId());
       // Copy outputs
-      pmsSweepingOutputService.cloneForRetryExecution(ambiance, nodeExecution.getOriginalNodeExecutionId());
+      pmsSweepingOutputService.cloneForRetryExecution(ambiance, newNodeExecution.getOriginalNodeExecutionId());
 
-      return nodeExecutionService.updateStatusWithOps(
-          nodeExecution.getUuid(), status, null, EnumSet.noneOf(Status.class));
+      return nodeExecutionService.updateStatusWithOps(newNodeExecution.getUuid(), originalNodeExecution.getStatus(),
+          update -> update.set(NodeExecutionKeys.startTs, System.currentTimeMillis()), EnumSet.noneOf(Status.class));
     });
-    processAdviserResponse(ambiance, nodeExecution.getAdviserResponse());
+
+    // Sending node advising event so that any FailureStrategy will be handled.
+    nodeAdviseHelper.queueAdvisingEvent(newNodeExecution, originalNodeExecution.getFailureInfo(),
+        originalNodeExecution.getStatus(), originalNodeExecution.getStatus());
   }
 
   @Override
@@ -183,18 +189,34 @@ public class IdentityNodeExecutionStrategy
       log.info("Starting to handle Adviser Response of type: {}", adviserResponse.getType());
       NodeExecution nodeExecution = nodeExecutionService.get(nodeExecutionId);
       AdviserResponseHandler adviserResponseHandler = adviseHandlerFactory.obtainHandler(adviserResponse.getType());
-      if (!isFailureStrategyAdvisor(adviserResponseHandler)) {
-        adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
-      } else {
-        endNodeExecution(ambiance);
-      }
+      adviserResponseHandler.handleAdvise(nodeExecution, adviserResponse);
     }
   }
 
-  private boolean isFailureStrategyAdvisor(AdviserResponseHandler adviserResponseHandler) {
-    return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
-        || adviserResponseHandler instanceof MarkSuccessAdviseHandler
-        || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
+  @Override
+  public void concludeExecution(
+      Ambiance ambiance, Status toStatus, Status fromStatus, EnumSet<Status> overrideStatusSet) {
+    Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(ambiance));
+    Node node = planService.fetchNode(ambiance.getPlanId(), level.getSetupId());
+    if (isEmpty(node.getAdviserObtainments())) {
+      NodeExecution updatedNodeExecution =
+          nodeExecutionService.updateStatusWithOps(level.getRuntimeId(), toStatus, null, overrideStatusSet);
+      if (updatedNodeExecution == null) {
+        log.warn("Cannot conclude node execution. Status update failed To:{}", toStatus);
+        return;
+      }
+      endNodeExecution(updatedNodeExecution.getAmbiance());
+      return;
+    }
+    NodeExecution updatedNodeExecution = nodeExecutionService.updateStatusWithOps(level.getRuntimeId(), toStatus,
+        ops -> ops.set(NodeExecutionKeys.endTs, System.currentTimeMillis()), overrideStatusSet);
+    if (updatedNodeExecution == null) {
+      log.warn("Cannot conclude node execution. Status update failed To:{}", toStatus);
+      return;
+    }
+    NodeExecution originalNodeExecution = nodeExecutionService.get(updatedNodeExecution.getOriginalNodeExecutionId());
+    nodeAdviseHelper.queueAdvisingEvent(
+        updatedNodeExecution, originalNodeExecution.getFailureInfo(), toStatus, fromStatus);
   }
 
   @Override

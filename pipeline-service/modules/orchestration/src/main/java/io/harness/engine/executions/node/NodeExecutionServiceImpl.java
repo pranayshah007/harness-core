@@ -925,10 +925,23 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
     List<NodeExecution> nodeExecutions = mongoTemplate.find(query, NodeExecution.class);
 
+    Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+        continue;
+      }
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid())) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      } else if (nodeExecutionMap.get(nodeExecution.getNode().getUuid()).getCreatedAt()
+          > nodeExecution.getCreatedAt()) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      }
+    }
+
     // fetching stageFqn of stage Nodes
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
-    nodeExecutions.forEach(
-        nodeExecution -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
+    nodeExecutionMap.forEach(
+        (uuid, nodeExecution) -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
     return nodeExecutionIdToPlanNode;
   }
 
