@@ -7,6 +7,7 @@
 
 package io.harness.event;
 
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
@@ -36,6 +37,7 @@ import io.harness.repositories.orchestrationEventLog.OrchestrationEventLogReposi
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
