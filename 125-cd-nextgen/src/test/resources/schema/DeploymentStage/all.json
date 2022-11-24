@@ -5464,7 +5464,7 @@
             "CustomDeployment",
             "ECS",
             "Elastigroup",
-            "TanzuApplicationService"
+            "TAS"
           ]
         }
       },
@@ -5650,7 +5650,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "TanzuApplicationService"
+                "const": "TAS"
               }
             }
           },
