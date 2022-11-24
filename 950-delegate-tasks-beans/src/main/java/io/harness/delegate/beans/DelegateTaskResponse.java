@@ -26,7 +26,6 @@ public class DelegateTaskResponse {
   private DelegateResponseData response;
   private ResponseCode responseCode;
   TaskType taskType;
-  private boolean usingKryoWithoutReference;
   @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
 
   public enum ResponseCode {
@@ -34,4 +33,5 @@ public class DelegateTaskResponse {
     FAILED,
     RETRY_ON_OTHER_DELEGATE,
   }
+  private boolean usingKryoWithoutReference;
 }

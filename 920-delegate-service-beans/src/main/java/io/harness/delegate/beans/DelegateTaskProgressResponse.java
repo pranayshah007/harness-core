@@ -31,7 +31,7 @@ public class DelegateTaskProgressResponse implements PersistentEntity {
   private String correlationId;
   private byte[] progressData;
   @FdIndex private long processAfter;
-  private boolean usingKryoWithoutReference;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
+  private boolean usingKryoWithoutReference;
 }
