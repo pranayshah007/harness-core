@@ -13,13 +13,14 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
 
-@Value
+@Data
 @Builder
 @OwnedBy(CDP)
 @TypeAlias("elastigroupExecutionPassThroughData")
@@ -27,4 +28,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class ElastigroupExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
+  ResizeStrategy resizeStrategy;
+  boolean isBlueGreen;
+  String elastigroupNamePrefix;
+  String awsRegion;
+  String awsConnectorRef;
 }

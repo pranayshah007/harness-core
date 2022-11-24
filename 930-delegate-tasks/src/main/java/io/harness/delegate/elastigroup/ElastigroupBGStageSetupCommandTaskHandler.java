@@ -66,13 +66,25 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
+      throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSetupCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSetupCommandRequest"));
     }
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
+    ElastigroupSetupResult elastigroupSetupResult =
+        ElastigroupSetupResult.builder()
+            .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+            .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
+            .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+            .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
+            .useCurrentRunningInstanceCount(
+                ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
+            .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
+            .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
+            .build();
 
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
@@ -96,6 +108,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
       // Update lbDetails with fetched details, as they have more data field in
       elastigroupSetupCommandRequest.setAwsLoadBalancerConfigs(lbDetailList);
+      elastigroupSetupResult.setLoadBalancerDetailsForBGDeployments(lbDetailList);
 
       // Generate final json by substituting name, capacity and LBConfig
       String finalJson =
@@ -106,9 +119,9 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
       // Check if existing elastigroup with exists with same stage name
       deployLogCallback.saveExecutionLog(format("Querying to find Elastigroup with name: [%s]", stageElastiGroupName));
@@ -131,6 +144,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       String stageElastiGroupId = stageElastiGroup.getId();
       deployLogCallback.saveExecutionLog(
           format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId));
+      elastigroupSetupResult.setNewElastiGroup(stageElastiGroup);
 
       // Prod ELasti Groups
       String prodElastiGroupName = elastigroupSetupCommandRequest.getElastigroupNamePrefix();
@@ -147,10 +161,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       } else {
         prodElastiGroupList = emptyList();
       }
-
-      deployLogCallback.saveExecutionLog(
-          color(format("Completed Blue green setup for Spotinst"), LogColor.Green, LogWeight.Bold), LogLevel.INFO,
-          CommandExecutionStatus.SUCCESS);
+      elastigroupSetupResult.setGroupToBeDownsized(prodElastiGroupList);
 
       ElastiGroupCapacity elastiGroupCapacity =
           elastigroupSetupCommandRequest.getElastigroupOriginalConfig().getCapacity();
@@ -170,29 +181,14 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
           }
         }
       }
-      stageElastiGroup.getCapacity().setMaximum(max);
-      stageElastiGroup.getCapacity().setMinimum(min);
-      stageElastiGroup.getCapacity().setTarget(target);
+      elastigroupSetupResult.getNewElastiGroup().getCapacity().setMaximum(max);
+      elastigroupSetupResult.getNewElastiGroup().getCapacity().setMinimum(min);
+      elastigroupSetupResult.getNewElastiGroup().getCapacity().setTarget(target);
 
       elastigroupDeployTaskHelper.scaleElastigroup(stageElastiGroup, spotInstApiTokenRef, spotInstAccountId,
           elastigroupDeployTaskHelper.getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin()),
           iLogStreamingTaskClient, ElastigroupCommandUnitConstants.UP_SCALE.toString(),
           ElastigroupCommandUnitConstants.UP_SCALE_STEADY_STATE_WAIT.toString(), commandUnitsProgress);
-
-      ElastigroupSetupResult elastigroupSetupResult =
-          ElastigroupSetupResult.builder()
-              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
-              .newElastiGroup(stageElastiGroup)
-              .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
-              .groupToBeDownsized(prodElastiGroupList)
-              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
-              .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
-              .useCurrentRunningInstanceCount(
-                  ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
-              .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
-              .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
-              .loadBalancerDetailsForBGDeployments(lbDetailList)
-              .build();
 
       return ElastigroupSetupResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -203,7 +199,11 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       deployLogCallback.saveExecutionLog(color(format("Blue Green Stage Setup Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new ElastigroupNGException(sanitizedException);
+      return ElastigroupSetupResponse.builder()
+          .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+          .elastigroupSetupResult(elastigroupSetupResult)
+          .errorMessage(sanitizedException.getMessage())
+          .build();
     }
   }
 }

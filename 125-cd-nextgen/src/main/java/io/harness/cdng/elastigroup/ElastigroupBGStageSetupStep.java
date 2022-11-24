@@ -116,12 +116,11 @@ public class ElastigroupBGStageSetupStep
                 .collect(Collectors.toList()),
             ambiance);
 
-    ConnectorInfoDTO connectorInfoDTO = elastigroupStepCommonHelper.getConnector(
-        elastigroupStepCommonHelper.renderExpression(ambiance,
-            ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec())
-                .getConnectorRef()
-                .getValue()),
-        ambiance);
+    String awsConnectorRef = elastigroupStepCommonHelper.renderExpression(ambiance,
+        ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider().getSpec())
+            .getConnectorRef()
+            .getValue());
+    ConnectorInfoDTO connectorInfoDTO = elastigroupStepCommonHelper.getConnector(awsConnectorRef, ambiance);
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         ElastigroupSetupCommandRequest.builder()
@@ -151,16 +150,14 @@ public class ElastigroupBGStageSetupStep
             .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
             .build();
 
+    executionPassThroughData.setElastigroupNamePrefix(elastigroupNamePrefix);
+    executionPassThroughData.setAwsRegion(elastigroupSetupCommandRequest.getAwsRegion());
+    executionPassThroughData.setBlueGreen(elastigroupSetupCommandRequest.isBlueGreen());
+    executionPassThroughData.setAwsConnectorRef(awsConnectorRef);
+    executionPassThroughData.setResizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy());
+
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
         executionPassThroughData, true, TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG);
-  }
-
-  private Integer fetchCurrentRunningCountForSetupRequest(ElastigroupInstances elastigroupInstances) {
-    if (ElastigroupInstancesType.FIXED.equals(elastigroupInstances.getType())) {
-      return null;
-    }
-
-    return Integer.valueOf(2);
   }
 
   private ElastiGroup generateOriginalConfigFromJson(
@@ -220,58 +217,55 @@ public class ElastigroupBGStageSetupStep
     ElastigroupExecutionPassThroughData elastigroupExecutionPassThroughData =
         (ElastigroupExecutionPassThroughData) passThroughData;
     ElastigroupSetupResponse elastigroupSetupResponse;
+    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = ElastigroupSetupDataOutcome.builder().build();
+    elastigroupSetupDataOutcome
+        .setResizeStrategy(elastigroupExecutionPassThroughData.getResizeStrategy())
+            elastigroupSetupDataOutcome.setElastigroupNamePrefix(
+                elastigroupExecutionPassThroughData.getElastigroupNamePrefix());
+    elastigroupSetupDataOutcome.setBlueGreen(elastigroupExecutionPassThroughData.isBlueGreen());
+    elastigroupSetupDataOutcome.setAwsConnectorRef(elastigroupExecutionPassThroughData.getAwsConnectorRef());
+    elastigroupSetupDataOutcome.setAwsRegion(elastigroupExecutionPassThroughData.getAwsRegion());
     try {
       elastigroupSetupResponse = (ElastigroupSetupResponse) responseDataSupplier.get();
     } catch (Exception e) {
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
+          elastigroupSetupDataOutcome, StepOutcomeGroup.STAGE.name());
       log.error("Error while processing elastigroup task response: {}", e.getMessage(), e);
       return elastigroupStepCommonHelper.handleTaskException(ambiance, elastigroupExecutionPassThroughData, e);
-    }
-    StepResponseBuilder stepResponseBuilder =
-        StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
-    if (elastigroupSetupResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-      return ElastigroupStepCommonHelper.getFailureResponseBuilder(elastigroupSetupResponse, stepResponseBuilder)
-          .build();
     }
 
     ElastigroupSetupResult elastigroupSetupResult = elastigroupSetupResponse.getElastigroupSetupResult();
     ElastiGroup oldElastiGroup = elastigroupStepCommonHelper.fetchOldElasticGroup(elastigroupSetupResult);
 
-    ElastigroupBGStageSetupStepParameters elastigroupBGStageSetupStepParameters =
-        (ElastigroupBGStageSetupStepParameters) stepParameters.getSpec();
+    elastigroupSetupDataOutcome.setUseCurrentRunningInstanceCount(
+        elastigroupSetupResult.isUseCurrentRunningInstanceCount());
+    elastigroupSetupDataOutcome.setMaxInstanceCount(elastigroupSetupResult.getMaxInstanceCount());
+    elastigroupSetupDataOutcome.setOldElastigroupOriginalConfig(oldElastiGroup);
+    elastigroupSetupDataOutcome.setNewElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup());
+    elastigroupSetupDataOutcome.setLoadBalancerDetailsForBGDeployments(
+        elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments());
+    elastigroupSetupDataOutcome.build();
 
-    ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
-        ElastigroupSetupDataOutcome.builder()
-            .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
-            .elastigroupNamePrefix(elastigroupSetupResult.getElastiGroupNamePrefix())
-            .useCurrentRunningInstanceCount(elastigroupSetupResult.isUseCurrentRunningInstanceCount())
-            .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
-            .isBlueGreen(elastigroupSetupResult.isBlueGreen())
-            .oldElastigroupOriginalConfig(oldElastiGroup)
-            .newElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup())
-            .loadBalancerDetailsForBGDeployments(elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments())
-            .awsConnectorRef(
-                ((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
-                        .getSpec())
-                    .getConnectorRef()
-                    .getValue())
-            .awsRegion(((AwsCloudProviderBasicConfig) elastigroupBGStageSetupStepParameters.getConnectedCloudProvider()
-                            .getSpec())
-                    .getRegion()
-                           .getValue())
-            .build();
+    StepResponseBuilder stepResponseBuilder =
+        StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
     } else {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT);
     }
 
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME,
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
         elastigroupSetupDataOutcome, StepOutcomeGroup.STAGE.name());
+
+    if (elastigroupSetupResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      return ElastigroupStepCommonHelper.getFailureResponseBuilder(elastigroupSetupResponse, stepResponseBuilder)
+          .build();
+    }
 
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(elastigroupSetupDataOutcome)
+                         .outcome(elastigroupSetupDataOutcome.build())
                          .build())
         .build();
   }
