@@ -1,5 +1,6 @@
 package io.harness.ng.core.migration.serviceenvmigrationv2;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -11,29 +12,20 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
+import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
-import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
-import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
-import io.harness.cdng.infra.yaml.InfrastructureConfig;
-import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
-import io.harness.cdng.service.beans.ServiceYamlV2;
-import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.EnvironmentValidationHelper;
-import io.harness.ng.core.OrgAndProjectValidationHelper;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageRequestDto;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageResponseDto;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -42,23 +34,21 @@ import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
+import lombok.Builder;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
-import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
+import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
+import static io.harness.rbac.CDNGRbacPermissions.SERVICE_VIEW_PERMISSION;
 import static java.lang.String.format;
 
 @OwnedBy(CDP)
@@ -66,10 +56,16 @@ import static java.lang.String.format;
 @Slf4j
 public class ServiceEnvironmentV2MigrationService {
 
+    @OwnedBy(CDP)
+    @Data
+    @Builder
+    public static class StageSchema {
+        @JsonProperty("stage") private DeploymentStageNode stageNode;
+    }
+
     @Inject private ServiceEntityService serviceEntityService;
     @Inject private InfrastructureEntityService infrastructureEntityService;
     @Inject private CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
-    @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
     @Inject private EnvironmentValidationHelper environmentValidationHelper;
     @Inject private AccessControlClient accessControlClient;
 
@@ -78,7 +74,7 @@ public class ServiceEnvironmentV2MigrationService {
             return YamlPipelineUtils.read(yaml, StageSchema.class);
         }
         catch (IOException ex) {
-            throw new InvalidRequestException("not able to create stage Schema due to " + ex.getMessage());
+            throw new InvalidRequestException("not able to parse stage yaml due to " + ex.getMessage());
         }
     }
 
@@ -86,23 +82,14 @@ public class ServiceEnvironmentV2MigrationService {
         try {
             return YamlPipelineUtils.getYamlString(stageSchema);
         } catch (IOException e) {
-            throw new InvalidRequestException("not able to create yaml from stage Schema due to " + e.getMessage());
+            throw new InvalidRequestException("not able to parse stage yaml due to " + e.getMessage());
         }
     }
 
-    public StageResponseDto createServiceInfraV2(StageRequestDto stageRequestDto, String accountId) {
-        // add check to see cd stage
+    public String createServiceInfraV2(StageRequestDto stageRequestDto, String accountId) {
         if(isEmpty(stageRequestDto.getYaml())){
             throw new InvalidRequestException("stage yaml can't be empty");
         }
-        // check if stage belongs to CD----done
-        // check if service belongs to v1----done
-        // check if infra belongs to v1-----done
-        // check that v2 service do not exist with identifier-----done
-        // check that v2 infra do not exist with identifier-----done
-        // check if service ref and env ref are fixed values----done
-        // check access control----done
-        // add validation for infra identifier---done
         StageSchema stageSchema = getStageSchema(stageRequestDto.getYaml());
         DeploymentStageConfig deploymentStageConfig = stageSchema.getStageNode().getDeploymentStageConfig();
         YamlField stageField=getStageYamlField(stageRequestDto.getYaml());
@@ -118,31 +105,38 @@ public class ServiceEnvironmentV2MigrationService {
         validateParameterRef(infrastructure.getEnvironmentRef(), "environmentRef");
         String environmentRef = infrastructure.getEnvironmentRef().getValue();
 
-        orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-                stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier(), accountId);
         environmentValidationHelper.checkThatEnvExists(accountId, stageRequestDto.getOrgIdentifier(),
                 stageRequestDto.getProjectIdentifier(), environmentRef);
 
-        ServiceEntity serviceEntity = getServiceV1(accountId, stageRequestDto.getOrgIdentifier(),
+        ServiceEntity existedServiceEntity = getServiceV1Entity(accountId, stageRequestDto.getOrgIdentifier(),
                 stageRequestDto.getProjectIdentifier(), serviceRef);
-        evaluateServiceV2(serviceEntity, serviceConfig, stageField);
 
-        checkInfraExistence(accountId, stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier(),
+        addServiceV2YamlInServiceEntity(existedServiceEntity, serviceConfig, stageField);
+
+        checkInfrastructureEntityExistence(accountId, stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier(),
                 environmentRef, stageRequestDto.getInfraIdentifier());
-        InfrastructureEntity infrastructureEntity = evaluateInfraV2(infrastructure, stageRequestDto, serviceConfig, accountId, stageField);
+        InfrastructureEntity infrastructureEntity = createInfraEntity(infrastructure, stageRequestDto, serviceConfig, accountId, stageField);
+
+        accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, stageRequestDto.getOrgIdentifier()
+                        , stageRequestDto.getProjectIdentifier()),
+                Resource.of(NGResourceType.ENVIRONMENT, environmentRef), ENVIRONMENT_VIEW_PERMISSION);
 
         accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, stageRequestDto.getOrgIdentifier()
                         , stageRequestDto.getProjectIdentifier()),
                 Resource.of(NGResourceType.ENVIRONMENT, environmentRef), ENVIRONMENT_UPDATE_PERMISSION,
-                "unable to create infrastructure");
+                "unable to create infrastructure because of permission");
+
+        accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, stageRequestDto.getOrgIdentifier()
+                        , stageRequestDto.getProjectIdentifier()),
+                Resource.of(NGResourceType.SERVICE, serviceRef), SERVICE_VIEW_PERMISSION);
 
         accessControlClient.checkForAccessOrThrow(
                 ResourceScope.of(accountId, stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier()),
-                Resource.of(NGResourceType.SERVICE, null), SERVICE_UPDATE_PERMISSION,
-                "unable to update service");
+                Resource.of(NGResourceType.SERVICE, serviceRef), SERVICE_UPDATE_PERMISSION,
+                "unable to update service because of permission");
 
         InfrastructureEntity createdInfrastructure = infrastructureEntityService.create(infrastructureEntity);
-        ServiceEntity updatedService = serviceEntityService.update(serviceEntity);
+        ServiceEntity updatedService = serviceEntityService.update(existedServiceEntity);
 
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode serviceNode = objectMapper.createObjectNode();
@@ -162,9 +156,7 @@ public class ServiceEnvironmentV2MigrationService {
         stageSpecNode.set("service", serviceNode);
         stageSpecNode.set("environment", envNode);
 
-        return StageResponseDto.builder()
-                .yaml(YamlPipelineUtils.writeYamlString(stageField.getNode().getCurrJsonNode()))
-                .build();
+        return YamlPipelineUtils.writeYamlString(stageField.getNode().getCurrJsonNode());
     }
 
     private YamlField getStageYamlField(String yaml) {
@@ -176,8 +168,8 @@ public class ServiceEnvironmentV2MigrationService {
         }
     }
 
-    private InfrastructureEntity evaluateInfraV2(PipelineInfrastructure infrastructure, StageRequestDto stageRequestDto,
-                                                 ServiceConfig serviceConfig, String accountId, YamlField stageField) {
+    private InfrastructureEntity createInfraEntity(PipelineInfrastructure infrastructure, StageRequestDto stageRequestDto,
+                                                   ServiceConfig serviceConfig, String accountId, YamlField stageField) {
 
         YamlField infrastructureField = stageField.getNode().getField("spec").getNode().getField("infrastructure");
         YamlField infrastructureSpecField = infrastructureField.getNode().getField("infrastructureDefinition")
@@ -218,7 +210,7 @@ public class ServiceEnvironmentV2MigrationService {
         return infrastructureEntity;
     }
 
-    private ServiceEntity evaluateServiceV2(ServiceEntity serviceEntity, ServiceConfig serviceConfig, YamlField stageField) {
+    private ServiceEntity addServiceV2YamlInServiceEntity(ServiceEntity serviceEntity, ServiceConfig serviceConfig, YamlField stageField) {
 
         YamlField serviceConfigField = stageField.getNode().getField("spec").getNode().getField("serviceConfig");
         YamlField serviceDefinitionField = serviceConfigField.getNode().getField("serviceDefinition");
@@ -239,46 +231,53 @@ public class ServiceEnvironmentV2MigrationService {
 
         final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
         if(ngServiceConfig==null) {
-            throw new InvalidRequestException("not able to evaluate service v2 yaml");
+            throw new InvalidRequestException("not able to parse generated yaml for service of type v2");
         }
         return serviceEntity;
     }
 
-    private ServiceEntity getServiceV1(String accountId, String orgIdentifier,
-                                       String projectIdentifier, String serviceIdentifier) {
+    private ServiceEntity getServiceV1Entity(String accountId, String orgIdentifier,
+                                             String projectIdentifier, String serviceIdentifier) {
         Optional<ServiceEntity> optionalService = serviceEntityService.get(accountId, orgIdentifier,
                 projectIdentifier, serviceIdentifier, false);
         if(optionalService.isPresent()) {
             ServiceEntity serviceEntity = optionalService.get();
             try {
                 NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
-                if(ngServiceConfig!= null && (ngServiceConfig.getNgServiceV2InfoConfig().getGitOpsEnabled() ||
-                         ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition()!=null ||
-                        ngServiceConfig.getNgServiceV2InfoConfig().getUseFromStage()!=null)) {
-                    throw new InvalidRequestException(format("a service v2 already exists with identifier: %s", serviceIdentifier));
+                if(ngServiceConfig!= null && (isGitOpsEnabled(ngServiceConfig.getNgServiceV2InfoConfig()) ||
+                         ngServiceConfig.getNgServiceV2InfoConfig().getServiceDefinition()!=null)) {
+                    throw new InvalidRequestException(format("a service of type v2 already exists with identifier: %s", serviceIdentifier));
 
                 }
             }
             catch (Exception e) {
-                log.info(format("a service v2 doesn't exists with identifier: %s", serviceIdentifier));
+                throw new InvalidRequestException(format("not able to parse service due to %s", e.getMessage()));
             }
             return serviceEntity;
         }
-        throw new InvalidRequestException(format("service is not present with identifier: %s", serviceIdentifier));
+        throw new InvalidRequestException(format("a service of type v1 doesn't exist with identifier: %s", serviceIdentifier));
     }
 
-    private void checkInfraExistence(String accountId, String orgIdentifier,
-                                     String projectIdentifier, String envIdentifier, String infraIdentifier) {
+    private void checkInfrastructureEntityExistence(String accountId, String orgIdentifier,
+                                                    String projectIdentifier, String envIdentifier, String infraIdentifier) {
         Optional<InfrastructureEntity> optionalInfra =
                 infrastructureEntityService.get(accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
         if(optionalInfra.isPresent()) {
-            throw new InvalidRequestException(format("a infra v2 already exists with identifier: %s", infraIdentifier));
+            throw new InvalidRequestException(format("an infra of type v2 already exists with identifier: %s", infraIdentifier));
         }
     }
 
     private boolean isAllowSimultaneousDeployments(ParameterField<Boolean> allowSimultaneousDeployments) {
         if(allowSimultaneousDeployments.getValue()!=null) {
             return allowSimultaneousDeployments.getValue();
+        }
+        return false;
+    }
+
+    private boolean isGitOpsEnabled(NGServiceV2InfoConfig ngServiceV2InfoConfig) {
+        if(ngServiceV2InfoConfig!=null && ngServiceV2InfoConfig.getGitOpsEnabled()!=null
+        && ngServiceV2InfoConfig.getGitOpsEnabled()) {
+            return true;
         }
         return false;
     }
@@ -291,18 +290,14 @@ public class ServiceEnvironmentV2MigrationService {
     }
 
     private void validateOldService(DeploymentStageConfig deploymentStageConfig) {
-        if(deploymentStageConfig.getServiceConfig()==null || deploymentStageConfig.getService()!=null ||
-        deploymentStageConfig.getServices()!=null) {
-            throw new InvalidRequestException("either service v1 is not present in" +
-                    "stage yaml or service v2 exist in yaml");
+        if(deploymentStageConfig.getServiceConfig()==null) {
+            throw new InvalidRequestException("service of type v1 doesn't exist in stage yaml");
         }
     }
 
     private void validateOldInfra(DeploymentStageConfig deploymentStageConfig) {
-        if(deploymentStageConfig.getInfrastructure()==null || deploymentStageConfig.getEnvironment()!=null ||
-        deploymentStageConfig.getEnvironments()!=null) {
-            throw new InvalidRequestException("either infra v1 is not present in" +
-                    "stage yaml or environment v2 exist in yaml");
+        if(deploymentStageConfig.getInfrastructure()==null) {
+            throw new InvalidRequestException("infra of type v1 doesn't exist in stage yaml");
         }
     }
 

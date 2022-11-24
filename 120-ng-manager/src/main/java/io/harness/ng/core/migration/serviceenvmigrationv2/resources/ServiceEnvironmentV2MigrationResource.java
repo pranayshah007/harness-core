@@ -3,12 +3,14 @@ package io.harness.ng.core.migration.serviceenvmigrationv2.resources;
 import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageResponseDto;
+import io.harness.utils.YamlPipelineUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -41,21 +43,22 @@ import javax.ws.rs.QueryParam;
 public class ServiceEnvironmentV2MigrationResource {
 
         private final ServiceEnvironmentV2MigrationService serviceEnvironmentV2MigrationService;
+        @Inject private OrgAndProjectValidationHelper orgAndProjectValidationHelper;
+
 
         @POST
         @Path("/stage")
         @ApiOperation(value = "Create/Update a Service and infra", nickname = "create/ update ServiceV2 and infra")
         public ResponseDTO<StageResponseDto> migrateOldServiceInfraFromStage(@NotNull @QueryParam("accountIdentifier") String accountId,
                                                                              @Valid StageRequestDto stageRequestDto) {
-                StageResponseDto stageResponseDto = serviceEnvironmentV2MigrationService.createServiceInfraV2(stageRequestDto, accountId);
-                return ResponseDTO.newResponse(stageResponseDto);
-        }
 
-        @POST
-        @Path("/stage-template")
-        @ApiOperation(value = "Create/Update a Service, infra and template", nickname = "create/ update ServiceV2 and infra")
-        public void migrateOldServiceInfraFromStageTemplate() {
+                orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+                        stageRequestDto.getOrgIdentifier(), stageRequestDto.getProjectIdentifier(), accountId);
 
+                String updatedStageYaml = serviceEnvironmentV2MigrationService.createServiceInfraV2(stageRequestDto, accountId);
+                return ResponseDTO.newResponse(StageResponseDto.builder()
+                        .yaml(updatedStageYaml)
+                        .build());
         }
 
 

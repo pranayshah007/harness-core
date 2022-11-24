@@ -1,6 +1,5 @@
 package io.harness.ng.core.migration.serviceenvmigrationv2.dto;
 
-import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
