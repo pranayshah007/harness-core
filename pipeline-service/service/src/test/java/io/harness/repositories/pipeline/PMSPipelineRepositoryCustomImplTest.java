@@ -113,6 +113,9 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     doReturn(true)
         .when(gitSyncSdkService)
         .isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
+    for (String excludedField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+      query.fields().exclude(excludedField);
+    }
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {
@@ -208,17 +211,6 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                               .storeType(StoreType.INLINE)
                                               .build();
 
-    Criteria criteria = Criteria.where(PipelineEntityKeys.accountId)
-                            .is(accountIdentifier)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineId)
-                            .and(PipelineEntityKeys.deleted)
-                            .is(false);
-    Query query = new Query(criteria);
     doReturn(inlinePipelineEntity).when(mongoTemplate).findOne(query, PipelineEntity.class);
     Optional<PipelineEntity> optionalPipelineEntity = pipelineRepository.find(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);

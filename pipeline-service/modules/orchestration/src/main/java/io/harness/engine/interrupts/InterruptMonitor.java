@@ -111,7 +111,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
       // The null check is for really old plans which are cleared by mongo
       PlanExecution planExecution = null;
       try {
-        planExecution = planExecutionService.get(interrupt.getPlanExecutionId());
+        planExecution = planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId());
       } catch (Exception ex) {
         // Just ignoring this exception this happens again for old executions where the plan execution have been removed
         // from database

@@ -10,9 +10,22 @@ package io.harness.repositories;
 import io.harness.execution.PlanExecution;
 
 import java.util.List;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 public interface PlanExecutionRepositoryCustom {
   PlanExecution getWithProjectionsWithoutUuid(String planExecutionId, List<String> fieldNames);
 
-  PlanExecution getWithProjections(String planExecutionId, List<String> fieldNames);
+  /**
+   * Update Plan execution with given find query and updateOperations, it returns new record after update
+   * @param query
+   * @param updateOps
+   * @param upsert
+   * @return
+   */
+  PlanExecution updatePlanExecution(Query query, Update updateOps, boolean upsert);
+
+  PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames);
+
+  PlanExecution getPlanExecutionWithIncludedProjections(String planExecutionId, List<String> includedFieldNames);
 }

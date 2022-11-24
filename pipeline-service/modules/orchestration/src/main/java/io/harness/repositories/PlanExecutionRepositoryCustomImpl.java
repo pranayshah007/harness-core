@@ -17,9 +17,11 @@ import com.google.inject.Inject;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @OwnedBy(PIPELINE)
@@ -38,10 +40,27 @@ public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositor
   }
 
   @Override
-  public PlanExecution getWithProjections(String planExecutionId, List<String> fieldNames) {
+  public PlanExecution updatePlanExecution(Query query, Update updateOps, boolean upsert) {
+    return mongoTemplate.findAndModify(
+        query, updateOps, new FindAndModifyOptions().upsert(upsert).returnNew(true), PlanExecution.class);
+  }
+
+  @Override
+  public PlanExecution getPlanExecutionWithProjections(String planExecutionId, List<String> excludedFieldNames) {
     Criteria criteria = Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId);
     Query query = new Query(criteria);
-    for (String fieldName : fieldNames) {
+    for (String fieldName : excludedFieldNames) {
+      query.fields().exclude(fieldName);
+    }
+    return mongoTemplate.findOne(query, PlanExecution.class);
+  }
+
+  @Override
+  public PlanExecution getPlanExecutionWithIncludedProjections(
+      String planExecutionId, List<String> includedFieldNames) {
+    Criteria criteria = Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId);
+    Query query = new Query(criteria);
+    for (String fieldName : includedFieldNames) {
       query.fields().include(fieldName);
     }
     return mongoTemplate.findOne(query, PlanExecution.class);

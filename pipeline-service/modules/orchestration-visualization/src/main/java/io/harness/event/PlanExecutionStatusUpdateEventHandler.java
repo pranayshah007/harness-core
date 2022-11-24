@@ -27,10 +27,15 @@ public class PlanExecutionStatusUpdateEventHandler {
   @Inject private GraphGenerationService graphGenerationService;
 
   public OrchestrationGraph handleEvent(String planExecutionId, OrchestrationGraph orchestrationGraph) {
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
     return handleEvent(planExecution, orchestrationGraph);
   }
 
+  /**
+   * @param planExecution -> Only metadata of planExecution required
+   * @param orchestrationGraph
+   * @return
+   */
   public OrchestrationGraph handleEvent(PlanExecution planExecution, OrchestrationGraph orchestrationGraph) {
     try {
       if (planExecution.getStatus() == Status.ERRORED) {

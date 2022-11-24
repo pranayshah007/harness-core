@@ -197,7 +197,7 @@ public class NotificationHelperTest extends CategoryTest {
     when(planExecutionMetadataService.findByPlanExecutionId(any()))
         .thenReturn(java.util.Optional.ofNullable(planExecutionMetadata));
     doReturn(null).when(notificationClient).sendNotificationAsync(any());
-    when(planExecutionService.get(anyString()))
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     doReturn(executionUrl).when(notificationHelper).generateUrl(any());
     // testing pipeline level event flow.
@@ -250,7 +250,7 @@ public class NotificationHelperTest extends CategoryTest {
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     NodeExecution nodeExecution =
         NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
-    when(planExecutionService.get(anyString()))
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(emailNotificationYaml).build()));
@@ -283,7 +283,7 @@ public class NotificationHelperTest extends CategoryTest {
     PlanNode planNode = PlanNode.builder().identifier("dummyIdentifier").build();
     NodeExecution nodeExecution =
         NodeExecution.builder().planNode(planNode).status(Status.SUCCEEDED).startTs(0L).ambiance(ambiance).build();
-    when(planExecutionService.get(anyString()))
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
         .thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).startTs(0L).endTs(0L).build());
     when(planExecutionMetadataService.findByPlanExecutionId(anyString()))
         .thenReturn(Optional.of(PlanExecutionMetadata.builder().yaml(allEventsYaml).build()));
