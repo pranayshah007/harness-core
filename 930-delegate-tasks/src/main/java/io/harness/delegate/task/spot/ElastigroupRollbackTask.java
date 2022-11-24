@@ -78,7 +78,11 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     try {
       final ElastigroupRollbackTaskParameters rollbackParameters = (ElastigroupRollbackTaskParameters) parameters;
       if (rollbackParameters.isBlueGreen()) {
-        return executeBlueGreenRollback(rollbackParameters, commandUnitsProgress);
+        if (rollbackParameters.isSetupRollback()) {
+          return executeBlueGreenSetupRollback(rollbackParameters, commandUnitsProgress);
+        } else {
+          return executeBlueGreenSwapRollback(rollbackParameters, commandUnitsProgress);
+        }
       } else {
         return executeBasicAndCanaryRollback(rollbackParameters, commandUnitsProgress);
       }
@@ -92,7 +96,24 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private DelegateResponseData executeBlueGreenRollback(
+  private DelegateResponseData executeBlueGreenSetupRollback(
+      ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
+    SpotConfig spotConfig =
+        ngConfigMapper.mapSpotConfigWithDecryption(parameters.getSpotConnector(), parameters.getEncryptionDetails());
+    String spotInstAccountId = spotConfig.getCredential().getSpotAccountId();
+    String spotInstToken = spotConfig.getCredential().getAppTokenId();
+    int timeoutInMinutes = parameters.getTimeout() > 0 ? parameters.getTimeout() : STEADY_STATE_TIME_OUT_IN_MINUTES;
+
+    rollbackNew(parameters, spotInstAccountId, spotInstToken, timeoutInMinutes, commandUnitsProgress);
+
+    return ElastigroupRollbackTaskResponse.builder()
+        .status(CommandExecutionStatus.SUCCESS)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+        .errorMessage(getErrorMessage(CommandExecutionStatus.SUCCESS))
+        .build();
+  }
+
+  private DelegateResponseData executeBlueGreenSwapRollback(
       ElastigroupRollbackTaskParameters parameters, CommandUnitsProgress commandUnitsProgress) throws Exception {
     SpotConfig spotConfig =
         ngConfigMapper.mapSpotConfigWithDecryption(parameters.getSpotConnector(), parameters.getEncryptionDetails());
