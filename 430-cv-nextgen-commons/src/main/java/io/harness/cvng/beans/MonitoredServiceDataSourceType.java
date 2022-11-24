@@ -27,7 +27,10 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("SplunkMetric") SPLUNK_METRIC,
   @JsonProperty("ElasticSearch") ELASTICSEARCH,
   @JsonProperty("CloudWatchMetrics") CLOUDWATCH_METRICS,
-  @JsonProperty("AwsPrometheus") AWS_PROMETHEUS;
+  @JsonProperty("AwsPrometheus") AWS_PROMETHEUS,
+  @JsonProperty("SumologicLog") SUMOLOGIC_LOG,
+  @JsonProperty("SumologicMetrics") SUMOLOGIC_METRICS; // Needs to be common here too
+  // TODO nextgen spec
 
   public static Map<DataSourceType, MonitoredServiceDataSourceType> dataSourceTypeMonitoredServiceDataSourceTypeMap =
       new HashMap<DataSourceType, MonitoredServiceDataSourceType>() {
@@ -48,6 +51,9 @@ public enum MonitoredServiceDataSourceType {
           put(DataSourceType.ELASTICSEARCH, ELASTICSEARCH);
           put(DataSourceType.CLOUDWATCH_METRICS, CLOUDWATCH_METRICS);
           put(DataSourceType.AWS_PROMETHEUS, AWS_PROMETHEUS);
+          put(DataSourceType.SUMOLOGIC_LOG, SUMOLOGIC_LOG);
+          put(DataSourceType.SUMOLOGIC_METRICS, SUMOLOGIC_METRICS);
+          // Single here too
         }
       };
 }

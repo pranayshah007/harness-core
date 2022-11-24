@@ -30,7 +30,9 @@ public enum DataSourceType {
   CUSTOM_HEALTH_LOG("CustomHealthLog", VerificationType.LOG, "splunk"),
   ELASTICSEARCH("ElasticSearch", VerificationType.LOG, "splunk"),
   CLOUDWATCH_METRICS("CloudWatchMetrics", VerificationType.TIME_SERIES, "appdynamics"),
-  AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, "prometheus");
+  AWS_PROMETHEUS("AwsPrometheus", VerificationType.TIME_SERIES, "prometheus"),
+  SUMOLOGIC_METRICS("SumologicMetrics", VerificationType.TIME_SERIES, "prometheus"),
+  SUMOLOGIC_LOG("SumologicLog", VerificationType.LOG, "splunk");
 
   private String displayName;
   private VerificationType verificationType;
