@@ -19,6 +19,7 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
@@ -266,5 +267,10 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
     if (isNotEmpty(stateMachineList)) {
       hPersistence.save(stateMachineList);
     }
+  }
+
+  @Override
+  public AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis) {
+    throw new IllegalStateException("Invalid verificationType");
   }
 }

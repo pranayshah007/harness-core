@@ -17,7 +17,6 @@ import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
-import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,20 +38,12 @@ import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.utils.FeatureFlagNames;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
-import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
-import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
@@ -66,8 +57,6 @@ import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState
 import io.harness.cvng.statemachine.entities.TimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
-import io.harness.cvng.statemachine.services.api.StateMachineFactory;
-import io.harness.cvng.statemachine.services.api.StateMachineService;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
@@ -80,9 +69,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -91,7 +80,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.MockitoAnnotations;
 
-public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBase {
+public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Inject AnalysisStateMachineService stateMachineService;
   @Inject private Clock clock;
   @Inject HPersistence hPersistence;
@@ -100,9 +89,7 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private StateMachineFactory stateMachineFactory;
-  @Inject private ExecutionLogService executionLogService;
-  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+  @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   private final DataGenerator dataGenerator = DataGenerator.builder().accountId(generateUuid()).build();
   private String accountId;
@@ -155,28 +142,23 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_forServiceGuard() throws IllegalAccessException {
+  public void testCreateStateMachine_forServiceGuard() {
     AnalysisInput inputs = AnalysisInput.builder()
                                .verificationTaskId(verificationTaskId)
                                .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
                                .endTime(Instant.now())
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.LIVE_MONITORING, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(LiveMonitoringStateMachineService.class);
-    LiveMonitoringStateMachineService liveMonitoringStateMachineService =
-        (LiveMonitoringStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(liveMonitoringStateMachineService, "cvConfigService", cvConfigService, true);
-    AnalysisStateMachine stateMachine = liveMonitoringStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.LIVE_MONITORING)
+            .createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
   @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_forSLI() throws IllegalAccessException {
+  public void testCreateStateMachine_forSLI() {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
             Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
@@ -190,114 +172,18 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
                                .endTime(Instant.now())
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.SLI, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(SLIStateMachineService.class);
-    SLIStateMachineService sliStateMachineService = (SLIStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(sliStateMachineService, "serviceLevelIndicatorService", serviceLevelIndicatorService, true);
 
-    AnalysisStateMachine stateMachine = sliStateMachineService.createAnalysisStateMachine(inputs);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.SLI).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState().getType()).isEqualTo(AnalysisState.StateType.SLI_METRIC_ANALYSIS);
     assertThat(stateMachine.getStatus()).isEqualTo(AnalysisStatus.CREATED);
   }
 
   @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testCreateStateMachine_forCompositeSLO() throws IllegalAccessException {
-    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder()
-                                                   .sources(MonitoredServiceDTO.Sources.builder().build())
-                                                   .serviceRef("service1")
-                                                   .environmentRef("env1")
-                                                   .identifier("service1_env1")
-                                                   .build();
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
-    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec1 =
-        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
-    simpleServiceLevelObjectiveSpec1.setMonitoredServiceRef(monitoredServiceDTO1.getIdentifier());
-    simpleServiceLevelObjectiveSpec1.setHealthSourceRef(generateUuid());
-    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec1);
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
-    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
-        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
-            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
-
-    MonitoredServiceDTO monitoredServiceDTO2 = builderFactory.monitoredServiceDTOBuilder()
-                                                   .sources(MonitoredServiceDTO.Sources.builder().build())
-                                                   .serviceRef("service2")
-                                                   .environmentRef("env2")
-                                                   .identifier("service2_env2")
-                                                   .build();
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
-    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
-        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
-    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
-        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
-    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
-    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
-    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
-    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
-        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
-            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
-
-    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
-        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
-            .spec(CompositeServiceLevelObjectiveSpec.builder()
-                      .serviceLevelObjectivesDetails(
-                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
-                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
-                                            .weightagePercentage(75.0)
-                                            .accountId(simpleServiceLevelObjective1.getAccountId())
-                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
-                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
-                                            .build(),
-                              ServiceLevelObjectiveDetailsDTO.builder()
-                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
-                                  .weightagePercentage(25.0)
-                                  .accountId(simpleServiceLevelObjective2.getAccountId())
-                                  .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
-                                  .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
-                                  .build()))
-                      .build())
-            .build();
-    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
-    CompositeServiceLevelObjective compositeServiceLevelObjective =
-        (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
-            builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
-    String sloId = compositeServiceLevelObjective.getUuid();
-    verificationTaskService.createCompositeSLOVerificationTask(generateUuid(), sloId, null);
-    AnalysisInput inputs = AnalysisInput.builder()
-                               .verificationTaskId(sloId)
-                               .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
-                               .endTime(Instant.now())
-                               .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.COMPOSITE_SLO, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(CompositeSLOStateMachineService.class);
-    CompositeSLOStateMachineService compositeSLOStateMachineService =
-        (CompositeSLOStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(
-        compositeSLOStateMachineService, "serviceLevelObjectiveV2Service", serviceLevelObjectiveV2Service, true);
-
-    AnalysisStateMachine stateMachine = compositeSLOStateMachineService.createAnalysisStateMachine(inputs);
-    assertThat(stateMachine).isNotNull();
-    assertThat(stateMachine.getCurrentState().getType())
-        .isEqualTo(AnalysisState.StateType.COMPOSOITE_SLO_METRIC_ANALYSIS);
-    assertThat(stateMachine.getStatus()).isEqualTo(AnalysisStatus.CREATED);
-  }
-
-  @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_forDeployment() throws IllegalAccessException {
+  public void testCreateStateMachine_forDeployment() {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
@@ -322,28 +208,16 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
                                .endTime(Instant.now())
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.DEPLOYMENT, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(DeploymentStateMachineService.class);
-    DeploymentStateMachineService deploymentStateMachineService = (DeploymentStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "cvConfigService", cvConfigService, true);
-    FieldUtils.writeField(
-        deploymentStateMachineService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
-        .thenReturn(false);
-    FieldUtils.writeField(deploymentStateMachineService, "featureFlagService", featureFlagService, true);
-    AnalysisStateMachine stateMachine = deploymentStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_forDeployment_withTransientCvConfig() throws IllegalAccessException {
+  public void testCreateStateMachine_forDeployment_withTransientCvConfig() {
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
@@ -377,28 +251,16 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
                                .endTime(Instant.now())
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.DEPLOYMENT, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(DeploymentStateMachineService.class);
-    DeploymentStateMachineService deploymentStateMachineService = (DeploymentStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "cvConfigService", cvConfigService, true);
-    FieldUtils.writeField(
-        deploymentStateMachineService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    FeatureFlagService featureFlagService = mock(FeatureFlagService.class);
-    when(featureFlagService.isFeatureFlagEnabled(
-             eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
-        .thenReturn(false);
-    FieldUtils.writeField(deploymentStateMachineService, "featureFlagService", featureFlagService, true);
-    AnalysisStateMachine stateMachine = deploymentStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
   }
 
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_logWorkflow_preDeployment() throws IllegalAccessException {
+  public void testCreateStateMachine_logWorkflow_preDeployment() {
     CVConfig cvConfig = cvConfigService.save(builderFactory.splunkCVConfigBuilder().build());
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
@@ -426,16 +288,9 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(verificationJobInstance.getStartTime().minus(17, ChronoUnit.MINUTES))
                                .endTime(verificationJobInstance.getStartTime().minus(2, ChronoUnit.MINUTES))
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.DEPLOYMENT, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(DeploymentStateMachineService.class);
-    DeploymentStateMachineService deploymentStateMachineService = (DeploymentStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "cvConfigService", cvConfigService, true);
-    FieldUtils.writeField(
-        deploymentStateMachineService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    AnalysisStateMachine stateMachine = deploymentStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState()).isInstanceOf(PreDeploymentLogClusterState.class);
   }
@@ -443,7 +298,7 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
   @Test
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
-  public void testCreateStateMachine_logWorkflow_postDeploymentCluster() throws IllegalAccessException {
+  public void testCreateStateMachine_logWorkflow_postDeploymentCluster() {
     CVConfig cvConfig = cvConfigService.save(builderFactory.splunkCVConfigBuilder().build());
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
@@ -469,16 +324,9 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(verificationJobInstance.getStartTime().plus(1, ChronoUnit.MINUTES))
                                .endTime(verificationJobInstance.getStartTime().plus(2, ChronoUnit.MINUTES))
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.DEPLOYMENT, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(DeploymentStateMachineService.class);
-    DeploymentStateMachineService deploymentStateMachineService = (DeploymentStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "cvConfigService", cvConfigService, true);
-    FieldUtils.writeField(
-        deploymentStateMachineService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    AnalysisStateMachine stateMachine = deploymentStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertThat(stateMachine).isNotNull();
     assertThat(stateMachine.getCurrentState()).isInstanceOf(DeploymentLogClusterState.class);
   }
@@ -774,6 +622,8 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
     when(featureFlagService.isFeatureFlagEnabled(
              eq(builderFactory.getContext().getAccountId()), eq(FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)))
         .thenReturn(true);
+    FieldUtils.writeField(taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT),
+        "featureFlagService", featureFlagService, true);
     String verificationTaskId = generateUuid();
     String verificationJobInstanceId = generateUuid();
     VerificationTask verificationTask = VerificationTask.builder()
@@ -798,17 +648,9 @@ public class AnalysisStateMachineServiceServiceImplTest extends CvNextGenTestBas
                                .startTime(Instant.now().minus(5, ChronoUnit.MINUTES))
                                .endTime(Instant.now())
                                .build();
-    StateMachineService stateMachineService =
-        stateMachineFactory.getStateMachineService(VerificationTask.TaskType.DEPLOYMENT, inputs);
-    assertThat(stateMachineService.getClass()).isEqualTo(DeploymentStateMachineService.class);
-    DeploymentStateMachineService deploymentStateMachineService = (DeploymentStateMachineService) stateMachineService;
-    FieldUtils.writeField(stateMachineService, "verificationTaskService", verificationTaskService, true);
-    FieldUtils.writeField(stateMachineService, "executionLogService", executionLogService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "cvConfigService", cvConfigService, true);
-    FieldUtils.writeField(
-        deploymentStateMachineService, "verificationJobInstanceService", verificationJobInstanceService, true);
-    FieldUtils.writeField(deploymentStateMachineService, "featureFlagService", featureFlagService, true);
-    AnalysisStateMachine stateMachine = deploymentStateMachineService.createAnalysisStateMachine(inputs);
+
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
     assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
     assertThat(stateMachine).isNotNull();
   }

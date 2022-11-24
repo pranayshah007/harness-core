@@ -28,7 +28,6 @@ import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrches
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
-import io.harness.cvng.statemachine.services.api.StateMachineFactory;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.metrics.AutoMetricContext;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
   @Inject private MetricService metricService;
   @Inject private MetricContextBuilder metricContextBuilder;
   @Inject private DeploymentTimeSeriesAnalysisService deploymentTimeSeriesAnalysisService;
-  @Inject private StateMachineFactory stateMachineFactory;
+  @Inject private Map<VerificationTask.TaskType, AnalysisStateMachineService> taskTypeAnalysisStateMachineServiceMap;
 
   @Override
   public void queueAnalysis(String verificationTaskId, Instant startTime, Instant endTime) {
@@ -90,8 +90,7 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     VerificationTask.TaskType verificationTaskType = verificationTask.getTaskInfo().getTaskType();
 
     AnalysisStateMachine stateMachine =
-        stateMachineFactory.getStateMachineService(verificationTaskType, inputForAnalysis)
-            .createAnalysisStateMachine(inputForAnalysis);
+        taskTypeAnalysisStateMachineServiceMap.get(verificationTaskType).createStateMachine(inputForAnalysis);
 
     Query<AnalysisOrchestrator> orchestratorQuery =
         hPersistence.createQuery(AnalysisOrchestrator.class)
