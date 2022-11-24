@@ -18,13 +18,13 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretReference;
 import io.harness.exception.InvalidRequestException;
-import io.harness.secret.SecretReference;
-import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
@@ -50,15 +50,27 @@ import org.hibernate.validator.constraints.URL;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("ServiceNowConnector")
-@OneOfField(fields = {"username", "usernameRef"}) // TODO: to be removed while migration
 @Schema(name = "ServiceNowConnector", description = "ServiceNow Connector details.")
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @URL @NotNull @NotBlank String serviceNowUrl;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
+  @Hidden
   String username;
-  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData usernameRef;
-  @ApiModelProperty(dataType = "string") @NotNull @SecretReference SecretRefData passwordRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
+  @Hidden
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  SecretRefData usernameRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
+  @Hidden
+  @ApiModelProperty(dataType = "string")
+  @SecretReference
+  SecretRefData passwordRef;
   Set<String> delegateSelectors;
-  @Valid ServiceNowAuthenticationDTO auth;
+  @Valid @NotNull ServiceNowAuthenticationDTO auth;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
