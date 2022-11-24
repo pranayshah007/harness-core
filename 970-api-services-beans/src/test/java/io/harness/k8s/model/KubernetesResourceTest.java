@@ -31,9 +31,9 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.KubernetesYamlException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.rule.Owner;
 import io.harness.yaml.BooleanPatchedRepresenter;
 

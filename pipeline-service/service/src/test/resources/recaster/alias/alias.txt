@@ -151,14 +151,6 @@ io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
 io.harness.steps.plugin.ContainerStepNode
 io.harness.steps.plugin.ContainerStepInfo
-io.harness.steps.plugin.ContainerStepInitOutcome
+io.harness.steps.plugin.ContainerStepOutcome
 io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.steps.plugin.ContainerStepParameters
-io.harness.beans.yaml.extended.volumes.EmptyDirYaml
-io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext
-io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities
-io.harness.beans.yaml.extended.volumes.HostPathYaml
-io.harness.steps.plugin.infrastructure.ContainerK8sInfra
-io.harness.beans.yaml.extended.infrastrucutre.OSType
-io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml
-io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration

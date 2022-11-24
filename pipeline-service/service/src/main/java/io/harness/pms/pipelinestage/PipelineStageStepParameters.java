@@ -16,9 +16,11 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(HarnessTeam.PIPELINE)
+@FieldNameConstants(innerTypeName = "PipelineStageStepParametersKeys")
 @Data
 @Builder
 @TypeAlias("pipelineStageStepParameters")

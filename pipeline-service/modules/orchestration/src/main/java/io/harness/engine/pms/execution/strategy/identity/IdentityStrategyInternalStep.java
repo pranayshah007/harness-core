@@ -35,8 +35,10 @@ import io.harness.tasks.ResponseData;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class IdentityStrategyInternalStep
@@ -55,10 +57,12 @@ public class IdentityStrategyInternalStep
     NodeExecution childNodeExecution = null;
     List<NodeExecution> nodeExecutions = nodeExecutionService.fetchNodeExecutionsByParentIdWithAmbianceAndNode(
         identityParams.getOriginalNodeExecutionId(), true, true);
+    nodeExecutions =
+        nodeExecutions.stream().sorted(Comparator.comparing(NodeExecution::getCreatedAt)).collect(Collectors.toList());
     for (NodeExecution nodeExecution : nodeExecutions) {
       if (nodeExecution.getUuid().equals(identityParams.getOriginalNodeExecutionId())) {
         originalNodeExecution = nodeExecution;
-      } else {
+      } else if (childNodeExecution == null) {
         childNodeExecution = nodeExecution;
       }
     }

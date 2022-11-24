@@ -33,11 +33,13 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.ecr.EcrService;
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.impl.delegate.AwsEcrApiHelperServiceDelegate;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.Rule;
@@ -55,6 +57,7 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
   @Mock private AwsApiHelperService awsApiHelperService;
   @InjectMocks private EcrArtifactTaskHandler ecrArtifactTaskHandler;
   @Mock private AwsEcrApiHelperServiceDelegate awsEcrApiHelperServiceDelegate;
+  @Mock SecretDecryptionService secretDecryptionService;
 
   @Test
   @Owner(developers = ACASIAN)
@@ -357,5 +360,87 @@ public class EcrArtifactTaskHandlerTest extends CategoryTest {
     ArtifactTaskExecutionResponse response = spyecrtaskhandler.validateArtifactImage(ecrArtifactDelegateRequest);
 
     assertThat(response.isArtifactSourceValid()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testdecryptRequestDTOs() throws IOException {
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    AwsConnectorDTO awsConnectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(
+                AwsCredentialDTO.builder()
+                    .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                    .config(AwsManualConfigSpecDTO.builder()
+                                .accessKey("access-key")
+                                .secretKeyRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                .build())
+                    .build())
+            .build();
+
+    String region = "us-east-1";
+
+    EcrArtifactDelegateRequest ecrArtifactDelegateRequest = EcrArtifactDelegateRequest.builder()
+                                                                .region(region)
+                                                                .awsConnectorDTO(awsConnectorDTO)
+                                                                .imagePath("imagePath")
+                                                                .tag("tag")
+                                                                .build();
+
+    ecrArtifactTaskHandler.decryptRequestDTOs(ecrArtifactDelegateRequest);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildTagRegex() {
+    EcrArtifactTaskHandler spyecrtaskhandler = spy(ecrArtifactTaskHandler);
+
+    AwsConnectorDTO awsConnectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(
+                AwsCredentialDTO.builder()
+                    .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                    .config(AwsManualConfigSpecDTO.builder()
+                                .accessKey("access-key")
+                                .secretKeyRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                .build())
+                    .build())
+            .build();
+
+    String region = "us-east-1";
+
+    EcrArtifactDelegateRequest ecrArtifactDelegateRequest = EcrArtifactDelegateRequest.builder()
+                                                                .region(region)
+                                                                .awsConnectorDTO(awsConnectorDTO)
+                                                                .imagePath("imagePath")
+                                                                .tagRegex("t.*")
+                                                                .build();
+    AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
+
+    doReturn(AwsInternalConfig.builder().build())
+        .when(spyecrtaskhandler)
+        .getAwsInternalConfig(ecrArtifactDelegateRequest);
+
+    BuildDetailsInternal buildDetailsInternal = BuildDetailsInternal.builder().number("tag").build();
+
+    doReturn(buildDetailsInternal)
+        .when(ecrService)
+        .getLastSuccessfulBuildFromRegex(awsInternalConfig, "EcrImageUrl", region, "imagePath", "t.*");
+
+    doReturn("EcrImageUrl").when(awsEcrApiHelperServiceDelegate).getEcrImageUrl(awsInternalConfig, region, "imagePath");
+
+    doReturn(Collections.singletonList(Collections.singletonMap("tag", "label")))
+        .when(ecrService)
+        .getLabels(awsInternalConfig, "imagePath", region, Collections.singletonList("tag"));
+
+    ArtifactTaskExecutionResponse response = spyecrtaskhandler.getLastSuccessfulBuild(ecrArtifactDelegateRequest);
+
+    EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        (EcrArtifactDelegateResponse) response.getArtifactDelegateResponses().get(0);
+
+    assertThat(ecrArtifactDelegateResponse.getLabel()).isEqualTo(Collections.singletonMap("tag", "label"));
+
+    assertThat(ecrArtifactDelegateResponse.getBuildDetails().getNumber()).isEqualTo("tag");
   }
 }

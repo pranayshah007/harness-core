@@ -32,4 +32,6 @@ import lombok.experimental.SuperBuilder;
 @JsonInclude(NON_NULL)
 @Schema(name = "CVLicenseSummary",
     description = "This contains details of the Test Intelligence License Summary in Harness")
-public class CVLicenseSummaryDTO extends LicensesWithSummaryDTO {}
+public class CVLicenseSummaryDTO extends LicensesWithSummaryDTO {
+  int totalServices;
+}

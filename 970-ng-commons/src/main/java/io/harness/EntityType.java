@@ -408,6 +408,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(EntityTypeConstants.GITOPS_FETCH_LINKED_APPS)
+  GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),

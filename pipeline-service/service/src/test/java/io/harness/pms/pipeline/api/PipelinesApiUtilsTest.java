@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,11 +25,14 @@ import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
@@ -143,5 +147,14 @@ public class PipelinesApiUtilsTest extends CategoryTest {
     assertEquals(listResponseBody.getSlug(), slug);
     assertEquals(listResponseBody.getName(), name);
     assertEquals(listResponseBody.getStoreType(), StoreTypeEnum.INLINE);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testBuildPipelineValidationResponseBody() {
+    PipelineValidationEvent event = PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build();
+    PipelineValidationResponseBody responseBody = PipelinesApiUtils.buildPipelineValidationResponseBody(event);
+    assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
   }
 }

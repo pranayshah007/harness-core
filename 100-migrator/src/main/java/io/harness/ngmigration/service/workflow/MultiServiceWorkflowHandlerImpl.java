@@ -35,8 +35,13 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public TemplateEntityType getTemplateType(Workflow workflow) {
+  public TemplateEntityType getTemplateType() {
     return TemplateEntityType.PIPELINE_TEMPLATE;
+  }
+
+  @Override
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    return areSimilar(stepMapperFactory, workflow1, workflow2);
   }
 
   @Override
@@ -47,21 +52,38 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
         orchestrationWorkflow.getPostDeploymentSteps());
   }
 
+  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
+    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
+    return PhaseStep.Yaml.builder()
+        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
+        .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
+        .steps(workflowYaml.getPreDeploymentSteps())
+        .build();
+  }
+
+  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
+    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
+    return PhaseStep.Yaml.builder()
+        .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
+        .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
+        .steps(workflowYaml.getPostDeploymentSteps())
+        .build();
+  }
+
   @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
     MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    CanaryOrchestrationWorkflow orchestrationWorkflow = (CanaryOrchestrationWorkflow) workflow.getOrchestration();
-    PhaseStep.Yaml prePhase = PhaseStep.Yaml.builder()
-                                  .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-                                  .stepsInParallel(orchestrationWorkflow.getPreDeploymentSteps().isStepsInParallel())
-                                  .steps(workflowYaml.getPreDeploymentSteps())
-                                  .build();
-    PhaseStep.Yaml postPhase = PhaseStep.Yaml.builder()
-                                   .stepSkipStrategies(workflowYaml.getPreDeploymentStepSkipStrategy())
-                                   .stepsInParallel(orchestrationWorkflow.getPostDeploymentSteps().isStepsInParallel())
-                                   .steps(workflowYaml.getPostDeploymentSteps())
-                                   .build();
+    PhaseStep.Yaml prePhase = getPreDeploymentPhase(workflow);
+    PhaseStep.Yaml postPhase = getPostDeploymentPhase(workflow);
     return buildMultiStagePipelineTemplate(
         stepMapperFactory, prePhase, workflowYaml.getPhases(), postPhase, workflowYaml.getRollbackPhases());
+  }
+
+  @Override
+  List<Yaml> getRollbackPhases(Workflow workflow) {
+    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
+    return workflowYaml.getRollbackPhases();
   }
 }

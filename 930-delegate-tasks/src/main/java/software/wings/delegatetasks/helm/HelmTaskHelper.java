@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -122,7 +123,12 @@ public class HelmTaskHelper {
   @Inject private DelegateFileManagerBase delegateFileManagerBase;
 
   public static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
-    FileUtils.copyDirectory(src, dest);
+    if (src.isDirectory()) {
+      FileUtils.copyDirectory(src, dest);
+    } else {
+      Path destFilePath = Paths.get(dest.getPath(), src.getName());
+      FileUtils.copyFile(src, destFilePath.toFile());
+    }
     deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
     waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }

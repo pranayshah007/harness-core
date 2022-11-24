@@ -56,6 +56,7 @@ public class MigrationAsyncTracker implements PersistentEntity, UuidAware, Creat
   MigrationTrackReqPayload requestPayload;
   MigrationAsyncTrackerStatus status;
   MigrationTrackRespPayload responsePayload;
+  private String requestType;
 
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore private long createdAt;

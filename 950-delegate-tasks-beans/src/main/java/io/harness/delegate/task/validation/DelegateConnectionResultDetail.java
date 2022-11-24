@@ -22,7 +22,7 @@ public class DelegateConnectionResultDetail {
   private String criteria;
   private boolean validated;
   private long duration;
-  private Date validUntil = getValidUntilTime();
+  @Builder.Default private Date validUntil = getValidUntilTime();
 
   public static Date getValidUntilTime() {
     return Date.from(OffsetDateTime.now().plusDays(30).toInstant());

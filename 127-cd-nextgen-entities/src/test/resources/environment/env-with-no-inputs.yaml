@@ -1,0 +1,41 @@
+environment:
+  name: ENV_ID
+  identifier: ENV_ID
+  tags: {}
+  type: Production
+  orgIdentifier: default
+  projectIdentifier: TcSvcOverrideTest
+  variables:
+    - name: envV1
+      type: String
+      value: envVal1
+      description: ""
+    - name: envV2
+      type: String
+      value: envVal2
+      description: ""
+  overrides:
+    manifests:
+      - manifest:
+          identifier: manifest1
+          type: Values
+          spec:
+            store:
+              type: Github
+              spec:
+                connectorRef: HarnessConnector
+                gitFetchType: Branch
+                paths:
+                  - values.yaml
+                repoName: K8s
+                branch: master
+    configFiles:
+      - configFile:
+          identifier: configFile1
+          spec:
+            store:
+              type: Harness
+              spec:
+                files:
+                  - account:/Sample manifests
+                secretFiles: []

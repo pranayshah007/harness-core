@@ -9,7 +9,7 @@ package io.harness.steps.approval.step.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.StoreIn;
@@ -164,9 +164,9 @@ public abstract class ApprovalInstance implements PersistentEntity, PersistentRe
   public FailureInfo getFailureInfo() {
     if (status == ApprovalStatus.REJECTED) {
       FailureData failureData = FailureData.newBuilder()
-                                    .addFailureTypes(FailureType.UNKNOWN_FAILURE)
+                                    .addFailureTypes(FailureType.APPROVAL_REJECTION)
                                     .setLevel(Level.ERROR.name())
-                                    .setCode(GENERAL_ERROR.name())
+                                    .setCode(APPROVAL_REJECTION.name())
                                     .setMessage("Approval Step has been Rejected")
                                     .build();
       return FailureInfo.newBuilder().addFailureData(failureData).build();

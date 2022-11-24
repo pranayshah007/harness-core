@@ -270,8 +270,8 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build()));
 
     ChangeSummaryDTO changeSummaryDTO =
-        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), null, null, null, null,
-            Instant.ofEpochSecond(100), Instant.ofEpochSecond(500));
+        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null, null,
+            null, null, Instant.ofEpochSecond(100), Instant.ofEpochSecond(500));
 
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCount()).isEqualTo(3);
     assertThat(changeSummaryDTO.getCategoryCountMap().get(ChangeCategory.DEPLOYMENT).getCountInPrecedingWindow())
@@ -370,7 +370,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
             .build()));
 
     ChangeSummaryDTO changeSummaryDTO =
-        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), null,
+        changeEventService.getChangeSummary(builderFactory.getContext().getProjectParams(), (List<String>) null,
             Arrays.asList(builderFactory.getContext().getEnvIdentifier()), null, null, Instant.ofEpochSecond(100),
             Instant.ofEpochSecond(500));
 

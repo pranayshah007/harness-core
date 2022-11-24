@@ -84,10 +84,11 @@ public class PerpetualTaskRecordDao {
 
   public void updateTaskStateNonAssignableReason(
       String taskId, PerpetualTaskUnassignedReason reason, int assignTryCount, PerpetualTaskState perpetualTaskState) {
-    Query<PerpetualTaskRecord> query = persistence.createQuery(PerpetualTaskRecord.class)
-                                           .filter(PerpetualTaskRecordKeys.uuid, taskId)
-                                           .field(PerpetualTaskRecordKeys.state)
-                                           .in(asList(PerpetualTaskState.TASK_UNASSIGNED, TASK_NON_ASSIGNABLE));
+    Query<PerpetualTaskRecord> query =
+        persistence.createQuery(PerpetualTaskRecord.class)
+            .filter(PerpetualTaskRecordKeys.uuid, taskId)
+            .field(PerpetualTaskRecordKeys.state)
+            .in(asList(PerpetualTaskState.TASK_UNASSIGNED, TASK_NON_ASSIGNABLE, TASK_ASSIGNED));
     UpdateOperations<PerpetualTaskRecord> updateOperations =
         persistence.createUpdateOperations(PerpetualTaskRecord.class)
             .set(PerpetualTaskRecordKeys.unassignedReason, reason)

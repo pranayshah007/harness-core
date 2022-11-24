@@ -7,7 +7,6 @@
 
 package io.harness.cvng.statemachine.services.api;
 
-import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 
@@ -21,6 +20,5 @@ public interface AnalysisStateMachineService {
   AnalysisStatus executeStateMachine(AnalysisStateMachine stateMachine);
   AnalysisStateMachine getExecutingStateMachine(String verificationTaskId);
   void retryStateMachineAfterFailure(AnalysisStateMachine analysisStateMachine);
-  AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis);
   void save(List<AnalysisStateMachine> stateMachineList);
 }
