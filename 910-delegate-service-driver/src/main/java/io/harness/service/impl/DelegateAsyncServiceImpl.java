@@ -37,7 +37,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -183,25 +182,32 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
     return deleteSuccessful;
   }
 
-  @Getter(lazy = true)
-  private final byte[] timeoutMessage = kryoSerializer.asDeflatedBytes(
-      ErrorNotifyResponseData.builder()
-          .errorMessage("Delegate service did not provide response and the task time-outed")
-          .build());
-
   @Override
-  public void setupTimeoutForTask(String taskId, long expiry, long holdUntil) {
+  public void setupTimeoutForTask(String taskId, long expiry, long holdUntil, boolean usingKryoWithoutReference) {
     Instant validUntilInstant = Instant.ofEpochMilli(expiry).plusSeconds(Duration.ofHours(1).getSeconds());
     UpdateOperations<DelegateAsyncTaskResponse> updateOperations =
         persistence.createUpdateOperations(DelegateAsyncTaskResponse.class)
-            .setOnInsert(DelegateAsyncTaskResponseKeys.responseData, getTimeoutMessage())
+            .setOnInsert(DelegateAsyncTaskResponseKeys.responseData, getTimeoutMessage(usingKryoWithoutReference))
             .setOnInsert(DelegateAsyncTaskResponseKeys.processAfter, expiry)
             .setOnInsert(DelegateAsyncTaskResponseKeys.validUntil, Date.from(validUntilInstant))
+            .setOnInsert(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, usingKryoWithoutReference)
             .set(DelegateAsyncTaskResponseKeys.holdUntil, holdUntil);
 
     Query<DelegateAsyncTaskResponse> upsertQuery =
         persistence.createQuery(DelegateAsyncTaskResponse.class, excludeAuthority)
             .filter(DelegateAsyncTaskResponseKeys.uuid, taskId);
     persistence.upsert(upsertQuery, updateOperations);
+  }
+
+  private byte[] getTimeoutMessage(boolean usingKryoWithoutReference) {
+    ErrorNotifyResponseData errorNotifyResponseData =
+        ErrorNotifyResponseData.builder()
+            .errorMessage("Delegate service did not provide response and the task time-outed")
+            .build();
+    if (usingKryoWithoutReference) {
+      return referenceFalseKryoSerializer.asDeflatedBytes(errorNotifyResponseData);
+    } else {
+      return kryoSerializer.asDeflatedBytes(errorNotifyResponseData);
+    }
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ALEXEI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -119,7 +120,7 @@ public class NgDelegate2TaskExecutorTest extends OrchestrationTestBase {
                         .setTotalExpiry(Timestamp.newBuilder().setSeconds(30).build())
                         .setTaskId(TaskId.newBuilder().setId(taskId).build())
                         .build());
-    doNothing().when(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong());
+    doNothing().when(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong(), eq(false));
     when(tokenSupplier.get()).thenReturn(DelegateCallbackToken.newBuilder().setToken(generateUuid()).build());
 
     String actualTaskId = ngDelegate2TaskExecutor.queueTask(new HashMap<>(), taskRequest, Duration.ZERO);
@@ -127,7 +128,7 @@ public class NgDelegate2TaskExecutorTest extends OrchestrationTestBase {
     assertThat(actualTaskId).isEqualTo(taskId);
 
     verify(delegateServiceBlockingStub).submitTask(any());
-    verify(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong());
+    verify(delegateAsyncService).setupTimeoutForTask(anyString(), anyLong(), anyLong(), eq(false));
     verify(tokenSupplier).get();
 
     verifyNoMoreInteractions(delegateSyncService);
