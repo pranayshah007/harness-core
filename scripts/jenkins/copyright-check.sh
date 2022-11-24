@@ -4,36 +4,28 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-merge_summary=()
-merge_summary+=( $(git diff HEAD@{0} HEAD@{1} --name-only) )
+FILES_WITHOUT_STMTS=()
 
-echo "Merge Summary: "${merge_summary[@]}
-error_data=()
+HARNESS_INC="Copyright [0-9]{4} Harness Inc. All rights reserved."
 
-copyright_text="Copyright "$current_year" Harness Inc. All rights reserved."
-echo "'"$copyright_text"'"
+MERGE_SUMMARY=$(git diff HEAD@{0} HEAD@{1} --name-only | grep -v '\.yml' | grep -v '\.yaml' | grep -v '\.properties' | grep -v '\.md')
 
-for file in ${merge_summary[@]}
+echo "$MERGE_SUMMARY"
+
+for file in ${MERGE_SUMMARY[@]}
 do
-    if [ -z "$(grep  "$copyright_text" $file)" ];
-    then
-      error_data+=( "$file" )
-    else
-      echo "checked... " $file
-    fi
+    [ -z "$(grep -E "${HARNESS_INC}" $file)" ] && FILES_WITHOUT_STMTS+=( "$file" )
 done
 
-echo ${error_data[@]}
-len=${#error_data[@]}
+len=${#FILES_WITHOUT_STMTS[@]}
 
-if [ $len -eq 0 ];
-then
-  echo "All file have up to date copyrights... "
+if [ $len -eq 0 ]; then
+  echo "INFO: All files have copyright statement..."
 else
-  echo "please update the copyright issue in following files and re-trigger the execution... "
-  for i in ${error_data[@]}
+  echo "ERROR: Following ${len} files do not have the Copyright statements. please update and re-trigger the execution..."
+  for file in ${FILES_WITHOUT_STMTS[@]}
   do
-    echo $i
+    echo "-> $file"
   done
   exit 1
 fi
