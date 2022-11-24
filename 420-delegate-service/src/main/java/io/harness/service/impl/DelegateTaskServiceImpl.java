@@ -48,6 +48,7 @@ import software.wings.beans.TaskType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -66,6 +67,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -247,10 +249,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
       if (delegateTask.getData().isAsync()) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
       } else {
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);
@@ -278,10 +280,10 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
       if (delegateTask.getTaskDataV2().isAsync()) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
       } else {
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);

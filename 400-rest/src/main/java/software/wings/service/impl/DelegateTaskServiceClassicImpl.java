@@ -265,6 +265,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
   @Inject private SettingsService settingsService;
@@ -1785,12 +1786,22 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
          TaskLogContext taskLogContext = new TaskLogContext(delegateTask.getUuid(), OVERRIDE_ERROR)) {
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
-        delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+        if (response.isUsingKryoWithoutReference()) {
+          delegateCallbackService.publishAsyncTaskResponse(
+              delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
+        } else {
+          delegateCallbackService.publishAsyncTaskResponse(
+              delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
+        }
       } else {
         log.debug("Publishing sync task response...");
-        delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+        if (response.isUsingKryoWithoutReference()) {
+          delegateCallbackService.publishSyncTaskResponse(
+              delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
+        } else {
+          delegateCallbackService.publishSyncTaskResponse(
+              delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
+        }
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response for task", ex);

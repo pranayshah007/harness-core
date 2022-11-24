@@ -62,23 +62,25 @@ public class MongoDelegateCallbackService implements DelegateCallbackService {
   }
 
   @Override
-  public void publishSyncTaskResponse(String delegateTaskId, byte[] responseData) {
+  public void publishSyncTaskResponse(String delegateTaskId, byte[] responseData, boolean usingKryoWithoutReference) {
     Document document = new Document();
     document.put(ID_FIELD_NAME, delegateTaskId);
     document.put(DelegateSyncTaskResponseKeys.responseData, responseData);
+    document.put(DelegateSyncTaskResponseKeys.usingKryoWithoutReference, usingKryoWithoutReference);
     syncTaskResponseCollection.insertOne(document);
   }
 
   private static final UpdateOptions upsert = new UpdateOptions().upsert(true);
 
   @Override
-  public void publishAsyncTaskResponse(String delegateTaskId, byte[] responseData) {
+  public void publishAsyncTaskResponse(String delegateTaskId, byte[] responseData, boolean usingKryoWithoutReference) {
     Bson filter = Filters.eq(ID_FIELD_NAME, delegateTaskId);
 
     Document document = new Document();
     document.put(ID_FIELD_NAME, delegateTaskId);
     document.put(DelegateAsyncTaskResponseKeys.responseData, responseData);
     document.put(DelegateAsyncTaskResponseKeys.processAfter, 0l);
+    document.put(DelegateAsyncTaskResponseKeys.usingKryoWithoutReference, usingKryoWithoutReference);
 
     Bson update = new Document("$set", document);
 
