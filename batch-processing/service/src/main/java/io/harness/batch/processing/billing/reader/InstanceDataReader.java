@@ -7,21 +7,13 @@
 
 package io.harness.batch.processing.billing.reader;
 
-import io.harness.batch.processing.billing.writer.support.BillingDataGenerationValidator;
 import io.harness.batch.processing.dao.intfc.InstanceDataDao;
-import io.harness.ccm.cluster.ClusterRecordService;
-import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -45,21 +37,17 @@ public class InstanceDataReader {
   }
 
   public List<InstanceData> getNext() {
-    List<InstanceData> instanceDataLists = instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
-        accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId);
+    List<InstanceData> instanceDataLists;
+    if (clusterId == null) {
+      instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
+          accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+    } else {
+      instanceDataLists = instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
+          accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId);
+    }
 
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
-      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
-        Instant batchStartTime = instanceDataLists.get(0).getActiveInstanceIterator();
-        log.info("Instance details reader sec {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
-        int value = batchStartTime.compareTo(activeInstanceIterator);
-        if (value > 0) {
-          activeInstanceIterator = batchStartTime.plus(1, ChronoUnit.MILLIS);
-          log.info(
-              "Instance details reader val is greater {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
-        }
-      }
       if (instanceDataLists.get(0).getActiveInstanceIterator().equals(activeInstanceIterator)) {
         log.info("Incrementing lastActiveInstanceIterator by 1ms {} {} {} {}", instanceDataLists.size(),
             activeInstanceIterator, endTime, accountId);
