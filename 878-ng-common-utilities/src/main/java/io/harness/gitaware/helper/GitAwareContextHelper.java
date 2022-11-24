@@ -82,9 +82,9 @@ public class GitAwareContextHelper {
         .build();
   }
 
-  public CacheResponse getCacheResponseFromScmGitMetadata(){
+  public CacheResponse getCacheResponseFromScmGitMetadata() {
     ScmGitMetaData scmGitMetaData = getScmGitMetaData();
-    if(scmGitMetaData == null || scmGitMetaData.getCacheResponse()== null){
+    if (scmGitMetaData == null || scmGitMetaData.getCacheResponse() == null) {
       return CacheResponse.builder().build();
     }
     return scmGitMetaData.getCacheResponse();
