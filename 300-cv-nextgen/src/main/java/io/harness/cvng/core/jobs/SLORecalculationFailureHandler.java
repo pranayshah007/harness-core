@@ -11,7 +11,9 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -37,16 +39,27 @@ public class SLORecalculationFailureHandler implements MongoPersistenceIterator.
                                       .build();
     SLODashboardWidget.SLOGraphData sloGraphData =
         sloHealthIndicatorService.getGraphData(projectParams, serviceLevelObjective);
-    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-        projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
-    try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
-      if (sloGraphData.isRecalculatingSLI()
-          && serviceLevelObjective.getLastUpdatedAt() > System.currentTimeMillis() - recalculationDelayThreshold) {
-        metricService.incCounter(CVNGMetricsUtils.RECALCULATION_FAILURE);
+    if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
+      try (SLOMetricContext sloMetricContext =
+               new SLOMetricContext((CompositeServiceLevelObjective) serviceLevelObjective)) {
+        addMetrics(sloGraphData, serviceLevelObjective);
       }
-      if (sloGraphData.isCalculatingSLI()) {
-        metricService.incCounter(CVNGMetricsUtils.CALCULATION_FAILURE);
+    } else {
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          projectParams, ((SimpleServiceLevelObjective) serviceLevelObjective).getServiceLevelIndicators().get(0));
+      try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
+        addMetrics(sloGraphData, serviceLevelObjective);
       }
+    }
+  }
+  private void addMetrics(
+      SLODashboardWidget.SLOGraphData sloGraphData, AbstractServiceLevelObjective serviceLevelObjective) {
+    if (sloGraphData.isRecalculatingSLI()
+        && serviceLevelObjective.getLastUpdatedAt() > System.currentTimeMillis() - recalculationDelayThreshold) {
+      metricService.incCounter(CVNGMetricsUtils.RECALCULATION_FAILURE);
+    }
+    if (sloGraphData.isCalculatingSLI()) {
+      metricService.incCounter(CVNGMetricsUtils.CALCULATION_FAILURE);
     }
   }
 }

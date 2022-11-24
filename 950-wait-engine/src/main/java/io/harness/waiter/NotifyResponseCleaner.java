@@ -13,8 +13,8 @@ import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueueController;
 import io.harness.waiter.persistence.PersistenceWrapper;

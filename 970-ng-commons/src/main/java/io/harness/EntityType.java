@@ -408,6 +408,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(EntityTypeConstants.GITOPS_FETCH_LINKED_APPS)
+  GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
@@ -428,7 +431,7 @@ public enum EntityType {
   BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
+          EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE);

@@ -72,8 +72,10 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
           objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, verificationTaskId,
           startTime, endTime);
     } else {
-      createCompositeSLORecords(serviceLevelObjectivesDetailCompositeSLORecordMap,
-          objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, verificationTaskId);
+      List<CompositeSLORecord> compositeSLORecords =
+          getCompositeSLORecordsFromSLIsDetails(serviceLevelObjectivesDetailCompositeSLORecordMap,
+              objectivesDetailSLIMissingDataTypeMap, sloVersion, runningGoodCount, runningBadCount, verificationTaskId);
+      hPersistence.save(compositeSLORecords);
     }
   }
 
@@ -165,7 +167,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         .build();
   }
 
-  private void createCompositeSLORecords(
+  public List<CompositeSLORecord> getCompositeSLORecordsFromSLIsDetails(
       Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
       Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap, int sloVersion,
       double runningGoodCount, double runningBadCount, String verificationTaskId) {
@@ -190,7 +192,7 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
         sloRecordList.add(sloRecord);
       }
     }
-    hPersistence.save(sloRecordList);
+    return sloRecordList;
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, retryOn = ConcurrentModificationException.class)

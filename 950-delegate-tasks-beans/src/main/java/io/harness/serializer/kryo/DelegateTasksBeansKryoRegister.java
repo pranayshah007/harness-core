@@ -1958,19 +1958,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
 
-    // Elastigroup
     kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);
     kryo.register(ElastigroupStartupScriptFetchResponse.class, 573546);
     kryo.register(ElastigroupSetupCommandRequest.class, 573547);
     kryo.register(ElastigroupSetupResponse.class, 573548);
     kryo.register(ElastigroupSetupResult.class, 573549);
-    kryo.register(ElastigroupNGException.class, 573600);
-    kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573601);
-    kryo.register(ElastigroupParametersFetchResponse.class, 573602);
-    kryo.register(ElastigroupParametersFetchRequest.class, 573603);
-    kryo.register(ElastigroupSwapRouteCommandRequest.class, 573604);
-    kryo.register(ElastigroupSwapRouteResponse.class, 573605);
-    kryo.register(ElastigroupSwapRouteResult.class, 573606);
 
     kryo.register(InlineFileConfig.class, 573550);
     kryo.register(InlineStoreDelegateConfig.class, 573551);
@@ -1980,5 +1972,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
+
+    kryo.register(ElastigroupNGException.class, 10000116);
+    kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 10000117);
+    kryo.register(ElastigroupParametersFetchResponse.class, 10000118);
+    kryo.register(ElastigroupParametersFetchRequest.class, 10000119);
+    kryo.register(ElastigroupSwapRouteCommandRequest.class, 10000120);
+    kryo.register(ElastigroupSwapRouteResponse.class, 10000121);
+    kryo.register(ElastigroupSwapRouteResult.class, 10000122);
   }
 }

@@ -9,6 +9,7 @@ package io.harness.ngmigration.service.step;
 
 import io.harness.plancreator.steps.AbstractStepNode;
 
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 public class EmptyStepMapperImpl implements StepMapper {
@@ -18,7 +19,17 @@ public class EmptyStepMapperImpl implements StepMapper {
   }
 
   @Override
+  public State getState(StepYaml stepYaml) {
+    return null;
+  }
+
+  @Override
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     return null;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

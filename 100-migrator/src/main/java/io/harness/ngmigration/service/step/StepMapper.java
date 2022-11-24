@@ -23,7 +23,11 @@ import java.util.Map;
 public interface StepMapper {
   String getStepType(StepYaml stepYaml);
 
+  State getState(StepYaml stepYaml);
+
   AbstractStepNode getSpec(StepYaml stepYaml);
+
+  boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2);
 
   default ParameterField<Timeout> getTimeout(StepYaml stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);

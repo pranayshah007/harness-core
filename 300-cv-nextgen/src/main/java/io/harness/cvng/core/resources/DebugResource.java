@@ -43,7 +43,7 @@ public class DebugResource {
   @GET
   @Timed
   @Path("slo/{identifier}")
-  @ApiOperation(value = "Gets SLO debug data", nickname = "getSLODebugData")
+  @ApiOperation(value = "Gets SLO debug data", nickname = "getSLODebugData", hidden = true)
   public RestResponse<SLODebugResponse> getSLODebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getSLODebugResponse(projectParams, identifier));
@@ -52,7 +52,7 @@ public class DebugResource {
   @GET
   @Timed
   @Path("composite-slo/{identifier}")
-  @ApiOperation(value = "Gets Composite SLO debug data", nickname = "getCompositeSLODebugData")
+  @ApiOperation(value = "Gets Composite SLO debug data", nickname = "getCompositeSLODebugData", hidden = true)
   public RestResponse<CompositeSLODebugResponse> getCompositeSLODebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getCompositeSLODebugResponse(projectParams, identifier));
@@ -61,7 +61,7 @@ public class DebugResource {
   @GET
   @Timed
   @Path("verify-step/{identifier}")
-  @ApiOperation(value = "Gets Verify Step debug data", nickname = "getVerifyStepDebugData")
+  @ApiOperation(value = "Gets Verify Step debug data", nickname = "getVerifyStepDebugData", hidden = true)
   public RestResponse<VerifyStepDebugResponse> getVerifyStepDebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.getVerifyStepDebugResponse(projectParams, identifier));
@@ -70,8 +70,10 @@ public class DebugResource {
   @PUT
   @Timed
   @Path("datacollectiontask/{identifier}/retry")
-  @ApiOperation(value = "Updates DataCollectionTask for Debugging", nickname = "updateDataCollectionTaskDebugData")
-  public RestResponse<DataCollectionTask> updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectParams projectParams,
+  @ApiOperation(
+      value = "Updates DataCollectionTask for Debugging", nickname = "updateDataCollectionTaskDebugData", hidden = true)
+  public RestResponse<DataCollectionTask>
+  updateDataCollectionTaskDebug(@NotNull @BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(debugService.retryDataCollectionTask(projectParams, identifier));
   }

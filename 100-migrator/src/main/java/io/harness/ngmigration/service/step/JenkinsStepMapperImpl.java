@@ -16,6 +16,7 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.sm.State;
 import software.wings.sm.states.JenkinsState;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -31,10 +32,16 @@ public class JenkinsStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     JenkinsState state = new JenkinsState(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    JenkinsState state = (JenkinsState) getState(stepYaml);
     JenkinsBuildStepNode stepNode = new JenkinsBuildStepNode();
     baseSetup(stepYaml, stepNode);
 
@@ -66,5 +73,11 @@ public class JenkinsStepMapperImpl implements StepMapper {
             .build();
     stepNode.setJenkinsBuildStepInfo(stepInfo);
     return stepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    // We can parameterize almost everything in Jenkins step. So customers could templatize
+    return true;
   }
 }

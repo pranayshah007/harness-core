@@ -60,8 +60,52 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class WorkflowHandler {
-  public TemplateEntityType getTemplateType(Workflow workflow) {
+  public TemplateEntityType getTemplateType() {
     return TemplateEntityType.STAGE_TEMPLATE;
+  }
+
+  public abstract boolean areSimilar(Workflow workflow1, Workflow workflow2);
+
+  boolean areSimilar(StepMapperFactory stepMapperFactory, Workflow workflow1, Workflow workflow2) {
+    List<WorkflowPhase.Yaml> phases1 = getPhases(workflow1);
+    List<WorkflowPhase.Yaml> rollbackPhases1 = getRollbackPhases(workflow1);
+    PhaseStep.Yaml pre1 = getPreDeploymentPhase(workflow1);
+    PhaseStep.Yaml post1 = getPostDeploymentPhase(workflow1);
+
+    List<WorkflowPhase.Yaml> phases2 = getPhases(workflow2);
+    List<WorkflowPhase.Yaml> rollbackPhases2 = getRollbackPhases(workflow2);
+    PhaseStep.Yaml pre2 = getPreDeploymentPhase(workflow2);
+    PhaseStep.Yaml post2 = getPostDeploymentPhase(workflow2);
+
+    if (!areSimilarPhaseStep(stepMapperFactory, pre1, pre2)) {
+      return false;
+    }
+
+    if (!areSimilarPhaseStep(stepMapperFactory, post1, post2)) {
+      return false;
+    }
+
+    if (phases1.size() != phases2.size()) {
+      return false;
+    }
+
+    if (rollbackPhases1.size() != rollbackPhases2.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < phases1.size(); ++i) {
+      if (!areSimilarPhase(stepMapperFactory, phases1.get(i), phases2.get(i))) {
+        return false;
+      }
+    }
+
+    for (int i = 0; i < rollbackPhases1.size(); ++i) {
+      if (!areSimilarPhase(stepMapperFactory, rollbackPhases2.get(i), rollbackPhases1.get(i))) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public List<NGVariable> getVariables(Workflow workflow) {
@@ -94,21 +138,21 @@ public abstract class WorkflowHandler {
     return ParameterField.createFieldWithDefaultValue(true, true, "<+input>", variable.getValue(), validator, true);
   }
 
-  public JsonNode getTemplateSpec(Workflow workflow) {
+  public abstract JsonNode getTemplateSpec(Workflow workflow);
+
+  abstract List<Yaml> getRollbackPhases(Workflow workflow);
+
+  abstract List<Yaml> getPhases(Workflow workflow);
+
+  PhaseStep.Yaml getPreDeploymentPhase(Workflow workflow) {
     return null;
   }
 
-  List<Yaml> getRollbackPhases(Workflow workflow) {
+  PhaseStep.Yaml getPostDeploymentPhase(Workflow workflow) {
     return null;
   }
 
-  List<Yaml> getPhases(Workflow workflow) {
-    return null;
-  }
-
-  public List<GraphNode> getSteps(Workflow workflow) {
-    return null;
-  }
+  public abstract List<GraphNode> getSteps(Workflow workflow);
 
   List<GraphNode> getSteps(
       List<WorkflowPhase> phases, PhaseStep preDeploymentPhaseStep, PhaseStep postDeploymentPhaseStep) {
@@ -145,6 +189,52 @@ public abstract class WorkflowHandler {
                        .collect(Collectors.toList());
     }
     return stepGroups;
+  }
+
+  boolean areSimilarPhase(StepMapperFactory stepMapperFactory, WorkflowPhase.Yaml phase1, WorkflowPhase.Yaml phase2) {
+    List<PhaseStep.Yaml> phase1Steps = phase1 != null ? phase1.getPhaseSteps() : Collections.emptyList();
+    List<PhaseStep.Yaml> phase2Steps = phase2 != null ? phase2.getPhaseSteps() : Collections.emptyList();
+
+    if (phase1Steps.size() != phase2Steps.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < phase1Steps.size(); ++i) {
+      if (!areSimilarPhaseStep(stepMapperFactory, phase1Steps.get(i), phase2Steps.get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  boolean areSimilarPhaseStep(
+      StepMapperFactory stepMapperFactory, PhaseStep.Yaml phaseStep1, PhaseStep.Yaml phaseStep2) {
+    if ((phaseStep1 == null && phaseStep2 != null) || (phaseStep1 != null && phaseStep2 == null)) {
+      return false;
+    }
+
+    if (phaseStep1 == null) {
+      return true;
+    }
+
+    List<StepYaml> stepYamls1 =
+        EmptyPredicate.isNotEmpty(phaseStep1.getSteps()) ? phaseStep1.getSteps() : Collections.emptyList();
+    List<StepYaml> stepYamls2 =
+        EmptyPredicate.isNotEmpty(phaseStep2.getSteps()) ? phaseStep2.getSteps() : Collections.emptyList();
+
+    if (stepYamls2.size() != stepYamls1.size()) {
+      return false;
+    }
+
+    for (int i = 0; i < stepYamls1.size(); ++i) {
+      StepYaml stepYaml1 = stepYamls1.get(i);
+      StepYaml stepYaml2 = stepYamls2.get(i);
+      if (!stepMapperFactory.areSimilar(stepYaml1, stepYaml2)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   ExecutionWrapperConfig getStepGroup(StepMapperFactory stepMapperFactory, PhaseStep.Yaml phaseStep) {
@@ -327,6 +417,19 @@ public abstract class WorkflowHandler {
     stageNode.setName(phase.getName());
     stageNode.setIdentifier(MigratorUtility.generateIdentifier(phase.getName()));
     stageNode.setDeploymentStageConfig(stageConfig);
+    if (EmptyPredicate.isNotEmpty(phase.getServiceVariableOverrides())) {
+      stageNode.setVariables(phase.getServiceVariableOverrides()
+                                 .stream()
+                                 .filter(sv -> StringUtils.isNotBlank(sv.getName()))
+                                 .map(sv
+                                     -> StringNGVariable.builder()
+                                            .name(sv.getName())
+                                            .type(NGVariableType.STRING)
+                                            .value(ParameterField.createValueField(
+                                                StringUtils.isNotBlank(sv.getValue()) ? sv.getValue() : ""))
+                                            .build())
+                                 .collect(Collectors.toList()));
+    }
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 

@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -31,9 +32,11 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
+import io.harness.cvng.servicelevelobjective.beans.SLOValue;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
@@ -46,8 +49,10 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.AbstractServiceLevelObjectiveUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -59,6 +64,7 @@ import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetSer
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
 import io.harness.exception.DuplicateFieldException;
@@ -75,9 +81,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +98,7 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -114,6 +123,47 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
   @Inject private OutboxService outboxService;
   @Inject private CompositeSLOService compositeSLOService;
   @Inject private SideKickService sideKickService;
+  @Inject private ServiceLevelObjectiveDetailsTransformer serviceLevelObjectiveDetailsTransformer;
+  @Inject private SLIRecordServiceImpl sliRecordService;
+  @Inject private CompositeSLORecordServiceImpl compositeSLORecordService;
+
+  @Override
+  public TimeGraphResponse getOnboardingGraph(CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
+    Instant endTime = clock.instant().truncatedTo(ChronoUnit.MINUTES);
+    Instant startTime = endTime.minus(Duration.ofDays(1));
+    List<ServiceLevelObjectivesDetail> serviceLevelObjectivesDetails =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> serviceLevelObjectiveDetailsTransformer.getServiceLevelObjectiveDetails(
+                    serviceLevelObjectiveDetailsDTO))
+            .collect(Collectors.toList());
+    Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
+        sloDetailsSLIRecordsAndSLIMissingDataType = sliRecordService.getSLODetailsSLIRecordsAndSLIMissingDataType(
+            serviceLevelObjectivesDetails, startTime, endTime);
+    List<CompositeSLORecord> compositeSLORecords = new ArrayList<>();
+    if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
+        == compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
+      compositeSLORecords = getCompositeSLORecords(
+          sloDetailsSLIRecordsAndSLIMissingDataType.getKey(), sloDetailsSLIRecordsAndSLIMissingDataType.getValue());
+    }
+    compositeSLORecords.sort(Comparator.comparing(CompositeSLORecord::getTimestamp));
+    return TimeGraphResponse.builder()
+        .startTime(startTime.toEpochMilli())
+        .endTime(endTime.toEpochMilli())
+        .dataPoints(compositeSLORecords.stream()
+                        .map(compositeSLORecord
+                            -> TimeGraphResponse.DataPoints.builder()
+                                   .timeStamp(compositeSLORecord.getTimestamp().toEpochMilli())
+                                   .value(SLOValue.builder()
+                                              .goodCount((int) (compositeSLORecord.getRunningGoodCount()))
+                                              .badCount((int) compositeSLORecord.getRunningBadCount())
+                                              .build()
+                                              .sloPercentage())
+                                   .build())
+                        .collect(Collectors.toList()))
+        .build();
+  }
 
   @Override
   public ServiceLevelObjectiveV2Response create(
@@ -841,6 +891,19 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
         .filter(serviceLevelObjective
             -> serviceLevelObjective.getName().toLowerCase().contains(searchFilter.trim().toLowerCase()))
         .collect(Collectors.toList());
+  }
+
+  private List<CompositeSLORecord> getCompositeSLORecords(
+      Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
+      Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap) {
+    if (isEmpty(serviceLevelObjectivesDetailCompositeSLORecordMap)) {
+      return new ArrayList<>();
+    }
+    double runningGoodCount = 0;
+    double runningBadCount = 0;
+    return compositeSLORecordService.getCompositeSLORecordsFromSLIsDetails(
+        serviceLevelObjectivesDetailCompositeSLORecordMap, objectivesDetailSLIMissingDataTypeMap, 0, runningGoodCount,
+        runningBadCount, null);
   }
 
   @Value

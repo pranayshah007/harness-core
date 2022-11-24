@@ -124,6 +124,8 @@ public class NGCommonEntityConstants {
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
   public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
+  public static final String RESOURCE = "Resource it targets (For icons)";
+  public static final String POLICY = "Get YAML of the policy";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";

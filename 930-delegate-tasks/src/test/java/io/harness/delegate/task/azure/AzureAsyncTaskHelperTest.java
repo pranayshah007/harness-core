@@ -855,15 +855,10 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
 
     AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
         AzureIdentityAccessTokenResponse.builder().accessToken(accessToken).build();
-    if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
-      when(azureAuthorizationClient.getUserAccessToken(azureConfig,
-               AzureUtils.convertToScope(
-                   AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
-          .thenReturn(azureIdentityAccessTokenResponse);
-    } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
-        == AzureCredentialType.INHERIT_FROM_DELEGATE) {
-      when(azureAuthorizationClient.getUserAccessToken(azureConfig, null)).thenReturn(azureIdentityAccessTokenResponse);
-    }
+    when(azureAuthorizationClient.getUserAccessToken(azureConfig,
+             AzureUtils.convertToScope(
+                 AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+        .thenReturn(azureIdentityAccessTokenResponse);
 
     when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
         .thenReturn(readResourceFileContent("azure/adminKubeConfigContent.yaml"));

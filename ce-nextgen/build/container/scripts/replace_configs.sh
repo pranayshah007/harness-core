@@ -143,3 +143,13 @@ replace_key_value exportMetricsToStackDriver "$EXPORT_METRICS_TO_STACK_DRIVER"
 
 replace_key_value lightwingAutoCUDClientConfig.baseUrl "$LIGHTWING_AUTOCUD_CLIENT_CONFIG_BASEURL"
 replace_key_value enableLightwingAutoCUDDC "$ENABLE_LIGHTWING_AUTOCUD_DC"
+
+replace_key_value governanceConfig.useDkron "$GOVERNANCE_USE_DKRON"
+replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API_ENDPOINT"
+replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
+replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
+replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+
+replace_key_value dkronClientConfig.baseUrl "$DKRON_CLIENT_BASEURL"
+replace_key_value dkronClientConfig.connectTimeOutSeconds "$DKRON_CLIENT_CONNECTTIMEOUT"
+replace_key_value dkronClientConfig.readTimeOutSeconds "$DKRON_CLIENT_READTIMEOUT"
