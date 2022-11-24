@@ -298,8 +298,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
 
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String envId, String infraId, String pipelineExecutionId,
-      String buildId, int limit) {
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId, int limit) {
     Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
 
     if (envId != null) {
@@ -316,6 +316,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     }
     if (pipelineExecutionId != null) {
       criteria.and(InstanceKeys.lastPipelineExecutionId).is(pipelineExecutionId);
+    }
+    if (clusterIdentifier != null) {
+      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
     }
 
     MatchOperation matchStage = Aggregation.match(criteria);

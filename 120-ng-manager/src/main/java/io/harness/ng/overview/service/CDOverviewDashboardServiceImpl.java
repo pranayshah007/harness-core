@@ -1908,9 +1908,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Override
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceIdentifier, String envIdentifier, String infraIdentifier,
-      String pipelineExecutionId, String buildId) {
+      String clusterIdentifier, String pipelineExecutionId, String buildId) {
     return instanceDashboardService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier,
-        serviceIdentifier, envIdentifier, infraIdentifier, pipelineExecutionId, buildId);
+        serviceIdentifier, envIdentifier, infraIdentifier, clusterIdentifier, pipelineExecutionId, buildId);
   }
 
   /*

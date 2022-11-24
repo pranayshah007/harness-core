@@ -227,10 +227,10 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String envId, String infraId, String pipelineExecutionId,
-      String buildId, int limit) {
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId, int limit) {
     return instanceRepository.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId,
-        envId, infraId, pipelineExecutionId, buildId, limit);
+        envId, infraId, clusterIdentifier, pipelineExecutionId, buildId, limit);
   }
 
   /*

@@ -216,11 +216,11 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
 
   @Override
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String envId, String infraId, String pipelineExecutionId,
-      String buildId) {
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId) {
     AggregationResults<InstancesByBuildId> instancesByBuildId =
         instanceService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId,
-            infraId, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
+            infraId, clusterIdentifier, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
 
     List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
 
