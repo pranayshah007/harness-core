@@ -22,6 +22,7 @@ import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
@@ -65,6 +66,7 @@ public class PMSPipelineDtoMapper {
         .modules(pipelineEntity.getFilters().keySet())
         .gitDetails(getEntityGitDetails(pipelineEntity))
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
+        .cacheResponse(getCacheResponse(pipelineEntity))
         .build();
   }
 
@@ -72,6 +74,12 @@ public class PMSPipelineDtoMapper {
     return pipelineEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
         : pipelineEntity.getStoreType() == StoreType.REMOTE
         ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : null;
+  }
+
+  public CacheResponse getCacheResponse(PipelineEntity pipelineEntity) {
+    return pipelineEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getCacheResponseFromScmGitMetadata()
         : null;
   }
 

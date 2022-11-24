@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.governance.GovernanceMetadata;
@@ -40,4 +41,5 @@ public class PMSPipelineResponseDTO {
   GovernanceMetadata governanceMetadata;
   YamlSchemaErrorWrapperDTO yamlSchemaErrorWrapper;
   ValidateTemplateInputsResponseDTO validateTemplateInputsResponse;
+  CacheResponse cacheResponse;
 }
