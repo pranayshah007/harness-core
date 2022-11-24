@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.tas.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -18,6 +25,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,13 +42,13 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
-@Slf4j
 @NextGenManagerAuth
 @Api("/tas")
 @Path("/tas")
 @Produces({"application/json", "application/yaml"})
 @Consumes({"application/json", "application/yaml"})
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@Slf4j
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
@@ -73,8 +81,15 @@ public class TasResource {
   @GET
   @Path("/organizations")
   @ApiOperation(value = "Gets tas organizations ", nickname = "getTasOrganizations")
-  public ResponseDTO<List<String>> getTasOrganizations(@Parameter(description = "Identifier for tas connector") @NotNull
-                                                       @QueryParam("connectorRef") String tasConnectorIdentifier,
+  @Operation(operationId = "getTasOrganizations", summary = "Return the Tas organizations",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return the Tas organizations")
+      })
+  public ResponseDTO<List<String>>
+  getTasOrganizations(@Parameter(description = "Identifier for tas connector") @NotNull @QueryParam(
+                          "connectorRef") String tasConnectorIdentifier,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
@@ -86,8 +101,15 @@ public class TasResource {
   @GET
   @Path("/space")
   @ApiOperation(value = "Gets tas spaces ", nickname = "getTasSpaces")
-  public ResponseDTO<List<String>> getTasSpaces(@Parameter(description = "Identifier for tas connector") @NotNull
-                                                @QueryParam("connectorRef") String tasConnectorIdentifier,
+  @Operation(operationId = "getTasSpaces", summary = "Return the Tas spaces",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Return the Tas spaces")
+      })
+  public ResponseDTO<List<String>>
+  getTasSpaces(@Parameter(description = "Identifier for tas connector") @NotNull @QueryParam(
+                   "connectorRef") String tasConnectorIdentifier,
       @Parameter(description = "organization for tas") @NotNull @QueryParam("organization") String organization,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

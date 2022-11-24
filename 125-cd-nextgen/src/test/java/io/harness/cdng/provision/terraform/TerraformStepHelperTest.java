@@ -10,6 +10,7 @@ package io.harness.cdng.provision.terraform;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
@@ -58,6 +59,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.moduleSource.ModuleSource;
 import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -1379,6 +1381,33 @@ public class TerraformStepHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testSaveTerraformHumanPlanOutput() {
+    final Ambiance ambiance = getAmbiance();
+
+    String fileId = "human_plan_id";
+
+    String provisioner = "provisioner1";
+
+    final TerraformTaskNGResponse response =
+        TerraformTaskNGResponse.builder().tfHumanReadablePlanFileId(fileId).build();
+    final String expectedOutputName = TerraformHumanReadablePlanOutput.getOutputName(provisioner);
+
+    String outputName = helper.saveTerraformPlanHumanReadableOutput(ambiance, response, provisioner);
+
+    ArgumentCaptor<TerraformHumanReadablePlanOutput> outputCaptor =
+        ArgumentCaptor.forClass(TerraformHumanReadablePlanOutput.class);
+    verify(mockExecutionSweepingOutputService)
+        .consume(eq(ambiance), eq(expectedOutputName), outputCaptor.capture(), eq(StepCategory.STEP.name()));
+    TerraformHumanReadablePlanOutput output = outputCaptor.getValue();
+    assertThat(outputName).isEqualTo(expectedOutputName);
+    assertThat(output.getProvisionerIdentifier()).isEqualTo(provisioner);
+    assertThat(output.getTfPlanFileId()).isEqualTo(fileId);
+    assertThat(output.getTfPlanFileBucket()).isEqualTo(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name());
+  }
+
+  @Test
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testSaveTerraformPlanExecutionDetails() {
@@ -1401,8 +1430,72 @@ public class TerraformStepHelperTest extends CategoryTest {
             .provisionerId("provisioner1")
             .tfPlanJsonFieldId("testId")
             .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfHumanReadablePlanId("humanReadablePlanID")
+            .tfHumanReadablePlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
             .encryptedTfPlan(encryptedRecordData)
             .build();
+
+    TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
+                                           .tfPlanJsonFileId("testId")
+                                           .tfHumanReadablePlanFileId("humanReadablePlanID")
+                                           .encryptedTfPlan(EncryptedRecordData.builder().build())
+                                           .build();
+
+    TerraformPlanStepParameters terraformPlanStepParameters =
+        TerraformPlanStepParameters.infoBuilder()
+            .configuration(TerraformPlanExecutionDataParameters.builder()
+                               .secretManagerRef(ParameterField.createValueField("secretManagerRefTest"))
+                               .build())
+            .build();
+
+    helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1", terraformPlanStepParameters);
+
+    ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
+        ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
+    verify(terraformPlanExectionDetailsService).save(outputCaptor.capture());
+    TerraformPlanExecutionDetails output = outputCaptor.getValue();
+    assertThat(output).isEqualTo(terraformPlanExecutionDetails);
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testSaveTerraformHumanReadablePlanExecutionDetails() {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+
+    List<EncryptedRecordData> encryptedRecordData = List.of(EncryptedRecordData.builder().build());
+
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId("provisioner1")
+            .tfPlanJsonFieldId("testId")
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfHumanReadablePlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
+            .encryptedTfPlan(encryptedRecordData)
+            .encryptionConfig(VaultConfig.builder()
+                                  .basePath("testBasePath")
+                                  .renewAppRoleToken(false)
+                                  .encryptionType(EncryptionType.VAULT)
+                                  .build())
+            .build();
+
+    doReturn(VaultConfigDTO.builder()
+                 .basePath("testBasePath")
+                 .renewAppRoleToken(false)
+                 .encryptionType(EncryptionType.VAULT)
+                 .build())
+        .when(mockSecretManagerClientService)
+        .getSecretManager(anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     TerraformTaskNGResponse response = TerraformTaskNGResponse.builder()
                                            .tfPlanJsonFileId("testId")
@@ -1416,14 +1509,50 @@ public class TerraformStepHelperTest extends CategoryTest {
                                .build())
 
             .build();
-
     helper.saveTerraformPlanExecutionDetails(ambiance, response, "provisioner1", terraformPlanStepParameters);
 
     ArgumentCaptor<TerraformPlanExecutionDetails> outputCaptor =
         ArgumentCaptor.forClass(TerraformPlanExecutionDetails.class);
     verify(terraformPlanExectionDetailsService).save(outputCaptor.capture());
     TerraformPlanExecutionDetails output = outputCaptor.getValue();
-    assertThat(output).isEqualTo(terraformPlanExecutionDetails);
+  }
+
+  @Test
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testCleanupTfHumanReadablePlan() {
+    final Ambiance ambiance = getAmbiance();
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+
+    String fileId = "human_plan_id";
+    String provisioner = "provisioner1";
+
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId(provisioner)
+            .tfHumanReadablePlanId(fileId)
+            .tfHumanReadablePlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
+            .build();
+
+    doReturn(Collections.singletonList(terraformPlanExecutionDetails))
+        .when(terraformPlanExectionDetailsService)
+        .listAllPipelineTFPlanExecutionDetails(any(TFPlanExecutionDetailsKey.class));
+    helper.cleanupTfPlanHumanReadable(List.of(terraformPlanExecutionDetails));
+
+    ArgumentCaptor<String> outputCaptor = ArgumentCaptor.forClass(String.class);
+    doReturn(mockFileService).when(mockFileServiceFactory).get();
+    verify(mockFileService).deleteFile(outputCaptor.capture(), any(FileBucket.class));
+    String output = outputCaptor.getValue();
+    assertThat(output).isEqualTo(fileId);
   }
 
   @Test

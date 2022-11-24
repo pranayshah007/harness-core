@@ -50,8 +50,10 @@ import io.harness.serializer.KryoSerializer;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
@@ -107,6 +109,13 @@ public class ServiceAllInOnePlanCreatorUtils {
             .serviceRef(finalServiceYaml.getServiceRef())
             .inputs(finalServiceYaml.getServiceInputs())
             .envGroupRef(environmentGroupYaml.getEnvGroupRef())
+            .envRefs(environmentGroupYaml.getEnvironments()
+                         .getValue()
+                         .stream()
+                         .map(e -> e.getEnvironmentRef())
+                         .collect(Collectors.toList()))
+            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentGroupYaml.getEnvironments().getValue()))
+            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentGroupYaml.getEnvironments().getValue()))
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
             .gitOpsMultiSvcEnvEnabled(ParameterField.<Boolean>builder().value(true).build())
@@ -134,6 +143,8 @@ public class ServiceAllInOnePlanCreatorUtils {
                          .stream()
                          .map(e -> e.getEnvironmentRef())
                          .collect(Collectors.toList()))
+            .envToEnvInputs(getMergedEnvironmentRuntimeInputs(environmentsYaml.getValues().getValue()))
+            .envToSvcOverrideInputs(getMergedServiceOverrideInputs(environmentsYaml.getValues().getValue()))
             .inputs(finalServiceYaml.getServiceInputs())
             .childrenNodeIds(childrenNodeIds)
             .deploymentType(serviceType)
@@ -276,6 +287,30 @@ public class ServiceAllInOnePlanCreatorUtils {
           elastigroupSettingsNode.getUuid(), PlanCreationResponse.builder().planNode(elastigroupSettingsNode).build());
     }
     return nodeIds;
+  }
+
+  private Map<String, ParameterField<Map<String, Object>>> getMergedEnvironmentRuntimeInputs(
+      List<EnvironmentYamlV2> envYamlV2List) {
+    Map<String, ParameterField<Map<String, Object>>> mergedEnvironmentInputs = new HashMap<>();
+    for (EnvironmentYamlV2 environmentYamlV2 : envYamlV2List) {
+      ParameterField<Map<String, Object>> environmentInputs = environmentYamlV2.getEnvironmentInputs();
+      if (environmentInputs != null) {
+        mergedEnvironmentInputs.put(environmentYamlV2.getEnvironmentRef().getValue(), environmentInputs);
+      }
+    }
+    return mergedEnvironmentInputs;
+  }
+
+  private Map<String, ParameterField<Map<String, Object>>> getMergedServiceOverrideInputs(
+      List<EnvironmentYamlV2> envYamlV2List) {
+    Map<String, ParameterField<Map<String, Object>>> mergedServiceOverrideInputs = new HashMap<>();
+    for (EnvironmentYamlV2 environmentYamlV2 : envYamlV2List) {
+      ParameterField<Map<String, Object>> serviceOverrideInputs = environmentYamlV2.getServiceOverrideInputs();
+      if (serviceOverrideInputs != null) {
+        mergedServiceOverrideInputs.put(environmentYamlV2.getEnvironmentRef().getValue(), serviceOverrideInputs);
+      }
+    }
+    return mergedServiceOverrideInputs;
   }
 
   private ServiceYamlV2 useServiceYamlFromStage(@NotNull ServiceUseFromStageV2 useFromStage, YamlField specField) {

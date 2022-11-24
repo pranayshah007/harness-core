@@ -107,6 +107,8 @@ public class EngineExceptionUtils {
         return io.harness.exception.FailureType.POLICY_EVALUATION_FAILURE;
       case INPUT_TIMEOUT_FAILURE:
         return io.harness.exception.FailureType.INPUT_TIMEOUT_FAILURE;
+      case APPROVAL_REJECTION:
+        return io.harness.exception.FailureType.APPROVAL_REJECTION;
       default:
         throw new InvalidRequestException("No failure mapped to " + oFailureType.name());
     }

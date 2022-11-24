@@ -35,10 +35,10 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.UserProvider;
 import io.harness.resource.VersionInfoResource;
 import io.harness.serializer.CommandLibraryServer;
-import io.harness.serializer.CommonsRegistrars;
 import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.morphia.PrimaryVersionManagerMorphiaRegistrar;
 
 import software.wings.app.CharsetResponseFilter;

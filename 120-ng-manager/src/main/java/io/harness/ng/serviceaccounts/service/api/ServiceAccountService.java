@@ -30,6 +30,7 @@ public interface ServiceAccountService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
   ServiceAccountDTO getServiceAccountDTO(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  ServiceAccountDTO getServiceAccountDTO(String accountIdentifier, String identifier);
   PageResponse<ServiceAccountAggregateDTO> listAggregateServiceAccounts(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, List<String> identifiers, Pageable pageable, ServiceAccountFilterDTO filterDTO);
 

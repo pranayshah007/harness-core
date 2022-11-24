@@ -8,8 +8,8 @@
 package io.serializer.registrars;
 
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.serializer.CommonsRegistrars;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.kryo.NGCommonsKryoRegistrar;
 import io.harness.serializer.kryo.RecasterKryoRegistrar;
 

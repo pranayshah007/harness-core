@@ -125,7 +125,12 @@ public class RedissonClientFactory {
       }
 
       log.info("Creating Redis Client");
-      redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
+      try {
+        redisConfigRedissonClientMap.put(redisConfig, Redisson.create(config));
+      } catch (Exception ex) {
+        log.error("Exception occurred when creating redis client.", ex);
+        throw ex;
+      }
       return redisConfigRedissonClientMap.get(redisConfig);
     }
   }

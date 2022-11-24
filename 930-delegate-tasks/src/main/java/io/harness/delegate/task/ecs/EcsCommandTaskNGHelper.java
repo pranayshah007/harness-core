@@ -78,6 +78,7 @@ import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
 import software.amazon.awssdk.services.ecs.model.CreateServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
+import software.amazon.awssdk.services.ecs.model.Deployment;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
@@ -161,32 +162,59 @@ public class EcsCommandTaskNGHelper {
         : Optional.empty();
   }
 
-  public WaiterResponse<DescribeServicesResponse> ecsServiceSteadyStateCheck(LogCallback deployLogCallback,
-      AwsConnectorDTO awsConnectorDTO, String cluster, String serviceName, String region,
-      long serviceSteadyStateTimeout, List<ServiceEvent> eventsAlreadyProcessed) {
+  public void ecsServiceSteadyStateCheck(LogCallback deployLogCallback, AwsConnectorDTO awsConnectorDTO, String cluster,
+      String serviceName, String region, long serviceSteadyStateTimeout, List<ServiceEvent> eventsAlreadyProcessed) {
     deployLogCallback.saveExecutionLog(
         format("Waiting for Service %s to reach steady state %n", serviceName), LogLevel.INFO);
 
-    DescribeServicesRequest describeServicesRequest =
-        DescribeServicesRequest.builder().services(Collections.singletonList(serviceName)).cluster(cluster).build();
+    try {
+      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMillis(serviceSteadyStateTimeout), () -> {
+        Service service;
 
-    WaiterResponse<DescribeServicesResponse> describeServicesResponseWaiterResponse =
-        ecsV2Client.ecsServiceSteadyStateCheck(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO),
-            describeServicesRequest, region, serviceSteadyStateTimeout);
+        do {
+          service = describeService(cluster, serviceName, region, awsConnectorDTO).get();
 
-    if (describeServicesResponseWaiterResponse.matched().exception().isPresent()) {
-      Throwable throwable = describeServicesResponseWaiterResponse.matched().exception().get();
-      deployLogCallback.saveExecutionLog(
-          format("Service %s failed to reach steady state %n", serviceName), LogLevel.ERROR);
-      throw new RuntimeException(format("Service %s failed to reach steady state %n", serviceName), throwable);
+          if (service == null) {
+            String msg = new StringBuilder()
+                             .append("Received empty response while describing service ")
+                             .append(serviceName)
+                             .toString();
+            deployLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
+            throw new RuntimeException(msg);
+          }
+
+          printAwsEvent(service, eventsAlreadyProcessed, deployLogCallback);
+        } while (!hasServiceReachedSteadyState(service));
+
+        return true;
+      });
+    } catch (Exception e) {
+      String msg = new StringBuilder()
+                       .append("Timed out waiting for service: ")
+                       .append(serviceName)
+                       .append(" to reach steady state")
+                       .toString();
+      deployLogCallback.saveExecutionLog(msg, LogLevel.ERROR);
+      throw new RuntimeException(msg, e);
     }
 
-    Optional<Service> serviceOptional = describeService(cluster, serviceName, region, awsConnectorDTO);
-
-    printAwsEvent(serviceOptional.get(), eventsAlreadyProcessed, deployLogCallback);
-
     deployLogCallback.saveExecutionLog(format("Service %s reached steady state %n", serviceName), LogLevel.INFO);
-    return describeServicesResponseWaiterResponse;
+  }
+
+  boolean hasServiceReachedSteadyState(Service service) {
+    List<Deployment> deployments = service.deployments();
+    if (deployments.size() != 1) {
+      return false;
+    }
+    long deploymentTime = deployments.get(0).updatedAt().getEpochSecond();
+    long steadyStateMessageTime =
+        service.events()
+            .stream()
+            .filter(serviceEvent -> serviceEvent.message().endsWith("has reached a steady state."))
+            .map(serviceEvent -> serviceEvent.createdAt().getEpochSecond())
+            .max(Long::compare)
+            .orElse(0L);
+    return steadyStateMessageTime >= deploymentTime;
   }
 
   public WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(LogCallback deployLogCallback,
@@ -438,10 +466,24 @@ public class EcsCommandTaskNGHelper {
         createServiceRequest.serviceName(), ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
     if (!(optionalService.isPresent() && isServiceActive(optionalService.get()))) {
+      if (optionalService.isPresent() && isServiceDraining(optionalService.get())) {
+        logCallback.saveExecutionLog(format("An existing Service with name %s draining, waiting for it to reach "
+                                             + "inactive state %n",
+                                         createServiceRequest.serviceName()),
+            LogLevel.INFO);
+        ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+            createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
+            (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+        logCallback.saveExecutionLog(
+            format("An existed Service with name %s reached inactive state %n", createServiceRequest.serviceName()),
+            LogLevel.INFO);
+      }
+
       logCallback.saveExecutionLog(format("Creating Service %s with task definition %s and desired count %s %n",
                                        createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
                                        createServiceRequest.desiredCount()),
           LogLevel.INFO);
+
       CreateServiceResponse createServiceResponse =
           createService(createServiceRequest, ecsInfraConfig.getRegion(), ecsInfraConfig.getAwsConnectorDTO());
 
@@ -587,6 +629,17 @@ public class EcsCommandTaskNGHelper {
 
       logCallback.saveExecutionLog(
           format("Deleted existing Service with name %s %n", createServiceRequest.serviceName()), LogLevel.INFO);
+    } else if (optionalService.isPresent() && isServiceDraining(optionalService.get())) {
+      logCallback.saveExecutionLog(format("An existing Service with name %s draining, waiting for it to reach "
+                                           + "inactive state %n",
+                                       createServiceRequest.serviceName()),
+          LogLevel.INFO);
+      ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), createServiceRequest.cluster(),
+          createServiceRequest.serviceName(), ecsInfraConfig.getRegion(),
+          (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+      logCallback.saveExecutionLog(
+          format("An existed Service with name %s reached inactive state %n", createServiceRequest.serviceName()),
+          LogLevel.INFO);
     }
 
     logCallback.saveExecutionLog(format("Creating Service %s with task definition %s and desired count %s %n",
@@ -714,6 +767,17 @@ public class EcsCommandTaskNGHelper {
           service.serviceName(), ecsInfraConfig.getRegion(), (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
       logCallback.saveExecutionLog(
           format("Deleted non-blue version Service: %s %n%n", service.serviceName()), LogLevel.INFO);
+    } else if (optionalService.isPresent() && isServiceDraining(optionalService.get())) {
+      logCallback.saveExecutionLog(
+          format("An existing non-blue version Service with name %s draining, waiting for it to reach "
+                  + "inactive state %n",
+              stageServiceName),
+          LogLevel.INFO);
+      ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+          stageServiceName, ecsInfraConfig.getRegion(), (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+      logCallback.saveExecutionLog(
+          format("An existed non-blue version Service with name %s reached inactive state %n", stageServiceName),
+          LogLevel.INFO);
     }
 
     // add green tag in create service request
@@ -779,8 +843,8 @@ public class EcsCommandTaskNGHelper {
               CreateServiceRequest.serializableBuilderClass())
               .build();
 
-      // update desired count of old service to its earlier desired count if its not same
-      if (!oldService.desiredCount().equals(createServiceRequest.desiredCount())) {
+      // update desired count of old service to its maximum desired count if it is not less than that
+      if (oldService.desiredCount() < (createServiceRequest.desiredCount())) {
         logCallback.saveExecutionLog(
             format("Updating Old Service %s with task definition %s and desired count %s", oldService.serviceName(),
                 oldService.taskDefinition(), createServiceRequest.desiredCount()),
@@ -795,6 +859,19 @@ public class EcsCommandTaskNGHelper {
           parseYamlAsObject(ecsBlueGreenRollbackRequest.getOldServiceCreateRequestBuilderString(),
               CreateServiceRequest.serializableBuilderClass())
               .build();
+
+      if (oldOptionalService.isPresent() && isServiceDraining(oldOptionalService.get())) {
+        logCallback.saveExecutionLog(format("An existing old Service with name %s draining, waiting for it to reach "
+                                             + "inactive state %n",
+                                         ecsBlueGreenRollbackRequest.getOldServiceName()),
+            LogLevel.INFO);
+        ecsServiceInactiveStateCheck(logCallback, ecsInfraConfig.getAwsConnectorDTO(), ecsInfraConfig.getCluster(),
+            ecsBlueGreenRollbackRequest.getOldServiceName(), ecsInfraConfig.getRegion(),
+            (int) TimeUnit.MILLISECONDS.toMinutes(timeoutInMillis));
+        logCallback.saveExecutionLog(format("An existed old Service with name %s reached inactive state %n",
+                                         ecsBlueGreenRollbackRequest.getOldServiceName()),
+            LogLevel.INFO);
+      }
 
       logCallback.saveExecutionLog(format("Creating Old Service %s with task definition %s and desired count %s",
                                        createServiceRequest.serviceName(), createServiceRequest.taskDefinition(),
@@ -1141,6 +1218,10 @@ public class EcsCommandTaskNGHelper {
 
   public boolean isServiceActive(Service service) {
     return service != null && service.status().equals("ACTIVE");
+  }
+
+  public boolean isServiceDraining(Service service) {
+    return service != null && service.status().equals("DRAINING");
   }
 
   public RunTaskResponse runTask(RunTaskRequest runTaskRequest, AwsConnectorDTO awsConnectorDTO, String region) {

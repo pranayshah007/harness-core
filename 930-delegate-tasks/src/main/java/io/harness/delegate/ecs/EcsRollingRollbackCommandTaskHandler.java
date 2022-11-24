@@ -37,11 +37,13 @@ import software.wings.beans.LogWeight;
 
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
+import software.amazon.awssdk.services.ecs.model.Service;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -80,9 +82,20 @@ public class EcsRollingRollbackCommandTaskHandler extends EcsCommandTaskNGHandle
         CreateServiceRequest.Builder createServiceRequestBuilder =
             ecsCommandTaskHelper.parseYamlAsObject(ecsRollingRollbackConfig.getCreateServiceRequestBuilderString(),
                 CreateServiceRequest.serializableBuilderClass());
-        // replace cluster
+        Integer maxDesiredCount = createServiceRequestBuilder.build().desiredCount();
+
+        Optional<Service> optionalService = ecsCommandTaskHelper.describeService(ecsInfraConfig.getCluster(),
+            createServiceRequestBuilder.build().serviceName(), ecsInfraConfig.getRegion(),
+            ecsInfraConfig.getAwsConnectorDTO());
+
+        // compare max desired count with live desired count
+        if (optionalService.isPresent() && ecsCommandTaskHelper.isServiceActive(optionalService.get())) {
+          maxDesiredCount = Math.max(maxDesiredCount, optionalService.get().desiredCount());
+        }
+
+        // replace cluster and desired count
         CreateServiceRequest createServiceRequest =
-            createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).build();
+            createServiceRequestBuilder.cluster(ecsInfraConfig.getCluster()).desiredCount(maxDesiredCount).build();
 
         rollback(createServiceRequest, ecsRollingRollbackConfig.getRegisterScalableTargetRequestBuilderStrings(),
             ecsRollingRollbackConfig.getRegisterScalingPolicyRequestBuilderStrings(), ecsInfraConfig,

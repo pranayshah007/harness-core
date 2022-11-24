@@ -12,6 +12,7 @@ import static io.harness.ng.core.models.Secret.SecretKeys;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
@@ -41,6 +42,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.api.NGEncryptedDataService;
@@ -493,7 +495,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     doNothing()
         .when(secretEntityReferenceHelper)
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
@@ -506,7 +508,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(success).isTrue();
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
-    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
     verify(secretEntityReferenceHelper, atLeastOnce())
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
   }
@@ -517,7 +519,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
 
     doNothing()
         .when(secretEntityReferenceHelper)
@@ -530,7 +532,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(success).isTrue();
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
-    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
     verify(secretEntityReferenceHelper, times(0)).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
   }
 
@@ -541,7 +543,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     List<String> secretIdentifiers = new ArrayList<>();
     secretIdentifiers.add("identifier1");
     secretIdentifiers.add("identifier2");
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     doNothing()
         .when(secretEntityReferenceHelper)
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
@@ -553,6 +555,14 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(ngSecretServiceV2, times(2)).get(any(), any(), any(), any());
     verify(secretEntityReferenceHelper, times(2))
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
+  }
+
+  @Test(expected = EntityNotFoundException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testDeleteInvalidIdentifier() {
+    when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    secretCrudService.delete(accountIdentifier, null, null, "identifier", false);
   }
 
   @Test

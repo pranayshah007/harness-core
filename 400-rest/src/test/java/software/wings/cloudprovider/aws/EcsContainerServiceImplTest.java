@@ -227,7 +227,7 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
     ecsContainerService.provisionTasks(US_EAST_1.getName(), connectorConfig.toDTO(), Collections.emptyList(),
-        CLUSTER_NAME, SERVICE_NAME, 0, DESIRED_COUNT, 10, new ExecutionLogCallback(), false);
+        CLUSTER_NAME, SERVICE_NAME, 0, DESIRED_COUNT, 10, new ExecutionLogCallback());
     verify(awsHelperService)
         .updateService(US_EAST_1.getName(), awsConfig, Collections.emptyList(),
             new UpdateServiceRequest()
@@ -324,14 +324,14 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
     when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
-    ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME,
-        5, 15, 10 * 1000, logCallback, false);
+    ecsContainerService.provisionTasks(
+        region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 15, 10 * 1000, logCallback);
 
     verify(awsHelperService).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(TimeoutException.class);
     assertThatThrownBy(()
                            -> ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails,
-                               CLUSTER_NAME, SERVICE_NAME, 5, 15, 10 * 1000, logCallback, false))
+                               CLUSTER_NAME, SERVICE_NAME, 5, 15, 10 * 1000, logCallback))
         .isInstanceOf(TimeoutException.class);
   }
 
@@ -346,45 +346,27 @@ public class EcsContainerServiceImplTest extends WingsBaseTest {
     doReturn(new ListTasksResult().withTaskArns("T1", "T2", "T3", "T4", "T5"))
         .when(awsHelperService)
         .listTasks(eq(region), eq(awsConfig), any(), any(), anyBoolean());
-    Service service = new Service().withServiceName(SERVICE_NAME).withDesiredCount(5).withRunningCount(4);
-    Service updatedService = new Service().withServiceName(SERVICE_NAME).withDesiredCount(5).withRunningCount(4);
+    Service service = new Service().withServiceName(SERVICE_NAME).withDesiredCount(5).withRunningCount(5);
 
     doReturn(new DescribeServicesResult().withServices(Lists.newArrayList(service)))
         .when(awsHelperService)
         .describeServices(region, awsConfig, encryptionDetails,
             new DescribeServicesRequest().withCluster(CLUSTER_NAME).withServices(SERVICE_NAME));
 
-    doReturn(new UpdateServiceResult().withService(updatedService))
-        .when(awsHelperService)
-        .updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
     when(awsHelperService.describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean()))
         .thenReturn(new DescribeTasksResult());
-    ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME,
-        5, 5, 10 * 1000, logCallback, true);
+    ecsContainerService.provisionTasks(
+        region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback);
 
-    // logic to check if exception is being thrown
-    verify(awsHelperService).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
+    verify(awsHelperService, times(1)).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
+    verify(awsHelperService, times(0)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
+
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenThrow(TimeoutException.class);
     assertThatThrownBy(()
                            -> ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails,
-                               CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback, true))
+                               CLUSTER_NAME, SERVICE_NAME, 5, 5, 10 * 1000, logCallback))
         .isInstanceOf(TimeoutException.class);
-    verify(awsHelperService, times(1)).describeTasks(any(), any(AwsConfig.class), any(), any(), anyBoolean());
-    verify(awsHelperService, times(2)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
-
-    // logic to check desired == running == 5 and deployment.size() = 1, shouldn't retry
-    HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(null);
-    service.withDeployments(new Deployment()).setRunningCount(5);
-    ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME,
-        5, 5, 10 * 1000, logCallback, true);
-    verify(awsHelperService, times(2)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
-
-    // logic to check desired == running == 5 and deployment.size() = 0, should retry
-    service.setDeployments(null);
-    ecsContainerService.provisionTasks(region, connectorConfig.toDTO(), encryptionDetails, CLUSTER_NAME, SERVICE_NAME,
-        5, 5, 10 * 1000, logCallback, true);
-    verify(awsHelperService, times(3)).updateService(eq(region), eq(awsConfig), eq(encryptionDetails), any());
   }
 
   @Test

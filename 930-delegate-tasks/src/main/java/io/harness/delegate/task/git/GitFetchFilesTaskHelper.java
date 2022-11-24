@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.git;
 
+import static io.harness.logging.LogLevel.INFO;
+
 import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -16,6 +18,7 @@ import static java.lang.String.format;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.git.model.GitFile;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Singleton;
@@ -35,8 +38,8 @@ public class GitFetchFilesTaskHelper {
     StringBuilder sb = new StringBuilder(1024);
     files.forEach(each -> sb.append(color(format("- %s", each.getFilePath()), Gray)).append(System.lineSeparator()));
 
-    executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
-    executionLogCallback.saveExecutionLog(sb.toString());
+    executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold), INFO);
+    executionLogCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
   }
 
   public void printFileNamesInExecutionLogs(List<String> filePathList, LogCallback logCallback) {
@@ -47,7 +50,7 @@ public class GitFetchFilesTaskHelper {
     StringBuilder sb = new StringBuilder(1024);
     filePathList.forEach(filePath -> sb.append(color(format("- %s", filePath), Gray)).append(System.lineSeparator()));
 
-    logCallback.saveExecutionLog(sb.toString());
+    logCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
   }
 
   public String extractErrorMessage(Exception exception) {

@@ -206,6 +206,9 @@ public class DelegatePlatformService extends AbstractDelegateAgentService {
   }
 
   @Override
+  protected void onPreResponseSent(final DelegateTaskResponse response) {}
+
+  @Override
   protected void onResponseSent(final String taskId) {
     currentlyExecutingTasks.remove(taskId);
     if (currentlyExecutingFutures.remove(taskId) != null) {

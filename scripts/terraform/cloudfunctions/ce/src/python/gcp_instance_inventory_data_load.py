@@ -61,9 +61,9 @@ def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.instanceId = S.instanceId and T.creationTime = s.creationTime
+                ON T.instanceId = S.instanceId
                 WHEN MATCHED THEN
-                  UPDATE SET networkInterfaces = s.networkInterfaces, status = s.status, lastUpdatedAt = '%s', 
+                  UPDATE SET creationTime = s.creationTime, networkInterfaces = s.networkInterfaces, status = s.status, lastUpdatedAt = '%s', 
                   labels = s.labels, disks = s.disks, lastStartTimestamp = s.lastStartTimestamp
                 WHEN NOT MATCHED THEN
                   INSERT (instanceId, name, creationTime, zone, 

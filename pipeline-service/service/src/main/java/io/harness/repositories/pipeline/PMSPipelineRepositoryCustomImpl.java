@@ -36,8 +36,9 @@ import io.harness.pms.events.PipelineUpdateEvent;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineMetadataV2;
-import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.pipeline.service.PipelineEntityReadHelper;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.springdata.PersistenceUtils;
 import io.harness.springdata.TransactionHelper;
@@ -74,6 +75,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   private final GitAwareEntityHelper gitAwareEntityHelper;
   private final OutboxService outboxService;
   private final GitSyncSdkService gitSyncSdkService;
+  private final PipelineEntityReadHelper pipelineEntityReadHelper;
 
   @Override
   public Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier,
@@ -93,16 +95,16 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public Long countAllPipelines(Criteria criteria) {
-    Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.count(query, PipelineEntity.class);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override
   public Long countAllPipelinesInAccount(String accountId) {
     Criteria criteria =
         Criteria.where(PipelineEntityKeys.accountId).is(accountId).and(PipelineEntityKeys.deleted).is(false);
-    Query query = new Query().addCriteria(criteria);
-    return mongoTemplate.count(query, PipelineEntity.class);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override
@@ -199,7 +201,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public Optional<PipelineEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
+      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     Query query = new Query(criteria);
@@ -215,26 +218,27 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
       } else {
-        savedEntity =
-            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+        savedEntity = fetchRemoteEntity(
+            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
       }
     }
     return Optional.of(savedEntity);
   }
 
   PipelineEntity fetchRemoteEntityWithFallBackBranch(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, PipelineEntity savedEntity, String branch) {
+      String projectIdentifier, PipelineEntity savedEntity, String branch, boolean loadFromCache) {
     try {
-      savedEntity = fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch);
+      savedEntity =
+          fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       String fallBackBranch = getFallBackBranch(savedEntity);
       if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
-        savedEntity =
-            fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch);
+        savedEntity = fetchRemoteEntity(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
       } else {
         throw ex;
       }
@@ -254,7 +258,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @VisibleForTesting
   PipelineEntity fetchRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      PipelineEntity savedEntity, String branch) {
+      PipelineEntity savedEntity, String branch, boolean loadFromCache) {
     return (PipelineEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
         Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         GitContextRequestParams.builder()
@@ -262,6 +266,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .connectorRef(savedEntity.getConnectorRef())
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
+            .loadFromCache(loadFromCache)
             .build(),
         Collections.emptyMap());
   }
@@ -434,7 +439,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public Long countFileInstances(String accountId, String repoURL, String filePath) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFileUniquenessCheck(accountId, repoURL, filePath);
-    return countAllPipelines(criteria);
+    Query query = new Query(criteria);
+    return pipelineEntityReadHelper.findCount(query);
   }
 
   @Override

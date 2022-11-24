@@ -31,6 +31,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @Singleton
+/*
+ * Called only for community edition
+ */
 public class PipelineTelemetryPublisher {
   public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   @Inject PMSPipelineService pmsPipelineService;
@@ -60,6 +63,7 @@ public class PipelineTelemetryPublisher {
         Criteria noCriteria = new Criteria();
         totalNumberOfPipelines = pmsPipelineService.countAllPipelines(noCriteria);
 
+        // Community devs only
         Criteria criteriaExecutions =
             Criteria.where(PlanExecutionSummaryKeys.createdAt).gt(System.currentTimeMillis() - MILLISECONDS_IN_A_DAY);
         pipelinesExecutedInADay = pmsExecutionService.getCountOfExecutions(criteriaExecutions);

@@ -20,7 +20,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.TasManifestVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
-import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -66,7 +66,7 @@ public class TasManifest implements ManifestAttributes, Visitable {
   @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
-  @Wither CfCliVersion cfCliVersion;
+  @Wither CfCliVersionNG cfCliVersion;
   @Wither
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
@@ -127,7 +127,7 @@ public class TasManifest implements ManifestAttributes, Visitable {
   public static class TasManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
     StoreConfigWrapperParameters store;
-    CfCliVersion cfCliVersion;
+    CfCliVersionNG cfCliVersion;
     ParameterField<List<String>> varsPaths;
     ParameterField<List<String>> autoScalerPath;
   }

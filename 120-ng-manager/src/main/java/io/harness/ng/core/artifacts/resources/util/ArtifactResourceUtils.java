@@ -394,6 +394,21 @@ public class ArtifactResourceUtils {
     }
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    groupId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        groupId, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactRepositoryUrl = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, artifactRepositoryUrl, fqnPath, gitEntityBasicInfo, serviceRef);
+    artifactId = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        artifactId, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryPort = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryPort, fqnPath, gitEntityBasicInfo, serviceRef);
+    packageName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, packageName, fqnPath, gitEntityBasicInfo, serviceRef);
+    group = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, runtimeInputYaml,
+        group, fqnPath, gitEntityBasicInfo, serviceRef);
+    repositoryName = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
+        runtimeInputYaml, repositoryName, fqnPath, gitEntityBasicInfo, serviceRef);
     artifactPath = getResolvedImagePath(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier,
         runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo, serviceRef);
     return nexusResourceService.getBuildDetails(connectorRef, repositoryName, repositoryPort, artifactPath,

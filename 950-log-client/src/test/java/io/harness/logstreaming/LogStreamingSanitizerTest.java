@@ -9,6 +9,7 @@ package io.harness.logstreaming;
 
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -49,6 +50,23 @@ public class LogStreamingSanitizerTest extends CategoryTest {
 
     io.harness.logstreaming.LogStreamingSanitizer logStreamingSanitizer =
         LogStreamingSanitizer.builder().secrets(secrets).build();
+
+    logStreamingSanitizer.sanitizeLogMessage(logLine);
+    Assertions.assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void shouldMaskJwt() {
+    String message =
+        "JWT: a1c.x2z.123 \n JWT2: 123.123.123 JWT3: abc.abc.abc \n JWT4: xyz.xyz JWT5: xyz.xyz.xyz.xyz \n JWT6: xyz.xyz.xyz. xyz \n JWT7: xyz.xyz.xyz;xyz.xyz.xyz";
+    String sanitizedMessage =
+        String.format("JWT: %s \n JWT2: %s JWT3: %s \n JWT4: xyz.xyz JWT5: %s.xyz \n JWT6: %s. xyz \n JWT7: %s;%s",
+            SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK);
+
+    LogLine logLine = LogLine.builder().message(message).build();
+    LogStreamingSanitizer logStreamingSanitizer = LogStreamingSanitizer.builder().secrets(null).build();
 
     logStreamingSanitizer.sanitizeLogMessage(logLine);
     Assertions.assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);

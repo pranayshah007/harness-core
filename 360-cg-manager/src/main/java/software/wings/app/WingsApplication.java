@@ -7,7 +7,6 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -81,7 +80,6 @@ import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerEventConsumerService;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.exception.WingsException;
@@ -147,7 +145,12 @@ import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
+import io.harness.queue.RedisConsumerControllerCg;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.queue.consumers.GeneralEventConsumerCg;
+import io.harness.queue.consumers.NotifyEventConsumerCg;
+import io.harness.queue.publishers.CgGeneralEventPublisher;
+import io.harness.queue.publishers.CgNotifyEventPublisher;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -174,7 +177,6 @@ import io.harness.threading.ExecutorModule;
 import io.harness.threading.Schedulable;
 import io.harness.threading.ThreadPool;
 import io.harness.timeout.TimeoutEngine;
-import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.validation.SuppressValidation;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -301,6 +303,7 @@ import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
 import software.wings.yaml.gitSync.GitSyncPollingIterator;
 
+import com.codahale.metrics.InstrumentedExecutorService;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -390,6 +393,7 @@ public class WingsApplication extends Application<MainConfiguration> {
   private static final SecureRandom random = new SecureRandom();
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
   private HarnessMetricRegistry harnessMetricRegistry;
   private StartupMode startupMode;
 
@@ -485,10 +489,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
-    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
-        configuration.getCommonPoolConfig().getCorePoolSize(), configuration.getCommonPoolConfig().getMaxPoolSize(),
-        configuration.getCommonPoolConfig().getIdleTime(), configuration.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    ExecutorService mainPoolExecutor = ThreadPool.create(configuration.getCommonPoolConfig().getCorePoolSize(),
+        configuration.getCommonPoolConfig().getMaxPoolSize(), configuration.getCommonPoolConfig().getIdleTime(),
+        configuration.getCommonPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
+    ExecutorModule.getInstance().setExecutorService(
+        new InstrumentedExecutorService(mainPoolExecutor, threadPoolMetricRegistry, "main"));
 
     List<Module> modules = new ArrayList<>();
     addModules(configuration, modules);
@@ -726,7 +732,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     initMetrics(injector);
 
-    registerWaitEnginePublishers(injector);
+    registerWaitEnginePublishers(injector, configuration.isRedisNotifyEvent());
     if (isManager()) {
       registerQueueListeners(configuration, injector);
     }
@@ -930,10 +936,11 @@ public class WingsApplication extends Application<MainConfiguration> {
     modules.add(new IndexMigratorModule());
     modules.add(new YamlModule());
     modules.add(new ManagerQueueModule());
+    modules.add(new ManagerEventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(new EventsModule(configuration));
     if (configuration.isGraphQLEnabled()) {
       modules.add(GraphQLModule.getInstance());
@@ -988,17 +995,6 @@ public class WingsApplication extends Application<MainConfiguration> {
       }
     });
 
-    modules.add(new AbstractPersistenceTracerModule() {
-      @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return configuration.getEventsFrameworkConfiguration();
-      }
-
-      @Override
-      protected String serviceIdProvider() {
-        return MANAGER.getServiceId();
-      }
-    });
     modules.add(DmsModule.getInstance(shouldEnableDelegateMgmt(configuration)));
   }
 
@@ -1192,6 +1188,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage((Managed) injector.getInstance(ExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
+    environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
   }
 
   private void registerManagedBeansManager(
@@ -1209,13 +1206,20 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
   }
 
-  private void registerWaitEnginePublishers(Injector injector) {
-    final QueuePublisher<NotifyEvent> publisher =
-        injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
-    final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
-        injector.getInstance(NotifyQueuePublisherRegister.class);
-    notifyQueuePublisherRegister.register(GENERAL, payload -> publisher.send(asList(GENERAL), payload));
-    notifyQueuePublisherRegister.register(ORCHESTRATION, payload -> publisher.send(asList(ORCHESTRATION), payload));
+  private void registerWaitEnginePublishers(Injector injector, boolean redisNotifyEvent) {
+    if (redisNotifyEvent) {
+      final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+          injector.getInstance(NotifyQueuePublisherRegister.class);
+      notifyQueuePublisherRegister.register(GENERAL, injector.getInstance(CgGeneralEventPublisher.class));
+      notifyQueuePublisherRegister.register(ORCHESTRATION, injector.getInstance(CgNotifyEventPublisher.class));
+    } else {
+      final QueuePublisher<NotifyEvent> publisher =
+          injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
+      final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+          injector.getInstance(NotifyQueuePublisherRegister.class);
+      notifyQueuePublisherRegister.register(GENERAL, payload -> publisher.send(asList(GENERAL), payload));
+      notifyQueuePublisherRegister.register(ORCHESTRATION, payload -> publisher.send(asList(ORCHESTRATION), payload));
+    }
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
@@ -1234,31 +1238,38 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Initializing queue listeners...");
 
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    EventListenersCountConfig listenerConfig = configuration.getEventListenersCountConfig();
+
     EventListener genericEventListener =
         injector.getInstance(Key.get(EventListener.class, Names.named("GenericEventListener")));
     queueListenerController.register((QueueListener) genericEventListener, 1);
 
     queueListenerController.register(injector.getInstance(ArtifactCollectEventListener.class), 1);
     queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
-    queueListenerController.register(injector.getInstance(DeploymentEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentEventListenerCount());
-    queueListenerController.register(injector.getInstance(InstanceEventListener.class),
-        configuration.getEventListenersCountConfig().getInstanceEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(DeploymentEventListener.class), listenerConfig.getDeploymentEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(InstanceEventListener.class), listenerConfig.getInstanceEventListenerCount());
     queueListenerController.register(injector.getInstance(DeploymentTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentTimeSeriesEventListenerCount());
+        listenerConfig.getDeploymentTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(DeploymentStepTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentStepTimeSeriesEventListenerCount());
+        listenerConfig.getDeploymentStepTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(ExecutionInterruptTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getExecutionInterruptTimeSeriesEventListenerCount());
+        listenerConfig.getExecutionInterruptTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(EmailNotificationListener.class), 1);
-    queueListenerController.register(injector.getInstance(ExecutionEventListener.class),
-        configuration.getEventListenersCountConfig().getExecutionEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(ExecutionEventListener.class), listenerConfig.getExecutionEventListenerCount());
     queueListenerController.register(injector.getInstance(SecretMigrationEventListener.class), 1);
-    queueListenerController.register(injector.getInstance(GeneralNotifyEventListener.class),
-        configuration.getEventListenersCountConfig().getGeneralNotifyEventListenerCount());
-    queueListenerController.register(injector.getInstance(OrchestrationNotifyEventListener.class),
-        configuration.getEventListenersCountConfig().getOrchestrationNotifyEventListenerCount());
     queueListenerController.register(injector.getInstance(PruneEntityListener.class), 1);
+
+    queueListenerController.register(
+        injector.getInstance(GeneralNotifyEventListener.class), listenerConfig.getGeneralNotifyEventListenerCount());
+    queueListenerController.register(injector.getInstance(OrchestrationNotifyEventListener.class),
+        listenerConfig.getOrchestrationNotifyEventListenerCount());
+
+    RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
+    controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
+    controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
   }
 
   private void scheduleJobsManager(

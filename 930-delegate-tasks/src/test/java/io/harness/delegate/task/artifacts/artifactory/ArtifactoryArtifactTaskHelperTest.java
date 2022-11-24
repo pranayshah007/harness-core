@@ -7,7 +7,9 @@
 
 package io.harness.delegate.task.artifacts.artifactory;
 
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doNothing;
@@ -129,5 +131,86 @@ public class ArtifactoryArtifactTaskHelperTest extends CategoryTest {
 
     verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(artifactoryArtifactDelegateRequest);
     verify(artifactoryArtifactTaskHandler).validateArtifactServer(artifactoryArtifactDelegateRequest);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGenericGetArtifactCollectResponseGetLastSuccessfulBuild() {
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
+
+    ArtifactoryGenericArtifactDelegateRequest artifactoryArtifactDelegateRequest =
+        ArtifactoryGenericArtifactDelegateRequest.builder()
+            .artifactoryConnectorDTO(
+                ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build())
+            .build();
+
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(artifactoryArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_BUILDS)
+                                                        .build();
+
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+
+    when(artifactoryArtifactTaskHandler.getBuilds(artifactoryArtifactDelegateRequest))
+        .thenReturn(artifactTaskExecutionResponse);
+
+    ArtifactTaskResponse artifactTaskResponse =
+        artifactoryArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+
+    assertThat(artifactTaskResponse).isNotNull();
+
+    assertThat(artifactTaskResponse.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
+
+    verify(artifactoryArtifactTaskHandler).getBuilds(artifactoryArtifactDelegateRequest);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetArtifactCollectResponseValidateArtifactServers1() {
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
+    ArtifactoryArtifactDelegateRequest artifactoryArtifactDelegateRequest =
+        ArtifactoryArtifactDelegateRequest.builder()
+            .artifactoryConnectorDTO(
+                ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build())
+            .build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(artifactoryArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.JENKINS_BUILD)
+                                                        .build();
+
+    ArtifactTaskResponse artifactTaskResponse =
+        artifactoryArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
+
+    verify(artifactoryArtifactTaskHandler).decryptRequestDTOs(artifactoryArtifactDelegateRequest);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testArtifactFailure() {
+    doNothing()
+        .when(artifactoryArtifactTaskHandler)
+        .decryptRequestDTOs(ArtifactoryArtifactDelegateRequest.builder().build());
+    ArtifactoryGenericArtifactDelegateRequest artifactoryArtifactDelegateRequest =
+        ArtifactoryGenericArtifactDelegateRequest.builder()
+            .artifactoryConnectorDTO(
+                ArtifactoryConnectorDTO.builder().auth(ArtifactoryAuthenticationDTO.builder().build()).build())
+            .build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(artifactoryArtifactDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.JENKINS_BUILD)
+                                                        .build();
+
+    ArtifactTaskResponse artifactTaskResponse =
+        artifactoryArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getCommandExecutionStatus()).isEqualTo(FAILURE);
   }
 }
