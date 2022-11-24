@@ -28,4 +28,5 @@ public interface ServiceAccountRepository
       String accountIdentifier, String orgIdentifier, String projectIdentifier);
   long deleteByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  ServiceAccount findByAccountIdentifierAndIdentifier(String accountIdentifier, String identifier);
 }

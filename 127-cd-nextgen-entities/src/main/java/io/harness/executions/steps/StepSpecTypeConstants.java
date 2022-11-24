@@ -74,5 +74,6 @@ public interface StepSpecTypeConstants {
   String CHAOS_STEP = "Chaos";
 
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  String GITOPS_FETCH_LINKED_APPS = "GitopsFetchLinkedApps";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
 }

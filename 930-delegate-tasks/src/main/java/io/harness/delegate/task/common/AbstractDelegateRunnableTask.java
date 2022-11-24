@@ -31,11 +31,11 @@ import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.delegate.exceptionhandler.core.DelegateExceptionManager;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.globalcontex.ErrorHandlingGlobalContextData;
 import io.harness.logging.AccountLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager;
 import io.harness.secret.SecretSanitizerThreadLocal;
 

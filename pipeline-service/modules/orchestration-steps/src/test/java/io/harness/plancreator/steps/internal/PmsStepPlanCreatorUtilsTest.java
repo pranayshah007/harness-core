@@ -67,7 +67,7 @@ public class PmsStepPlanCreatorUtilsTest extends OrchestrationStepsTestBase {
 
     YamlField yamlField = YamlUtils.readTree(yaml);
     AdviserObtainment adviserObtainment =
-        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField);
+        PmsStepPlanCreatorUtils.getNextStepAdviserObtainment(kryoSerializer, yamlField, false);
     assertNull(adviserObtainment);
   }
 

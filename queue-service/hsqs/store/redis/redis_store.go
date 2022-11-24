@@ -7,21 +7,59 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"reflect"
+	"time"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/harness/harness-core/queue-service/hsqs/utils"
 	"github.com/rs/zerolog"
-	"os"
-	"reflect"
-	"time"
 )
 
 // Store Redis type store used for enqueuing and dequeuing
 type Store struct {
 	Client *redis.Client
 	Logger *zerolog.Logger
+}
+
+func newTlSConfig(certPathForTLS string) (*tls.Config, error) {
+	// Create TLS config using cert PEM
+	rootPem, err := ioutil.ReadFile(certPathForTLS)
+	if err != nil {
+		return nil, fmt.Errorf("could not read certificate file (%s), error: %s", certPathForTLS, err.Error())
+	}
+
+	roots := x509.NewCertPool()
+	ok := roots.AppendCertsFromPEM(rootPem)
+	if !ok {
+		return nil, fmt.Errorf("error adding cert (%s) to pool, error: %s", certPathForTLS, err.Error())
+	}
+	return &tls.Config{RootCAs: roots}, nil
+}
+
+// NewRedisStore returns a new instance of RedisStore.
+func NewRedisStoreWithTLS(endpoint, password string, useTLS bool, certPathForTLS string) *Store {
+	opt := &redis.Options{
+		Addr:     endpoint,
+		Password: password,
+	}
+	if useTLS {
+		newTlSConfig, err := newTlSConfig(certPathForTLS)
+		if err != nil {
+			fmt.Errorf("could not get TLS config: %s", err)
+			return nil
+		}
+		opt.TLSConfig = newTlSConfig
+	}
+	c := redis.NewClient(opt)
+	l := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	return &Store{Client: c, Logger: &l}
 }
 
 // NewRedisStore returns a new instance of RedisStore.

@@ -20,11 +20,11 @@ import com.google.inject.Singleton;
 public class CVLicenseObjectMapper implements LicenseObjectMapper<CVModuleLicense, CVModuleLicenseDTO> {
   @Override
   public CVModuleLicenseDTO toDTO(CVModuleLicense moduleLicense) {
-    return CVModuleLicenseDTO.builder().build();
+    return CVModuleLicenseDTO.builder().numberOfServices(moduleLicense.getNumberOfServices()).build();
   }
 
   @Override
   public CVModuleLicense toEntity(CVModuleLicenseDTO moduleLicenseDTO) {
-    return CVModuleLicense.builder().build();
+    return CVModuleLicense.builder().numberOfServices(moduleLicenseDTO.getNumberOfServices()).build();
   }
 }

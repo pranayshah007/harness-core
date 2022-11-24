@@ -18,7 +18,10 @@ import io.harness.azure.model.VirtualMachineData;
 import software.wings.beans.AzureImageGallery;
 
 import com.azure.core.management.exception.ManagementException;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
 import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
 import com.azure.resourcemanager.compute.models.GalleryImage;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
 import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
@@ -193,11 +196,12 @@ public interface AzureComputeClient {
    * @param azureUserAuthVMInstanceData
    * @param imageArtifact
    * @param tags
+   * @return
    */
-  void createVirtualMachineScaleSet(AzureConfig azureConfig, String subscriptionId,
-      VirtualMachineScaleSet baseVirtualMachineScaleSet, String newVirtualMachineScaleSetName,
-      AzureUserAuthVMInstanceData azureUserAuthVMInstanceData, AzureMachineImageArtifact imageArtifact,
-      AzureVMSSTagsData tags);
+  SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> createVirtualMachineScaleSet(
+      AzureConfig azureConfig, String subscriptionId, VirtualMachineScaleSet baseVirtualMachineScaleSet,
+      String newVirtualMachineScaleSetName, AzureUserAuthVMInstanceData azureUserAuthVMInstanceData,
+      AzureMachineImageArtifact imageArtifact, AzureVMSSTagsData tags);
 
   /**
    * Attach virtual machine scale set to load balancer backend pools.

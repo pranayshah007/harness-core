@@ -22,8 +22,8 @@ import java.util.concurrent.ExecutorService;
 public class PmsNotifyEventMessageListener extends PmsAbstractMessageListener<NotifyEventProto, NotifyEventHandler> {
   @Inject
   public PmsNotifyEventMessageListener(@Named(SDK_SERVICE_NAME) String serviceName,
-      NotifyEventHandler createPartialPlanEventHandler, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
-    super(serviceName, NotifyEventProto.class, createPartialPlanEventHandler, executorService);
+      NotifyEventHandler notifyEventHandler, @Named(CORE_EXECUTOR_NAME) ExecutorService executorService) {
+    super(serviceName, NotifyEventProto.class, notifyEventHandler, executorService);
   }
 
   @Override

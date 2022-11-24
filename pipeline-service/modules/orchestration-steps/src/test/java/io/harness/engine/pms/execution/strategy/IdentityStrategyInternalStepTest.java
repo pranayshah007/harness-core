@@ -47,7 +47,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -241,10 +240,12 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
                                .uuid("uuid1")
                                .ambiance(oldAmbiance)
                                .planNode(IdentityPlanNode.builder().uuid("identityPlanUuid").build())
+                               .createdAt(100L)
                                .build(),
                  NodeExecution.builder()
                      .uuid("originalNodeExecutionId")
                      .executableResponse(ExecutableResponse.newBuilder().setChild(childExecutableResponse).build())
+                     .createdAt(50L)
                      .build()))
         .when(nodeExecutionService)
         .fetchNodeExecutionsByParentIdWithAmbianceAndNode(originalNodeExecutionId, true, true);
@@ -254,18 +255,32 @@ public class IdentityStrategyInternalStepTest extends CategoryTest {
     assertEquals(response, childExecutableResponse);
     verify(planService, never()).saveIdentityNodesForMatrix(any(), any());
 
-    doReturn(Collections.singletonList(NodeExecution.builder()
-                                           .uuid("uuid1")
-                                           .ambiance(oldAmbiance)
-                                           .planNode(PlanNode.builder().uuid("planUuid1").build())
-                                           .build()))
+    // NodeExecution with lowest createdAt should be returned as child.
+    doReturn(Arrays.asList(NodeExecution.builder()
+                               .uuid("uuid1")
+                               .ambiance(oldAmbiance)
+                               .createdAt(100L)
+                               .planNode(PlanNode.builder().uuid("planUuid1").build())
+                               .build(),
+                 NodeExecution.builder()
+                     .uuid("uuid2")
+                     .ambiance(oldAmbiance)
+                     .planNode(PlanNode.builder().uuid("planUuid2").build())
+                     .createdAt(200L)
+                     .build()))
         .when(nodeExecutionService)
         .fetchNodeExecutionsByParentIdWithAmbianceAndNode(originalNodeExecutionId, true, true);
+    ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
     response = identityStrategyInternalStep.obtainChild(ambiance, stepParameters, null);
     assertFalse(response.getChildNodeId().equals("planUuid1"));
 
-    verify(planService, times(1)).saveIdentityNodesForMatrix(any(), any());
+    verify(planService, times(1)).saveIdentityNodesForMatrix(argumentCaptor.capture(), any());
+    List<Node> childList = argumentCaptor.getValue();
+    assertEquals(childList.size(), 1);
+    IdentityPlanNode childIdentityPlanNode = (IdentityPlanNode) childList.get(0);
+    // uuid1 because it is the first child. uuid2 will be started by uuid1 with help of nextStep Adviser.
+    assertEquals(childIdentityPlanNode.getOriginalNodeExecutionId(), "uuid1");
   }
 
   @Test

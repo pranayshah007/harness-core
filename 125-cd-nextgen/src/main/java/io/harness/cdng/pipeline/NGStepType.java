@@ -171,6 +171,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
       StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
   ELASTIGROUP_DEPLOY("Elastigroup Deploy", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
       StepSpecTypeConstants.ELASTIGROUP_DEPLOY),

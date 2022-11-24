@@ -3212,8 +3212,6 @@ public class DelegateServiceImpl implements DelegateService {
     DelegateGroup existingEntity = query.get();
 
     if (existingEntity != null && !matchOwners(existingEntity.getOwner(), owner)) {
-      log.error(
-          "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
       throw new InvalidRequestException(
           "Unable to create delegate group. Delegate with same name exists. Delegate name must be unique across account.");
     }
@@ -3342,7 +3340,7 @@ public class DelegateServiceImpl implements DelegateService {
           }
         } else {
           delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_RESTARTED);
-          log.error("Delegate restarted");
+          log.debug("Delegate restarted");
         }
       }
     }

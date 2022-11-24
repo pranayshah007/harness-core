@@ -49,6 +49,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.events.SecretCreateEvent;
 import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.events.SecretUpdateEvent;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.Secret.SecretKeys;
@@ -67,6 +68,7 @@ import io.harness.utils.PageUtils;
 
 import software.wings.beans.TaskType;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Streams;
 import com.google.inject.Inject;
@@ -150,8 +152,8 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
   }
 
   @Override
-  public boolean delete(
-      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, @NotNull String identifier) {
+  public boolean delete(@NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      @NotNull String identifier, boolean forceDelete) {
     Optional<Secret> secretV2Optional = get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
 
     if (!secretV2Optional.isPresent()) {
@@ -160,12 +162,24 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
 
     Secret secret = secretV2Optional.get();
 
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      secretRepository.delete(secret);
-      deleteSecretActivities(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    return Failsafe.with(transactionRetryPolicy)
+        .get(()
+                 -> transactionTemplate.execute(status
+                     -> deleteInternal(
+                         accountIdentifier, orgIdentifier, projectIdentifier, identifier, secret, forceDelete)));
+  }
+
+  @VisibleForTesting
+  protected boolean deleteInternal(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String identifier, Secret secret, boolean forceDelete) {
+    secretRepository.delete(secret);
+    deleteSecretActivities(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    if (forceDelete) {
+      outboxService.save(new SecretForceDeleteEvent(accountIdentifier, secret.toDTO()));
+    } else {
       outboxService.save(new SecretDeleteEvent(accountIdentifier, secret.toDTO()));
-      return true;
-    }));
+    }
+    return true;
   }
 
   private void deleteSecretActivities(

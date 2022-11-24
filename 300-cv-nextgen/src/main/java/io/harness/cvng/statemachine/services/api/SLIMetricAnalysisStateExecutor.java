@@ -78,6 +78,7 @@ public class SLIMetricAnalysisStateExecutor extends AnalysisStateExecutor<SLIMet
         sliRecordList, serviceLevelIndicator.getUuid(), verificationTaskId, serviceLevelIndicator.getVersion());
     sloHealthIndicatorService.upsert(serviceLevelIndicator);
     analysisState.setStatus(AnalysisStatus.SUCCESS);
+    // TODO (this end time won't always be the creation time, i.e in case of reclculation, we need to re-think this.
     try (SLOMetricContext sloMetricContext = new SLOMetricContext(serviceLevelIndicator)) {
       metricService.recordDuration(
           CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC, Duration.between(clock.instant(), endTime));

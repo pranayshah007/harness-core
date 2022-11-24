@@ -52,6 +52,11 @@ public class BuildWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    return areSimilar(stepMapperFactory, workflow1, workflow2);
+  }
+
+  @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
     List<WorkflowPhase.Yaml> phases = getPhases(workflow);
     List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);

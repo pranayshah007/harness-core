@@ -30,6 +30,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -39,7 +40,7 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
-  public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
@@ -62,12 +63,13 @@ public class KustomizeSourceRepoStoreService implements NgManifestService {
                 StoreConfigWrapper.builder().type(StoreConfigType.GIT).spec(storeConfig).build()))
             .pluginPath(ParameterField.createValueField(applicationManifest.getKustomizeConfig().getPluginRootDir()))
             .build();
-    return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.KUSTOMIZE)
-                      .spec(kustomizeManifest)
-                      .build())
-        .build();
+    return Collections.singletonList(
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder()
+                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+                          .type(ManifestConfigType.KUSTOMIZE)
+                          .spec(kustomizeManifest)
+                          .build())
+            .build());
   }
 }
