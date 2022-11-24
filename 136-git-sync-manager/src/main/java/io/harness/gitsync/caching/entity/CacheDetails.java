@@ -5,20 +5,23 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.ccm.views.dto;
+package io.harness.gitsync.caching.entity;
 
-import io.harness.ccm.views.helper.ExecutionDetailRequest;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import javax.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
-@Value
+@Getter
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ExecutionDetailDTO {
-  @JsonProperty("executionDetail") @Valid ExecutionDetailRequest executionDetailRequest;
+@OwnedBy(HarnessTeam.PIPELINE)
+public class CacheDetails {
+  boolean isStale;
+  long cacheExpiryTTL;
+  long validUntilTTL;
+  long lastUpdatedAt;
 }
