@@ -429,7 +429,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
         .isEqualTo(null);
     verify(waitNotifyEngine)
-        .doneWith(
+        .doneWithV2(
             delegateTask.getWaitId(), ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build());
   }
 
