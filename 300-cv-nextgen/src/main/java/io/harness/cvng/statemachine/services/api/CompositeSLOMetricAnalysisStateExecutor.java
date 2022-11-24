@@ -8,6 +8,8 @@
 package io.harness.cvng.statemachine.services.api;
 
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
@@ -20,9 +22,11 @@ import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjective
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
+import io.harness.metrics.service.api.MetricService;
 
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -47,6 +51,7 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
 
   @Inject private Clock clock;
 
+  @Inject private MetricService metricService;
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
@@ -78,6 +83,10 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
           sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjective.getVersion(),
           verificationTaskId, startTime, endTime);
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    }
+    try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
+      metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
+          Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
     }
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;

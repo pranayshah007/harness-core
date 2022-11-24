@@ -13,8 +13,6 @@ import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
 import io.harness.cvng.analysis.beans.LogClusterLevel;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.core.services.api.ExecutionLogService;
-import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
@@ -23,23 +21,19 @@ import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
+import io.harness.cvng.statemachine.services.api.StateMachineService;
 
 import com.google.inject.Inject;
 
-public class LiveMonitoringStateMachineServiceImpl extends AnalysisStateMachineServiceImpl {
-  @Inject private VerificationTaskService verificationTaskService;
+public class LiveMonitoringStateMachineService extends StateMachineService {
   @Inject private CVConfigService cvConfigService;
-  @Inject private ExecutionLogService executionLogService;
+
+  public LiveMonitoringStateMachineService(AnalysisInput inputForAnalysis) {
+    super(inputForAnalysis);
+  }
 
   @Override
-  public AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis) {
-    AnalysisStateMachine stateMachine = AnalysisStateMachine.builder()
-                                            .verificationTaskId(inputForAnalysis.getVerificationTaskId())
-                                            .analysisStartTime(inputForAnalysis.getStartTime())
-                                            .analysisEndTime(inputForAnalysis.getEndTime())
-                                            .status(AnalysisStatus.CREATED)
-                                            .build();
-
+  public AnalysisStateMachine createAnalysisStateMachine(AnalysisInput inputForAnalysis) {
     String cvConfigId = verificationTaskService.getCVConfigId(inputForAnalysis.getVerificationTaskId());
     CVConfig cvConfig = cvConfigService.get(cvConfigId);
     VerificationType verificationType = cvConfig.getVerificationType();
@@ -56,16 +50,15 @@ public class LiveMonitoringStateMachineServiceImpl extends AnalysisStateMachineS
             "Unimplemented verification type for orchestration : " + verificationType);
     }
     if (cvConfig.isDemo()) {
-      stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO);
+      this.analysisStateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO);
     } else {
-      stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
+      this.analysisStateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
     }
     firstState.setStatus(AnalysisStatus.CREATED);
     firstState.setInputs(inputForAnalysis);
-    stateMachine.setAccountId(cvConfig.getAccountId());
-    stateMachine.setCurrentState(firstState);
-    executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
-    return stateMachine;
+    this.analysisStateMachine.setAccountId(cvConfig.getAccountId());
+    this.analysisStateMachine.setCurrentState(firstState);
+    log();
+    return this.analysisStateMachine;
   }
 }

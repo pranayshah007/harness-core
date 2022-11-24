@@ -500,7 +500,8 @@ public enum FeatureName {
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
-  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS);
+  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
+  SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV);
 
   @Deprecated
   FeatureName() {
