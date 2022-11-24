@@ -41,6 +41,7 @@ public enum AuthorizationServiceHeader {
   DEBEZIUM_SERVICE("DebeziumService"),
   SUBSCRIPTION_SERVICE("SubscriptionService"),
   CHAOS_SERVICE("ChaosService"),
+  CODE("Code"),
   MIGRATOR("MigratorService");
 
   private final String serviceId;

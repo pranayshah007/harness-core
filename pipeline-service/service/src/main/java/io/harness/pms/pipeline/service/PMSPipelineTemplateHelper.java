@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +26,7 @@ import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceRequestDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.exception.NGTemplateResolveException;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
@@ -37,6 +39,7 @@ import io.harness.utils.PmsFeatureFlagHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -187,6 +190,17 @@ public class PMSPipelineTemplateHelper {
 
     return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, null, null, null, null, null, null, null, null, refreshRequest));
+  }
+
+  public HashSet<String> getTemplatesModuleInfo(TemplateMergeResponseDTO templateMergeResponseDTO) {
+    HashSet<String> templateModuleInfo = new HashSet<>();
+    if (isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
+      for (TemplateReferenceSummary templateReferenceSummary :
+          templateMergeResponseDTO.getTemplateReferenceSummaries()) {
+        templateModuleInfo.addAll(templateReferenceSummary.getModuleInfo());
+      }
+    }
+    return templateModuleInfo;
   }
 
   private String getConnectorRef() {

@@ -7,16 +7,12 @@
 
 package io.harness.cvng.cdng.services.impl;
 
-import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SERVICE_CONFIG_KEY;
-import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.SPEC_KEY;
-import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.STAGE_KEY;
-import static io.harness.cvng.cdng.services.impl.CVNGStepUtils.USE_FROM_STAGE_KEY;
-
 import io.harness.common.NGExpressionUtils;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo.ResolvedCVConfigInfoBuilder;
+import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
 import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
@@ -27,6 +23,8 @@ import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.yaml.YamlNode;
 
@@ -43,6 +41,8 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
     implements VerifyStepMonitoredServiceResolutionService {
   @Inject private CVConfigService cvConfigService;
   @Inject private MonitoredServiceService monitoredServiceService;
+
+  @Inject private CDStageMetaDataService cdStageMetaDataService;
 
   @Override
   public ResolvedCVConfigInfo fetchAndPersistResolvedCVConfigInfo(
@@ -61,11 +61,14 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
     YamlNode stageLevelYamlNode = getStageSpecYamlNode(filterCreationContext.getCurrentField().getNode());
     List<EntityDetailProtoDTO> result = new ArrayList<>();
 
-    if (stageLevelYamlNode == null) {
+    if (stageLevelYamlNode == null || stageLevelYamlNode.getIdentifier() == null) {
       return result;
     }
-    String serviceIdentifier = parseServiceIdentifier(stageLevelYamlNode);
-    String envIdentifier = CVNGStepUtils.getEnvRefNode(stageLevelYamlNode).asText();
+
+    ResponseDTO<CDStageMetaDataDTO> responseDTO =
+        cdStageMetaDataService.getServiceAndEnvironmentRef(stageLevelYamlNode);
+    String serviceIdentifier = responseDTO.getData().getServiceRef();
+    String envIdentifier = responseDTO.getData().getEnvironmentRef();
 
     ServiceEnvironmentParams serviceEnvironmentParams = ServiceEnvironmentParams.builder()
                                                             .accountIdentifier(projectParams.getAccountIdentifier())
@@ -110,26 +113,6 @@ public class DefaultVerifyStepMonitoredServiceResolutionServiceImpl
 
   private Optional<MonitoredService> getMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams) {
     return monitoredServiceService.getApplicationMonitoredService(serviceEnvironmentParams);
-  }
-
-  private String parseServiceIdentifier(YamlNode stageLevelYamlNode) {
-    // Service can be either selected from existing stage or directly provided.
-    // propagating service from multiple unknown stages is not supported yet.
-    if (CVNGStepUtils.hasServiceIdentifier(stageLevelYamlNode)) {
-      return CVNGStepUtils.getServiceRefNode(stageLevelYamlNode).asText();
-    } else {
-      String useFromStageIdentifier = stageLevelYamlNode.getField(SPEC_KEY)
-                                          .getNode()
-                                          .getField(SERVICE_CONFIG_KEY)
-                                          .getNode()
-                                          .getField(USE_FROM_STAGE_KEY)
-                                          .getNode()
-                                          .getField(STAGE_KEY)
-                                          .getNode()
-                                          .asText();
-      YamlNode propagateFromStage = CVNGStepUtils.findStageByIdentifier(stageLevelYamlNode, useFromStageIdentifier);
-      return CVNGStepUtils.getServiceRefNode(propagateFromStage).asText();
-    }
   }
 
   private YamlNode getStageSpecYamlNode(YamlNode yamlNode) {

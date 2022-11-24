@@ -1019,9 +1019,9 @@ public class ArtifactServiceImpl implements ArtifactService {
   }
 
   @Override
-  public List<Artifact> listArtifactsByArtifactStreamId(String appId, String artifactStreamId) {
+  public List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId) {
     return wingsPersistence.createQuery(Artifact.class)
-        .filter(ArtifactKeys.appId, appId)
+        .filter(ArtifactKeys.accountId, accountId)
         .filter(ArtifactKeys.artifactStreamId, artifactStreamId)
         .order(Sort.descending(CREATED_AT_KEY))
         .asList();

@@ -9,6 +9,7 @@ package io.harness.expression;
 
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
@@ -58,6 +59,15 @@ public class ExpressionEvaluatorTest extends CategoryTest {
       put("bob", bob);
     }
   };
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldNormalizeNestedExpression() {
+    ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
+    assertThat(expressionEvaluator.normalizeExpression("${empty(\"${target_VAR_281.var1}\")} == false", persons, "bob"))
+        .isEqualTo("empty(\"target_VAR_281.var1\") == false");
+  }
 
   @Test
   @Owner(developers = GEORGE)

@@ -20,7 +20,7 @@ import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 
@@ -41,10 +41,10 @@ public class EnvironmentsPlanCreatorHelper {
   @Inject private KryoSerializer kryoSerializer;
 
   public EnvironmentsPlanCreatorConfig createEnvironmentsPlanCreatorConfig(
-      PlanCreationContextValue metadata, EnvironmentsYaml environmentsYaml) {
-    final String accountIdentifier = metadata.getAccountIdentifier();
-    final String orgIdentifier = metadata.getOrgIdentifier();
-    final String projectIdentifier = metadata.getProjectIdentifier();
+      PlanCreationContext ctx, EnvironmentsYaml environmentsYaml) {
+    final String accountIdentifier = ctx.getAccountIdentifier();
+    final String orgIdentifier = ctx.getOrgIdentifier();
+    final String projectIdentifier = ctx.getProjectIdentifier();
 
     List<EnvironmentYamlV2> environmentYamlV2s = environmentsYaml.getValues().getValue();
 

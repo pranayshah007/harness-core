@@ -54,6 +54,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
+  public static final ParameterField<String> RUNTIME_INPUT = ParameterField.createValueField("<+input>");
+
   private MigratorUtility() {}
 
   public static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {

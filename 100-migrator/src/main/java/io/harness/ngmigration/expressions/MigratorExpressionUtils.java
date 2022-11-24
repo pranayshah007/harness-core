@@ -54,6 +54,15 @@ public class MigratorExpressionUtils {
     // Secrets
     context.put("secrets", new SecretMigratorFunctor());
 
+    // App
+    context.put("app.defaults", new AppVariablesMigratorFunctor());
+
+    // Http Step
+    context.put("httpResponseCode", "<+httpResponseCode>");
+    context.put("httpResponseBody", "<+httpResponseBody>");
+    context.put("httpMethod", "<+httpMethod>");
+    context.put("httpUrl", "<+httpUrl>");
+
     if (EmptyPredicate.isNotEmpty(customExpressions)) {
       context.putAll(customExpressions);
     }

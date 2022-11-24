@@ -115,7 +115,7 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
   public List<BuildDetails> getVersionsOfPackage(IdentifierRef connectorRef, String packageName, String packageType,
       String versionRegex, String org, String accountId, String orgIdentifier, String projectIdentifier) {
     if (EmptyPredicate.isEmpty(versionRegex)) {
-      return null;
+      return new ArrayList<>();
     }
 
     GithubConnectorDTO githubConnector = getConnector(connectorRef);
@@ -216,7 +216,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     }
   }
 
-  private ArtifactTaskExecutionResponse getTaskExecutionResponse(
+  @VisibleForTesting
+  protected ArtifactTaskExecutionResponse getTaskExecutionResponse(
       DelegateResponseData responseData, String ifFailedMessage) {
     if (responseData instanceof ErrorNotifyResponseData) {
       ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
@@ -271,7 +272,8 @@ public class GithubPackagesResourceServiceImpl implements GithubPackagesResource
     return (GithubConnectorDTO) connectors.getConnectorConfig();
   }
 
-  private boolean isAGithubConnector(@Valid @NotNull ConnectorResponseDTO connectorResponseDTO) {
+  @VisibleForTesting
+  public boolean isAGithubConnector(@Valid @NotNull ConnectorResponseDTO connectorResponseDTO) {
     return ConnectorType.GITHUB == (connectorResponseDTO.getConnector().getConnectorType());
   }
 

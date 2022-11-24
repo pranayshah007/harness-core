@@ -27,6 +27,8 @@ public class ServiceStepV3Parameters implements StepParameters {
   private List<ParameterField<String>> envRefs;
   private ParameterField<Boolean> gitOpsMultiSvcEnvEnabled;
   private ParameterField<Map<String, Object>> envInputs;
+  private Map<String, ParameterField<Map<String, Object>>> envToEnvInputs;
+  private Map<String, ParameterField<Map<String, Object>>> envToSvcOverrideInputs;
   private ParameterField<Map<String, Object>> serviceOverrideInputs;
   private List<String> childrenNodeIds;
   private ServiceDefinitionType deploymentType;

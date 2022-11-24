@@ -14,20 +14,26 @@ import static io.harness.pms.contracts.plan.TriggerType.MANUAL;
 
 import static java.lang.String.format;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.OrchestrationService;
+import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.retry.RetryExecutionParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.PlanExecutionMetadata.Builder;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.notification.bean.NotificationRules;
@@ -50,6 +56,8 @@ import io.harness.pms.ngpipeline.inputset.helpers.InputSetErrorsHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.InputSetSanitizer;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
+import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -57,10 +65,15 @@ import io.harness.pms.pipeline.service.PMSYamlSchemaService;
 import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
 import io.harness.pms.pipeline.yaml.BasicPipeline;
+import io.harness.pms.pipelinestage.helper.PipelineStageHelper;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.plan.execution.beans.ExecArgs;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.rbac.validator.PipelineRbacService;
 import io.harness.pms.stages.StagesExpressionExtractor;
 import io.harness.pms.yaml.PipelineVersion;
@@ -114,6 +127,10 @@ public class ExecutionHelper {
   PMSPipelineTemplateHelper pipelineTemplateHelper;
   PipelineEnforcementService pipelineEnforcementService;
   PmsFeatureFlagHelper featureFlagService;
+  PMSExecutionService pmsExecutionService;
+  AccessControlClient accessControlClient;
+  PipelineStageHelper pipelineStageHelper;
+  NodeExecutionService nodeExecutionService;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
@@ -475,5 +492,47 @@ public class ExecutionHelper {
         .setParentRetryId(originalExecutionId)
         .setRootExecutionId(rootRetryExecutionId)
         .build();
+  }
+
+  public PipelineExecutionDetailDTO getResponseDTO(String stageNodeId, String stageNodeExecutionId,
+      String childStageNodeId, Boolean renderFullBottomGraph, PipelineExecutionSummaryEntity executionSummaryEntity,
+      EntityGitDetails entityGitDetails) {
+    String accountId = executionSummaryEntity.getAccountId();
+    String orgId = executionSummaryEntity.getOrgIdentifier();
+    String projectId = executionSummaryEntity.getProjectIdentifier();
+    String planExecutionId = executionSummaryEntity.getPlanExecutionId();
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
+
+    // Checking if the stage is of type Pipeline Stage, then return the child graph along with top graph of parent
+    // pipeline
+    if (pipelineStageHelper.validateGraphToGenerate(executionSummaryEntity.getLayoutNodeMap(), stageNodeId)) {
+      NodeExecution nodeExecution = getNodeExecution(stageNodeId, planExecutionId);
+      return pipelineStageHelper.getResponseDTOWithChildGraph(
+          accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, nodeExecution);
+    }
+
+    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
+      pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
+      return PipelineExecutionDetailDTO.builder()
+          .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+          .build();
+    }
+
+    return PipelineExecutionDetailDTO.builder()
+        .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
+        .executionGraph(ExecutionGraphMapper.toExecutionGraph(
+            pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId),
+            executionSummaryEntity))
+        .build();
+  }
+
+  private NodeExecution getNodeExecution(String stageNodeId, String planExecutionId) {
+    try {
+      return nodeExecutionService.getByPlanNodeUuid(stageNodeId, planExecutionId);
+    } catch (InvalidRequestException ex) {
+      log.info("NodeExecution is null for plan node: {} ", stageNodeId);
+    }
+    return null;
   }
 }

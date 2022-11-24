@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -33,15 +33,20 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.transfer.MultipleFileDownload;
+import com.amazonaws.services.s3.transfer.TransferManager;
+import com.amazonaws.services.s3.transfer.TransferManagerBuilder;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -157,6 +162,63 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     }
     return null;
+  }
+
+  /***
+   *
+   * @param awsConfig
+   * @param bucketName
+   * @param key
+   * @param destinationDirectory
+   * @return
+   */
+  @Override
+  public boolean downloadS3Directory(AwsConfig awsConfig, String bucketName, String key, File destinationDirectory)
+      throws InterruptedException {
+    TransferManager transferManager =
+        TransferManagerBuilder.standard().withS3Client(getAmazonS3Client(awsConfig)).build();
+    MultipleFileDownload download = transferManager.downloadDirectory(bucketName, key, destinationDirectory);
+    try {
+      download.waitForCompletion();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new InterruptedException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+    } catch (AmazonServiceException amazonServiceException) {
+      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      awsApiHelperService.handleAmazonClientException(amazonClientException);
+    } finally {
+      transferManager.shutdownNow();
+    }
+
+    return true;
+  }
+
+  @Override
+  public boolean downloadS3DirectoryUsingS3URI(AwsConfig awsConfig, String s3URI, File destinationDirectory)
+      throws InterruptedException {
+    /**
+     *
+     *    Example of s3URI = "s3://iis-website-quickstart/foo/bar/baz";
+     *    thus,
+     *    String bucket = substr(5, length) = "iis-website-quickstart/foo/bar/baz";
+     *    String key = s3URI.substring(bucket.length()+1, s3URI.length()) = "foo/bar/baz";
+     *
+     */
+    AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
+    boolean downloadSuccess = false;
+    try {
+      downloadSuccess =
+          downloadS3Directory(awsConfig, amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationDirectory);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new InterruptedException(ExceptionMessageSanitizer.sanitizeException(e).getMessage());
+    } catch (AmazonServiceException amazonServiceException) {
+      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      awsApiHelperService.handleAmazonClientException(amazonClientException);
+    }
+    return downloadSuccess;
   }
 
   private AmazonS3Client getAmazonS3Client(String region, AwsConfig awsConfig) {

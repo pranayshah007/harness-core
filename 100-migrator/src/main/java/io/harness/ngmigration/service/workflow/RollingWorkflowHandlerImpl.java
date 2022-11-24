@@ -8,6 +8,7 @@
 package io.harness.ngmigration.service.workflow;
 
 import io.harness.cdng.service.beans.ServiceDefinitionType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
 import software.wings.beans.GraphNode;
@@ -19,6 +20,7 @@ import software.wings.yaml.workflow.RollingWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 
 public class RollingWorkflowHandlerImpl extends WorkflowHandler {
@@ -28,13 +30,15 @@ public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public List<Yaml> getRollbackPhases(Workflow workflow) {
     RollingWorkflowYaml rollingWorkflowYaml = rollingWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return rollingWorkflowYaml.getRollbackPhases();
+    return EmptyPredicate.isNotEmpty(rollingWorkflowYaml.getRollbackPhases()) ? rollingWorkflowYaml.getRollbackPhases()
+                                                                              : Collections.emptyList();
   }
 
   @Override
   public List<Yaml> getPhases(Workflow workflow) {
     RollingWorkflowYaml rollingWorkflowYaml = rollingWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    return rollingWorkflowYaml.getPhases();
+    return EmptyPredicate.isNotEmpty(rollingWorkflowYaml.getPhases()) ? rollingWorkflowYaml.getPhases()
+                                                                      : Collections.emptyList();
   }
 
   @Override
@@ -52,6 +56,11 @@ public class RollingWorkflowHandlerImpl extends WorkflowHandler {
   //      .action(StageRollbackFailureActionConfig.builder().build())
   //      .build())
   //      .build()))
+
+  @Override
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    return areSimilar(stepMapperFactory, workflow1, workflow2);
+  }
 
   public JsonNode getTemplateSpec(Workflow workflow) {
     return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);

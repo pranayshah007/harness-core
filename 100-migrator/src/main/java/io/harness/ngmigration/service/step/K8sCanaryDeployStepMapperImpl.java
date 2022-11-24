@@ -20,6 +20,7 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.InstanceUnitType;
+import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sCanaryDeploy;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -32,10 +33,16 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sCanaryDeploy state = new K8sCanaryDeploy(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    K8sCanaryDeploy state = (K8sCanaryDeploy) getState(stepYaml);
     K8sCanaryStepNode k8sRollingStepNode = new K8sCanaryStepNode();
     baseSetup(stepYaml, k8sRollingStepNode);
     InstanceSelectionBase spec;
@@ -59,5 +66,15 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build());
     return k8sRollingStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    K8sCanaryDeploy state1 = (K8sCanaryDeploy) getState(stepYaml1);
+    K8sCanaryDeploy state2 = (K8sCanaryDeploy) getState(stepYaml2);
+    if (!state2.getInstanceUnitType().equals(state1.getInstanceUnitType())) {
+      return false;
+    }
+    return state1.getInstances().equals(state2.getInstances());
   }
 }

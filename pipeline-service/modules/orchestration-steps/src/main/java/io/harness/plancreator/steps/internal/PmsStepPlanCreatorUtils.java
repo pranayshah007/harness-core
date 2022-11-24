@@ -93,7 +93,8 @@ public class PmsStepPlanCreatorUtils {
       }
     } else {
       // Always add nextStep adviser at last, as its priority is less than, Do not change the order.
-      AdviserObtainment nextStepAdviserObtainment = getNextStepAdviserObtainment(kryoSerializer, currentField);
+      AdviserObtainment nextStepAdviserObtainment =
+          getNextStepAdviserObtainment(kryoSerializer, currentField, isPipelineStage);
       if (nextStepAdviserObtainment != null) {
         adviserObtainmentList.add(nextStepAdviserObtainment);
       }
@@ -103,13 +104,20 @@ public class PmsStepPlanCreatorUtils {
   }
 
   @VisibleForTesting
-  AdviserObtainment getNextStepAdviserObtainment(KryoSerializer kryoSerializer, YamlField currentField) {
+  AdviserObtainment getNextStepAdviserObtainment(
+      KryoSerializer kryoSerializer, YamlField currentField, boolean isPipelineStage) {
     if (currentField != null && currentField.getNode() != null) {
       if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
           || StrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
-      YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
+
+      YamlField siblingField;
+      if (isPipelineStage) {
+        siblingField = GenericPlanCreatorUtils.obtainNextSiblingFieldAtStageLevel(currentField);
+      } else {
+        siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
+      }
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
             .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())

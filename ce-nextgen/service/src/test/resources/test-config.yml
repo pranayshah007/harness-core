@@ -151,3 +151,8 @@ lightwingAutoCUDClientConfig:
   baseUrl: http://localhost:9090/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+dkronClientConfig:
+  baseUrl: http://localhost:8080/
+  connectTimeOutSeconds: 50
+  readTimeOutSeconds: 50
