@@ -28,11 +28,12 @@ public interface VerificationTaskService {
   String createCompositeSLOVerificationTask(String accountId, String sloId, Map<String, String> tags);
   String createDeploymentVerificationTask(
       String accountId, String cvConfigId, String verificationJobInstanceId, Map<String, String> tags);
-  String getCVConfigId(String verificationTaskId);
 
+  String getCVConfigId(String verificationTaskId);
   String getSliId(String verificationTaskId);
   String getCompositeSLOId(String verificationTaskId);
   String getVerificationJobInstanceId(String verificationTaskId);
+
   VerificationTask get(String verificationTaskId);
   Optional<VerificationTask> maybeGet(String verificationTaskId);
   String getVerificationTaskId(String accountId, String cvConfigId, String verificationJobInstanceId);

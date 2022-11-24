@@ -27,4 +27,5 @@ public class GitContextRequestParams {
   String connectorRef;
   boolean isNewBranch;
   String newBranchName;
+  boolean loadFromCache;
 }

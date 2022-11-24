@@ -60,9 +60,9 @@ def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.id = S.id and T.creationTime = S.creationTime 
+                ON T.id = S.id 
                 WHEN MATCHED THEN
-                  UPDATE SET sizeGb = s.sizeGb, status = s.status, options = s.options,
+                  UPDATE SET creationTime = s.creationTime, sizeGb = s.sizeGb, status = s.status, options = s.options,
                   type = s.type, provisionedIops = s.provisionedIops, 
                   snapshots = s.snapshots, labels = s.labels, users = s.users,
                   lastAttachTimestamp = s.lastAttachTimestamp, lastDetachTimestamp = s.lastDetachTimestamp,

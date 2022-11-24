@@ -9,6 +9,7 @@ java_library(
     deps = [
         "//:lombok",
         "//950-wait-engine/src/proto:950_wait_engine_java_proto",
+        "//953-events-api:module",
         "//959-timeout-engine:module",
         "//980-commons:module",
         "//999-annotations:module",

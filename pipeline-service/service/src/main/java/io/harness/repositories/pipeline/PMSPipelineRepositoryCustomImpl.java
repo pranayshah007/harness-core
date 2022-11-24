@@ -201,7 +201,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public Optional<PipelineEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch) {
+      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     Query query = new Query(criteria);
@@ -217,26 +218,27 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       if (loadFromFallbackBranch) {
         savedEntity = fetchRemoteEntityWithFallBackBranch(
-            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
       } else {
-        savedEntity =
-            fetchRemoteEntity(accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch());
+        savedEntity = fetchRemoteEntity(
+            accountId, orgIdentifier, projectIdentifier, savedEntity, gitEntityInfo.getBranch(), loadFromCache);
       }
     }
     return Optional.of(savedEntity);
   }
 
   PipelineEntity fetchRemoteEntityWithFallBackBranch(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, PipelineEntity savedEntity, String branch) {
+      String projectIdentifier, PipelineEntity savedEntity, String branch, boolean loadFromCache) {
     try {
-      savedEntity = fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch);
+      savedEntity =
+          fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, branch, loadFromCache);
     } catch (WingsException ex) {
       String fallBackBranch = getFallBackBranch(savedEntity);
       if (shouldRetryWithFallBackBranch(PipelineExceptionsHelper.getScmException(ex), branch, fallBackBranch)) {
         log.info(String.format(
             "Retrieving pipeline [%s] from fall back branch [%s] ", savedEntity.getIdentifier(), fallBackBranch));
-        savedEntity =
-            fetchRemoteEntity(accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch);
+        savedEntity = fetchRemoteEntity(
+            accountIdentifier, orgIdentifier, projectIdentifier, savedEntity, fallBackBranch, loadFromCache);
       } else {
         throw ex;
       }
@@ -256,7 +258,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @VisibleForTesting
   PipelineEntity fetchRemoteEntity(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      PipelineEntity savedEntity, String branch) {
+      PipelineEntity savedEntity, String branch, boolean loadFromCache) {
     return (PipelineEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
         Scope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         GitContextRequestParams.builder()
@@ -264,6 +266,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .connectorRef(savedEntity.getConnectorRef())
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
+            .loadFromCache(loadFromCache)
             .build(),
         Collections.emptyMap());
   }

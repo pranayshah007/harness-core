@@ -19,6 +19,7 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.delegate.task.validation.DelegateConnectionResultDetail;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -35,12 +36,12 @@ public abstract class AbstractDelegateValidateTask implements DelegateValidateTa
   private String accountId;
   private String delegateId;
   private String taskType;
-  private Consumer<List<DelegateConnectionResult>> consumer;
+  private Consumer<List<DelegateConnectionResultDetail>> consumer;
   private TaskData taskData;
   private List<ExecutionCapability> executionCapabilities;
 
-  public AbstractDelegateValidateTask(
-      String delegateId, DelegateTaskPackage delegateTaskPackage, Consumer<List<DelegateConnectionResult>> consumer) {
+  public AbstractDelegateValidateTask(String delegateId, DelegateTaskPackage delegateTaskPackage,
+      Consumer<List<DelegateConnectionResultDetail>> consumer) {
     this.accountId = delegateTaskPackage.getAccountId();
     this.delegateId = delegateId;
     this.delegateTaskId = delegateTaskPackage.getDelegateTaskId();
@@ -51,14 +52,14 @@ public abstract class AbstractDelegateValidateTask implements DelegateValidateTa
   }
 
   @Override
-  public List<DelegateConnectionResult> validationResults() {
+  public List<DelegateConnectionResultDetail> validationResults() {
     try (TaskLogContext ignore = new TaskLogContext(this.delegateTaskId, OVERRIDE_ERROR)) {
-      List<DelegateConnectionResult> results = null;
+      List<DelegateConnectionResultDetail> results = null;
       try {
         long startTime = System.currentTimeMillis();
         results = validate();
         long duration = System.currentTimeMillis() - startTime;
-        for (DelegateConnectionResult result : results) {
+        for (DelegateConnectionResultDetail result : results) {
           result.setAccountId(accountId);
           result.setDelegateId(delegateId);
           if (result.getDuration() == 0) {
@@ -79,11 +80,11 @@ public abstract class AbstractDelegateValidateTask implements DelegateValidateTa
     return emptyList();
   }
 
-  public List<DelegateConnectionResult> validate() {
+  public List<DelegateConnectionResultDetail> validate() {
     try {
       String criteria = getCriteria().get(0);
       return singletonList(
-          DelegateConnectionResult.builder().criteria(criteria).validated(connectableHttpUrl(criteria)).build());
+          DelegateConnectionResultDetail.builder().criteria(criteria).validated(connectableHttpUrl(criteria)).build());
     } catch (Exception e) {
       return emptyList();
     }

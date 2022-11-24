@@ -55,7 +55,8 @@ public class PagerDutyResource {
   @ApiOperation(value = "gets services from PagerDuty", nickname = "getServicesFromPagerDuty")
   public RestResponse<List<PagerDutyServiceDetail>> getServicesFromPagerDuty(
       @NotNull @BeanParam ProjectParams projectParams, @QueryParam("connectorIdentifier") String connectorIdentifier,
-      @QueryParam("requestGuid") @NotNull String requestGuid) {
-    return new RestResponse<>(pagerDutyService.getPagerDutyServices(projectParams, connectorIdentifier, requestGuid));
+      @QueryParam("requestGuid") @NotNull String requestGuid, @QueryParam("query") String query) {
+    return new RestResponse<>(
+        pagerDutyService.getPagerDutyServices(projectParams, connectorIdentifier, requestGuid, query));
   }
 }

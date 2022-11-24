@@ -17,8 +17,8 @@ import static io.harness.threading.Morpheus.sleep;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Duration.ofSeconds;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.MessageLogContext;

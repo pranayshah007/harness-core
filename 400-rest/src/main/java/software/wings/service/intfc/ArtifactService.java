@@ -254,5 +254,5 @@ public interface ArtifactService extends OwnedByArtifactStream {
 
   List<ArtifactFile> fetchArtifactFiles(String artifactId);
 
-  List<Artifact> listArtifactsByArtifactStreamId(String appId, String artifactStreamId);
+  List<Artifact> listArtifactsByArtifactStreamId(String accountId, String artifactStreamId);
 }

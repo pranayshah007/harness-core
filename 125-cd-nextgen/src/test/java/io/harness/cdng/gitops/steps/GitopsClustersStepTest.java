@@ -8,9 +8,11 @@
 package io.harness.cdng.gitops.steps;
 
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -40,7 +42,9 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import junitparams.JUnitParamsRunner;
@@ -228,7 +232,7 @@ public class GitopsClustersStepTest extends CategoryTest {
   public void testExecuteSyncAfterRbac(ClusterStepParameters input, GitopsClustersOutcome expectedOutcome) {
     step.executeSyncAfterRbac(buildAmbiance(), input, StepInputPackage.builder().build(), null);
 
-    verify(sweepingOutputService).resolveOptional(any(), any());
+    verify(sweepingOutputService, atLeast(2)).resolveOptional(any(), any());
     verify(sweepingOutputService).consume(any(), eq("gitops"), eq(expectedOutcome), eq("STAGE"));
     reset(sweepingOutputService);
   }
@@ -253,11 +257,10 @@ public class GitopsClustersStepTest extends CategoryTest {
             .build(),
         new GitopsClustersOutcome(new ArrayList<>())
             .appendCluster(
-                new Metadata("envGroupId", null), new Metadata("env1Id", null), new Metadata("c1", "c1-name"))
-            .appendCluster(
-                new Metadata("envGroupId", null), new Metadata("env1Id", null), new Metadata("c2", "c2-name"))
+                new Metadata("envGroupId", null), new Metadata("env1Id", null), new Metadata("c1", "c1-name"), Map.of())
+            .appendCluster(new Metadata("envGroupId", null), new Metadata("env1Id", null),
+                new Metadata("c2", "c2-name"), Map.of())};
 
-    };
     final Object[] set2 =
         new Object[] {ClusterStepParameters.builder()
                           .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1Id").deployToAll(true).build()))
@@ -303,5 +306,48 @@ public class GitopsClustersStepTest extends CategoryTest {
         .putAllSetupAbstractions(ImmutableMap.of(
             "accountId", "accountId", "orgIdentifier", "orgId", "projectIdentifier", "projId", "appId", "APP_ID"))
         .build();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testToGitOpsOutcomeForServiceOverrides() {
+    Map<String, GitopsClustersStep.IndividualClusterInternal> validatedClusters = new HashMap<>();
+    GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
+        GitopsClustersStep.IndividualClusterInternal.builder()
+            .clusterName("c1-Ref")
+            .clusterRef("c1Ref")
+            .envRef("env1")
+            .envVariables(Map.of("k1", "v1"))
+            .build();
+    validatedClusters.put("c1", c1IndividualCluster);
+    Map<String, Object> svcVariables = Map.of("k1", "sv1");
+    Map<String, Map<String, Object>> envSvcOverrideVars = Map.of("env1", Map.of("k1", "svcEnvOveride1"));
+
+    GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, svcVariables, envSvcOverrideVars);
+    assertThat(outcome).isNotNull();
+    String k1 = outcome.getClustersData().get(0).variables.get("k1").toString();
+    assertThat(k1).isEqualTo("svcEnvOveride1");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testToGitOpsOutcomeForEnvrionmentOveride() {
+    Map<String, GitopsClustersStep.IndividualClusterInternal> validatedClusters = new HashMap<>();
+    GitopsClustersStep.IndividualClusterInternal c1IndividualCluster =
+        GitopsClustersStep.IndividualClusterInternal.builder()
+            .clusterName("c1-Ref")
+            .clusterRef("c1Ref")
+            .envRef("env1")
+            .envVariables(Map.of("k1", "v1"))
+            .build();
+    validatedClusters.put("c1", c1IndividualCluster);
+    Map<String, Object> svcVariables = Map.of("k1", "sv1");
+
+    GitopsClustersOutcome outcome = step.toOutcome(validatedClusters, svcVariables, Map.of());
+    assertThat(outcome).isNotNull();
+    String k1 = outcome.getClustersData().get(0).variables.get("k1").toString();
+    assertThat(k1).isEqualTo("v1");
   }
 }

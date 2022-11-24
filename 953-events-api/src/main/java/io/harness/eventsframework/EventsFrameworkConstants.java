@@ -168,4 +168,16 @@ public final class EventsFrameworkConstants {
   // Tracing Constants
   public static final String QUERY_ANALYSIS_TOPIC = "query_analysis";
   public static final int QUERY_ANALYSIS_TOPIC_SIZE = 100;
+
+  // CG WaitNotify constants
+
+  public static final String CG_NOTIFY_EVENT = "cg_notify_event";
+  public static final int CG_NOTIFY_EVENT_TOPIC_SIZE = 100000;
+  public static final int CG_NOTIFY_EVENT_BATCH_SIZE = 50;
+  public static final Duration CG_NOTIFY_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
+
+  public static final String CG_GENERAL_EVENT = "cg_general_event";
+  public static final int CG_GENERAL_EVENT_TOPIC_SIZE = 100000;
+  public static final int CG_GENERAL_EVENT_BATCH_SIZE = 50;
+  public static final Duration CG_GENERAL_EVENT_MAX_PROCESSING_TIME = Duration.ofSeconds(5);
 }

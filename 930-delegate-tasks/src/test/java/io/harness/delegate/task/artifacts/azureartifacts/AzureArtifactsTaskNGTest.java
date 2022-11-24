@@ -649,4 +649,11 @@ public class AzureArtifactsTaskNGTest extends CategoryTest {
 
     verify(azureArtifactsTaskHelper).getArtifactCollectResponse(artifactTaskParameters);
   }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testIsSupportingErrorFramework() {
+    assertThat(azureArtifactsTaskNG.isSupportingErrorFramework()).isEqualTo(true);
+  }
 }

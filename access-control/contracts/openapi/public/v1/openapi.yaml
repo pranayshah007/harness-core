@@ -300,7 +300,7 @@ paths:
     parameters:
       - schema:
           type: string
-        name: roleassignment
+        name: role-assignment
         in: path
         required: true
         description: Role assignment slug
@@ -361,7 +361,7 @@ paths:
     parameters:
       - schema:
           type: string
-        name: roleassignment
+        name: role-assignment
         in: path
         required: true
         description: Role assignment slug
@@ -424,7 +424,7 @@ paths:
     parameters:
       - schema:
           type: string
-        name: roleassignment
+        name: role-assignment
         in: path
         required: true
         description: Role assignment slug

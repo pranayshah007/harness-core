@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.Workflow;
@@ -39,5 +40,15 @@ public class WorkflowHandlerFactory {
       default:
         throw new InvalidRequestException("Unsupported WF type");
     }
+  }
+
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    OrchestrationWorkflowType type1 = workflow1.getOrchestration().getOrchestrationWorkflowType();
+    OrchestrationWorkflowType type2 = workflow2.getOrchestration().getOrchestrationWorkflowType();
+
+    if (!type1.equals(type2)) {
+      return false;
+    }
+    return getWorkflowHandler(workflow1).areSimilar(workflow1, workflow2);
   }
 }

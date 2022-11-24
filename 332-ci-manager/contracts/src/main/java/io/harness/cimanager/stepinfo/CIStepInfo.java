@@ -51,11 +51,21 @@ public interface CIStepInfo extends StepSpecType, WithStepElementParameters, Spe
   int MIN_RETRY = 0;
   int MAX_RETRY = 5;
   long DEFAULT_TIMEOUT = Duration.ofHours(2).toMillis();
+  int DEFAULT_RETRY = 1;
 
   @JsonIgnore TypeInfo getNonYamlInfo();
-  @JsonIgnore int getRetry();
-  @JsonIgnore String getName();
-  @JsonIgnore String getIdentifier();
+  @JsonIgnore
+  default int getRetry() {
+    return DEFAULT_RETRY;
+  }
+  @JsonIgnore
+  default String getName() {
+    return "";
+  }
+  @JsonIgnore
+  default String getIdentifier() {
+    return "";
+  }
   @JsonIgnore
   default long getDefaultTimeout() {
     return DEFAULT_TIMEOUT;
