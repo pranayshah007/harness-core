@@ -17,7 +17,6 @@ import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,8 +27,7 @@ import lombok.experimental.NonFinal;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class ElastigroupParametersFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander,
-                                                          ExpressionReflectionUtils.NestedAnnotationResolver {
+public class ElastigroupParametersFetchRequest implements ActivityAccess, TaskParameters, ExecutionCapabilityDemander{
   String executionLogName;
   String activityId;
   String accountId;

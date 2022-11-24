@@ -66,7 +66,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSetupCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSetupCommandRequest"));
@@ -77,7 +77,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_SETUP.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
@@ -176,8 +176,8 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
       elastigroupDeployTaskHelper.scaleElastigroup(stageElastiGroup, spotInstApiTokenRef, spotInstAccountId,
           elastigroupDeployTaskHelper.getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin()),
-          iLogStreamingTaskClient, ElastigroupCommandUnitConstants.upScale.toString(),
-          ElastigroupCommandUnitConstants.upScaleSteadyStateWait.toString(), commandUnitsProgress);
+          iLogStreamingTaskClient, ElastigroupCommandUnitConstants.UP_SCALE.toString(),
+          ElastigroupCommandUnitConstants.UP_SCALE_STEADY_STATE_WAIT.toString(), commandUnitsProgress);
 
       ElastigroupSetupResult elastigroupSetupResult =
           ElastigroupSetupResult.builder()
@@ -189,7 +189,6 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
               .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
               .useCurrentRunningInstanceCount(
                   ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
-              .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
               .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
               .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
               .loadBalancerDetailsForBGDeployments(lbDetailList)
