@@ -48,6 +48,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
   @Inject @Named("enablePrimaryCheck") private boolean enablePrimaryCheck;
@@ -96,20 +97,41 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData;
+        long doneWithStartTime;
+        long doneWithEndTime;
         if (disableDeserialization) {
           responseData = BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build();
+
+          doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+          waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
+          doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         } else {
-          ResponseData data = (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
-          if (data instanceof SerializedResponseData) {
-            responseData = data;
+          if (lockedAsyncTaskResponse.isUsingKryoWithoutReference()) {
+            ResponseData data =
+                (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+            if (data instanceof SerializedResponseData) {
+              responseData = data;
+            } else {
+              responseData = (DelegateResponseData) data;
+            }
+
+            doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            waitNotifyEngine.doneWithV2(lockedAsyncTaskResponse.getUuid(), responseData);
+            doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
           } else {
-            responseData = (DelegateResponseData) data;
+            ResponseData data =
+                (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+            if (data instanceof SerializedResponseData) {
+              responseData = data;
+            } else {
+              responseData = (DelegateResponseData) data;
+            }
+
+            doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+            waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
+            doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
           }
         }
-
-        long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-        waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
-        long doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
         if (log.isDebugEnabled()) {
           log.debug("DB update processing time {} for doneWith operation, loop processing time {} ",
