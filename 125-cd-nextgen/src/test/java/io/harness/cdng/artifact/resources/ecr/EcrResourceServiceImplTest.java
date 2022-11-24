@@ -3,6 +3,7 @@ package io.harness.cdng.artifact.resources.ecr;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -11,7 +12,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrBuildDetailsDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrListImagesDTO;
+import io.harness.cdng.artifact.resources.ecr.dtos.EcrRequestDTO;
 import io.harness.cdng.artifact.resources.ecr.dtos.EcrResponseDTO;
 import io.harness.cdng.artifact.resources.ecr.service.EcrResourceServiceImpl;
 import io.harness.cdng.common.resources.AwsResourceServiceHelper;
@@ -29,6 +32,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.ArtifactServerException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
@@ -258,5 +262,103 @@ public class EcrResourceServiceImplTest extends CategoryTest {
         ecrResourceService.getImages(connectorRef, REGION, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
 
     assertThat(ecrListImagesDTO.getImages()).isEqualTo(ls);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetSuccessfulBuild() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .scope(Scope.PROJECT)
+                                     .build();
+
+    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).build();
+
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+
+    when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .thenReturn(BaseNGAccess.builder()
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_IDENTIFIER)
+                        .projectIdentifier(PROJECT_IDENTIFIER)
+                        .build());
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+
+    EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+
+    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+        .thenReturn(ArtifactTaskResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .artifactTaskExecutionResponse(
+                            ArtifactTaskExecutionResponse.builder()
+                                .artifactDelegateResponses(Collections.singletonList(ecrArtifactDelegateResponse))
+                                .build())
+                        .build());
+
+    EcrBuildDetailsDTO ecrResponseDTO = ecrResourceService.getSuccessfulBuild(
+        connectorRef, IMAGE_PATH, ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    assertThat(ecrResponseDTO).isNotNull();
+
+    assertThat(ecrResponseDTO.getTag()).isEqualTo("tag");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testgetSuccessfulBuildException() {
+    IdentifierRef connectorRef = IdentifierRef.builder()
+                                     .accountIdentifier(ACCOUNT_ID)
+                                     .identifier("identifier")
+                                     .projectIdentifier(PROJECT_IDENTIFIER)
+                                     .orgIdentifier(ORG_IDENTIFIER)
+                                     .scope(Scope.PROJECT)
+                                     .build();
+
+    EcrRequestDTO ecrRequestDTO = EcrRequestDTO.builder().region(REGION).build();
+
+    ConnectorResponseDTO connectorResponse = getConnector();
+    when(connectorService.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponse));
+
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().build();
+
+    when(secretManagerClientService.getEncryptionDetails(any(), any()))
+        .thenReturn(Lists.newArrayList(encryptedDataDetail));
+
+    when(serviceHelper.getBaseNGAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .thenReturn(BaseNGAccess.builder()
+                        .accountIdentifier(ACCOUNT_ID)
+                        .orgIdentifier(ORG_IDENTIFIER)
+                        .projectIdentifier(PROJECT_IDENTIFIER)
+                        .build());
+    ArtifactBuildDetailsNG artifactBuildDetailsNG = ArtifactBuildDetailsNG.builder().number("tag").build();
+
+    EcrArtifactDelegateResponse ecrArtifactDelegateResponse =
+        new EcrArtifactDelegateResponse(artifactBuildDetailsNG, null, null, null, null, null, null);
+
+    when(serviceHelper.getResponseData(any(), any(), any(), any()))
+        .thenReturn(
+            ArtifactTaskResponse.builder()
+                .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                .artifactTaskExecutionResponse(
+                    ArtifactTaskExecutionResponse.builder().artifactDelegateResponses(Collections.emptyList()).build())
+                .build());
+    assertThatThrownBy(()
+                           -> ecrResourceService.getSuccessfulBuild(
+                               connectorRef, IMAGE_PATH, ecrRequestDTO, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Ecr get last successful build task failure.");
   }
 }

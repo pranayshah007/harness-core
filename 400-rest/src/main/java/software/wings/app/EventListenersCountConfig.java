@@ -26,4 +26,6 @@ public class EventListenersCountConfig {
   int executionEventListenerCount;
   int generalNotifyEventListenerCount;
   int orchestrationNotifyEventListenerCount;
+  int notifyConsumerCount;
+  int generalConsumerCount;
 }

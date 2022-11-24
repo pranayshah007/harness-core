@@ -7,6 +7,7 @@
 
 package io.harness.logstreaming;
 
+import static io.harness.NGConstants.JWT_REGEX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 
@@ -21,22 +22,28 @@ public class LogStreamingSanitizer {
   private final Set<String> secrets;
 
   public void sanitizeLogMessage(LogLine logLine) {
-    if (isEmpty(secrets)) {
-      return;
+    String sanitizedLogMessage = logLine.getMessage();
+    if (!isEmpty(secrets)) {
+      ArrayList<String> secretMasks = new ArrayList<>();
+      ArrayList<String> secretValues = new ArrayList<>();
+      for (String secret : secrets) {
+        secretMasks.add(SECRET_MASK);
+        secretValues.add(secret);
+
+        addSecretMasksWithQuotesRemoved(secret, secretMasks, secretValues);
+      }
+      sanitizedLogMessage = replaceEach(
+          logLine.getMessage(), secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
     }
 
-    ArrayList<String> secretMasks = new ArrayList<>();
-    ArrayList<String> secretValues = new ArrayList<>();
-    for (String secret : secrets) {
-      secretMasks.add(SECRET_MASK);
-      secretValues.add(secret);
-
-      addSecretMasksWithQuotesRemoved(secret, secretMasks, secretValues);
-    }
-    String sanitizedLogMessage =
-        replaceEach(logLine.getMessage(), secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
+    // JWT mask
+    sanitizedLogMessage = sanitizeRegex(sanitizedLogMessage, JWT_REGEX);
 
     logLine.setMessage(sanitizedLogMessage);
+  }
+
+  private String sanitizeRegex(String message, String regex) {
+    return message.replaceAll(regex, SECRET_MASK);
   }
 
   private void addSecretMasksWithQuotesRemoved(

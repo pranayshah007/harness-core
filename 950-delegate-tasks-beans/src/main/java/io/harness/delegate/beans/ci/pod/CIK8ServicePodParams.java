@@ -10,7 +10,7 @@ package io.harness.delegate.beans.ci.pod;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import java.util.Map;

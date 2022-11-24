@@ -37,4 +37,9 @@ public class AzureServerException extends WingsException {
     super(message, null, null, Level.ERROR, null, null);
     super.param(MESSAGE_KEY, message);
   }
+
+  public AzureServerException(Throwable throwable) {
+    super(throwable.getMessage(), throwable, null, Level.ERROR, null, null);
+    super.param(MESSAGE_KEY, throwable.getMessage());
+  }
 }

@@ -148,9 +148,9 @@ public class ServicePlanCreatorHelper {
       throw new InvalidRequestException("ServiceRef cannot be expression or runtime input during execution");
     }
 
-    final String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
-    final String orgIdentifier = ctx.getMetadata().getOrgIdentifier();
-    final String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
+    final String accountIdentifier = ctx.getAccountIdentifier();
+    final String orgIdentifier = ctx.getOrgIdentifier();
+    final String projectIdentifier = ctx.getProjectIdentifier();
     final String serviceRef = serviceYamlV2.getServiceRef().getValue();
     final Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);

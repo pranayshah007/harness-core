@@ -18,8 +18,8 @@ import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import java.util.List;
 import javax.ws.rs.core.Response;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class WingsExceptionMapper implements ExceptionMapper<WingsException> {
   @Override
   public Response toResponse(WingsException exception) {
-    ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
+    ExceptionLogger.logProcessedMessages_asWarn(exception, MANAGER, log);
     List<ResponseMessage> responseMessages = ExceptionLogger.getResponseMessageList(exception, REST_API);
 
     ErrorCode errorCode = exception.getCode() != null ? exception.getCode() : ErrorCode.UNKNOWN_ERROR;

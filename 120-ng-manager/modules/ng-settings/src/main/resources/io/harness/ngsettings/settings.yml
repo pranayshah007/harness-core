@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 6
+version : 7
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -29,3 +29,35 @@ settings :
       - ACCOUNT
       - ORGANIZATION
       - PROJECT
+  - identifier: scim_jwt_token_key_field
+    name: SCIM JWT token Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_value_field
+    name: SCIM JWT token value to be matched for Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_jwks_keys_url
+    name: SCIM JWT token jwks keys public URL
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_service_account_id
+    name: SCIM JWT token mapped Service Account identifier
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT

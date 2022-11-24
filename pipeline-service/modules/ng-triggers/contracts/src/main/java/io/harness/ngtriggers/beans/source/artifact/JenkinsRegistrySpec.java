@@ -27,6 +27,7 @@ public class JenkinsRegistrySpec implements ArtifactTypeSpec {
   List<TriggerEventDataCondition> eventConditions;
   String jobName;
   String artifactPath;
+  String build;
 
   @Override
   public String fetchConnectorRef() {

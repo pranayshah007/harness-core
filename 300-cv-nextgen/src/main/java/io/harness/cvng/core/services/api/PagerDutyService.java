@@ -20,7 +20,7 @@ import java.util.List;
 @OwnedBy(CV)
 public interface PagerDutyService {
   List<PagerDutyServiceDetail> getPagerDutyServices(
-      ProjectParams projectParams, String connectorIdentifier, String requestGuid);
+      ProjectParams projectParams, String connectorIdentifier, String requestGuid, String query);
 
   void registerPagerDutyWebhook(
       MonitoredServiceParams monitoredServiceParams, PagerDutyChangeSource pagerDutyChangeSource);

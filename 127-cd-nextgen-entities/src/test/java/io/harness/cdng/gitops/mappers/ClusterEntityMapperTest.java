@@ -70,6 +70,54 @@ public class ClusterEntityMapperTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.ROHITKARELIA)
   @Category(UnitTests.class)
+  public void testWriteDTOWithScope() {
+    io.harness.gitops.models.Cluster cluster = new io.harness.gitops.models.Cluster("testId", "test-Id");
+    cluster.setTags(Map.of("k1", "v1"));
+    cluster.setAgentIdentifier("agentId");
+
+    ClusterFromGitops entity = ClusterEntityMapper.writeDTO(ScopeLevel.PROJECT, cluster);
+
+    assertThat(entity.getName()).isEqualTo("test-Id");
+    assertThat(entity.getIdentifier()).isEqualTo("testId");
+    assertThat(entity.getTags()).isNotEmpty();
+    assertThat(entity.getTags().get("k1")).isEqualTo("v1");
+    assertThat(entity.getAgentIdentifier()).isNotEmpty();
+    assertThat(entity.getAgentIdentifier()).isEqualTo("agentId");
+    assertThat(entity.getScopeLevel()).isEqualTo(ScopeLevel.PROJECT);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testWriteDTOReturnsClusterResponse() {
+    Cluster cluster = Cluster.builder()
+                          .id("testId")
+                          .accountId("accountId")
+                          .clusterRef("testCluster")
+                          .orgIdentifier("orgId")
+                          .projectIdentifier("projectId")
+                          .envRef("envId")
+                          .agentIdentifier("agentId")
+                          .build();
+
+    Map<String, ClusterFromGitops> clusterFromGitops = Map.of("project.testCluster",
+        ClusterFromGitops.builder()
+            .tags(Map.of("k1", "v1"))
+            .name("testCluster")
+            .agentIdentifier("agentId")
+            .scopeLevel(ScopeLevel.PROJECT)
+            .build());
+
+    ClusterResponse response = ClusterEntityMapper.writeDTO(cluster, clusterFromGitops);
+
+    assertThat(response.getName()).isEqualTo("testCluster");
+    assertThat(response.getTags()).isNotEmpty();
+    assertThat(response.getTags().get("k1")).isEqualTo("v1");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ROHITKARELIA)
+  @Category(UnitTests.class)
   public void testWriteDTOCLusterRefIsCamelCase() {
     long epochSecond = Instant.now().getEpochSecond();
     Cluster request = Cluster.builder()

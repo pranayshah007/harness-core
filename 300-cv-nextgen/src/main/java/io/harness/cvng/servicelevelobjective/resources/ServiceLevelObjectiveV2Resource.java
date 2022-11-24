@@ -17,10 +17,12 @@ import io.harness.annotations.ExposeInternalException;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.CVConstants;
+import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2Response;
+import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
@@ -85,6 +87,18 @@ public class ServiceLevelObjectiveV2Resource {
   public static final String EDIT_PERMISSION = "chi_slo_edit";
   public static final String VIEW_PERMISSION = "chi_slo_view";
   public static final String DELETE_PERMISSION = "chi_slo_delete";
+
+  @POST
+  @Timed
+  @ExceptionMetered
+  @Path("composite-slo/onboarding-graph")
+  @ApiOperation(value = "Get onboarding graph for composite slo", nickname = "getOnboardingGraph")
+  @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
+  public RestResponse<TimeGraphResponse> getOnboardingGraph(@NotNull @BeanParam ProjectParams projectParams,
+      @Parameter(description = "Composite SLO spec which consists of list of SLO details") @ApiParam(required = true)
+      @NotNull @Valid @Body CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
+    return new RestResponse<>(serviceLevelObjectiveService.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
+  }
 
   @POST
   @Timed

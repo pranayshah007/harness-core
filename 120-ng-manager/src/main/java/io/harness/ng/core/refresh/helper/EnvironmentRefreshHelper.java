@@ -14,6 +14,7 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
@@ -408,8 +409,9 @@ public class EnvironmentRefreshHelper {
       return;
     }
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
-      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
-          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
+      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYaml(context.getAccountId(),
+          context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false,
+          NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
       if (EmptyPredicate.isEmpty(infraInputs)) {
         envObjectNode.remove(YamlTypes.INFRASTRUCTURE_DEFS);
         return;
@@ -462,8 +464,9 @@ public class EnvironmentRefreshHelper {
     }
 
     if (EmptyPredicate.isNotEmpty(infraDefIdentifiers)) {
-      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYamlV2(
-          context.getAccountId(), context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false);
+      String infraInputs = infrastructureEntityService.createInfrastructureInputsFromYaml(context.getAccountId(),
+          context.getOrgId(), context.getProjectId(), envRefValue, infraDefIdentifiers, false,
+          NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
       if (EmptyPredicate.isEmpty(infraInputs)) {
         errorNodeSummary.setValid(false);
         return false;

@@ -46,8 +46,8 @@ public class PagerDutyServiceImpl implements PagerDutyService {
 
   @Override
   public List<PagerDutyServiceDetail> getPagerDutyServices(
-      ProjectParams projectParams, String connectorIdentifier, String requestGuid) {
-    DataCollectionRequest request = PagerDutyServicesRequest.builder().build();
+      ProjectParams projectParams, String connectorIdentifier, String requestGuid, String query) {
+    DataCollectionRequest request = PagerDutyServicesRequest.builder().query(query).build();
     OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
                                                     .dataCollectionRequest(request)
                                                     .connectorIdentifier(connectorIdentifier)
