@@ -157,8 +157,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     if (CollectionUtils.isEmpty(newIdentifiers)) {
       return existingIdentifiers;
     }
-    Set<CgReleaseIdentifiers> mergeIdentifiersSet = new HashSet<>(existingIdentifiers);
-    mergeIdentifiersSet.addAll(newIdentifiers);
+    Set<CgReleaseIdentifiers> mergeIdentifiersSet = new HashSet<>(newIdentifiers);
+    mergeIdentifiersSet.addAll(existingIdentifiers);
 
     return mergeIdentifiersSet;
   }
@@ -238,7 +238,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                      : null)
                              .build());
 
-    if (deploymentSummary != null && deploymentSummary.getArtifactStreamId() != null) {
+    if (deploymentSummary.getArtifactStreamId() != null) {
       return populateArtifactInInstanceBuilder(builder, deploymentSummary, infraMapping, pod).build();
     }
 
@@ -276,8 +276,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
             && cgK8sReleaseIdentifier.getNamespace().equals(namespace)
             && cgK8sReleaseIdentifier.getReleaseName().equals(releaseName)
             && cgK8sReleaseIdentifier.isHelmDeployment() == isHelmDeployment
-            && (StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
-                    && StringUtils.isBlank(containerSvcName)
+            && ((StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
+                    && StringUtils.isBlank(containerSvcName))
                 || (cgK8sReleaseIdentifier.getContainerServiceName().equals(containerSvcName)))) {
           instances.add(instanceInDb);
         }
@@ -304,6 +304,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   public Set<CgReleaseIdentifiers> createReleaseIdentifiers(DeploymentSummary deploymentSummary) {
     DeploymentInfo deploymentInfo = deploymentSummary.getDeploymentInfo();
     Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
+
     if (deploymentInfo instanceof K8sDeploymentInfo) {
       K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentInfo;
       Set<String> namespaces = getNamespaces(k8sDeploymentInfo.getNamespaces(), k8sDeploymentInfo.getNamespace());
@@ -408,26 +409,27 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
         .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
         .forEach(releaseIdentifier
-            -> releaseDetails.add(
-                CgDeploymentReleaseDetails.newBuilder()
-                    .setTaskDetailsId(taskDetails.getUuid())
-                    .setInfraMappingId(taskDetails.getInfraMappingId())
-                    .setInfraMappingType(infraMapping.getInfraMappingType())
-                    .setReleaseDetails(
-                        Any.pack(DirectK8sInstanceSyncTaskDetails.newBuilder()
-                                     .setReleaseName(releaseIdentifier.getReleaseName())
-                                     .setNamespace(releaseIdentifier.getNamespace())
-                                     .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
-                                     .setIsHelm(releaseIdentifier.isHelmDeployment())
-                                     .setContainerServiceName(isEmpty(releaseIdentifier.getContainerServiceName())
-                                             ? ""
-                                             : releaseIdentifier.getContainerServiceName())
-                                     .build()))
-                    .build()
-
-                    ));
+            -> releaseDetails.add(CgDeploymentReleaseDetails.newBuilder()
+                                      .setTaskDetailsId(taskDetails.getUuid())
+                                      .setInfraMappingId(taskDetails.getInfraMappingId())
+                                      .setInfraMappingType(infraMapping.getInfraMappingType())
+                                      .setReleaseDetails(Any.pack(
+                                          directK8sInstanceSyncTaskDetailsBuilder(releaseIdentifier, clusterConfig)))
+                                      .build()));
 
     return releaseDetails;
+  }
+
+  private DirectK8sInstanceSyncTaskDetails directK8sInstanceSyncTaskDetailsBuilder(
+      CgK8sReleaseIdentifier releaseIdentifier, K8sClusterConfig clusterConfig) {
+    return DirectK8sInstanceSyncTaskDetails.newBuilder()
+        .setReleaseName(releaseIdentifier.getReleaseName())
+        .setNamespace(releaseIdentifier.getNamespace())
+        .setK8SClusterConfig(ByteString.copyFrom(kryoSerializer.asBytes(clusterConfig)))
+        .setIsHelm(releaseIdentifier.isHelmDeployment())
+        .setContainerServiceName(
+            isEmpty(releaseIdentifier.getContainerServiceName()) ? "" : releaseIdentifier.getContainerServiceName())
+        .build();
   }
 
   @Override

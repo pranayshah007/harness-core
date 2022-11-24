@@ -146,8 +146,8 @@ public class CgInstanceSyncServiceV2 {
 
   @VisibleForTesting
   boolean hasDeploymentKey(DeploymentSummary deploymentSummary) {
-    return deploymentSummary.getPcfDeploymentKey() != null || deploymentSummary.getK8sDeploymentKey() != null
-        || deploymentSummary.getContainerDeploymentKey() != null || deploymentSummary.getAwsAmiDeploymentKey() != null
+    return deploymentSummary.getK8sDeploymentKey() != null || deploymentSummary.getContainerDeploymentKey() != null
+        || deploymentSummary.getAwsAmiDeploymentKey() != null
         || deploymentSummary.getAwsCodeDeployDeploymentKey() != null
         || deploymentSummary.getSpotinstAmiDeploymentKey() != null
         || deploymentSummary.getAwsLambdaDeploymentKey() != null
@@ -310,8 +310,8 @@ public class CgInstanceSyncServiceV2 {
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
     for (String taskDetailsId : InstanceSyncDataListPerTask.keySet()) {
       Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries = new HashMap<>();
-      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances = new HashMap<>();
-      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
+      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances;
+      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap;
 
       List<InstanceSyncData> instanceSyncDataList = InstanceSyncDataListPerTask.get(taskDetailsId);
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
