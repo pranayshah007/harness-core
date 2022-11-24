@@ -609,7 +609,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
       StringNotifyProgressData data1 = StringNotifyProgressData.builder().data("progress1-" + uuid).build();
-      waitNotifyEngine.progressOn(uuid, data1);
+      waitNotifyEngine.progressOn(uuid, data1, false);
 
       ProgressUpdate progressUpdate = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
                                           .filter(ProgressUpdateKeys.correlationId, uuid)
@@ -620,7 +620,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       assertThat(progressDataResult).isEqualTo(data1);
 
       StringNotifyProgressData data2 = StringNotifyProgressData.builder().data("progress2-" + uuid).build();
-      waitNotifyEngine.progressOn(uuid, data2);
+      waitNotifyEngine.progressOn(uuid, data2, false);
 
       List<ProgressUpdate> progressUpdate2 = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
                                                  .filter(ProgressUpdateKeys.correlationId, uuid)
@@ -629,6 +629,56 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       assertThat(progressUpdate2).hasSize(2);
       ProgressData progressDataResult2 =
           (ProgressData) kryoSerializer.asInflatedObject(progressUpdate2.get(1).getProgressData());
+      assertThat(progressDataResult2).isEqualTo(data2);
+
+      while (progressCallCount.get() < 2) {
+        Thread.yield();
+      }
+
+      StringNotifyProgressData result1 = (StringNotifyProgressData) progressDataList.get(0);
+      StringNotifyProgressData result2 = (StringNotifyProgressData) progressDataList.get(1);
+
+      assertThat(progressDataList).hasSize(2);
+      assertThat(Arrays.asList(result1.getData(), result2.getData()))
+          .containsExactlyInAnyOrder(data1.getData(), data2.getData());
+      assertThat(progressCallCount.get()).isEqualTo(2);
+    }
+  }
+
+  /**
+   * Should wait for progress on correlation id.
+   */
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldWaitForProgressOnCorrelationIdUsingKryoWithoutReference() throws InterruptedException {
+    String uuid = generateUuid();
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      String waitInstanceId =
+          waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), new TestProgressCallback(), uuid);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+      StringNotifyProgressData data1 = StringNotifyProgressData.builder().data("progress1-" + uuid).build();
+      waitNotifyEngine.progressOn(uuid, data1, true);
+
+      ProgressUpdate progressUpdate = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
+                                          .filter(ProgressUpdateKeys.correlationId, uuid)
+                                          .get();
+      assertThat(progressUpdate).isNotNull();
+      ProgressData progressDataResult =
+          (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData());
+      assertThat(progressDataResult).isEqualTo(data1);
+
+      StringNotifyProgressData data2 = StringNotifyProgressData.builder().data("progress2-" + uuid).build();
+      waitNotifyEngine.progressOn(uuid, data2, true);
+
+      List<ProgressUpdate> progressUpdate2 = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
+                                                 .filter(ProgressUpdateKeys.correlationId, uuid)
+                                                 .order(Sort.ascending(ProgressUpdateKeys.createdAt))
+                                                 .asList();
+      assertThat(progressUpdate2).hasSize(2);
+      ProgressData progressDataResult2 =
+          (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate2.get(1).getProgressData());
       assertThat(progressDataResult2).isEqualTo(data2);
 
       while (progressCallCount.get() < 2) {

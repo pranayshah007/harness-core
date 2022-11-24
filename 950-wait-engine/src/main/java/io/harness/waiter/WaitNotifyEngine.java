@@ -116,7 +116,7 @@ public class WaitNotifyEngine {
     return waitInstanceId;
   }
 
-  public void progressOn(String correlationId, ProgressData progressData) {
+  public void progressOn(String correlationId, ProgressData progressData, boolean usingKryoWithoutReference) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
     if (log.isDebugEnabled()) {
@@ -124,12 +124,15 @@ public class WaitNotifyEngine {
     }
 
     try {
-      persistenceWrapper.save(ProgressUpdate.builder()
-                                  .uuid(generateUuid())
-                                  .correlationId(correlationId)
-                                  .createdAt(currentTimeMillis())
-                                  .progressData(kryoSerializer.asDeflatedBytes(progressData))
-                                  .build());
+      persistenceWrapper.save(
+          ProgressUpdate.builder()
+              .uuid(generateUuid())
+              .correlationId(correlationId)
+              .createdAt(currentTimeMillis())
+              .usingKryoWithoutReference(usingKryoWithoutReference)
+              .progressData(usingKryoWithoutReference ? referenceFalseKryoSerializer.asDeflatedBytes(progressData)
+                                                      : kryoSerializer.asDeflatedBytes(progressData))
+              .build());
     } catch (Exception exception) {
       log.error("Failed to notify for progress of type " + progressData.getClass().getSimpleName(), exception);
     }

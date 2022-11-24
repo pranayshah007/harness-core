@@ -216,7 +216,8 @@ public class CVNGStepTaskServiceImplTest extends CvNextGenTestBase {
                     .activityId(activityId)
                     .verifyStepExecutionId(activityId)
                     .activityStatusDTO(activityStatusDTO)
-                    .build()));
+                    .build()),
+            eq(false));
   }
 
   private CVNGStepTask get(String callbackId) {

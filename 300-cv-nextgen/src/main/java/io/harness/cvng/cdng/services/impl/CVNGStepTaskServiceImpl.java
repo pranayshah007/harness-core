@@ -87,7 +87,8 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
               .activityId(entity.getCallbackId())
               .verifyStepExecutionId(entity.getCallbackId())
               .activityStatusDTO(activityStatusDTO)
-              .build());
+              .build(),
+          false);
       if (ActivityVerificationStatus.getFinalStates().contains(activityStatusDTO.getStatus())) {
         waitNotifyEngine.doneWith(entity.getCallbackId(),
             CVNGResponseData.builder()
