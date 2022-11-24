@@ -14,8 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.plancreator.flowcontrol.FlowControlConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
-import io.harness.pms.contracts.plan.ExecutionMetadata;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.tags.TagUtils;
@@ -70,13 +68,11 @@ public class PipelineSetupStepParameters implements StepParameters {
 
   public static PipelineSetupStepParameters getStepParameters(
       PlanCreationContext ctx, PipelineInfoConfig infoConfig, String childNodeID) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionMetadata executionMetadata = planCreationContextValue.getMetadata();
     if (infoConfig == null) {
       return PipelineSetupStepParameters.newBuilder()
           .childNodeID(childNodeID)
-          .executionId(executionMetadata.getExecutionUuid())
-          .sequenceId(executionMetadata.getRunSequence())
+          .executionId(ctx.getExecutionUuid())
+          .sequenceId(ctx.getRunSequence())
           .build();
     }
 
@@ -84,7 +80,7 @@ public class PipelineSetupStepParameters implements StepParameters {
 
     return new PipelineSetupStepParameters(childNodeID, infoConfig.getName(), infoConfig.getIdentifier(),
         infoConfig.getFlowControl(), SdkCoreStepUtils.getParameterFieldHandleValueNull(infoConfig.getDescription()),
-        infoConfig.getTags(), infoConfig.getProperties(), infoConfig.getVariables(),
-        executionMetadata.getExecutionUuid(), executionMetadata.getRunSequence());
+        infoConfig.getTags(), infoConfig.getProperties(), infoConfig.getVariables(), ctx.getExecutionUuid(),
+        ctx.getRunSequence());
   }
 }

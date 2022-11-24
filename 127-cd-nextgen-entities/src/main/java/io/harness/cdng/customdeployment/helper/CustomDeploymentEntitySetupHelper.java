@@ -10,8 +10,6 @@ package io.harness.cdng.customdeployment.helper;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum.TEMPLATE;
 
-import static software.wings.beans.AccountType.log;
-
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
 
@@ -42,7 +40,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CustomDeploymentEntitySetupHelper {
   @Inject @Named(EventsFrameworkConstants.SETUP_USAGE) private Producer eventProducer;
   @JsonIgnore private final ObjectMapper jsonObjectMapper = new ObjectMapper();

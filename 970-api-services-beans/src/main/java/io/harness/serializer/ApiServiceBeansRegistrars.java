@@ -9,6 +9,7 @@ package io.harness.serializer;
 
 import io.harness.logging.serializer.kryo.ApiServiceBeansProtoKryoRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
+import io.harness.serializer.common.CommonsRegistrars;
 import io.harness.serializer.kryo.ApiServiceBeansKryoRegister;
 import io.harness.serializer.kryo.RbacCoreKryoRegistrar;
 import io.harness.serializer.morphia.ApiServiceBeansMorphiaRegistrar;

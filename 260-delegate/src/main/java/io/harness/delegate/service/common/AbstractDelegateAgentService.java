@@ -114,6 +114,7 @@ import retrofit2.Response;
 
 @Slf4j
 public abstract class AbstractDelegateAgentService implements DelegateAgentService {
+  protected static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_INSTANCE_ID = generateUuid();
   private static final int POLL_INTERVAL_SECONDS = 3;
   // Marker string to indicate task events.
@@ -121,7 +122,6 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   private static final String ABORT_EVENT_MARKER = "{\"eventType\":\"DelegateTaskAbortEvent\"";
   private static final String HEARTBEAT_RESPONSE = "{\"eventType\":\"DelegateHeartbeatResponseStreaming\"";
 
-  private static final String HOST_NAME = getLocalHostName();
   private static final String DELEGATE_TYPE = System.getenv("DELEGATE_TYPE");
   protected static final String DELEGATE_NAME =
       isNotBlank(System.getenv("DELEGATE_NAME")) ? System.getenv("DELEGATE_NAME") : "";
@@ -188,8 +188,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
    * @return true if pre-execute checks failed which will cause the task to fail
    */
   protected abstract boolean onPreExecute(DelegateTaskEvent delegateTaskEvent, String delegateTaskId);
+  protected abstract void onPreResponseSent(DelegateTaskResponse response);
   protected abstract void onResponseSent(String taskId);
-
   // ToDo: add more onXXX lifecycle hooks
 
   @Override
@@ -221,6 +221,7 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
     }
   }
 
+  @Override
   public void freeze() {
     log.warn("Delegate with id: {} was put in freeze mode.", DelegateAgentCommonVariables.getDelegateId());
     frozenAt.set(System.currentTimeMillis());
@@ -248,6 +249,8 @@ public abstract class AbstractDelegateAgentService implements DelegateAgentServi
   @Override
   public void sendTaskResponse(final String taskId, final DelegateTaskResponse taskResponse) {
     try {
+      onPreResponseSent(taskResponse);
+
       for (int attempt = 0; attempt < NUM_RESPONSE_RETRIES; attempt++) {
         final Response<ResponseBody> response = getDelegateAgentManagerClient()
                                                     .sendTaskStatus(DelegateAgentCommonVariables.getDelegateId(),

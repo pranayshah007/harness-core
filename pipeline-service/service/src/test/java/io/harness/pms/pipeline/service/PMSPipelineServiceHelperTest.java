@@ -19,10 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
-import io.harness.CategoryTest;
+import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.engine.GovernanceService;
 import io.harness.exception.DuplicateFileImportException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.FilterType;
@@ -42,11 +41,11 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
-import io.harness.telemetry.TelemetryReporter;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -56,31 +55,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.bson.Document;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.Assertions;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PIPELINE)
-public class PMSPipelineServiceHelperTest extends CategoryTest {
-  PMSPipelineServiceHelper pmsPipelineServiceHelper;
+public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock FilterService filterService;
   @Mock FilterCreatorMergeService filterCreatorMergeService;
-
-  @Mock PmsFeatureFlagService pmsFeatureFlagService;
-  @Mock TelemetryReporter telemetryReporter;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
-  @Mock PMSYamlSchemaService yamlSchemaService;
-  @Mock GovernanceService governanceService;
   @Mock GitAwareEntityHelper gitAwareEntityHelper;
   @Mock PMSPipelineRepository pmsPipelineRepository;
   @Mock PipelineValidationService pipelineValidationService;
   @Mock PipelineGovernanceService pipelineGovernanceService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
   String orgIdentifier = "org";
@@ -88,14 +83,6 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
   String pipelineIdentifier = "pipeline";
 
   String repoName = "testRepo";
-
-  @Before
-  public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    pmsPipelineServiceHelper = new PMSPipelineServiceHelper(filterService, filterCreatorMergeService,
-        pipelineValidationService, pipelineGovernanceService, pipelineTemplateHelper, pmsFeatureFlagService,
-        telemetryReporter, gitAwareEntityHelper, pmsPipelineRepository);
-  }
 
   @Test
   @Owner(developers = NAMAN)
@@ -278,10 +265,12 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, false);
 
-    Mockito.when(pipelineGovernanceService.validateGovernanceRules(any(), any(), any(), any()))
-        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
+    Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
+        .thenReturn(PipelineValidationResponse.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
     GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.validatePipelineYamlInternal(pipelineEntity, false);
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
     assertThat(governanceMetadata.getDeny()).isFalse();
   }
 

@@ -100,6 +100,7 @@ public class ExpressionEvaluator {
         NormalizeVariableResolver.builder().objectPrefixes(generatePrefixList(defaultObjectPrefix)).context(jc).build();
 
     StrSubstitutor substitutor = new StrSubstitutor();
+    substitutor.setEnableSubstitutionInVariables(true);
     substitutor.setVariableResolver(variableResolver);
 
     StringBuffer sb = new StringBuffer(expression);

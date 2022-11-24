@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.MEET;
 import static io.harness.rule.OwnerRule.NISHANT;
+import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.VINICIUS;
 import static io.harness.utils.PageTestUtils.getPage;
@@ -44,6 +45,7 @@ import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -205,7 +207,7 @@ public class ProjectServiceImplTest extends CategoryTest {
     setContextData(accountIdentifier);
     exceptionRule.expect(DuplicateFieldException.class);
     exceptionRule.expectMessage(
-        String.format("A project with identifier [%s] and orgIdentifier [%s] is already present or was deleted",
+        String.format("A project with identifier [%s] and orgIdentifier [%s] is already present",
             project.getIdentifier(), orgIdentifier));
     when(organizationService.get(accountIdentifier, orgIdentifier)).thenReturn(Optional.of(random(Organization.class)));
     when(transactionTemplate.execute(any()))
@@ -437,6 +439,24 @@ public class ProjectServiceImplTest extends CategoryTest {
     assertEquals(projectIdentifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test(expected = EntityNotFoundException.class)
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testHardDeleteInvalidIdentifier() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    Long version = 0L;
+
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(projectRepository.hardDelete(any(), any(), any(), any())).thenReturn(null);
+
+    projectService.delete(accountIdentifier, orgIdentifier, projectIdentifier, version);
   }
 
   @Test

@@ -156,6 +156,8 @@ public class PerpetualTaskRecordHandler extends IteratorPumpModeHandler implemen
           } else {
             log.info("Perpetual task {} unable to assign delegate due to missing DelegateMetaInfo.",
                 validationTask.getUuid());
+            perpetualTaskRecordDao.updateInvalidStateWithExceptions(
+                taskRecord, PerpetualTaskUnassignedReason.PT_TASK_FAILED, "Missing DelegateMetaInfo");
           }
         } else if ((response instanceof RemoteMethodReturnValueData)
             && (((RemoteMethodReturnValueData) response).getException() instanceof InvalidRequestException)) {

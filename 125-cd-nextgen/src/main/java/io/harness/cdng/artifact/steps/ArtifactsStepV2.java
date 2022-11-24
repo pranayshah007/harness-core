@@ -140,7 +140,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       }
 
       // process artifact sources in service yaml and select primary
-      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(mergedServiceYaml);
+      String processedServiceYaml = artifactStepHelper.getArtifactProcessedServiceYaml(ambiance, mergedServiceYaml);
 
       // resolve template refs in primary and sidecar artifacts
       String accountId = AmbianceUtils.getAccountId(ambiance);

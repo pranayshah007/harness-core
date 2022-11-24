@@ -107,9 +107,8 @@ public class AzureContainerRegistrySettingsProviderTest extends CategoryTest {
         AzureTestUtils.createTestContainerArtifactConfig(AzureTestUtils.createAzureConnectorDTO());
     doReturn(authenticationType).when(azureConfig).getAzureAuthenticationType();
     when(azureAuthorizationClient.getUserAccessToken(azureConfig,
-             AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == authenticationType ? AzureUtils.convertToScope(
-                 AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())
-                                                                                  : null))
+             AzureUtils.convertToScope(
+                 AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
         .thenReturn(accessTokenResponse);
     doReturn(refreshToken).when(azureContainerRegistryClient).getAcrRefreshToken(REGISTRY_HOSTNAME, accessToken);
 

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.service.steps;
 
+import static io.harness.cdng.gitops.steps.GitopsClustersStep.GITOPS_ENV_OUTCOME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
@@ -25,6 +26,7 @@ import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.freeze.FreezeOutcome;
+import io.harness.cdng.gitops.steps.GitOpsEnvOutCome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
@@ -144,7 +146,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
       if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
           && stepParameters.getGitOpsMultiSvcEnvEnabled().getValue()) {
-        executeGitOpsEnvironmentPart(ambiance, servicePartResponse, logCallback);
+        handleMultipleEnvironmentsPart(ambiance, stepParameters, servicePartResponse, logCallback);
       } else {
         executeEnvironmentPart(ambiance, stepParameters, servicePartResponse, logCallback, entityMap);
       }
@@ -169,17 +171,6 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     }
   }
 
-  private void executeGitOpsEnvironmentPart(
-      Ambiance ambiance, ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
-    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
-
-    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
-        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
-
-    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
-        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
-  }
-
   private void validate(ServiceStepV3Parameters stepParameters) {
     if (ParameterField.isNull(stepParameters.getServiceRef())) {
       throw new InvalidRequestException("service ref not provided");
@@ -189,9 +180,93 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       throw new UnresolvedExpressionsException(Arrays.asList(stepParameters.getServiceRef().getExpressionValue()));
     }
 
-    if (ParameterField.isNull(stepParameters.getEnvRef())) {
-      throw new InvalidRequestException("environment ref not provided");
+    if (ParameterField.isNull(stepParameters.getEnvRef()) && isEmpty(stepParameters.getEnvRefs())) {
+      throw new InvalidRequestException("environment ref or environment refs not provided");
     }
+  }
+
+  /**
+   * Function handles processing envInputs and serviceInputs for multiple environments. Currently,
+   * the flow is being used for GitOps Flows deploying to multiple environments.
+   */
+  private void handleMultipleEnvironmentsPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
+      ServicePartResponse servicePartResponse, NGLogCallback logCallback) {
+    Map<String, Map<String, Object>> envToEnvVariables = new HashMap<>();
+    Map<String, Map<String, Object>> envToSvcVariables = new HashMap<>();
+    List<NGVariable> svcOverrideVariables;
+
+    if (isEmpty(parameters.getEnvRefs())) {
+      throw new InvalidRequestException("No environments are found while handling deployment to multiple environments");
+    }
+
+    List<Environment> environments = getEnvironmentsFromEnvRef(ambiance, parameters.getEnvRefs());
+
+    log.info("Starting execution for Environments: [{}]", Arrays.toString(environments.toArray()));
+    for (Environment environment : environments) {
+      NGEnvironmentConfig ngEnvironmentConfig;
+      // handle old environments
+      if (isEmpty(environment.getYaml())) {
+        getNGEnvironmentConfig(environment);
+      }
+      if (isNotEmpty(parameters.getEnvToEnvInputs())) {
+        try {
+          ngEnvironmentConfig = mergeEnvironmentInputs(
+              environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.getIdentifier()));
+
+        } catch (IOException ex) {
+          throw new InvalidRequestException("Unable to read yaml for environment: " + environment.getIdentifier(), ex);
+        }
+        List<NGVariable> variables = ngEnvironmentConfig.getNgEnvironmentInfoConfig().getVariables();
+        envToEnvVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(variables));
+      }
+
+      final Optional<NGServiceOverridesEntity> ngServiceOverridesEntity =
+          serviceOverrideService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
+              AmbianceUtils.getProjectIdentifier(ambiance), environment.getIdentifier(),
+              parameters.getServiceRef().getValue());
+      NGServiceOverrideConfig ngServiceOverrides;
+      if (ngServiceOverridesEntity.isPresent()) {
+        ngServiceOverrides = mergeSvcOverrideInputs(ngServiceOverridesEntity.get().getYaml(),
+            parameters.getEnvToSvcOverrideInputs().get(environment.getIdentifier()));
+
+        svcOverrideVariables = ngServiceOverrides.getServiceOverrideInfoConfig().getVariables();
+        envToSvcVariables.put(environment.getIdentifier(), NGVariablesUtils.getMapOfVariables(svcOverrideVariables));
+      }
+    }
+
+    resolve(ambiance, envToEnvVariables, envToSvcVariables);
+
+    GitOpsEnvOutCome gitOpsEnvOutCome = new GitOpsEnvOutCome(envToEnvVariables, envToSvcVariables);
+
+    sweepingOutputService.consume(ambiance, GITOPS_ENV_OUTCOME, gitOpsEnvOutCome, StepCategory.STAGE.name());
+
+    processServiceVariables(ambiance, servicePartResponse, logCallback, null);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalManifestMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_MANIFESTS_SWEEPING_OUTPUT);
+
+    serviceStepOverrideHelper.prepareAndSaveFinalConfigFilesMetadataToSweepingOutput(
+        servicePartResponse.getNgServiceConfig(), null, null, ambiance, SERVICE_CONFIG_FILES_SWEEPING_OUTPUT);
+  }
+
+  private List<Environment> getEnvironmentsFromEnvRef(Ambiance ambiance, List<ParameterField<String>> envRefs) {
+    List<String> envRefsIds = envRefs.stream().map(e -> e.getValue()).collect(Collectors.toList());
+
+    List<Environment> environments =
+        environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(AmbianceUtils.getAccountId(ambiance),
+            AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), envRefsIds);
+
+    if (environments.isEmpty()) {
+      throw new InvalidRequestException(
+          "Unable to fetch environments from environment identifiers. Please verify if referred environments still exist");
+    }
+    return environments;
+  }
+
+  private NGEnvironmentConfig getNGEnvironmentConfig(Environment environment) {
+    NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+    environment.setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
+    return ngEnvironmentConfig;
   }
 
   private void executeEnvironmentPart(Ambiance ambiance, ServiceStepV3Parameters parameters,
@@ -212,13 +287,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         throw new InvalidRequestException("Environment " + envRef.getValue() + " not found");
       }
 
+      NGEnvironmentConfig ngEnvironmentConfig;
       // handle old environments
       if (isEmpty(environment.get().getYaml())) {
-        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment.get());
-        environment.get().setYaml(io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml(ngEnvironmentConfig));
+        getNGEnvironmentConfig(environment.get());
       }
 
-      NGEnvironmentConfig ngEnvironmentConfig;
       try {
         ngEnvironmentConfig = mergeEnvironmentInputs(environment.get().getYaml(), envInputs);
       } catch (IOException ex) {

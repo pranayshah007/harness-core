@@ -8,8 +8,10 @@
 package io.harness.ng.core.outbox;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.events.SecretForceDeleteEvent.SECRET_FORCE_DELETED;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 
 import static io.serializer.HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
 import static junit.framework.TestCase.assertEquals;
@@ -36,6 +38,7 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretRequestWrapper;
 import io.harness.ng.core.events.SecretCreateEvent;
 import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.events.SecretUpdateEvent;
 import io.harness.outbox.OutboxEvent;
 import io.harness.rule.Owner;
@@ -158,6 +161,38 @@ public class SecretEventHandlerTest extends CategoryTest {
     AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
     assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
     assertEquals(Action.DELETE, auditEntry.getAction());
+    assertNull(auditEntry.getNewYaml());
+    assertEquals(oldYaml, auditEntry.getOldYaml());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testForceDelete() throws JsonProcessingException {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    SecretDTOV2 secretDTO = getSecretDTOV2(orgIdentifier, identifier);
+    SecretForceDeleteEvent secretDeleteEvent = new SecretForceDeleteEvent(accountIdentifier, secretDTO);
+    String eventData = objectMapper.writeValueAsString(secretDeleteEvent);
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .id(randomAlphabetic(10))
+                                  .blocked(false)
+                                  .eventType(SECRET_FORCE_DELETED)
+                                  .eventData(eventData)
+                                  .resourceScope(secretDeleteEvent.getResourceScope())
+                                  .resource(secretDeleteEvent.getResource())
+                                  .createdAt(Long.parseLong(randomNumeric(5)))
+                                  .build();
+
+    String oldYaml = getYamlString(SecretRequestWrapper.builder().secret(secretDTO).build());
+
+    final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
+    verifyMethodInvocation(outboxEvent, auditEntryArgumentCaptor);
+
+    AuditEntry auditEntry = auditEntryArgumentCaptor.getValue();
+    assertAuditEntry(accountIdentifier, orgIdentifier, identifier, auditEntry, outboxEvent);
+    assertEquals(Action.FORCE_DELETE, auditEntry.getAction());
     assertNull(auditEntry.getNewYaml());
     assertEquals(oldYaml, auditEntry.getOldYaml());
   }

@@ -12,6 +12,7 @@ import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.core.beans.CompositeSLODebugResponse;
 import io.harness.cvng.core.beans.SLODebugResponse;
 import io.harness.cvng.core.beans.VerifyStepDebugResponse;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -22,16 +23,25 @@ import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.DebugService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
+import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 
@@ -45,6 +55,7 @@ import java.util.Set;
 
 public class DebugServiceImpl implements DebugService {
   @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject VerificationTaskService verificationTaskService;
@@ -55,15 +66,22 @@ public class DebugServiceImpl implements DebugService {
   @Inject VerificationJobInstanceService verificationJobInstanceService;
   @Inject ActivityService activityService;
   @Inject CVNGLogService cvngLogService;
+  @Inject OrchestrationService orchestrationService;
+  @Inject CompositeSLORecordService sloRecordService;
 
   @Override
   public SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier) {
+    AbstractServiceLevelObjective abstractServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
     ServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveService.getEntity(projectParams, identifier);
+    Preconditions.checkNotNull(abstractServiceLevelObjective, "Value of Identifier is not present in database");
 
-    Preconditions.checkNotNull(serviceLevelObjective, "Value of Identifier is not present in database");
+    Preconditions.checkArgument(abstractServiceLevelObjective.getType().equals(ServiceLevelObjectiveType.SIMPLE));
 
-    List<ServiceLevelIndicator> serviceLevelIndicatorList =
-        serviceLevelIndicatorService.getEntities(projectParams, serviceLevelObjective.getServiceLevelIndicators());
+    SimpleServiceLevelObjective simpleServiceLevelObjective =
+        (SimpleServiceLevelObjective) abstractServiceLevelObjective;
+    List<ServiceLevelIndicator> serviceLevelIndicatorList = serviceLevelIndicatorService.getEntities(
+        projectParams, simpleServiceLevelObjective.getServiceLevelIndicators());
 
     SLOHealthIndicator sloHealthIndicator =
         sloHealthIndicatorService.getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
@@ -95,6 +113,7 @@ public class DebugServiceImpl implements DebugService {
     return SLODebugResponse.builder()
         .projectParams(projectParams)
         .serviceLevelObjective(serviceLevelObjective)
+        .simpleServiceLevelObjective(simpleServiceLevelObjective)
         .serviceLevelIndicatorList(serviceLevelIndicatorList)
         .sloHealthIndicator(sloHealthIndicator)
         .sliIdentifierToVerificationTaskMap(sliIdentifierToVerificationTaskMap)
@@ -144,6 +163,74 @@ public class DebugServiceImpl implements DebugService {
         .verificationTaskIdToAnalysisStateMachineMap(verificationTaskIdToAnalysisStateMachineMap)
         .verificationTaskIdToCVNGApiLogMap(verificationTaskIdToCVNGApiLogMap)
         .verificationTaskIdToCVNGExecutionLogMap(verificationTaskIdToCVNGExecutionLogMap)
+        .build();
+  }
+
+  @Override
+  public CompositeSLODebugResponse getCompositeSLODebugResponse(ProjectParams projectParams, String identifier) {
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(projectParams, identifier);
+
+    Preconditions.checkNotNull(serviceLevelObjective, "Value of Identifier is not present in database");
+    Preconditions.checkArgument(serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE));
+
+    CompositeServiceLevelObjective compositeServiceLevelObjective =
+        (CompositeServiceLevelObjective) serviceLevelObjective;
+
+    List<SimpleServiceLevelObjective> simpleServiceLevelObjectives = new ArrayList<>();
+    List<ServiceLevelIndicator> serviceLevelIndicators = new ArrayList<>();
+    Map<String, List<SLIRecord>> sliIdentifierToSLIRecordsMap = new HashMap<>();
+
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
+      ProjectParams projectParamsForSimpleSLO = ProjectParams.builder()
+                                                    .projectIdentifier(objectivesDetail.getProjectIdentifier())
+                                                    .orgIdentifier(objectivesDetail.getOrgIdentifier())
+                                                    .accountIdentifier(objectivesDetail.getAccountId())
+                                                    .build();
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+              projectParamsForSimpleSLO, objectivesDetail.getServiceLevelObjectiveRef());
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      List<SLIRecord> sliRecords = sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), 100);
+      simpleServiceLevelObjectives.add(simpleServiceLevelObjective);
+      serviceLevelIndicators.add(serviceLevelIndicator);
+      sliIdentifierToSLIRecordsMap.put(serviceLevelIndicator.getUuid(), sliRecords);
+    }
+
+    VerificationTask verificationTask = verificationTaskService.getCompositeSLOTask(
+        projectParams.getAccountIdentifier(), compositeServiceLevelObjective.getUuid());
+
+    SLOHealthIndicator sloHealthIndicator = sloHealthIndicatorService.getBySLOIdentifier(projectParams, identifier);
+
+    AnalysisStateMachine analysisStateMachine =
+        analysisStateMachineService.getExecutingStateMachine(verificationTask.getUuid());
+
+    AnalysisOrchestrator analysisOrchestrator =
+        orchestrationService.getAnalysisOrchestrator(verificationTask.getUuid());
+
+    List<CompositeSLORecord> sloRecords =
+        sloRecordService.getLatestCountSLORecords(compositeServiceLevelObjective.getUuid(), 100);
+
+    return CompositeSLODebugResponse.builder()
+        .projectParams(projectParams)
+        .serviceLevelObjective(compositeServiceLevelObjective)
+        .simpleServiceLevelObjectives(simpleServiceLevelObjectives)
+        .serviceLevelIndicators(serviceLevelIndicators)
+        .sliIdentifierToSLIRecordsMap(sliIdentifierToSLIRecordsMap)
+        .sloHealthIndicator(sloHealthIndicator)
+        .verificationTask(verificationTask)
+        .analysisOrchestrator(analysisOrchestrator)
+        .analysisStateMachine(analysisStateMachine)
+        .sloRecords(sloRecords)
         .build();
   }
 

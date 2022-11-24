@@ -15,6 +15,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
@@ -54,6 +55,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -109,9 +111,9 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetLastObjectIdIfExists() {
     String objectId = "objectId";
-    doReturn(Optional.of(PipelineEntity.builder().objectIdOfYaml(objectId).build()))
-        .when(pipelineService)
-        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    Mockito
+        .when(pipelineService.getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+        .thenReturn(Optional.of(PipelineEntity.builder().objectIdOfYaml(objectId).build()));
     EntityGitDetails returnedEntityDetails =
         pipelineEntityGitSyncHelper.getEntityDetailsIfExists(accountId, pipelineYaml).get();
     verify(pipelineService, times(1))
@@ -128,9 +130,9 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     doReturn(PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(pipelineEntity).build())
         .when(pipelineService)
-        .validateAndCreatePipeline(any());
+        .validateAndCreatePipeline(any(), eq(true));
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.save(accountId, pipelineYaml);
-    verify(pipelineService, times(1)).validateAndCreatePipeline(any());
+    verify(pipelineService, times(1)).validateAndCreatePipeline(any(), eq(true));
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));
   }
 
@@ -143,9 +145,9 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     doReturn(PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(pipelineEntity).build())
         .when(pipelineService)
-        .validateAndCreatePipeline(any());
+        .validateAndCreatePipeline(any(), eq(true));
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.save(accountId, pipelineYaml);
-    verify(pipelineService, times(1)).validateAndCreatePipeline(any());
+    verify(pipelineService, times(1)).validateAndCreatePipeline(any(), eq(true));
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));
   }
 
@@ -158,9 +160,9 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(pipelineEntity).build();
-    doReturn(pipelineCRUDResult).when(pipelineService).validateAndUpdatePipeline(any(), any());
+    doReturn(pipelineCRUDResult).when(pipelineService).validateAndUpdatePipeline(any(), any(), eq(true));
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.update(accountId, pipelineYaml, ChangeType.NONE);
-    verify(pipelineService, times(1)).validateAndUpdatePipeline(any(), any());
+    verify(pipelineService, times(1)).validateAndUpdatePipeline(any(), any(), eq(true));
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));
   }
 

@@ -21,6 +21,7 @@ import io.harness.selection.log.DelegateSelectionLog;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 
 import software.wings.beans.DelegateConnection;
+import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 
 import java.util.Set;
 
@@ -36,6 +37,7 @@ public class DelegateServiceMorphiaRegistrar implements MorphiaRegistrar {
     set.add(PerpetualTaskRecord.class);
     set.add(DelegateRing.class);
     set.add(VersionOverride.class);
+    set.add(DelegateConnectionResult.class);
   }
 
   @Override

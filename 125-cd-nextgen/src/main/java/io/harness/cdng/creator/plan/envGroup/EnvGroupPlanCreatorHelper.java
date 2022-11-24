@@ -30,8 +30,8 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.plan.Dependency;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -63,10 +63,10 @@ public class EnvGroupPlanCreatorHelper {
   @Inject private KryoSerializer kryoSerializer;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
-      PlanCreationContextValue metadata, EnvironmentGroupYaml envGroupYaml) {
-    final String accountIdentifier = metadata.getAccountIdentifier();
-    final String orgIdentifier = metadata.getOrgIdentifier();
-    final String projectIdentifier = metadata.getProjectIdentifier();
+      PlanCreationContext ctx, EnvironmentGroupYaml envGroupYaml) {
+    final String accountIdentifier = ctx.getAccountIdentifier();
+    final String orgIdentifier = ctx.getOrgIdentifier();
+    final String projectIdentifier = ctx.getProjectIdentifier();
     final String envGroupIdentifier = envGroupYaml.getEnvGroupRef().getValue();
 
     final Optional<EnvironmentGroupEntity> entity =

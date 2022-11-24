@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class ConstraintViolationExceptionMapper implements ExceptionMapper<ConstraintViolationException> {
   @Override
   public Response toResponse(ConstraintViolationException exception) {
-    log.error("ConstraintViolationException while handling restcall", exception);
     ImmutableList<String> errors = ConstraintViolationHandlerUtils.getErrorMessages(exception);
 
     if (errors.isEmpty()) {
