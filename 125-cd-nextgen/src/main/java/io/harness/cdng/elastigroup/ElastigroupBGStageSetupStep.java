@@ -218,10 +218,9 @@ public class ElastigroupBGStageSetupStep
         (ElastigroupExecutionPassThroughData) passThroughData;
     ElastigroupSetupResponse elastigroupSetupResponse;
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = ElastigroupSetupDataOutcome.builder().build();
-    elastigroupSetupDataOutcome
-        .setResizeStrategy(elastigroupExecutionPassThroughData.getResizeStrategy())
-            elastigroupSetupDataOutcome.setElastigroupNamePrefix(
-                elastigroupExecutionPassThroughData.getElastigroupNamePrefix());
+    elastigroupSetupDataOutcome.setResizeStrategy(elastigroupExecutionPassThroughData.getResizeStrategy());
+    elastigroupSetupDataOutcome.setElastigroupNamePrefix(
+        elastigroupExecutionPassThroughData.getElastigroupNamePrefix());
     elastigroupSetupDataOutcome.setBlueGreen(elastigroupExecutionPassThroughData.isBlueGreen());
     elastigroupSetupDataOutcome.setAwsConnectorRef(elastigroupExecutionPassThroughData.getAwsConnectorRef());
     elastigroupSetupDataOutcome.setAwsRegion(elastigroupExecutionPassThroughData.getAwsRegion());
@@ -244,7 +243,6 @@ public class ElastigroupBGStageSetupStep
     elastigroupSetupDataOutcome.setNewElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup());
     elastigroupSetupDataOutcome.setLoadBalancerDetailsForBGDeployments(
         elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments());
-    elastigroupSetupDataOutcome.build();
 
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
@@ -265,7 +263,7 @@ public class ElastigroupBGStageSetupStep
     return stepResponseBuilder.status(Status.SUCCEEDED)
         .stepOutcome(StepResponse.StepOutcome.builder()
                          .name(OutcomeExpressionConstants.OUTPUT)
-                         .outcome(elastigroupSetupDataOutcome.build())
+                         .outcome(elastigroupSetupDataOutcome)
                          .build())
         .build();
   }
