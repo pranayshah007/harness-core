@@ -39,6 +39,7 @@ public class ElastigroupRollbackTaskParameters implements TaskParameters, Execut
   SpotConnectorDTO spotConnector;
   List<EncryptedDataDetail> encryptionDetails;
   int timeout;
+  boolean isSetupRollback;
   boolean isBlueGreen;
   private String elastigroupNamePrefix;
   private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;

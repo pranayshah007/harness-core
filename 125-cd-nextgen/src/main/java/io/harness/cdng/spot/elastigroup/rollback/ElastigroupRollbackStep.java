@@ -74,7 +74,7 @@ public class ElastigroupRollbackStep extends TaskExecutableWithRollbackAndRbac<E
               .timeout(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), StepUtils.DEFAULT_STEP_TIMEOUT))
               .build();
 
-      return stepHelper.prepareTaskRequest(ambiance, taskData, stepHelper.getExecutionUnits(),
+      return stepHelper.prepareTaskRequest(ambiance, taskData, stepHelper.getExecutionUnits(taskParameters),
           TaskType.ELASTIGROUP_ROLLBACK.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(
               emptyIfNull(getParameterFieldValue(elastigroupRollbackStepParameters.getDelegateSelectors()))));

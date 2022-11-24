@@ -14,6 +14,8 @@ import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.RENAME_OLD_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
@@ -55,6 +57,8 @@ import io.harness.steps.StepUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +67,15 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 @Slf4j
 public class ElastigroupRollbackStepHelper extends CDStepHelper {
+  private static final List<String> BG_SETUP_ROLLBACK_EXECUTION_UNITS =
+      Arrays.asList(DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
+  private static final List<String> BG_SWAP_ROLLBACK_EXECUTION_UNITS = Arrays.asList(UP_SCALE_COMMAND_UNIT,
+      UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, RENAME_OLD_COMMAND_UNIT, SWAP_ROUTES_COMMAND_UNIT,
+      DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
+  private static final List<String> BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS =
+      Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
+          DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
+
   @Inject private ElastigroupEntityHelper entityHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -85,6 +98,7 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
         .oldElastigroup(oldElastigroup)
         .timeout(getTimeoutInMin(stepElementParameters))
         .isBlueGreen(elastigroupSetupOutcome.isBlueGreen())
+        .isSetupRollback(!elastigroupSetupOutcome.isSuccessful())
         .elastigroupNamePrefix(elastigroupSetupOutcome.getElastigroupNamePrefix())
         .loadBalancerDetailsForBGDeployments(elastigroupSetupOutcome.getLoadBalancerDetailsForBGDeployments())
         .awsRegion(elastigroupSetupOutcome.getAwsRegion())
@@ -137,9 +151,26 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
     return (SpotConnectorDTO) connectorDTO.getConnectorConfig();
   }
 
-  public List<String> getExecutionUnits() {
-    return Arrays.asList(UP_SCALE_COMMAND_UNIT, UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DOWN_SCALE_COMMAND_UNIT,
-        DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT, DELETE_NEW_ELASTI_GROUP);
+  public Collection<String> getExecutionUnits() {
+    final HashSet<String> allExecutionUnits = new HashSet<>();
+
+    allExecutionUnits.addAll(BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS);
+    allExecutionUnits.addAll(BG_SETUP_ROLLBACK_EXECUTION_UNITS);
+    allExecutionUnits.addAll(BG_SWAP_ROLLBACK_EXECUTION_UNITS);
+
+    return allExecutionUnits;
+  }
+
+  public List<String> getExecutionUnits(ElastigroupRollbackTaskParameters parameters) {
+    if (parameters.isBlueGreen()) {
+      if (parameters.isSetupRollback()) {
+        return BG_SETUP_ROLLBACK_EXECUTION_UNITS;
+      } else {
+        return BG_SWAP_ROLLBACK_EXECUTION_UNITS;
+      }
+    } else {
+      return BASIC_AND_CANARY_ROLLBACK_EXECUTION_UNITS;
+    }
   }
 
   public StepResponse handleTaskFailure(Ambiance ambiance, StepElementParameters stepElementParameters, Exception e)
