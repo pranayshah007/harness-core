@@ -4549,6 +4549,22 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "GitOpsDeploymentRepoManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "GitStore": {
       "allOf": [
         {
@@ -6659,6 +6675,7 @@
             "Values",
             "ServerlessAwsLambda",
             "ReleaseRepo",
+            "DeploymentRepo",
             "EcsTaskDefinition",
             "EcsServiceDefinition",
             "EcsScalableTargetDefinition",
@@ -6668,6 +6685,22 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeploymentRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GitOpsDeploymentRepoManifest"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -10531,14 +10564,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "GitOpsUpdateReleaseRepo"
+                "const": "GitOpsFetchLinkedApps"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/UpdateReleaseRepoStepInfo"
+                "$ref": "#/definitions/FetchLinkedAppsStepInfo"
               }
             }
           }
@@ -10547,14 +10580,14 @@
           "if": {
             "properties": {
               "type": {
-                "const": "GitopsFetchLinkedApps"
+                "const": "GitOpsUpdateReleaseRepo"
               }
             }
           },
           "then": {
             "properties": {
               "spec": {
-                "$ref": "#/definitions/FetchLinkedAppsStepInfo"
+                "$ref": "#/definitions/UpdateReleaseRepoStepInfo"
               }
             }
           }

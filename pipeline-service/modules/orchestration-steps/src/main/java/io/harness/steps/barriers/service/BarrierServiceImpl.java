@@ -292,8 +292,7 @@ public class BarrierServiceImpl implements BarrierService, ForceProctor {
     if (PLAN.equals(metadata.get(LEVEL))) {
       PlanExecution planExecution;
       try {
-        planExecution = planExecutionService.get(forcerId.getValue());
-        status = planExecution.getStatus();
+        status = planExecutionService.getStatus(forcerId.getValue());
       } catch (InvalidRequestException e) {
         log.warn("Plan Execution was not found. State set to APPROACHING", e);
         return APPROACHING;

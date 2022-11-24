@@ -1,6 +1,6 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 7
+version : 8
 settings :
   - identifier: mandate_webhook_secrets_for_github_triggers
     name: Mandate Webhook Secrets for Github Triggers
@@ -58,6 +58,14 @@ settings :
     category: SCIM
     groupIdentifier: scim_jwt_token_configuration_g1
     valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_git_commands
+    name: Use Git client for commits
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
     allowOverrides: false
     allowedScopes:
       - ACCOUNT

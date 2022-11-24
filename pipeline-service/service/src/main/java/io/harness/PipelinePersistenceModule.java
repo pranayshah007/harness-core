@@ -23,6 +23,9 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.ReadPreference;
+import com.mongodb.Tag;
+import com.mongodb.TagSet;
+import org.mongodb.morphia.query.FindOptions;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -49,6 +52,16 @@ public class PipelinePersistenceModule extends SpringPersistenceModule {
     HMongoTemplate template =
         new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter(), primaryMongoConfig);
     template.setReadPreference(ReadPreference.secondary());
+    return template;
+  }
+
+  @Provides
+  @Singleton
+  @Named("analytics-mongo")
+  protected MongoTemplate getAnalyticsMongoTemplate(MongoTemplate mongoTemplate, MongoConfig primaryMongoConfig) {
+    HMongoTemplate template =
+        new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter(), primaryMongoConfig);
+    template.setReadPreference(ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))));
     return template;
   }
 }

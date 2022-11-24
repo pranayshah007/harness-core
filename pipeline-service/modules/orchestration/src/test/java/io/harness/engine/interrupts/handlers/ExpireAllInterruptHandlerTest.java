@@ -22,7 +22,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
@@ -88,7 +87,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(planExecutionService.get(planExecutionId)).thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     assertThatThrownBy(
         ()
             -> expireAllInterruptHandler.registerInterrupt(Interrupt.builder()
@@ -119,7 +118,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
                               .build();
 
     mongoTemplate.save(interrupt);
-    when(planExecutionService.get(planExecutionId)).thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     assertThatThrownBy(
         ()
             -> expireAllInterruptHandler.registerInterrupt(Interrupt.builder()
@@ -139,7 +138,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestRegisterInterruptPlanEnded() {
     String planExecutionId = generateUuid();
-    when(planExecutionService.get(planExecutionId)).thenReturn(PlanExecution.builder().status(Status.ABORTED).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.ABORTED);
     when(nodeExecutionService.getPipelineNodeExecution(planExecutionId))
         .thenReturn(Optional.of(NodeExecution.builder().status(Status.FAILED).build()));
     assertThatThrownBy(
@@ -161,7 +160,7 @@ public class ExpireAllInterruptHandlerTest extends OrchestrationTestBase {
   public void shouldTestRegisterInterruptSuccessful() {
     String planExecutionId = generateUuid();
     String interruptId = generateUuid();
-    when(planExecutionService.get(planExecutionId)).thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     assertThatThrownBy(
         ()
             -> expireAllInterruptHandler.registerInterrupt(Interrupt.builder()

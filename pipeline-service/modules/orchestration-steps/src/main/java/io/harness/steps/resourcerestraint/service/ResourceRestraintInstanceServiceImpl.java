@@ -111,8 +111,7 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       switch (scope) {
         case PLAN:
         case PIPELINE:
-          PlanExecution planExecution = planExecutionService.get(releaseEntityId);
-          finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());
+          finished = StatusUtils.finalStatuses().contains(planExecutionService.getStatus(releaseEntityId));
           break;
         case STAGE:
           NodeExecution nodeExecution =

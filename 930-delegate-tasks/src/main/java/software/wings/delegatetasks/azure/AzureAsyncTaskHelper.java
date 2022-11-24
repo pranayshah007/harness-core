@@ -580,14 +580,11 @@ public class AzureAsyncTaskHelper {
   }
 
   private String fetchAzureUserAccessToken(AzureConfig azureConfig) {
-    String scope =
-        null; // for ManagedIdentity we leave scope null as it is then defaulted to what the Azure SDK has defined
-    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
-        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
-      scope = AzureUtils.convertToScope(
-          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint());
-    }
-    return azureAuthorizationClient.getUserAccessToken(azureConfig, scope).getAccessToken();
+    return azureAuthorizationClient
+        .getUserAccessToken(azureConfig,
+            AzureUtils.convertToScope(
+                AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
+        .getAccessToken();
   }
 
   private void verifyAzureKubeConfig(AzureKubeConfig azureKubeConfig) {
@@ -691,19 +688,12 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
         azureConfigContext.getCertificateWorkingDirectory());
 
-    String azureAccessToken;
-    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
-        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
-      azureAccessToken =
-          azureAuthorizationClient
-              .getUserAccessToken(azureConfig,
-                  AzureUtils.convertToScope(
-                      AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
-              .getAccessToken();
-    } else {
-      // only MSI connection will/should reach here
-      azureAccessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();
-    }
+    String azureAccessToken =
+        azureAuthorizationClient
+            .getUserAccessToken(azureConfig,
+                AzureUtils.convertToScope(
+                    AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint()))
+            .getAccessToken();
 
     String refreshToken =
         azureContainerRegistryClient.getAcrRefreshToken(azureConfigContext.getContainerRegistry(), azureAccessToken);

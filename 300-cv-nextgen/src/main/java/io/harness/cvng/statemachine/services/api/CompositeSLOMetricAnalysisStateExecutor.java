@@ -7,46 +7,43 @@
 
 package io.harness.cvng.statemachine.services.api;
 
-import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.metrics.CVNGMetricsUtils;
+import io.harness.cvng.metrics.beans.SLOMetricContext;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
-import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
-import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
+import io.harness.cvng.servicelevelobjective.services.impl.SLIRecordServiceImpl;
+import io.harness.cvng.servicelevelobjective.services.impl.ServiceLevelObjectiveV2ServiceImpl;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
+import io.harness.metrics.service.api.MetricService;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecutor<CompositeSLOMetricAnalysisState> {
-  @Inject private SLIRecordService sliRecordService;
+  @Inject private SLIRecordServiceImpl sliRecordService;
 
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
 
-  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+  @Inject private ServiceLevelObjectiveV2ServiceImpl serviceLevelObjectiveV2Service;
 
   @Inject private CompositeSLORecordService compositeSLORecordService;
-
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
   @Inject private VerificationTaskService verificationTaskService;
 
@@ -54,6 +51,7 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
 
   @Inject private Clock clock;
 
+  @Inject private MetricService metricService;
   @Override
   public AnalysisState execute(CompositeSLOMetricAnalysisState analysisState) {
     String verificationTaskId = analysisState.getInputs().getVerificationTaskId();
@@ -76,38 +74,19 @@ public class CompositeSLOMetricAnalysisStateExecutor extends AnalysisStateExecut
     if (endTime.isAfter(startTime.plus(12, ChronoUnit.HOURS))) {
       endTime = startTime.plus(12, ChronoUnit.HOURS);
     }
-    Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
-    Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
-    for (ServiceLevelObjectivesDetail objectivesDetail :
-        compositeServiceLevelObjective.getServiceLevelObjectivesDetails()) {
-      ProjectParams projectParams = ProjectParams.builder()
-                                        .projectIdentifier(objectivesDetail.getProjectIdentifier())
-                                        .orgIdentifier(objectivesDetail.getOrgIdentifier())
-                                        .accountIdentifier(objectivesDetail.getAccountId())
-                                        .build();
-      SimpleServiceLevelObjective simpleServiceLevelObjective =
-          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
-              projectParams, objectivesDetail.getServiceLevelObjectiveRef());
-      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
-          "Only one service level indicator is supported");
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-          ProjectParams.builder()
-              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
-              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
-              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
-              .build(),
-          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
-      String sliId = serviceLevelIndicator.getUuid();
-      int sliVersion = serviceLevelIndicator.getVersion();
-      List<SLIRecord> sliRecords = sliRecordService.getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
-      serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
-      objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
-    }
-    if (serviceLevelObjectivesDetailSLIRecordMap.size()
+    Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
+        sloDetailsSLIRecordsAndSLIMissingDataType = sliRecordService.getSLODetailsSLIRecordsAndSLIMissingDataType(
+            compositeServiceLevelObjective.getServiceLevelObjectivesDetails(), startTime, endTime);
+    if (sloDetailsSLIRecordsAndSLIMissingDataType.getKey().size()
         == compositeServiceLevelObjective.getServiceLevelObjectivesDetails().size()) {
-      compositeSLORecordService.create(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap,
-          compositeServiceLevelObjective.getVersion(), verificationTaskId, startTime, endTime);
+      compositeSLORecordService.create(sloDetailsSLIRecordsAndSLIMissingDataType.getKey(),
+          sloDetailsSLIRecordsAndSLIMissingDataType.getValue(), compositeServiceLevelObjective.getVersion(),
+          verificationTaskId, startTime, endTime);
       sloHealthIndicatorService.upsert(compositeServiceLevelObjective);
+    }
+    try (SLOMetricContext sloMetricContext = new SLOMetricContext(compositeServiceLevelObjective)) {
+      metricService.recordDuration(CVNGMetricsUtils.SLO_DATA_ANALYSIS_METRIC,
+          Duration.between(clock.instant(), analysisState.getInputs().getStartTime()));
     }
     analysisState.setStatus(AnalysisStatus.SUCCESS);
     return analysisState;

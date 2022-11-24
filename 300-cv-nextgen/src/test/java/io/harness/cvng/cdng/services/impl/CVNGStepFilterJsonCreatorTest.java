@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -21,11 +22,16 @@ import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepType;
 import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
+import io.harness.cvng.cdng.services.api.CDStageMetaDataService;
+import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.filter.creation.FilterCreationResponse;
@@ -45,11 +51,14 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
@@ -62,6 +71,11 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private ChangeSourceService changeSourceService;
   @Inject private MetricPackService metricPackService;
+
+  @Mock private CDStageMetaDataService cdStageMetaDataService;
+
+  @Inject
+  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -79,6 +93,12 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
     envIdentifier = builderFactory.getContext().getEnvIdentifier();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
 
+    ResponseDTO<CDStageMetaDataDTO> responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder().serviceRef(serviceIdentifier).environmentRef(envIdentifier).build());
+    Mockito.when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
+
+    FieldUtils.writeField(verifyStepCvConfigServiceMap.get(MonitoredServiceSpecType.DEFAULT), "cdStageMetaDataService",
+        cdStageMetaDataService, true);
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", new HashMap<>(), true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
   }
@@ -141,8 +161,12 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   public void testHandleNode_whenServiceOrEnvIsRuntimeOrExpression() throws IOException {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    serviceIdentifier = "<+input>";
+    ResponseDTO<CDStageMetaDataDTO> responseDTO = ResponseDTO.newResponse(
+        CDStageMetaDataDTO.builder().serviceRef(serviceIdentifier).environmentRef(envIdentifier).build());
+    Mockito.when(cdStageMetaDataService.getServiceAndEnvironmentRef(any())).thenReturn(responseDTO);
     for (String yamlFilePath : YAML_FILE_PATHS) {
-      YamlField yamlField = getVerifyStepYamlField(yamlFilePath, "<+input>", "Prod");
+      YamlField yamlField = getVerifyStepYamlField(yamlFilePath, serviceIdentifier, envIdentifier);
       FilterCreationContextBuilder filterCreationContextBuilder =
           FilterCreationContext.builder().setupMetadata(SetupMetadata.newBuilder()
                                                             .setAccountId(accountId)

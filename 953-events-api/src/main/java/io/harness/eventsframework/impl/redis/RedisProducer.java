@@ -88,10 +88,9 @@ public class RedisProducer extends AbstractProducer {
       populateOtherProducerSpecificData(redisData);
 
       StreamMessageId messageId = stream.addAll(redisData, maxTopicSize, false);
+      redisData.remove(REDIS_STREAM_INTERNAL_KEY);
       log.info("Events framework message inserted - messageId: {}, metaData: {} in the topic: {}", messageId, redisData,
           this.getTopicName());
-      addMonitoring(message);
-      redisData.remove(REDIS_STREAM_INTERNAL_KEY);
       return messageId.toString();
     } catch (Exception ex) {
       log.error("Exception occurred in sendInternal", ex);

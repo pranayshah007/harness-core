@@ -184,6 +184,8 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.RollingSLOTarget;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveBuilder;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective.SimpleServiceLevelObjectiveBuilder;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob;
 import io.harness.cvng.verificationjob.entities.AutoVerificationJob.AutoVerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.BlueGreenVerificationJob;
@@ -1117,6 +1119,24 @@ public class BuilderFactory {
                           .build()))
                   .build())
         .userJourneyRefs(Collections.singletonList("userJourney"));
+  }
+
+  public SimpleServiceLevelObjectiveBuilder getSimpleServiceLevelObjectiveBuilder() {
+    return SimpleServiceLevelObjective.builder()
+        .type(ServiceLevelObjectiveType.SIMPLE)
+        .accountId(context.getAccountId())
+        .projectIdentifier(context.getProjectIdentifier())
+        .orgIdentifier(context.getOrgIdentifier())
+        .identifier("sloIdentifier")
+        .name("sloName")
+        .tags(Collections.singletonList(NGTag.builder().key("key").value("value").build()))
+        .desc("slo description")
+        .sloTarget(RollingSLOTarget.builder().periodLengthDays(30).build())
+        .sloTargetPercentage(80.0)
+        .serviceLevelIndicators(Collections.singletonList("sloIdentifier_metric1"))
+        .healthSourceIdentifier("healthSourceIdentifier")
+        .monitoredServiceIdentifier(context.serviceIdentifier + "_" + context.getEnvIdentifier())
+        .userJourneyIdentifiers(Collections.singletonList("userJourney"));
   }
 
   public SLOErrorBudgetResetDTOBuilder getSLOErrorBudgetResetDTOBuilder() {

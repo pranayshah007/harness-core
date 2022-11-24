@@ -21,8 +21,8 @@ import io.harness.engine.interrupts.InterruptService;
 import io.harness.engine.interrupts.helpers.ExpiryHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.StatusUtils;
 
@@ -70,7 +70,7 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
     }
 
     // Check if plan is running
-    PlanExecution planExecution = planExecutionService.get(interrupt.getPlanExecutionId());
+    Status planExecutionStatus = planExecutionService.getStatus(interrupt.getPlanExecutionId());
     Optional<NodeExecution> pipelineNodeExecution =
         nodeExecutionService.getPipelineNodeExecution(interrupt.getPlanExecutionId());
     if (pipelineNodeExecution.isEmpty()) {
@@ -78,7 +78,7 @@ public class ExpireAllInterruptHandler extends InterruptPropagatorHandler implem
           String.format("NodeExecution not found for pipeline node for planExecutionId %s and interruptId %s",
               interrupt.getPlanExecutionId(), interrupt.getUuid()));
     }
-    if (StatusUtils.isFinalStatus(planExecution.getStatus())
+    if (StatusUtils.isFinalStatus(planExecutionStatus)
         && StatusUtils.isFinalStatus(pipelineNodeExecution.get().getStatus())) {
       throw new InvalidRequestException("Plan Execution is already finished");
     }

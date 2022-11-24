@@ -26,6 +26,7 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.VALUES) VALUES(ManifestType.VALUES),
   @JsonProperty(ManifestType.ServerlessAwsLambda) SERVERLESS_AWS_LAMBDA(ManifestType.ServerlessAwsLambda),
   @JsonProperty(ManifestType.ReleaseRepo) RELEASE_REPO(ManifestType.ReleaseRepo),
+  @JsonProperty(ManifestType.DeploymentRepo) DEPLOYMENT_REPO(ManifestType.DeploymentRepo),
   @JsonProperty(ManifestType.EcsTaskDefinition) ECS_TASK_DEFINITION(ManifestType.EcsTaskDefinition),
   @JsonProperty(ManifestType.EcsServiceDefinition) ECS_SERVICE_DEFINITION(ManifestType.EcsServiceDefinition),
   @JsonProperty(ManifestType.EcsScalableTargetDefinition)

@@ -7,10 +7,15 @@
 
 package io.harness.cvng.servicelevelobjective.services.impl;
 
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
+import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.NO_DATA;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.KARAN_SARASWAT;
+import static io.harness.rule.OwnerRule.SATHISH;
 import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +35,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
 import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.core.beans.TimeGraphResponse;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
@@ -72,6 +78,7 @@ import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTarg
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
@@ -97,6 +104,7 @@ import io.serializer.HObjectMapper;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -128,6 +136,7 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   @Mock SideKickService sideKickService;
   @Inject private OutboxService outboxService;
   @Inject private Map<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMap;
+  @Inject private SLIRecordServiceImpl sliRecordService;
 
   private BuilderFactory builderFactory;
   ProjectParams projectParams;
@@ -2121,6 +2130,66 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     assertThat(serviceLevelObjectiveDeleteEvent.getOldServiceLevelObjectiveDTO()).isEqualTo(compositeSLODTO);
   }
 
+  @Test
+  @Owner(developers = SATHISH)
+  @Category(UnitTests.class)
+  public void testGetOnboardingGraph() throws IllegalAccessException {
+    FieldUtils.writeField(serviceLevelObjectiveV2Service, "clock", clock, true);
+
+    createMonitoredService();
+
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        CompositeServiceLevelObjectiveSpec.builder()
+            .serviceLevelObjectivesDetails(
+                Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                  .weightagePercentage(75.0)
+                                  .accountId(simpleServiceLevelObjective1.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                  .build(),
+                    ServiceLevelObjectiveDetailsDTO.builder()
+                        .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                        .weightagePercentage(25.0)
+                        .accountId(simpleServiceLevelObjective2.getAccountId())
+                        .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                        .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                        .build()))
+            .build();
+    TimeGraphResponse timeGraphResponse =
+        serviceLevelObjectiveV2Service.getOnboardingGraph(compositeServiceLevelObjectiveSpec);
+    assert timeGraphResponse != null;
+    assertThat(timeGraphResponse.getDataPoints()).isNotNull();
+    assertThat(timeGraphResponse.getDataPoints()).isEmpty();
+
+    String sliId1 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective1.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    String sliId2 = serviceLevelIndicatorService
+                        .getServiceLevelIndicator(builderFactory.getProjectParams(),
+                            simpleServiceLevelObjective2.getServiceLevelIndicators().get(0))
+                        .getUuid();
+    createSLIRecords(sliId1);
+    createSLIRecords(sliId2);
+
+    timeGraphResponse = serviceLevelObjectiveV2Service.getOnboardingGraph(compositeServiceLevelObjectiveSpec);
+    assert timeGraphResponse != null;
+    assertThat(timeGraphResponse.getDataPoints()).isNotNull();
+    assertThat(timeGraphResponse.getDataPoints()).isNotEmpty();
+    assertThat(timeGraphResponse.getDataPoints().size()).isEqualTo(10);
+    assertThat(timeGraphResponse.getDataPoints().get(0).getValue()).isEqualTo(0.0);
+    assertThat(timeGraphResponse.getDataPoints().get(1).getValue()).isEqualTo(50.0);
+    assertThat(timeGraphResponse.getDataPoints().get(2).getValue()).isEqualTo(66.66666666666667);
+    assertThat(timeGraphResponse.getDataPoints().get(3).getValue()).isEqualTo(75.0);
+    assertThat(timeGraphResponse.getDataPoints().get(4).getValue()).isEqualTo(80.0);
+    assertThat(timeGraphResponse.getDataPoints().get(5).getValue()).isEqualTo(83.33333333333333);
+    assertThat(timeGraphResponse.getDataPoints().get(6).getValue()).isEqualTo(71.42857142857143);
+    assertThat(timeGraphResponse.getDataPoints().get(7).getValue()).isEqualTo(62.5);
+    assertThat(timeGraphResponse.getDataPoints().get(8).getValue()).isEqualTo(55.55555555555556);
+    assertThat(timeGraphResponse.getDataPoints().get(9).getValue()).isEqualTo(50.0);
+  }
+
   private ServiceLevelObjectiveV2DTO createSLOBuilder() {
     return builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
   }
@@ -2129,5 +2198,22 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+  }
+
+  private void createSLIRecords(String sliId) {
+    Instant startTime = clock.instant().minus(Duration.ofMinutes(10));
+    List<SLIRecord.SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
+    List<SLIRecordParam> sliRecordParams = getSLIRecordParam(startTime, sliStates);
+    sliRecordService.create(sliRecordParams, sliId, "verificationTaskId", 0);
+  }
+
+  private List<SLIRecordParam> getSLIRecordParam(Instant startTime, List<SLIRecord.SLIState> sliStates) {
+    List<SLIRecordParam> sliRecordParams = new ArrayList<>();
+    for (int i = 0; i < sliStates.size(); i++) {
+      SLIRecord.SLIState sliState = sliStates.get(i);
+      sliRecordParams.add(
+          SLIRecordParam.builder().sliState(sliState).timeStamp(startTime.plus(Duration.ofMinutes(i))).build());
+    }
+    return sliRecordParams;
   }
 }

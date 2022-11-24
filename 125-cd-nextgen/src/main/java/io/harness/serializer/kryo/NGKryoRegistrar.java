@@ -29,6 +29,8 @@ import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepInfo;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepParams;
+import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
+import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
@@ -197,5 +199,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ElastigroupDeployStepInfo.class, 12617);
     kryo.register(ElastigroupRollbackStepInfo.class, 12618);
     kryo.register(ElastigroupSetupStepInfo.class, 12619);
+    kryo.register(FetchLinkedAppsStepParams.class, 12620);
+    kryo.register(GitOpsLinkedAppsOutcome.class, 12621);
   }
 }

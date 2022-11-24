@@ -65,19 +65,15 @@ public class RuleExecutionDAO {
     }
     if (ruleExecutionFilter.getRegion() != null) {
       query.field(RuleExecutionKeys.targetRegions).in(ruleExecutionFilter.getRegion());
-      log.info("Added  target Regions filter");
     }
     if (ruleExecutionFilter.getExecutionStatus() != null) {
       query.field(RuleExecutionKeys.executionStatus).equal(ruleExecutionFilter.getExecutionStatus());
-      log.info("Added Execution Status filter");
     }
     if (ruleExecutionFilter.getCloudProvider() != null) {
       query.field(RuleExecutionKeys.cloudProvider).equal(ruleExecutionFilter.getCloudProvider());
-      log.info("Added  cloud Provider filter");
     }
     if (ruleExecutionFilter.getTime() != null) {
       for (CCMTimeFilter time : ruleExecutionFilter.getTime()) {
-        log.info("Added time filter {}", time.getOperator());
         switch (time.getOperator()) {
           case AFTER:
             query.field(RuleExecutionKeys.lastUpdatedAt).greaterThanOrEq(time.getTimestamp());
@@ -90,8 +86,6 @@ public class RuleExecutionDAO {
         }
       }
     }
-    log.info("list size {}", query.asList().size());
-    log.info("stream size  limit {} page {}", ruleExecutionFilter.getLimit(), ruleExecutionFilter.getOffset());
     ruleExecutionList.setTotalItems(query.asList().size());
     ruleExecutionList.setRuleExecution(query.limit(ruleExecutionFilter.getLimit())
                                            .offset(ruleExecutionFilter.getOffset())

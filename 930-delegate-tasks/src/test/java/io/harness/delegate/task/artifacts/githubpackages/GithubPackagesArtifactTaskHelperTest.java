@@ -451,7 +451,7 @@ public class GithubPackagesArtifactTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
-  public void testThrowException() throws Exception {
+  public void testThrowException() {
     SecretRefData secretRefData =
         SecretRefData.builder().identifier("id").decryptedValue("token".toCharArray()).scope(Scope.ACCOUNT).build();
 
@@ -537,8 +537,7 @@ public class GithubPackagesArtifactTaskHelperTest extends CategoryTest {
     when(githubPackagesArtifactTaskHandler.getBuilds(githubPackagesArtifactDelegateRequest))
         .thenThrow(new GithubPackagesServerRuntimeException("error"));
 
-    assertThatThrownBy(() -> githubPackagesArtifactTaskHandler.getBuilds(githubPackagesArtifactDelegateRequest))
-        .hasMessage("error")
+    assertThatThrownBy(() -> githubPackagesArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters))
         .isInstanceOf(GithubPackagesServerRuntimeException.class);
   }
 }

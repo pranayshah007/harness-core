@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ngexception.ErrorMetadataDTO;
 import io.harness.exception.runtime.HashiCorpVaultRuntimeException;
 
 import java.util.EnumSet;
@@ -130,6 +131,22 @@ public class ExceptionUtils {
         return (WingsException) exception.getCause();
       }
       exception = exception.getCause();
+    }
+    return null;
+  }
+
+  public static ErrorMetadataDTO getErrorMetadata(Throwable ex, String metadataType) {
+    if (metadataType == null) {
+      return null;
+    }
+    while (ex != null) {
+      if (ex instanceof WingsException) {
+        WingsException exception = (WingsException) ex;
+        if (exception.getMetadata() != null && metadataType.equals(exception.getMetadata().getType())) {
+          return exception.getMetadata();
+        }
+      }
+      ex = ex.getCause();
     }
     return null;
   }

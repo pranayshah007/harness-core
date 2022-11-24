@@ -130,6 +130,16 @@ ciExecutionServiceConfig:
   defaultMemoryLimit: 500
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
+  executionLimits:
+    free:
+      defaultTotalExecutionCount: 20
+      defaultMacExecutionCount: 5
+    team:
+      defaultTotalExecutionCount: 50
+      defaultMacExecutionCount: 10
+    enterprise:
+      defaultTotalExecutionCount: 100
+      defaultMacExecutionCount: 10      
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:1.14.19

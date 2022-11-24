@@ -13,6 +13,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -70,15 +71,25 @@ public final class RuleEnforcement implements PersistentEntity, UuidAware, Creat
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("RuleEnforcement")
+                 .name("ruleEnforcement")
                  .field(RuleEnforcementId.name)
                  .field(RuleEnforcementId.accountId)
                  .field(RuleEnforcementId.cloudProvider)
                  .field(RuleEnforcementId.orgIdentifier)
                  .field(RuleEnforcementId.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(RuleEnforcementId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(RuleEnforcementId.createdAt).build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort1")
+                 .field(RuleEnforcementId.name)
+                 .field(RuleEnforcementId.accountId)
+                 .sortField(RuleEnforcementId.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort2")
+                 .field(RuleEnforcementId.name)
+                 .field(RuleEnforcementId.accountId)
+                 .sortField(RuleEnforcementId.createdAt)
+                 .build())
         .build();
   }
   public RuleEnforcement toDTO() {

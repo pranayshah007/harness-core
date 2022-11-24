@@ -422,8 +422,6 @@ orchestrationRedisEventsConfig:
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
-  reduceOrchestrationLog: ${REDUCE_ORCHESTRATION_EVENT_LOG:-false}
-  shouldUseBatching: ${ORCHESTRATION_LOG_SHOULD_USE_BATCHING:-false}
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}

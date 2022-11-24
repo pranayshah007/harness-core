@@ -17,6 +17,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.filters.Entity;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -26,6 +28,8 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
@@ -50,6 +54,7 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -172,7 +177,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     } else if (deploymentStageConfig.getEnvironmentGroup() != null) {
       addFiltersFromEnvironmentGroup(filterCreationContext, deploymentStageConfig.getEnvironmentGroup());
     } else if (deploymentStageConfig.getEnvironments() != null) {
-      if (!deploymentStageConfig.getEnvironments().getValues().isExpression()) {
+      if (ParameterField.isNotNull(deploymentStageConfig.getEnvironments().getValues())
+          && !deploymentStageConfig.getEnvironments().getValues().isExpression()) {
         for (EnvironmentYamlV2 environmentYamlV2 : deploymentStageConfig.getEnvironments().getValues().getValue()) {
           addFiltersFromEnvironment(
               filterCreationContext, filterBuilder, environmentYamlV2, deploymentStageConfig.getGitOpsEnabled());
@@ -188,18 +194,34 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   private void addFiltersFromEnvironment(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       EnvironmentYamlV2 env, boolean gitOpsEnabled) {
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
-    if (environmentRef == null || environmentRef.fetchFinalValue() == null) {
+    if (ParameterField.isNull(environmentRef)) {
       throw new InvalidYamlRuntimeException(
           format("environmentRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    final ParameterField<Boolean> deployToAll = env.getDeployToAll();
+    if (ParameterField.isNotNull(env.getFilters()) && !env.getFilters().isExpression()
+        && EmptyPredicate.isNotEmpty(env.getFilters().getValue())) {
+      Set<Entity> unsupportedEntities = env.getFilters()
+                                            .getValue()
+                                            .stream()
+                                            .map(FilterYaml::getOn)
+                                            .flatMap(EnumSet::stream)
+                                            .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
+                                            .collect(Collectors.toSet());
+      if (!unsupportedEntities.isEmpty()) {
+        throw new InvalidYamlRuntimeException(
+            format("Environment filters can only support [%s]. Please add the correct filters in stage [%s]",
+                HarnessStringUtils.join(",", Entity.infrastructures.name(), Entity.gitOpsClusters.name()),
+                YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+    }
+
     if (!gitOpsEnabled) {
       if (ParameterField.isNull(env.getInfrastructureDefinition())
-          && ParameterField.isNull(env.getInfrastructureDefinitions())) {
+          && ParameterField.isNull(env.getInfrastructureDefinitions()) && ParameterField.isNull(env.getFilters())) {
         throw new InvalidYamlRuntimeException(format(
-            "InfrastructureDefinition or InfrastructureDefinitions must be specified for environment in stage [%s]",
+            "InfrastructureDefinition or InfrastructureDefinitions or filters must be specified for environment in stage [%s]",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
     }
@@ -208,56 +230,63 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Optional<Environment> environmentEntityOptional = environmentService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), environmentRef.getValue(), false);
-      if (environmentEntityOptional.isPresent()) {
-        final Environment entity = environmentEntityOptional.get();
-        filterBuilder.environmentName(entity.getName());
-
-        List<InfraStructureDefinitionYaml> infraList = new ArrayList<>();
-        if (ParameterField.isNotNull(env.getInfrastructureDefinitions())) {
-          if (!env.getInfrastructureDefinitions().isExpression()) {
-            infraList.addAll(env.getInfrastructureDefinitions().getValue());
-          }
-        } else if (ParameterField.isNotNull(env.getInfrastructureDefinition())) {
-          if (!env.getInfrastructureDefinition().isExpression()) {
-            infraList.add(env.getInfrastructureDefinition().getValue());
-          }
-        }
-
-        if (isNotEmpty(infraList)) {
-          List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructureFromIdentifierList(
-              filterCreationContext.getSetupMetadata().getAccountId(),
-              filterCreationContext.getSetupMetadata().getOrgId(),
-              filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
-              infraList.stream()
-                  .map(InfraStructureDefinitionYaml::getIdentifier)
-                  .filter(field -> !field.isExpression())
-                  .map(ParameterField::getValue)
-                  .collect(Collectors.toList()));
-          for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
-            if (infrastructureEntity.getType() == null) {
-              throw new InvalidRequestException(format(
-                  "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
-                  infrastructureEntity.getIdentifier(), infrastructureEntity.getEnvIdentifier()));
-            }
-            filterBuilder.infrastructureType(infrastructureEntity.getType().getDisplayName());
-          }
-        }
-      }
+      environmentEntityOptional.ifPresent(environment -> {
+        filterBuilder.environmentName(environment.getName());
+        final List<InfraStructureDefinitionYaml> infraList = getInfraStructureDefinitionYamlsList(env);
+        addFiltersForInfraYamlList(filterCreationContext, filterBuilder, environment, infraList);
+      });
     }
 
+    final ParameterField<Boolean> deployToAll = env.getDeployToAll();
     if (gitOpsEnabled && !deployToAll.isExpression()) {
-      if (deployToAll.getValue() && env.getGitOpsClusters() != null
-          && env.getGitOpsClusters().fetchFinalValue() != null) {
+      if (deployToAll.getValue() && ParameterField.isNotNull(env.getGitOpsClusters())) {
         throw new InvalidYamlRuntimeException(format(
             "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
-      if (!deployToAll.getValue() && env.getGitOpsClusters() != null
-          && env.getGitOpsClusters().fetchFinalValue() == null) {
+      if (!deployToAll.getValue() && ParameterField.isNull(env.getGitOpsClusters())
+          && ParameterField.isNull(env.getFilters())) {
         throw new InvalidYamlRuntimeException(format(
-            "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
+            "When deploy to all is false, list of gitops clusters or filters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
+    }
+  }
+
+  private List<InfraStructureDefinitionYaml> getInfraStructureDefinitionYamlsList(EnvironmentYamlV2 env) {
+    List<InfraStructureDefinitionYaml> infraList = new ArrayList<>();
+    if (ParameterField.isNotNull(env.getInfrastructureDefinitions())) {
+      if (!env.getInfrastructureDefinitions().isExpression()) {
+        infraList.addAll(env.getInfrastructureDefinitions().getValue());
+      }
+    } else if (ParameterField.isNotNull(env.getInfrastructureDefinition())) {
+      if (!env.getInfrastructureDefinition().isExpression()) {
+        infraList.add(env.getInfrastructureDefinition().getValue());
+      }
+    }
+    return infraList;
+  }
+
+  private void addFiltersForInfraYamlList(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
+      Environment entity, List<InfraStructureDefinitionYaml> infraList) {
+    if (isEmpty(infraList)) {
+      return;
+    }
+    List<InfrastructureEntity> infrastructureEntities = infraService.getAllInfrastructureFromIdentifierList(
+        filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
+        filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
+        infraList.stream()
+            .map(InfraStructureDefinitionYaml::getIdentifier)
+            .filter(field -> !field.isExpression())
+            .map(ParameterField::getValue)
+            .collect(Collectors.toList()));
+    for (InfrastructureEntity infrastructureEntity : infrastructureEntities) {
+      if (infrastructureEntity.getType() == null) {
+        throw new InvalidRequestException(format(
+            "Infrastructure Definition [%s] in environment [%s] does not have an associated type. Please select a type for the infrastructure and try again",
+            infrastructureEntity.getIdentifier(), infrastructureEntity.getEnvIdentifier()));
+      }
+      filterBuilder.infrastructureType(infrastructureEntity.getType().getDisplayName());
     }
   }
 
@@ -287,14 +316,14 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
 
   private void addFiltersForServices(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
       ServicesYaml services, ServiceDefinitionType deploymentType) {
-    List<String> serviceRefs = new ArrayList<>();
-
     if (services.getValues().isExpression()) {
       return;
     }
+
+    final List<String> serviceRefs = new ArrayList<>();
     for (ServiceYamlV2 serviceYamlV2 : services.getValues().getValue()) {
       final ParameterField<String> serviceEntityRef = serviceYamlV2.getServiceRef();
-      if (serviceEntityRef == null || serviceEntityRef.fetchFinalValue() == null) {
+      if (ParameterField.isNull(serviceEntityRef)) {
         throw new InvalidYamlRuntimeException(format(
             "serviceRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
             YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));

@@ -3520,6 +3520,91 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "PluginStepInfoV1": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "uses": {
+              "type": "string"
+            },
+            "with": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldMapStringJsonNode"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PodSetupInfo": {
       "type": "object",
       "required": [
@@ -4445,6 +4530,117 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ScriptStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "run"
+          ],
+          "properties": {
+            "env": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "image": {
+              "type": "string"
+            },
+            "outputs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "privileged": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "pull": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "always",
+                    "never",
+                    "if-not-exists"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resources": {
+              "$ref": "#/definitions/ContainerResource"
+            },
+            "run": {
+              "type": "string"
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "sh",
+                    "bash",
+                    "powershell",
+                    "pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "user": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32"
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SecretNGVariable": {
       "allOf": [
         {
@@ -5028,6 +5224,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/SecurityStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "plugin"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/PluginStepInfoV1"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "script"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ScriptStepInfo"
               }
             }
           }

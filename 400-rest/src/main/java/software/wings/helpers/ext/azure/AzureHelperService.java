@@ -17,7 +17,6 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 
-import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -51,6 +50,7 @@ import com.azure.core.management.profile.AzureProfile;
 import com.azure.identity.ClientSecretCredential;
 import com.azure.identity.ClientSecretCredentialBuilder;
 import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.PowerState;
 import com.azure.resourcemanager.compute.models.VirtualMachine;
 import com.azure.resourcemanager.containerservice.models.OSType;
 import com.azure.resourcemanager.keyvault.models.Vault;
@@ -251,7 +251,7 @@ public class AzureHelperService {
   }
 
   private boolean isVmRunning(VirtualMachine vm) {
-    return vm.powerState().equals(RUNNING);
+    return vm.powerState().equals(PowerState.RUNNING);
   }
 
   public PageResponse<Host> listHosts(AzureInfrastructureMapping azureInfrastructureMapping,

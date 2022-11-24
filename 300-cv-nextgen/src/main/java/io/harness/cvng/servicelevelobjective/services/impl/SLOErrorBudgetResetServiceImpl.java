@@ -10,12 +10,12 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.events.servicelevelobjective.ServiceLevelObjectiveErrorBudgetResetEvent;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset;
 import io.harness.cvng.servicelevelobjective.entities.SLOErrorBudgetReset.SLOErrorBudgetResetKeys;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetService {
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
   @Inject private OutboxService outboxService;
@@ -41,7 +41,7 @@ public class SLOErrorBudgetResetServiceImpl implements SLOErrorBudgetResetServic
   @Override
   public SLOErrorBudgetResetDTO resetErrorBudget(
       ProjectParams projectParams, SLOErrorBudgetResetDTO sloErrorBudgetResetDTO) {
-    ServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveService.getEntity(
+    AbstractServiceLevelObjective serviceLevelObjective = serviceLevelObjectiveService.getEntity(
         projectParams, sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());
     Preconditions.checkNotNull(serviceLevelObjective, "SLO with identifier:%s not found",
         sloErrorBudgetResetDTO.getServiceLevelObjectiveIdentifier());

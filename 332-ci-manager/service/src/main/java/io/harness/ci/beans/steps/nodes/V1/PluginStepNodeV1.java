@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.beans.steps.nodes;
+package io.harness.beans.steps.nodes.V1;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
@@ -16,11 +16,10 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfoType;
-import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.steps.stepinfo.V1.PluginStepInfoV1;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import javax.validation.constraints.NotNull;
@@ -28,35 +27,32 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("run_tests")
-@TypeAlias("RunTestsStepNodeV1")
+@JsonTypeName("plugin")
 @OwnedBy(CI)
-@RecasterAlias("io.harness.beans.steps.nodes.RunTestStepNodeV1")
-public class RunTestStepNodeV1 extends CIAbstractStepNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.run_tests;
+@RecasterAlias("io.harness.beans.steps.nodes.V1.PluginStepNodeV1")
+public class PluginStepNodeV1 extends CIAbstractStepNode {
+  @JsonProperty("type") @NotNull PluginStepNodeV1.StepType type = StepType.PLUGIN;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  @JsonSubTypes({ @JsonSubTypes.Type(value = RunTestsStepInfo.class, name = "run_tests") })
-  RunTestsStepInfo runTestsStepInfo;
+  PluginStepInfoV1 pluginStepInfo;
   @Override
   public String getType() {
-    return CIStepInfoType.RUN_TESTS_V1.getDisplayName();
+    return CIStepInfoType.PLUGIN_V1.getDisplayName();
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return runTestsStepInfo;
+    return pluginStepInfo;
   }
 
-  enum StepType {
-    run_tests(CIStepInfoType.RUN_TESTS_V1.getDisplayName());
-    @Getter String name;
+  public enum StepType {
+    @JsonProperty("plugin") PLUGIN(CIStepInfoType.PLUGIN_V1.getDisplayName());
+    @Getter final String name;
     StepType(String name) {
       this.name = name;
     }

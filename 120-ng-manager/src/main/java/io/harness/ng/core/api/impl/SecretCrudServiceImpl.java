@@ -472,7 +472,8 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       }
 
       if (remoteDeletionSuccess) {
-        localDeletionSuccess = ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+        localDeletionSuccess =
+            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete);
       }
       if (remoteDeletionSuccess && localDeletionSuccess) {
         secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
@@ -498,7 +499,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
           get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (optionalSecret.isPresent()) {
         boolean deletionSuccess =
-            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+            ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
         if (deletionSuccess) {
           secretEntityReferenceHelper.deleteSecretEntityReferenceWhenSecretGetsDeleted(accountIdentifier, orgIdentifier,
               projectIdentifier, identifier, getSecretManagerIdentifier(optionalSecret.get().getSecret()));

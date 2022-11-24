@@ -115,7 +115,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
     return ImmutableList
         .<MongoIndex>builder()
         // PlanExecutionMonitorService
-        .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
+        .add(CompoundMongoIndex.builder().name("status_idx").field(PlanExecutionKeys.status).build())
         // findPrevUnTerminatedPlanExecutionsByExecutionTag
         .add(SortCompoundMongoIndex.builder()
                  .name("exec_tag_status_idx")
@@ -129,7 +129,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
                  .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                 .field(NodeExecutionKeys.status)
+                 .field(PlanExecutionKeys.status)
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())
         .build();

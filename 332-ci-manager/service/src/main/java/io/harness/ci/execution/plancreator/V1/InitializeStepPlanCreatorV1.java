@@ -9,6 +9,7 @@ package io.harness.ci.plancreator.V1;
 
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,8 +18,12 @@ import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.steps.nodes.InitializeStepNode;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreatorV2;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
@@ -54,17 +59,17 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
   @Inject private CILicenseService ciLicenseService;
 
   public PlanCreationResponse createPlan(PlanCreationContext ctx, IntegrationStageNodeV1 integrationStageNodeV1,
-      CodeBase codebase, ExecutionSource executionSource, List<ExecutionWrapperConfig> executionWrapperConfigs,
-      String childID) {
+      CodeBase codebase, ExecutionSource executionSource, Infrastructure infrastructure,
+      List<ExecutionWrapperConfig> executionWrapperConfigs, String childID) {
     // create PluginStepNode
     InitializeStepNode initializeStepNode =
-        getStepNode(ctx, codebase, integrationStageNodeV1, executionSource, executionWrapperConfigs);
+        getStepNode(ctx, codebase, integrationStageNodeV1, executionSource, infrastructure, executionWrapperConfigs);
     // create Plan node
     return createInternalStepPlan(ctx, initializeStepNode, childID);
   }
 
   private InitializeStepNode getStepNode(PlanCreationContext ctx, CodeBase codeBase,
-      IntegrationStageNodeV1 integrationStageNodeV1, ExecutionSource executionSource,
+      IntegrationStageNodeV1 integrationStageNodeV1, ExecutionSource executionSource, Infrastructure infrastructure,
       List<ExecutionWrapperConfig> executionWrapperConfigs) {
     String accountId = ctx.getAccountIdentifier();
     List<ExecutionWrapperConfig> expandedExecutionElement = new ArrayList<>();
@@ -85,8 +90,6 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
       strategyExpansionMap.putAll(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData());
     }
     IntegrationStageConfigImplV1 integrationStageConfigImplV1 = integrationStageNodeV1.getStageConfig();
-    // TODO: use exact infra later
-    Infrastructure infrastructure = IntegrationStageUtils.getInfrastructureV2();
     InitializeStepInfo initializeStepInfo =
         InitializeStepInfo.builder()
             .identifier(InitializeStepInfo.STEP_TYPE.getType())
@@ -123,22 +126,27 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
     if (infrastructure == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
-    // TODO: add infra check
 
-    //    if (infrastructure.getType() == Infrastructure.Type.VM) {
-    //      vmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
-    //      VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
-    //      return parseTimeout(vmPoolYaml.getSpec().getInitTimeout(), "15m");
-    //    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
-    //      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
-    //        throw new CIStageExecutionException("Input infrastructure can not be empty");
-    //      }
-    //      ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
-    //      return parseTimeout(timeout, "10m");
-    //    } else {
-    //      return ParameterField.createValueField(Timeout.fromString("10m"));
-    //    }
+    if (infrastructure.getType() == Infrastructure.Type.VM) {
+      VmInitializeTaskParamsBuilder.validateInfrastructure(infrastructure);
+      VmPoolYaml vmPoolYaml = (VmPoolYaml) ((VmInfraYaml) infrastructure).getSpec();
+      return parseTimeout(vmPoolYaml.getSpec().getInitTimeout(), "15m");
+    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
+      if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+        throw new CIStageExecutionException("Input infrastructure can not be empty");
+      }
+      ParameterField<String> timeout = ((K8sDirectInfraYaml) infrastructure).getSpec().getInitTimeout();
+      return parseTimeout(timeout, "10m");
+    }
     return ParameterField.createValueField(Timeout.fromString("10m"));
+  }
+
+  private ParameterField<Timeout> parseTimeout(ParameterField<String> timeout, String defaultTimeout) {
+    if (timeout != null && timeout.fetchFinalValue() != null && isNotEmpty((String) timeout.fetchFinalValue())) {
+      return ParameterField.createValueField(Timeout.fromString((String) timeout.fetchFinalValue()));
+    } else {
+      return ParameterField.createValueField(Timeout.fromString(defaultTimeout));
+    }
   }
 
   @Override
