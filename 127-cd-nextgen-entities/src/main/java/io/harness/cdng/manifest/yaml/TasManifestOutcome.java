@@ -13,7 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,7 +34,7 @@ public class TasManifestOutcome implements ManifestOutcome {
   String identifier;
   String type = ManifestType.TAS_MANIFEST;
   StoreConfig store;
-  CfCliVersion cfCliVersion;
+  CfCliVersionNG cfCliVersion;
   ParameterField<List<String>> varsPaths;
   ParameterField<List<String>> autoScalerPath;
 }
