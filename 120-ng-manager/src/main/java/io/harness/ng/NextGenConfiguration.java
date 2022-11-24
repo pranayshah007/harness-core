@@ -148,7 +148,8 @@ public class NextGenConfiguration extends Configuration {
   public static final String MANIFEST_RESOURCE_PACKAGE = "io.harness.ng.core.manifests.resources";
   private static final String REFRESH_RESOURCE_PACKAGE = "io.harness.ng.core.refresh";
   private static final String DEPLOYMENT_STAGE_PACKAGE = "io.harness.ng.core.deploymentstage";
-  private static final String SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE = "io.harness.ng.core.migration.serviceenvmigrationv2.resources";
+  private static final String SERVICE_ENV_MIGRATION_RESOURCE_PACKAGE =
+      "io.harness.ng.core.migration.serviceenvmigrationv2.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
