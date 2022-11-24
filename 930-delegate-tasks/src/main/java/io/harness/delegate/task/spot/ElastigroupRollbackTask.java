@@ -10,13 +10,9 @@ package io.harness.delegate.task.spot;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
-import static io.harness.spotinst.model.SpotInstConstants.RENAME_NEW_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.RENAME_OLD_COMMAND_UNIT;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
 import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -150,10 +146,8 @@ public class ElastigroupRollbackTask extends AbstractDelegateRunnableTask {
         getLogStreamingTaskClient(), DOWN_SCALE_COMMAND_UNIT, DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT,
         commandUnitsProgress);
 
-    String stageElastigroupName =
-        format("%s__%s", parameters.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
-    taskHelper.renameElastigroup(elastigroup, stageElastigroupName, spotInstAccountId, spotInstToken,
-        getLogStreamingTaskClient(), RENAME_NEW_COMMAND_UNIT, commandUnitsProgress);
+    taskHelper.deleteElastigroup(
+        elastigroup, spotInstToken, spotInstAccountId, getLogStreamingTaskClient(), commandUnitsProgress);
   }
 
   private ElastigroupRollbackTaskResponse executeBasicAndCanaryRollback(
