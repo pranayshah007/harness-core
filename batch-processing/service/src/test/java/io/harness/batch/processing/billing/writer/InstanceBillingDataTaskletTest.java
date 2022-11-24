@@ -46,6 +46,7 @@ import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
 import io.harness.ccm.commons.service.intf.ClusterRecordService;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.security.authentication.BatchQueryConfig;
@@ -120,6 +121,8 @@ public class InstanceBillingDataTaskletTest extends CategoryTest {
   @Mock private ClusterRecordService eventsClusterRecordService;
 
   @Mock private CloudToHarnessMappingService cloudToHarnessMappingService;
+
+  @Mock private FeatureFlagService featureFlagService;
 
   @Captor private ArgumentCaptor<List<InstanceBillingData>> instanceBillingDataArgumentCaptor;
 
