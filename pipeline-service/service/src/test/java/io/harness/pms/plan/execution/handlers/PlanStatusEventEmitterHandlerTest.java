@@ -14,7 +14,6 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
