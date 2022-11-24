@@ -7,6 +7,7 @@
 
 package io.harness.gitaware.dto;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -28,4 +29,5 @@ public class GitContextRequestParams {
   boolean isNewBranch;
   String newBranchName;
   boolean loadFromCache;
+  EntityType entityType;
 }

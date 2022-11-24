@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts.azureartifacts;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,6 +29,10 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.runtime.AzureArtifactsServerRuntimeException;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.DummyLogCallbackImpl;
 import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
@@ -626,5 +631,125 @@ public class AzureArtifactsTaskHelperTest extends CategoryTest {
 
     verify(azureArtifactsTaskHandler).decryptRequestDTOs(azureArtifactsDelegateRequest);
     verify(azureArtifactsTaskHandler).getLastSuccessfulBuild(azureArtifactsDelegateRequest);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testSaveLogs() {
+    DummyLogCallbackImpl logCallback = new DummyLogCallbackImpl();
+
+    logCallback.saveExecutionLog("hello");
+
+    azureArtifactsTaskHelper.saveLogs(logCallback, "world");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testInvalidTaskType() {
+    SecretRefData tokenRef = SecretRefData.builder().decryptedValue("value".toCharArray()).build();
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder().tokenRef(tokenRef).build();
+
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .credentialsSpec(azureArtifactsTokenDTO)
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .build();
+
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("https://dev.azure.com/automation-cdc/")
+            .auth(azureArtifactsAuthenticationDTO)
+            .build();
+
+    AzureArtifactsDelegateRequest azureArtifactsDelegateRequest =
+        AzureArtifactsDelegateRequest.builder()
+            .project(null)
+            .feed("feed")
+            .packageId(null)
+            .packageName("package")
+            .packageType("maven")
+            .versionRegex("*")
+            .azureArtifactsConnectorDTO(azureArtifactsConnectorDTO)
+            .build();
+
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(azureArtifactsDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_AUTH_TOKEN)
+                                                        .build();
+
+    ArtifactTaskResponse expectedArtifactTaskResponse =
+        ArtifactTaskResponse.builder()
+            .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+            .errorMessage("There is no such Azure Artifacts Delegate task - "
+                + artifactTaskParameters.getArtifactTaskType().name())
+            .errorCode(ErrorCode.INVALID_ARGUMENT)
+            .build();
+
+    doNothing().when(azureArtifactsTaskHandler).decryptRequestDTOs(azureArtifactsDelegateRequest);
+
+    ArtifactTaskResponse artifactTaskResponse =
+        azureArtifactsTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+
+    assertThat(artifactTaskResponse).isNotNull();
+    assertThat(artifactTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(expectedArtifactTaskResponse.getCommandExecutionStatus());
+    assertThat(artifactTaskResponse.getErrorMessage()).isEqualTo(expectedArtifactTaskResponse.getErrorMessage());
+    assertThat(artifactTaskResponse.getErrorCode()).isEqualTo(expectedArtifactTaskResponse.getErrorCode());
+
+    verify(azureArtifactsTaskHandler).decryptRequestDTOs(azureArtifactsDelegateRequest);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testThrowException() {
+    SecretRefData tokenRef = SecretRefData.builder().decryptedValue("value".toCharArray()).build();
+
+    AzureArtifactsTokenDTO azureArtifactsTokenDTO = AzureArtifactsTokenDTO.builder().tokenRef(tokenRef).build();
+
+    AzureArtifactsCredentialsDTO azureArtifactsCredentialsDTO =
+        AzureArtifactsCredentialsDTO.builder()
+            .credentialsSpec(azureArtifactsTokenDTO)
+            .type(AzureArtifactsAuthenticationType.PERSONAL_ACCESS_TOKEN)
+            .build();
+
+    AzureArtifactsAuthenticationDTO azureArtifactsAuthenticationDTO =
+        AzureArtifactsAuthenticationDTO.builder().credentials(azureArtifactsCredentialsDTO).build();
+
+    AzureArtifactsConnectorDTO azureArtifactsConnectorDTO =
+        AzureArtifactsConnectorDTO.builder()
+            .azureArtifactsUrl("https://dev.azure.com/automation-cdc/")
+            .auth(azureArtifactsAuthenticationDTO)
+            .build();
+
+    AzureArtifactsDelegateRequest azureArtifactsDelegateRequest =
+        AzureArtifactsDelegateRequest.builder()
+            .project(null)
+            .feed("feed")
+            .packageId(null)
+            .packageName("package")
+            .packageType("maven")
+            .versionRegex("*")
+            .azureArtifactsConnectorDTO(azureArtifactsConnectorDTO)
+            .build();
+
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(azureArtifactsDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.GET_BUILDS)
+                                                        .build();
+
+    doNothing().when(azureArtifactsTaskHandler).decryptRequestDTOs(azureArtifactsDelegateRequest);
+
+    when(azureArtifactsTaskHandler.getBuilds(azureArtifactsDelegateRequest))
+        .thenThrow(new AzureArtifactsServerRuntimeException("error"));
+
+    assertThatThrownBy(() -> azureArtifactsTaskHelper.getArtifactCollectResponse(artifactTaskParameters))
+        .isInstanceOf(AzureArtifactsServerRuntimeException.class);
   }
 }

@@ -13,4 +13,6 @@ import java.util.List;
 
 public interface PlanExecutionRepositoryCustom {
   PlanExecution getWithProjectionsWithoutUuid(String planExecutionId, List<String> fieldNames);
+
+  PlanExecution getWithProjections(String planExecutionId, List<String> fieldNames);
 }

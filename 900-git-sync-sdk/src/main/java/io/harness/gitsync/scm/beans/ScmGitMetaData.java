@@ -9,6 +9,7 @@ package io.harness.gitsync.scm.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.sdk.CacheResponse;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,4 +29,5 @@ public class ScmGitMetaData {
   String blobId;
   String fileUrl;
   String repoUrl;
+  @Setter CacheResponse cacheResponse;
 }

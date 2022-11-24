@@ -36,4 +36,14 @@ public class PlanExecutionRepositoryCustomImpl implements PlanExecutionRepositor
     query.fields().exclude(PlanExecutionKeys.uuid);
     return mongoTemplate.findOne(query, PlanExecution.class);
   }
+
+  @Override
+  public PlanExecution getWithProjections(String planExecutionId, List<String> fieldNames) {
+    Criteria criteria = Criteria.where(PlanExecutionKeys.uuid).is(planExecutionId);
+    Query query = new Query(criteria);
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return mongoTemplate.findOne(query, PlanExecution.class);
+  }
 }

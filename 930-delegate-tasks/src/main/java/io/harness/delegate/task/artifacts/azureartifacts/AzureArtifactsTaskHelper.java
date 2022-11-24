@@ -20,6 +20,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.manage.GlobalContextManager;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.HashMap;
@@ -117,9 +118,11 @@ public class AzureArtifactsTaskHelper {
         GlobalContextManager.upsertGlobalContextRecord(mdcGlobalContextData);
       }
 
-      ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
-          .getMap()
-          .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+      if (GlobalContextManager.get(MdcGlobalContextData.MDC_ID) != null) {
+        ((MdcGlobalContextData) GlobalContextManager.get(MdcGlobalContextData.MDC_ID))
+            .getMap()
+            .put(ExceptionMetadataKeys.CONNECTOR.name(), attributes.getConnectorRef());
+      }
 
       throw ex;
     }
@@ -134,7 +137,8 @@ public class AzureArtifactsTaskHelper {
         .build();
   }
 
-  private void saveLogs(LogCallback executionLogCallback, String message) {
+  @VisibleForTesting
+  protected void saveLogs(LogCallback executionLogCallback, String message) {
     if (executionLogCallback != null) {
       executionLogCallback.saveExecutionLog(message);
     }
