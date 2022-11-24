@@ -55,7 +55,6 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
-import io.harness.pms.merger.helpers.YamlRefreshHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlNodeUtils;
@@ -569,23 +568,12 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       String newServiceInputsYaml = createServiceInputsYamlGivenPrimaryArtifactRef(
           serviceYaml, serviceId, primaryArtifactRefNode == null ? null : primaryArtifactRefNode.asText());
       return ServiceInputsMergedResponseDto.builder()
-          .mergedServiceInputsYaml(mergeServiceInputs(oldServiceInputsYaml, newServiceInputsYaml))
+          .mergedServiceInputsYaml(InputSetMergeUtility.mergeInputs(oldServiceInputsYaml, newServiceInputsYaml))
           .serviceYaml(serviceYaml)
           .build();
     } catch (IOException ex) {
       throw new InvalidRequestException("Error occurred while merging old and new service inputs", ex);
     }
-  }
-
-  private String mergeServiceInputs(String oldServiceInputsYaml, String newServiceInputsYaml) {
-    if (isEmpty(newServiceInputsYaml)) {
-      return newServiceInputsYaml;
-    }
-    if (isEmpty(oldServiceInputsYaml)) {
-      return newServiceInputsYaml;
-    }
-    return YamlPipelineUtils.writeYamlString(
-        YamlRefreshHelper.refreshYamlFromSourceYaml(oldServiceInputsYaml, newServiceInputsYaml));
   }
 
   private void modifyServiceDefinitionNodeBeforeCreatingServiceInputs(

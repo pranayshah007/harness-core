@@ -48,6 +48,6 @@ public interface ChangeEventService {
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime);
 
   ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, String monitoredServiceIdentifier,
-      List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
-      Instant endTime);
+      List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
+      List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime);
 }

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -35,6 +36,7 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
@@ -55,6 +57,8 @@ public class GithubPackagesArtifactTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock GithubPackagesRegistryService githubPackagesRegistryService;
+
+  @Mock SecretDecryptionService secretDecryptionService;
 
   @InjectMocks GithubPackagesArtifactTaskHandler githubPackagesArtifactTaskHandler;
 
@@ -213,6 +217,80 @@ public class GithubPackagesArtifactTaskHandlerTest extends CategoryTest {
             githubPackagesArtifactDelegateRequest.getPackageName(),
             githubPackagesArtifactDelegateRequest.getPackageType(),
             githubPackagesArtifactDelegateRequest.getVersionRegex(), githubPackagesArtifactDelegateRequest.getOrg());
+
+    GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
+        GithubPackagesRequestResponseMapper.toGithubPackagesResponse(build1, githubPackagesArtifactDelegateRequest);
+
+    ArtifactTaskExecutionResponse executionResponse =
+        githubPackagesArtifactTaskHandler.getLastSuccessfulBuild(githubPackagesArtifactDelegateRequest);
+
+    assertThat(executionResponse).isNotNull();
+    assertThat(executionResponse.getBuildDetails()).isNotNull();
+    assertThat(executionResponse.getBuildDetails().size()).isEqualTo(1);
+    assertThat(executionResponse.getBuildDetails().get(0).getNumber()).isEqualTo("b1");
+    assertThat(executionResponse.getBuildDetails().get(0).getUiDisplayName()).isEqualTo("Version# b1");
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildWithSpecificVersion() {
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("id").decryptedValue("token".toCharArray()).scope(Scope.ACCOUNT).build();
+
+    GithubTokenSpecDTO githubTokenSpecDTO = GithubTokenSpecDTO.builder().tokenRef(secretRefData).build();
+
+    GithubApiAccessDTO githubApiAccessDTO =
+        GithubApiAccessDTO.builder().spec(githubTokenSpecDTO).type(GithubApiAccessType.TOKEN).build();
+
+    GithubUsernameTokenDTO githubUsernameTokenDTO =
+        GithubUsernameTokenDTO.builder().username("username").tokenRef(secretRefData).build();
+
+    GithubHttpCredentialsDTO githubHttpCredentialsDTO = GithubHttpCredentialsDTO.builder()
+                                                            .httpCredentialsSpec(githubUsernameTokenDTO)
+                                                            .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                            .build();
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder().authType(GitAuthType.HTTP).credentials(githubHttpCredentialsDTO).build();
+
+    GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                .apiAccess(githubApiAccessDTO)
+                                                .authentication(githubAuthenticationDTO)
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .executeOnDelegate(true)
+                                                .url("url")
+                                                .build();
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        GithubPackagesArtifactDelegateRequest.builder()
+            .org(null)
+            .packageType("container")
+            .packageName("packageName")
+            .sourceType(GITHUB_PACKAGES)
+            .connectorRef("ref")
+            .githubConnectorDTO(githubConnectorDTO)
+            .version("b1")
+            .versionRegex(null)
+            .encryptedDataDetails(new ArrayList<>())
+            .build();
+
+    GithubPackagesInternalConfig githubPackagesInternalConfig =
+        GithubPackagesRequestResponseMapper.toGithubPackagesInternalConfig(githubPackagesArtifactDelegateRequest);
+
+    List<BuildDetails> builds = new ArrayList<>();
+
+    BuildDetails build1 = new BuildDetails();
+    build1.setNumber("b1");
+    build1.setUiDisplayName("Version# b1");
+
+    builds.add(build1);
+
+    doReturn(build1)
+        .when(githubPackagesRegistryService)
+        .getBuild(githubPackagesInternalConfig, githubPackagesArtifactDelegateRequest.getPackageName(),
+            githubPackagesArtifactDelegateRequest.getPackageType(), githubPackagesArtifactDelegateRequest.getVersion(),
+            githubPackagesArtifactDelegateRequest.getOrg());
 
     GithubPackagesArtifactDelegateResponse githubPackagesArtifactDelegateResponse =
         GithubPackagesRequestResponseMapper.toGithubPackagesResponse(build1, githubPackagesArtifactDelegateRequest);
@@ -397,5 +475,61 @@ public class GithubPackagesArtifactTaskHandlerTest extends CategoryTest {
     boolean b = githubPackagesArtifactTaskHandler.isRegex(githubPackagesArtifactDelegateRequest);
 
     assertThat(b).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testDecryptRequestDTOs() {
+    SecretRefData secretRefData =
+        SecretRefData.builder().identifier("id").decryptedValue("token".toCharArray()).scope(Scope.ACCOUNT).build();
+
+    GithubTokenSpecDTO githubTokenSpecDTO = GithubTokenSpecDTO.builder().tokenRef(secretRefData).build();
+
+    GithubApiAccessDTO githubApiAccessDTO =
+        GithubApiAccessDTO.builder().spec(githubTokenSpecDTO).type(GithubApiAccessType.TOKEN).build();
+
+    GithubUsernameTokenDTO githubUsernameTokenDTO =
+        GithubUsernameTokenDTO.builder().username("username").tokenRef(secretRefData).build();
+
+    GithubHttpCredentialsDTO githubHttpCredentialsDTO = GithubHttpCredentialsDTO.builder()
+                                                            .httpCredentialsSpec(githubUsernameTokenDTO)
+                                                            .type(GithubHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                            .build();
+
+    GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder().authType(GitAuthType.HTTP).credentials(githubHttpCredentialsDTO).build();
+
+    GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                .apiAccess(githubApiAccessDTO)
+                                                .authentication(githubAuthenticationDTO)
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .executeOnDelegate(true)
+                                                .url("url")
+                                                .build();
+
+    GithubPackagesArtifactDelegateRequest githubPackagesArtifactDelegateRequest =
+        GithubPackagesArtifactDelegateRequest.builder()
+            .org(null)
+            .packageType("container")
+            .packageName("packageName")
+            .sourceType(GITHUB_PACKAGES)
+            .connectorRef("ref")
+            .githubConnectorDTO(githubConnectorDTO)
+            .version(null)
+            .versionRegex("*")
+            .encryptedDataDetails(new ArrayList<>())
+            .build();
+
+    doReturn(null)
+        .when(secretDecryptionService)
+        .decrypt(githubPackagesArtifactDelegateRequest.getGithubConnectorDTO().getApiAccess().getSpec(),
+            githubPackagesArtifactDelegateRequest.getEncryptedDataDetails());
+
+    githubPackagesArtifactTaskHandler.decryptRequestDTOs(githubPackagesArtifactDelegateRequest);
+
+    verify(secretDecryptionService)
+        .decrypt(githubPackagesArtifactDelegateRequest.getGithubConnectorDTO().getApiAccess().getSpec(),
+            githubPackagesArtifactDelegateRequest.getEncryptedDataDetails());
   }
 }

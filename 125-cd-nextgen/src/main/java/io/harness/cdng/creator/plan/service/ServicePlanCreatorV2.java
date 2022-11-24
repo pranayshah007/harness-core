@@ -61,9 +61,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     final LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // enforcement validator
-    enforcementValidator.validate(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-        ctx.getMetadata().getProjectIdentifier(), ctx.getMetadata().getMetadata().getPipelineIdentifier(),
-        ctx.getYaml(), ctx.getMetadata().getMetadata().getExecutionUuid());
+    enforcementValidator.validate(ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier(),
+        ctx.getPipelineIdentifier(), ctx.getYaml(), ctx.getExecutionUuid());
 
     YamlField serviceField = ctx.getCurrentField();
     YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);

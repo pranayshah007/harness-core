@@ -234,6 +234,9 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
 
+  // If this flag is enabled event framework is utilized for wait engine notification mechanism
+  @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
+
   private int applicationPort;
   private boolean sslEnabled;
 

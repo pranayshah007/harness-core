@@ -59,7 +59,7 @@ public class PmsSecurityContextGuardUtils {
       case SERVICE_ACCOUNT:
         return new ServiceAccountPrincipal(principal,
             executionTriggerInfo.getTriggeredBy().getExtraInfoMap().get("email"),
-            executionTriggerInfo.getTriggeredBy().getIdentifier());
+            executionTriggerInfo.getTriggeredBy().getIdentifier(), AmbianceUtils.getAccountId(ambiance));
       default:
         throw new AccessDeniedException("Unknown Principal Type", WingsException.USER);
     }

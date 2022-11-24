@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public interface NgManifestService {
-  ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList);
 

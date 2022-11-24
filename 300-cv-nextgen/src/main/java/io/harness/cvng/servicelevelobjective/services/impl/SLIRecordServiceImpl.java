@@ -12,6 +12,7 @@ import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.entities.EntityDisableTime;
 import io.harness.cvng.core.entities.MonitoredService;
@@ -22,12 +23,17 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLIValue;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordKeys;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -40,6 +46,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,6 +65,10 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @Inject MonitoredServiceService monitoredServiceService;
 
   @Inject EntityDisabledTimeService entityDisabledTimeService;
+
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+
+  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
   @Override
   public void create(List<SLIRecordParam> sliRecordParamList, String sliId, String verificationTaskId, int sliVersion) {
@@ -414,6 +425,44 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @Override
   public void delete(List<String> sliIds) {
     hPersistence.delete(hPersistence.createQuery(SLIRecord.class).field(SLIRecordKeys.sliId).in(sliIds));
+  }
+
+  public Pair<Map<ServiceLevelObjectivesDetail, List<SLIRecord>>, Map<ServiceLevelObjectivesDetail, SLIMissingDataType>>
+  getSLODetailsSLIRecordsAndSLIMissingDataType(
+      List<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail> serviceLevelObjectivesDetailList,
+      Instant startTime, Instant endTime) {
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, List<SLIRecord>>
+        serviceLevelObjectivesDetailSLIRecordMap = new HashMap<>();
+    Map<CompositeServiceLevelObjective.ServiceLevelObjectivesDetail, SLIMissingDataType>
+        objectivesDetailSLIMissingDataTypeMap = new HashMap<>();
+    for (CompositeServiceLevelObjective.ServiceLevelObjectivesDetail objectivesDetail :
+        serviceLevelObjectivesDetailList) {
+      ProjectParams projectParams = ProjectParams.builder()
+                                        .projectIdentifier(objectivesDetail.getProjectIdentifier())
+                                        .orgIdentifier(objectivesDetail.getOrgIdentifier())
+                                        .accountIdentifier(objectivesDetail.getAccountId())
+                                        .build();
+      SimpleServiceLevelObjective simpleServiceLevelObjective =
+          (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+              projectParams, objectivesDetail.getServiceLevelObjectiveRef());
+      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
+          "Only one service level indicator is supported");
+      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+          ProjectParams.builder()
+              .accountIdentifier(simpleServiceLevelObjective.getAccountId())
+              .orgIdentifier(simpleServiceLevelObjective.getOrgIdentifier())
+              .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
+              .build(),
+          simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
+      String sliId = serviceLevelIndicator.getUuid();
+      int sliVersion = serviceLevelIndicator.getVersion();
+      List<SLIRecord> sliRecords = getSLIRecordsWithSLIVersion(sliId, startTime, endTime, sliVersion);
+      if (!sliRecords.isEmpty()) {
+        serviceLevelObjectivesDetailSLIRecordMap.put(objectivesDetail, sliRecords);
+        objectivesDetailSLIMissingDataTypeMap.put(objectivesDetail, serviceLevelIndicator.getSliMissingDataType());
+      }
+    }
+    return Pair.of(serviceLevelObjectivesDetailSLIRecordMap, objectivesDetailSLIMissingDataTypeMap);
   }
 
   private SLIRecord getLastSLIRecord(String sliId, Instant startTimeStamp) {

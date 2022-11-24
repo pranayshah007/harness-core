@@ -811,7 +811,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
 
   private void registerSLORecalculationFailure(Injector injector) {
     ScheduledThreadPoolExecutor dataCollectionExecutor = new ScheduledThreadPoolExecutor(
-        3, new ThreadFactoryBuilder().setNameFormat("sli-recalculation-failure").build());
+        3, new ThreadFactoryBuilder().setNameFormat("slo-recalculation-failure").build());
     SLORecalculationFailureHandler sloRecalculationFailureHandler =
         injector.getInstance(SLORecalculationFailureHandler.class);
     PersistenceIterator sloRecalculationFailureHandlerIterator =
@@ -828,11 +828,9 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .handler(sloRecalculationFailureHandler)
             .schedulingType(REGULAR)
             .filterExpander(query
-                -> query.and(
-                    query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
-                        .greaterThan(
-                            injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()),
-                    query.criteria(ServiceLevelObjectiveV2Keys.type).equal(ServiceLevelObjectiveType.SIMPLE)))
+                -> query.criteria(ServiceLevelObjectiveV2Keys.lastUpdatedAt)
+                       .greaterThan(
+                           injector.getInstance(Clock.class).instant().minus(45, ChronoUnit.MINUTES).toEpochMilli()))
             .persistenceProvider(injector.getInstance(MorphiaPersistenceProvider.class))
             .redistribute(true)
             .build();

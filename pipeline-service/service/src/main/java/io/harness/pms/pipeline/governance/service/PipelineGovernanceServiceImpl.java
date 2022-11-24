@@ -5,9 +5,11 @@ import static io.harness.pms.contracts.governance.ExpansionPlacementStrategy.APP
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.GovernanceService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.PipelineGovernanceGitConfig;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
@@ -25,7 +27,9 @@ import io.harness.utils.PmsFeatureFlagService;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +54,24 @@ public class PipelineGovernanceServiceImpl implements PipelineGovernanceService 
         accountId, orgIdentifier, projectIdentifier, yamlWithResolvedTemplates, false);
     return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
         projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
+  }
+
+  @Override
+  public GovernanceMetadata validateGovernanceRulesAndThrowExceptionIfDenied(
+      String accountId, String orgIdentifier, String projectIdentifier, String yamlWithResolvedTemplates) {
+    GovernanceMetadata governanceMetadata =
+        validateGovernanceRules(accountId, orgIdentifier, projectIdentifier, yamlWithResolvedTemplates);
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      // todo: see if this can be changed to PolicyEvaluationFailureException, probably yes
+      throw new InvalidRequestException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds);
+    }
+    return governanceMetadata;
   }
 
   @Override

@@ -24,7 +24,9 @@ import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.dto.ImportDTO;
 import io.harness.ngmigration.dto.SaveSummaryDTO;
+import io.harness.ngmigration.dto.SimilarWorkflowDetail;
 import io.harness.ngmigration.service.AsyncDiscoveryHandler;
+import io.harness.ngmigration.service.AsyncSimilarWorkflowHandler;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.ngmigration.service.MigrationResourceService;
 import io.harness.ngmigration.service.UsergroupImportService;
@@ -45,7 +47,9 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
@@ -69,6 +73,7 @@ public class NgMigrationResource {
   @Inject AsyncDiscoveryHandler asyncDiscoveryHandler;
   @Inject MigrationResourceService migrationResourceService;
   @Inject UsergroupImportService usergroupImportService;
+  @Inject AsyncSimilarWorkflowHandler asyncSimilarWorkflowHandler;
 
   @POST
   @Path("/discover-multi")
@@ -107,7 +112,7 @@ public class NgMigrationResource {
   @Timed
   @ExceptionMetered
   public RestResponse<Map<String, String>> queueAccountLevelSummary(@QueryParam("accountId") String accountId) {
-    String requestId = asyncDiscoveryHandler.queueAccountSummary(accountId);
+    String requestId = asyncDiscoveryHandler.queue(accountId);
     return new RestResponse<>(ImmutableMap.of("requestId", requestId));
   }
 
@@ -117,7 +122,7 @@ public class NgMigrationResource {
   @ExceptionMetered
   public RestResponse<MigrationAsyncTracker> getAccountLevelSummary(
       @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
-    return new RestResponse<>(asyncDiscoveryHandler.getAccountSummary(accountId, reqId));
+    return new RestResponse<>(asyncDiscoveryHandler.getTaskResult(accountId, reqId));
   }
 
   @GET
@@ -209,5 +214,32 @@ public class NgMigrationResource {
     return Response.ok(migrationResourceService.exportYaml(auth, importDTO))
         .header("content-disposition", format("attachment; filename = %s_%s.zip", accountId, filename))
         .build();
+  }
+
+  @GET
+  @Path("/similar-workflows")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<List<Set<SimilarWorkflowDetail>>> getSimilarWorkflows(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(migrationResourceService.listSimilarWorkflow(accountId));
+  }
+
+  // This is get because in prod we cannot run this on customers accounts if it is POST
+  @GET
+  @Path("/similar-workflows/async")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Map<String, String>> queueSimilarWorkflows(@QueryParam("accountId") String accountId) {
+    String requestId = asyncSimilarWorkflowHandler.queue(accountId);
+    return new RestResponse<>(ImmutableMap.of("requestId", requestId));
+  }
+
+  @GET
+  @Path("/similar-workflows/async-result")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<MigrationAsyncTracker> getSimilarWorkflows(
+      @QueryParam("requestId") String reqId, @QueryParam("accountId") String accountId) {
+    return new RestResponse<>(asyncSimilarWorkflowHandler.getTaskResult(accountId, reqId));
   }
 }
