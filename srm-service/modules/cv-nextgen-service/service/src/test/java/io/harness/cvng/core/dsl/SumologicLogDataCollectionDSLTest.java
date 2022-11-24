@@ -14,6 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.HoverflyTestBase;
+import io.harness.cvng.beans.SumologicLogDataCollectionInfo;
+import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
+import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
 import io.harness.datacollection.DataCollectionDSLService;
@@ -25,6 +29,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -39,9 +44,12 @@ public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
   private static final int LOG_RECORDS_COUNT = 50;
 
   DataCollectionDSLService dataCollectionDSLService;
+
+  private String code;
+
   @Before
   public void setup() throws IOException {
-    super.before();
+      super.before();
     dataCollectionDSLService = new DataCollectionServiceImpl();
     ExecutorService executorService = Executors.newFixedThreadPool(THREADS);
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
@@ -78,8 +86,32 @@ public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
                                               .commonHeaders(sumologicLogSampleDataRequest.collectionHeaders())
                                               .baseUrl(sumologicLogSampleDataRequest.getBaseUrl())
                                               .build();
-    List<?> result = (List<?>) dataCollectionDSLService.execute(
-        sampleDataRequestDSL, runtimeParameters, (CallDetails callDetails) -> {});
+    List<?> result =
+        (List<?>) dataCollectionDSLService.execute(sampleDataRequestDSL, runtimeParameters, (CallDetails callDetails) -> {});
     assertThat(result).hasSize(LOG_RECORDS_COUNT);
+  }
+
+  private RuntimeParameters getRuntimeParameters(Instant instant) {
+    SumologicLogDataCollectionInfo dataCollectionInfo = SumologicLogDataCollectionInfo.builder()
+                                                            .query("_sourceCategory=windows/performance")
+                                                            .serviceInstanceIdentifier("host")
+                                                            .build();
+    dataCollectionInfo.setHostCollectionDSL(code);
+    dataCollectionInfo.setCollectHostData(true);
+    SumoLogicConnectorDTO sumoLogicConnectorDTO =
+        SumoLogicConnectorDTO.builder()
+            .url("https://api.in.sumologic.com/")
+            .accessIdRef(SecretRefData.builder().decryptedValue(SECRET_REF_DATA.toCharArray()).build())
+            .accessKeyRef(
+                SecretRefData.builder().decryptedValue(SECRET_REF_DATA.toCharArray()).build()) // TODO Use encrypted
+            .build();
+    return RuntimeParameters.builder()
+        .baseUrl(dataCollectionInfo.getBaseUrl(sumoLogicConnectorDTO))
+        .commonHeaders(dataCollectionInfo.collectionHeaders(sumoLogicConnectorDTO))
+        .commonOptions(dataCollectionInfo.collectionParams(sumoLogicConnectorDTO))
+        .otherEnvVariables(dataCollectionInfo.getDslEnvVariables(sumoLogicConnectorDTO))
+        .endTime(instant)
+        .startTime(instant.minus(Duration.ofMinutes(1)))
+        .build();
   }
 }

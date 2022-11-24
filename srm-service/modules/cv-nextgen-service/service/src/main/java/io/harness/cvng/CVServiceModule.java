@@ -95,6 +95,8 @@ import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigUpdatableEntit
 import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackDriverCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigUpdatableEntity;
+import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
 import io.harness.cvng.core.entities.changeSource.HarnessCDChangeSource;
@@ -215,6 +217,8 @@ import io.harness.cvng.core.services.impl.StackdriverDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.StackdriverLogDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.StackdriverServiceImpl;
 import io.harness.cvng.core.services.impl.SumoLogicServiceImpl;
+import io.harness.cvng.core.services.impl.SumologicLogDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.SumologicMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.TimeSeriesRecordServiceImpl;
 import io.harness.cvng.core.services.impl.TimeSeriesThresholdServiceImpl;
 import io.harness.cvng.core.services.impl.VerificationTaskServiceImpl;
@@ -265,6 +269,8 @@ import io.harness.cvng.core.utils.monitoredService.SplunkHealthSourceSpecTransfo
 import io.harness.cvng.core.utils.monitoredService.SplunkMetricHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverLogHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverMetricHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.SumologicLogHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.SumologicMetricSourceSpecTransformer;
 import io.harness.cvng.dashboard.services.api.ErrorTrackingDashboardService;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
@@ -532,6 +538,12 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.ELASTICSEARCH)
         .to(ELKHealthSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
+        .to(SumologicMetricSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SUMOLOGIC_LOG)
+        .to(SumologicLogHealthSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.CUSTOM_HEALTH_LOG)
         .to(CustomHealthSourceSpecLogTransformer.class)
         .in(Scopes.SINGLETON);
@@ -596,6 +608,12 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.AWS_PROMETHEUS)
         .to(AwsPrometheusDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.SUMOLOGIC_LOG)
+        .to(SumologicLogDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
+        .to(SumologicMetricDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionSLIInfoMapperMapBinder =
         MapBinder.newMapBinder(binder(), DataSourceType.class, DataCollectionSLIInfoMapper.class);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.PROMETHEUS)
@@ -629,8 +647,8 @@ public class CVServiceModule extends AbstractModule {
         .to(AwsPrometheusDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
-        .to(AwsPrometheusDataCollectionInfoMapper.class)
-        .in(Scopes.SINGLETON); // TODO ADD actual Sumologic Mapper.
+        .to(SumologicMetricDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
         verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
             binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
@@ -762,7 +780,12 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.AWS_PROMETHEUS)
         .to(AwsPrometheusUpdatableEntity.class)
         .in(Scopes.SINGLETON);
-    // TODO add for SUMOLOGIC
+    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.SUMOLOGIC_METRICS)
+        .to(SumologicMetricCVConfig.SumologicMetricUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.SUMOLOGIC_LOG)
+        .to(SumologicLogCVConfig.SumologicLogCVConfigUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
     MapBinder<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
         MapBinder.newMapBinder(binder(), SLIMetricType.class, ServiceLevelIndicatorUpdatableEntity.class);
     serviceLevelIndicatorMapBinder.addBinding(SLIMetricType.RATIO)
