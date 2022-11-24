@@ -89,7 +89,7 @@ public class ElastigroupSwapRouteStep
     SpotInstConfig spotInstConfig = elastigroupStepCommonHelper.getSpotInstConfig(infrastructureOutcome, ambiance);
 
     OptionalSweepingOutput optionalElastigroupSetupOutput = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME));
+        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
 
     if (!optionalElastigroupSetupOutput.isFound()) {
       elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(
