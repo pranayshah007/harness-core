@@ -293,7 +293,7 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraId,
-      @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String clusterId,
+      @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterId,
       @NotNull @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
       @NotNull @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
     /*
