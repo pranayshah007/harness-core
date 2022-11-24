@@ -502,7 +502,6 @@ public enum FeatureName {
   TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS);
 
-
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
