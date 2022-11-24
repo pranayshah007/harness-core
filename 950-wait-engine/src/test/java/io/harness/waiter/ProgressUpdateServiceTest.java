@@ -96,6 +96,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
                                 .correlationId(correlationId)
                                 .createdAt(currentTimeMillis() - 1000)
                                 .expireProcessing(currentTimeMillis() + 60000)
+                                .usingKryoWithoutReference(true)
                                 .progressData(referenceFalseKryoSerializer.asDeflatedBytes(
                                     StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
                                 .build());
@@ -105,6 +106,7 @@ public class ProgressUpdateServiceTest extends WaitEngineTestBase {
                                 .correlationId(correlationId)
                                 .createdAt(currentTimeMillis())
                                 .expireProcessing(currentTimeMillis())
+                                .usingKryoWithoutReference(true)
                                 .progressData(referenceFalseKryoSerializer.asDeflatedBytes(
                                     StringNotifyProgressData.builder().data("progress1-" + generateUuid()).build()))
                                 .build());
