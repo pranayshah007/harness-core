@@ -26,28 +26,34 @@ public enum ElastigroupCommandUnitConstants {
       return "Fetch Elastigroup Json";
     }
   },
-  upScale {
+  UP_SCALE {
     @Override
     public String toString() {
       return "Upscale Elastigroup";
     }
   },
-  upScaleSteadyStateWait {
+  UP_SCALE_STEADY_STATE_WAIT {
     @Override
     public String toString() {
       return "Upscale wait for steady state";
     }
   },
-  downScale {
+  DOWN_SCALE {
     @Override
     public String toString() {
       return "Downscale Elastigroup";
     }
   },
-  downScaleSteadyStateWait {
+  DOWN_SCALE_STEADY_STATE_WAIT {
     @Override
     public String toString() {
       return "Downscale wait for steady state";
+    }
+  },
+  SWAP_TARGET_GROUP {
+    @Override
+    public String toString() {
+      return "Swap Target Group";
     }
   }
 }

@@ -38,9 +38,9 @@ public class ElastigroupBGStageSetupStepParameters
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(ElastigroupCommandUnitConstants.fetchStartupScript.toString(),
-        ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(),
-        ElastigroupCommandUnitConstants.createSetup.toString(), ElastigroupCommandUnitConstants.upScale.toString(),
-        ElastigroupCommandUnitConstants.upScaleSteadyStateWait.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(),
+        ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(),
+        ElastigroupCommandUnitConstants.CREATE_SETUP.toString(), ElastigroupCommandUnitConstants.UP_SCALE.toString(),
+        ElastigroupCommandUnitConstants.UP_SCALE_STEADY_STATE_WAIT.toString());
   }
 }

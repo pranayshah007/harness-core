@@ -89,9 +89,9 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     String elastigroupNamePrefix = "prefix";
     String prefix = format("%s__", elastigroupNamePrefix);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.swapTargetGroup.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWN_SCALE.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWN_SCALE_STEADY_STATE_WAIT.toString(), true,commandUnitsProgress);
 
     String awsRegion = "awsRegion";
 

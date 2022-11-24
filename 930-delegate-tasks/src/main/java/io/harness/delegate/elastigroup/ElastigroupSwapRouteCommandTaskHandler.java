@@ -70,7 +70,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSwapRouteCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSwapRouteCommandRequest"));
@@ -81,7 +81,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
     timeoutInMillis = elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.swapTargetGroup.toString(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
@@ -95,9 +95,9 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
       String prodElastiGroupName = elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix();
       String stageElastiGroupName = format(
@@ -142,7 +142,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         throw new InvalidRequestException(errorMessage);
       }
 
-      if (downsizeOldElastigroup && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
+      if (downsizeOldElastigroup && elastigroupSwapRouteCommandRequest.getOldElastigroup() != null && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
         ElastiGroup temp = ElastiGroup.builder()
                                .id(oldElastiGroupId)
                                .name(stageElastiGroupName)
@@ -151,14 +151,14 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         int steadyStateTimeOut =
             elastigroupDeployTaskHelper.getTimeOut(elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin());
         elastigroupDeployTaskHelper.scaleElastigroup(temp, spotInstApiTokenRef, spotInstAccountId, steadyStateTimeOut,
-            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(),
-            ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), commandUnitsProgress);
+            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWN_SCALE.toString(),
+            ElastigroupCommandUnitConstants.DOWN_SCALE_STEADY_STATE_WAIT.toString(), commandUnitsProgress);
       } else {
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(), true, commandUnitsProgress);
+            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWN_SCALE.toString(), true, commandUnitsProgress);
         deployLogCallback.saveExecutionLog("Nothing to Downsize.", INFO, SUCCESS);
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
-            ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), true, commandUnitsProgress);
+            ElastigroupCommandUnitConstants.DOWN_SCALE_STEADY_STATE_WAIT.toString(), true, commandUnitsProgress);
         deployLogCallback.saveExecutionLog(
             "No Downsize was required, Swap Route Successfully Completed", INFO, SUCCESS);
       }
@@ -168,16 +168,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
           CommandExecutionStatus.SUCCESS);
 
       ElastigroupSwapRouteResultBuilder elastigroupSwapRouteResult = ElastigroupSwapRouteResult.builder();
-      elastigroupSwapRouteResult.downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
-          .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList());
-      if (elastigroupSwapRouteCommandRequest.getOldElastigroup() != null) {
-        elastigroupSwapRouteResult.oldElastiGroupId(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId());
-        elastigroupSwapRouteResult.oldElastiGroupName(elastigroupSwapRouteCommandRequest.getOldElastigroup().getName());
-      }
-      if (elastigroupSwapRouteCommandRequest.getNewElastigroup() != null) {
-        elastigroupSwapRouteResult.newElastiGroupId(elastigroupSwapRouteCommandRequest.getNewElastigroup().getId());
-        elastigroupSwapRouteResult.newElastiGroupName(elastigroupSwapRouteCommandRequest.getNewElastigroup().getName());
-      }
+      setElastigroupResult(elastigroupSwapRouteResult, elastigroupSwapRouteCommandRequest);
 
       return ElastigroupSwapRouteResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -189,6 +180,19 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
       deployLogCallback.saveExecutionLog(color(format("Swap Routes Step Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);
+    }
+  }
+
+  private void setElastigroupResult(ElastigroupSwapRouteResultBuilder elastigroupSwapRouteResult, ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest) {
+    elastigroupSwapRouteResult.downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
+            .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList());
+    if (elastigroupSwapRouteCommandRequest.getOldElastigroup() != null) {
+      elastigroupSwapRouteResult.oldElastiGroupId(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId());
+      elastigroupSwapRouteResult.oldElastiGroupName(elastigroupSwapRouteCommandRequest.getOldElastigroup().getName());
+    }
+    if (elastigroupSwapRouteCommandRequest.getNewElastigroup() != null) {
+      elastigroupSwapRouteResult.newElastiGroupId(elastigroupSwapRouteCommandRequest.getNewElastigroup().getId());
+      elastigroupSwapRouteResult.newElastiGroupName(elastigroupSwapRouteCommandRequest.getNewElastigroup().getName());
     }
   }
 }
