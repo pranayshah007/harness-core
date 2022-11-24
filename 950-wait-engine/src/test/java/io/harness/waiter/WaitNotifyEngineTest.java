@@ -9,6 +9,7 @@ package io.harness.waiter;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SANJA;
@@ -42,6 +43,7 @@ import io.harness.waiter.ProgressUpdate.ProgressUpdateKeys;
 import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -74,6 +76,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
   @Inject private TestNotifyEventListener notifyEventListener;
   @Inject private QueueListenerController queueListenerController;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   /**
    * Setup response map.
@@ -105,8 +108,38 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       String id = waitNotifyEngine.doneWith(uuid, data);
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+      assertThat(responseDataResult).isEqualTo(data);
+
+      Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
+
+      assertThat(responseMap).hasSize(1).isEqualTo(of(uuid, data));
+      assertThat(callCount.get()).isEqualTo(1);
+    }
+  }
+
+  /**
+   * Should wait for correlation id.
+   */
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldWaitForCorrelationIdV2() throws IOException {
+    String uuid = generateUuid();
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      String waitInstanceId = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+
+      ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid).build();
+      String id = waitNotifyEngine.doneWithV2(uuid, data);
+      NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
 
       Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
@@ -131,8 +164,38 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+      assertThat(responseDataResult).isEqualTo(data);
+
+      Concurrent.test(10, i -> { notifyEventListener.execute(); });
+
+      assertThat(notifyConsumer.count(Filter.ALL)).isEqualTo(0);
+
+      assertThat(responseMap).hasSize(1).isEqualTo(of(uuid, data));
+      assertThat(callCount.get()).isEqualTo(1);
+    }
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void stressWaitForCorrelationIdV2() throws IOException {
+    String uuid = generateUuid();
+    try (MaintenanceGuard guard = new MaintenanceGuard(true)) {
+      String waitInstanceId = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+
+      ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid).build();
+      String id = waitNotifyEngine.doneWithV2(uuid, data);
+
+      NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
 
       Concurrent.test(10, i -> { notifyEventListener.execute(); });
@@ -159,8 +222,38 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+      assertThat(responseDataResult).isEqualTo(data);
+
+      notifyEventListener.execute();
+
+      assertThat(notifyConsumer.count(Filter.ALL)).isEqualTo(0);
+
+      assertThat(responseMap).hasSize(1).isEqualTo(of(uuid, data));
+      assertThat(callCount.get()).isEqualTo(1);
+    }
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testNotifyBeforeWaitV2() throws IOException {
+    String uuid = generateUuid();
+    try (MaintenanceGuard guard = new MaintenanceGuard(true)) {
+      ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid).build();
+      String id = waitNotifyEngine.doneWithV2(uuid, data);
+
+      String waitInstanceId = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+
+      NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
 
       notifyEventListener.execute();
@@ -195,6 +288,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse1 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse1).isNotNull();
+      assertThat(notifyResponse1.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult1 =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse1.getResponseData());
       assertThat(responseDataResult1).isEqualTo(data1);
@@ -208,6 +302,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse2 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse2).isNotNull();
+      assertThat(notifyResponse2.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult2 =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse2.getResponseData());
       assertThat(responseDataResult2).isEqualTo(data2);
@@ -221,8 +316,72 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse3 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse3).isNotNull();
+      assertThat(notifyResponse3.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse3.getResponseData());
+      assertThat(responseDataResult).isEqualTo(data3);
+
+      Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
+
+      assertThat(responseMap).hasSize(3).containsAllEntriesOf(of(uuid1, data1, uuid2, data2, uuid3, data3));
+      assertThat(callCount.get()).isEqualTo(1);
+    }
+  }
+
+  /**
+   * Should wait for correlation ids.
+   */
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldWaitForCorrelationIdsV2() throws IOException {
+    String uuid1 = generateUuid();
+    String uuid2 = generateUuid();
+    String uuid3 = generateUuid();
+
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      String waitInstanceId =
+          waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid1, uuid2, uuid3);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+
+      ResponseData data1 = StringNotifyResponseData.builder().data("response-" + uuid1).build();
+
+      String id = waitNotifyEngine.doneWithV2(uuid1, data1);
+
+      NotifyResponse notifyResponse1 = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse1).isNotNull();
+      assertThat(notifyResponse1.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult1 =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse1.getResponseData());
+      assertThat(responseDataResult1).isEqualTo(data1);
+
+      Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
+
+      assertThat(responseMap).hasSize(0);
+      ResponseData data2 = StringNotifyResponseData.builder().data("response-" + uuid2).build();
+
+      id = waitNotifyEngine.doneWithV2(uuid2, data2);
+
+      NotifyResponse notifyResponse2 = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse2).isNotNull();
+      assertThat(notifyResponse2.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult2 =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse2.getResponseData());
+      assertThat(responseDataResult2).isEqualTo(data2);
+
+      Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
+
+      assertThat(responseMap).hasSize(0);
+      ResponseData data3 = StringNotifyResponseData.builder().data("response-" + uuid3).build();
+
+      id = waitNotifyEngine.doneWithV2(uuid3, data3);
+
+      NotifyResponse notifyResponse3 = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse3).isNotNull();
+      assertThat(notifyResponse3.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse3.getResponseData());
       assertThat(responseDataResult).isEqualTo(data3);
 
       Poller.pollFor(Duration.ofSeconds(10), ofMillis(100), () -> notifyConsumer.count(Filter.ALL) == 0);
@@ -253,6 +412,34 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       assertThat(waitInstance.getTimeout()).isEqualTo(Duration.ofSeconds(3));
       ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid1).build();
       waitNotifyEngine.doneWith(uuid1, data);
+      Poller.pollFor(Duration.ofSeconds(6), ofMillis(300), () -> timeoutCallCount.get() == 1);
+      assertThat(responseMap).hasSize(1).containsAllEntriesOf(of(uuid1, data));
+      assertThat(mongoTemplate.findOne(query(where(WaitInstanceKeys.uuid).is(waitInstanceId)), WaitInstance.class))
+          .isNull();
+    }
+  }
+
+  @Test
+  @SpringWaiter
+  @Owner(developers = ASHISHSANODIA, intermittent = true)
+  @Category(UnitTests.class)
+  public void shouldTestTimeoutWithResponseV2() {
+    String uuid1 = generateUuid();
+    String uuid2 = generateUuid();
+    List<String> correlationIds = Arrays.asList(uuid1, uuid2);
+
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      timeoutEngine.createAndStartIterator(
+          PersistenceIteratorFactory.PumpExecutorOptions.builder().name("TimeoutEngine").poolSize(5).build(),
+          ofSeconds(60));
+      String waitInstanceId = waitNotifyEngine.waitForAllOnInList(
+          TEST_PUBLISHER, new TestNotifyCallback(), correlationIds, Duration.ofSeconds(3));
+      WaitInstance waitInstance =
+          mongoTemplate.findOne(query(where(WaitInstanceKeys.uuid).is(waitInstanceId)), WaitInstance.class);
+      assertThat(waitInstance).isNotNull();
+      assertThat(waitInstance.getTimeout()).isEqualTo(Duration.ofSeconds(3));
+      ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid1).build();
+      waitNotifyEngine.doneWithV2(uuid1, data);
       Poller.pollFor(Duration.ofSeconds(6), ofMillis(300), () -> timeoutCallCount.get() == 1);
       assertThat(responseMap).hasSize(1).containsAllEntriesOf(of(uuid1, data));
       assertThat(mongoTemplate.findOne(query(where(WaitInstanceKeys.uuid).is(waitInstanceId)), WaitInstance.class))
@@ -356,8 +543,47 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+      assertThat(responseDataResult).isEqualTo(data);
+
+      while (notifyConsumer.count(Filter.ALL) != 0) {
+        Thread.yield();
+      }
+
+      assertThat(responseMap).hasSize(1).containsAllEntriesOf(of(uuid, data));
+      assertThat(callCount.get()).isEqualTo(3);
+    }
+  }
+
+  /**
+   * Should wait forx correlation id for multiple wait instances.
+   */
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldWaitForCorrelationIdForMultipleWaitInstancesV2() throws IOException {
+    String uuid = generateUuid();
+
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      String waitInstanceId1 = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+      String waitInstanceId2 = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+      String waitInstanceId3 = waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), uuid);
+
+      assertThat(persistence.createQuery(WaitInstance.class, excludeAuthority).asList())
+          .hasSize(3)
+          .extracting(WaitInstance::getUuid)
+          .containsExactly(waitInstanceId1, waitInstanceId2, waitInstanceId3);
+
+      ResponseData data = StringNotifyResponseData.builder().data("response-" + uuid).build();
+      String id = waitNotifyEngine.doneWithV2(uuid, data);
+
+      NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
+      assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isTrue();
+      ResponseData responseDataResult =
+          (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
 
       while (notifyConsumer.count(Filter.ALL) != 0) {

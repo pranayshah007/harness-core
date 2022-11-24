@@ -310,14 +310,15 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     if (delegateTask.getTaskDataV2().isAsync()) {
       String waitId = delegateTask.getWaitId();
       if (waitId != null) {
-        waitNotifyEngine.doneWith(waitId, response.getResponse());
+        waitNotifyEngine.doneWithV2(waitId, response.getResponse());
       } else {
         log.error("Async task has no wait ID");
       }
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
-                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
+                           .usingKryoWithoutReference(true)
+                           .responseData(referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()))
                            .build());
     }
   }

@@ -30,6 +30,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class WaitNotifyEngine {
 
   @Inject private PersistenceWrapper persistenceWrapper;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private NotifyQueuePublisherRegister publisherRegister;
 
   public String waitForAllOn(String publisherName, NotifyCallback notifyCallback, String... correlationIds) {
@@ -134,10 +136,15 @@ public class WaitNotifyEngine {
   }
 
   public String doneWith(String correlationId, ResponseData response) {
-    return doneWith(correlationId, response, response instanceof ErrorResponseData);
+    return doneWith(correlationId, response, response instanceof ErrorResponseData, kryoSerializer, false);
   }
 
-  private String doneWith(String correlationId, ResponseData response, boolean error) {
+  public String doneWithV2(String correlationId, ResponseData response) {
+    return doneWith(correlationId, response, response instanceof ErrorResponseData, referenceFalseKryoSerializer, true);
+  }
+
+  private String doneWith(String correlationId, ResponseData response, boolean error, KryoSerializer serializer,
+      boolean usingKryoWithoutReference) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
     if (log.isDebugEnabled()) {
@@ -150,7 +157,8 @@ public class WaitNotifyEngine {
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .responseData(kryoSerializer.asDeflatedBytes(response))
+                                  .usingKryoWithoutReference(usingKryoWithoutReference)
+                                  .responseData(serializer.asDeflatedBytes(response))
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());
       long queryEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
