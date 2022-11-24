@@ -130,7 +130,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
       // Happen in dev environments when you abruptly stop the services
       // Will rarely happen in prod env, but can happen
       // TODO: Revisit this by introducing the level count in node execution
-      if (isEmpty(leaves)) {
+      if (isEmpty(leaves) && !StatusUtils.isFinalStatus(planExecution.getStatus())) {
         log.error("No Leaves found something really wrong happened here. Lets check this execution {}",
             interrupt.getPlanExecutionId());
         discontinueAllRunningNodeExecutionsAndPlanExecution(interrupt, nodeExecutions);

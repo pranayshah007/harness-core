@@ -372,9 +372,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @VisibleForTesting
   @Override
   public boolean shouldLog(Update updateOps) {
-    if (!orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-      return false;
-    }
     Set<String> fieldsUpdated = new HashSet<>();
     if (updateOps.getUpdateObject().containsKey("$set")) {
       fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
@@ -395,9 +392,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     if (nodeExecution.getVersion() == null) {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
-        }
+        orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
@@ -485,9 +480,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-        }
+        orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
       }
       return updated;
     });

@@ -166,7 +166,10 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
       switch (orchestrationEventType) {
         case PLAN_EXECUTION_STATUS_UPDATE:
-          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecutionId, orchestrationGraph);
+          PlanExecution planExecution = planExecutionService.getWithStatusAndEndTs(planExecutionId);
+          updateRequired =
+              pmsExecutionSummaryService.onPlanStatusUpdate(planExecution, executionSummaryUpdate) || updateRequired;
+          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecution, orchestrationGraph);
           break;
         case STEP_DETAILS_UPDATE:
           orchestrationGraph = stepDetailsUpdateEventHandler.handleEvent(

@@ -152,6 +152,12 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
+  public PlanExecution getWithStatusAndEndTs(String planExecutionId) {
+    return planExecutionRepository.getWithProjections(
+        planExecutionId, Lists.newArrayList(PlanExecutionKeys.status, PlanExecutionKeys.endTs));
+  }
+
+  @Override
   public void onNodeStatusUpdate(NodeUpdateInfo nodeUpdateInfo) {
     NodeStatusUpdateHandler nodeStatusUpdateObserver =
         nodeStatusUpdateHandlerFactory.obtainStepStatusUpdate(nodeUpdateInfo);
