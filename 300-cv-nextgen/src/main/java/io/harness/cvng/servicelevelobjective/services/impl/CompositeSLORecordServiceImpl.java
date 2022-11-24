@@ -10,30 +10,19 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.persistence.HQuery.excludeAuthorityCount;
 
 import io.harness.annotations.retry.RetryOnException;
-import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.Point;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
-import io.harness.cvng.servicelevelobjective.beans.SLOValue;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord.CompositeSLORecordKeys;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.persistence.HPersistence;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.List;
@@ -45,10 +34,8 @@ import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 
 public class CompositeSLORecordServiceImpl implements CompositeSLORecordService {
-  @VisibleForTesting static int MAX_NUMBER_OF_POINTS = 2000;
   private static final int RETRY_COUNT = 3;
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
   @Override
   public void create(
@@ -80,91 +67,32 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
   }
 
   @Override
-  public SLOGraphData getGraphData(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime,
-      Instant endTime, int totalErrorBudgetMinutes, int sloVersion) {
-    return getGraphData(compositeServiceLevelObjective, startTime, endTime, totalErrorBudgetMinutes, sloVersion, null);
+  public List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .greaterThanOrEq(startTimeStamp)
+        .field(CompositeSLORecordKeys.timestamp)
+        .lessThan(endTimeStamp)
+        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
+        .asList();
   }
 
   @Override
-  public SLOGraphData getGraphData(CompositeServiceLevelObjective compositeServiceLevelObjective, Instant startTime,
-      Instant endTime, int totalErrorBudgetMinutes, int sloVersion, TimeRangeParams filter) {
-    Preconditions.checkState(totalErrorBudgetMinutes != 0, "Total error budget minutes should not be zero.");
-    if (Objects.isNull(filter)) {
-      filter = TimeRangeParams.builder().startTime(startTime).endTime(endTime).build();
-    }
-    List<CompositeSLORecord> sloRecords =
-        compositeSLORecords(compositeServiceLevelObjective.getUuid(), startTime, endTime, filter);
+  public CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .get();
+  }
 
-    List<Point> sloTrend = new ArrayList<>();
-    List<Point> errorBudgetBurndown = new ArrayList<>();
-    double errorBudgetRemainingPercentage = 100;
-    int errorBudgetRemaining = totalErrorBudgetMinutes;
-    boolean isReCalculatingSLI = false;
-    boolean isCalculatingSLI = false;
-    boolean enabled = true;
-    if (!sloRecords.isEmpty()) {
-      SLOValue sloValue = null;
-      double prevRecordGoodCount = 0;
-      double prevRecordBadCount = 0;
-      CompositeSLORecord lastCompositeSLORecord =
-          getLastCompositeSLORecord(compositeServiceLevelObjective.getUuid(), startTime);
-      if (Objects.nonNull(lastCompositeSLORecord)) {
-        prevRecordGoodCount = lastCompositeSLORecord.getRunningGoodCount();
-        prevRecordBadCount = lastCompositeSLORecord.getRunningBadCount();
-      }
-      for (CompositeSLORecord sloRecord : sloRecords) {
-        double goodCountFromStart = sloRecord.getRunningGoodCount() - prevRecordGoodCount;
-        double badCountFromStart = sloRecord.getRunningBadCount() - prevRecordBadCount;
-        if (sloRecord.getSloVersion() != sloVersion) {
-          isReCalculatingSLI = true;
-          return SLOGraphData.builder()
-              .errorBudgetBurndown(errorBudgetBurndown)
-              .errorBudgetRemaining(errorBudgetRemaining)
-              .sloPerformanceTrend(sloTrend)
-              .isRecalculatingSLI(isReCalculatingSLI)
-              .isCalculatingSLI(isCalculatingSLI)
-              .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
-              .build();
-        }
-        sloValue = SLOValue.builder().goodCount(goodCountFromStart).badCount(badCountFromStart).build();
-        sloTrend.add(SLODashboardWidget.Point.builder()
-                         .timestamp(sloRecord.getTimestamp().toEpochMilli())
-                         .value(sloValue.sloPercentage())
-                         .enabled(enabled)
-                         .build());
-        errorBudgetBurndown.add(
-            SLODashboardWidget.Point.builder()
-                .timestamp(sloRecord.getTimestamp().toEpochMilli())
-                .value(((totalErrorBudgetMinutes - sloValue.getBadCount()) * 100.0) / totalErrorBudgetMinutes)
-                .enabled(enabled)
-                .build());
-      }
-      errorBudgetRemainingPercentage = errorBudgetBurndown.get(errorBudgetBurndown.size() - 1).getValue();
-      errorBudgetRemaining = totalErrorBudgetMinutes - (int) sloValue.getBadCount();
-    } else {
-      isCalculatingSLI = true;
-    }
-
-    long startFilter = filter.getStartTime().toEpochMilli();
-    long endFilter = filter.getEndTime().toEpochMilli();
-
-    sloTrend = sloTrend.stream()
-                   .filter(slo -> slo.getTimestamp() >= startFilter)
-                   .filter(slo -> slo.getTimestamp() <= endFilter)
-                   .collect(Collectors.toList());
-    errorBudgetBurndown = errorBudgetBurndown.stream()
-                              .filter(e -> e.getTimestamp() >= startFilter)
-                              .filter(e -> e.getTimestamp() <= endFilter)
-                              .collect(Collectors.toList());
-
-    return SLOGraphData.builder()
-        .errorBudgetBurndown(errorBudgetBurndown)
-        .errorBudgetRemaining(errorBudgetRemaining)
-        .sloPerformanceTrend(sloTrend)
-        .isRecalculatingSLI(isReCalculatingSLI)
-        .isCalculatingSLI(isCalculatingSLI)
-        .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
-        .build();
+  @Override
+  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .get();
   }
 
   public List<CompositeSLORecord> getCompositeSLORecordsFromSLIsDetails(
@@ -235,78 +163,6 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
     hPersistence.save(updateOrCreateSLORecords);
   }
 
-  private List<CompositeSLORecord> compositeSLORecords(
-      String sloId, Instant startTime, Instant endTime, TimeRangeParams filter) {
-    CompositeSLORecord firstRecord = getFirstCompositeSLORecord(sloId, startTime);
-    CompositeSLORecord lastRecord = getLastCompositeSLORecord(sloId, endTime);
-    CompositeSLORecord firstRecordInRange = getFirstCompositeSLORecord(sloId, filter.getStartTime());
-    CompositeSLORecord lastRecordInRange = getLastCompositeSLORecord(sloId, filter.getEndTime());
-    if (firstRecordInRange == null || lastRecordInRange == null) {
-      return Collections.emptyList();
-    } else {
-      startTime = firstRecordInRange.getTimestamp();
-      endTime = lastRecordInRange.getTimestamp().plus(Duration.ofMinutes(1));
-    }
-    List<Instant> minutes = new ArrayList<>();
-    long totalMinutes = Duration.between(startTime, endTime).toMinutes();
-    long diff = totalMinutes / MAX_NUMBER_OF_POINTS;
-    if (diff == 0) {
-      diff = 1L;
-    }
-    minutes.add(firstRecord.getTimestamp());
-    minutes.add(startTime);
-    Duration diffDuration = Duration.ofMinutes(diff);
-    for (Instant current = startTime.plus(Duration.ofMinutes(diff)); current.isBefore(endTime);
-         current = current.plus(diffDuration)) {
-      minutes.add(current);
-    }
-    minutes.add(endTime.minus(Duration.ofMinutes(1)));
-    minutes.add(lastRecord.getTimestamp());
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .field(CompositeSLORecordKeys.timestamp)
-        .in(minutes)
-        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
-        .asList();
-  }
-
-  @Override
-  public List<CompositeSLORecord> getSLORecords(String sloId, Instant startTimeStamp, Instant endTimeStamp) {
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .field(CompositeSLORecordKeys.timestamp)
-        .greaterThanOrEq(startTimeStamp)
-        .field(CompositeSLORecordKeys.timestamp)
-        .lessThan(endTimeStamp)
-        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
-        .asList();
-  }
-
-  private CompositeSLORecord getLastCompositeSLORecord(String sloId, Instant startTimeStamp) {
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .field(CompositeSLORecordKeys.timestamp)
-        .lessThan(startTimeStamp)
-        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
-        .get();
-  }
-  private CompositeSLORecord getFirstCompositeSLORecord(String sloId, Instant timestampInclusive) {
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .field(CompositeSLORecordKeys.timestamp)
-        .greaterThanOrEq(timestampInclusive)
-        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
-        .get();
-  }
-
-  @Override
-  public CompositeSLORecord getLatestCompositeSLORecord(String sloId) {
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
-        .get();
-  }
-
   private void getTimeStampToValueMaps(
       Map<ServiceLevelObjectivesDetail, List<SLIRecord>> serviceLevelObjectivesDetailCompositeSLORecordMap,
       Map<ServiceLevelObjectivesDetail, SLIMissingDataType> objectivesDetailSLIMissingDataTypeMap,
@@ -332,21 +188,31 @@ public class CompositeSLORecordServiceImpl implements CompositeSLORecordService 
       }
     }
   }
-
-  @Override
-  public CompositeSLORecord getLatestCompositeSLORecordWithVersion(String sloId, int sloVersion) {
-    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
-        .filter(CompositeSLORecordKeys.sloId, sloId)
-        .filter(CompositeSLORecordKeys.sloVersion, sloVersion)
-        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
-        .get();
-  }
-
   @Override
   public List<CompositeSLORecord> getLatestCountSLORecords(String sloId, int count) {
     return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
         .filter(CompositeSLORecordKeys.sloId, sloId)
         .order(Sort.descending(CompositeSLORecordKeys.timestamp))
         .asList(new FindOptions().limit(count));
+  }
+
+  @Override
+  public CompositeSLORecord getLastCompositeSLORecord(String sloId, Instant startTimeStamp) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .lessThan(startTimeStamp)
+        .order(Sort.descending(CompositeSLORecordKeys.timestamp))
+        .get();
+  }
+
+  @Override
+  public CompositeSLORecord getFirstCompositeSLORecord(String sloId, Instant timestampInclusive) {
+    return hPersistence.createQuery(CompositeSLORecord.class, excludeAuthorityCount)
+        .filter(CompositeSLORecordKeys.sloId, sloId)
+        .field(CompositeSLORecordKeys.timestamp)
+        .greaterThanOrEq(timestampInclusive)
+        .order(Sort.ascending(CompositeSLORecordKeys.timestamp))
+        .get();
   }
 }
