@@ -143,7 +143,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
           spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
       String stageElastiGroupId = stageElastiGroup.getId();
       deployLogCallback.saveExecutionLog(
-          format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+          format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId));
       elastigroupSetupResult.setNewElastiGroup(stageElastiGroup);
 
       // Prod ELasti Groups
@@ -156,9 +156,11 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       if (prodOptionalElastiGroup.isPresent()) {
         ElastiGroup prodElastiGroup = prodOptionalElastiGroup.get();
         deployLogCallback.saveExecutionLog(format("Found existing Prod Elastigroup with name: [%s] and id: [%s]",
-            prodElastiGroup.getName(), prodElastiGroup.getId()));
+            prodElastiGroup.getName(), prodElastiGroup.getId()), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         prodElastiGroupList = singletonList(prodElastiGroup);
       } else {
+        deployLogCallback.saveExecutionLog(format("Not able to find Prod Elastigroup with name: [%s]",
+                prodElastiGroupName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         prodElastiGroupList = emptyList();
       }
       elastigroupSetupResult.setGroupToBeDownsized(prodElastiGroupList);
@@ -196,8 +198,6 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
     } catch (Exception ex) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
-      deployLogCallback.saveExecutionLog(color(format("Blue Green Stage Setup Failed."), LogColor.Red, LogWeight.Bold),
-          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return ElastigroupSetupResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .elastigroupSetupResult(elastigroupSetupResult)
