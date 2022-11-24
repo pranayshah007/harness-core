@@ -9,7 +9,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.models.ActiveServiceInstanceInfoV2;
-import io.harness.ng.overview.dto.InstanceGroupedByArtifactList;
 import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
 import io.harness.rule.Owner;
 import io.harness.service.instancedashboardservice.InstanceDashboardServiceImpl;
@@ -19,6 +18,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -35,23 +36,40 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
   }
 
   Map<String,
-      Map<String, Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>
+      Map<String,
+          Map<String,
+              Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+                  Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>>
   getSampleServiceBuildEnvInfraMap() {
     Map<String,
-        Map<String, Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>
+        Map<String,
+            Map<String,
+                Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+                    Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>>
         serviceBuildEnvInfraMap = new HashMap<>();
 
-    Map<String, Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>
-        buildEnvInfraMap = new HashMap<>();
-
-    Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>> envInfraMap1 =
+    Map<String,
+        Map<String,
+            Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+                Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>> buildEnvInfraMap =
         new HashMap<>();
-    Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>> envInfraMap2 =
+
+    Map<String,
+        Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+            Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>> envInfraMap1 =
+        new HashMap<>();
+    Map<String,
+        Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+            Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>> envInfraMap2 =
         new HashMap<>();
 
     Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> infraPipelineExecutionMap1 =
         new HashMap<>();
     Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> infraPipelineExecutionMap2 =
+        new HashMap<>();
+    Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> clusterPipelineExecutionMap1 =
+        new HashMap<>();
+    Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> clusterPipelineExecutionMap2 =
         new HashMap<>();
 
     infraPipelineExecutionMap1.put("infra1", new ArrayList<>());
@@ -63,8 +81,17 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
     infraPipelineExecutionMap2.put("infra2", new ArrayList<>());
     infraPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b"));
 
-    envInfraMap1.put("env1", infraPipelineExecutionMap1);
-    envInfraMap2.put("env2", infraPipelineExecutionMap2);
+    clusterPipelineExecutionMap1.put("infra1", new ArrayList<>());
+    clusterPipelineExecutionMap1.get("infra1").add(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a"));
+    clusterPipelineExecutionMap1.get("infra1").add(getSampleInstanceGroupedByPipelineExecution("1", 2l, 2, "a"));
+    clusterPipelineExecutionMap1.get("infra1").add(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b"));
+    clusterPipelineExecutionMap1.put("infra2", new ArrayList<>());
+    clusterPipelineExecutionMap1.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a"));
+    clusterPipelineExecutionMap2.put("infra2", new ArrayList<>());
+    clusterPipelineExecutionMap2.get("infra2").add(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b"));
+
+    envInfraMap1.put("env1", new MutablePair<>(infraPipelineExecutionMap1, clusterPipelineExecutionMap1));
+    envInfraMap2.put("env2", new MutablePair<>(infraPipelineExecutionMap2, clusterPipelineExecutionMap2));
 
     buildEnvInfraMap.put("1", envInfraMap1);
     buildEnvInfraMap.put("2", envInfraMap2);
@@ -100,23 +127,23 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByInfrastructure instanceGroupedByCluster1 =
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
-            .clusterIdentifier("Cluster1")
-            .agentIdentifier("Cluster1")
+            .clusterIdentifier("infra1")
+            .agentIdentifier("infra1")
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 2l, 3, "a"),
                     getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByInfrastructure instanceGroupedByCluster2 =
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
-            .clusterIdentifier("Cluster2")
-            .agentIdentifier("Cluster2")
+            .clusterIdentifier("infra2")
+            .agentIdentifier("infra2")
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("1", 1l, 1, "a")))
             .build();
     InstanceGroupedByServiceList.InstanceGroupedByInfrastructure instanceGroupedByCluster3 =
         InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
-            .clusterIdentifier("Cluster2")
-            .agentIdentifier("Cluster2")
+            .clusterIdentifier("infra2")
+            .agentIdentifier("infra2")
             .instanceGroupedByPipelineExecutionList(
                 Arrays.asList(getSampleInstanceGroupedByPipelineExecution("2", 1l, 1, "b")))
             .build();
@@ -201,7 +228,10 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_groupByServices() {
     Map<String,
-        Map<String, Map<String, Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>
+        Map<String,
+            Map<String,
+                Pair<Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>,
+                    Map<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>>>>>>
         serviceBuildEnvInfraMap = getSampleServiceBuildEnvInfraMap();
     Map<String, String> serviceIdToServiceNameMap = new HashMap<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
@@ -225,7 +255,7 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
 
     List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServices1 =
         CDOverviewDashboardServiceImpl.groupedByServices(serviceBuildEnvInfraMap, envIdToEnvNameMap,
-            infraIdToInfraNameMap, serviceIdToServiceNameMap, buildIdToArtifactPathMap, false, false);
+            infraIdToInfraNameMap, serviceIdToServiceNameMap, infraIdToInfraNameMap, buildIdToArtifactPathMap, false);
 
     assertThat(instanceGroupedByServices1).isEqualTo(instanceGroupedByServices);
   }
