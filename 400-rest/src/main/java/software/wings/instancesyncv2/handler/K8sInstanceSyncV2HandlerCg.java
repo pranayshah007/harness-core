@@ -207,7 +207,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     try {
       return k8sStateHelper.fetchPodListForCluster(containerInfraMapping, cgK8sReleaseIdentifier.getNamespace(),
           cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getClusterName());
-    } catch (Exception e) {
+    } catch (InterruptedException e) {
       throw new K8sPodSyncException(format("Exception in fetching podList for release %s, namespace %s",
                                         cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getNamespace()),
           e);
@@ -276,9 +276,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
             && cgK8sReleaseIdentifier.getNamespace().equals(namespace)
             && cgK8sReleaseIdentifier.getReleaseName().equals(releaseName)
             && cgK8sReleaseIdentifier.isHelmDeployment() == isHelmDeployment
-            && ((StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
+            && (StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
                     && StringUtils.isBlank(containerSvcName)
-                || (cgK8sReleaseIdentifier.getContainerServiceName().equals(containerSvcName))))) {
+                || (cgK8sReleaseIdentifier.getContainerServiceName().equals(containerSvcName)))) {
           instances.add(instanceInDb);
         }
       }
@@ -378,6 +378,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     if (CollectionUtils.isNotEmpty(namespaces)) {
       namespacesSet.addAll(namespaces);
+      namespacesSet = namespacesSet.stream().filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
     return namespacesSet;

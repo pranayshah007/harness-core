@@ -177,7 +177,7 @@ public class CgInstanceSyncServiceV2 {
   }
   protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
     Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);
-    if (summaryOptional != null && summaryOptional.isPresent()) {
+    if (summaryOptional.isPresent()) {
       DeploymentSummary deploymentSummaryFromDB = summaryOptional.get();
       deploymentSummary.setUuid(deploymentSummaryFromDB.getUuid());
       // Copy Artifact Information for rollback version for previous deployment summary
