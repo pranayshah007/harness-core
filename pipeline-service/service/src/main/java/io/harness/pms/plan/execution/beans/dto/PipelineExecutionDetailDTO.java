@@ -31,4 +31,6 @@ import lombok.experimental.FieldDefaults;
 public class PipelineExecutionDetailDTO {
   PipelineExecutionSummaryDTO pipelineExecutionSummary;
   ExecutionGraph executionGraph;
+
+  ChildExecutionDetailDTO childGraph;
 }

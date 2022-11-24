@@ -10,9 +10,11 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -36,6 +38,8 @@ import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.TGTGenerationMethod;
+import io.harness.ng.core.events.SecretDeleteEvent;
+import io.harness.ng.core.events.SecretForceDeleteEvent;
 import io.harness.ng.core.models.KerberosConfig;
 import io.harness.ng.core.models.KerberosWinRmConfig;
 import io.harness.ng.core.models.NTLMConfig;
@@ -46,6 +50,7 @@ import io.harness.ng.core.models.SSHKeyCredential;
 import io.harness.ng.core.models.SSHKeyPathCredential;
 import io.harness.ng.core.models.SSHPasswordCredential;
 import io.harness.ng.core.models.Secret;
+import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.models.TGTKeyTabFilePathSpec;
 import io.harness.ng.core.models.TGTPasswordSpec;
 import io.harness.ng.core.models.WinRmAuth;
@@ -58,6 +63,7 @@ import io.harness.repositories.ng.core.spring.SecretRepository;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.SSHAuthScheme;
 import io.harness.secretmanagerclient.SecretType;
+import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.WinRmAuthScheme;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secretmanagerclient.services.WinRmCredentialsSpecDTOHelper;
@@ -70,6 +76,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -84,6 +91,25 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+  private ArgumentCaptor<SecretForceDeleteEvent> secretForceDeleteEventArgumentCaptor;
+  private ArgumentCaptor<SecretDeleteEvent> secretDeleteEventArgumentCaptor;
+
+  private String ORG_ID = randomAlphabetic(10);
+  private String PROJECT_ID = randomAlphabetic(10);
+  private String ID = randomAlphabetic(10);
+  private String ACC_ID = randomAlphabetic(10);
+  Secret secret = Secret.builder()
+                      .identifier(ID)
+                      .accountIdentifier(ACC_ID)
+                      .projectIdentifier(PROJECT_ID)
+                      .orgIdentifier(ORG_ID)
+                      .secretSpec(SecretTextSpec.builder()
+                                      .secretManagerIdentifier("secretManager")
+                                      .valueType(ValueType.Inline)
+                                      .value("value")
+                                      .build())
+
+                      .build();
   @Before
   public void setup() {
     secretRepository = mock(SecretRepository.class);
@@ -100,6 +126,8 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
         ngSecretActivityService, outboxService, transactionTemplate, taskSetupAbstractionHelper,
         winRmCredentialsSpecDTOHelper, accessControlClient);
     secretServiceV2Spy = spy(secretServiceV2);
+    secretForceDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretForceDeleteEvent.class);
+    secretDeleteEventArgumentCaptor = ArgumentCaptor.forClass(SecretDeleteEvent.class);
   }
 
   private SecretDTOV2 getSecretDTO() {
@@ -146,10 +174,38 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
     doNothing().when(secretRepository).delete(any());
     when(transactionTemplate.execute(any())).thenReturn(true);
-    boolean success = secretServiceV2Spy.delete("account", "org", "proj", "identifier");
+    boolean success = secretServiceV2Spy.delete("account", "org", "proj", "identifier", false);
     assertThat(success).isTrue();
     verify(secretServiceV2Spy).get(any(), any(), any(), any());
     verify(secretRepository, times(0)).delete(any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void deleteInternal_withForceDeleteFalse() {
+    doNothing().when(ngSecretActivityService).deleteAllActivities(any(), any());
+    doNothing().when(secretRepository).delete(any());
+    boolean success = secretServiceV2Spy.deleteInternal("account", "org", "proj", "identifier", secret, false);
+    assertThat(success).isTrue();
+    verify(outboxService, times(1)).save(secretDeleteEventArgumentCaptor.capture());
+    SecretDeleteEvent secretDeleteEvent = secretDeleteEventArgumentCaptor.getValue();
+    assertThat(secret.getIdentifier()).isEqualTo(secretDeleteEvent.getSecret().getIdentifier());
+    assertThat("SecretDeleted").isEqualTo(secretDeleteEvent.getEventType());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void deleteInternal_withForceDeleteTrue() {
+    doNothing().when(ngSecretActivityService).deleteAllActivities(any(), any());
+    doNothing().when(secretRepository).delete(any());
+    boolean success = secretServiceV2Spy.deleteInternal("account", "org", "proj", "identifier", secret, true);
+    assertThat(success).isTrue();
+    verify(outboxService, times(1)).save(secretForceDeleteEventArgumentCaptor.capture());
+    SecretForceDeleteEvent secretDeleteEvent = secretForceDeleteEventArgumentCaptor.getValue();
+    assertThat(secret.getIdentifier()).isEqualTo(secretDeleteEvent.getSecret().getIdentifier());
+    assertThat("SecretForceDeleted").isEqualTo(secretDeleteEvent.getEventType());
   }
 
   @Test

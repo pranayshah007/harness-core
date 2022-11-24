@@ -16,4 +16,5 @@ import lombok.NonNull;
 public interface PerspectiveAnomalyService {
   List<AnomalyData> listPerspectiveAnomaliesForDate(
       @NonNull String accountIdentifier, @NonNull String perspectiveId, Instant date);
+  void updateAnomalySentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus);
 }

@@ -418,6 +418,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .selfService(true)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .numberOfServices(Integer.valueOf(UNLIMITED))
                                        .build();
     CVModuleLicenseDTO dto = (CVModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.ENTERPRISE, ACCOUNT_IDENTIFIER, ModuleType.CV);
@@ -440,6 +441,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .selfService(true)
                                        .startTime(0)
                                        .expiryTime(0)
+                                       .numberOfServices(100)
                                        .build();
     CVModuleLicenseDTO dto = (CVModuleLicenseDTO) moduleLicenseInterface.generateTrialLicense(
         Edition.TEAM, ACCOUNT_IDENTIFIER, ModuleType.CV);
@@ -461,6 +463,7 @@ public class ModuleLicenseInterfaceImplTest extends CategoryTest {
                                        .startTime(0)
                                        .selfService(true)
                                        .expiryTime(Long.MAX_VALUE)
+                                       .numberOfServices(5)
                                        .build();
     CVModuleLicenseDTO dto =
         (CVModuleLicenseDTO) moduleLicenseInterface.generateFreeLicense(ACCOUNT_IDENTIFIER, ModuleType.CV);

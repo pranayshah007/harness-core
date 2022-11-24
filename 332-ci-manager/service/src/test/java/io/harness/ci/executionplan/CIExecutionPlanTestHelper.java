@@ -62,7 +62,7 @@ import io.harness.beans.yaml.extended.CustomTextVariable;
 import io.harness.beans.yaml.extended.CustomVariable;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml.EmptyDirYamlSpec;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;

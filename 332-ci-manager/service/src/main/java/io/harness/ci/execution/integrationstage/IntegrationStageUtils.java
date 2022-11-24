@@ -56,12 +56,10 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
-import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.platform.ArchType;
-import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.InfraInfoUtils;
 import io.harness.ci.license.CILicenseService;
@@ -99,7 +97,6 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
@@ -177,16 +174,15 @@ public class IntegrationStageUtils {
 
   public static ExecutionSource buildExecutionSource(ExecutionTriggerInfo executionTriggerInfo,
       TriggerPayload triggerPayload, String identifier, ParameterField<Build> parameterFieldBuild,
-      String connectorIdentifier, ConnectorUtils connectorUtils, PlanCreationContextValue planCreationContextValue,
-      CodeBase codeBase) {
+      String connectorIdentifier, ConnectorUtils connectorUtils, PlanCreationContext ctx, CodeBase codeBase) {
     if (!executionTriggerInfo.getIsRerun()) {
       if (executionTriggerInfo.getTriggerType() == TriggerType.MANUAL
           || executionTriggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON) {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContext(connectorIdentifier, connectorUtils, planCreationContextValue,
-                parsedPayload, codeBase, triggerPayload.getVersion())) {
+        if (treatWebhookAsManualExecutionWithContext(
+                connectorIdentifier, connectorUtils, ctx, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
 
@@ -200,8 +196,8 @@ public class IntegrationStageUtils {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContext(connectorIdentifier, connectorUtils, planCreationContextValue,
-                parsedPayload, codeBase, triggerPayload.getVersion())) {
+        if (treatWebhookAsManualExecutionWithContext(
+                connectorIdentifier, connectorUtils, ctx, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
@@ -296,10 +292,10 @@ public class IntegrationStageUtils {
   }
 
   private static boolean treatWebhookAsManualExecutionWithContext(String connectorIdentifier,
-      ConnectorUtils connectorUtils, PlanCreationContextValue planCreationContextValue, ParsedPayload parsedPayload,
-      CodeBase codeBase, long version) {
-    BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(planCreationContextValue.getAccountIdentifier(),
-        planCreationContextValue.getOrgIdentifier(), planCreationContextValue.getProjectIdentifier());
+      ConnectorUtils connectorUtils, PlanCreationContext ctx, ParsedPayload parsedPayload, CodeBase codeBase,
+      long version) {
+    BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(
+        ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier());
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);
@@ -788,30 +784,6 @@ public class IntegrationStageUtils {
         .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
         .scmHostType(connectorUtils.getScmHostType(connectorDetails))
         .build();
-  }
-
-  // assuming hosted VM infra for unscripted demo
-  public static Infrastructure getInfrastructureV2() {
-    return HostedVmInfraYaml.builder()
-        .spec(HostedVmInfraYaml.HostedVmInfraSpec.builder()
-                  .platform(ParameterField.createValueField(Platform.builder()
-                                                                .arch(ParameterField.createValueField(ArchType.Amd64))
-                                                                .os(ParameterField.createValueField(OSType.Linux))
-                                                                .build()))
-                  .build())
-        .build();
-  }
-
-  public static ExecutionSource buildExecutionSourceV2(
-      PlanCreationContext ctx, CodeBase codeBase, ConnectorUtils connectorUtils, String identifier) {
-    if (codeBase == null) {
-      return null;
-    }
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
-    return buildExecutionSource(triggerInfo, triggerPayload, identifier, codeBase.getBuild(),
-        codeBase.getConnectorRef().getValue(), connectorUtils, planCreationContextValue, codeBase);
   }
 
   public static Long getStageTtl(CILicenseService ciLicenseService, String accountId, Infrastructure infrastructure) {

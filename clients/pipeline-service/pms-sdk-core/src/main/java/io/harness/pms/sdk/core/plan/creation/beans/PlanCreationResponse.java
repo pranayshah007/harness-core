@@ -39,6 +39,10 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
   String startingNodeId;
   @Singular List<String> errorMessages;
 
+  public Dependencies getDependencies() {
+    return dependencies;
+  }
+
   public void merge(PlanCreationResponse other) {
     // adding PlanNode to map of nodes
     addNode(other.getPlanNode());
@@ -51,7 +55,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     addYamlUpdates(other.getYamlUpdates());
   }
 
-  public void mergeContext(Map<String, PlanCreationContextValue> contextMap) {
+  private void mergeContext(Map<String, PlanCreationContextValue> contextMap) {
     if (EmptyPredicate.isEmpty(contextMap)) {
       return;
     }
@@ -60,7 +64,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     }
   }
 
-  public void mergeLayoutNodeInfo(GraphLayoutResponse layoutNodeInfo) {
+  private void mergeLayoutNodeInfo(GraphLayoutResponse layoutNodeInfo) {
     if (layoutNodeInfo == null) {
       return;
     }
@@ -72,7 +76,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     graphLayoutResponse.addLayoutNodes(layoutNodeInfo.getLayoutNodes());
   }
 
-  public void addNodes(Map<String, PlanNode> newNodes) {
+  private void addNodes(Map<String, PlanNode> newNodes) {
     if (EmptyPredicate.isEmpty(newNodes)) {
       return;
     }
@@ -98,7 +102,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     }
   }
 
-  public void addDependencies(Dependencies dependencies) {
+  private void addDependencies(Dependencies dependencies) {
     if (dependencies == null || EmptyPredicate.isEmpty(dependencies.getDependenciesMap())) {
       return;
     }
@@ -109,7 +113,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
         (key, value) -> addDependencyMetadata(dependencies.getYaml(), key, value));
   }
 
-  public void addDependencyMetadata(String yaml, String nodeId, Dependency value) {
+  private void addDependencyMetadata(String yaml, String nodeId, Dependency value) {
     if ((dependencies != null && dependencies.getDependencyMetadataMap().containsKey(nodeId))
         || (nodes != null && nodes.containsKey(nodeId))) {
       return;
@@ -125,7 +129,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     dependencies = dependencies.toBuilder().putDependencyMetadata(nodeId, value).build();
   }
 
-  public void putContextValue(String key, PlanCreationContextValue value) {
+  private void putContextValue(String key, PlanCreationContextValue value) {
     if (contextMap != null && contextMap.containsKey(key)) {
       return;
     }
@@ -138,7 +142,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     contextMap.put(key, value);
   }
 
-  public void addDependency(String yaml, String nodeId, String yamlPath) {
+  private void addDependency(String yaml, String nodeId, String yamlPath) {
     if ((dependencies != null && dependencies.getDependenciesMap().containsKey(nodeId))
         || (nodes != null && nodes.containsKey(nodeId))) {
       return;
@@ -150,7 +154,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     dependencies = dependencies.toBuilder().putDependencies(nodeId, yamlPath).build();
   }
 
-  public void mergeStartingNodeId(String otherStartingNodeId) {
+  private void mergeStartingNodeId(String otherStartingNodeId) {
     if (EmptyPredicate.isEmpty(otherStartingNodeId)) {
       return;
     }
@@ -164,7 +168,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     }
   }
 
-  public void addYamlUpdates(YamlUpdates otherYamlUpdates) {
+  private void addYamlUpdates(YamlUpdates otherYamlUpdates) {
     if (otherYamlUpdates == null) {
       return;
     }
@@ -175,7 +179,7 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     yamlUpdates = yamlUpdates.toBuilder().putAllFqnToYaml(otherYamlUpdates.getFqnToYamlMap()).build();
   }
 
-  public boolean checkIfSinglePlanNodeInResponse() {
+  private boolean checkIfSinglePlanNodeInResponse() {
     if (EmptyPredicate.isEmpty(nodes)) {
       return true;
     }

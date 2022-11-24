@@ -73,7 +73,7 @@ public enum CIStepInfoType {
   ZAP(CI_LITE_ENGINE, "Zap"),
   BITRISE(CI_LITE_ENGINE, "Bitrise"),
   SCRIPT(CI_LITE_ENGINE, "script"),
-  RUN_TESTS_V1(CI_LITE_ENGINE, "run_tests");
+  PLUGIN_V1(CI_LITE_ENGINE, "plugin");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

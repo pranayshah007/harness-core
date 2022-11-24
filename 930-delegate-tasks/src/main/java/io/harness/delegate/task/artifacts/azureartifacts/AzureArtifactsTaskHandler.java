@@ -61,12 +61,12 @@ public class AzureArtifactsTaskHandler extends DelegateArtifactTaskHandler<Azure
         attributesRequest.getFeed(), attributesRequest.getProject());
 
     String versionRegex = attributesRequest.getVersionRegex();
-
-    Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
-
-    builds = builds.stream()
-                 .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
-                 .collect(Collectors.toList());
+    if (versionRegex != null) {
+      Pattern pattern = Pattern.compile(versionRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+      builds = builds.stream()
+                   .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+                   .collect(Collectors.toList());
+    }
 
     return ArtifactTaskExecutionResponse.builder().buildDetails(builds).build();
   }

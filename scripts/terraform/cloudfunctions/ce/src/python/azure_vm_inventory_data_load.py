@@ -61,9 +61,9 @@ def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.vmId = S.vmId and T.creationTime = s.creationTime
+                ON T.vmId = S.vmId
                 WHEN MATCHED THEN
-                  UPDATE SET networkInterfaces = s.networkInterfaces, provisioningState = s.provisioningState,
+                  UPDATE SET creationTime = s.creationTime, networkInterfaces = s.networkInterfaces, provisioningState = s.provisioningState,
                   lastUpdatedAt = '%s', displayStatus = s.displayStatus, tags = s.tags,
                   publicIps = s.publicIps, privateIps = s.privateIps
                 WHEN NOT MATCHED THEN

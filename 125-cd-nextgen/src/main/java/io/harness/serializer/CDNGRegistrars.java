@@ -31,6 +31,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStepNode;
 import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.gitops.MergePRStepNode;
 import io.harness.cdng.gitops.UpdateReleaseRepoStepNode;
+import io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepNode;
@@ -177,6 +178,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(UpdateReleaseRepoStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_FETCH_LINKED_APPS)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(FetchLinkedAppsStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
                                            .modulesSupported(Collections.singletonList(ModuleType.CD))

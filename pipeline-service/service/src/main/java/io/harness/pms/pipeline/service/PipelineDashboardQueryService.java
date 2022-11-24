@@ -8,7 +8,8 @@
 package io.harness.pms.pipeline.service;
 
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.Dashboard.StatusAndTime;
+import io.harness.pms.dashboard.MeanAndMedian;
+import io.harness.pms.dashboard.StatusAndTime;
 import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
@@ -16,7 +17,6 @@ import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.SelectField;
@@ -89,34 +89,42 @@ public class PipelineDashboardQueryService {
     }
   }
 
-  public long getPipelineExecutionMeanDuration(String accountId, String orgId, String projectId, String pipelineId,
-      long startInterval, long endInterval, String tableName) {
+  public MeanAndMedian getPipelineExecutionMeanAndMedianDuration(String accountId, String orgId, String projectId,
+      String pipelineId, long startInterval, long endInterval, String tableName) {
     try {
-      @NotNull List<Long> mean;
       List<Condition> conditionsCD =
           createConditions(CD_TableName, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
       List<Condition> conditionsCI =
           createConditions(CI_TableName, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
       conditionsCD.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.isNotNull());
       conditionsCI.add(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.isNotNull());
+      List<MeanAndMedian> meanAndMedians;
       if (Objects.equals(tableName, CD_TableName)) {
-        mean = this.dsl
-                   .select(new SelectField[] {DSL.avg(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.sub(
-                                                          Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
-                                                  .div(1000)})
-                   .from(fromCD)
-                   .where(conditionsCD)
-                   .fetch()
-                   .into(long.class);
+        meanAndMedians = this.dsl
+                             .select(new SelectField[] {DSL.avg(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.sub(
+                                                                    Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
+                                                            .div(1000),
+                                 DSL.percentileDisc(0.5)
+                                     .withinGroupOrderBy((Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
+                                                             .sub(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
+                                     .div(1000)})
+                             .from(fromCD)
+                             .where(conditionsCD)
+                             .fetch()
+                             .into(MeanAndMedian.class);
       } else if (Objects.equals(tableName, CI_TableName)) {
-        mean = this.dsl
-                   .select(new SelectField[] {DSL.avg(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.sub(
-                                                          Tables.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS))
-                                                  .div(1000)})
-                   .from(fromCI)
-                   .where(conditionsCI)
-                   .fetch()
-                   .into(long.class);
+        meanAndMedians = this.dsl
+                             .select(new SelectField[] {DSL.avg(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.sub(
+                                                                    Tables.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS))
+                                                            .div(1000),
+                                 DSL.percentileDisc(0.5)
+                                     .withinGroupOrderBy((Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS)
+                                                             .sub(Tables.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS))
+                                     .div(1000)})
+                             .from(fromCI)
+                             .where(conditionsCI)
+                             .fetch()
+                             .into(MeanAndMedian.class);
       } else {
         // Including PlanExecutionId in the projection because it is used as unique identifier for union operation
         Table table = dsl.select(new SelectField[] {Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS,
@@ -130,78 +138,19 @@ public class PipelineDashboardQueryService {
                                      .from(fromCI)
                                      .where(conditionsCI))
                           .asTable();
-        mean =
+        meanAndMedians =
             dsl.select(new SelectField[] {DSL.avg(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
                                                       .sub(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)))
-                                              .div(1000)})
+                                              .div(1000),
+                           DSL.percentileDisc(0.5)
+                               .withinGroupOrderBy((Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
+                                                       .sub(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
+                               .div(1000)})
                 .from(table)
                 .fetch()
-                .into(long.class);
+                .into(MeanAndMedian.class);
       }
-      return mean.get(0);
-    } catch (DataAccessException ex) {
-      if (DBUtils.isConnectionError(ex)) {
-        throw new InvalidRequestException(
-            "Unable to fetch Dashboard data for executions, Please ensure timescale is enabled", ex);
-      } else {
-        throw new InvalidRequestException("Unable to fetch Dashboard data for executions", ex);
-      }
-    } catch (Exception ex) {
-      throw new InvalidRequestException("Unable to fetch Dashboard data for executions", ex);
-    }
-  }
-
-  public long getPipelineExecutionMedianDuration(String accountId, String orgId, String projectId, String pipelineId,
-      long startInterval, long endInterval, String tableName) {
-    try {
-      @NotNull List<Long> median;
-      List<Condition> conditionsCD =
-          createConditions(CD_TableName, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
-      List<Condition> conditionsCI =
-          createConditions(CI_TableName, orgId, pipelineId, projectId, accountId, startInterval, endInterval);
-      conditionsCD.add(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.isNotNull());
-      conditionsCI.add(Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.isNotNull());
-      if (Objects.equals(tableName, CD_TableName)) {
-        median = this.dsl
-                     .select(new SelectField[] {DSL.percentileDisc(0.5).withinGroupOrderBy(
-                         (Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS.sub(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
-                             .div(1000))})
-                     .from(fromCD)
-                     .where(conditionsCD)
-                     .fetch()
-                     .into(long.class);
-      } else if (Objects.equals(tableName, CI_TableName)) {
-        median = this.dsl
-                     .select(new SelectField[] {DSL.percentileDisc(0.5).withinGroupOrderBy(
-                         (Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS.sub(Tables.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS))
-                             .div(1000))})
-                     .from(fromCI)
-                     .where(conditionsCI)
-                     .fetch()
-                     .into(long.class);
-      } else {
-        // Including PlanExecutionId in the projection because it is used as a unique identifier for union
-        // operation
-        Table table = dsl.select(new SelectField[] {Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS,
-                                     Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS,
-                                     Tables.PIPELINE_EXECUTION_SUMMARY_CD.PLANEXECUTIONID})
-                          .from(fromCD)
-                          .where(conditionsCD)
-                          .union(dsl.select(new SelectField[] {Tables.PIPELINE_EXECUTION_SUMMARY_CI.ENDTS,
-                                                Tables.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS,
-                                                Tables.PIPELINE_EXECUTION_SUMMARY_CI.PLANEXECUTIONID})
-                                     .from(fromCI)
-                                     .where(conditionsCI))
-                          .asTable();
-        median = dsl.select(new SelectField[] {DSL.percentileDisc(0.5).withinGroupOrderBy(
-                                (table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
-                                        .sub(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)))
-                                    .div(1000))})
-                     .from(table)
-                     .fetch()
-                     .into(long.class);
-      }
-      return median.get(0);
+      return meanAndMedians.get(0);
     } catch (DataAccessException ex) {
       if (DBUtils.isConnectionError(ex)) {
         throw new InvalidRequestException(

@@ -14,16 +14,31 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
+import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
+import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersKeys;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
+import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExecutionDetailDTOBuilder;
+import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
+import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO.PipelineExecutionDetailDTOBuilder;
+import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.StepSpecTypeConstants;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,6 +58,9 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PipelineStageHelper {
   @Inject private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  @Inject private final PMSExecutionService pmsExecutionService;
+  @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
+  @Inject private final AccessControlClient accessControlClient;
 
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity);
@@ -107,5 +125,67 @@ public class PipelineStageHelper {
       inputSetYaml = YamlPipelineUtils.writeYamlString(map);
     }
     return inputSetYaml;
+  }
+
+  public PipelineExecutionDetailDTO getResponseDTOWithChildGraph(String accountId, String childStageNodeId,
+      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
+      NodeExecution nodeExecution) {
+    String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
+    PmsStepParameters parameters = nodeExecution.getNode().getStepParameters();
+
+    String orgId = parameters.getValue(PipelineStageStepParametersKeys.org);
+    String projectId = parameters.getValue(PipelineStageStepParametersKeys.project);
+    return getExecutionDetailDTO(
+        accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, childExecutionId, orgId, projectId);
+  }
+
+  private PipelineExecutionDetailDTO getExecutionDetailDTO(String accountId, String childStageNodeId,
+      PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails, String childExecutionId,
+      String orgId, String projectId) {
+    PipelineExecutionSummaryEntity executionSummaryEntityForChild =
+        pmsExecutionService.getPipelineExecutionSummaryEntity(accountId, orgId, projectId, childExecutionId, false);
+
+    // access control on child pipeline
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+        Resource.of("PIPELINE", executionSummaryEntityForChild.getPipelineIdentifier()),
+        PipelineRbacPermissions.PIPELINE_VIEW);
+
+    EntityGitDetails entityGitDetailsForChild;
+    if (executionSummaryEntity.getEntityGitDetails() == null) {
+      entityGitDetailsForChild =
+          pmsGitSyncHelper.getEntityGitDetailsFromBytes(executionSummaryEntityForChild.getGitSyncBranchContext());
+    } else {
+      entityGitDetailsForChild = executionSummaryEntityForChild.getEntityGitDetails();
+    }
+
+    // Top graph of parent execution
+    PipelineExecutionDetailDTOBuilder pipelineStageGraphBuilder =
+        PipelineExecutionDetailDTO.builder().pipelineExecutionSummary(
+            PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails));
+
+    ChildExecutionDetailDTO childGraph =
+        getChildGraph(childStageNodeId, childExecutionId, executionSummaryEntityForChild, entityGitDetailsForChild);
+    return pipelineStageGraphBuilder.childGraph(childGraph).build();
+  }
+
+  private ChildExecutionDetailDTO getChildGraph(String childStageNodeId, String childExecutionId,
+      PipelineExecutionSummaryEntity executionSummaryEntityForChild, EntityGitDetails entityGitDetailsForChild) {
+    // Top graph for child execution
+    ChildExecutionDetailDTOBuilder childGraphBuilder = ChildExecutionDetailDTO.builder().pipelineExecutionSummary(
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntityForChild, entityGitDetailsForChild));
+
+    // if child stage node id is not null, add bottom graph for child execution
+    if (childStageNodeId != null) {
+      childGraphBuilder.executionGraph(ExecutionGraphMapper.toExecutionGraph(
+          pmsExecutionService.getOrchestrationGraph(childStageNodeId, childExecutionId, null),
+          executionSummaryEntityForChild));
+    }
+    return childGraphBuilder.build();
+  }
+
+  public boolean validateGraphToGenerate(Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTO, String stageNodeId) {
+    // Validates nodeType which should be Pipeline
+    return graphLayoutNodeDTO.containsKey(stageNodeId)
+        && graphLayoutNodeDTO.get(stageNodeId).getNodeType().equals(StepSpecTypeConstants.PIPELINE_STAGE);
   }
 }

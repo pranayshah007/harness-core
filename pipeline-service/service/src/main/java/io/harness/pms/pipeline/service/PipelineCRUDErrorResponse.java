@@ -43,14 +43,14 @@ public class PipelineCRUDErrorResponse {
 
   public void checkForGovernanceErrorAndThrow(GovernanceMetadata governanceMetadata) {
     if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
+      List<String> denyingRuleSetIds = governanceMetadata.getDetailsList()
+                                           .stream()
+                                           .filter(PolicySetMetadata::getDeny)
+                                           .map(PolicySetMetadata::getIdentifier)
+                                           .collect(Collectors.toList());
       // todo: see if this can be changed to PolicyEvaluationFailureException, probably yes
       throw new InvalidRequestException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds);
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingRuleSetIds);
     }
   }
 

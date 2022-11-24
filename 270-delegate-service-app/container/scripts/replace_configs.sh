@@ -324,6 +324,10 @@ if [[ "" != "$REDIS_URL" ]]; then
   export REDIS_URL; yq -i '.singleServerConfig.address=env(REDIS_URL)' $REDISSON_CACHE_FILE
 fi
 
+if [[ "" != "$ATMOSPHERE_REDIS_URL" ]]; then
+  export ATMOSPHERE_REDIS_URL; yq -i '.redisAtmosphereConfig.redisUrl=env(ATMOSPHERE_REDIS_URL)' $CONFIG_FILE
+fi
+
 if [[ "$REDIS_SENTINEL" == "true" ]]; then
   yq -i '.redisLockConfig.sentinel=true' $CONFIG_FILE
   yq -i '.redisAtmosphereConfig.sentinel=true' $CONFIG_FILE

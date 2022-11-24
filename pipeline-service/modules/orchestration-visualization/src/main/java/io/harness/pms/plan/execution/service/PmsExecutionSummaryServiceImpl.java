@@ -98,7 +98,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                  .get(nodeExecution.getNodeId())
                  .getNodeType()
                  .equals(StrategyType.PARALLELISM.name())) {
-          updateApplied = updateApplied || updateStrategyNodeFields(nodeExecution, update, true);
+          updateApplied = updateStrategyNodeFields(nodeExecution, update, true) || updateApplied;
         }
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
@@ -108,9 +108,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                    .getEdgeLayoutList()
                    .getCurrentNodeChildren()
                    .contains(childNodeExecution.getUuid())) {
-            updateApplied = updateApplied
-                || addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
-                    graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId);
+            updateApplied = addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
+                                graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId)
+                || updateApplied;
           }
         }
       }

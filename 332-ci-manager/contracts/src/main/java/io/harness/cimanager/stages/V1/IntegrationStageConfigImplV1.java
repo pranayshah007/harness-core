@@ -11,13 +11,20 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.clone.Clone;
+import io.harness.beans.yaml.extended.platform.V1.Arch;
+import io.harness.beans.yaml.extended.platform.V1.OS;
+import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
+import io.harness.beans.yaml.extended.runtime.V1.CloudRuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
@@ -55,6 +62,27 @@ public class IntegrationStageConfigImplV1 implements StageInfoConfig {
       this.clone = Clone.builder().build();
     }
     return this.clone;
+  }
+
+  @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", visible = true)
+  @JsonProperty("runtime")
+  RuntimeV1 runtime;
+  public RuntimeV1 getRuntime() {
+    if (this.runtime == null) {
+      this.runtime = CloudRuntimeV1.builder().build();
+    }
+    return this.runtime;
+  }
+
+  @JsonProperty("platform") PlatformV1 platform;
+  public PlatformV1 getPlatform() {
+    if (this.platform == null) {
+      this.platform = PlatformV1.builder()
+                          .os(ParameterField.createValueField(OS.LINUX))
+                          .arch(ParameterField.createValueField(Arch.AMD_64))
+                          .build();
+    }
+    return this.platform;
   }
 
   @Override

@@ -19,4 +19,5 @@ public class ConnectorEvent {
   public static final String CONNECTOR_CREATED = "ConnectorCreated";
   public static final String CONNECTOR_UPDATED = "ConnectorUpdated";
   public static final String CONNECTOR_DELETED = "ConnectorDeleted";
+  public static final String CONNECTOR_FORCE_DELETED = "ConnectorForceDeleted";
 }

@@ -7,7 +7,7 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.exception.InvalidRequestException;
+import software.wings.yaml.workflow.StepYaml;
 
 import com.google.inject.Inject;
 
@@ -22,6 +22,13 @@ public class StepMapperFactory {
   @Inject EmailStepMapperImpl emailStepMapper;
   @Inject K8sRollingRollbackStepMapperImpl k8sRollingRollbackStepMapper;
   @Inject K8sCanaryDeployStepMapperImpl k8sCanaryDeployStepMapper;
+  @Inject EmptyStepMapperImpl emptyStepMapper;
+  @Inject K8sScaleStepMapperImpl k8sScaleStepMapper;
+  @Inject JenkinsStepMapperImpl jenkinsStepMapper;
+  @Inject K8sSwapServiceSelectorsStepMapperImpl k8sSwapServiceSelectorsStepMapper;
+  @Inject K8sBlueGreenDeployStepMapperImpl k8sBlueGreenDeployStepMapper;
+  @Inject JiraCreateUpdateStepMapperImpl jiraCreateUpdateStepMapper;
+  @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
@@ -39,14 +46,34 @@ public class StepMapperFactory {
         return k8sDeleteStepMapper;
       case "K8S_APPLY":
         return k8sApplyStepMapper;
+      case "K8S_SCALE":
+        return k8sScaleStepMapper;
       case "EMAIL":
         return emailStepMapper;
       case "K8S_DEPLOYMENT_ROLLING_ROLLBACK":
         return k8sRollingRollbackStepMapper;
       case "K8S_CANARY_DEPLOY":
         return k8sCanaryDeployStepMapper;
+      case "JENKINS":
+        return jenkinsStepMapper;
+      case "KUBERNETES_SWAP_SERVICE_SELECTORS":
+        return k8sSwapServiceSelectorsStepMapper;
+      case "K8S_BLUE_GREEN_DEPLOY":
+        return k8sBlueGreenDeployStepMapper;
+      case "JIRA_CREATE_UPDATE":
+        return jiraCreateUpdateStepMapper;
+      case "ARTIFACT_COLLECTION":
+      case "ARTIFACT_CHECK":
+        return emptyStepMapper;
       default:
-        throw new InvalidRequestException("Unsupported step");
+        return unsupportedStepMapper;
     }
+  }
+
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    if (!stepYaml1.getType().equals(stepYaml2.getType())) {
+      return false;
+    }
+    return getStepMapper(stepYaml1.getType()).areSimilar(stepYaml1, stepYaml2);
   }
 }

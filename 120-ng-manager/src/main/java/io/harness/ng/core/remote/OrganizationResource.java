@@ -96,6 +96,12 @@ import org.springframework.data.domain.Page;
       @Content(mediaType = "application/json", schema = @Schema(implementation = FailureDTO.class))
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = FailureDTO.class))
     })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Not Found",
+    content =
+    {
+      @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
+      , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
+    })
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error",
     content =
     {

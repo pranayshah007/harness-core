@@ -7,8 +7,6 @@
 
 package software.wings.delegatetasks;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
@@ -35,9 +33,6 @@ public class GenericLogSanitizer extends LogSanitizer {
    */
   @Override
   public String sanitizeLog(String activityId, String message) {
-    if (isEmpty(secretLines)) {
-      return message;
-    }
     return sanitizeLogInternal(message, secretLines);
   }
 }

@@ -13,7 +13,7 @@ import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.logging.ExceptionLogger;
+import io.harness.exception.ExceptionLogger;
 import io.harness.ng.core.Status;
 
 import javax.ws.rs.container.ResourceInfo;

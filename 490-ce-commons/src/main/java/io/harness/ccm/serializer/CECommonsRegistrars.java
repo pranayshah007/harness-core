@@ -9,7 +9,7 @@ package io.harness.ccm.serializer;
 
 import io.harness.ccm.serializer.morphia.CECommonsMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.serializer.CommonsRegistrars;
+import io.harness.serializer.common.CommonsRegistrars;
 
 import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
