@@ -7,6 +7,9 @@
 
 package io.harness.cdng.service.steps;
 
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -19,6 +22,8 @@ import lombok.Data;
 
 @Data
 @Builder
+@OwnedBy(HarnessTeam.CDC)
+@RecasterAlias("io.harness.cdng.service.steps.ServiceStepV3Parameters")
 public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<String> serviceRef;
   private ParameterField<Map<String, Object>> inputs;

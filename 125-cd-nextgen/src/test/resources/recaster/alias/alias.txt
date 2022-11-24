@@ -566,3 +566,4 @@ io.harness.cdng.environment.filters.AllowAllFilter
 io.harness.cdng.gitops.steps.GitOpsEnvOutCome
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode
+io.harness.cdng.service.steps.ServiceStepV3Parameters
