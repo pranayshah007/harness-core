@@ -1968,6 +1968,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
 
           List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
               new ArrayList<>();
+          List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList =
+              new ArrayList<>();
 
           for (Map.Entry<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> entry2 :
               entry1.getValue().getKey().entrySet()) {
@@ -2036,17 +2038,16 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               }
               pipelineExecutions = new ArrayList<>(instanceGroupedByPipelineExecutionMap.values());
             }
-            instanceGroupedByInfrastructureList.add(
-                InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
-                    .agentIdentifier(agentId)
-                    .clusterIdentifier(clusterId)
-                    .instanceGroupedByPipelineExecutionList(pipelineExecutions)
-                    .build());
+            instanceGroupedByClusterList.add(InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
+                                                 .agentIdentifier(agentId)
+                                                 .clusterIdentifier(clusterId)
+                                                 .instanceGroupedByPipelineExecutionList(pipelineExecutions)
+                                                 .build());
           }
           instanceGroupedByEnvironmentList.add(InstanceGroupedByServiceList.InstanceGroupedByEnvironment.builder()
                                                    .envId(envId)
                                                    .envName(envName)
-                                                   .instanceGroupedByClusterList(instanceGroupedByInfrastructureList)
+                                                   .instanceGroupedByClusterList(instanceGroupedByClusterList)
                                                    .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
                                                    .build());
         }
