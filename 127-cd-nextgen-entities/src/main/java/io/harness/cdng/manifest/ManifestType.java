@@ -36,6 +36,7 @@ public interface ManifestType {
   String KustomizePatches = "KustomizePatches";
   String ServerlessAwsLambda = "ServerlessAwsLambda";
   String ReleaseRepo = "ReleaseRepo";
+  String DeploymentRepo = "DeploymentRepo";
   String EcsTaskDefinition = "EcsTaskDefinition";
   String EcsServiceDefinition = "EcsServiceDefinition";
   String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
@@ -46,7 +47,7 @@ public interface ManifestType {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
         ManifestType.KustomizePatches, ManifestType.Kustomize, ManifestType.HelmChart, ManifestType.CONFIG_FILE,
         ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo,
-        ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition, ManifestType.EcsScalableTargetDefinition,
-        ManifestType.EcsScalingPolicyDefinition));
+        ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
+        ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition));
   }
 }

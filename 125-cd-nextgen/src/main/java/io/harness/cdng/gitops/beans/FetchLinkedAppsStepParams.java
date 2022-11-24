@@ -8,12 +8,12 @@ import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
 
-@Value
-@Builder
 @OwnedBy(HarnessTeam.GITOPS)
 public class FetchLinkedAppsStepParams implements GitOpsSpecParameters {
+  @Builder(builderMethodName = "infoBuilder")
+  public FetchLinkedAppsStepParams() {}
+
   @Override
   public ParameterField<List<TaskSelectorYaml>> getDelegateSelectors() {
     return null;

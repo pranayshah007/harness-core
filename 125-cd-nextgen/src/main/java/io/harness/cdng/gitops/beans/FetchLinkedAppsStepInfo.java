@@ -45,6 +45,6 @@ public class FetchLinkedAppsStepInfo implements CDStepInfo {
 
   @Override
   public SpecParameters getSpecParameters() {
-    return FetchLinkedAppsStepParams.builder().build();
+    return FetchLinkedAppsStepParams.infoBuilder().build();
   }
 }
