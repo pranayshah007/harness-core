@@ -11,6 +11,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirec
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.repositories.CIExecutionRepository;
@@ -19,6 +20,7 @@ import com.google.inject.Inject;
 
 public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   public void addActiveExecutionBuild(OrchestrationEvent event, String accountID, String runtimeID) {
     int count = 0;
