@@ -143,7 +143,7 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
           spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
       String stageElastiGroupId = stageElastiGroup.getId();
       deployLogCallback.saveExecutionLog(
-          format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId));
+          format("Created Elastigroup with name: [%s] and id: [%s]", stageElastiGroupName, stageElastiGroupId), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       elastigroupSetupResult.setNewElastiGroup(stageElastiGroup);
 
       // Prod ELasti Groups
@@ -162,7 +162,6 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
         prodElastiGroupList = emptyList();
       }
       elastigroupSetupResult.setGroupToBeDownsized(prodElastiGroupList);
-
       ElastiGroupCapacity elastiGroupCapacity =
           elastigroupSetupCommandRequest.getElastigroupOriginalConfig().getCapacity();
       int min = elastiGroupCapacity.getMinimum();
