@@ -7,8 +7,9 @@
 FILES_WITHOUT_STMTS=()
 
 HARNESS_INC="Copyright [0-9]{4} Harness Inc. All rights reserved."
+EXCLUSION_LIST='\.log\|\.toml\|\.yml\|\.yaml\|\.properties\|\.md\|\.json\|\.config\|\.env\|\.txt\|\.info\|\.jks\|\.mod\|\.env\|\.xml\|^\.'
 
-MERGE_SUMMARY=$(git diff HEAD@{0} HEAD@{1} --name-only | grep -v '\.yml' | grep -v '\.yaml' | grep -v '\.properties' | grep -v '\.md')
+MERGE_SUMMARY=$(git diff HEAD@{0} HEAD@{1} --name-only | grep -v ${EXCLUSION_LIST})
 
 echo "$MERGE_SUMMARY"
 
