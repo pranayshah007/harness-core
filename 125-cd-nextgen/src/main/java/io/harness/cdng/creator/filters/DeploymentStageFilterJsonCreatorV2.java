@@ -205,7 +205,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Set<Entity> unsupportedEntities = env.getFilters()
                                             .getValue()
                                             .stream()
-                                            .map(FilterYaml::getOn)
+                                            .map(FilterYaml::getEntities)
                                             .flatMap(EnumSet::stream)
                                             .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
                                             .collect(Collectors.toSet());
