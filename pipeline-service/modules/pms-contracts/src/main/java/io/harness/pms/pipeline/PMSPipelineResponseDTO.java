@@ -40,4 +40,5 @@ public class PMSPipelineResponseDTO {
   GovernanceMetadata governanceMetadata;
   YamlSchemaErrorWrapperDTO yamlSchemaErrorWrapper;
   ValidateTemplateInputsResponseDTO validateTemplateInputsResponse;
+  CacheResponseMetadataDTO cacheResponse;
 }
