@@ -8,6 +8,7 @@
 package software.wings.scim;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,6 +72,7 @@ public class ScimGroupServiceTest extends WingsBaseTest {
   private static final String GROUP_ID = "groupId";
   private static final String ACCOUNT_ID = "accountId";
   private static final String RANDOM_ID = "Random";
+  private static final Integer MAX_RESULT_COUNT = 20;
 
   @Inject WingsPersistence realWingsPersistence;
   @Mock WingsPersistence wingsPersistence;
@@ -277,7 +279,7 @@ public class ScimGroupServiceTest extends WingsBaseTest {
   public void testSearchGroup() {
     String filter = "value eq 'username@harness.io'";
     int count = 1;
-    int startIndex = 0;
+    int startIndex = 1;
 
     when(wingsPersistence.createQuery(UserGroup.class)).thenReturn(userGroupQuery);
     ScimListResponse<ScimGroup> scimGroupScimListResponse =
@@ -286,6 +288,23 @@ public class ScimGroupServiceTest extends WingsBaseTest {
     assertThat(scimGroupScimListResponse).isNotNull();
     assertThat(scimGroupScimListResponse.getItemsPerPage()).isEqualTo(count);
     assertThat(scimGroupScimListResponse.getStartIndex()).isEqualTo(startIndex);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSearchGroup_WithStartIndexAndCountAsNULL() {
+    String filter = "value eq 'username@harness.io'";
+    Integer count = null;
+    Integer startIndex = null;
+
+    when(wingsPersistence.createQuery(UserGroup.class)).thenReturn(userGroupQuery);
+    ScimListResponse<ScimGroup> scimGroupScimListResponse =
+        scimGroupService.searchGroup(filter, ACCOUNT_ID, count, startIndex);
+
+    assertThat(scimGroupScimListResponse).isNotNull();
+    assertThat(scimGroupScimListResponse.getItemsPerPage()).isEqualTo(MAX_RESULT_COUNT);
+    assertThat(scimGroupScimListResponse.getStartIndex()).isEqualTo(0);
   }
 
   @Test

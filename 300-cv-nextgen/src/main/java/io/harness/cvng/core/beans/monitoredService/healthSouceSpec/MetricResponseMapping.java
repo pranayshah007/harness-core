@@ -9,8 +9,6 @@ package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 
 import io.harness.cvng.beans.MetricResponseMappingDTO;
 
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,8 +20,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MetricResponseMapping {
-  @NotNull @NotEmpty String metricValueJsonPath;
-  @NotNull @NotEmpty String timestampJsonPath;
+  String metricValueJsonPath;
+  String timestampJsonPath;
   String serviceInstanceJsonPath;
   String serviceInstanceListJsonPath;
   String relativeMetricListJsonPath;
