@@ -54,20 +54,20 @@ import org.hibernate.validator.constraints.URL;
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @URL @NotNull @NotBlank String serviceNowUrl;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   String username;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
   @ApiModelProperty(dataType = "string")
   @SecretReference
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData usernameRef;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
   @ApiModelProperty(dataType = "string")
   @SecretReference
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData passwordRef;
   Set<String> delegateSelectors;
   @Valid @NotNull ServiceNowAuthenticationDTO auth;

@@ -40,16 +40,16 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServiceNowConnector extends Connector {
   String serviceNowUrl;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   String username;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   String usernameRef;
   /** @deprecated */
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   @Hidden
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   String passwordRef;
   @NotEmpty ServiceNowAuthType authType;
   @NotNull ServiceNowAuthentication serviceNowAuthentication;

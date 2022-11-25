@@ -9,8 +9,8 @@ package io.harness.ng.core.migration;
 
 import static io.harness.rule.OwnerRule.NAMANG;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.Assert.assertEquals;
+import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -25,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.ServiceNowConnectorBuilder;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
@@ -105,10 +106,10 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigrationTest extends N
   }
 
   private ServiceNowConnector buildServiceNowConnector(boolean withNewYAML) {
-    ServiceNowConnector.ServiceNowConnectorBuilder serviceNowConnectorBuilder = ServiceNowConnector.builder()
-                                                                                    .serviceNowUrl("https://dummy.com")
-                                                                                    .username("username")
-                                                                                    .passwordRef("passwordRef");
+    ServiceNowConnectorBuilder serviceNowConnectorBuilder = ServiceNowConnector.builder()
+                                                                .serviceNowUrl("https://dummy.com")
+                                                                .username("username")
+                                                                .passwordRef("passwordRef");
 
     if (withNewYAML) {
       serviceNowConnectorBuilder.authType(ServiceNowAuthType.USER_PASSWORD)

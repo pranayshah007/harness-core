@@ -10,12 +10,12 @@ package io.harness.ng.core.migration.background;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.util.Objects.isNull;
-import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowAuthentication;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.ServiceNowConnectorKeys;
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
@@ -49,8 +49,8 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
 
       try (HIterator<ServiceNowConnector> iterator = new HIterator<>(serviceNowConnectorQuery.fetch())) {
         for (ServiceNowConnector serviceNowConnector : iterator) {
-          if (serviceNowConnector.getServiceNowAuthentication() != null
-              || isNotEmpty(serviceNowConnector.getAuthType())) {
+          if (!isNull(serviceNowConnector.getServiceNowAuthentication())
+              || !isNull(serviceNowConnector.getAuthType())) {
             log.info(String.format(
                 "%s Skipping since serviceNow connector with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
                 DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
@@ -109,9 +109,8 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
                                                    .is(serviceNowConnector.getProjectIdentifier());
 
       Update update = new Update();
-      update.set(ServiceNowConnector.ServiceNowConnectorKeys.authType, ServiceNowAuthType.USER_PASSWORD)
-          .set(ServiceNowConnector.ServiceNowConnectorKeys.serviceNowAuthentication,
-              serviceNowUserNamePasswordAuthentication);
+      update.set(ServiceNowConnectorKeys.authType, ServiceNowAuthType.USER_PASSWORD)
+          .set(ServiceNowConnectorKeys.serviceNowAuthentication, serviceNowUserNamePasswordAuthentication);
 
       connectorRepository.update(serviceNowConnectorIdCriteria, update, ChangeType.NONE,
           serviceNowConnector.getProjectIdentifier(), serviceNowConnector.getOrgIdentifier(),
