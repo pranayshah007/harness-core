@@ -227,11 +227,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final String STREAM_DELEGATE = "/stream/delegate/";
   public static final String TASK_SELECTORS = "Task Selectors";
   public static final String TASK_CATEGORY_MAP = "Task Category Map";
-  private static final int SECRET_CACHE_TTL_MINUTES = 3;
-  private static final int SECRET_CACHE_MAXIMUM_SIZE = 1000;
-  private static final long CAPABILITIES_CHECK_TASK_TIMEOUT_IN_MINUTES = 1L;
-
-  private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
   @Inject private HPersistence persistence;
   @Inject ObjectMapper objectMapper;
@@ -1128,7 +1123,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   void setValidationStarted(String delegateId, DelegateTask delegateTask) {
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_VALIDATION);
-    log.info("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    log.debug("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
                                                           .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
     Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
@@ -1530,7 +1525,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       String delegateId, String taskId, DelegateTask delegateTask, String delegateInstanceId) {
     // Clear pending validations. No longer need to track since we're assigning.
     clearFromValidationCache(delegateTask);
-    log.info("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    // QUESTION? Do we need a metric for this
+    log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)
