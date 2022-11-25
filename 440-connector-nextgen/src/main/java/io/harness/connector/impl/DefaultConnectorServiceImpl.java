@@ -1209,7 +1209,7 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
     boolean isForceDeleteEnabledBySettings =
         isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
-    return isForceDeleteFFEnabled || isForceDeleteEnabledBySettings;
+    return isForceDeleteFFEnabled && isForceDeleteEnabledBySettings;
   }
 
   @VisibleForTesting

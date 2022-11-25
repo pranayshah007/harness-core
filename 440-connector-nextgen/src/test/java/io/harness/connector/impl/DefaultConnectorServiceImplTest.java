@@ -413,12 +413,16 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFOFF() {
     doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
     doReturn(false).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
 
     createConnector(identifier, name);
-    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
-    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
-    assertThat(deleted).isTrue();
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
   }
 
   @Test
@@ -429,10 +433,13 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
-    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
-    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
-    assertThat(deleted).isTrue();
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
   }
 
   @Test
@@ -460,10 +467,13 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
-    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
-    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
-    assertThat(deleted).isTrue();
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
   }
 
   @Test
@@ -471,7 +481,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteAsTrue() {
     doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(false).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
     when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
              any(ConnectorInfoDTO.class), anyString()))
@@ -486,7 +497,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDelete_withForceDeleteAsTrue_throwsException() {
     doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
-    doReturn(false).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
     when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
              any(ConnectorInfoDTO.class), anyString()))
