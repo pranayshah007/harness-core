@@ -306,7 +306,7 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
-    Map<String, List<InstanceSyncData>> InstanceSyncDataListPerTask = new HashMap<>();
+    Map<String, List<InstanceSyncData>> instanceSyncDataListPerTask = new HashMap<>();
     for (InstanceSyncData instanceSyncData : result.getInstanceDataList()) {
       if (!instanceSyncData.getExecutionStatus().equals(CommandExecutionStatus.SUCCESS.name())) {
         log.error("Instance Sync failed for perpetual task: [{}], for task details: [{}], with error: [{}]",
@@ -314,20 +314,20 @@ public class CgInstanceSyncServiceV2 {
         continue;
       }
 
-      if (!InstanceSyncDataListPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
-        InstanceSyncDataListPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
+      if (!instanceSyncDataListPerTask.containsKey(instanceSyncData.getTaskDetailsId())) {
+        instanceSyncDataListPerTask.put(instanceSyncData.getTaskDetailsId(), new ArrayList<>());
       }
 
-      InstanceSyncDataListPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
+      instanceSyncDataListPerTask.get(instanceSyncData.getTaskDetailsId()).add(instanceSyncData);
     }
 
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
-    for (String taskDetailsId : InstanceSyncDataListPerTask.keySet()) {
+    for (String taskDetailsId : instanceSyncDataListPerTask.keySet()) {
       Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries = new HashMap<>();
       Map<CgReleaseIdentifiers, List<Instance>> deployedInstances;
       Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap;
 
-      List<InstanceSyncData> instanceSyncDataList = InstanceSyncDataListPerTask.get(taskDetailsId);
+      List<InstanceSyncData> instanceSyncDataList = instanceSyncDataListPerTask.get(taskDetailsId);
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);

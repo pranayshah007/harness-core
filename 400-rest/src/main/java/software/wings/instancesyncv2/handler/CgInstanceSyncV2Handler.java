@@ -49,7 +49,7 @@ public interface CgInstanceSyncV2Handler {
   List<Instance> instancesToSaveAndUpdate(List<Instance> instances, List<Instance> instancesInDb);
 
   Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
-      Set<CgReleaseIdentifiers> cgReleaseIdentifiers, String appId, String InfraMappingId);
+      Set<CgReleaseIdentifiers> cgReleaseIdentifiers, String appId, String infraMappingId);
 
   Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
 }

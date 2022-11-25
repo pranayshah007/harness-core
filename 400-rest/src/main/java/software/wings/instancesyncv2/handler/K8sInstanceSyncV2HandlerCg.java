@@ -127,15 +127,14 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
           cloudProvider.getValue().getType());
       throw new InvalidRequestException("Cloud Provider not of type KUBERNETES_CLUSTER");
     }
-
+    // Todo: to be removed later .setCloudProviderDetails(ByteString.copyFrom(new byte[0]))
     PerpetualTaskExecutionBundle.Builder builder =
         PerpetualTaskExecutionBundle.newBuilder()
-            .setTaskParams(
-                Any.pack(CgInstanceSyncTaskParams.newBuilder()
-                             .setAccountId(cloudProvider.getAccountId())
-                             .setCloudProviderType(cloudProvider.getValue().getType())
-                             .setCloudProviderDetails(ByteString.copyFrom(new byte[0])) // Todo: to be removed later
-                             .build()))
+            .setTaskParams(Any.pack(CgInstanceSyncTaskParams.newBuilder()
+                                        .setAccountId(cloudProvider.getAccountId())
+                                        .setCloudProviderType(cloudProvider.getValue().getType())
+                                        .setCloudProviderDetails(ByteString.copyFrom(new byte[0]))
+                                        .build()))
             .putAllSetupAbstractions(Maps.of(NG, "false", OWNER, cloudProvider.getAccountId()));
     cloudProvider.getValue().fetchRequiredExecutionCapabilities(null).forEach(executionCapability
         -> builder
@@ -210,7 +209,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     try {
       return k8sStateHelper.fetchPodListForCluster(containerInfraMapping, cgK8sReleaseIdentifier.getNamespace(),
           cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getClusterName());
-    } catch (InterruptedException e) {
+    } catch (Exception e) {
       throw new K8sPodSyncException(format("Exception in fetching podList for release %s, namespace %s",
                                         cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getNamespace()),
           e);
@@ -277,15 +276,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
           namespace = ((K8sPodInfo) containerInfo).getNamespace();
           releaseName = ((K8sPodInfo) containerInfo).getReleaseName();
           isHelmDeployment = false;
+        } else {
+          log.error("Not Supported containerInfo type : [{}]", containerInfo.getClass());
         }
 
-        if (isNotEmpty(cgK8sReleaseIdentifier.getNamespace()) && isNotEmpty(cgK8sReleaseIdentifier.getReleaseName())
-            && cgK8sReleaseIdentifier.getNamespace().equals(namespace)
-            && cgK8sReleaseIdentifier.getReleaseName().equals(releaseName)
-            && cgK8sReleaseIdentifier.isHelmDeployment() == isHelmDeployment
-            && ((StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
-                    && StringUtils.isBlank(containerSvcName))
-                || (cgK8sReleaseIdentifier.getContainerServiceName().equals(containerSvcName)))) {
+        if (filterInstanceBasedOnCgK8sReleaseIdentifierCondition(
+                cgK8sReleaseIdentifier, namespace, releaseName, containerSvcName, isHelmDeployment)) {
           instances.add(instanceInDb);
         }
       }
@@ -297,6 +293,18 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     log.info("fetchInstancesFromDb Method Ends");
     return instancesMap;
   }
+
+  private boolean filterInstanceBasedOnCgK8sReleaseIdentifierCondition(CgK8sReleaseIdentifier cgK8sReleaseIdentifier,
+      String namespace, String releaseName, String containerSvcName, boolean isHelmDeployment) {
+    return isNotEmpty(cgK8sReleaseIdentifier.getNamespace()) && isNotEmpty(cgK8sReleaseIdentifier.getReleaseName())
+        && cgK8sReleaseIdentifier.getNamespace().equals(namespace)
+        && cgK8sReleaseIdentifier.getReleaseName().equals(releaseName)
+        && cgK8sReleaseIdentifier.isHelmDeployment() == isHelmDeployment
+        && ((StringUtils.isBlank(cgK8sReleaseIdentifier.getContainerServiceName())
+                && StringUtils.isBlank(containerSvcName))
+            || (cgK8sReleaseIdentifier.getContainerServiceName().equals(containerSvcName)));
+  }
+
   @Override
   public InstanceSyncTaskDetails prepareTaskDetails(
       DeploymentSummary deploymentSummary, String cloudProviderId, String perpetualTaskId) {
@@ -557,6 +565,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
         instances = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
             instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
+      } else {
+        log.error("Not Supported containerInfo type : [{}]", instanceInfos.get(0).getClass());
       }
       instancesMap.put(cgK8sReleaseIdentifier, instances);
     }
