@@ -190,9 +190,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private List<Instance> getK8sInstanceFromDelegate(InfrastructureMapping infrastructureMapping,
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier, DeploymentSummary deploymentSummary) {
+    log.info("deploymentSummary: [{}]", deploymentSummary);
+    log.info("infrastructureMapping: [{}]", infrastructureMapping);
     List<Instance> instances = new ArrayList<>();
     ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
     List<K8sPod> k8sPods = getK8sPodsFromDelegate(containerInfraMapping, cgK8sReleaseIdentifier);
+    log.info("List<K8sPod> k8sPods: [{}]", k8sPods);
     if (isEmpty(k8sPods)) {
       return instances;
     }
@@ -247,7 +250,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   public Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
       Set<CgReleaseIdentifiers> cgReleaseIdentifierList, String appId, String InfraMappingId) {
+    log.info("fetchInstancesFromDb Method Starts");
     List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(appId, InfraMappingId);
+    log.info("All instancesInDb: [{}]", instancesInDb);
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
 
     // Todo: should be subject to optimisation, it’s ineffective and theoretically can be reduced to just creating
@@ -255,7 +260,9 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifierList) {
       List<Instance> instances = new ArrayList<>();
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) cgReleaseIdentifiers;
+      log.info("For cgK8sReleaseIdentifier: [{}]", cgK8sReleaseIdentifier);
       for (Instance instanceInDb : instancesInDb) {
+        log.info("For instanceInDb: [{}]", instanceInDb);
         ContainerInfo containerInfo = (ContainerInfo) instanceInDb.getInstanceInfo();
         String containerSvcName = null;
         String namespace = null;
@@ -282,8 +289,12 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
           instances.add(instanceInDb);
         }
       }
+      log.info("filtered instanceInDb: [{}]", instances);
       instancesMap.put(cgReleaseIdentifiers, instances);
     }
+    log.info("Nested For Loop End");
+    log.info("instancesMap in DB: [{}]", instancesMap);
+    log.info("fetchInstancesFromDb Method Ends");
     return instancesMap;
   }
   @Override
@@ -555,12 +566,15 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   @Override
   public Map<CgReleaseIdentifiers, List<Instance>> getDeployedInstances(
       Set<CgReleaseIdentifiers> cgReleaseIdentifiers, DeploymentSummary deploymentSummary) {
+    log.info("getDeployedInstances Method Start");
+
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
     if (isNull(deploymentSummary)) {
       log.error("Null deployment summary passed. Nothing to do here.");
       return instancesMap;
     }
     for (CgReleaseIdentifiers cgReleaseIdentifier : cgReleaseIdentifiers) {
+      log.info("For cgReleaseIdentifier: [{}]", cgReleaseIdentifier);
       List<Instance> instances = new ArrayList<>();
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) cgReleaseIdentifier;
 
@@ -569,26 +583,36 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
         instances = getK8sInstanceFromDelegate(infrastructureMapping, cgK8sReleaseIdentifier, deploymentSummary);
 
+        log.info("deployedInstances of type K8sDeploymentInfo: [{}]", instances);
+
       } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
         ContainerMetadata containerMetadata = getContainerMetadataFromReleaseIdentifier(cgK8sReleaseIdentifier, null);
+        log.info("containerMetadata: [{}]", containerMetadata);
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+        log.info("infrastructureMapping: [{}]", infrastructureMapping);
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
 
         ContainerSyncResponse instanceSyncResponse =
             containerSync.getInstances(containerInfraMapping, singletonList(containerMetadata));
+        log.info("ContainerSyncResponse : [{}]", instanceSyncResponse);
         if (instanceSyncResponse != null && CollectionUtils.isNotEmpty(instanceSyncResponse.getContainerInfoList())) {
           instances = getInstancesForContainerPods(
               deploymentSummary, containerInfraMapping, instanceSyncResponse.getContainerInfoList());
         }
+        log.info("deployedInstances of type ContainerDeploymentInfoWithLabels: [{}]", instances);
       }
       instancesMap.put(cgK8sReleaseIdentifier, instances);
     }
+    log.info("instancesMap: [{}]", instancesMap);
+    log.info("getDeployedInstances Method End");
     return instancesMap;
   }
 
   private List<Instance> getInstancesForContainerPods(DeploymentSummary deploymentSummary,
       ContainerInfrastructureMapping containerInfraMapping, List<ContainerInfo> containerInfoList) {
+    log.info("deploymentSummary: [{}]", deploymentSummary);
+    log.info("containerInfoList: [{}]", containerInfoList);
     if (CollectionUtils.isEmpty(containerInfoList)) {
       return Collections.emptyList();
     }

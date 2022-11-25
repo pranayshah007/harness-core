@@ -90,6 +90,8 @@ public class CgInstanceSyncServiceV2 {
       return;
     }
 
+    log.info("DeploymentEvent of New Deployment: [{}]", event);
+
     event.getDeploymentSummaries()
         .parallelStream()
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
@@ -98,7 +100,7 @@ public class CgInstanceSyncServiceV2 {
           if (event.isRollback()) {
             deploymentSummary = getDeploymentSummaryForRollback(deploymentSummary);
           }
-
+          log.info("Saving DeploymentSummary of New Deployment: [{}]", deploymentSummary);
           saveDeploymentSummary(deploymentSummary, event.isRollback());
 
           SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
@@ -121,6 +123,8 @@ public class CgInstanceSyncServiceV2 {
 
           String configuredPerpetualTaskId =
               getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
+          log.info("configuredPerpetualTaskId: [{}]", configuredPerpetualTaskId);
+
           if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
             String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
             trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
@@ -131,13 +135,20 @@ public class CgInstanceSyncServiceV2 {
           Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
               instanceSyncHandler.createReleaseIdentifiers(deploymentSummary);
 
+          log.info("cgReleaseIdentifiers Set for deploymentSummary: [{}]", cgReleaseIdentifiers);
+
           Map<CgReleaseIdentifiers, List<Instance>> deployedInstancesMap =
               instanceSyncHandler.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
+
+          log.info("deployedInstancesMap: [{}]", deployedInstancesMap);
 
           Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
               cgReleaseIdentifiers, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
 
+          log.info("instancesInDbMap: [{}]", instancesInDbMap);
+
           for (CgReleaseIdentifiers cgReleaseIdentifier : cgReleaseIdentifiers) {
+            log.info("For cgReleaseIdentifier handleInstances method: [{}]", cgReleaseIdentifier);
             handleInstances(deployedInstancesMap.get(cgReleaseIdentifier), instancesInDbMap.get(cgReleaseIdentifier),
                 instanceSyncHandler);
           }
@@ -194,6 +205,9 @@ public class CgInstanceSyncServiceV2 {
 
   private void handleInstances(
       List<Instance> instances, List<Instance> instancesInDb, CgInstanceSyncV2Handler instanceSyncHandler) {
+    log.info("cluster instances inside handleInstances Method: [{}]", instances);
+    log.info("DB instances inside handleInstances Method: [{}]", instancesInDb);
+
     List<Instance> instancesToDelete = instanceSyncHandler.instancesToDelete(instancesInDb, instances);
     Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
     log.info("Instances to delete: [{}]", instanceIdsToDelete);
@@ -323,6 +337,8 @@ public class CgInstanceSyncServiceV2 {
       Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
           instanceSyncHandler.getCgReleaseIdentifiersList(instanceSyncDataList);
 
+      log.info("cgReleaseIdentifiersInstanceSyncDataMap: [{}]", cgReleaseIdentifiersInstanceSyncDataMap);
+
       Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
           Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
 
@@ -331,13 +347,20 @@ public class CgInstanceSyncServiceV2 {
             cgReleaseIdentifiers, deploymentService.get(cgReleaseIdentifiers.getLastDeploymentSummaryId()));
       }
 
+      log.info("deploymentSummaries: [{}]", deploymentSummaries);
+
       instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
           cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+      log.info("instancesInDbMap for Perpetual Task: [{}]", instancesInDbMap);
 
       deployedInstances =
           instanceSyncHandler.groupInstanceSyncData(deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
 
+      log.info("deployedInstances for Perpetual Task: [{}]", deployedInstances);
+
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersInstanceSyncDataMap.keySet()) {
+        log.info("For cgReleaseIdentifiers : [{}]", cgReleaseIdentifiers);
         List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
         List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
         handleInstances(instances, instancesInDb, instanceSyncHandler);
