@@ -21,6 +21,8 @@ import software.wings.yaml.workflow.StepYaml;
 import java.util.Map;
 
 public interface StepMapper {
+  int DEFAULT_TIMEOUT_MILLI = 600000;
+
   String getStepType(StepYaml stepYaml);
 
   State getState(StepYaml stepYaml);
@@ -68,13 +70,17 @@ public interface StepMapper {
     stepNode.setName(state.getName());
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
-      pmsAbstractStepNode.setTimeout(
-          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
+      pmsAbstractStepNode.setTimeout(ParameterField.createValueField(
+          Timeout.builder()
+              .timeoutInMillis(state.getTimeoutMillis() == null ? DEFAULT_TIMEOUT_MILLI : state.getTimeoutMillis())
+              .build()));
     }
     if (stepNode instanceof CdAbstractStepNode) {
       CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
-      cdAbstractStepNode.setTimeout(
-          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
+      cdAbstractStepNode.setTimeout(ParameterField.createValueField(
+          Timeout.builder()
+              .timeoutInMillis(state.getTimeoutMillis() == null ? DEFAULT_TIMEOUT_MILLI : state.getTimeoutMillis())
+              .build()));
     }
   }
 }

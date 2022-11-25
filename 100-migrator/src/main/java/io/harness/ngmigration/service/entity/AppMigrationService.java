@@ -82,8 +82,6 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
 
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
-
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     return null;
@@ -210,7 +208,7 @@ public class AppMigrationService extends NgMigrationService {
       Map<String, String> variableSpec =
           ImmutableMap.<String, String>builder()
               .put("valueType", "FIXED")
-              .put("fixedValue", (String) migratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
+              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
               .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
