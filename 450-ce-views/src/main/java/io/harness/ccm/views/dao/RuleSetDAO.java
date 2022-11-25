@@ -121,7 +121,7 @@ public class RuleSetDAO {
   public List<RuleSet> check(String accountId, List<String> rulesPackIdentifier) {
     List<RuleSet> ruleSets = hPersistence.createQuery(RuleSet.class)
                                  .field(RuleSetId.accountId)
-                                 .equal(accountId)
+                                 .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
                                  .field(RuleSetId.uuid)
                                  .in(rulesPackIdentifier)
                                  .asList();
@@ -132,7 +132,7 @@ public class RuleSetDAO {
   public List<RuleSet> listPacks(String accountId, List<String> packIds) {
     List<RuleSet> ruleSets = hPersistence.createQuery(RuleSet.class)
                                  .field(RuleSetId.accountId)
-                                 .equal(accountId)
+                                 .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
                                  .field(RuleSetId.uuid)
                                  .in(packIds)
                                  .order(Sort.ascending(RuleSetId.name))
