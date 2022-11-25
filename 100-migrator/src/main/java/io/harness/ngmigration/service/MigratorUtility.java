@@ -28,6 +28,7 @@ import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -80,6 +81,15 @@ public class MigratorUtility {
     }
     String generated = CaseUtils.toCamelCase(name.replaceAll("[^A-Za-z0-9]", " ").trim(), false, ' ');
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
+  }
+
+  public static ParameterField<Timeout> getTimeout(Integer timeoutInMillis) {
+    if (timeoutInMillis == null) {
+      return ParameterField.createValueField(Timeout.builder().timeoutString("10m").build());
+    }
+    long t = timeoutInMillis / 1000;
+    String timeoutString = t + "s";
+    return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 
   public static ParameterField<String> getParameterField(String value) {

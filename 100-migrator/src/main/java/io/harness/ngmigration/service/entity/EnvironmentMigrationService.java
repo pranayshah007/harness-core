@@ -8,22 +8,26 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.ng.core.environment.beans.EnvironmentType.Production;
 
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
@@ -43,6 +47,7 @@ import io.harness.yaml.core.variables.NGVariable;
 
 import software.wings.beans.Environment;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -51,6 +56,7 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
+import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.ServiceVariableService;
@@ -74,6 +80,8 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ServiceVariableService serviceVariableService;
+  @Inject private ApplicationManifestService applicationManifestService;
+  @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -130,6 +138,13 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                      .type(NGMigrationEntityType.SECRET)
                                      .id(serviceVariable.getEncryptedValue())
                                      .build())
+                          .collect(Collectors.toList()));
+    }
+    List<ApplicationManifest> applicationManifests =
+        applicationManifestService.getAllByEnvId(environment.getAppId(), environment.getUuid());
+    if (isNotEmpty(applicationManifests)) {
+      children.addAll(applicationManifests.stream()
+                          .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
                           .collect(Collectors.toList()));
     }
     return DiscoveryNode.builder().children(children).entityNode(environmentNode).build();
@@ -191,6 +206,18 @@ public class EnvironmentMigrationService extends NgMigrationService {
     String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     List<ServiceVariable> serviceVariablesForAllServices = serviceVariableService.getServiceVariablesForEntity(
         environment.getAppId(), environment.getUuid(), OBTAIN_VALUE);
+    Set<CgEntityId> manifestIds =
+        entities.values()
+            .stream()
+            .filter(entry -> MANIFEST.equals(entry.getType()))
+            .map(node -> (ApplicationManifest) node.getEntity())
+            .filter(manifest -> StringUtils.equals(manifest.getEnvId(), environment.getUuid()))
+            .filter(manifest -> StringUtils.isBlank(manifest.getServiceId()))
+            .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
+            .collect(Collectors.toSet());
+
+    List<ManifestConfigWrapper> manifests =
+        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities);
 
     NGEnvironmentConfig environmentConfig =
         NGEnvironmentConfig.builder()
@@ -203,6 +230,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
                     .variables(getGlobalVariables(migratedEntities, serviceVariablesForAllServices))
+                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder().manifests(manifests).build())
                     .type(PROD == environment.getEnvironmentType() ? Production : PreProduction)
                     .build())
             .build();
