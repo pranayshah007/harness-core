@@ -239,7 +239,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     Boolean isBuiltInSMDisabled = false;
 
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (isNgSettingsFFEnabled(accountIdentifier)) {
       isBuiltInSMDisabled = parseBoolean(
           NGRestUtils
               .getResponse(settingsClient.getSetting(
@@ -448,6 +448,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       boolean forceDelete) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
+      if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+        throw new InvalidRequestException(
+            format(
+                "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
+                accountIdentifier),
+            USER);
+      }
+
       Optional<SecretResponseWrapper> optionalSecret =
           get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (optionalSecret.isPresent()) {
@@ -773,5 +781,28 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       throw new EntityNotFoundException(
           format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
     }
+  }
+
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledViaSettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledViaSettings;
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
   }
 }
