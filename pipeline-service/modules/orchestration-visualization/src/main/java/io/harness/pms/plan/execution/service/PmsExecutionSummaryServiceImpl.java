@@ -147,7 +147,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Ambiance ambiance = nodeExecution.getAmbiance();
     Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-    if (!entity.isPresent()) {
+    if (entity.isEmpty()) {
       return false;
     }
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
