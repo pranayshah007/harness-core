@@ -79,10 +79,13 @@ public class AwsNgConfigMapper {
         throw new InvalidArgumentsException(Pair.of("accessKey", "Missing or empty"));
       }
 
-      awsInternalConfig = AwsInternalConfig.builder()
-                              .accessKey(accessKey.toCharArray())
-                              .secretKey(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue())
-                              .build();
+      char[] secretKey = null;
+
+      if (awsManualConfigSpecDTO != null && awsManualConfigSpecDTO.getSecretKeyRef() != null) {
+        secretKey = awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue();
+      }
+
+      awsInternalConfig = AwsInternalConfig.builder().accessKey(accessKey.toCharArray()).secretKey(secretKey).build();
 
     } else if (INHERIT_FROM_DELEGATE == credential.getAwsCredentialType()) {
       awsInternalConfig.setUseEc2IamCredentials(true);
