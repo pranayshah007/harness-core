@@ -217,7 +217,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
+        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData), false);
   }
 
   @Override

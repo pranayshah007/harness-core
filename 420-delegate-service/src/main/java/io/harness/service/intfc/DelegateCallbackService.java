@@ -10,6 +10,7 @@ package io.harness.service.intfc;
 public interface DelegateCallbackService {
   void publishSyncTaskResponse(String delegateTaskId, byte[] responseData, boolean usingKryoWithoutReference);
   void publishAsyncTaskResponse(String delegateTaskId, byte[] responseData, boolean usingKryoWithoutReference);
-  void publishTaskProgressResponse(String delegateTaskId, String uuid, byte[] responseData);
+  void publishTaskProgressResponse(
+      String delegateTaskId, String uuid, byte[] responseData, boolean usingKryoWithoutReference);
   void destroy();
 }

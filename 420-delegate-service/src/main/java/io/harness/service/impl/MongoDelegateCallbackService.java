@@ -90,7 +90,8 @@ public class MongoDelegateCallbackService implements DelegateCallbackService {
   }
 
   @Override
-  public void publishTaskProgressResponse(String delegateTaskId, String uuid, byte[] responseData) {
+  public void publishTaskProgressResponse(
+      String delegateTaskId, String uuid, byte[] responseData, boolean usingKryoWithoutReference) {
     Bson filter = Filters.eq(ID_FIELD_NAME, uuid);
 
     Document document = new Document();
@@ -98,6 +99,7 @@ public class MongoDelegateCallbackService implements DelegateCallbackService {
     document.put(DelegateTaskProgressResponseKeys.correlationId, delegateTaskId);
     document.put(DelegateTaskProgressResponseKeys.progressData, responseData);
     document.put(DelegateTaskProgressResponseKeys.processAfter, 0);
+    document.put(DelegateTaskProgressResponseKeys.usingKryoWithoutReference, usingKryoWithoutReference);
 
     Bson update = new Document("$set", document);
 
