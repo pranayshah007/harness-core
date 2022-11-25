@@ -99,7 +99,7 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
 
   @Override
   public String getFacilitatorType() {
-    return OrchestrationFacilitatorType.TASK;
+    return OrchestrationFacilitatorType.ASYNC;
   }
 
   @Override

@@ -97,7 +97,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   @Override
   public void submitTask(SubmitTaskRequest request, StreamObserver<SubmitTaskResponse> responseObserver) {
     try {
-      String taskId = generateUuid();
+      Str\\\\ing taskId = generateUuid();
       TaskDetails taskDetails = request.getDetails();
       Map<String, String> setupAbstractions = request.getSetupAbstractions().getValuesMap();
       LinkedHashMap<String, String> logAbstractions =

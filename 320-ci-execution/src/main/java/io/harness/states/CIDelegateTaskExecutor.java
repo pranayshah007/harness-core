@@ -1,4 +1,11 @@
-package io.harness.states;
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
+package io.harness.ci.states;
 
 import static java.lang.String.format;
 
@@ -15,6 +22,8 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +55,38 @@ public class CIDelegateTaskExecutor {
                                                         .executionTimeout(Duration.ofHours(12))
                                                         .taskSetupAbstractions(setupAbstractions)
                                                         .build();
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
+            format("Failed to submit delegate task  after retrying {} times"));
+    // Make a call to the log service and get back the token
+
+    return Failsafe.with(retryPolicy).get(() -> {
+      return delegateServiceGrpcClient.submitAsyncTask(
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+    });
+  }
+
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
+      List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
+      LinkedHashMap<String, String> logStreamingAbstractions) {
+    String accountId = task.getAccountId();
+    TaskData taskData = task.getData();
+    final DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .parked(taskData.isParked())
+            .accountId(accountId)
+            .serializationFormat(taskData.getSerializationFormat())
+            .taskSelectors(taskSelectors)
+            .taskType(taskData.getTaskType())
+            .logStreamingAbstractions(logStreamingAbstractions)
+            .taskParameters(extractTaskParameters(taskData))
+            .executionTimeout(Duration.ofHours(12))
+            .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+            .taskSetupAbstractions(setupAbstractions)
+            .expressionFunctorToken(taskData.getExpressionFunctorToken())
+            .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
+            .emitEvent(emitEvent)
+            .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
             format("Failed to submit delegate task  after retrying {} times"));
