@@ -211,6 +211,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastigroupOriginalConfig(oldElastiGroup)
             .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
+            .successful(true)
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());

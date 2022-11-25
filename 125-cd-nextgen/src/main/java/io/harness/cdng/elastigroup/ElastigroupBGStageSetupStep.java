@@ -227,6 +227,7 @@ public class ElastigroupBGStageSetupStep
     try {
       elastigroupSetupResponse = (ElastigroupSetupResponse) responseDataSupplier.get();
     } catch (Exception e) {
+      elastigroupSetupDataOutcome.setSuccessful(false);
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME,
           elastigroupSetupDataOutcome, StepOutcomeGroup.STAGE.name());
       log.error("Error while processing elastigroup task response: {}", e.getMessage(), e);
@@ -243,6 +244,7 @@ public class ElastigroupBGStageSetupStep
     elastigroupSetupDataOutcome.setNewElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup());
     elastigroupSetupDataOutcome.setLoadBalancerDetailsForBGDeployments(
         elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments());
+    elastigroupSetupDataOutcome.setSuccessful(true);
 
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
