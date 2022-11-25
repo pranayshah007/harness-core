@@ -235,14 +235,14 @@ public class GovernanceRuleEnforcementResource {
                 .timezone(ruleEnforcement.getExecutionTimezone())
                 .executor(SCHEDULER_EXECUTOR)
                 .metadata(metadata)
-                .executorConfig(SchedulerDTO.ExecutorConfig.builder()
-                                    .method(SCHEDULER_HTTP_METHOD)
-                                    .timeout(SCHEDULER_HTTP_TIMEOUT)
-                                    .debug(SCHEDULER_IS_DEBUG)
-                                    .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
-                                    .body(jsonObject.toString())
-                                    .headers(headers.toString())
-                                    .build())
+                .executor_config(SchedulerDTO.ExecutorConfig.builder()
+                                     .method(SCHEDULER_HTTP_METHOD)
+                                     .timeout(SCHEDULER_HTTP_TIMEOUT)
+                                     .debug(SCHEDULER_IS_DEBUG)
+                                     .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
+                                     .body(jsonObject.toString())
+                                     .headers(headers.toString())
+                                     .build())
                 .build();
         log.info(new Gson().toJson(schedulerDTO));
         okhttp3.RequestBody body =
