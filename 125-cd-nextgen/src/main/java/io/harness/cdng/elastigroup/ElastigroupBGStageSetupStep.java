@@ -244,7 +244,8 @@ public class ElastigroupBGStageSetupStep
     elastigroupSetupDataOutcome.setNewElastigroupOriginalConfig(elastigroupSetupResult.getNewElastiGroup());
     elastigroupSetupDataOutcome.setLoadBalancerDetailsForBGDeployments(
         elastigroupSetupResult.getLoadBalancerDetailsForBGDeployments());
-    elastigroupSetupDataOutcome.setSuccessful(true);
+    elastigroupSetupDataOutcome.setSuccessful(
+        elastigroupSetupResponse.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS);
 
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(elastigroupSetupResponse.getUnitProgressData().getUnitProgresses());
