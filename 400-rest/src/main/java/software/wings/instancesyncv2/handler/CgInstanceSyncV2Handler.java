@@ -13,6 +13,7 @@ import io.harness.perpetualtask.instancesyncv2.InstanceSyncData;
 
 import software.wings.api.DeploymentInfo;
 import software.wings.api.DeploymentSummary;
+import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
@@ -42,8 +43,8 @@ public interface CgInstanceSyncV2Handler {
 
   List<Instance> instancesToDelete(List<Instance> list1, List<Instance> list2);
 
-  Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(
-      Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries,
+  Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(InfrastructureMapping infrastructureMapping,
+      Map<CgReleaseIdentifiers, List<DeploymentSummary>> deploymentSummaries,
       Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap);
 
   List<Instance> instancesToSaveAndUpdate(List<Instance> instances, List<Instance> instancesInDb);

@@ -17,6 +17,7 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
@@ -64,8 +65,11 @@ import software.wings.beans.infrastructure.instance.key.PodInstanceKey;
 import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
+import software.wings.instancesyncv2.model.BasicDeploymentIdentifier;
+import software.wings.instancesyncv2.model.BlueGreenDeploymentIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
+import software.wings.instancesyncv2.model.DeploymentIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.service.impl.ContainerMetadata;
 import software.wings.service.impl.ContainerMetadataType;
@@ -86,6 +90,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -96,6 +103,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -103,11 +111,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.groovy.util.Maps;
+import org.joda.time.DateTime;
 
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 @Singleton
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
+  private static final String DEPLOYMENT_NO_COLOR = "NO_COLOR";
+
   @NonNull private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @NonNull private InfrastructureMappingService infrastructureMappingService;
   @NonNull private KryoSerializer kryoSerializer;
@@ -156,8 +167,26 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     if (CollectionUtils.isEmpty(newIdentifiers)) {
       return existingIdentifiers;
     }
-    Set<CgReleaseIdentifiers> mergeIdentifiersSet = new HashSet<>(newIdentifiers);
+
+    Set<CgReleaseIdentifiers> mergeIdentifiersSet = new HashSet<>();
+    for (CgReleaseIdentifiers newIdentifier : newIdentifiers) {
+      Optional<CgReleaseIdentifiers> optionalReleaseIdentifier =
+          existingIdentifiers.stream().filter(newIdentifier::equals).findFirst();
+      if (optionalReleaseIdentifier.isPresent()) {
+        CgReleaseIdentifiers existingReleaseIdentifiers = optionalReleaseIdentifier.get();
+        Set<DeploymentIdentifier> allDeploymentIdentifiers = new HashSet<>(newIdentifier.getDeploymentIdentifiers());
+        if (isNotEmpty(existingReleaseIdentifiers.getDeploymentIdentifiers())) {
+          allDeploymentIdentifiers.addAll(existingReleaseIdentifiers.getDeploymentIdentifiers());
+        }
+        newIdentifier.setDeploymentIdentifiers(allDeploymentIdentifiers);
+      }
+
+      mergeIdentifiersSet.add(newIdentifier);
+    }
+
     mergeIdentifiersSet.addAll(existingIdentifiers);
+
+    log.info("Merged release identifiers: {}", mergeIdentifiersSet);
 
     return mergeIdentifiersSet;
   }
@@ -332,11 +361,18 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         return Collections.emptySet();
       }
 
+      DeploymentIdentifier deploymentIdentifier = isNotEmpty(k8sDeploymentInfo.getBlueGreenStageColor())
+          ? BlueGreenDeploymentIdentifier.builder()
+                .lastDeploymentSummaryUuid(deploymentSummary.getUuid())
+                .color(k8sDeploymentInfo.getBlueGreenStageColor())
+                .build()
+          : BasicDeploymentIdentifier.builder().lastDeploymentSummaryUuid(deploymentSummary.getUuid()).build();
+
       for (String namespace : namespaces) {
         cgReleaseIdentifiersSet.add(CgK8sReleaseIdentifier.builder()
                                         .clusterName(k8sDeploymentInfo.getClusterName())
                                         .releaseName(k8sDeploymentInfo.getReleaseName())
-                                        .lastDeploymentSummaryId(deploymentSummary.getUuid())
+                                        .deploymentIdentifiers(Collections.singleton(deploymentIdentifier))
                                         .namespace(namespace)
                                         .isHelmDeployment(false)
                                         .build());
@@ -364,7 +400,10 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                                         .containerServiceName(isEmpty(controller) ? null : controller)
                                                         .namespace(namespace)
                                                         .releaseName(containerDeploymentInfo.getReleaseName())
-                                                        .lastDeploymentSummaryId(deploymentSummary.getUuid())
+                                                        .deploymentIdentifiers(singleton(
+                                                            BasicDeploymentIdentifier.builder()
+                                                                .lastDeploymentSummaryUuid(deploymentSummary.getUuid())
+                                                                .build()))
                                                         .isHelmDeployment(true)
                                                         .build())
                                              .collect(Collectors.toSet()));
@@ -373,12 +412,15 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         return cgReleaseIdentifiersSet;
       } else if (isNotEmpty(containerDeploymentInfo.getContainerInfoList())) {
         for (String namespace : namespaces) {
-          cgReleaseIdentifiersSet.add(CgK8sReleaseIdentifier.builder()
-                                          .namespace(namespace)
-                                          .lastDeploymentSummaryId(deploymentSummary.getUuid())
-                                          .releaseName(containerDeploymentInfo.getReleaseName())
-                                          .isHelmDeployment(true)
-                                          .build());
+          cgReleaseIdentifiersSet.add(
+              CgK8sReleaseIdentifier.builder()
+                  .namespace(namespace)
+                  .deploymentIdentifiers(singleton(BasicDeploymentIdentifier.builder()
+                                                       .lastDeploymentSummaryUuid(deploymentSummary.getUuid())
+                                                       .build()))
+                  .releaseName(containerDeploymentInfo.getReleaseName())
+                  .isHelmDeployment(true)
+                  .build());
         }
         return cgReleaseIdentifiersSet;
       }
@@ -532,8 +574,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   }
 
   @Override
-  public Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(
-      Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries,
+  public Map<CgReleaseIdentifiers, List<Instance>> groupInstanceSyncData(InfrastructureMapping infrastructureMapping,
+      Map<CgReleaseIdentifiers, List<DeploymentSummary>> deploymentSummaries,
       Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap) {
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
 
@@ -547,22 +589,33 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
               .parallelStream()
               .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
               .collect(Collectors.toList());
-      DeploymentSummary deploymentSummary = deploymentSummaries.get(cgK8sReleaseIdentifier);
+      Map<String, DeploymentSummary> deploymentSummaryMap =
+          deploymentSummaries.get(cgK8sReleaseIdentifier)
+              .stream()
+              .filter(summary -> summary.getDeploymentInfo() instanceof K8sDeploymentInfo)
+              .collect(Collectors.toMap(summary -> {
+                K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) summary.getDeploymentInfo();
+                return isNotEmpty(k8sDeploymentInfo.getBlueGreenStageColor())
+                    ? k8sDeploymentInfo.getBlueGreenStageColor()
+                    : DEPLOYMENT_NO_COLOR;
+              }, Function.identity()));
 
-      if (CollectionUtils.isEmpty(instanceInfos) || Objects.isNull(deploymentSummary)) {
+      if (CollectionUtils.isEmpty(instanceInfos) || isEmpty(deploymentSummaryMap)) {
         instancesMap.put(cgK8sReleaseIdentifier, emptyList());
         continue;
       }
 
       if (instanceInfos.get(0) instanceof K8sPodInfo) {
-        InfrastructureMapping infrastructureMapping =
-            infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-        instances = getInstancesForK8sPods(deploymentSummary, infrastructureMapping,
+        instances = getInstancesForK8sPods(deploymentSummaryMap, infrastructureMapping,
             instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
       } else if (instanceInfos.get(0) instanceof KubernetesContainerInfo) {
-        InfrastructureMapping infrastructureMapping =
-            infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
+        if (deploymentSummaryMap.size() > 1) {
+          log.error(
+              "Found multiple deployment summaries for native helm deployment, this is unexpected and will use only first one. Deployment summary map key set: {}",
+              deploymentSummaryMap.keySet());
+        }
+        DeploymentSummary deploymentSummary = deploymentSummaryMap.entrySet().iterator().next().getValue();
         instances = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
             instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
       } else {
@@ -592,9 +645,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         InfrastructureMapping infrastructureMapping =
             infrastructureMappingService.get(deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
         instances = getK8sInstanceFromDelegate(infrastructureMapping, cgK8sReleaseIdentifier, deploymentSummary);
-
         log.info("deployedInstances of type K8sDeploymentInfo: [{}]", instances);
-
       } else if (deploymentSummary.getDeploymentInfo() instanceof ContainerDeploymentInfoWithLabels) {
         ContainerMetadata containerMetadata = getContainerMetadataFromReleaseIdentifier(cgK8sReleaseIdentifier, null);
         log.info("containerMetadata: [{}]", containerMetadata);
@@ -639,14 +690,22 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     return instances;
   }
 
-  private List<Instance> getInstancesForK8sPods(
-      DeploymentSummary deploymentSummary, InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
+  private List<Instance> getInstancesForK8sPods(Map<String, DeploymentSummary> deploymentSummaryMap,
+      InfrastructureMapping infrastructureMapping, List<K8sPodInfo> pods) {
     if (CollectionUtils.isEmpty(pods)) {
       return Collections.emptyList();
     }
 
     List<Instance> instances = new ArrayList<>();
     for (K8sPodInfo pod : pods) {
+      String color = isNotEmpty(pod.getBlueGreenColor()) ? pod.getBlueGreenColor() : DEPLOYMENT_NO_COLOR;
+      DeploymentSummary deploymentSummary = deploymentSummaryMap.get(color);
+      if (deploymentSummary == null) {
+        log.warn(
+            "Received untrackable pod: [pod: {}, release: {}, namespace: {}] with invalid color {}. Available summary colors: {}",
+            pod.getPodName(), pod.getReleaseName(), pod.getNamespace(), color, deploymentSummaryMap.keySet());
+        continue;
+      }
       HelmChartInfo helmChartInfo =
           getK8sPodHelmChartInfo((K8sDeploymentInfo) deploymentSummary.getDeploymentInfo(), pod);
       Instance instance = buildInstanceFromPodInfo(infrastructureMapping, pod, deploymentSummary);

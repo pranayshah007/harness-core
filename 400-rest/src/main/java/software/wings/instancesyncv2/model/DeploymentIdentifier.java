@@ -7,9 +7,11 @@
 
 package software.wings.instancesyncv2.model;
 
-import java.util.Set;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-public interface CgReleaseIdentifiers {
-  Set<DeploymentIdentifier> getDeploymentIdentifiers();
-  void setDeploymentIdentifiers(Set<DeploymentIdentifier> deploymentIdentifiers);
+import io.harness.annotations.dev.OwnedBy;
+
+@OwnedBy(CDP)
+public interface DeploymentIdentifier {
+  String getLastDeploymentSummaryUuid();
 }

@@ -11,26 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-
-import java.util.Set;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(CDP)
-public class CgK8sReleaseIdentifier implements CgReleaseIdentifiers {
-  private String namespace;
-  private String releaseName;
-  private String clusterName;
-  private String containerServiceName;
-  private boolean isHelmDeployment;
-  @EqualsAndHashCode.Exclude private Set<DeploymentIdentifier> deploymentIdentifiers;
+@EqualsAndHashCode
+public class BasicDeploymentIdentifier implements DeploymentIdentifier {
+  @EqualsAndHashCode.Exclude String lastDeploymentSummaryUuid;
 }

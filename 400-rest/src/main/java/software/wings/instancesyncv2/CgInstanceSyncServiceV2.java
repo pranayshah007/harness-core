@@ -8,6 +8,7 @@
 package software.wings.instancesyncv2;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toSet;
 
@@ -34,6 +35,7 @@ import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2Handler;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
+import software.wings.instancesyncv2.model.DeploymentIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -48,6 +50,7 @@ import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -323,9 +326,9 @@ public class CgInstanceSyncServiceV2 {
 
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
     for (String taskDetailsId : instanceSyncDataListPerTask.keySet()) {
-      Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaries = new HashMap<>();
-      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances;
-      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap;
+      Map<CgReleaseIdentifiers, List<DeploymentSummary>> deploymentSummaries = new HashMap<>();
+      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances = new HashMap<>();
+      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
 
       List<InstanceSyncData> instanceSyncDataList = instanceSyncDataListPerTask.get(taskDetailsId);
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
@@ -333,6 +336,8 @@ public class CgInstanceSyncServiceV2 {
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2Handler instanceSyncHandler =
           handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
+      InfrastructureMapping infrastructureMapping =
+          infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
       Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
           instanceSyncHandler.getCgReleaseIdentifiersList(instanceSyncDataList);
@@ -343,8 +348,15 @@ public class CgInstanceSyncServiceV2 {
           Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
 
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
-        deploymentSummaries.put(
-            cgReleaseIdentifiers, deploymentService.get(cgReleaseIdentifiers.getLastDeploymentSummaryId()));
+        List<DeploymentSummary> deploymentSummariesList = new ArrayList<>();
+        if (isNotEmpty(cgReleaseIdentifiers.getDeploymentIdentifiers())) {
+          cgReleaseIdentifiers.getDeploymentIdentifiers()
+              .stream()
+              .map(DeploymentIdentifier::getLastDeploymentSummaryUuid)
+              .map(deploymentService::get)
+              .forEach(deploymentSummariesList::add);
+        }
+        deploymentSummaries.put(cgReleaseIdentifiers, deploymentSummariesList);
       }
 
       log.info("deploymentSummaries: [{}]", deploymentSummaries);
@@ -353,9 +365,8 @@ public class CgInstanceSyncServiceV2 {
           cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
       log.info("instancesInDbMap for Perpetual Task: [{}]", instancesInDbMap);
-
-      deployedInstances =
-          instanceSyncHandler.groupInstanceSyncData(deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
+      deployedInstances = instanceSyncHandler.groupInstanceSyncData(
+          infrastructureMapping, deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
 
       log.info("deployedInstances for Perpetual Task: [{}]", deployedInstances);
 
