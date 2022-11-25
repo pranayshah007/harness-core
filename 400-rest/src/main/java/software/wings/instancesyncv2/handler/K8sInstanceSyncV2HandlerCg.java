@@ -84,12 +84,14 @@ import software.wings.service.intfc.instance.InstanceService;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.sm.states.k8s.K8sStateHelper;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -100,6 +102,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.NonNull;
@@ -114,6 +117,7 @@ import org.apache.groovy.util.Maps;
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private static final String DEPLOYMENT_NO_COLOR = "NO_COLOR";
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
 
   @NonNull private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @NonNull private InfrastructureMappingService infrastructureMappingService;
@@ -731,6 +735,15 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     log.info("instancesMap: [{}]", instancesMap);
     log.info("getDeployedInstances Method End");
     return instancesMap;
+  }
+
+  @Override
+  public long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData) {
+    if (isEmpty(instanceSyncData.getInstanceDataList())) {
+      return releaseIdentifier.getDeleteAfter();
+    }
+
+    return System.currentTimeMillis() + RELEASE_PRESERVE_TIME;
   }
 
   private List<Instance> getInstancesForContainerPods(DeploymentSummary deploymentSummary,

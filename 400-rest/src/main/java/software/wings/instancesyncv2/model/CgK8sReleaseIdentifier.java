@@ -33,4 +33,5 @@ public class CgK8sReleaseIdentifier implements CgReleaseIdentifiers {
   private String containerServiceName;
   private boolean isHelmDeployment;
   @EqualsAndHashCode.Exclude private Set<DeploymentIdentifier> deploymentIdentifiers;
+  @EqualsAndHashCode.Exclude private long deleteAfter;
 }

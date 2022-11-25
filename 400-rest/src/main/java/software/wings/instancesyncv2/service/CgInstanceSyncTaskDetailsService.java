@@ -17,9 +17,11 @@ import software.wings.instancesyncv2.model.InstanceSyncTaskDetails.InstanceSyncT
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import javax.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
@@ -29,7 +31,7 @@ import org.mongodb.morphia.query.Query;
 @Slf4j
 @Singleton
 public class CgInstanceSyncTaskDetailsService {
-  private final WingsMongoPersistence mongoPersistence;
+  @Nonnull private WingsMongoPersistence mongoPersistence;
 
   public void save(InstanceSyncTaskDetails taskDetails) {
     if (Objects.isNull(taskDetails)) {
@@ -67,9 +69,16 @@ public class CgInstanceSyncTaskDetailsService {
     return query.asList();
   }
 
-  public void updateLastRun(String taskDetailsId) {
+  public void updateLastRun(
+      String taskDetailsId, Set<CgReleaseIdentifiers> releasesToUpdate, Set<CgReleaseIdentifiers> releasesToDelete) {
     InstanceSyncTaskDetails taskDetails = getForId(taskDetailsId);
     taskDetails.setLastSuccessfulRun(System.currentTimeMillis());
+    if (!releasesToUpdate.isEmpty() || !releasesToDelete.isEmpty()) {
+      Set<CgReleaseIdentifiers> allReleases = new HashSet<>(releasesToUpdate);
+      allReleases.addAll(taskDetails.getReleaseIdentifiers());
+      allReleases.removeAll(releasesToDelete);
+      taskDetails.setReleaseIdentifiers(allReleases);
+    }
     save(taskDetails);
   }
 }

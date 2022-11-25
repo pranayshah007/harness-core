@@ -12,4 +12,6 @@ import java.util.Set;
 public interface CgReleaseIdentifiers {
   Set<DeploymentIdentifier> getDeploymentIdentifiers();
   void setDeploymentIdentifiers(Set<DeploymentIdentifier> deploymentIdentifiers);
+  long getDeleteAfter();
+  void setDeleteAfter(long timestamp);
 }

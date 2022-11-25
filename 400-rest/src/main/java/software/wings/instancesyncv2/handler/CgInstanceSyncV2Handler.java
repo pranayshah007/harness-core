@@ -58,4 +58,6 @@ public interface CgInstanceSyncV2Handler {
         cgReleaseIdentifiers, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
   }
   Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
+
+  long getDeleteReleaseAfter(CgReleaseIdentifiers releaseIdentifier, InstanceSyncData instanceSyncData);
 }

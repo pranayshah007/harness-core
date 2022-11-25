@@ -368,13 +368,25 @@ public class CgInstanceSyncServiceV2 {
 
       log.info("deployedInstances for Perpetual Task: [{}]", deployedInstances);
 
+      Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
+      Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
       for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersInstanceSyncDataMap.keySet()) {
         log.info("For cgReleaseIdentifiers : [{}]", cgReleaseIdentifiers);
         List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
         List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
         handleInstances(instances, instancesInDb, instanceSyncHandler);
+
+        long deleteReleaseAfter = instanceSyncHandler.getDeleteReleaseAfter(
+            cgReleaseIdentifiers, cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
+        cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
+        if (deleteReleaseAfter > System.currentTimeMillis()) {
+          releasesToDelete.add(cgReleaseIdentifiers);
+        } else {
+          releasesToUpdate.add(cgReleaseIdentifiers);
+        }
       }
-      taskDetailsService.updateLastRun(taskDetailsId);
+
+      taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
     }
   }
 

@@ -8,9 +8,12 @@
 package software.wings.instancesyncv2;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABOSII;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -45,6 +48,7 @@ import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
 import software.wings.instancesyncv2.model.BasicDeploymentIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
+import software.wings.instancesyncv2.model.CgReleaseIdentifiers;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
 import software.wings.service.impl.SettingsServiceImpl;
@@ -56,7 +60,10 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.protobuf.Any;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -88,6 +95,10 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Before
   public void setup() {
     initMocks(this);
+
+    doReturn(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1))
+        .when(k8sHandler)
+        .getDeleteReleaseAfter(any(CgK8sReleaseIdentifier.class), any(InstanceSyncData.class));
   }
 
   @Test
@@ -288,12 +299,12 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testFetchTaskDetails() {
-    doReturn(Arrays.asList(InstanceSyncTaskDetails.builder()
-                               .perpetualTaskId("perpetualTaskId")
-                               .accountId("accountId")
-                               .appId("appId")
-                               .cloudProviderId("cpID")
-                               .build()))
+    doReturn(asList(InstanceSyncTaskDetails.builder()
+                        .perpetualTaskId("perpetualTaskId")
+                        .accountId("accountId")
+                        .appId("appId")
+                        .cloudProviderId("cpID")
+                        .build()))
         .when(taskDetailsService)
         .fetchAllForPerpetualTask(anyString(), anyString());
 
@@ -364,7 +375,103 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
     ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", builder.build());
-    verify(taskDetailsService, times(1)).updateLastRun(captor.capture());
+    verify(taskDetailsService, times(1)).updateLastRun(captor.capture(), anySet(), anySet());
     assertThat(captor.getValue()).isEqualTo("taskId");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testProcessInstanceSyncResultWithCleanup() {
+    final InstanceSyncData instanceSyncData1 = createDummyInstanceSyncData("taskId1", "release-1", "default");
+    final InstanceSyncData instanceSyncData2 = createDummyInstanceSyncData("taskId1", "release-2", "namespace1");
+    final InstanceSyncData instanceSyncData3 = createDummyInstanceSyncData("taskId2", "release-3", "default");
+
+    final CgInstanceSyncResponse instanceSyncResponse = CgInstanceSyncResponse.newBuilder()
+                                                            .setPerpetualTaskId("taskId")
+                                                            .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+                                                            .setAccountId("accountId")
+                                                            .addInstanceData(instanceSyncData1)
+                                                            .addInstanceData(instanceSyncData2)
+                                                            .addInstanceData(instanceSyncData3)
+                                                            .build();
+
+    final InstanceSyncTaskDetails taskDetails1 = createDummyInstanceSyncTaskDetails("taskId1",
+        new HashSet<>(asList(createDummyReleaseIdentifier("release-1", "default"),
+            createDummyReleaseIdentifier("release-2", "namespace1"),
+            createDummyReleaseIdentifier("release-x", "default"))));
+
+    final InstanceSyncTaskDetails taskDetails2 = createDummyInstanceSyncTaskDetails("taskId2",
+        new HashSet<>(asList(createDummyReleaseIdentifier("release-3", "default"),
+            createDummyReleaseIdentifier("release-x", "default"))));
+
+    doReturn(taskDetails1).when(taskDetailsService).getForId("taskId1");
+    doReturn(taskDetails2).when(taskDetailsService).getForId("taskId2");
+    doReturn(SettingAttribute.Builder.aSettingAttribute()
+                 .withAccountId("accountId")
+                 .withAppId("appId")
+                 .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
+                 .build())
+        .when(cloudProviderService)
+        .get(anyString());
+    doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+    doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
+    doReturn(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(7))
+        .when(k8sHandler)
+        .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-1", "default"), instanceSyncData1);
+    doReturn(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7))
+        .when(k8sHandler)
+        .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-2", "namespace1"), instanceSyncData2);
+    doReturn(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7))
+        .when(k8sHandler)
+        .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-3", "default"), instanceSyncData2);
+
+    cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", instanceSyncResponse);
+
+    ArgumentCaptor<String> taskIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Set<CgReleaseIdentifiers>> updateReleasesCaptor = ArgumentCaptor.forClass(Set.class);
+    ArgumentCaptor<Set<CgReleaseIdentifiers>> deleteReleasesCaptor = ArgumentCaptor.forClass(Set.class);
+    verify(taskDetailsService, times(2))
+        .updateLastRun(taskIdCaptor.capture(), updateReleasesCaptor.capture(), deleteReleasesCaptor.capture());
+
+    assertThat(taskIdCaptor.getAllValues()).containsExactlyInAnyOrder("taskId1", "taskId2");
+    assertThat(updateReleasesCaptor.getAllValues())
+        .containsExactlyInAnyOrder(Collections.singleton(createDummyReleaseIdentifier("release-1", "default")));
+    assertThat(deleteReleasesCaptor.getAllValues())
+        .containsExactlyInAnyOrder(Collections.singleton(createDummyReleaseIdentifier("release-2", "namespace1")),
+            Collections.singleton(createDummyReleaseIdentifier("release-3", "default")));
+  }
+
+  private InstanceSyncData createDummyInstanceSyncData(String taskId, String releaseName, String namespace) {
+    return InstanceSyncData.newBuilder()
+        .setExecutionStatus(CommandExecutionStatus.SUCCESS.name())
+        .setTaskDetailsId(taskId)
+        .setReleaseDetails(Any.pack(DirectK8sReleaseDetails.newBuilder()
+                                        .setReleaseName(releaseName)
+                                        .setNamespace(namespace)
+                                        .setIsHelm(false)
+                                        .build()))
+        .build();
+  }
+
+  private CgReleaseIdentifiers createDummyReleaseIdentifier(String releaseName, String namespace) {
+    return CgK8sReleaseIdentifier.builder()
+        .releaseName(releaseName)
+        .namespace(namespace)
+        .isHelmDeployment(false)
+        .deploymentIdentifiers(Collections.singleton(
+            BasicDeploymentIdentifier.builder().lastDeploymentSummaryUuid("lastDeploymentSummaryId").build()))
+        .build();
+  }
+
+  private InstanceSyncTaskDetails createDummyInstanceSyncTaskDetails(
+      String taskId, Set<CgReleaseIdentifiers> releaseIdentifiers) {
+    return InstanceSyncTaskDetails.builder()
+        .perpetualTaskId("perpetualTaskId" + taskId)
+        .accountId("accountId")
+        .releaseIdentifiers(releaseIdentifiers)
+        .appId("appId")
+        .cloudProviderId("cpId")
+        .build();
   }
 }

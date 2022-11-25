@@ -8,10 +8,12 @@
 package software.wings.instancesyncv2.handler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP;
 import static io.harness.seeddata.SampleDataProviderConstants.HARNESS_SAMPLE_APP_DESC;
 
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
+import static software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg.RELEASE_PRESERVE_TIME;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,6 +76,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -433,6 +436,24 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
     List<Instance> instances = instancesMap.get(cgK8sReleaseIdentifier);
     assertThat(instances.size()).isEqualTo(3);
     assertThat(instances.get(0).getEnvId()).isEqualTo("envId");
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testDeleteAfter() {
+    long currentTimeMillis = System.currentTimeMillis();
+    CgK8sReleaseIdentifier releaseIdentifier =
+        CgK8sReleaseIdentifier.builder().releaseName("release-1").deleteAfter(currentTimeMillis).build();
+
+    InstanceSyncData emptyInstanceSyncData = InstanceSyncData.newBuilder().build();
+    InstanceSyncData nonEmptyInstanceSyncData =
+        InstanceSyncData.newBuilder().addInstanceData(ByteString.EMPTY).addInstanceData(ByteString.EMPTY).build();
+
+    assertThat(k8sInstanceSyncV2HandlerCg.getDeleteReleaseAfter(releaseIdentifier, emptyInstanceSyncData))
+        .isEqualTo(currentTimeMillis);
+    assertThat(k8sInstanceSyncV2HandlerCg.getDeleteReleaseAfter(releaseIdentifier, nonEmptyInstanceSyncData))
+        .isGreaterThan(currentTimeMillis + RELEASE_PRESERVE_TIME);
   }
   private K8sPodInfo createK8sPod(String id, String releaseName, String namespace) {
     return K8sPodInfo.builder()
