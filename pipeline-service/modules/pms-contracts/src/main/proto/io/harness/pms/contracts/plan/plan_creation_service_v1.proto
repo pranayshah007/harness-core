@@ -1,0 +1,104 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.pms.contracts.plan;
+
+option java_multiple_files = true;
+
+import "io/harness/pms/contracts/plan/plan_node_proto.proto";
+import "io/harness/pms/contracts/plan/graph_layout.proto";
+import "io/harness/pms/contracts/plan/variables.proto";
+import "io/harness/pms/contracts/plan/execution_metadata.proto";
+import "io/harness/pms/contracts/triggers/trigger_payload.proto";
+import "io/harness/pms/contracts/plan/plan_creation_service.proto";
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_detail.proto";
+
+service PlanCreationServiceV1 {
+  rpc create(CreationRequest) returns (CreationResponse);
+}
+
+message CreationRequest{
+  oneof requestValue{
+    PlanCreationRequest planCreationRequest = 1;
+    FilterCreationRequest filterCreationRequest = 2;
+    VariableCreationRequest variableCreationRequest = 3;
+  }
+  string yaml = 4;
+  map<string, DependencyV1> deps = 5;
+  CreationMetadata creationMetadata = 6;
+  CreationType type = 7;
+}
+
+message PlanCreationRequest{
+  oneof value {
+    string stringValue = 1;
+    ExecutionMetadata metadata = 2;
+  }
+  triggers.TriggerPayload triggerPayload = 3;
+  bool isExecutionInputEnabled = 4;
+}
+
+message DependencyV1 {
+  string value = 1;
+  map<string, string> dependencyMetadata = 2;
+}
+
+message FilterCreationRequest{
+
+}
+
+message VariableCreationRequest{
+}
+
+message CreationMetadata{
+  string accountIdentifier = 1;
+  string orgIdentifier = 2;
+  string projectIdentifier = 3;
+  bytes gitSyncBranchContext = 4;
+  map<string, string> metadata = 5;
+}
+
+enum CreationType{
+  UNKNOWN_TYPE = 0;
+  PLAN = 1;
+  FILTER = 2;
+  VARIABLE = 3;
+}
+
+message CreationResponse{
+  oneof creationResponse {
+    PlanCreationResponseV1 planCreationResponseV1 = 1;
+    FilterCreationResponseV1 filterCreationResponseV1 = 2;
+    VariablesCreationResponseV1 variablesCreationResponseV1 = 3;
+    ErrorResponse errorResponse = 4;
+  }
+  map<string, DependencyV1> deps = 5;
+  YamlUpdates yamlUpdates = 6;
+}
+
+message PlanCreationResponseV1{
+  map<string, PlanNodeProto> nodes = 1;
+  string startingNodeId = 2;
+  map<string, PlanCreationRequest> context = 3;
+  GraphLayoutInfo graphLayoutInfo = 4;
+}
+
+message FilterCreationResponseV1{
+  string filter = 1;
+  uint32 stageCount = 2;
+  string startingNodeId = 3;
+  repeated io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO referredEntities = 4;
+  repeated string stageNames = 5;
+  map<string, DependencyV1> resolvedDeps = 6;
+}
+
+message VariablesCreationResponseV1{
+  map<string, YamlProperties> yamlProperties = 1;
+  repeated ErrorResponse errorResponse = 2;
+  map<string, DependencyV1> resolvedDeps = 3;
+  map<string, YamlExtraProperties> yamlExtraProperties = 4;
+}

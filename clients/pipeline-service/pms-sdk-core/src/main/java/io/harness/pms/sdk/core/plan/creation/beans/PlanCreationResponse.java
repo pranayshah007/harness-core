@@ -28,7 +28,7 @@ import lombok.Singular;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
 @Builder
-public class PlanCreationResponse implements AsyncCreatorResponse {
+public class PlanCreationResponse extends MergeCreationResponse implements AsyncCreatorResponse {
   @Singular @Deprecated Map<String, PlanNode> nodes;
   PlanNode planNode;
   Dependencies dependencies;

@@ -151,7 +151,7 @@ public class CIPlanCreatorUtils {
         ? ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName())
         : optionalRepository.get().getName();
     ParameterField<String> connector = optionalRepository.isEmpty()
-        ? ParameterField.createValueField(ctx.getMetadata().getMetadata().getPipelineConnectorRef())
+        ? ParameterField.createValueField(ctx.getPipelineConnectorRef())
         : optionalRepository.get().getConnector();
     return builder.repoName(repoName).connectorRef(connector);
   }
