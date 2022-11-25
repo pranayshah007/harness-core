@@ -659,8 +659,6 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
   public void monitoredServiceNewRelicTemplateValidation() throws IOException {
     String monitoredServiceYaml = getResource("monitoredservice/monitored-service-newrelic-validation.yaml");
     List<InvalidResourceData> invalidResourceDataList = new ArrayList<>();
-    String responseMappingPath =
-        "monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping";
     invalidResourceDataList.add(InvalidResourceData.builder()
                                     .path("monitoredService\\sources\\healthSources\\spec")
                                     .property("applicationName")
@@ -679,30 +677,10 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                                     .replacementValue("")
                                     .expectedResponseCode(500)
                                     .build());
-    invalidResourceDataList.add(InvalidResourceData.builder()
-                                    .path(responseMappingPath)
-                                    .property("metricValueJsonPath")
-                                    .replacementValue(null)
-                                    .expectedResponseCode(500)
-                                    .build());
-    invalidResourceDataList.add(InvalidResourceData.builder()
-                                    .path(responseMappingPath)
-                                    .property("metricValueJsonPath")
-                                    .replacementValue("")
-                                    .expectedResponseCode(500)
-                                    .build());
-    invalidResourceDataList.add(InvalidResourceData.builder()
-                                    .path(responseMappingPath)
-                                    .property("timestampJsonPath")
-                                    .replacementValue(null)
-                                    .expectedResponseCode(500)
-                                    .build());
-    invalidResourceDataList.add(InvalidResourceData.builder()
-                                    .path(responseMappingPath)
-                                    .property("timestampJsonPath")
-                                    .replacementValue("")
-                                    .expectedResponseCode(500)
-                                    .build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("metricValueJsonPath").replacementValue(null).expectedResponseCode(500).build());
+    //    invalidResourceDataList.add(
+    //            InvalidResourceData.builder().path("monitoredService\\sources\\healthSources\\spec\\newRelicMetricDefinitions\\responseMapping").property("timestampJsonPath").replacementValue(null).expectedResponseCode(500).build());
     for (InvalidResourceData invalidResourceData : invalidResourceDataList) {
       String msJson = InvalidResourceData.replace(monitoredServiceYaml, invalidResourceData);
       String msYaml = convertToYaml(msJson);

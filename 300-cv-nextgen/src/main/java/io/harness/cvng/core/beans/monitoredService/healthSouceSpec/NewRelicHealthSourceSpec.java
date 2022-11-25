@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -47,7 +46,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   String applicationName;
   String applicationId;
   String feature;
-  @Valid @UniqueIdentifierCheck List<NewRelicMetricDefinition> newRelicMetricDefinitions;
+  @UniqueIdentifierCheck List<NewRelicMetricDefinition> newRelicMetricDefinitions;
 
   @Override
   public CVConfigUpdateResult getCVConfigUpdateResult(String accountId, String orgIdentifier, String projectIdentifier,
@@ -172,7 +171,7 @@ public class NewRelicHealthSourceSpec extends MetricHealthSourceSpec {
   public static class NewRelicMetricDefinition extends HealthSourceMetricDefinition {
     String groupName;
     String nrql;
-    @Valid MetricResponseMapping responseMapping;
+    MetricResponseMapping responseMapping;
   }
 
   @Value
