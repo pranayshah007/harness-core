@@ -22,6 +22,7 @@ import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
@@ -34,6 +35,7 @@ import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.pipeline.PipelineMetadataV2;
 import io.harness.pms.pipeline.RecentExecutionInfo;
 import io.harness.pms.pipeline.RecentExecutionInfoDTO;
@@ -65,6 +67,7 @@ public class PMSPipelineDtoMapper {
         .modules(pipelineEntity.getFilters().keySet())
         .gitDetails(getEntityGitDetails(pipelineEntity))
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
+        .cacheResponseMetadata(getCacheResponseMetadata(pipelineEntity))
         .build();
   }
 
@@ -73,6 +76,18 @@ public class PMSPipelineDtoMapper {
         : pipelineEntity.getStoreType() == StoreType.REMOTE
         ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
         : null;
+  }
+
+  public CacheResponseMetadataDTO getCacheResponseMetadata(PipelineEntity pipelineEntity) {
+    if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+      return CacheResponseMetadataDTO.builder()
+          .cacheState(cacheResponse.getCacheState())
+          .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .ttlLeft(cacheResponse.getTtlLeft())
+          .build();
+    }
+    return null;
   }
 
   private EntityGitDetails getEntityGitDetailsForMetadataResponse(PipelineEntity pipelineEntity) {
