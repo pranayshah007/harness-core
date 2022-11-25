@@ -30,6 +30,7 @@ import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
 import io.harness.cdng.artifact.mappers.ArtifactConfigToDelegateReqMapper;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.common.NGExpressionUtils;
 import io.harness.connector.ConnectorInfoDTO;
@@ -92,6 +93,8 @@ import java.util.stream.Collectors;
 public class ArtifactStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+
+  @Inject private CDExpressionResolver cdExpressionResolver;
 
   public ArtifactSourceDelegateRequest toSourceDelegateRequest(ArtifactConfig artifactConfig, Ambiance ambiance) {
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
@@ -576,16 +579,16 @@ public class ArtifactStepHelper {
     return resultantArtifact;
   }
 
-  public String getArtifactProcessedServiceYaml(String serviceYaml) {
+  public String getArtifactProcessedServiceYaml(Ambiance ambiance, String serviceYaml) {
     try {
-      YamlField yamlField = processArtifactsInYaml(serviceYaml);
+      YamlField yamlField = processArtifactsInYaml(ambiance, serviceYaml);
       return YamlUtils.writeYamlString(yamlField);
     } catch (IOException ex) {
       throw new InvalidRequestException("Error processing artifact sources in service Yaml", ex);
     }
   }
 
-  public YamlField processArtifactsInYaml(String serviceEntityYaml) throws IOException {
+  public YamlField processArtifactsInYaml(Ambiance ambiance, String serviceEntityYaml) throws IOException {
     YamlField yamlField = YamlUtils.readTree(serviceEntityYaml);
     YamlField serviceDefField =
         yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION);
@@ -623,19 +626,28 @@ public class ArtifactStepHelper {
         throw new InvalidRequestException("Primary artifact ref cannot be empty");
       }
 
-      if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
-        throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
-      }
-
       ObjectNode artifactsNode = (ObjectNode) artifactsField.getNode().getCurrJsonNode();
       List<YamlNode> artifactSources = artifactSourcesField.getNode().asArray();
+
       ObjectNode primaryNode = null;
-      for (YamlNode artifactSource : artifactSources) {
-        String artifactSourceIdentifier = artifactSource.getIdentifier();
-        if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
-          primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
+      // If there is only 1 artifact source, default to that
+      if (artifactSources.size() == 1) {
+        if (artifactSources.get(0).isObject()) {
+          primaryNode = (ObjectNode) artifactSources.get(0).getCurrJsonNode();
           primaryNode.remove(YamlTypes.IDENTIFIER);
-          break;
+        }
+      } else {
+        primaryArtifactRefValue = cdExpressionResolver.renderExpression(ambiance, primaryArtifactRefValue);
+        if (NGExpressionUtils.isRuntimeOrExpressionField(primaryArtifactRefValue)) {
+          throw new InvalidRequestException("Primary artifact ref cannot be runtime or expression inside service");
+        }
+        for (YamlNode artifactSource : artifactSources) {
+          String artifactSourceIdentifier = artifactSource.getIdentifier();
+          if (primaryArtifactRefValue.equals(artifactSourceIdentifier) && artifactSource.isObject()) {
+            primaryNode = (ObjectNode) artifactSource.getCurrJsonNode();
+            primaryNode.remove(YamlTypes.IDENTIFIER);
+            break;
+          }
         }
       }
 

@@ -116,6 +116,7 @@ public class ExecutionDetailsResource {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final AccessControlClient accessControlClient;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
+  @Inject private final ExecutionHelper executionHelper;
 
   @POST
   @Path("/summary")
@@ -272,6 +273,8 @@ public class ExecutionDetailsResource {
           "stageNodeId") String stageNodeId,
       @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
           "stageNodeExecutionId") String stageNodeExecutionId,
+      @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
+          "childStageNodeId") String childStageNodeId,
       @Parameter(description = PipelineResourceConstants.GENERATE_FULL_GRAPH_PARAM_MESSAGE) @QueryParam(
           "renderFullBottomGraph") Boolean renderFullBottomGraph,
       @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
@@ -287,22 +290,10 @@ public class ExecutionDetailsResource {
       entityGitDetails = executionSummaryEntity.getEntityGitDetails();
     }
 
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of("PIPELINE", executionSummaryEntity.getPipelineIdentifier()), PipelineRbacPermissions.PIPELINE_VIEW);
-    if (EmptyPredicate.isEmpty(stageNodeId) && (renderFullBottomGraph == null || !renderFullBottomGraph)) {
-      pmsExecutionService.sendGraphUpdateEvent(executionSummaryEntity);
-      return ResponseDTO.newResponse(PipelineExecutionDetailDTO.builder()
-                                         .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(
-                                             executionSummaryEntity, entityGitDetails))
-                                         .build());
-    }
+    PipelineExecutionDetailDTO executionDetailDTO = executionHelper.getResponseDTO(stageNodeId, stageNodeExecutionId,
+        childStageNodeId, renderFullBottomGraph, executionSummaryEntity, entityGitDetails);
 
-    return ResponseDTO.newResponse(
-        PipelineExecutionDetailDTO.builder()
-            .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
-            .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
-            .build());
+    return ResponseDTO.newResponse(executionDetailDTO);
   }
 
   @GET
@@ -349,7 +340,8 @@ public class ExecutionDetailsResource {
         PipelineExecutionDetailDTO.builder()
             .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
+                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId),
+                executionSummaryEntity))
             .build());
   }
 

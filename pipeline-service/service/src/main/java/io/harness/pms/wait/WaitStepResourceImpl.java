@@ -34,7 +34,8 @@ public class WaitStepResourceImpl implements WaitStepResource {
   public ResponseDTO<WaitStepResponseDto> markAsFailOrSuccess(
       String accountId, String orgId, String projectId, String nodeExecutionId, WaitStepRequestDto waitStepRequestDto) {
     String planExecutionId = nodeExecutionService.get(nodeExecutionId).getPlanExecutionId();
-    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    String pipelineIdentifier =
+        planExecutionService.getExecutionMetadataFromPlanExecution(planExecutionId).getPipelineIdentifier();
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     waitStepService.markAsFailOrSuccess(
@@ -46,7 +47,8 @@ public class WaitStepResourceImpl implements WaitStepResource {
   public ResponseDTO<WaitStepExecutionDetailsDto> getWaitStepExecutionDetails(
       String accountId, String orgId, String projectId, String nodeExecutionId) {
     String planExecutionId = nodeExecutionService.get(nodeExecutionId).getPlanExecutionId();
-    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    String pipelineIdentifier =
+        planExecutionService.getExecutionMetadataFromPlanExecution(planExecutionId).getPipelineIdentifier();
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_VIEW);
     WaitStepInstance waitStepInstance = waitStepService.getWaitStepExecutionDetails(nodeExecutionId);

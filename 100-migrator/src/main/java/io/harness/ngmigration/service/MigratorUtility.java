@@ -23,6 +23,7 @@ import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -41,6 +42,7 @@ import io.serializer.HObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -208,24 +210,31 @@ public class MigratorUtility {
       List<ServiceVariable> serviceVariables, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
-      serviceVariables.forEach(serviceVariable -> {
-        if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
-          variables.add(SecretNGVariable.builder()
-                            .type(NGVariableType.SECRET)
-                            .value(ParameterField.createValueField(
-                                MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
-                            .name(serviceVariable.getName())
-                            .build());
-        } else {
-          variables.add(StringNGVariable.builder()
-                            .type(NGVariableType.STRING)
-                            .name(serviceVariable.getName())
-                            .value(ParameterField.createValueField(String.valueOf(serviceVariable.getValue())))
-                            .build());
-        }
-      });
+      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities)));
     }
     return variables;
+  }
+
+  public static NGVariable getNGVariable(
+      ServiceVariable serviceVariable, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
+      return SecretNGVariable.builder()
+          .type(NGVariableType.SECRET)
+          .value(ParameterField.createValueField(
+              MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+          .name(serviceVariable.getName())
+          .build();
+    } else {
+      String value = "";
+      if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
+        value = (String) MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>());
+      }
+      return StringNGVariable.builder()
+          .type(NGVariableType.STRING)
+          .name(serviceVariable.getName())
+          .value(ParameterField.createValueField(value))
+          .build();
+    }
   }
 
   public static String generateIdentifier(

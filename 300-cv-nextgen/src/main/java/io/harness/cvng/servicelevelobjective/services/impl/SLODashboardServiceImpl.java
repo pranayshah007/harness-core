@@ -25,7 +25,6 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.MonitoredS
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLODashboardWidgetBuilder;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOHealthListView;
-import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsRefDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
@@ -37,17 +36,14 @@ import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObject
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective.ServiceLevelObjectivesDetail;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.entities.UserJourney;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
-import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.cvng.servicelevelobjective.services.api.UserJourneyService;
@@ -71,9 +67,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
-  @Inject private SLIRecordService sliRecordService;
-  @Inject private CompositeSLORecordService sloRecordService;
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private GraphDataService graphDataService;
   @Inject private SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject private Clock clock;
   @Inject private NextGenService nextGenService;
@@ -215,17 +209,16 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     TimePeriod timePeriod = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
 
-    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-        ProjectParams.builder()
-            .accountIdentifier(projectParams.getAccountIdentifier())
-            .orgIdentifier(sloDetail.getOrgIdentifier())
-            .projectIdentifier(sloDetail.getProjectIdentifier())
-            .build(),
-        sloDetail.getSliIdentifier());
-    SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
+    AbstractServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(ProjectParams.builder()
+                                                     .accountIdentifier(projectParams.getAccountIdentifier())
+                                                     .orgIdentifier(sloDetail.getOrgIdentifier())
+                                                     .projectIdentifier(sloDetail.getProjectIdentifier())
+                                                     .build(),
+            sloDetail.getSloIdentifier());
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
         timePeriod.getStartTime(compositeServiceLevelObjective.getZoneOffset()), currentTimeMinute,
-        sloDetail.getTotalErrorBudget(), serviceLevelIndicator.getSliMissingDataType(),
-        serviceLevelIndicator.getVersion(), filter);
+        sloDetail.getTotalErrorBudget(), filter);
 
     return SLOConsumptionBreakdown.builder()
         .sloIdentifier(sloDetail.getSloIdentifier())
@@ -284,22 +277,15 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     int totalErrorBudgetMinutes =
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
 
+    SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
+        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
+        filter);
     if (slo.getType().equals(ServiceLevelObjectiveType.SIMPLE)) {
       SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
           (SimpleServiceLevelObjectiveSpec) sloResponse.getServiceLevelObjectiveV2DTO().getSpec();
-      Preconditions.checkState(simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().size() == 1,
-          "Only one service level indicator is supported");
-      ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
-          simpleServiceLevelObjectiveSpec.getServiceLevelIndicators().get(0);
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-          projectParams, serviceLevelIndicatorDTO.getIdentifier());
       MonitoredServiceDTO monitoredService =
           monitoredServiceService.get(projectParams, simpleServiceLevelObjectiveSpec.getMonitoredServiceRef())
               .getMonitoredServiceDTO();
-
-      SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
-          timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-          serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);
 
       MonitoredServiceDetail monitoredServiceDetail =
           MonitoredServiceDetail.builder()
@@ -363,10 +349,6 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                          .healthSourceName(sloDetail.getHealthSourceName())
                          .build())
               .collect(Collectors.toList());
-
-      SLODashboardWidget.SLOGraphData sloGraphData =
-          sloRecordService.getGraphData(compositeSLO, timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()),
-              currentTimeMinute, totalErrorBudgetMinutes, compositeSLO.getVersion(), filter);
 
       return getSloDashboardWidgetBuilder(slo, timePeriod, sloGraphData, serviceLevelObjective, totalErrorBudgetMinutes,
           currentLocalDate, monitoredServiceDetails)

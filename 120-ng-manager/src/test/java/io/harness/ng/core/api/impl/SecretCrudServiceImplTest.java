@@ -495,7 +495,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     doNothing()
         .when(secretEntityReferenceHelper)
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
@@ -508,7 +508,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(success).isTrue();
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
-    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(false));
     verify(secretEntityReferenceHelper, atLeastOnce())
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());
   }
@@ -519,7 +519,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
 
     doNothing()
         .when(secretEntityReferenceHelper)
@@ -532,7 +532,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     assertThat(success).isTrue();
     verify(encryptedDataService, atLeastOnce()).get(any(), any(), any(), any());
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
-    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any());
+    verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
     verify(secretEntityReferenceHelper, times(0)).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
   }
 
@@ -543,7 +543,7 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     List<String> secretIdentifiers = new ArrayList<>();
     secretIdentifiers.add("identifier1");
     secretIdentifiers.add("identifier2");
-    when(ngSecretServiceV2.delete(any(), any(), any(), any())).thenReturn(true);
+    when(ngSecretServiceV2.delete(any(), any(), any(), any(), eq(false))).thenReturn(true);
     doNothing()
         .when(secretEntityReferenceHelper)
         .deleteSecretEntityReferenceWhenSecretGetsDeleted(any(), any(), any(), any(), any());

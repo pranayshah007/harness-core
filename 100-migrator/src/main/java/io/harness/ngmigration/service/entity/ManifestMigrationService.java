@@ -86,7 +86,6 @@ import retrofit2.Response;
 @Slf4j
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private NgManifestFactory manifestFactory;
   private static final List<AppManifestKind> SUPPORTED_MANIFEST_KIND =
       Lists.newArrayList(AppManifestKind.VALUES, AppManifestKind.K8S_MANIFEST);
@@ -295,7 +294,7 @@ public class ManifestMigrationService extends NgMigrationService {
                 : identifier.substring(0, identifier.length() - 3) + ".yml";
           }
           String content =
-              (String) migratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
+              (String) MigratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -344,7 +343,7 @@ public class ManifestMigrationService extends NgMigrationService {
     for (CgEntityId manifestEntityId : manifestEntityIds) {
       CgEntityNode manifestNode = entities.get(manifestEntityId);
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      migratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
+      MigratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
       BaseProvidedInput manifestInput =
           inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;

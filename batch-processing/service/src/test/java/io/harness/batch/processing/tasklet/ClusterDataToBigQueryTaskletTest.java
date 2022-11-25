@@ -7,6 +7,7 @@
 
 package io.harness.batch.processing.tasklet;
 
+import static io.harness.beans.FeatureName.CCM_WORKLOAD_LABELS_OPTIMISATION;
 import static io.harness.rule.OwnerRule.HITESH;
 import static io.harness.rule.OwnerRule.ROHIT;
 import static io.harness.rule.OwnerRule.TRUNAPUSHPA;
@@ -31,6 +32,7 @@ import io.harness.batch.processing.tasklet.support.K8SWorkloadService;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.commons.beans.InstanceType;
 import io.harness.ccm.commons.entities.k8s.K8sWorkload;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.testsupport.BaseTaskletTest;
 
@@ -83,6 +85,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   @Mock private StepContext stepContext;
   @Mock private StepExecution stepExecution;
   @Mock private JobParameters parameters;
+  @Mock private FeatureFlagService featureFlagService;
 
   private final Instant END_INSTANT = Instant.now();
   private final Instant START_INSTANT = END_INSTANT.minus(1, ChronoUnit.HOURS);
@@ -116,6 +119,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testGetLabelMapForGroup() {
     mockGetWorkload();
+    when(featureFlagService.isNotEnabled(CCM_WORKLOAD_LABELS_OPTIMISATION, ACCOUNT_ID)).thenReturn(true);
     final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
     Map<K8SWorkloadService.WorkloadUidCacheKey, Map<String, String>> labelMap =
         clusterDataToBigQueryTasklet.getLabelMapForClusterGroup(instances,
@@ -144,6 +148,7 @@ public class ClusterDataToBigQueryTaskletTest extends BaseTaskletTest {
   @Category(UnitTests.class)
   public void testGetClusterBillingDataForBatch() {
     mockGetWorkload();
+    when(featureFlagService.isNotEnabled(CCM_WORKLOAD_LABELS_OPTIMISATION, ACCOUNT_ID)).thenReturn(true);
     final List<InstanceBillingData> instances = ImmutableList.of(createBillingData(NAME_0), createBillingData(NAME_1));
     List<ClusterBillingData> clusterBillingData = clusterDataToBigQueryTasklet.getClusterBillingDataForBatch(
         ACCOUNT_ID, BatchJobType.CLUSTER_DATA_TO_BIG_QUERY, instances);

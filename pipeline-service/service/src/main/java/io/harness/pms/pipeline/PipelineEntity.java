@@ -161,7 +161,11 @@ public class PipelineEntity
   @Wither @Version Long version;
 
   @Wither @Default Map<String, org.bson.Document> filters = new HashMap<>();
-  ExecutionSummaryInfo executionSummaryInfo;
+
+  /**
+   * @deprecated Use {@link RecentExecutionInfo} from {@link PipelineMetadataV2}
+   */
+  @Deprecated ExecutionSummaryInfo executionSummaryInfo;
   int runSequence;
 
   @Wither int stageCount;

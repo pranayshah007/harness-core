@@ -19,7 +19,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.filters.Entity;
+import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -55,6 +58,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
@@ -76,6 +80,8 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
 
   @Mock private InfrastructureEntityService infraService;
   @InjectMocks private DeploymentStageFilterJsonCreatorV2 filterCreator;
+
+  private final ClassLoader classLoader = this.getClass().getClassLoader();
 
   private final ServiceEntity serviceEntity = ServiceEntity.builder()
                                                   .accountId("accountId")
@@ -127,6 +133,9 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     doReturn(Optional.of(serviceEntity))
         .when(serviceEntityService)
         .get("accountId", "orgId", "projectId", "service-id", false);
+    doReturn(List.of(serviceEntity))
+        .when(serviceEntityService)
+        .getServices("accountId", "orgId", "projectId", List.of("service-id"));
     doReturn(Optional.of(envEntity)).when(environmentService).get("accountId", "orgId", "projectId", "env-id", false);
     doReturn(Optional.of(infra)).when(infraService).get("accountId", "orgId", "projectId", "env-id", "infra-id");
     doReturn(Lists.newArrayList(infra))
@@ -157,6 +166,25 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigWithFilters")
+  public void getFiltersWithEnvFilters(DeploymentStageNode node) {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .build();
+    PipelineFilter filter = filterCreator.getFilter(ctx, node);
+    assertThat(filter.toJson())
+        .isEqualTo(
+            "{\"deploymentTypes\":[\"Kubernetes\"],\"environmentNames\":[\"my-env\"],\"serviceNames\":[\"my-service\"],\"infrastructureTypes\":[]}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigGitops")
   public void getFiltersGitops(DeploymentStageNode node) {
     FilterCreationContext ctx = FilterCreationContext.builder()
@@ -178,6 +206,24 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
   @Category(UnitTests.class)
   @Parameters(method = "getDeploymentStageConfigEnvGroup")
   public void getFiltersEnvGroup(DeploymentStageNode node) {
+    FilterCreationContext ctx = FilterCreationContext.builder()
+                                    .currentField(new YamlField(new YamlNode(null)))
+                                    .setupMetadata(SetupMetadata.newBuilder()
+                                                       .setAccountId("accountId")
+                                                       .setOrgId("orgId")
+                                                       .setProjectId("projectId")
+                                                       .build())
+                                    .build();
+    PipelineFilter filter = filterCreator.getFilter(ctx, node);
+    assertThat(filter.toJson())
+        .isEqualTo("{\"deploymentTypes\":[],\"environmentNames\":[],\"serviceNames\":[],\"infrastructureTypes\":[]}");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigEnvironments")
+  public void getFiltersEnvironments(DeploymentStageNode node) {
     FilterCreationContext ctx = FilterCreationContext.builder()
                                     .currentField(new YamlField(new YamlNode(null)))
                                     .setupMetadata(SetupMetadata.newBuilder()
@@ -260,6 +306,15 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     assertThatExceptionOfType(InvalidYamlRuntimeException.class).isThrownBy(() -> filterCreator.getFilter(ctx, node));
   }
 
+  private Object[][] getDeploymentStageConfigWithFilters() throws IOException {
+    final DeploymentStageNode node1 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithEnvironmentAndFilter.yaml");
+
+    final DeploymentStageNode node2 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/gitops/deployStageWithEnvironmentAndFilter.yaml");
+
+    return new Object[][] {{node1}, {node2}};
+  }
   private Object[][] getDeploymentStageConfig() {
     final DeploymentStageNode node1 = new DeploymentStageNode();
     node1.setDeploymentStageConfig(
@@ -502,13 +557,19 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .deploymentType(KUBERNETES)
             .build());
 
-    // environments/deployToAll/filters not specified
     final DeploymentStageNode node9 = new DeploymentStageNode();
     node9.setDeploymentStageConfig(
         DeploymentStageConfig.builder()
             .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environmentGroup(
-                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("envgroup")).build())
+            .environment(EnvironmentYamlV2.builder()
+                             .environmentRef(ParameterField.<String>builder().value("env").build())
+                             .filters(ParameterField.createValueField(
+                                 List.of(FilterYaml.builder()
+                                             .type(FilterType.tags)
+                                             .spec(TagsFilter.builder().build())
+                                             .on(EnumSet.of(Entity.environments, Entity.infrastructures))
+                                             .build())))
+                             .build())
             .deploymentType(KUBERNETES)
             .build());
 
@@ -537,7 +598,18 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .deploymentType(KUBERNETES)
             .build());
 
-    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}, {node9}};
+    // environments/deployToAll/filters not specified
+    final DeploymentStageNode node12 = new DeploymentStageNode();
+    node12.setDeploymentStageConfig(
+        DeploymentStageConfig.builder()
+            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
+            .environmentGroup(
+                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("envgroup")).build())
+            .deploymentType(KUBERNETES)
+            .build());
+
+    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}, {node9}, {node10},
+        {node10}, {node11}, {node12}};
   }
   private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
@@ -547,5 +619,20 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
     String stageYaml = Resources.toString(testFile, Charsets.UTF_8);
     final DeploymentStageNode node1 = YamlPipelineUtils.read(stageYaml, DeploymentStageNode.class);
     return new Object[][] {{node1}};
+  }
+
+  private Object[][] getDeploymentStageConfigEnvironments() throws IOException {
+    final DeploymentStageNode node1 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithMultiEnvironments.yaml");
+
+    final DeploymentStageNode node2 =
+        getDeploymentStageNodeFromYaml("multisvcinfra/deployStageWithMultiEnvironmentsAndFilters.yaml");
+    return new Object[][] {{node1}, {node2}};
+  }
+
+  private DeploymentStageNode getDeploymentStageNodeFromYaml(String filePath) throws IOException {
+    final URL testFile = classLoader.getResource(filePath);
+    String stageYaml = Resources.toString(testFile, Charsets.UTF_8);
+    return YamlPipelineUtils.read(stageYaml, DeploymentStageNode.class);
   }
 }

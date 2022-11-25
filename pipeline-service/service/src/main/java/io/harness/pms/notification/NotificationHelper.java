@@ -255,7 +255,7 @@ public class NotificationHelper {
   Map<String, String> constructTemplateData(Ambiance ambiance, PipelineEventType pipelineEventType,
       NodeExecution nodeExecution, Long updatedAt, String orgIdentifier, String projectIdentifier) {
     Map<String, String> templateData = new HashMap<>();
-    PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
     String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
     String userName;
     Long startTs;

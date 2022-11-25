@@ -61,13 +61,14 @@ public class DebugServiceImpl implements DebugService {
   @Inject VerificationTaskService verificationTaskService;
   @Inject DataCollectionTaskService dataCollectionTaskService;
   @Inject SLIRecordService sliRecordService;
+  @Inject CompositeSLORecordService sloRecordService;
   @Inject AnalysisStateMachineService analysisStateMachineService;
   @Inject CVNGStepTaskService cvngStepTaskService;
   @Inject VerificationJobInstanceService verificationJobInstanceService;
   @Inject ActivityService activityService;
   @Inject CVNGLogService cvngLogService;
   @Inject OrchestrationService orchestrationService;
-  @Inject CompositeSLORecordService sloRecordService;
+  public static final Integer RECORDS_BATCH_SIZE = 100;
 
   @Override
   public SLODebugResponse getSLODebugResponse(ProjectParams projectParams, String identifier) {
@@ -200,7 +201,8 @@ public class DebugServiceImpl implements DebugService {
               .projectIdentifier(simpleServiceLevelObjective.getProjectIdentifier())
               .build(),
           simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
-      List<SLIRecord> sliRecords = sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), 100);
+      List<SLIRecord> sliRecords =
+          sliRecordService.getLatestCountSLIRecords(serviceLevelIndicator.getUuid(), RECORDS_BATCH_SIZE);
       simpleServiceLevelObjectives.add(simpleServiceLevelObjective);
       serviceLevelIndicators.add(serviceLevelIndicator);
       sliIdentifierToSLIRecordsMap.put(serviceLevelIndicator.getUuid(), sliRecords);
@@ -218,7 +220,7 @@ public class DebugServiceImpl implements DebugService {
         orchestrationService.getAnalysisOrchestrator(verificationTask.getUuid());
 
     List<CompositeSLORecord> sloRecords =
-        sloRecordService.getLatestCountSLORecords(compositeServiceLevelObjective.getUuid(), 100);
+        sloRecordService.getLatestCountSLORecords(compositeServiceLevelObjective.getUuid(), RECORDS_BATCH_SIZE);
 
     return CompositeSLODebugResponse.builder()
         .projectParams(projectParams)

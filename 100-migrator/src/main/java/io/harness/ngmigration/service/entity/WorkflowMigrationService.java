@@ -36,7 +36,6 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -88,7 +87,6 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private WorkflowService workflowService;
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private StepMapperFactory stepMapperFactory;
   @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 

@@ -23,4 +23,7 @@ public class ExecutionGraph {
   Map<String, ExecutionNode> nodeMap;
   Map<String, ExecutionNodeAdjacencyList> nodeAdjacencyListMap;
   RepresentationStrategy representationStrategy = RepresentationStrategy.CAMELCASE;
+
+  // attach project, account, org, execution id
+  Map<String, String> executionMetadata;
 }
