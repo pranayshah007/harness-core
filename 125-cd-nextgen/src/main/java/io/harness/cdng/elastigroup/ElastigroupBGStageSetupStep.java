@@ -134,7 +134,7 @@ public class ElastigroupBGStageSetupStep
             .commandName(ELASTIGROUP_BG_STAGE_SETUP_COMMAND_NAME)
             .image(elastigroupStepExecutorParams.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
-            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
+            .timeoutIntervalInMin(getSteadyStateTimeout(stepParameters))
             .maxInstanceCount(elastiGroupOriginalConfig.getCapacity().getMaximum())
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
                 elastigroupBGStageSetupStepParameters.getInstances().getType()))
@@ -158,6 +158,14 @@ public class ElastigroupBGStageSetupStep
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
         executionPassThroughData, true, TaskType.ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG);
+  }
+
+  private int getSteadyStateTimeout(StepElementParameters stepParameters) {
+    final int timeoutInMin = CDStepHelper.getTimeoutInMin(stepParameters);
+    if (timeoutInMin > 1) {
+      return timeoutInMin - 1;
+    }
+    return timeoutInMin;
   }
 
   private ElastiGroup generateOriginalConfigFromJson(
