@@ -108,6 +108,10 @@ public class ElastigroupRollbackStepHelper extends CDStepHelper {
   }
 
   private ElastiGroup calculateNewForUpsize(ElastiGroup setupElastigroup) {
+    if (setupElastigroup == null) {
+      return null;
+    }
+
     final ElastiGroup result = setupElastigroup.clone();
 
     result.getCapacity().setTarget(0);
