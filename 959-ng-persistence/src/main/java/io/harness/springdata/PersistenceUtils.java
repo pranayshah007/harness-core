@@ -16,6 +16,7 @@ import java.time.temporal.ChronoUnit;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.RetryPolicy;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.TransientDataAccessException;
 import org.springframework.transaction.TransactionException;
 
@@ -30,6 +31,23 @@ public class PersistenceUtils {
     return new RetryPolicy<>()
         .handleIf(ex -> {
           if ((ex instanceof TransactionException) || (ex instanceof TransientDataAccessException)) {
+            return true;
+          } else if (ex instanceof MongoException) {
+            return ((MongoException) ex).hasErrorLabel(MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL);
+          }
+          return false;
+        })
+        .withBackoff(1, 10, ChronoUnit.SECONDS)
+        .withMaxAttempts(3)
+        .onFailedAttempt(event -> log.warn(failedAttemptMessage, event.getAttemptCount(), event.getLastFailure()))
+        .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
+  }
+  public static RetryPolicy<Object> getRetryPolicyWithDuplicateKeyException(
+      String failedAttemptMessage, String failureMessage) {
+    return new RetryPolicy<>()
+        .handleIf(ex -> {
+          if ((ex instanceof TransactionException) || (ex instanceof TransientDataAccessException)
+              || (ex instanceof DuplicateKeyException)) {
             return true;
           } else if (ex instanceof MongoException) {
             return ((MongoException) ex).hasErrorLabel(MongoException.TRANSIENT_TRANSACTION_ERROR_LABEL);
