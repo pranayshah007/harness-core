@@ -11,6 +11,7 @@ import static io.harness.NGConstants.CONNECTOR_HEARTBEAT_LOG_PREFIX;
 import static io.harness.NGConstants.CONNECTOR_STRING;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.beans.FeatureName.NG_SETTINGS;
+import static io.harness.beans.FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET;
 import static io.harness.connector.ConnectivityStatus.FAILURE;
 import static io.harness.connector.ConnectivityStatus.UNKNOWN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -735,6 +736,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     }
     Connector existingConnector = existingConnectorOptional.get();
     ConnectorResponseDTO connectorDTO = connectorMapper.writeDTO(existingConnector);
+    if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+      throw new InvalidRequestException(
+          format(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [%s]", accountIdentifier),
+          USER);
+    }
+
     if (!forceDelete) {
       checkThatTheConnectorIsNotUsedByOthers(existingConnector);
     }
@@ -1186,9 +1194,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
 
   private Boolean isBuiltInSMDisabled(String accountIdentifier) {
     Boolean isBuiltInSMDisabled = false;
-    boolean isNgSettingsEnabled =
-        CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
-    if (isNgSettingsEnabled) {
+
+    if (isNgSettingsFFEnabled(accountIdentifier)) {
       isBuiltInSMDisabled = parseBoolean(
           NGRestUtils
               .getResponse(settingsClient.getSetting(
@@ -1196,5 +1203,31 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
               .getValue());
     }
     return isBuiltInSMDisabled;
+  }
+
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledBySettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled || isForceDeleteEnabledBySettings;
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
+  }
+
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(PL_FORCE_DELETE_CONNECTOR_SECRET.name(), accountIdentifier));
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(NG_SETTINGS.name(), accountIdentifier));
   }
 }
