@@ -45,6 +45,7 @@ public class InstanceInfo {
   List<Container> containerList;
   Map<String, String> labels;
   Map<String, String> namespaceLabels;
+  Map<String, String> topOwnerLabels;
   Map<String, String> metaData;
   Map<String, String> metadataAnnotations;
   List<String> pvcClaimNames;
