@@ -7,7 +7,14 @@
 
 package io.harness.delegate.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
@@ -25,8 +32,6 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
-import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
-import io.harness.delegate.task.ecs.EcsTaskHelperBase;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
 import io.harness.delegate.task.elastigroup.ElastigroupDeployTaskHelper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
@@ -43,6 +48,11 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,19 +60,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -86,10 +83,11 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void executeTaskInternalNotElastigroupSetupRequestTest() throws Exception {
-    ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest = ElastigroupSwapRouteCommandRequest.builder().build();
+    ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
+        ElastigroupSwapRouteCommandRequest.builder().build();
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     elastigroupBGStageSetupCommandTaskHandler.executeTaskInternal(
-            elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
+        elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
   }
 
   @Test
@@ -102,24 +100,37 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
     String region = "region";
     String prefix = format("%s__", elastigroupNamePrefix);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback)
+        .when(elastigroupCommandTaskNGHelper)
+        .getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_SETUP.toString(), true,
+            commandUnitsProgress);
 
     AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
     ConnectorConfigDTO connectorConfigDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
-    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).connectorType(ConnectorType.AWS).build();
     List<EncryptedDataDetail> encryptedDataDetails = Arrays.asList();
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
-    doReturn(awsInternalConfig).when(elastigroupCommandTaskNGHelper).getAwsInternalConfig((AwsConnectorDTO) connectorConfigDTO, region);
+    doReturn(awsInternalConfig)
+        .when(elastigroupCommandTaskNGHelper)
+        .getAwsInternalConfig((AwsConnectorDTO) connectorConfigDTO, region);
 
     List<LoadBalancerDetailsForBGDeployment> lbDetailList = Arrays.asList();
     String finalJson = "finalJson";
 
     SecretRefData spotAccountId = SecretRefData.builder().build();
-    SecretRefData spotInstApiTokenRef = SecretRefData.builder().decryptedValue(new char[]{'a'}).build();
+    SecretRefData spotInstApiTokenRef = SecretRefData.builder().decryptedValue(new char[] {'a'}).build();
     String decryptedSpotAccountIdRef = "a";
     String decryptedSpotInstApiTokenRef = "a";
-    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = SpotPermanentTokenConfigSpecDTO.builder().spotAccountId(decryptedSpotAccountIdRef).spotAccountIdRef(spotAccountId).apiTokenRef(spotInstApiTokenRef).build();
-    SpotCredentialDTO spotCredentialDTO = SpotCredentialDTO.builder().config(spotPermanentTokenConfigSpecDTO).spotCredentialType(SpotCredentialType.PERMANENT_TOKEN).build();
+    SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO = SpotPermanentTokenConfigSpecDTO.builder()
+                                                                          .spotAccountId(decryptedSpotAccountIdRef)
+                                                                          .spotAccountIdRef(spotAccountId)
+                                                                          .apiTokenRef(spotInstApiTokenRef)
+                                                                          .build();
+    SpotCredentialDTO spotCredentialDTO = SpotCredentialDTO.builder()
+                                              .config(spotPermanentTokenConfigSpecDTO)
+                                              .spotCredentialType(SpotCredentialType.PERMANENT_TOKEN)
+                                              .build();
     SpotConnectorDTO spotConnectorDTO = SpotConnectorDTO.builder().credential(spotCredentialDTO).build();
     SpotInstConfig spotInstConfig = SpotInstConfig.builder().spotConnectorDTO(spotConnectorDTO).build();
 
@@ -128,56 +139,66 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
     ElastiGroup elastigroupOriginalConfig = ElastiGroup.builder().id(id).capacity(elastiGroupCapacity).build();
 
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
-            ElastigroupSetupCommandRequest.builder()
-                    .timeoutIntervalInMin(timeout)
-                    .elastigroupNamePrefix(elastigroupNamePrefix)
-                    .spotInstConfig(spotInstConfig)
-                    .connectorInfoDTO(connectorInfoDTO)
-                    .awsEncryptedDetails(encryptedDataDetails)
-                    .elastigroupOriginalConfig(elastigroupOriginalConfig)
-                    .awsRegion(region)
-                    .build();
+        ElastigroupSetupCommandRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .elastigroupNamePrefix(elastigroupNamePrefix)
+            .spotInstConfig(spotInstConfig)
+            .connectorInfoDTO(connectorInfoDTO)
+            .awsEncryptedDetails(encryptedDataDetails)
+            .elastigroupOriginalConfig(elastigroupOriginalConfig)
+            .awsRegion(region)
+            .build();
 
-    doReturn(lbDetailList).when(elastigroupCommandTaskNGHelper).fetchAllLoadBalancerDetails(elastigroupSetupCommandRequest, awsInternalConfig, createServiceLogCallback);
+    doReturn(lbDetailList)
+        .when(elastigroupCommandTaskNGHelper)
+        .fetchAllLoadBalancerDetails(elastigroupSetupCommandRequest, awsInternalConfig, createServiceLogCallback);
 
     String stageElastiGroupName =
-            format("%s__%s", elastigroupSetupCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
-
+        format("%s__%s", elastigroupSetupCommandRequest.getElastigroupNamePrefix(), STAGE_ELASTI_GROUP_NAME_SUFFIX);
 
     doNothing().when(elastigroupCommandTaskNGHelper).decryptSpotInstConfig(spotInstConfig);
 
     ElastiGroup stageElastiGroup = ElastiGroup.builder().id(id).capacity(elastiGroupCapacity).build();
 
-    doReturn(finalJson).when(elastigroupCommandTaskNGHelper).generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
-    doReturn(Optional.of(stageElastiGroup)).when(spotInstHelperServiceDelegate).getElastiGroupByName(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, stageElastiGroupName);
-    doReturn(stageElastiGroup).when(spotInstHelperServiceDelegate).createElastiGroup(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, finalJson);
+    doReturn(finalJson)
+        .when(elastigroupCommandTaskNGHelper)
+        .generateFinalJson(elastigroupSetupCommandRequest, stageElastiGroupName);
+    doReturn(Optional.of(stageElastiGroup))
+        .when(spotInstHelperServiceDelegate)
+        .getElastiGroupByName(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, stageElastiGroupName);
+    doReturn(stageElastiGroup)
+        .when(spotInstHelperServiceDelegate)
+        .createElastiGroup(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, finalJson);
 
     ElastiGroup prodElastigroup = ElastiGroup.builder().id(id).capacity(elastiGroupCapacity).build();
     String prodElastiGroupName = elastigroupSetupCommandRequest.getElastigroupNamePrefix();
-    doReturn(Optional.of(prodElastigroup)).when(spotInstHelperServiceDelegate).getElastiGroupByName(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, prodElastiGroupName);
+    doReturn(Optional.of(prodElastigroup))
+        .when(spotInstHelperServiceDelegate)
+        .getElastiGroupByName(decryptedSpotInstApiTokenRef, decryptedSpotAccountIdRef, prodElastiGroupName);
 
-    doReturn(timeout).when(elastigroupDeployTaskHelper).getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin());
+    doReturn(timeout)
+        .when(elastigroupDeployTaskHelper)
+        .getTimeOut(elastigroupSetupCommandRequest.getTimeoutIntervalInMin());
 
     ElastigroupSetupResult elastigroupSetupResult =
-            ElastigroupSetupResult.builder()
-                    .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
-                    .newElastiGroup(stageElastiGroup)
-                    .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
-                    .groupToBeDownsized(Collections.singletonList(prodElastigroup))
-                    .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
-                    .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
-                    .useCurrentRunningInstanceCount(
-                            elastigroupSetupCommandRequest.isUseCurrentRunningInstanceCount())
-                    .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
-                    .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
-                    .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
-                    .loadBalancerDetailsForBGDeployments(lbDetailList)
-                    .build();
+        ElastigroupSetupResult.builder()
+            .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+            .newElastiGroup(stageElastiGroup)
+            .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
+            .groupToBeDownsized(Collections.singletonList(prodElastigroup))
+            .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+            .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
+            .useCurrentRunningInstanceCount(elastigroupSetupCommandRequest.isUseCurrentRunningInstanceCount())
+            .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
+            .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
+            .loadBalancerDetailsForBGDeployments(lbDetailList)
+            .build();
 
-    ElastigroupSetupResponse elastigroupSetupResponse = (ElastigroupSetupResponse) elastigroupBGStageSetupCommandTaskHandler.executeTaskInternal(elastigroupSetupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
+    ElastigroupSetupResponse elastigroupSetupResponse =
+        (ElastigroupSetupResponse) elastigroupBGStageSetupCommandTaskHandler.executeTaskInternal(
+            elastigroupSetupCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
 
     assertThat(elastigroupSetupResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(elastigroupSetupResponse.getElastigroupSetupResult())
-        .isEqualTo(elastigroupSetupResult);
+    assertThat(elastigroupSetupResponse.getElastigroupSetupResult()).isEqualTo(elastigroupSetupResult);
   }
 }
