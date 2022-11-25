@@ -144,6 +144,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
         applicationManifestService.getAllByEnvId(environment.getAppId(), environment.getUuid());
     if (isNotEmpty(applicationManifests)) {
       children.addAll(applicationManifests.stream()
+                          .filter(manifest -> StringUtils.isBlank(manifest.getServiceId()))
                           .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
                           .collect(Collectors.toList()));
     }
