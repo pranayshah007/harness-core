@@ -237,6 +237,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String buildIdentifier) {
     Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
 
+    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).exists(false);
+
     if (envIdentifier != null) {
       criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
     }

@@ -1852,7 +1852,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceGitOpsInfoList =
         instanceDashboardService.getActiveServiceInstanceInfo(accountIdentifier, orgIdentifier, projectIdentifier,
             envIdentifier, serviceIdentifier, buildIdentifier, true);
-    activeServiceInstanceGitOpsInfoList.addAll(activeServiceInstanceGitOpsInfoList);
+    activeServiceInstanceInfoList.addAll(activeServiceInstanceGitOpsInfoList);
 
     return getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoList);
   }
@@ -1926,7 +1926,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     return InstanceGroupedByServiceList.builder().instanceGroupedByServiceList(instanceGroupedByServiceList).build();
   }
 
-  private List<InstanceGroupedByServiceList.InstanceGroupedByService> groupedByServices(
+  public List<InstanceGroupedByServiceList.InstanceGroupedByService> groupedByServices(
       Map<String,
           Map<String,
               Map<String,
