@@ -132,6 +132,10 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
@@ -179,6 +183,10 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVar
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntApplyStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroyStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntPlanStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntRollbackStepVariableCreator;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -219,6 +227,8 @@ import java.util.Set;
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String TERRAFORM_STEP_METADATA = "Terraform";
+  private static final String TERRAGRUNT_STEP_METADATA = "Terragrunt";
+
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
   private static final String AZURE = "Azure";
   private static final String HELM = "Helm";
@@ -233,6 +243,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CLOUDFORMATION_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final List<String> TERRAFORM_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> TERRAGRUNT_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
@@ -353,6 +365,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ElastigroupRollbackStepPlanCreator());
     planCreators.add(new ElastigroupSetupStepPlanCreator());
 
+    // Terragrunt
+    planCreators.add(new TerragruntPlanStepPlanCreator());
+    planCreators.add(new TerragruntApplyStepPlanCreator());
+    planCreators.add(new TerragruntDestroyStepPlanCreator());
+    planCreators.add(new TerragruntRollbackStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -447,6 +465,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new ElastigroupDeployStepVariableCreator());
     variableCreators.add(new ElastigroupRollbackStepVariableCreator());
     variableCreators.add(new ElastigroupSetupStepVariableCreator());
+
+    // Terragrunt
+    variableCreators.add(new TerragruntPlanStepVariableCreator());
+    variableCreators.add(new TerragruntApplyStepVariableCreator());
+    variableCreators.add(new TerragruntDestroyStepVariableCreator());
+    variableCreators.add(new TerragruntRollbackStepVariableCreator());
 
     return variableCreators;
   }
@@ -865,6 +889,50 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
+    StepInfo terragruntPlan = StepInfo.newBuilder()
+                                  .setName("Terragrunt Plan")
+                                  .setType(StepSpecTypeConstants.TERRAGRUNT_PLAN)
+                                  .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_PLAN.name())
+                                  .setStepMetaData(StepMetaData.newBuilder()
+                                                       .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                       .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                       .build())
+                                  .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                  .build();
+
+    StepInfo terragruntApply = StepInfo.newBuilder()
+                                   .setName("Terragrunt Apply")
+                                   .setType(StepSpecTypeConstants.TERRAGRUNT_APPLY)
+                                   .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_APPLY.name())
+                                   .setStepMetaData(StepMetaData.newBuilder()
+                                                        .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                        .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                        .build())
+                                   .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                   .build();
+
+    StepInfo terragruntDestroy = StepInfo.newBuilder()
+                                     .setName("Terragrunt Destroy")
+                                     .setType(StepSpecTypeConstants.TERRAGRUNT_DESTROY)
+                                     .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_DESTROY.name())
+                                     .setStepMetaData(StepMetaData.newBuilder()
+                                                          .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                          .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                          .build())
+                                     .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                     .build();
+
+    StepInfo terragruntRollback = StepInfo.newBuilder()
+                                      .setName("Terragrunt Rollback")
+                                      .setType(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
+                                      .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_ROLLBACK.name())
+                                      .setStepMetaData(StepMetaData.newBuilder()
+                                                           .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                           .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                           .build())
+                                      .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                      .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -914,6 +982,11 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(elastigroupDeployStep);
     stepInfos.add(elastigroupRollbackStep);
     stepInfos.add(elastigroupSetup);
+    stepInfos.add(terragruntPlan);
+    stepInfos.add(terragruntApply);
+    stepInfos.add(terragruntDestroy);
+    stepInfos.add(terragruntRollback);
+
     return stepInfos;
   }
 }

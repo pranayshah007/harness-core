@@ -5787,6 +5787,412 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TerragruntApplyStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntBackendConfig": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TerragruntBackendConfigSpec"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntBackendConfigSpec": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntConfigFilesWrapper": {
+      "type": "object",
+      "required": [
+        "store"
+      ],
+      "properties": {
+        "moduleSource": {
+          "$ref": "#/definitions/ModuleSource"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntDestroyStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntExecutionData": {
+      "type": "object",
+      "required": [
+        "configFiles",
+        "moduleConfig"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerragruntBackendConfig"
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerragruntConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "moduleConfig": {
+          "$ref": "#/definitions/TerragruntModuleConfig"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntVarFileWrapper"
+          }
+        },
+        "workspace": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntModuleConfig": {
+      "type": "object",
+      "required": [
+        "terragruntRunType"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "terragruntRunType": {
+          "type": "string",
+          "enum": [
+            "RunAll",
+            "RunModule"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntPlanExecutionData": {
+      "type": "object",
+      "required": [
+        "command",
+        "configFiles",
+        "moduleConfig",
+        "secretManagerRef"
+      ],
+      "properties": {
+        "backendConfig": {
+          "$ref": "#/definitions/TerragruntBackendConfig"
+        },
+        "command": {
+          "type": "string",
+          "enum": [
+            "Apply",
+            "Destroy"
+          ]
+        },
+        "configFiles": {
+          "$ref": "#/definitions/TerragruntConfigFilesWrapper"
+        },
+        "environmentVariables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "exportTerragruntPlanJson": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "moduleConfig": {
+          "$ref": "#/definitions/TerragruntModuleConfig"
+        },
+        "secretManagerRef": {
+          "type": "string"
+        },
+        "targets": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "varFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TerragruntVarFileWrapper"
+          }
+        },
+        "workspace": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntPlanStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/TerragruntPlanExecutionData"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CDStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntStepConfiguration": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/TerragruntExecutionData"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "Inline",
+            "InheritFromPlan",
+            "InheritFromApply"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntVarFile": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "spec": {
+          "$ref": "#/definitions/TerragruntVarFileSpec"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntVarFileSpec": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TerragruntVarFileWrapper": {
+      "type": "object",
+      "required": [
+        "varFile"
+      ],
+      "properties": {
+        "varFile": {
+          "$ref": "#/definitions/TerragruntVarFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "UpdateReleaseRepoStepInfo": {
       "allOf": [
         {

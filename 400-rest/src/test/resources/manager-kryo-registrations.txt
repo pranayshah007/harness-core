@@ -2711,6 +2711,9 @@
 573555:io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
 573556:io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse
 573557:io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse
+573558:io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse
+573559:io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse
+573560:io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

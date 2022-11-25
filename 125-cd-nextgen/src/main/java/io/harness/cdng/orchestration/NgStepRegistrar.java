@@ -80,6 +80,10 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
+import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
+import io.harness.cdng.provision.terragrunt.TerragruntPlanStep;
+import io.harness.cdng.provision.terragrunt.TerragruntRollbackStep;
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
@@ -202,6 +206,10 @@ public class NgStepRegistrar {
     engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
     engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
     engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
+    engineSteps.put(TerragruntPlanStep.STEP_TYPE, TerragruntPlanStep.class);
+    engineSteps.put(TerragruntApplyStep.STEP_TYPE, TerragruntApplyStep.class);
+    engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
+    engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
 
     return engineSteps;
   }
