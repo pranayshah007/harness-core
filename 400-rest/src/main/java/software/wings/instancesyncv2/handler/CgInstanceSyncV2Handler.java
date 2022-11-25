@@ -52,5 +52,10 @@ public interface CgInstanceSyncV2Handler {
   Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
       Set<CgReleaseIdentifiers> cgReleaseIdentifiers, String appId, String infraMappingId);
 
+  default Map<CgReleaseIdentifiers, List<Instance>> fetchDbInstancesForNewDeployment(
+      Set<CgReleaseIdentifiers> cgReleaseIdentifiers, DeploymentSummary deploymentSummary) {
+    return fetchInstancesFromDb(
+        cgReleaseIdentifiers, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+  }
   Map<CgReleaseIdentifiers, InstanceSyncData> getCgReleaseIdentifiersList(List<InstanceSyncData> instanceSyncData);
 }

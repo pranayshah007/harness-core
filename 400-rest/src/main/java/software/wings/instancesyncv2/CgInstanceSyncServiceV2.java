@@ -145,8 +145,8 @@ public class CgInstanceSyncServiceV2 {
 
           log.info("deployedInstancesMap: [{}]", deployedInstancesMap);
 
-          Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
-              cgReleaseIdentifiers, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+          Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap =
+              instanceSyncHandler.fetchDbInstancesForNewDeployment(cgReleaseIdentifiers, deploymentSummary);
 
           log.info("instancesInDbMap: [{}]", instancesInDbMap);
 

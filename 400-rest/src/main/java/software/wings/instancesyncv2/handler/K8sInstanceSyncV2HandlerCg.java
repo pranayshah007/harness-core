@@ -220,9 +220,14 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       CgK8sReleaseIdentifier cgK8sReleaseIdentifier, DeploymentSummary deploymentSummary) {
     log.info("deploymentSummary: [{}]", deploymentSummary);
     log.info("infrastructureMapping: [{}]", infrastructureMapping);
+    K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentSummary.getDeploymentInfo();
     List<Instance> instances = new ArrayList<>();
     ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
-    List<K8sPod> k8sPods = getK8sPodsFromDelegate(containerInfraMapping, cgK8sReleaseIdentifier);
+    List<K8sPod> k8sPods =
+        getK8sPodsFromDelegate(containerInfraMapping, cgK8sReleaseIdentifier)
+            .stream()
+            .filter(k8sPod -> colorCheck(k8sPod.getColor(), k8sDeploymentInfo.getBlueGreenStageColor()))
+            .collect(Collectors.toList());
     log.info("List<K8sPod> k8sPods: [{}]", k8sPods);
     if (isEmpty(k8sPods)) {
       return instances;
@@ -274,6 +279,68 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     }
 
     return builder.build();
+  }
+
+  @Override
+  public Map<CgReleaseIdentifiers, List<Instance>> fetchDbInstancesForNewDeployment(
+      Set<CgReleaseIdentifiers> cgReleaseIdentifierList, DeploymentSummary deploymentSummary) {
+    log.info("fetchInstancesFromDb Method Starts");
+    List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(
+        deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
+    log.info("All instancesInDb: [{}]", instancesInDb);
+    Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
+
+    // Todo: should be subject to optimisation, it’s ineffective and theoretically can be reduced to just creating
+    // CgReleaseIdentifier based on instance
+    for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifierList) {
+      List<Instance> instances = new ArrayList<>();
+      CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) cgReleaseIdentifiers;
+      log.info("For cgK8sReleaseIdentifier: [{}]", cgK8sReleaseIdentifier);
+      for (Instance instanceInDb : instancesInDb) {
+        log.info("For instanceInDb: [{}]", instanceInDb);
+        ContainerInfo containerInfo = (ContainerInfo) instanceInDb.getInstanceInfo();
+        String containerSvcName = null;
+        String namespace = null;
+        String releaseName = null;
+        boolean isHelmDeployment = false;
+        if (containerInfo instanceof KubernetesContainerInfo) {
+          namespace = ((KubernetesContainerInfo) containerInfo).getNamespace();
+          releaseName = ((KubernetesContainerInfo) containerInfo).getReleaseName();
+          containerSvcName = ((KubernetesContainerInfo) containerInfo).getControllerName();
+          isHelmDeployment = true;
+        } else if (containerInfo instanceof K8sPodInfo) {
+          K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentSummary.getDeploymentInfo();
+          K8sPodInfo k8sPodInfo = (K8sPodInfo) containerInfo;
+          namespace = k8sPodInfo.getNamespace();
+          releaseName = k8sPodInfo.getReleaseName();
+          if (!colorCheck(k8sPodInfo.getBlueGreenColor(), k8sDeploymentInfo.getBlueGreenStageColor())) {
+            continue;
+          }
+        } else {
+          log.error("Not Supported containerInfo type : [{}]", containerInfo.getClass());
+        }
+
+        if (filterInstanceBasedOnCgK8sReleaseIdentifierCondition(
+                cgK8sReleaseIdentifier, namespace, releaseName, containerSvcName, isHelmDeployment)) {
+          instances.add(instanceInDb);
+        }
+      }
+      log.info("filtered instanceInDb: [{}]", instances);
+      instancesMap.put(cgReleaseIdentifiers, instances);
+    }
+    log.info("Nested For Loop End");
+    log.info("instancesMap in DB: [{}]", instancesMap);
+    log.info("fetchInstancesFromDb Method Ends");
+    return instancesMap;
+  }
+
+  private boolean colorCheck(String k8sPodColor, String deploymentInfoColor) {
+    k8sPodColor = isNotEmpty(k8sPodColor) ? k8sPodColor : DEPLOYMENT_NO_COLOR;
+    deploymentInfoColor = isNotEmpty(deploymentInfoColor) ? deploymentInfoColor : DEPLOYMENT_NO_COLOR;
+    if (DEPLOYMENT_NO_COLOR.equals(deploymentInfoColor)) {
+      return true;
+    }
+    return k8sPodColor.equals(deploymentInfoColor);
   }
 
   public Map<CgReleaseIdentifiers, List<Instance>> fetchInstancesFromDb(
