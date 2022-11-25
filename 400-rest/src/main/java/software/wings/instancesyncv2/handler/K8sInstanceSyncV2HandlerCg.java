@@ -90,9 +90,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -111,7 +108,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.groovy.util.Maps;
-import org.joda.time.DateTime;
 
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
 @Singleton
@@ -656,33 +652,33 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
               .parallelStream()
               .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
               .collect(Collectors.toList());
-      Map<String, DeploymentSummary> deploymentSummaryMap =
-          deploymentSummaries.get(cgK8sReleaseIdentifier)
-              .stream()
-              .filter(summary -> summary.getDeploymentInfo() instanceof K8sDeploymentInfo)
-              .collect(Collectors.toMap(summary -> {
-                K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) summary.getDeploymentInfo();
-                return isNotEmpty(k8sDeploymentInfo.getBlueGreenStageColor())
-                    ? k8sDeploymentInfo.getBlueGreenStageColor()
-                    : DEPLOYMENT_NO_COLOR;
-              }, Function.identity()));
 
-      if (CollectionUtils.isEmpty(instanceInfos) || isEmpty(deploymentSummaryMap)) {
+      if (CollectionUtils.isEmpty(instanceInfos) || isEmpty(deploymentSummaries)) {
         instancesMap.put(cgK8sReleaseIdentifier, emptyList());
         continue;
       }
 
       if (instanceInfos.get(0) instanceof K8sPodInfo) {
+        Map<String, DeploymentSummary> deploymentSummaryMap =
+            deploymentSummaries.get(cgK8sReleaseIdentifier)
+                .stream()
+                .filter(summary -> summary.getDeploymentInfo() instanceof K8sDeploymentInfo)
+                .collect(Collectors.toMap(summary -> {
+                  K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) summary.getDeploymentInfo();
+                  return isNotEmpty(k8sDeploymentInfo.getBlueGreenStageColor())
+                      ? k8sDeploymentInfo.getBlueGreenStageColor()
+                      : DEPLOYMENT_NO_COLOR;
+                }, Function.identity()));
         instances = getInstancesForK8sPods(deploymentSummaryMap, infrastructureMapping,
             instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
       } else if (instanceInfos.get(0) instanceof KubernetesContainerInfo) {
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
-        if (deploymentSummaryMap.size() > 1) {
+        List<DeploymentSummary> deploymentSummaryList = deploymentSummaries.get(cgReleaseIdentifier);
+        if (deploymentSummaryList.size() > 1) {
           log.error(
-              "Found multiple deployment summaries for native helm deployment, this is unexpected and will use only first one. Deployment summary map key set: {}",
-              deploymentSummaryMap.keySet());
+              "Found multiple deployment summaries for native helm deployment, this is unexpected and will use only first one.");
         }
-        DeploymentSummary deploymentSummary = deploymentSummaryMap.entrySet().iterator().next().getValue();
+        DeploymentSummary deploymentSummary = deploymentSummaryList.get(0);
         instances = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
             instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
       } else {

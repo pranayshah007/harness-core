@@ -417,17 +417,17 @@ public class K8sInstanceSyncV2HandlerCgTest extends CategoryTest {
                                                                   .build())
                                               .build();
 
-    Map<CgReleaseIdentifiers, DeploymentSummary> deploymentSummaryMap = new HashMap<>();
+    Map<CgReleaseIdentifiers, List<DeploymentSummary>> deploymentSummaryMap = new HashMap<>();
 
     Map<CgReleaseIdentifiers, InstanceSyncData> instanceSyncDataMap = new HashMap<>();
     Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
     instanceSyncDataMap.put(cgK8sReleaseIdentifier, instanceSyncData);
     instancesInDbMap.put(cgK8sReleaseIdentifier, Collections.singletonList(instance));
     List<Instance> instancesInDb = Collections.singletonList(instance);
-    deploymentSummaryMap.put(cgK8sReleaseIdentifier, deploymentSummary);
+    deploymentSummaryMap.put(cgK8sReleaseIdentifier, Collections.singletonList(deploymentSummary));
     instancesInDbMap.put(cgK8sReleaseIdentifier, instancesInDb);
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap =
-        k8sInstanceSyncV2HandlerCg.groupInstanceSyncData(deploymentSummaryMap, instanceSyncDataMap);
+        k8sInstanceSyncV2HandlerCg.groupInstanceSyncData(infraMapping, deploymentSummaryMap, instanceSyncDataMap);
     assertThat(instancesMap).isNotNull();
     assertThat(instancesMap.size()).isEqualTo(1);
     List<Instance> instances = instancesMap.get(cgK8sReleaseIdentifier);

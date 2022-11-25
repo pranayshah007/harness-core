@@ -43,6 +43,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.infrastructure.instance.key.deployment.K8sDeploymentKey;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
+import software.wings.instancesyncv2.model.BasicDeploymentIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
@@ -338,12 +339,13 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
     doReturn(InstanceSyncTaskDetails.builder()
                  .perpetualTaskId("perpetualTaskId")
                  .accountId("accountId")
-                 .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                                               .releaseName("releaseName")
-                                                               .namespace("namespace")
-                                                               .lastDeploymentSummaryId("lastDeploymentSummaryId")
-                                                               .isHelmDeployment(false)
-                                                               .build()))
+                 .releaseIdentifiers(Collections.singleton(
+                     CgK8sReleaseIdentifier.builder()
+                         .releaseName("releaseName")
+                         .namespace("namespace")
+                         .deploymentIdentifiers(Collections.singleton(BasicDeploymentIdentifier.builder().build()))
+                         .isHelmDeployment(false)
+                         .build()))
                  .appId("appId")
                  .cloudProviderId("cpId")
                  .build())

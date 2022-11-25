@@ -7,7 +7,6 @@
 
 package software.wings.instancesyncv2;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.util.stream.Collectors.toSet;
@@ -50,7 +49,6 @@ import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

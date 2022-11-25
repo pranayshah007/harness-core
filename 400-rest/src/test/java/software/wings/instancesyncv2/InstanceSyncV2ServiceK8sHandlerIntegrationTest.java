@@ -78,6 +78,7 @@ import software.wings.dl.WingsMongoPersistence;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
 import software.wings.instancesyncv2.handler.CgInstanceSyncV2HandlerFactory;
 import software.wings.instancesyncv2.handler.K8sInstanceSyncV2HandlerCg;
+import software.wings.instancesyncv2.model.BasicDeploymentIdentifier;
 import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.instancesyncv2.service.CgInstanceSyncTaskDetailsService;
@@ -192,138 +193,6 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
         .when(mockQuery)
         .get();
   }
-  /*
-    @Test
-    @Owner(developers = NAMAN_TALAYCHA)
-    @Category(UnitTests.class)
-    public void test_syncK8sHelmChartInfo_forBlueGreenDeployment() throws Exception {
-      DeploymentSummary deploymentSummary = DeploymentSummary.builder()
-                                                .accountId(ACCOUNT_ID)
-                                                .infraMappingId(INFRA_MAPPING_ID)
-                                                .workflowExecutionId("workflowExecution_1")
-                                                .stateExecutionInstanceId("stateExecutionInstanceId")
-                                                .workflowExecutionName("Current Workflow")
-                                                .deploymentInfo(K8sDeploymentInfo.builder()
-                                                        .namespace("namespace")
-                                                        .releaseName("releaseName")
-                                                                    .helmChartInfo(helmChartInfoWithVersion("1.1.0"))
-                                                        .blueGreenStageColor("green")
-                                                                    .blueGreenStageColor(colorBlue)
-                                                                    .build())
-                                                .build();
-      Instance instanceWithGreenColor = buildInstanceWith("sample-pod-1",
-          K8sPodInfo.builder()
-              .blueGreenColor(colorGreen)
-              .helmChartInfo(helmChartInfoWithVersion("1.0.0"))
-              .namespace("namespace")
-              .releaseName("releaseName")
-              .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
-              .build());
-      instanceWithGreenColor.setLastWorkflowExecutionId("workflowExecution_1");
-      Instance instanceWithBlueColor = buildInstanceWith("sample-pod-2",
-          K8sPodInfo.builder()
-              .blueGreenColor(colorBlue)
-              .helmChartInfo(helmChartInfoWithVersion("1.0.0"))
-              .namespace("namepace")
-              .releaseName("releaseName")
-              .containers(singletonList(K8sContainerInfo.builder().image("nginx:0.1").build()))
-              .build());
-      instanceWithBlueColor.setLastWorkflowExecutionId("workflowExecution_1");
-
-      */
-  /* Given:
-    - New deployment with blue stage color
-    - No existing instances in database
-    Should store 2 new instances:
-     - 1 green instance with null helm chart info (is not matching the deployment color)
-     - 1 blue instance using HelmChartInfo fromm deployment summary (1.1.0)
- */
-  /*
-
-test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary, emptyList(),
-   asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
-   asList(null, helmChartInfoWithVersion("1.1.0")));
-
-*/ /* Given:
-    - New deployment with blue stage color
-    - 1 green instance existing in db
-    Should store 1 new instance:
-     - 1 blue instance using HelmChartInfo fromm deployment summary (1.1.0)
- */
-  /*
-test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary, singletonList(instanceWithGreenColor),
-    asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
-    singletonList(helmChartInfoWithVersion("1.1.0")));
-
-*/
-  /* Given:
-   - New deployment with blue stage color
-   - 1 green and 1 blue instance existing in db
-   Should update 1 instance:
-    - existing 1 blue instance (sample-pod-2) with helmChartInfo from deployment summary
-*/ /*
- test_syncK8sHelmChartInfo_blueGreenDeploymentWith(deploymentSummary,
-     asList(instanceWithGreenColor, instanceWithBlueColor),
-     asList(k8sPodWithColorLabel("sample-pod-1", colorGreen), k8sPodWithColorLabel("sample-pod-2", colorBlue)),
-     singletonList(helmChartInfoWithVersion("1.1.0")));
-}
-
-public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary deploymentSummary,
-   List<Instance> instances, List<K8sPod> pods, List<HelmChartInfo> expectedVersions) throws Exception {
- reset(instanceService);
- ArgumentCaptor<Instance> instanceCaptor = ArgumentCaptor.forClass(Instance.class);
- doReturn(getInframapping(InfrastructureMappingType.DIRECT_KUBERNETES.name()))
-     .when(infrastructureMappingService)
-     .get(any(), any());
-
-
- doReturn(pods).when(k8sStateHelper).fetchPodListForCluster(any(), any(), any(), any());
-
- doReturn(InstanceSyncTaskDetails.builder()
-              .infraMappingId("infraMappingId")
-              .perpetualTaskId("perpetualTaskId")
-              .cloudProviderId("cloudProviderId")
-              .appId("appId")
-              .accountId("accountId")
-              .releaseIdentifiers(singleton(CgK8sReleaseIdentifier.builder()
-                                                .releaseName("releaseName")
-                                                .clusterName("clusterName")
-                                                .namespace("namespace")
-                                                .lastDeploymentSummaryId("lastDeploymentSummaryId")
-                                                .build()))
-              .build())
-     .when(taskDetailsService)
-     .getForInfraMapping(any(), any());
-
- doReturn(SettingAttribute.Builder.aSettingAttribute()
-              .withAccountId("accountId")
-              .withAppId("appId")
-              .withValue(KubernetesClusterConfig.builder().accountId("accountId").masterUrl("masterURL").build())
-              .build())
-     .when(cloudProviderService)
-     .get(any());
-
- doReturn(new byte[] {}).when(kryoSerializer).asBytes(any());
- doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
-
- doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
-
- doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
-
- DeploymentEvent deploymentEvent =
-     DeploymentEvent.builder().deploymentSummaries(asList(deploymentSummary)).isRollback(true).build();
- cgInstanceSyncServiceV2.handleInstanceSync(deploymentEvent);
-
- verify(instanceService, times(expectedVersions.size())).saveOrUpdate(instanceCaptor.capture());
- List<Instance> savedInstances = instanceCaptor.getAllValues();
- IntStream.range(0, savedInstances.size()).forEach(idx -> {
-   Instance instance = savedInstances.get(idx);
-   HelmChartInfo expectedVersion = expectedVersions.get(idx);
-   assertThat(instance.getInstanceInfo()).isInstanceOf(K8sPodInfo.class);
-   K8sPodInfo k8sPodInfo = (K8sPodInfo) instance.getInstanceInfo();
-   assertThat(k8sPodInfo.getHelmChartInfo()).isEqualTo(expectedVersion);
- });
-}*/
 
   @Test
   @Owner(developers = NAMAN_TALAYCHA)
@@ -400,7 +269,10 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                                                    .releaseName("releaseName")
                                                    .clusterName("clusterName")
                                                    .namespace("namespace")
-                                                   .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                   .deploymentIdentifiers(Collections.singleton(
+                                                       BasicDeploymentIdentifier.builder()
+                                                           .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                           .build()))
                                                    .build()))
                  .build())
         .when(taskDetailsService)
@@ -800,18 +672,23 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                                                  .setAccountId("accountId");
 
     doReturn(instances).when(instanceService).getInstancesForAppAndInframapping(any(), any());
-    doReturn(InstanceSyncTaskDetails.builder()
-                 .perpetualTaskId("perpetualTaskId")
-                 .accountId("accountId")
-                 .appId("appId")
-                 .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                                               .releaseName(releaseName)
-                                                               .namespace(namespace)
-                                                               .lastDeploymentSummaryId("lastDeploymentSummaryId")
-                                                               .isHelmDeployment(false)
-                                                               .build()))
-                 .cloudProviderId("cpId")
-                 .build())
+    doReturn(
+        InstanceSyncTaskDetails.builder()
+            .perpetualTaskId("perpetualTaskId")
+            .accountId("accountId")
+            .infraMappingId("infraMappingId")
+            .appId("appId")
+            .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                          .releaseName(releaseName)
+                                                          .namespace(namespace)
+                                                          .deploymentIdentifiers(Collections.singleton(
+                                                              BasicDeploymentIdentifier.builder()
+                                                                  .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                                  .build()))
+                                                          .isHelmDeployment(false)
+                                                          .build()))
+            .cloudProviderId("cpId")
+            .build())
         .when(taskDetailsService)
         .getForId(any());
 
@@ -921,7 +798,10 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                                                    .releaseName("releaseName")
                                                    .clusterName("clusterName")
                                                    .namespace("default")
-                                                   .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                   .deploymentIdentifiers(Collections.singleton(
+                                                       BasicDeploymentIdentifier.builder()
+                                                           .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                           .build()))
                                                    .build()))
                  .build())
         .when(taskDetailsService)
@@ -995,7 +875,10 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                                                    .releaseName("releaseName")
                                                    .clusterName("clusterName")
                                                    .namespace("default")
-                                                   .lastDeploymentSummaryId("lastDeploymentSummaryId")
+                                                   .deploymentIdentifiers(Collections.singleton(
+                                                       BasicDeploymentIdentifier.builder()
+                                                           .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                           .build()))
                                                    .build()))
                  .build())
         .when(taskDetailsService)
@@ -1347,18 +1230,23 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
       String releaseName, String namespace) throws Exception {
     Exception thrownException = null;
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(any(), any());
-    doReturn(InstanceSyncTaskDetails.builder()
-                 .perpetualTaskId("perpetualTaskId")
-                 .accountId("accountId")
-                 .appId("appId")
-                 .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                                               .releaseName(releaseName)
-                                                               .namespace(namespace)
-                                                               .lastDeploymentSummaryId("lastDeploymentSummaryId")
-                                                               .isHelmDeployment(false)
-                                                               .build()))
-                 .cloudProviderId("cpId")
-                 .build())
+    doReturn(
+        InstanceSyncTaskDetails.builder()
+            .perpetualTaskId("perpetualTaskId")
+            .infraMappingId("infraMappingId")
+            .accountId("accountId")
+            .appId("appId")
+            .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                          .releaseName(releaseName)
+                                                          .namespace(namespace)
+                                                          .deploymentIdentifiers(Collections.singleton(
+                                                              BasicDeploymentIdentifier.builder()
+                                                                  .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                                  .build()))
+                                                          .isHelmDeployment(false)
+                                                          .build()))
+            .cloudProviderId("cpId")
+            .build())
         .when(taskDetailsService)
         .getForId(any());
 
@@ -1413,19 +1301,24 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
       String releaseName, String namespace, String Controller) {
     doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(any(), any());
 
-    doReturn(InstanceSyncTaskDetails.builder()
-                 .perpetualTaskId("perpetualTaskId")
-                 .accountId("accountId")
-                 .appId("appId")
-                 .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
-                                                               .releaseName(releaseName)
-                                                               .namespace(namespace)
-                                                               .lastDeploymentSummaryId("lastDeploymentSummaryId")
-                                                               .isHelmDeployment(true)
-                                                               .containerServiceName(Controller)
-                                                               .build()))
-                 .cloudProviderId("cpId")
-                 .build())
+    doReturn(
+        InstanceSyncTaskDetails.builder()
+            .perpetualTaskId("perpetualTaskId")
+            .accountId("accountId")
+            .infraMappingId("infraMappingId")
+            .appId("appId")
+            .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
+                                                          .releaseName(releaseName)
+                                                          .namespace(namespace)
+                                                          .deploymentIdentifiers(Collections.singleton(
+                                                              BasicDeploymentIdentifier.builder()
+                                                                  .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
+                                                                  .build()))
+                                                          .isHelmDeployment(true)
+                                                          .containerServiceName(Controller)
+                                                          .build()))
+            .cloudProviderId("cpId")
+            .build())
         .when(taskDetailsService)
         .getForId(any());
 
@@ -1492,6 +1385,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
                           .podName(id)
                           .namespace(namespace)
                           .releaseName(releaseName)
+                          .blueGreenColor("blue")
                           .containers(singletonList(K8sContainerInfo.builder().image("test").build()))
                           .build())
         .lastArtifactId(artifactId)
@@ -1515,6 +1409,7 @@ public void test_syncK8sHelmChartInfo_blueGreenDeploymentWith(DeploymentSummary 
     return K8sPod.builder()
         .podIP(id)
         .name(id)
+        .labels(ImmutableMap.of(HarnessLabels.color, "blue"))
         .releaseName(releaseName)
         .namespace(namespace)
         .containerList(singletonList(K8sContainer.builder().name(id).image("test").containerId(id).build()))
