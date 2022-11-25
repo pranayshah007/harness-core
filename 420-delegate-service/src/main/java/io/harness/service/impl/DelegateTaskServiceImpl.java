@@ -277,8 +277,9 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
             "Failed to obtain Delegate callback service for the given task. Skipping processing of task response.");
         return;
       }
-
-      if (delegateTask.getTaskDataV2().isAsync()) {
+      boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
+                                                           : delegateTask.getData().isAsync();
+      if (async) {
         delegateCallbackService.publishAsyncTaskResponse(
             delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
       } else {
@@ -307,7 +308,9 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   }
 
   private void handleInprocResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
-    if (delegateTask.getTaskDataV2().isAsync()) {
+    boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
+                                                         : delegateTask.getData().isAsync();
+    if (async) {
       String waitId = delegateTask.getWaitId();
       if (waitId != null) {
         waitNotifyEngine.doneWithV2(waitId, response.getResponse());
