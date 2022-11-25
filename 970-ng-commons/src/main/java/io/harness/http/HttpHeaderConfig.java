@@ -11,7 +11,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.yaml.core.VariableExpression.IteratePolicy.REGULAR_WITH_CUSTOM_FIELD;
 
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.yaml.core.VariableExpression;
 
 import lombok.Builder;

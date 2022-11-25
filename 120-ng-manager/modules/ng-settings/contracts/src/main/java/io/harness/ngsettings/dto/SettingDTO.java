@@ -9,6 +9,7 @@ package io.harness.ngsettings.dto;
 
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
+import static io.harness.ngsettings.SettingConstants.ALLOWED_SCOPES;
 import static io.harness.ngsettings.SettingConstants.ALLOWED_VALUES;
 import static io.harness.ngsettings.SettingConstants.ALLOW_EDIT;
 import static io.harness.ngsettings.SettingConstants.ALLOW_OVERRIDES;
@@ -23,6 +24,7 @@ import static io.harness.ngsettings.SettingConstants.VALUE_TYPE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.ScopeLevel;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngsettings.SettingCategory;
@@ -54,4 +56,5 @@ public class SettingDTO implements YamlDTO {
   @Schema(description = DEFAULT_VALUE) String defaultValue;
   @Schema(description = SOURCE) SettingSource settingSource;
   @NotNull @NotEmpty @Schema(description = ALLOW_EDIT) Boolean isSettingEditable;
+  @NotNull @NotEmpty @Schema(description = ALLOWED_SCOPES) Set<ScopeLevel> allowedScopes;
 }

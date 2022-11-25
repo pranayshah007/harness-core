@@ -16,7 +16,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;

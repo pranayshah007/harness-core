@@ -199,9 +199,21 @@ public class ServiceAccountServiceImpl implements ServiceAccountService {
             accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     if (serviceAccount == null) {
       throw new InvalidArgumentsException(String.format("Service account [%s] doesn't exist in scope", identifier));
-    } else {
-      return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);
     }
+
+    return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);
+  }
+
+  @Override
+  public ServiceAccountDTO getServiceAccountDTO(String accountIdentifier, String identifier) {
+    ServiceAccount serviceAccount =
+        serviceAccountRepository.findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    if (serviceAccount == null) {
+      throw new InvalidArgumentsException(
+          String.format("Service account '%s' doesn't exist in account '%s'", identifier, accountIdentifier));
+    }
+
+    return ServiceAccountDTOMapper.getDTOFromServiceAccount(serviceAccount);
   }
 
   @Override

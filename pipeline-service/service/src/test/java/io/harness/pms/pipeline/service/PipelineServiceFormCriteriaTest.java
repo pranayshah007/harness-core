@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -21,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
@@ -69,6 +71,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private ExpansionRequestsExtractor expansionRequestsExtractor;
   @Mock private JsonExpander jsonExpander;
   @Mock PmsFeatureFlagService pmsFeatureFlagService;
+  @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   private final String accountId = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -114,10 +117,13 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelperMocked)
-        .validatePipelineYaml(any());
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+    doReturn(TemplateMergeResponseDTO.builder().build())
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(any(), anyBoolean());
     when(pipelineSettingsService.getMaxPipelineCreationCount(any())).thenReturn(Long.MAX_VALUE);
 
-    pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
 
     Criteria criteria = pmsPipelineServiceHelper.formCriteria(
         accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, false, "cd", "my");

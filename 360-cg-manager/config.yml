@@ -663,6 +663,8 @@ eventListenersCountConfig:
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}
+  notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
+  generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
@@ -710,3 +712,5 @@ cdTsDbRetentionPeriodMonths: 7
 enableOpentelemetry: false
 
 disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
+
+redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}

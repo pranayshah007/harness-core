@@ -13,12 +13,18 @@ import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.sm.State;
 import software.wings.yaml.workflow.StepYaml;
 
 public class K8sRollingRollbackStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(StepYaml stepYaml) {
     return StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
+  }
+
+  @Override
+  public State getState(StepYaml stepYaml) {
+    return null;
   }
 
   @Override
@@ -30,5 +36,10 @@ public class K8sRollingRollbackStepMapperImpl implements StepMapper {
                                                          .pruningEnabled(ParameterField.createValueField(false))
                                                          .build());
     return k8sRollingStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

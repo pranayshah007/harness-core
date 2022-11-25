@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
 import java.util.List;
@@ -19,6 +20,9 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsExecutionSummaryService {
   void regenerateStageLayoutGraph(String planExecutionId, List<NodeExecution> nodeExecutions);
+
+  boolean onPlanStatusUpdate(PlanExecution planExecution, Update update);
+
   void update(String planExecutionId, Update update);
   boolean updateStageOfIdentityType(String planExecutionId, Update update);
   boolean addStageNodeInGraphIfUnderStrategy(String planExecutionId, NodeExecution nodeExecution, Update update);

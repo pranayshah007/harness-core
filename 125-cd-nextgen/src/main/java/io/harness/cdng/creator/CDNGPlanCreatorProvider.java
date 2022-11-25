@@ -98,6 +98,7 @@ import io.harness.cdng.creator.plan.steps.ElastigroupDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ElastigroupRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.GitOpsFetchLinkedAppsStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
@@ -145,6 +146,7 @@ import io.harness.cdng.creator.variables.ElastigroupDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
+import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
@@ -254,7 +256,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
       EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
       ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
-      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
+      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.DeploymentRepo, ManifestType.OpenshiftTemplate,
+      ManifestType.OpenshiftParam);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -274,6 +277,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsCreatePRStepPlanCreatorV2());
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
+    planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
     planCreators.add(new ServicePlanCreatorV2());
     planCreators.add(new K8sCanaryStepPlanCreator());
@@ -391,6 +395,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
+    variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
@@ -469,6 +474,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("GitOps Update Release Repo")
             .setType(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
             .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo fetchLinkedApps =
+        StepInfo.newBuilder()
+            .setName("GitOps Fetch Linked Apps")
+            .setType(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+            .setFeatureFlag(FeatureName.GITOPS_FETCH_LINKED_APPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -857,6 +870,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(gitOpsCreatePR);
     stepInfos.add(gitOpsMergePR);
     stepInfos.add(updateReleaseRepo);
+    stepInfos.add(fetchLinkedApps);
     stepInfos.add(k8sRolling);
     stepInfos.add(delete);
     stepInfos.add(canaryDeploy);

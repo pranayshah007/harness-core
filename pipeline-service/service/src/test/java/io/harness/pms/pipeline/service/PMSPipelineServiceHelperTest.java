@@ -41,10 +41,12 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
+import io.harness.pms.pipeline.validation.PipelineValidationResponse;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import java.io.IOException;
@@ -72,6 +74,7 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
   @Mock PMSPipelineRepository pmsPipelineRepository;
   @Mock PipelineValidationService pipelineValidationService;
   @Mock PipelineGovernanceService pipelineGovernanceService;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Spy @InjectMocks PMSPipelineServiceHelper pmsPipelineServiceHelper;
 
   String accountIdentifier = "account";
@@ -262,10 +265,12 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
         .when(pipelineTemplateHelper)
         .resolveTemplateRefsInPipeline(pipelineEntity, false);
 
-    Mockito.when(pipelineGovernanceService.validateGovernanceRules(any(), any(), any(), any()))
-        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
+    Mockito.when(pipelineValidationService.validateYamlAndGovernanceRules(any(), any(), any(), any(), any(), any()))
+        .thenReturn(PipelineValidationResponse.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
     GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.validatePipelineYamlInternal(pipelineEntity, false);
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
     assertThat(governanceMetadata.getDeny()).isFalse();
   }
 

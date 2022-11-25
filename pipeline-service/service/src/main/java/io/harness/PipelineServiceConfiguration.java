@@ -141,6 +141,7 @@ public class PipelineServiceConfiguration extends Configuration {
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "orchestrationRestrictionConfiguration")
   OrchestrationRestrictionConfiguration orchestrationRestrictionConfiguration;
+  @JsonProperty("yamlSchemaExecutorServiceConfig") private ThreadPoolConfig yamlSchemaExecutorServiceConfig;
 
   private String managerServiceSecret;
   private String managerTarget;

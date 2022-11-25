@@ -42,8 +42,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.ECS_CANARY_DELETE, StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
         StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS, StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK,
         StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT, StepSpecTypeConstants.SHELL_SCRIPT_PROVISION,
-        StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.ECS_RUN_TASK,
-        StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
+        StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS,
+        StepSpecTypeConstants.ECS_RUN_TASK, StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP);
   }
 }

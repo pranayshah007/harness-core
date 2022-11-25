@@ -9,8 +9,8 @@ package io.harness.migrations.seedata;
 
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.migrations.SeedDataMigration;
 
 import software.wings.beans.Account;

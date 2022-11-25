@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.gitsync.interceptor.GitSyncConstants.DEFAULT;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.eraro.ErrorCode;
@@ -37,7 +38,9 @@ import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.UpdateFileRequest;
 import io.harness.gitsync.UpdateFileResponse;
 import io.harness.gitsync.common.beans.GitOperation;
+import io.harness.gitsync.common.helper.CacheRequestMapper;
 import io.harness.gitsync.common.helper.ChangeTypeMapper;
+import io.harness.gitsync.common.helper.EntityTypeMapper;
 import io.harness.gitsync.common.helper.GitSyncGrpcClientUtils;
 import io.harness.gitsync.common.helper.GitSyncLogContextHelper;
 import io.harness.gitsync.common.helper.ScopeIdentifierMapper;
@@ -57,6 +60,8 @@ import io.harness.gitsync.scm.beans.ScmPushResponse;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.gitsync.scm.errorhandling.ScmErrorHandler;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.logging.MdcContextSetter;
 import io.harness.manage.GlobalContextManager;
@@ -104,7 +109,7 @@ public class SCMGitSyncHelper {
   }
 
   public ScmGetFileResponse getFileByBranch(Scope scope, String repoName, String branchName, String filePath,
-      String connectorRef, Map<String, String> contextMap) {
+      String connectorRef, boolean loadFromCache, EntityType entityType, Map<String, String> contextMap) {
     contextMap =
         GitSyncLogContextHelper.setContextMap(scope, repoName, branchName, filePath, GitOperation.GET_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
@@ -115,26 +120,27 @@ public class SCMGitSyncHelper {
               .setConnectorRef(connectorRef)
               .setBranchName(Strings.nullToEmpty(branchName))
               .setFilePath(filePath)
+              .setCacheRequestParams(CacheRequestMapper.getCacheRequest(loadFromCache))
               .putAllContextMap(contextMap)
+              .setEntityType(EntityTypeMapper.getEntityType(entityType))
               .setScopeIdentifiers(ScopeIdentifierMapper.getScopeIdentifiersFromScope(scope))
               .setPrincipal(getPrincipal())
               .build();
       final GetFileResponse getFileResponse = GitSyncGrpcClientUtils.retryAndProcessException(
           harnessToGitPushInfoServiceBlockingStub::getFile, getFileRequest);
 
+      ScmGitMetaData scmGitMetaData = getScmGitMetaData(getFileResponse);
       if (isFailureResponse(getFileResponse.getStatusCode())) {
         log.error("Git SDK getFile Failure: {}", getFileResponse);
-        ScmGitMetaData scmGitMetaData = getScmGitMetaDataFromGitProtoResponse(getFileResponse.getGitMetaData());
         if (isEmpty(scmGitMetaData.getBranchName())) {
           scmGitMetaData.setRepoName(getFileRequest.getBranchName());
         }
         scmErrorHandler.processAndThrowException(getFileResponse.getStatusCode(),
             getScmErrorDetailsFromGitProtoResponse(getFileResponse.getError()), scmGitMetaData);
       }
-
       return ScmGetFileResponse.builder()
           .fileContent(getFileResponse.getFileContent())
-          .gitMetaData(getScmGitMetaDataFromGitProtoResponse(getFileResponse.getGitMetaData()))
+          .gitMetaData(scmGitMetaData)
           .build();
     }
   }
@@ -387,6 +393,46 @@ public class SCMGitSyncHelper {
         .fileUrl(gitMetaData.getFileUrl())
         .repoUrl(gitMetaData.getRepoUrl())
         .build();
+  }
+
+  private ScmGitMetaData getScmGitMetaData(GetFileResponse getFileResponse) {
+    if (getFileResponse.hasCacheResponse()) {
+      return getScmGitMetaDataFromGitProtoResponse(
+          getFileResponse.getGitMetaData(), getFileResponse.getCacheResponse());
+    } else {
+      return getScmGitMetaDataFromGitProtoResponse(getFileResponse.getGitMetaData());
+    }
+  }
+
+  private ScmGitMetaData getScmGitMetaDataFromGitProtoResponse(
+      GitMetaData gitMetaData, io.harness.gitsync.CacheResponseParams cacheResponse) {
+    return ScmGitMetaData.builder()
+        .blobId(gitMetaData.getBlobId())
+        .branchName(gitMetaData.getBranchName())
+        .repoName(gitMetaData.getRepoName())
+        .filePath(gitMetaData.getFilePath())
+        .commitId(gitMetaData.getCommitId())
+        .fileUrl(gitMetaData.getFileUrl())
+        .repoUrl(gitMetaData.getRepoUrl())
+        .cacheResponse(getCacheResponseFromGitProtoResponse(cacheResponse))
+        .build();
+  }
+
+  private CacheResponse getCacheResponseFromGitProtoResponse(io.harness.gitsync.CacheResponseParams cacheResponse) {
+    return CacheResponse.builder()
+        .cacheState(getCacheStateFromGitProtoResponse(cacheResponse.getCacheState()))
+        .lastUpdatedAt(cacheResponse.getLastUpdateAt())
+        .ttlLeft(cacheResponse.getTtlLeft())
+        .build();
+  }
+
+  private CacheState getCacheStateFromGitProtoResponse(io.harness.gitsync.CacheState cacheState) {
+    if (io.harness.gitsync.CacheState.STALE_CACHE.equals(cacheState)) {
+      return CacheState.STALE_CACHE;
+    } else if (io.harness.gitsync.CacheState.VALID_CACHE.equals(cacheState)) {
+      return CacheState.VALID_CACHE;
+    }
+    return CacheState.UNKNOWN;
   }
 
   private ScmErrorDetails getScmErrorDetailsFromGitProtoResponse(ErrorDetails errorDetails) {

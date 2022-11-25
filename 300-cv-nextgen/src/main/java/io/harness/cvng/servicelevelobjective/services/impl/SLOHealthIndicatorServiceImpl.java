@@ -14,22 +14,18 @@ import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphDa
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveType;
 import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
-import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHealthIndicatorKeys;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
-import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
-import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
-import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
 import io.harness.persistence.HPersistence;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
@@ -40,10 +36,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService {
   @Inject private HPersistence hPersistence;
-  @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
-  @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
-  @Inject private SLIRecordService sliRecordService;
-  @Inject private CompositeSLORecordService sloRecordService;
+  @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
+  @Inject private GraphDataService graphDataService;
   @Inject private Clock clock;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
 
@@ -98,23 +92,9 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
                                       .orgIdentifier(serviceLevelIndicator.getOrgIdentifier())
                                       .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
                                       .build();
-    ServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveService.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
-    upsert(projectParams, serviceLevelObjective, serviceLevelIndicator);
-  }
-
-  @Override
-  public void upsert(ServiceLevelObjective serviceLevelObjective) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(serviceLevelObjective.getAccountId())
-                                      .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-                                      .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
-                                      .build();
-    Preconditions.checkState(
-        serviceLevelObjective.getServiceLevelIndicators().size() == 1, "Only one service level indicator is supported");
-    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-        projectParams, serviceLevelObjective.getServiceLevelIndicators().get(0));
-    upsert(projectParams, serviceLevelObjective, serviceLevelIndicator);
+    SimpleServiceLevelObjective serviceLevelObjective =
+        serviceLevelObjectiveV2Service.getFromSLIIdentifier(projectParams, serviceLevelIndicator.getIdentifier());
+    upsert(projectParams, serviceLevelObjective);
   }
 
   @Override
@@ -125,46 +105,6 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
             .filter(SLOHealthIndicatorKeys.orgIdentifier, projectParams.getOrgIdentifier())
             .filter(SLOHealthIndicatorKeys.projectIdentifier, projectParams.getProjectIdentifier())
             .filter(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier, serviceLevelObjectiveIdentifier));
-  }
-
-  private void upsert(ProjectParams projectParams, ServiceLevelObjective serviceLevelObjective,
-      ServiceLevelIndicator serviceLevelIndicator) {
-    SLOHealthIndicator sloHealthIndicator = getBySLOIdentifier(projectParams, serviceLevelObjective.getIdentifier());
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
-        sloErrorBudgetResetService.getErrorBudgetResets(projectParams, serviceLevelObjective.getIdentifier());
-    int totalErrorBudgetMinutes =
-        serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
-    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
-    SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator,
-        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
-        serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion());
-    if (Objects.isNull(sloHealthIndicator)) {
-      SLOHealthIndicator newSloHealthIndicator =
-          SLOHealthIndicator.builder()
-              .accountId(serviceLevelObjective.getAccountId())
-              .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
-              .projectIdentifier(serviceLevelIndicator.getProjectIdentifier())
-              .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-              .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
-              .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
-              .errorBudgetRemainingMinutes(sloGraphData.getErrorBudgetRemaining())
-              .build();
-      hPersistence.save(newSloHealthIndicator);
-    } else {
-      UpdateOperations<SLOHealthIndicator> updateOperations =
-          hPersistence.createUpdateOperations(SLOHealthIndicator.class);
-      updateOperations.set(
-          SLOHealthIndicatorKeys.errorBudgetRemainingPercentage, sloGraphData.getErrorBudgetRemainingPercentage());
-      updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRisk,
-          ErrorBudgetRisk.getFromPercentage(sloGraphData.getErrorBudgetRemainingPercentage()));
-      updateOperations.set(SLOHealthIndicatorKeys.errorBudgetRemainingMinutes, sloGraphData.getErrorBudgetRemaining());
-      updateOperations.set(SLOHealthIndicatorKeys.errorBudgetBurnRate,
-          sloGraphData.dailyBurnRate(serviceLevelObjective.getZoneOffset()));
-      updateOperations.set(SLOHealthIndicatorKeys.lastComputedAt, Instant.now());
-      hPersistence.update(sloHealthIndicator, updateOperations);
-    }
   }
 
   @Override
@@ -220,21 +160,7 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
         serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
-    if (serviceLevelObjective.getType().equals(ServiceLevelObjectiveType.COMPOSITE)) {
-      CompositeServiceLevelObjective compositeServiceLevelObjective =
-          (CompositeServiceLevelObjective) serviceLevelObjective;
-      return sloRecordService.getGraphData(compositeServiceLevelObjective,
-          timePeriod.getStartTime(compositeServiceLevelObjective.getZoneOffset()), currentTimeMinute,
-          totalErrorBudgetMinutes, compositeServiceLevelObjective.getVersion());
-    } else {
-      SimpleServiceLevelObjective simpleServiceLevelObjective = (SimpleServiceLevelObjective) serviceLevelObjective;
-      Preconditions.checkState(simpleServiceLevelObjective.getServiceLevelIndicators().size() == 1,
-          "Only one service level indicator is supported");
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
-          projectParams, simpleServiceLevelObjective.getServiceLevelIndicators().get(0));
-      return sliRecordService.getGraphData(serviceLevelIndicator,
-          timePeriod.getStartTime(simpleServiceLevelObjective.getZoneOffset()), currentTimeMinute,
-          totalErrorBudgetMinutes, serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion());
-    }
+    return graphDataService.getGraphData(serviceLevelObjective,
+        timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes);
   }
 }

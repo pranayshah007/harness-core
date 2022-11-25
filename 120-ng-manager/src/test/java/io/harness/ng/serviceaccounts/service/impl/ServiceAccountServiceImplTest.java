@@ -10,6 +10,7 @@ package io.harness.ng.serviceaccounts.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.JOHANNES;
 import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -230,6 +231,27 @@ public class ServiceAccountServiceImplTest extends NgManagerTestBase {
         serviceAccountService.getServiceAccountDTO(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     assertThat(account).isNotNull();
     assertThat(account.getName()).isEqualTo(name);
+    assertThat(account.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = JOHANNES)
+  @Category(UnitTests.class)
+  public void testGetServiceAccountDTOWithoutOrgAndProject() {
+    doReturn(ServiceAccount.builder()
+                 .name(name)
+                 .identifier(identifier)
+                 .accountIdentifier(accountIdentifier)
+                 .orgIdentifier(orgIdentifier)
+                 .projectIdentifier(projectIdentifier)
+                 .build())
+        .when(serviceAccountRepository)
+        .findByAccountIdentifierAndIdentifier(accountIdentifier, identifier);
+    ServiceAccountDTO account = serviceAccountService.getServiceAccountDTO(accountIdentifier, identifier);
+    assertThat(account).isNotNull();
+    assertThat(account.getName()).isEqualTo(name);
+    assertThat(account.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(account.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(account.getProjectIdentifier()).isEqualTo(projectIdentifier);
   }
 }

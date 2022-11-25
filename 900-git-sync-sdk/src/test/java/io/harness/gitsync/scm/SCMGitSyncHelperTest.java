@@ -124,6 +124,8 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
   PushFileResponse pushFileResponse4;
   EntityDetail entityDetail;
 
+  EntityType entityType;
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
@@ -144,6 +146,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
 
     SourcePrincipalContextBuilder.setSourcePrincipal(
         new UserPrincipal("userName", "DUMMY_USER_EMAIL", "userName", accountId));
+    entityType = EntityType.PIPELINES;
   }
 
   @Test
@@ -252,8 +255,8 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
              harnessToGitPushInfoServiceBlockingStub::getFile, any(GetFileRequest.class)))
         .thenReturn(successfulGetFileResponse);
 
-    ScmGetFileResponse scmGetFileResponse =
-        scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, filePath, connectorRef, contextMap);
+    ScmGetFileResponse scmGetFileResponse = scmGitSyncHelper.getFileByBranch(
+        getDefaultScope(), repo, branch, filePath, connectorRef, false, entityType, contextMap);
     assertThat(scmGetFileResponse).isNotNull();
     assertThat(scmGetFileResponse.getFileContent()).isEqualTo(fileContent);
     assertThat(scmGetFileResponse.getGitMetaData().getRepoName()).isEqualTo(repo);
@@ -272,8 +275,9 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
              harnessToGitPushInfoServiceBlockingStub::getFile, any(GetFileRequest.class)))
         .thenReturn(failureGetFileResponse);
 
-    assertThatThrownBy(
-        () -> scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, filePath, connectorRef, contextMap))
+    assertThatThrownBy(()
+                           -> scmGitSyncHelper.getFileByBranch(
+                               getDefaultScope(), repo, branch, filePath, connectorRef, false, entityType, contextMap))
         .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }

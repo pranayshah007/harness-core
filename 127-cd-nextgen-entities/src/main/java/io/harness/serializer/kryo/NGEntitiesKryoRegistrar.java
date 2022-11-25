@@ -116,6 +116,7 @@ import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -314,6 +315,7 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(CustomDeploymentNumberNGVariable.class, 130034);
     kryo.register(CustomDeploymentSecretNGVariable.class, 130035);
     kryo.register(CustomDeploymentNGVariableType.class, 130036);
+    kryo.register(GitOpsDeploymentRepoManifest.class, 130037);
 
     kryo.register(K8SDirectInfrastructure.class, 8028);
     kryo.register(K8sGcpInfrastructure.class, 8301);

@@ -31,14 +31,11 @@ import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.core.variables.NGVariable;
-import io.harness.yaml.core.variables.NGVariableType;
-import io.harness.yaml.core.variables.SecretNGVariable;
-import io.harness.yaml.core.variables.StringNGVariable;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.ServiceTemplate;
@@ -159,6 +156,7 @@ public class ServiceVariableMigrationService extends NgMigrationService {
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     ServiceVariable serviceVariable = (ServiceVariable) entities.get(entityId).getEntity();
+    MigratorExpressionUtils.render(serviceVariable, inputDTO.getCustomExpressions());
     List<NGYamlFile> files = new ArrayList<>();
 
     NGYamlFile yamlFile = getBlankServiceOverride(inputDTO, migratedEntities, serviceVariable.getEnvId(),
@@ -171,23 +169,7 @@ public class ServiceVariableMigrationService extends NgMigrationService {
       yamlFile = existingOverride;
       reused = true;
     }
-    NGVariable ngVariable = null;
-    if (StringUtils.isNotBlank(serviceVariable.getEncryptedValue())) {
-      ngVariable = SecretNGVariable.builder()
-                       .name(serviceVariable.getName())
-                       .type(NGVariableType.SECRET)
-                       .value(ParameterField.createValueField(
-                           MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
-                       .build();
-    }
-    if (serviceVariable.getValue() != null && StringUtils.isNotBlank(String.valueOf(serviceVariable.getValue()))) {
-      ngVariable = StringNGVariable.builder()
-                       .name(serviceVariable.getName())
-                       .type(NGVariableType.STRING)
-                       .value(ParameterField.createValueField(String.valueOf(serviceVariable.getValue())))
-                       .build();
-    }
-
+    NGVariable ngVariable = MigratorUtility.getNGVariable(serviceVariable, migratedEntities);
     NGServiceOverrideInfoConfig serviceOverrideInfoConfig =
         ((NGServiceOverrideConfig) yamlFile.getYaml()).getServiceOverrideInfoConfig();
     if (ngVariable != null) {

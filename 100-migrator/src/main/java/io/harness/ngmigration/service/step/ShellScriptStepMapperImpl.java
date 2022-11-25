@@ -22,6 +22,7 @@ import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.StringNGVariable;
 
+import software.wings.sm.State;
 import software.wings.sm.states.ShellScriptState;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -39,18 +40,22 @@ public class ShellScriptStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
-    // TODO: add mappers for other fields in shell script
     ShellScriptState state = new ShellScriptState(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    ShellScriptState state = (ShellScriptState) getState(stepYaml);
     ShellScriptStepNode shellScriptStepNode = new ShellScriptStepNode();
     baseSetup(stepYaml, shellScriptStepNode);
 
     ExecutionTarget executionTarget = null;
 
     if (!state.isExecuteOnDelegate()) {
-      // TODO: Fix connectionRef
       executionTarget = ExecutionTarget.builder()
                             .host(ParameterField.createValueField(state.getHost()))
                             .connectorRef(ParameterField.createValueField("<+input>"))
@@ -98,5 +103,23 @@ public class ShellScriptStepMapperImpl implements StepMapper {
             .executionTarget(executionTarget)
             .build());
     return shellScriptStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    ShellScriptState state1 = (ShellScriptState) getState(stepYaml1);
+    ShellScriptState state2 = (ShellScriptState) getState(stepYaml2);
+    if (!state1.getScriptType().equals(state2.getScriptType())) {
+      return false;
+    }
+    if (state1.isExecuteOnDelegate() != state2.isExecuteOnDelegate()) {
+      return false;
+    }
+    if (StringUtils.equals(state1.getScriptString(), state2.getScriptString())) {
+      return false;
+    }
+    // No going to compare output vars. Because more output does not impact execution of step.
+    // Customers can compare multi similar outputs & they can combine the output.
+    return true;
   }
 }

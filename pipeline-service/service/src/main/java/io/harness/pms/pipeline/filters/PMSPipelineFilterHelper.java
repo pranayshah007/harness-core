@@ -11,6 +11,8 @@ import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 
+import java.util.LinkedList;
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
@@ -84,5 +86,13 @@ public class PMSPipelineFilterHelper {
         .is(repoURl)
         .and(PipelineEntityKeys.filePath)
         .is(filePath);
+  }
+
+  public List<String> getPipelineNonMetadataFields() {
+    List<String> fields = new LinkedList<>();
+    fields.add(PipelineEntityKeys.yaml);
+    // As this is deprecated field
+    fields.add(PipelineEntityKeys.executionSummaryInfo);
+    return fields;
   }
 }

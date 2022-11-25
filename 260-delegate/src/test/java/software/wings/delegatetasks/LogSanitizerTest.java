@@ -124,11 +124,14 @@ public class LogSanitizerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenericSanitize_ShouldReplaceJwtTokens() {
     LogSanitizer logSanitizer = new GenericLogSanitizer(null);
-    String message =
-        "JWT: a1c.x2z.123 \n JWT2: 123.123.123 JWT3: abc.abc.abc \n JWT4: xyz.xyz JWT5: xyz.xyz.xyz.xyz \n JWT6: xyz.xyz.xyz. xyz \n JWT7: xyz.xyz.xyz;xyz.xyz.xyz";
-    String sanitizedMessage =
-        String.format("JWT: %s \n JWT2: %s JWT3: %s \n JWT4: xyz.xyz JWT5: %s.xyz \n JWT6: %s. xyz \n JWT7: %s;%s",
-            SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK);
+    String validDummyJWT =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+    String message = String.format(
+        "JWT: a1c.x2z.123 \n JWT2: %s JWT3: abc.abc.abc... \n JWT4: xyz.xyz JWT5: abc.abc.abc.abc \n JWT6: abc.abc.abc. xyz \n JWT7: %s;%s ...",
+        validDummyJWT, validDummyJWT, validDummyJWT);
+    String sanitizedMessage = String.format(
+        "JWT: a1c.x2z.123 \n JWT2: %s JWT3: abc.abc.abc... \n JWT4: xyz.xyz JWT5: abc.abc.abc.abc \n JWT6: abc.abc.abc. xyz \n JWT7: %s;%s ...",
+        SECRET_MASK, SECRET_MASK, SECRET_MASK, SECRET_MASK);
 
     String result = logSanitizer.sanitizeLog("", message);
     assertThat(result).isEqualTo(sanitizedMessage);

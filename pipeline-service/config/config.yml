@@ -379,6 +379,12 @@ planCreatorMergeServicePoolConfig:
   idleTime: ${PLAN_CREATOR_MERGE_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_MERGE_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
+yamlSchemaExecutorServiceConfig:
+  corePoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${YAML_SCHEMA_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${YAML_SCHEmA_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 pipelineRedisEventsConfig:
   setupUsage:
     maxTopicSize: ${SETUP_USAGE_MAX_TOPIC_SIZE:-10000}
@@ -416,8 +422,6 @@ orchestrationRedisEventsConfig:
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
-  reduceOrchestrationLog: ${REDUCE_ORCHESTRATION_EVENT_LOG:-false}
-  shouldUseBatching: ${ORCHESTRATION_LOG_SHOULD_USE_BATCHING:-false}
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}

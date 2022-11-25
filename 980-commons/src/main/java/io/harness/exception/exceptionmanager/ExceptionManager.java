@@ -12,6 +12,7 @@ import static io.harness.exception.WingsException.ReportTarget.REST_API;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.HintException;
@@ -19,7 +20,6 @@ import io.harness.exception.KryoHandlerNotFoundException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
-import io.harness.logging.ExceptionLogger;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.KryoSerializer;
 

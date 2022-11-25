@@ -41,6 +41,7 @@ public class OrchestrationEndTagsResolveHandler implements OrchestrationEndObser
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    // Todo(sahil): Change here to use projections and only get tag
     Optional<PipelineExecutionSummaryEntity> optional = pmsExecutionSummaryService.getPipelineExecutionSummary(
         accountId, orgId, projectId, ambiance.getPlanExecutionId());
     if (optional.isPresent()) {

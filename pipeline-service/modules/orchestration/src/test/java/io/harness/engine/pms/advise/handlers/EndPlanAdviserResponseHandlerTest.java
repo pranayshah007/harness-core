@@ -104,8 +104,8 @@ public class EndPlanAdviserResponseHandlerTest extends OrchestrationTestBase {
   public void shouldTestHandleAdviseWithEndTransition() {
     endPlanAdviserResponseHandler.handleAdvise(
         nodeExecution, AdviserResponse.newBuilder().setEndPlanAdvise(advise).setType(AdviseType.END_PLAN).build());
-    PlanExecution planExecution = planExecutionService.get(PLAN_EXECUTION_ID);
-    assertThat(planExecution.getStatus()).isEqualTo(Status.FAILED);
+    Status planExecutionStatus = planExecutionService.getStatus(PLAN_EXECUTION_ID);
+    assertThat(planExecutionStatus).isEqualTo(Status.FAILED);
   }
 
   @Test

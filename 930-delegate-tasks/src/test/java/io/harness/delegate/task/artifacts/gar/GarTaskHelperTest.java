@@ -28,6 +28,8 @@ import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.SecretRefData;
+import io.harness.eraro.ErrorCode;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -134,5 +136,48 @@ public class GarTaskHelperTest extends CategoryTest {
 
     verify(garArtifactTaskHandler).decryptRequestDTOs(any());
     verify(garArtifactTaskHandler).getBuilds(garDelegateRequest);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testDefault() {
+    doNothing().when(garArtifactTaskHandler).decryptRequestDTOs(any());
+    GarDelegateRequest garDelegateRequest =
+        GarDelegateRequest.builder()
+            .region("us")
+            .project("cd-play")
+            .maxBuilds(Integer.MAX_VALUE)
+            .repositoryName("vivek-repo")
+            .pkg("mongo")
+            .gcpConnectorDTO(
+                GcpConnectorDTO.builder()
+                    .credential(
+                        GcpConnectorCredentialDTO.builder()
+                            .gcpCredentialType(GcpCredentialType.MANUAL_CREDENTIALS)
+                            .config(
+                                GcpManualDetailsDTO.builder()
+                                    .secretKeyRef(
+                                        SecretRefData.builder().decryptedValue(serviceAccountKeyFileContent).build())
+                                    .build())
+                            .build())
+                    .build())
+            .versionRegex("v")
+            .build();
+    ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
+                                                        .attributes(garDelegateRequest)
+                                                        .artifactTaskType(ArtifactTaskType.JENKINS_BUILD)
+                                                        .build();
+
+    ArtifactTaskResponse artifactTaskResponse =
+        garArtifactTaskHelper.getArtifactCollectResponse(artifactTaskParameters);
+
+    assertThat(artifactTaskResponse.getErrorCode()).isEqualTo(ErrorCode.INVALID_ARGUMENT);
+
+    assertThat(artifactTaskResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+
+    assertThat(artifactTaskResponse.getErrorMessage())
+        .isEqualTo("There is no Google Artifact Registry artifact task type impl defined for - JENKINS_BUILD");
+
+    verify(garArtifactTaskHandler).decryptRequestDTOs(any());
   }
 }
