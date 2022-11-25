@@ -4,7 +4,7 @@ import static io.harness.rule.OwnerRule.ABHISHEK;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.CategoryTest;
+import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -24,9 +24,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.CDC)
-public class CDOverviewDashboardServiceImplTest extends CategoryTest {
+public class CDOverviewDashboardServiceImplTest extends NgManagerTestBase {
   @InjectMocks private CDOverviewDashboardServiceImpl cdOverviewDashboardService;
   @Mock private InstanceDashboardServiceImpl instanceDashboardService;
 
@@ -97,7 +98,6 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
     buildEnvInfraMap.put("2", envInfraMap2);
 
     serviceBuildEnvInfraMap.put("svc1", buildEnvInfraMap);
-    // serviceBuildEnvInfraMap.put("svc2",buildEnvInfraMap);
 
     return serviceBuildEnvInfraMap;
   }
@@ -183,44 +183,47 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
             .serviceId("svc1")
             .instanceGroupedByArtifactList(Arrays.asList(instanceGroupedByArtifact1, instanceGroupedByArtifact2))
             .build();
-    // InstanceGroupedByServiceList.InstanceGroupedByService instanceGroupedByService2 =
-    // InstanceGroupedByServiceList.InstanceGroupedByService.builder().serviceName("svcN2").serviceId("svc2").instanceGroupedByArtifactList(Arrays.asList(instanceGroupedByArtifact1,instanceGroupedByArtifact2)).build();
     return Arrays.asList(instanceGroupedByService1);
   }
 
   List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfo() {
-    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoWithoutEnvWithServiceDetailsList = new ArrayList<>();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
     ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", "infra1", "infra1", null, null, "1", "a", 2l, "1", "artifact1:1", 2);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", "infra1", "infra1", null, null, "2", "b", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", "infra2", "infra2", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
-    instance1 = new ActiveServiceInstanceInfoV2(
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
+  }
+
+  List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoGitOps() {
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
+    ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", null, null, "infra1", "infra1", "1", "a", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", null, null, "infra1", "infra1", "1", "a", 2l, "1", "artifact1:1", 2);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", null, null, "infra1", "infra1", "2", "b", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env1", "env1", null, null, "infra2", "infra2", "1", "a", 1l, "1", "artifact1:1", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
+    activeServiceInstanceInfo.add(instance1);
     instance1 = new ActiveServiceInstanceInfoV2(
         "svc1", "svcN1", "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1);
-    activeServiceInstanceInfoWithoutEnvWithServiceDetailsList.add(instance1);
-    return activeServiceInstanceInfoWithoutEnvWithServiceDetailsList;
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
   }
 
   @Test
@@ -254,8 +257,8 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
         getSampleListInstanceGroupedByService();
 
     List<InstanceGroupedByServiceList.InstanceGroupedByService> instanceGroupedByServices1 =
-        CDOverviewDashboardServiceImpl.groupedByServices(serviceBuildEnvInfraMap, envIdToEnvNameMap,
-            infraIdToInfraNameMap, serviceIdToServiceNameMap, infraIdToInfraNameMap, buildIdToArtifactPathMap, false);
+        cdOverviewDashboardService.groupedByServices(serviceBuildEnvInfraMap, envIdToEnvNameMap, infraIdToInfraNameMap,
+            serviceIdToServiceNameMap, infraIdToInfraNameMap, buildIdToArtifactPathMap, false);
 
     assertThat(instanceGroupedByServices1).isEqualTo(instanceGroupedByServices);
   }
@@ -265,11 +268,33 @@ public class CDOverviewDashboardServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void test_getInstanceGroupedByServiceListHelper() {
     List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List = getSampleListActiveServiceInstanceInfo();
+    activeServiceInstanceInfoV2List.addAll(getSampleListActiveServiceInstanceInfoGitOps());
     InstanceGroupedByServiceList instanceGroupedByServiceList =
-        CDOverviewDashboardServiceImpl.getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoV2List);
+        cdOverviewDashboardService.getInstanceGroupedByServiceListHelper(activeServiceInstanceInfoV2List);
     assertThat(instanceGroupedByServiceList)
         .isEqualTo(InstanceGroupedByServiceList.builder()
                        .instanceGroupedByServiceList(getSampleListInstanceGroupedByService())
                        .build());
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void test_getInstanceGroupedByServiceList() {
+    Mockito
+        .when(instanceDashboardService.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, null, null, false))
+        .thenReturn(getSampleListActiveServiceInstanceInfo());
+    Mockito
+        .when(instanceDashboardService.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, null, null, true))
+        .thenReturn(getSampleListActiveServiceInstanceInfoGitOps());
+    InstanceGroupedByServiceList instanceGroupedByServiceList =
+        InstanceGroupedByServiceList.builder()
+            .instanceGroupedByServiceList(getSampleListInstanceGroupedByService())
+            .build();
+    assertThat(instanceGroupedByServiceList)
+        .isEqualTo(cdOverviewDashboardService.getInstanceGroupedByServiceList(
+            "accountId", "orgId", "projectId", null, null, null));
   }
 }

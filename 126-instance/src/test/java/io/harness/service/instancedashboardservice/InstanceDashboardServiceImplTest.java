@@ -7,6 +7,7 @@
 
 package io.harness.service.instancedashboardservice;
 
+import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -20,8 +21,10 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.ArtifactDetails;
 import io.harness.entities.Instance;
 import io.harness.entities.InstanceType;
+import io.harness.entities.instanceinfo.GitopsInstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.mappers.InstanceDetailsMapper;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.BuildsByEnvironment;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
@@ -32,9 +35,12 @@ import io.harness.models.dashboard.InstanceCountDetails;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeAndServiceId;
 import io.harness.models.dashboard.InstanceCountDetailsByEnvTypeBase;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
 import io.harness.service.instance.InstanceService;
 
+import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +62,329 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Mock InstanceService instanceService;
   @Mock InstanceDetailsMapper instanceDetailsMapper;
   @InjectMocks InstanceDashboardServiceImpl instanceDashboardService;
+  @Inject InstanceDashboardServiceImpl instanceDashboardService1;
+  @Inject InstanceRepository instanceRepository;
+
+  public void activateInstances() {
+    Instance.InstanceBuilder instanceBuilder =
+        Instance.builder().accountIdentifier("accountId").orgIdentifier("orgId").projectIdentifier("projectId");
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(2l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(2l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("2")
+                                .lastPipelineExecutionName("b")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra2")
+                                .infraName("infra2")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc1")
+                                .serviceName("svcN1")
+                                .envIdentifier("env2")
+                                .envName("env2")
+                                .infraIdentifier("infra2")
+                                .infraName("infra2")
+                                .lastPipelineExecutionId("2")
+                                .lastPipelineExecutionName("b")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("2").displayName("artifact2:2").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(2l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(2l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra1")
+                                .infraName("infra1")
+                                .lastPipelineExecutionId("2")
+                                .lastPipelineExecutionName("b")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env1")
+                                .envName("env1")
+                                .infraIdentifier("infra2")
+                                .infraName("infra2")
+                                .lastPipelineExecutionId("1")
+                                .lastPipelineExecutionName("a")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+                                .build());
+    instanceRepository.save(instanceBuilder.serviceIdentifier("svc2")
+                                .serviceName("svcN2")
+                                .envIdentifier("env2")
+                                .envName("env2")
+                                .infraIdentifier("infra2")
+                                .infraName("infra2")
+                                .lastPipelineExecutionId("2")
+                                .lastPipelineExecutionName("b")
+                                .lastDeployedAt(1l)
+                                .primaryArtifact(ArtifactDetails.builder().tag("2").displayName("artifact2:2").build())
+                                .build());
+    instanceBuilder.infraIdentifier(null).infraName(null);
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(2l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(2l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("2")
+            .lastPipelineExecutionName("b")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra2").agentIdentifier("infra2").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc1")
+            .serviceName("svcN1")
+            .envIdentifier("env2")
+            .envName("env2")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra2").agentIdentifier("infra2").build())
+            .lastPipelineExecutionId("2")
+            .lastPipelineExecutionName("b")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("2").displayName("artifact2:2").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(2l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(2l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra1").agentIdentifier("infra1").build())
+            .lastPipelineExecutionId("2")
+            .lastPipelineExecutionName("b")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env1")
+            .envName("env1")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra2").agentIdentifier("infra2").build())
+            .lastPipelineExecutionId("1")
+            .lastPipelineExecutionName("a")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("1").displayName("artifact1:1").build())
+            .build());
+    instanceRepository.save(
+        instanceBuilder.serviceIdentifier("svc2")
+            .serviceName("svcN2")
+            .envIdentifier("env2")
+            .envName("env2")
+            .instanceInfo(GitopsInstanceInfo.builder().clusterIdentifier("infra2").agentIdentifier("infra2").build())
+            .lastPipelineExecutionId("2")
+            .lastPipelineExecutionName("b")
+            .lastDeployedAt(1l)
+            .primaryArtifact(ArtifactDetails.builder().tag("2").displayName("artifact2:2").build())
+            .build());
+  }
+
+  List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfo(String serviceId, String serviceName) {
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
+    ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "1", "a", 2l, "1", "artifact1:1", 2);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", "infra1", "infra1", null, null, "2", "b", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", "infra2", "infra2", null, null, "1", "a", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
+  }
+
+  List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoEnv2(String serviceId, String serviceName) {
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
+    ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env2", "env2", "infra2", "infra2", null, null, "2", "b", 1l, "2", "artifact2:2", 1);
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
+  }
+
+  List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoGitOps(String serviceId, String serviceName) {
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
+    ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "1", "a", 2l, "1", "artifact1:1", 2);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", null, null, "infra1", "infra1", "2", "b", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env1", "env1", null, null, "infra2", "infra2", "1", "a", 1l, "1", "artifact1:1", 1);
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
+  }
+
+  List<ActiveServiceInstanceInfoV2> getSampleListActiveServiceInstanceInfoGitOpsEnv2(
+      String serviceId, String serviceName) {
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfo = new ArrayList<>();
+    ActiveServiceInstanceInfoV2 instance1 = new ActiveServiceInstanceInfoV2(
+        serviceId, serviceName, "env2", "env2", null, null, "infra2", "infra2", "2", "b", 1l, "2", "artifact2:2", 1);
+    activeServiceInstanceInfo.add(instance1);
+    return activeServiceInstanceInfo;
+  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
@@ -224,5 +553,119 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
                    .get(SERVICE_IDENTIFIER)
                    .getProdInstances())
         .isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_filterServiceId() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfo("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoEnv2("svc1", "svcN1"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, "svc1", null, false);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_filterServiceIdEnv() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfo("svc1", "svcN1");
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", "env1", "svc1", null, false);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_filterServiceId_GitOps() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfoGitOps("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoGitOpsEnv2("svc1", "svcN1"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, "svc1", null, true);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_filterServiceIdEnv_GitOps() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfoGitOps("svc1", "svcN1");
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", "env1", "svc1", null, true);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfo("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoEnv2("svc1", "svcN1"));
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfo("svc2", "svcN2"));
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoEnv2("svc2", "svcN2"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, null, null, false);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_filterEnv() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfo("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfo("svc2", "svcN2"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", "env1", null, null, false);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_GitOps() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfoGitOps("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoGitOpsEnv2("svc1", "svcN1"));
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoGitOps("svc2", "svcN2"));
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoGitOpsEnv2("svc2", "svcN2"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", null, null, null, true);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
+  }
+
+  @Test
+  @Owner(developers = ABHISHEK)
+  @Category(UnitTests.class)
+  public void getActiveServiceInstanceInfo_GitOps_filterEnv() {
+    activateInstances();
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List1 =
+        getSampleListActiveServiceInstanceInfoGitOps("svc1", "svcN1");
+    activeServiceInstanceInfoV2List1.addAll(getSampleListActiveServiceInstanceInfoGitOps("svc2", "svcN2"));
+    List<ActiveServiceInstanceInfoV2> activeServiceInstanceInfoV2List =
+        instanceDashboardService1.getActiveServiceInstanceInfo(
+            "accountId", "orgId", "projectId", "env1", null, null, true);
+    assertThat(activeServiceInstanceInfoV2List1).isEqualTo(activeServiceInstanceInfoV2List);
   }
 }
