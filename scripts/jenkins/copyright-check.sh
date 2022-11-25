@@ -15,7 +15,7 @@ echo "$MERGE_SUMMARY"
 
 for file in ${MERGE_SUMMARY[@]}
 do
-    [ -z "$(grep -E "${HARNESS_INC}" $file)" ] && FILES_WITHOUT_STMTS+=( "$file" )
+    [ -f $file ] && [ -z "$(grep -E "${HARNESS_INC}" $file)" ] && FILES_WITHOUT_STMTS+=( "$file" )
 done
 
 len=${#FILES_WITHOUT_STMTS[@]}
