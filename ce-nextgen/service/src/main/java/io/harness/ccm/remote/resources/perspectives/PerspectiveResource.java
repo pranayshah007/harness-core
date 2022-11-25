@@ -30,6 +30,8 @@ import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetType;
+import io.harness.ccm.budget.ValueDataPoint;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -208,30 +210,29 @@ public class PerspectiveResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(description = "Returns an array of last year's monthly actual budget amounts",
+        ApiResponse(description = "Return list of actual monthly budget cost and respective month in epoch",
             content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<Double[]>
+  public ResponseDTO<List<ValueDataPoint>>
   getLastYearMonthlyCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                              NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
           required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
       @NotNull @Valid @QueryParam("startTime") @Parameter(
           required = true, description = "The Start time (timestamp in millis) for the current period") long startTime,
-      @NotNull @Valid @QueryParam("period") @Parameter(required = true,
-          description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
-      BudgetPeriod period,
-      @NotNull @Valid @QueryParam("type") @Parameter(required = true,
-          description =
-              "The type (SPECIFIED_AMOUNT, PREVIOUS_MONTH_SPEND, PREVIOUS_PERIOD_SPEND, MONTHLY) for which we want the cost")
-      BudgetType type,
-      @NotNull @Valid @QueryParam("breakdown") @Parameter(required = true,
-          description = "The breakdown (MONTHLY, YEARLY) for which we want the cost") BudgetBreakdown breakdown) {
+      @NotNull @Valid @QueryParam("period") @Parameter(
+          required = true, description = "Only support for YEARLY budget period") BudgetPeriod period,
+      @NotNull @Valid @QueryParam("type") @Parameter(
+          required = true, description = "Only support for PREVIOUS_PERIOD_SPEND budget type") BudgetType type,
+      @NotNull @Valid @QueryParam("breakdown") @Parameter(
+          required = true, description = "Only support for MONTHLY breakdown") BudgetBreakdown breakdown) {
     rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
-    Double[] response = null;
+    List<ValueDataPoint> response = null;
     if (period == BudgetPeriod.YEARLY && type == BudgetType.PREVIOUS_PERIOD_SPEND
         && breakdown == BudgetBreakdown.MONTHLY) {
-      response = budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
+      Double[] lastYearMonthlyCost =
+          budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
+      response = BudgetUtils.getYearlyMonthWiseKeyValuePairs(startTime, lastYearMonthlyCost);
     }
     return ResponseDTO.newResponse(response);
   }
