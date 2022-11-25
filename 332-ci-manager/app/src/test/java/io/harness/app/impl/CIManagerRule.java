@@ -209,7 +209,7 @@ public class CIManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
     return PmsSdkConfiguration.builder()
         .deploymentMode(SdkDeployMode.LOCAL)
         .moduleType(ModuleType.CI)
-        .engineSteps(ExecutionRegistrar.getEngineSteps())
+        .engineSteps(ExecutionRegistrar.getEngineSteps(CIExecutionServiceConfig.builder().build()))
         .engineAdvisers(ExecutionAdvisers.getEngineAdvisers())
         .engineEventHandlersMap(OrchestrationExecutionEventHandlerRegistrar.getEngineEventHandlers())
         .build();

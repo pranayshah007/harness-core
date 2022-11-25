@@ -9,6 +9,7 @@ package io.harness.ci.registrars;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.states.ACRStep;
 import io.harness.ci.states.ActionStep;
 import io.harness.ci.states.BackgroundStep;
@@ -44,11 +45,14 @@ import java.util.Map;
 
 @OwnedBy(HarnessTeam.CI)
 public class ExecutionRegistrar {
-  public static Map<StepType, Class<? extends Step>> getEngineSteps() {
+  public static Map<StepType, Class<? extends Step>> getEngineSteps(CIExecutionServiceConfig configuration) {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
-    //    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
-    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
+    if (configuration.isNewInitStep()) {
+      engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
+    } else {
+      engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    }
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);

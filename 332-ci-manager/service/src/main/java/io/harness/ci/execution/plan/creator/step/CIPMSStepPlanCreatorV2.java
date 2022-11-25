@@ -26,6 +26,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIAbstractStepNode;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -43,6 +44,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.ProceedWithDefaultAdviserParameters;
@@ -80,6 +82,7 @@ import io.harness.yaml.utils.JsonPipelineUtils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -95,6 +98,7 @@ import java.util.stream.Collectors;
 @OwnedBy(HarnessTeam.CI)
 public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> extends AbstractStepPlanCreator<T> {
   public abstract Set<String> getSupportedStepTypes();
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   @Override public abstract Class<T> getFieldClass();
 
@@ -151,6 +155,65 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
         .build();
   }
 
+  public PlanCreationResponse createPlanForInitializationField(PlanCreationContext ctx, T stepElement) {
+    boolean isStepInsideRollback = false;
+    if (YamlUtils.findParentNode(ctx.getCurrentField().getNode(), ROLLBACK_STEPS) != null) {
+      isStepInsideRollback = true;
+    }
+    List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
+    stepElement.setIdentifier(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getIdentifier()));
+    stepElement.setName(StrategyUtils.getIdentifierWithExpression(ctx, stepElement.getName()));
+
+    StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    // Adds a strategy field as dependency if present.
+    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
+    // Swap the nodeUUid with the strategy node if present
+    FacilitatorObtainment facilitatorObtainment;
+    if (ciExecutionServiceConfig.isNewInitStep()) {
+      facilitatorObtainment =
+          FacilitatorObtainment.newBuilder()
+              .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.ASYNC).build())
+              .build();
+    } else {
+      facilitatorObtainment =
+          FacilitatorObtainment.newBuilder()
+              .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.TASK).build())
+              .build();
+    }
+
+    PlanNode stepPlanNode =
+        PlanNode.builder()
+            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stepElement.getUuid()))
+            .name(getName(stepElement))
+            .identifier(stepElement.getIdentifier())
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(facilitatorObtainment)
+            .adviserObtainments(adviserObtainmentFromMetaData)
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
+                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .expressionMode(stepElement.getStepSpecType().getExpressionMode())
+            .build();
+    return PlanCreationResponse.builder()
+        .node(stepPlanNode.getUuid(), stepPlanNode)
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(
+                              stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                          .build())
+        .build();
+  }
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
     boolean isStepInsideRollback = false;
     if (YamlUtils.findParentNode(currentField.getNode(), ROLLBACK_STEPS) != null) {

@@ -36,7 +36,7 @@ public class InitializeStepPlanCreator extends CIPMSStepPlanCreatorV2<Initialize
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, InitializeStepNode stepElement) {
-    return super.createPlanForField(ctx, stepElement);
+    return super.createPlanForInitializationField(ctx, stepElement);
   }
 
   @Override

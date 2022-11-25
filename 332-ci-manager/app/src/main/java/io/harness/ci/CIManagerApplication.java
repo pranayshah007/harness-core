@@ -280,8 +280,9 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(YamlSdkModule.getInstance());
 
-    PmsSdkConfiguration ciPmsSdkConfiguration = getPmsSdkConfiguration(
-        configuration, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    PmsSdkConfiguration ciPmsSdkConfiguration = getPmsSdkConfiguration(configuration, ModuleType.CI,
+        ExecutionRegistrar.getEngineSteps(configuration.getCiExecutionServiceConfig()),
+        CIPipelineServiceInfoProvider.class);
     modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration));
 
     modules.add(PipelineServiceUtilityModule.getInstance());
@@ -364,8 +365,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private void registerPMSSDK(CIManagerConfiguration config, Injector injector) {
-    PmsSdkConfiguration ciSDKConfig = getPmsSdkConfiguration(
-        config, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    PmsSdkConfiguration ciSDKConfig = getPmsSdkConfiguration(config, ModuleType.CI,
+        ExecutionRegistrar.getEngineSteps(config.getCiExecutionServiceConfig()), CIPipelineServiceInfoProvider.class);
     if (ciSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
       try {
         PmsSdkInitHelper.initializeSDKInstance(injector, ciSDKConfig);

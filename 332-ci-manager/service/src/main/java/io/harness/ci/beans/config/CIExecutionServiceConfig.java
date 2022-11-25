@@ -32,4 +32,5 @@ public class CIExecutionServiceConfig {
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;
   boolean isLocal;
+  boolean newInitStep;
 }

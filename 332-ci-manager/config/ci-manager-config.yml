@@ -130,6 +130,7 @@ ciExecutionServiceConfig:
   defaultMemoryLimit: 500
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
+  newInitStep: false
   executionLimits:
     free:
       defaultTotalExecutionCount: 20
