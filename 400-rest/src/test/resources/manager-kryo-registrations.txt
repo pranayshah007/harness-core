@@ -599,7 +599,9 @@
 5356:software.wings.beans.Account
 5357:software.wings.security.AppFilter
 5358:software.wings.security.authentication.TwoFactorAuthenticationMechanism
+5359:software.wings.beans.ServiceVariable
 5360:software.wings.beans.EntityType
+5361:software.wings.beans.ServiceVariable.OverrideType
 5362:software.wings.beans.ServiceVariableType
 5363:software.wings.beans.container.KubernetesServiceSpecification
 5364:software.wings.beans.container.KubernetesBlueGreenConfig
