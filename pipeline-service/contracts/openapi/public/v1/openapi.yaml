@@ -324,6 +324,10 @@ components:
               fqn: pipeline.steps.step
             fqn: pipeline.name
             hint_message: try changing something
+          cache_response_metadata:
+            cache_state: VALID_CACHE
+            ttl_left: 9223372036854776000
+            last_updated_at: 9223372036854776000
           created: 1234567890
           updated: 1234567890
       type: object
@@ -384,6 +388,8 @@ components:
           description: YAML schema errors.
           items:
             $ref: '#/components/schemas/YAMLSchemaErrorWrapper'
+        cache_response_metadata:
+          $ref: '#/components/schemas/CacheResponseMetadataDTO'
         created:
           type: integer
           description: Creation timestamp for Pipeline.
@@ -1052,6 +1058,32 @@ components:
         - pipeline_yaml
         - slug
         - name
+    CacheResponseMetadataDTO:
+      title: CacheResponseMetadataDTO
+      x-stoplight:
+        id: 8l1kpcrxe390j
+      type: object
+      properties:
+        cache_state:
+          type: string
+          enum:
+            - VALID_CACHE
+            - STALE_CACHE
+            - UNKNOWN
+          description: Tells the state of cache.
+        ttl_left:
+          type: integer
+          format: int64
+          description: Time left till cache expriry.
+        last_updated_at:
+          type: integer
+          format: int64
+          description: Time when the cache was last updated at.
+      x-examples:
+        example-1:
+          cache_state: VALID_CACHE
+          ttl_left: 9223372036854776000
+          last_updated_at: 9223372036854776000
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1217,6 +1249,10 @@ components:
                     fqn: pipeline.steps.step
                   fqn: pipeline.name
                   hint_message: try changing something
+                cache_response_metadata:
+                  cache_state: VALID_CACHE
+                  ttl_left: 9223372036854776000
+                  last_updated_at: 9223372036854776000
                 created: 1234567890
                 updated: 1234567890
         application/yaml:
@@ -1261,6 +1297,10 @@ components:
                     fqn: pipeline.steps.step
                   fqn: pipeline.name
                   hint_message: try changing something
+                cache_response_metadata:
+                  cache_state: VALID_CACHE
+                  ttl_left: 9223372036854776000
+                  last_updated_at: 9223372036854776000
                 created: 1234567890
                 updated: 1234567890
     PipelineListResponseBody:

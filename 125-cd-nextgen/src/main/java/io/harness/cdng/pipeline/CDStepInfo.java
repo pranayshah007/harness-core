@@ -51,6 +51,10 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
@@ -82,7 +86,8 @@ import io.swagger.annotations.ApiModel;
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
-        ElastigroupSetupStepInfo.class})
+        ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
+        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

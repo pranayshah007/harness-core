@@ -24,7 +24,6 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.plancreator.pipeline.PipelineConfig;
@@ -63,7 +62,6 @@ import okhttp3.RequestBody;
 public class PipelineMigrationService extends NgMigrationService {
   @Inject private PipelineService pipelineService;
   @Inject private WorkflowMigrationService workflowMigrationService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {

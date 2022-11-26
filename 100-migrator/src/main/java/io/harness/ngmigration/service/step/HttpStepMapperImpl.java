@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.step;
 import io.harness.beans.KeyValuePair;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.http.HttpHeaderConfig;
+import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.HttpStepInfo.HttpStepInfoBuilder;
@@ -52,7 +53,7 @@ public class HttpStepMapperImpl implements StepMapper {
         HttpStepInfo.infoBuilder()
             .url(ParameterField.createValueField(state.getUrl()))
             .method(ParameterField.createValueField(state.getMethod()))
-            .delegateSelectors(ParameterField.createValueField(Collections.emptyList()));
+            .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getTags()));
 
     if (StringUtils.isNotBlank(state.getBody())) {
       httpStepInfoBuilder.requestBody(ParameterField.createValueField(state.getBody()));

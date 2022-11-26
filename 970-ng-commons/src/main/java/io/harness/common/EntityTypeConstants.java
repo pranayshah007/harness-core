@@ -171,4 +171,8 @@ public interface EntityTypeConstants {
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  String TERRAGRUNT_PLAN = "TerragruntPlan";
+  String TERRAGRUNT_APPLY = "TerragruntApply";
+  String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
 }

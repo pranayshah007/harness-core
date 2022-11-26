@@ -291,7 +291,7 @@ public class AlertServiceImpl implements AlertService {
   @Override
   public Optional<Alert> findExistingAlert(String accountId, String appId, AlertType alertType, AlertData alertData) {
     try (AutoLogContext ignore = new AlertLogContext(accountId, alertType, appId, OVERRIDE_ERROR)) {
-      log.info("Finding existing alerts for accountId {}", accountId);
+      log.debug("Finding existing alerts for accountId {}", accountId);
       Query<Alert> query = getAlertsQuery(accountId, appId, alertType, alertData);
       try (HIterator<Alert> iterator = new HIterator<>(query.fetch())) {
         for (Alert alert : iterator) {

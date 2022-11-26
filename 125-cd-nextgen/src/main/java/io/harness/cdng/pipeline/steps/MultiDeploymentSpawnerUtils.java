@@ -93,11 +93,14 @@ public class MultiDeploymentSpawnerUtils {
     if (config.getServices() != null) {
       return config.getServices().getUuid();
     }
-    if (config.getEnvironments() != null) {
-      return config.getEnvironments().getUuid();
-    }
-    if (config.getEnvironmentGroup() != null && !config.getGitOpsEnabled()) {
-      return config.getEnvironmentGroup().getUuid();
+
+    if (!config.getGitOpsEnabled()) {
+      if (config.getEnvironments() != null) {
+        return config.getEnvironments().getUuid();
+      }
+      if (config.getEnvironmentGroup() != null) {
+        return config.getEnvironmentGroup().getUuid();
+      }
     }
     return node.getUuid();
   }

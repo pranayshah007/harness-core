@@ -396,7 +396,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   private DelegateGroupDetails buildDelegateGroupDetails(
       String accountId, DelegateGroup delegateGroup, List<Delegate> groupDelegates, String delegateGroupId) {
     if (groupDelegates == null) {
-      log.info("There are no delegates related to this delegate group.");
+      log.debug("There are no delegates related to this delegate group.");
       groupDelegates = emptyList();
     }
 

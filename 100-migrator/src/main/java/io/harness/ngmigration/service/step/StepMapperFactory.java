@@ -10,7 +10,9 @@ package io.harness.ngmigration.service.step;
 import software.wings.yaml.workflow.StepYaml;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StepMapperFactory {
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
@@ -74,6 +76,11 @@ public class StepMapperFactory {
     if (!stepYaml1.getType().equals(stepYaml2.getType())) {
       return false;
     }
-    return getStepMapper(stepYaml1.getType()).areSimilar(stepYaml1, stepYaml2);
+    try {
+      return getStepMapper(stepYaml1.getType()).areSimilar(stepYaml1, stepYaml2);
+    } catch (Exception e) {
+      log.error("There was an error with finding similar steps", e);
+      return false;
+    }
   }
 }

@@ -119,6 +119,8 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   private String EMPTY_ID = "";
   private String accountIdentifier = randomAlphabetic(10);
 
+  private String ACC_ID_CONSTANT = "accountIdentifier";
+
   @Before
   public void setup() throws IOException {
     initMocks(this);
@@ -515,7 +517,10 @@ public class SecretCrudServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MEENAKSHI)
   @Category(UnitTests.class)
-  public void testDelete_withForceDeleteTrue() {
+  public void testDelete_withForceDeleteTrue_forceDeleteEnabled() {
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     NGEncryptedData encryptedDataDTO = random(NGEncryptedData.class);
     when(encryptedDataService.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
     when(encryptedDataService.delete(any(), any(), any(), any(), eq(true))).thenReturn(true);
@@ -534,6 +539,85 @@ public class SecretCrudServiceImplTest extends CategoryTest {
     verify(encryptedDataService, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
     verify(ngSecretServiceV2, atLeastOnce()).delete(any(), any(), any(), any(), eq(true));
     verify(secretEntityReferenceHelper, times(0)).validateSecretIsNotUsedByOthers(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFOFF() {
+    doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
+    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
+    try {
+      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFOFF_settingsEnabled() {
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
+    doReturn(false).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
+    try {
+      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue_forceDeleteFFON_settingFFON_settingDisabled() {
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
+    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
+    doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
+    try {
+      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsDisabled() {
+    doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
+    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
+    doReturn(false).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
+    try {
+      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteTrue_forceDeleteFFOFF_settingFFON_settingsEnabled() {
+    doReturn(false).when(secretCrudService).isForceDeleteFFEnabled(ACC_ID_CONSTANT);
+    doReturn(true).when(secretCrudService).isNgSettingsFFEnabled(ACC_ID_CONSTANT);
+    doReturn(true).when(secretCrudService).isForceDeleteFFEnabledViaSettings(ACC_ID_CONSTANT);
+    try {
+      secretCrudService.delete(ACC_ID_CONSTANT, null, null, "identifier", true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [accountIdentifier]");
+    }
   }
 
   @Test

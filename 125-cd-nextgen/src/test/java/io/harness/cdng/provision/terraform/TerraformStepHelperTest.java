@@ -385,7 +385,7 @@ public class TerraformStepHelperTest extends CategoryTest {
     LinkedHashMap<String, TerraformVarFile> varFilesMap =
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
     TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
                                                   .configuration(TerraformStepConfigurationParameters.builder()
                                                                      .type(TerraformStepConfigurationType.INLINE)
                                                                      .spec(TerraformExecutionDataParameters.builder()
@@ -641,7 +641,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testGenerateFullIdentifier() throws IOException {
-    String entityId = helper.generateFullIdentifier("tfplan_$", getAmbiance());
+    String entityId = helper.generateFullIdentifier("tfplan_", getAmbiance());
     FileIo.createDirectoryIfDoesNotExist(entityId);
     assertThat(FileIo.checkIfFileExist(entityId)).isTrue();
     FileUtils.deleteQuietly(new File(entityId));
@@ -652,10 +652,10 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGenerateFullIdentifierInvalidProvisionerIdentifer() {
     try {
-      helper.generateFullIdentifier("tfplan_ $", getAmbiance());
+      helper.generateFullIdentifier("tfplan_ ", getAmbiance());
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage())
-          .isEqualTo("Provisioner Identifier cannot contain special characters or spaces: [tfplan_ $]");
+          .isEqualTo("Provisioner Identifier cannot contain special characters or spaces: [tfplan_ ]");
     }
   }
 
@@ -992,7 +992,7 @@ public class TerraformStepHelperTest extends CategoryTest {
 
     TerraformApplyStepParameters parameters =
         TerraformApplyStepParameters.infoBuilder()
-            .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INLINE)
                                .spec(TerraformExecutionDataParameters.builder().build())
@@ -1010,7 +1010,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                                          .targets(terraformConfig.targets)
                                                          .workspace(terraformConfig.workspace)
                                                          .build();
-    String inheritOutputName = "tfInheritOutput_APPLY_test-account/test-org/test-project/provId_$";
+    String inheritOutputName = "tfInheritOutput_APPLY_test-account/test-org/test-project/provId_";
     OptionalSweepingOutput optionalSweepingOutput =
         OptionalSweepingOutput.builder().found(true).output(terraformInheritOutput).build();
     Mockito.doReturn(optionalSweepingOutput)
@@ -1044,7 +1044,7 @@ public class TerraformStepHelperTest extends CategoryTest {
 
     TerraformApplyStepParameters parameters =
         TerraformApplyStepParameters.infoBuilder()
-            .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+            .provisionerIdentifier(ParameterField.createValueField("provId_"))
             .configuration(TerraformStepConfigurationParameters.builder()
                                .type(TerraformStepConfigurationType.INLINE)
                                .spec(TerraformExecutionDataParameters.builder().build())
@@ -1058,7 +1058,7 @@ public class TerraformStepHelperTest extends CategoryTest {
                                                          .targets(terraformConfig.targets)
                                                          .workspace(terraformConfig.workspace)
                                                          .build();
-    String inheritOutputName = "tfInheritOutput_test-account/test-org/test-project/provId_$";
+    String inheritOutputName = "tfInheritOutput_test-account/test-org/test-project/provId_";
     OptionalSweepingOutput optionalSweepingOutput =
         OptionalSweepingOutput.builder().found(true).output(terraformInheritOutput).build();
     Mockito.doReturn(optionalSweepingOutput)
@@ -1136,7 +1136,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetLatestFileIdNegativeScenario() {
-    String entityId = "test-account/test-org/test-project/provId_$";
+    String entityId = "test-account/test-org/test-project/provId_";
     String str = String.format("Unable to call fileservice to fetch latest file id for entityId: [%s]", entityId);
     try {
       helper.getLatestFileId(entityId);
@@ -1149,7 +1149,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testGetLatestFileId() {
-    String entityId = "test-account/test-org/test-project/provId_$";
+    String entityId = "test-account/test-org/test-project/provId_";
     String str = String.format("Unable to call fileservice to fetch latest file id for entityId: [%s]", entityId);
     try {
       helper.getLatestFileId(entityId);
@@ -1164,7 +1164,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testUpdateParentEntityIdAndVersionNegativeScenario() {
-    String entityId = "test-account/test-org/test-project/provId_$";
+    String entityId = "test-account/test-org/test-project/provId_";
     String stateFileId = "";
     String str =
         format("Unable to update StateFile version for entityId: [%s], Please try re-running pipeline", entityId);
@@ -1175,7 +1175,7 @@ public class TerraformStepHelperTest extends CategoryTest {
   @Owner(developers = NAMAN_TALAYCHA)
   @Category(UnitTests.class)
   public void testUpdateParentEntityIdAndVersion() throws UnsupportedEncodingException {
-    String entityId = "test-account/test-org/test-project/provId_$";
+    String entityId = "test-account/test-org/test-project/provId_";
     String stateFileId = "";
     String str =
         format("Unable to update StateFile version for entityId: [%s], Please try re-running pipeline", entityId);
@@ -1323,7 +1323,7 @@ public class TerraformStepHelperTest extends CategoryTest {
         TerraformStepDataGenerator.generateVarFileSpecs(remoteVarFiles, false);
 
     TerraformApplyStepParameters parameters = TerraformApplyStepParameters.infoBuilder()
-                                                  .provisionerIdentifier(ParameterField.createValueField("provId_$"))
+                                                  .provisionerIdentifier(ParameterField.createValueField("provId_"))
                                                   .configuration(TerraformStepConfigurationParameters.builder()
                                                                      .type(TerraformStepConfigurationType.INLINE)
                                                                      .spec(TerraformExecutionDataParameters.builder()

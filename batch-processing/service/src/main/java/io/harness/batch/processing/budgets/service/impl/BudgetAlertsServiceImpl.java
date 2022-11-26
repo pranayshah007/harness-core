@@ -325,11 +325,12 @@ public class BudgetAlertsServiceImpl {
             && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
           int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
           if (month != -1) {
-            return budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()[month] * alertThreshold.getPercentage()
-                / 100;
+            return BudgetUtils.getYearlyMonthWiseValues(
+                       budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount())[month]
+                * alertThreshold.getPercentage() / BudgetUtils.HUNDRED;
           }
         }
-        return budget.getBudgetAmount() * alertThreshold.getPercentage() / 100;
+        return budget.getBudgetAmount() * alertThreshold.getPercentage() / BudgetUtils.HUNDRED;
       default:
         return 0;
     }

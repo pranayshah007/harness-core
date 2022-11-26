@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
-import static software.wings.beans.command.DownloadArtifactCommandUnit.POWERSHELL_USE_ENV_PROXY;
 import static software.wings.utils.WingsTestConstants.ACCESS_KEY;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_FILE_NAME;
@@ -40,7 +39,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -98,8 +96,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 
 @OwnedBy(CDC)
 @RunWith(JUnitParamsRunner.class)
@@ -650,74 +646,38 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
     downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
 
-    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
-      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("true");
+    downloadArtifactCommandUnit.executeInternal(context);
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(executor).executeCommandString(argument.capture(), anyBoolean());
 
-      downloadArtifactCommandUnit.executeInternal(context);
-      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-      verify(executor).executeCommandString(argument.capture(), anyBoolean());
-      assertThat(argument.getValue()).endsWith("-Proxy \"$env:HTTP_PROXY\"");
-    }
+    final String command = argument.getValue();
+    assertThat(command).startsWith("$Headers = @");
+    assertThat(command).contains("-Proxy \"$env:HTTP_PROXY\"");
+    assertThat(command).contains("if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {");
+    assertThat(command).endsWith("-OutFile \"DESTINATION_DIR_PATH\\ARTIFACT_FILE_NAME\"\n}");
   }
 
   @Test
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
-  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxyWhenEnvSettingIsWrong() {
+  public void shouldDownloadFromArtifactoryUsingPowerShellAndProxyWithoutCredentials() {
     ShellCommandExecutionContext context = artifactoryContext;
 
     context.setExecutor(executor);
+    ((ArtifactoryConfig) context.getArtifactStreamAttributes().getServerSetting().getValue()).setUsername(null);
     downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
     downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
 
-    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
-      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("wrong-value");
+    downloadArtifactCommandUnit.executeInternal(context);
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(executor).executeCommandString(argument.capture(), anyBoolean());
 
-      downloadArtifactCommandUnit.executeInternal(context);
-      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-      verify(executor).executeCommandString(argument.capture(), anyBoolean());
-      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
-    }
-  }
+    final String command = argument.getValue();
 
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxyWhenEnvSettingIsNull() {
-    ShellCommandExecutionContext context = artifactoryContext;
-
-    context.setExecutor(executor);
-    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
-    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
-
-    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
-      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn(null);
-
-      downloadArtifactCommandUnit.executeInternal(context);
-      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-      verify(executor).executeCommandString(argument.capture(), anyBoolean());
-      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
-    }
-  }
-
-  @Test
-  @Owner(developers = FERNANDOD)
-  @Category(UnitTests.class)
-  public void shouldDownloadFromArtifactoryUsingPowerShellNoProxy() {
-    ShellCommandExecutionContext context = artifactoryContext;
-
-    context.setExecutor(executor);
-    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
-    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
-
-    try (MockedStatic<SystemWrapper> aMock = Mockito.mockStatic(SystemWrapper.class)) {
-      aMock.when(() -> SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY)).thenReturn("false");
-
-      downloadArtifactCommandUnit.executeInternal(context);
-      ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-      verify(executor).executeCommandString(argument.capture(), anyBoolean());
-      assertThat(argument.getValue()).doesNotContain("-Proxy \"$env:HTTP_PROXY\"");
-    }
+    assertThat(command).startsWith("[Net.ServicePointManager]::");
+    assertThat(command).contains("-Proxy \"$env:HTTP_PROXY\"");
+    assertThat(command).contains("if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {");
+    assertThat(command).endsWith("-OutFile \"DESTINATION_DIR_PATH\\ARTIFACT_FILE_NAME\"\n}");
   }
 
   private Map<String, String> mockMetadata(ArtifactStreamType artifactStreamType) {
