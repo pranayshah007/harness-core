@@ -7,36 +7,62 @@
 
 package io.harness.cdng.gitops.steps;
 
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.gitops.beans.FetchLinkedAppsStepParams;
 import io.harness.cdng.gitops.beans.GitOpsLinkedAppsOutcome;
+import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitops.FetchAppTaskParams;
+import io.harness.delegate.task.gitops.FetchAppTaskResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
+import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.beans.PageResponse;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.plancreator.steps.common.StepElementParameters;
+import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
-import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
-import io.harness.steps.executable.SyncExecutableWithRbac;
+import io.harness.serializer.KryoSerializer;
+import io.harness.steps.StepHelper;
+import io.harness.supplier.ThrowingSupplier;
+
+import software.wings.beans.TaskType;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,54 +72,121 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class FetchLinkedAppsStep implements SyncExecutableWithRbac {
+public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<FetchAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_FETCH_LINKED_APPS.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  public static final String GITOPS_LINKED_APPS = "GITOPS_LINKED_APPS";
+  public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
   @Inject private GitopsResourceClient gitopsResourceClient;
 
-  @Override
-  public void validateResources(Ambiance ambiance, StepParameters stepParameters) {}
+  @Inject private CDStepHelper cdStepHelper;
+  @Inject private StepHelper stepHelper;
+  @Inject private KryoSerializer kryoSerializer;
+  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, StepParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+  public Class getStepParametersClass() {
+    return FetchLinkedAppsStepParams.class;
+  }
 
-    OptionalSweepingOutput optionalGitOpsSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
 
-    if (optionalGitOpsSweepingOutput == null || !optionalGitOpsSweepingOutput.isFound()) {
-      throw new InvalidRequestException("GitOps Clusters Outcome Not Found.");
+  @Override
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<FetchAppTaskResponse> responseDataSupplier) throws Exception {
+    try {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.openStream("");
+      FetchAppTaskResponse fetchAppTaskResponse = responseDataSupplier.get();
+
+      if (fetchAppTaskResponse.getTaskStatus() == TaskStatus.FAILURE) {
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .failureInfo(
+                FailureInfo.newBuilder()
+                    .addFailureData(FailureData.newBuilder().setMessage(fetchAppTaskResponse.getErrorMessage()).build())
+                    .build())
+            .build();
+      }
+
+      OptionalSweepingOutput optionalGitOpsSweepingOutput = executionSweepingOutputService.resolveOptional(
+          ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+
+      if (optionalGitOpsSweepingOutput == null || !optionalGitOpsSweepingOutput.isFound()) {
+        throw new InvalidRequestException("GitOps Clusters Outcome Not Found.");
+      }
+
+      GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalGitOpsSweepingOutput.getOutput();
+      List<String> clusterIds = gitopsClustersOutcome.getClustersData()
+                                    .stream()
+                                    .map(GitopsClustersOutcome.ClusterData::getClusterId)
+                                    .collect(Collectors.toList());
+
+      IdentifierRef identifierRef = IdentifierRef.builder()
+                                        .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
+                                        .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+                                        .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                        .build();
+
+      List<Application> applications = fetchLinkedApps(fetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+
+      return StepResponse.builder()
+          .status(Status.SUCCEEDED)
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(GITOPS_LINKED_APPS_OUTCOME)
+                           .outcome(GitOpsLinkedAppsOutcome.builder().apps(applications).build())
+                           .build())
+          .build();
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Failed to execute Fetch Linked Apps step", ex);
+    } finally {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.closeStream("");
     }
+  }
 
-    GitopsClustersOutcome gitopsClustersOutcome = (GitopsClustersOutcome) optionalGitOpsSweepingOutput.getOutput();
-    List<String> clusterIds = gitopsClustersOutcome.getClustersData()
-                                  .stream()
-                                  .map(GitopsClustersOutcome.ClusterData::getClusterId)
-                                  .collect(Collectors.toList());
+  @Override
+  public TaskRequest obtainTaskAfterRbac(
+      Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
+    try {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.openStream("");
 
-    IdentifierRef identifierRef = IdentifierRef.builder()
-                                      .accountIdentifier(AmbianceUtils.getAccountId(ambiance))
-                                      .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
-                                      .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
-                                      .build();
+      FetchLinkedAppsStepParams gitOpsSpecParams = (FetchLinkedAppsStepParams) stepParameters.getSpec();
+      DeploymentRepoManifestOutcome deploymentRepo =
+          (DeploymentRepoManifestOutcome) gitOpsStepHelper.getDeploymentRepoOutcome(ambiance);
 
-    // TODO: Use appset name from manifest
-    List<Application> applications = fetchLinkedApps("my-service-appset", clusterIds, identifierRef);
+      List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
+      gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, deploymentRepo));
 
-    return StepResponse.builder()
-        .status(Status.SUCCEEDED)
-        .stepOutcome(StepResponse.StepOutcome.builder()
-                         .name(GITOPS_LINKED_APPS)
-                         .outcome(GitOpsLinkedAppsOutcome.builder().apps(applications).build())
-                         .build())
-        .build();
+      FetchAppTaskParams fetchAppTaskParams = FetchAppTaskParams.builder()
+                                                  .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+                                                  .accountId(AmbianceUtils.getAccountId(ambiance))
+                                                  .build();
+
+      final TaskData taskData = TaskData.builder()
+                                    .async(true)
+                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                    .taskType(TaskType.GITOPS_FETCH_APP_TASK.name())
+                                    .parameters(new Object[] {fetchAppTaskParams})
+                                    .build();
+
+      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.emptyList(),
+          TaskType.GITOPS_FETCH_APP_TASK.getDisplayName(),
+          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
+
+    } catch (Exception e) {
+      throw new InvalidRequestException("Failed to execute Fetch Linked Apps step", e);
+    }
   }
 
   private List<Application> fetchLinkedApps(String appSetName, List<String> clusterIds, IdentifierRef identifierRef) {
@@ -123,8 +216,19 @@ public class FetchLinkedAppsStep implements SyncExecutableWithRbac {
     }
   }
 
-  @Override
-  public Class getStepParametersClass() {
-    return FetchLinkedAppsStepParams.class;
+  public GitFetchFilesConfig getGitFetchFilesConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
+    String connectorId = gitStoreConfig.getConnectorRef().getValue();
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorDTO, manifestOutcome, getParameterFieldValue(gitStoreConfig.getPaths()), ambiance);
+
+    return GitFetchFilesConfig.builder()
+        .identifier(manifestOutcome.getIdentifier())
+        .manifestType(manifestOutcome.getType())
+        .succeedIfFileNotFound(false)
+        .gitStoreDelegateConfig(gitStoreDelegateConfig)
+        .build();
   }
 }
