@@ -27,6 +27,9 @@ public class YAMLFieldNameConstants {
   public final String STAGE = "stage";
   public final String STAGES = "stages";
   public final String STRATEGY = "strategy";
+  public final String CLONE = "clone";
+  public final String DISABLED = "disabled";
+  public final String WHEN = "when";
 
   public final String STEP = "step";
   public final String STEPS = "steps";
@@ -87,4 +90,5 @@ public class YAMLFieldNameConstants {
   public final String REPEAT = "repeat";
   public final String SERVICE_REF = "serviceRef";
   public final String ENVIRONMENT_REF = "environmentRef";
+  public final String GROUP = "group";
 }

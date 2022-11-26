@@ -25,7 +25,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.delegatetasks.azure.resource.taskhandler.ACRResourceProviderTaskHandler;
 
-import com.microsoft.azure.management.containerregistry.Registry;
+import com.azure.resourcemanager.containerregistry.models.Registry;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;

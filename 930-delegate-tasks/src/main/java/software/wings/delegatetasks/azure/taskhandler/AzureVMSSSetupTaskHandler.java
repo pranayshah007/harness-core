@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.azure.taskhandler;
 
 import static io.harness.azure.model.AzureConstants.CREATE_NEW_VMSS_COMMAND_UNIT;
+import static io.harness.azure.model.AzureConstants.DEFAULT_AZURE_VMSS_TIMEOUT_MIN;
 import static io.harness.azure.model.AzureConstants.DELETE_OLD_VIRTUAL_MACHINE_SCALE_SETS_COMMAND_UNIT;
 import static io.harness.azure.model.AzureConstants.DOWN_SCALE_COMMAND_UNIT;
 import static io.harness.azure.model.AzureConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
@@ -57,17 +58,25 @@ import io.harness.delegate.task.azure.request.AzureVMSSSetupTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSSetupTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.exception.AzureServerException;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.GalleryImageIdentifier;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.network.models.LoadBalancer;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.GalleryImageIdentifier;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.network.LoadBalancer;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -371,8 +380,9 @@ public class AzureVMSSSetupTaskHandler extends AzureVMSSTaskHandler {
         .orElse(0);
   }
 
-  private void createVirtualMachineScaleSet(AzureConfig azureConfig, AzureVMSSSetupTaskParameters setupTaskParameters,
-      Integer newHarnessRevision, String newVirtualMachineScaleSetName, ExecutionLogCallback logCallback) {
+  private VirtualMachineScaleSetInner createVirtualMachineScaleSet(AzureConfig azureConfig,
+      AzureVMSSSetupTaskParameters setupTaskParameters, Integer newHarnessRevision,
+      String newVirtualMachineScaleSetName, ExecutionLogCallback logCallback) {
     String subscriptionId = setupTaskParameters.getSubscriptionId();
     String resourceGroupName = setupTaskParameters.getResourceGroupName();
     String baseVirtualMachineScaleSetName = setupTaskParameters.getBaseVMSSName();
@@ -391,16 +401,47 @@ public class AzureVMSSSetupTaskHandler extends AzureVMSSTaskHandler {
     // Create new VMSS based on Base VMSS configuration
     logCallback.saveExecutionLog(
         format("Creating new Virtual Machine Scale Set: [%s]", newVirtualMachineScaleSetName), INFO);
-    azureComputeClient.createVirtualMachineScaleSet(azureConfig, subscriptionId, baseVirtualMachineScaleSet,
-        newVirtualMachineScaleSetName, azureUserAuthVMInstanceData, imageArtifact, azureVMSSTagsData);
+    SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> syncPoller =
+        azureComputeClient.createVirtualMachineScaleSet(azureConfig, subscriptionId, baseVirtualMachineScaleSet,
+            newVirtualMachineScaleSetName, azureUserAuthVMInstanceData, imageArtifact, azureVMSSTagsData);
 
-    if (setupTaskParameters.isBlueGreen()) {
-      attachNewCreatedVMSSToStageBackendPool(
-          azureConfig, setupTaskParameters, newVirtualMachineScaleSetName, logCallback);
+    PollResponse<PollResult<VirtualMachineScaleSetInner>> pollResponse;
+
+    try {
+      int timeoutIntervalInMin = setupTaskParameters.getTimeoutIntervalInMin() != null
+          ? setupTaskParameters.getTimeoutIntervalInMin()
+          : DEFAULT_AZURE_VMSS_TIMEOUT_MIN;
+      pollResponse = syncPoller.waitForCompletion(Duration.of(timeoutIntervalInMin, ChronoUnit.MINUTES));
+
+      if (pollResponse.getStatus().isComplete()
+          && pollResponse.getStatus() == LongRunningOperationStatus.SUCCESSFULLY_COMPLETED) {
+        if (setupTaskParameters.isBlueGreen()) {
+          attachNewCreatedVMSSToStageBackendPool(
+              azureConfig, setupTaskParameters, newVirtualMachineScaleSetName, logCallback);
+        }
+        logCallback.saveExecutionLog(
+            format("New Virtual Machine Scale Set: [%s] created successfully", newVirtualMachineScaleSetName), INFO,
+            SUCCESS);
+
+        return pollResponse.getValue().getValue();
+      }
+
+      String errorMessage = "Azure API call for creating VMSS has failed";
+
+      if (pollResponse.getValue() != null && pollResponse.getValue().getError() != null) {
+        errorMessage = format("%s with response code [%d]: %s", errorMessage,
+            pollResponse.getValue().getError().getResponseStatusCode(),
+            pollResponse.getValue().getError().getMessage());
+      }
+
+      throw new Exception(errorMessage);
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(format("Creation of new Virtual Machine Scale Set [%s] has failed. Error: %s",
+                                       newVirtualMachineScaleSetName, e.getMessage()),
+          ERROR, FAILURE);
+
+      throw new AzureServerException(e);
     }
-    logCallback.saveExecutionLog(
-        format("New Virtual Machine Scale Set: [%s] created successfully", newVirtualMachineScaleSetName), INFO,
-        SUCCESS);
   }
 
   @VisibleForTesting

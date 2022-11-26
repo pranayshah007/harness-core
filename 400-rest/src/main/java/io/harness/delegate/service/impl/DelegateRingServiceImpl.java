@@ -10,6 +10,7 @@ package io.harness.delegate.service.impl;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_1;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_2;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_3;
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_4;
 
 import static java.util.Collections.singletonList;
 
@@ -55,11 +56,20 @@ public class DelegateRingServiceImpl implements DelegateRingService {
 
   @Override
   public Map<String, List<String>> getDelegateVersionsForAllRings(boolean skipCache) {
-    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
         .stream()
         .collect(Collectors.toMap(ringName
             -> ringName,
             ringName -> Optional.ofNullable(getDelegateVersionsForRing(ringName, false)).orElse(singletonList("N/A"))));
+  }
+
+  @Override
+  public Map<String, String> getImmutableDelegateVersionsForAllRings(boolean skipCache) {
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
+        .stream()
+        .collect(Collectors.toMap(ringName
+            -> ringName,
+            ringName -> Optional.ofNullable(getImmutableDelegateVersionsForRing(ringName, false)).orElse("N/A")));
   }
 
   @Override
@@ -80,13 +90,30 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   }
 
   @Override
+  public String getImmutableDelegateVersionsForRing(String ringName, boolean skipCache) {
+    if (!skipCache) {
+      DelegateRing ring = delegateRingCache.getIfPresent(ringName);
+      if (ring != null) {
+        return ring.getDelegateImageTag();
+      }
+    }
+    DelegateRing ringFromDB =
+        persistence.createQuery(DelegateRing.class).filter(DelegateRingKeys.ringName, ringName).get();
+    if (!skipCache) {
+      delegateRingCache.put(ringName, ringFromDB);
+    }
+
+    return ringFromDB.getDelegateImageTag();
+  }
+
+  @Override
   public String getWatcherVersions(final String accountId) {
     return getDelegateRing(accountId).getWatcherVersions();
   }
 
   @Override
   public Map<String, String> getWatcherVersionsAllRings(boolean skipCache) {
-    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3)
+    return Arrays.asList(RING_NAME_1, RING_NAME_2, RING_NAME_3, RING_NAME_4)
         .stream()
         .collect(Collectors.toMap(ringName
             -> ringName,

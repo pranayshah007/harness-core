@@ -1018,7 +1018,7 @@ public class CanaryWorkflowExecutionAdvisor implements ExecutionEventAdvisor {
         selectTopMatchingStrategyInternal(failureStrategies, failureTypes, stateName, phaseElement, level);
 
     if (failureStrategy != null && isNotEmpty(failureStrategy.getFailureTypes()) && isEmpty(failureTypes)) {
-      log.error("Defaulting to accepting the action. "
+      log.warn("Defaulting to accepting the action. "
               + "the propagated failure types for state {} are unknown. ",
           stateName);
     }

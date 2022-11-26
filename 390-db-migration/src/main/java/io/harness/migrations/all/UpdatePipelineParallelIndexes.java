@@ -9,9 +9,9 @@ package io.harness.migrations.all;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ExecutionContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 

@@ -9,6 +9,7 @@ package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BOOPESH;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -35,6 +36,8 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PL)
 public class NGScimGroupServiceImplTest extends NgManagerTestBase {
+  private static final Integer MAX_RESULT_COUNT = 20;
+
   private UserGroupService userGroupService;
   private NgUserService ngUserService;
 
@@ -138,6 +141,8 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
   @Category(UnitTests.class)
   public void testSearchGroupByName() {
     String accountId = "accountId";
+    Integer count = 1;
+    Integer startIndex = 1;
 
     ScimGroup scimGroup = new ScimGroup();
     scimGroup.setDisplayName("testDisplayName");
@@ -150,10 +155,37 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     });
 
     ScimListResponse<ScimGroup> response =
-        scimGroupService.searchGroup("displayName eq \"testDisplayName\"", accountId, 1, 0);
+        scimGroupService.searchGroup("displayName eq \"testDisplayName\"", accountId, count, startIndex);
+
+    assertThat(response.getTotalResults()).isEqualTo(1);
+    assertThat(response.getStartIndex()).isEqualTo(startIndex);
+    assertThat(response.getItemsPerPage()).isEqualTo(count);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSearchGroupByName_WithStartIndexAndCountAsNULL() {
+    String accountId = "accountId";
+    Integer count = null;
+    Integer startIndex = null;
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("testDisplayName");
+    scimGroup.setId("id");
+
+    UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
+
+    when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<UserGroup>() {
+      { add(userGroup1); }
+    });
+
+    ScimListResponse<ScimGroup> response =
+        scimGroupService.searchGroup("displayName eq \"testDisplayName\"", accountId, count, startIndex);
 
     assertThat(response.getTotalResults()).isEqualTo(1);
     assertThat(response.getStartIndex()).isEqualTo(0);
+    assertThat(response.getItemsPerPage()).isEqualTo(MAX_RESULT_COUNT);
   }
 
   @Test

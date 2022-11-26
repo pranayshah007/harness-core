@@ -59,7 +59,6 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -414,8 +413,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
     } else if (envGroupYaml != null) {
       final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
-      EnvGroupPlanCreatorConfig config =
-          envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx.getMetadata(), envGroupYaml);
+      EnvGroupPlanCreatorConfig config = envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx, envGroupYaml);
       envGroupPlanCreatorHelper.addEnvironmentGroupDependency(planCreationResponseMap, config,
           specField.getNode().getField(YamlTypes.ENVIRONMENT_GROUP_YAML), gitOpsEnabled, envGroupUuid,
           postServiceStepUuid, serviceSpecNodeUuid);
@@ -428,9 +426,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       } else {
         serviceRef = servicePlanCreatorHelper.getServiceRef(serviceField);
       }
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
-          EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,
-              serviceOverrideService, environmentService, infrastructure);
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
+          ctx, environmentV2, gitOpsEnabled, serviceRef, serviceOverrideService, environmentService, infrastructure);
 
       overridesBuilder.serviceOverrideConfig(environmentPlanCreatorConfig.getServiceOverrideConfig());
       overridesBuilder.environmentGlobalOverride(environmentPlanCreatorConfig.getEnvironmentGlobalOverride());
@@ -635,15 +632,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
     if (envGroupYaml != null) {
-      EnvGroupPlanCreatorConfig config =
-          envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx.getMetadata(), envGroupYaml);
+      EnvGroupPlanCreatorConfig config = envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx, envGroupYaml);
 
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, config, kryoSerializer);
     } else if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
       EnvironmentsPlanCreatorConfig environmentsPlanCreatorConfig =
           environmentsPlanCreatorHelper.createEnvironmentsPlanCreatorConfig(
-              ctx.getMetadata(), stageNode.getDeploymentStageConfig().getEnvironments());
+              ctx, stageNode.getDeploymentStageConfig().getEnvironments());
 
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, environmentsPlanCreatorConfig, kryoSerializer);
@@ -655,9 +651,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       } else {
         serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
       }
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
-          ctx.getMetadata(), stageNode.deploymentStageConfig.getEnvironment(), true, serviceRef, serviceOverrideService,
-          environmentService, infrastructure);
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
+          EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx, stageNode.deploymentStageConfig.getEnvironment(), true,
+              serviceRef, serviceOverrideService, environmentService, infrastructure);
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, environmentPlanCreatorConfig, kryoSerializer);
     }
@@ -719,13 +715,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
-      if (ctx.getMetadata() != null
-          && featureFlagHelperService.isEnabled(
-              ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-        PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
-        String accountId = planCreationContextValue.getAccountIdentifier();
-        String orgId = planCreationContextValue.getOrgIdentifier();
-        String projectId = planCreationContextValue.getProjectIdentifier();
+      if (!EmptyPredicate.isEmpty(ctx.getAccountIdentifier())
+          && featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
+        String accountId = ctx.getAccountIdentifier();
+        String orgId = ctx.getOrgIdentifier();
+        String projectId = ctx.getProjectIdentifier();
         if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
                 featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
           return;

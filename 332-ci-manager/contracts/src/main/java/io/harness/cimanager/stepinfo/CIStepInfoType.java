@@ -70,7 +70,10 @@ public enum CIStepInfoType {
   SYSDIG(CI_LITE_ENGINE, "Sysdig"),
   TENABLE(CI_LITE_ENGINE, "Tenable"),
   VERACODE(CI_LITE_ENGINE, "Veracode"),
-  ZAP(CI_LITE_ENGINE, "Zap");
+  ZAP(CI_LITE_ENGINE, "Zap"),
+  BITRISE(CI_LITE_ENGINE, "Bitrise"),
+  SCRIPT(CI_LITE_ENGINE, "script"),
+  PLUGIN_V1(CI_LITE_ENGINE, "plugin");
 
   @Getter private final CIStepExecEnvironment ciStepExecEnvironment;
   private final String displayName;

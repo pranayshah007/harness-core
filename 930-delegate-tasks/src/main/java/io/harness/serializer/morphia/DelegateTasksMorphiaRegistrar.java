@@ -10,7 +10,6 @@ package io.harness.serializer.morphia;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.MigrateSecretTask;
 import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretKey;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretUsageLog;
 import io.harness.morphia.MorphiaRegistrar;
@@ -89,7 +88,6 @@ import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.ServiceNowConfig;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
@@ -142,7 +140,6 @@ import software.wings.delegatetasks.validation.capabilities.GitConnectionCapabil
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.WinrmHostValidationCapability;
-import software.wings.delegatetasks.validation.core.DelegateConnectionResult;
 import software.wings.helpers.ext.external.comm.CollaborationProviderResponse;
 import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 import software.wings.helpers.ext.k8s.response.K8sApplyResponse;
@@ -188,7 +185,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(NewRelicMetricDataRecord.class);
-    set.add(DelegateConnectionResult.class);
     set.add(AwsSecretsManagerConfig.class);
     set.add(AzureVaultConfig.class);
     set.add(GcpKmsConfig.class);
@@ -204,11 +200,9 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);
     set.add(MigrateSecretTask.class);
-    set.add(SecretKey.class);
     set.add(EmailData.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
-    set.add(ServiceVariable.class);
     set.add(CustomSecretNGManagerConfig.class);
   }
 

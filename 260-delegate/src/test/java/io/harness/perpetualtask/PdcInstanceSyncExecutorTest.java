@@ -25,7 +25,7 @@ import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.HostReachabilityInfo;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.service.impl.aws.model.response.HostReachabilityResponse;
 import software.wings.utils.HostValidationService;
 
@@ -98,7 +98,7 @@ public class PdcInstanceSyncExecutorTest extends DelegateTestBase {
             .addHostNames("h1")
             .addHostNames("h2")
             .setEncryptedData(ByteString.copyFrom(kryoSerializer.asBytes(Collections.emptyList())))
-            .setSettingAttribute(ByteString.copyFrom(kryoSerializer.asBytes(new SettingAttribute())))
+            .setSettingAttribute(ByteString.copyFrom(kryoSerializer.asBytes(SettingAttribute.builder().build())))
             .build();
 
     return PerpetualTaskExecutionParams.newBuilder().setCustomizedParams(Any.pack(message)).build();

@@ -74,11 +74,25 @@ public class RuntimeInputsValidator {
 
   // Assume both have same root node and structure
   public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml) {
-    return validateInputsAgainstSourceNode(nodeToValidateYaml, sourceNodeInputSetFormatYaml, new HashSet<>());
+    return validateInputsAgainstSourceNode(
+        nodeToValidateYaml, sourceNodeInputSetFormatYaml, new HashSet<>(), new HashSet<>());
   }
 
-  private boolean validateInputsAgainstSourceNode(
+  public boolean validateInputsAgainstSourceNode(
       String nodeToValidateYaml, String sourceNodeInputSetFormatYaml, Set<String> skipValidationIfAbsentKeySet) {
+    return validateInputsAgainstSourceNode(
+        nodeToValidateYaml, sourceNodeInputSetFormatYaml, skipValidationIfAbsentKeySet, new HashSet<>());
+  }
+
+  /**
+   *
+   * @param nodeToValidateYaml node to be validated. Eg. Merged pipeline yaml
+   * @param sourceNodeInputSetFormatYaml source node of the entity. E.g. Service node, Template node
+   * @param skipValidationIfAbsentKeySet ignore these extra keys in source node. E.g. service.serviceInputs
+   * @param skipValidationIfExtraKeySet ignore these extra keys in node to validate. E.g. primary.sources
+   */
+  public boolean validateInputsAgainstSourceNode(String nodeToValidateYaml, String sourceNodeInputSetFormatYaml,
+      Set<String> skipValidationIfAbsentKeySet, Set<String> skipValidationIfExtraKeySet) {
     YamlConfig sourceNodeYamlConfig = new YamlConfig(sourceNodeInputSetFormatYaml);
     Map<FQN, Object> sourceNodeFqnToValueMap = sourceNodeYamlConfig.getFqnToValueMap();
 
@@ -122,6 +136,18 @@ public class RuntimeInputsValidator {
     }
 
     // if nodeToValidateFqnToValueMap is not empty, return false.
+    // if some entries are remaining which are expected, remove them for nodeToValidate
+    Set<FQN> toRemoveKeySet = new HashSet<>();
+    for (Map.Entry<FQN, Object> entry : nodeToValidateFqnToValueMap.entrySet()) {
+      String fqnExp = entry.getKey().getExpressionFqn();
+      if (isNotEmpty(fqnExp) && skipValidationIfExtraKeySet.stream().anyMatch(fqnExp::endsWith)) {
+        Object value = entry.getValue();
+        if (value instanceof TextNode && NGExpressionUtils.matchesInputSetPattern(((TextNode) value).asText())) {
+          toRemoveKeySet.add(entry.getKey());
+        }
+      }
+    }
+    nodeToValidateFqnToValueMap.keySet().removeAll(toRemoveKeySet);
     return !isNotEmpty(nodeToValidateFqnToValueMap);
   }
 

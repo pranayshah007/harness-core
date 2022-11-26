@@ -288,6 +288,7 @@ public class K8sPodInfoTasklet implements Tasklet {
         .metaData(metaData)
         .labels(encodeDotsInKey(labelsMap))
         .namespaceLabels(encodeDotsInKey(podInfo.getNamespaceLabelsMap()))
+        .topOwnerLabels(encodeDotsInKey(podInfo.getTopLevelOwner().getLabelsMap()))
         .metadataAnnotations(podInfo.getMetadataAnnotationsMap())
         .harnessServiceInfo(harnessServiceInfo)
         .harnessServiceInfoNg(harnessServiceInfoNG)

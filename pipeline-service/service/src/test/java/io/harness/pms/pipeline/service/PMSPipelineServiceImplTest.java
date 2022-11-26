@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -32,6 +33,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.pms.contracts.steps.StepInfo;
@@ -79,6 +81,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private OutboxServiceImpl outboxService;
   @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private PipelineMetadataService pipelineMetadataService;
+  @Mock private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
 
   @Mock private PipelineSettingsService pipelineSettingsService;
 
@@ -161,7 +164,16 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(any());
+        .resolveTemplatesAndValidatePipeline(any());
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pmsPipelineServiceHelper)
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pmsPipelineServiceHelper)
+        .validatePipeline(any(), any(), anyBoolean());
+    doReturn(TemplateMergeResponseDTO.builder().build())
+        .when(pmsPipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(any(), anyBoolean());
 
     String pipeline_yaml_filename = "clonePipelineInput.yaml";
     PIPELINE_YAML = Resources.toString(
@@ -290,7 +302,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     pmsPipelineService.delete(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, 1L);
   }
 
@@ -303,11 +315,11 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD))
+    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
-    pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
-    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD);
+    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 
   @Test
@@ -342,12 +354,12 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), any());
-    doNothing().when(pmsPipelineServiceHelper).validatePipelineFromRemote(pipelineEntity);
+    doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(any());
+        .resolveTemplatesAndValidatePipeline(any());
     pmsPipelineRepository.save(pipelineEntity);
 
     PipelineSaveResponse pipelineSaveResponse =
@@ -368,12 +380,16 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
-    doNothing().when(pmsPipelineServiceHelper).validatePipelineFromRemote(pipelineEntity);
+    doNothing().when(pmsPipelineServiceHelper).resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
     doReturn(PIPELINE_YAML).when(pipelineCloneHelper).updatePipelineMetadataInSourceYaml(any(), any(), any());
     doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
         .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(any());
+        .resolveTemplatesAndValidatePipeline(any(), anyBoolean());
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(pmsPipelineServiceHelper)
+        .validatePipeline(any(), any(), anyBoolean());
+
     pmsPipelineRepository.save(pipelineEntity);
 
     PipelineSaveResponse pipelineSaveResponse =
@@ -389,7 +405,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   public void testUpdatePipelineYamlDraftException() {
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     pipelineEntity.setIsDraft(true);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD))
+    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -402,7 +418,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(pipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineRepository.save(pipelineEntity);
     PipelineCRUDResult pipelineCRUDResult =
-        pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD);
+        pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
     assertThat(pipelineCRUDResult.getPipelineEntity().getIdentifier()).isEqualTo(pipelineEntity.getIdentifier());
   }
 
@@ -416,10 +432,10 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     doReturn(updatedPipelineEntity)
         .when(pmsPipelineServiceHelper)
         .updatePipelineInfo(pipelineEntity, PipelineVersion.V0);
-    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD))
+    assertThatThrownBy(() -> pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true))
         .isInstanceOf(InvalidRequestException.class);
-    pmsPipelineService.validateAndCreatePipeline(pipelineEntity);
+    pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
-    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD);
+    pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
   }
 }

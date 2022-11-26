@@ -457,3 +457,63 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: TERRAGRUNT_PLAN
+    description: The restriction on terragrunt plan step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_APPLY
+    description: The restriction on terragrunt apply step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_DESTROY
+    description: The restriction on terragrunt destroy step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true
+  - name: TERRAGRUNT_ROLLBACK
+    description: The restriction on terragrunt rollback step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true

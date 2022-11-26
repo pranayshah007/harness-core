@@ -290,7 +290,7 @@ public class HQuery<T> extends QueryImpl<T> {
     }
 
     if (!this.getChildren().stream().map(Criteria::getFieldName).anyMatch(requiredFilterArgs::contains)) {
-      log.error("QUERY-ENFORCEMENT: appId or accountId must be present in List(Object/Key)/Get/Count/Search query",
+      log.warn("QUERY-ENFORCEMENT: appId or accountId must be present in List(Object/Key)/Get/Count/Search query",
           new Exception(""));
     }
   }

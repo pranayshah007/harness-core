@@ -166,7 +166,10 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
       OrchestrationEventType orchestrationEventType = orchestrationEventLog.getOrchestrationEventType();
       switch (orchestrationEventType) {
         case PLAN_EXECUTION_STATUS_UPDATE:
-          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecutionId, orchestrationGraph);
+          PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
+          updateRequired =
+              pmsExecutionSummaryService.onPlanStatusUpdate(planExecution, executionSummaryUpdate) || updateRequired;
+          orchestrationGraph = planExecutionStatusUpdateEventHandler.handleEvent(planExecution, orchestrationGraph);
           break;
         case STEP_DETAILS_UPDATE:
           orchestrationGraph = stepDetailsUpdateEventHandler.handleEvent(
@@ -285,7 +288,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public OrchestrationGraph buildOrchestrationGraph(String planExecutionId) {
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
     if (planExecution == null) {
       throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
               + planExecutionId + "] not found or unable to generate a graph for it",

@@ -45,6 +45,7 @@ import io.harness.cdng.licenserestriction.ServiceRestrictionsUsageImpl;
 import io.harness.cdng.migration.CDMigrationProvider;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.cdng.pipeline.executions.CdngOrchestrationExecutionEventHandlerRegistrar;
+import io.harness.cdng.provision.terraform.functor.TerraformHumanReadablePlanFunctor;
 import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.cf.AbstractCfModule;
@@ -702,6 +703,8 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     sdkFunctorMap.put(ImagePullSecretFunctor.IMAGE_PULL_SECRET, ImagePullSecretFunctor.class);
     sdkFunctorMap.put(VariableFunctor.VARIABLE, VariableFunctor.class);
     sdkFunctorMap.put(TerraformPlanJsonFunctor.TERRAFORM_PLAN_JSON, TerraformPlanJsonFunctor.class);
+    sdkFunctorMap.put(
+        TerraformHumanReadablePlanFunctor.TERRAFORM_HUMAN_READABLE_PLAN, TerraformHumanReadablePlanFunctor.class);
     sdkFunctorMap.put(InstanceFunctor.INSTANCE, InstanceFunctor.class);
     return sdkFunctorMap;
   }

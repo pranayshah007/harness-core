@@ -15,6 +15,7 @@ import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 
 import software.wings.beans.Account;
+import software.wings.beans.AccountStatus;
 import software.wings.beans.WorkflowExecution;
 import software.wings.search.entities.deployment.DeploymentExecutionEntity;
 import software.wings.search.framework.ExecutionEntity;
@@ -51,8 +52,12 @@ public class DeploymentReconTask implements Runnable {
   public void run() {
     try {
       long startTime = System.currentTimeMillis();
-      List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+      List<Account> accountList = accountService.listAllAccountWithDefaultsWithLicenseInfo();
       for (Account account : accountList) {
+        if (account.getLicenseInfo() == null
+            || !AccountStatus.ACTIVE.equals(account.getLicenseInfo().getAccountStatus())) {
+          continue;
+        }
         for (ExecutionEntity executionEntity : executionEntities) {
           if (!DeploymentExecutionEntity.SOURCE_ENTITY_CLASS.equals(executionEntity.getSourceEntityClass())
               && !featureFlagService.isEnabled(

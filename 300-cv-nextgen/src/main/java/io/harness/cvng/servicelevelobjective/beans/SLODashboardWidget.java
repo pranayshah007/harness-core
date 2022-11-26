@@ -9,6 +9,7 @@ package io.harness.cvng.servicelevelobjective.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
@@ -31,6 +32,7 @@ public class SLODashboardWidget {
   String serviceName;
   String environmentIdentifier;
   String environmentName;
+  List<MonitoredServiceDetail> monitoredServiceDetails;
   Map<String, String> tags;
   ServiceLevelIndicatorType type;
   @NotNull ServiceLevelObjectiveType sloType;
@@ -57,6 +59,7 @@ public class SLODashboardWidget {
   public static class BurnRate {
     @NotNull double currentRatePercentage; // rate per day for the current period
   }
+
   @Value
   @Builder
   public static class Point {
@@ -65,14 +68,17 @@ public class SLODashboardWidget {
     boolean enabled;
   }
 
-  public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {
-    return SLODashboardWidget.builder()
-        .isRecalculatingSLI(sloGraphData.isRecalculatingSLI())
-        .isCalculatingSLI(sloGraphData.isCalculatingSLI)
-        .errorBudgetRemaining(sloGraphData.getErrorBudgetRemaining())
-        .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
-        .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
-        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
+  @Value
+  @Builder
+  public static class MonitoredServiceDetail {
+    String monitoredServiceIdentifier;
+    String monitoredServiceName;
+    String healthSourceIdentifier;
+    String healthSourceName;
+    String serviceIdentifier;
+    String serviceName;
+    String environmentIdentifier;
+    String environmentName;
   }
 
   @Value
@@ -84,6 +90,8 @@ public class SLODashboardWidget {
     List<Point> sloPerformanceTrend;
     boolean isRecalculatingSLI;
     boolean isCalculatingSLI;
+    @JsonIgnore int errorBudgetBurned;
+    @JsonIgnore double sliStatusPercentage;
     public double errorBudgetSpentPercentage() {
       return 100 - errorBudgetRemainingPercentage;
     }
@@ -99,5 +107,15 @@ public class SLODashboardWidget {
         return (errorBudgetSpentPercentage()) / days;
       }
     }
+  }
+
+  public static SLODashboardWidgetBuilder withGraphData(SLOGraphData sloGraphData) {
+    return SLODashboardWidget.builder()
+        .isRecalculatingSLI(sloGraphData.isRecalculatingSLI())
+        .isCalculatingSLI(sloGraphData.isCalculatingSLI)
+        .errorBudgetRemaining(sloGraphData.getErrorBudgetRemaining())
+        .errorBudgetRemainingPercentage(sloGraphData.getErrorBudgetRemainingPercentage())
+        .errorBudgetBurndown(sloGraphData.getErrorBudgetBurndown())
+        .sloPerformanceTrend(sloGraphData.getSloPerformanceTrend());
   }
 }

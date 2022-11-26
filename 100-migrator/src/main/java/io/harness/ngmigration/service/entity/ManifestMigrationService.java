@@ -29,7 +29,6 @@ import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
-import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.ManifestProvidedEntitySpec;
@@ -87,7 +86,6 @@ import retrofit2.Response;
 @Slf4j
 public class ManifestMigrationService extends NgMigrationService {
   @Inject private ApplicationManifestService applicationManifestService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private NgManifestFactory manifestFactory;
   private static final List<AppManifestKind> SUPPORTED_MANIFEST_KIND =
       Lists.newArrayList(AppManifestKind.VALUES, AppManifestKind.K8S_MANIFEST);
@@ -296,7 +294,7 @@ public class ManifestMigrationService extends NgMigrationService {
                 : identifier.substring(0, identifier.length() - 3) + ".yml";
           }
           String content =
-              (String) migratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
+              (String) MigratorExpressionUtils.render(manifestFile.getFileContent(), inputDTO.getCustomExpressions());
           return NGYamlFile.builder()
               .type(NGMigrationEntityType.MANIFEST)
               .filename(null)
@@ -335,12 +333,6 @@ public class ManifestMigrationService extends NgMigrationService {
     return true;
   }
 
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return null;
-  }
-
   public List<ManifestConfigWrapper> getManifests(Set<CgEntityId> manifestEntityIds, MigrationInputDTO inputDTO,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     if (isEmpty(manifestEntityIds)) {
@@ -351,7 +343,7 @@ public class ManifestMigrationService extends NgMigrationService {
     for (CgEntityId manifestEntityId : manifestEntityIds) {
       CgEntityNode manifestNode = entities.get(manifestEntityId);
       ApplicationManifest applicationManifest = (ApplicationManifest) manifestNode.getEntity();
-      migratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
+      MigratorExpressionUtils.render(applicationManifest, inputDTO.getCustomExpressions());
       BaseProvidedInput manifestInput =
           inputDTO.getOverrides() == null ? null : inputDTO.getOverrides().get(manifestEntityId);
       ManifestProvidedEntitySpec entitySpec = null;
@@ -361,9 +353,9 @@ public class ManifestMigrationService extends NgMigrationService {
       List<NGYamlFile> files = getYamlFilesForManifest(applicationManifest, inputDTO, entities);
       NgManifestService ngManifestService = manifestFactory.getNgManifestService(applicationManifest);
 
-      ManifestConfigWrapper manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
+      List<ManifestConfigWrapper> manifestConfigWrapper = ngManifestService.getManifestConfigWrapper(
           applicationManifest, entities, migratedEntities, entitySpec, files);
-      ngManifests.add(manifestConfigWrapper);
+      ngManifests.addAll(manifestConfigWrapper);
     }
     return ngManifests;
   }

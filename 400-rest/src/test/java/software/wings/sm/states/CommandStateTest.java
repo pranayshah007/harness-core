@@ -1085,10 +1085,10 @@ public class CommandStateTest extends WingsBaseTest {
             .serviceTemplateId(TEMPLATE_ID)
             .serviceVariables(emptyMap())
             .hostConnectionAttributes(
-                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build())
+                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build().toDTO())
             .hostConnectionCredentials(Collections.emptyList())
             .bastionConnectionAttributes(
-                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build())
+                aSettingAttribute().withValue(Builder.aHostConnectionAttributes().build()).build().toDTO())
             .bastionConnectionCredentials(Collections.emptyList())
             .safeDisplayServiceVariables(emptyMap())
             .deploymentType("ECS")

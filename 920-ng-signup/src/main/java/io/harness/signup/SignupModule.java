@@ -60,7 +60,7 @@ public class SignupModule extends AbstractModule {
   protected void configure() {
     install(FeatureFlagModule.getInstance());
     install(UserClientModule.getInstance(serviceHttpClientConfig, managerServiceSecret, clientId));
-    install(AccessControlClientModule.getInstance(accessControlClientConfiguration, managerServiceSecret));
+    install(AccessControlClientModule.getInstance(accessControlClientConfiguration, clientId));
     install(GoogleCloudFileModule.getInstance());
     bind(SignupService.class).to(SignupServiceImpl.class);
     String deployMode = System.getenv().get(DEPLOY_MODE);

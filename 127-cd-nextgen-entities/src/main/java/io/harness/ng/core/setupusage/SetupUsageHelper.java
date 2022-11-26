@@ -7,7 +7,9 @@
 
 package io.harness.ng.core.setupusage;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
+import static io.harness.ng.core.entitysetupusage.dto.SetupUsageDetailType.ENTITY_REFERRED_BY_INFRA;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -16,6 +18,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.protohelper.IdentifierRefProtoDTOHelper;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entitysetupusage.EntityDetailWithSetupUsageDetailProtoDTO;
 import io.harness.eventsframework.schemas.entitysetupusage.EntitySetupUsageCreateV2DTO;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,7 +38,8 @@ public class SetupUsageHelper {
   @Inject @Named(SETUP_USAGE) private Producer producer;
   @Inject private IdentifierRefProtoDTOHelper identifierRefProtoDTOHelper;
 
-  public void publishEntitySetupUsage(@Valid SetupUsageOwnerEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
+  public void publishServiceEntitySetupUsage(
+      @Valid SetupUsageOwnerEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
     EntityDetailProtoDTO entityDetail =
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
@@ -70,24 +74,43 @@ public class SetupUsageHelper {
     }
   }
 
-  public void publishEntitySetupUsage(
+  public void publishInfraEntitySetupUsage(
       EntityDetailProtoDTO referredByEntityDetail, Set<EntityDetailProtoDTO> referredEntities, String accountId) {
     Map<String, List<EntityDetailProtoDTO>> referredEntityTypeToReferredEntities = new HashMap<>();
-    for (EntityDetailProtoDTO entityDetailProtoDTO : referredEntities) {
+    for (EntityDetailProtoDTO referredEntity : referredEntities) {
       List<EntityDetailProtoDTO> entityDetailProtoDTOS =
-          referredEntityTypeToReferredEntities.getOrDefault(entityDetailProtoDTO.getType().name(), new ArrayList<>());
-      entityDetailProtoDTOS.add(entityDetailProtoDTO);
-      referredEntityTypeToReferredEntities.put(entityDetailProtoDTO.getType().name(), entityDetailProtoDTOS);
+          referredEntityTypeToReferredEntities.getOrDefault(referredEntity.getType().name(), new ArrayList<>());
+      entityDetailProtoDTOS.add(referredEntity);
+      referredEntityTypeToReferredEntities.put(referredEntity.getType().name(), entityDetailProtoDTOS);
     }
 
     for (Map.Entry<String, List<EntityDetailProtoDTO>> entry : referredEntityTypeToReferredEntities.entrySet()) {
       List<EntityDetailProtoDTO> entityDetailProtoDTOs = entry.getValue();
-      EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
-                                                           .setAccountIdentifier(accountId)
-                                                           .setReferredByEntity(referredByEntityDetail)
-                                                           .addAllReferredEntities(entityDetailProtoDTOs)
-                                                           .setDeleteOldReferredByRecords(true)
-                                                           .build();
+      List<EntityDetailWithSetupUsageDetailProtoDTO> entityDetailWithSetupUsageDetailProtoDTOs = new ArrayList<>();
+      if (isNotEmpty(entityDetailProtoDTOs)) {
+        for (EntityDetailProtoDTO entityDetailProtoDTO : entityDetailProtoDTOs) {
+          entityDetailWithSetupUsageDetailProtoDTOs.add(
+              EntityDetailWithSetupUsageDetailProtoDTO.newBuilder()
+                  .setReferredEntity(entityDetailProtoDTO)
+                  .setType(ENTITY_REFERRED_BY_INFRA.toString())
+                  .setEntityInInfraDetail(
+                      EntityDetailWithSetupUsageDetailProtoDTO.EntityReferredByInfraSetupUsageDetailProtoDTO
+                          .newBuilder()
+                          .setEnvironmentIdentifier(
+                              referredByEntityDetail.getInfraDefRef().getEnvIdentifier().getValue())
+                          .build())
+                  .build());
+        }
+      }
+
+      EntitySetupUsageCreateV2DTO entityReferenceDTO =
+          EntitySetupUsageCreateV2DTO.newBuilder()
+              .setAccountIdentifier(accountId)
+              .setReferredByEntity(referredByEntityDetail)
+              .setDeleteOldReferredByRecords(true)
+              .addAllReferredEntityWithSetupUsageDetail(entityDetailWithSetupUsageDetailProtoDTOs)
+              .build();
+
       producer.send(
           Message.newBuilder()
               .putAllMetadata(ImmutableMap.of("accountId", accountId,
@@ -98,7 +121,7 @@ public class SetupUsageHelper {
     }
   }
 
-  public void deleteSetupUsages(@Valid SetupUsageOwnerEntity entity) {
+  public void deleteServiceSetupUsages(@Valid SetupUsageOwnerEntity entity) {
     EntityDetailProtoDTO entityDetail =
         EntityDetailProtoDTO.newBuilder()
             .setIdentifierRef(identifierRefProtoDTOHelper.createIdentifierRefProtoDTO(entity.getAccountId(),
@@ -121,7 +144,7 @@ public class SetupUsageHelper {
             .build());
   }
 
-  public void deleteSetupUsages(EntityDetailProtoDTO entityDetail, String accountId) {
+  public void deleteInfraSetupUsages(EntityDetailProtoDTO entityDetail, String accountId) {
     EntitySetupUsageCreateV2DTO entityReferenceDTO = EntitySetupUsageCreateV2DTO.newBuilder()
                                                          .setAccountIdentifier(accountId)
                                                          .setReferredByEntity(entityDetail)

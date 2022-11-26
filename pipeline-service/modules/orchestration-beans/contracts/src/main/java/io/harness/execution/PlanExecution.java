@@ -12,7 +12,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.logging.AutoLogContext;
@@ -69,6 +68,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   @Wither @CreatedDate Long createdAt;
   String planId;
   Map<String, String> setupAbstractions;
+  // TTL index
   @Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
 
   Status status;
@@ -111,9 +111,11 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
   }
 
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder().name("id_status_idx").field("_id").field(NodeExecutionKeys.status).build())
-        .add(CompoundMongoIndex.builder().name("status_idx").field(NodeExecutionKeys.status).build())
+    return ImmutableList
+        .<MongoIndex>builder()
+        // PlanExecutionMonitorService
+        .add(CompoundMongoIndex.builder().name("status_idx").field(PlanExecutionKeys.status).build())
+        // findPrevUnTerminatedPlanExecutionsByExecutionTag
         .add(SortCompoundMongoIndex.builder()
                  .name("exec_tag_status_idx")
                  .field(ExecutionMetadataKeys.tagExecutionKey)
@@ -126,7 +128,7 @@ public class PlanExecution implements PersistentRegularIterable, UuidAccess, Pms
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.orgIdentifier)
                  .field(PlanExecutionKeys.setupAbstractions + "." + SetupAbstractionKeys.projectIdentifier)
                  .field(PlanExecutionKeys.metadata + ".pipelineIdentifier")
-                 .field(NodeExecutionKeys.status)
+                 .field(PlanExecutionKeys.status)
                  .descSortField(PlanExecutionKeys.createdAt)
                  .build())
         .build();

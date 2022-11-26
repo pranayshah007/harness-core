@@ -79,9 +79,8 @@ public class ServicePlanCreator extends ChildrenPlanCreator<ServiceConfig> {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
     // enforcement validator
-    enforcementValidator.validate(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-        ctx.getMetadata().getProjectIdentifier(), ctx.getMetadata().getMetadata().getPipelineIdentifier(),
-        ctx.getYaml(), ctx.getMetadata().getMetadata().getExecutionUuid());
+    enforcementValidator.validate(ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier(),
+        ctx.getPipelineIdentifier(), ctx.getYaml(), ctx.getExecutionUuid());
 
     YamlField serviceConfigField = ctx.getCurrentField();
 

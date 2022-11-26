@@ -13,6 +13,7 @@ import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.PlanExecution;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.plan.NodeType;
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
@@ -21,6 +22,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
@@ -98,7 +100,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                  .get(nodeExecution.getNodeId())
                  .getNodeType()
                  .equals(StrategyType.PARALLELISM.name())) {
-          updateApplied = updateApplied || updateStrategyNodeFields(nodeExecution, update, true);
+          updateApplied = updateStrategyNodeFields(nodeExecution, update, true) || updateApplied;
         }
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
@@ -108,9 +110,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                    .getEdgeLayoutList()
                    .getCurrentNodeChildren()
                    .contains(childNodeExecution.getUuid())) {
-            updateApplied = updateApplied
-                || addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
-                    graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId);
+            updateApplied = addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
+                                graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId)
+                || updateApplied;
           }
         }
       }
@@ -145,7 +147,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Ambiance ambiance = nodeExecution.getAmbiance();
     Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-    if (!entity.isPresent()) {
+    if (entity.isEmpty()) {
       return false;
     }
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
@@ -205,6 +207,18 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       String accountId, String orgId, String projectId, String planExecutionId) {
     return pmsExecutionSummaryRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
         accountId, orgId, projectId, planExecutionId);
+  }
+
+  @Override
+  public boolean onPlanStatusUpdate(PlanExecution planExecution, Update update) {
+    ExecutionStatus status = ExecutionStatus.getExecutionStatus(planExecution.getStatus());
+
+    update.set(PlanExecutionSummaryKeys.internalStatus, planExecution.getStatus());
+    update.set(PlanExecutionSummaryKeys.status, status);
+    if (StatusUtils.isFinalStatus(status.getEngineStatus())) {
+      update.set(PlanExecutionSummaryKeys.endTs, planExecution.getEndTs());
+    }
+    return true;
   }
 
   @Override

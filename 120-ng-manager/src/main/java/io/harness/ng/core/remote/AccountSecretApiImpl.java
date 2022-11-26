@@ -145,7 +145,7 @@ public class AccountSecretApiImpl implements AccountSecretApi {
     secretPermissionValidator.checkForAccessOrThrow(ResourceScope.of(account, null, null),
         Resource.of(SECRET_RESOURCE_TYPE, secret), SECRET_DELETE_PERMISSION,
         secretResponseWrapper != null ? secretResponseWrapper.getSecret().getOwner() : null);
-    boolean deleted = ngSecretService.delete(account, null, null, secret);
+    boolean deleted = ngSecretService.delete(account, null, null, secret, false);
     if (deleted) {
       return Response.ok().entity(secretApiUtils.toSecretResponse(secretResponseWrapper)).build();
     }

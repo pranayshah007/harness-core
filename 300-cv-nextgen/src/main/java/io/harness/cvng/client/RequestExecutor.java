@@ -12,9 +12,12 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.rest.RestResponse;
 import io.harness.serializer.JsonUtils;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.util.List;
+import javax.ws.rs.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import retrofit2.Call;
@@ -61,6 +64,18 @@ public class RequestExecutor {
       } else {
         throw new ServiceCallException(
             ErrorCode.UNKNOWN_ERROR, code, responseMessages.get(0).getMessage(), errorBody, responseMessages);
+      }
+    } else {
+      String errorMessage;
+      try {
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = (JsonObject) jsonParser.parse(errorBody);
+        errorMessage = jsonObject.get("message").getAsString();
+      } catch (Exception e) {
+        return;
+      }
+      if (code == 400) {
+        throw new BadRequestException(errorMessage);
       }
     }
   }

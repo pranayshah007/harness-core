@@ -31,6 +31,7 @@ import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.jenkins.JenkinsBuildTaskNGResponse;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidCredentialsException;
@@ -39,7 +40,6 @@ import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.UnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.logging.CommandExecutionStatus;
-import io.harness.logging.ExceptionLogger;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -61,8 +61,11 @@ import com.offbytwo.jenkins.model.BuildWithDetails;
 import com.offbytwo.jenkins.model.JobWithDetails;
 import com.offbytwo.jenkins.model.QueueReference;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -154,31 +157,43 @@ public class JenkinsArtifactTaskHandler extends DelegateArtifactTaskHandler<Jenk
 
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(JenkinsArtifactDelegateRequest attributesRequest) {
-    if (isNotEmpty(attributesRequest.getBuildNumber())) {
-      List<BuildDetails> buildDetails = jenkinsRegistryService.getBuildsForJob(
-          JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), attributesRequest.getJobName(),
-          attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
-      buildDetails = buildDetails.stream()
-                         .filter(buildDetail -> buildDetail.getNumber().equals(attributesRequest.getBuildNumber()))
-                         .collect(toList());
-      if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
-        JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-            JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
-        return getSuccessTaskExecutionResponse(
-            Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetails.get(0)));
-      } else {
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Check if the version exist & check if the right connector chosen for fetching the build.",
-            "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
+    try {
+      String jobName = URLEncoder.encode(attributesRequest.getJobName(), StandardCharsets.UTF_8.toString());
+      if (isNotEmpty(attributesRequest.getBuildNumber())) {
+        List<BuildDetails> buildDetails = jenkinsRegistryService.getBuildsForJob(
+            JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
+            attributesRequest.getArtifactPaths(), ARTIFACT_RETENTION_SIZE);
+        if (isNotEmpty(buildDetails)) {
+          buildDetails = buildDetails.stream()
+                             .filter(buildDetail -> buildDetail.getNumber().equals(attributesRequest.getBuildNumber()))
+                             .collect(toList());
+        } else {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Check if the version exist & check if the right connector chosen for fetching the build.",
+              "Version not found ", new InvalidRequestException("Version not found"));
+        }
+        if (isNotEmpty(buildDetails) && buildDetails.get(0) != null) {
+          JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+              JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails.get(0), attributesRequest);
+          return getSuccessTaskExecutionResponse(Collections.singletonList(jenkinsArtifactDelegateResponse),
+              Collections.singletonList(buildDetails.get(0)));
+        } else {
+          throw NestedExceptionUtils.hintWithExplanationException(
+              "Check if the version exist & check if the right connector chosen for fetching the build.",
+              "Version didn't matched ", new InvalidRequestException("Version didn't matched"));
+        }
       }
+      BuildDetails buildDetails = jenkinsRegistryService.getLastSuccessfulBuildForJob(
+          JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), jobName,
+          attributesRequest.getArtifactPaths());
+      JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
+          JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails, attributesRequest);
+      return getSuccessTaskExecutionResponse(
+          Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetails));
+    } catch (UnsupportedEncodingException e) {
+      throw NestedExceptionUtils.hintWithExplanationException("JobName is not valid.",
+          "Check the JobName provided is valid.", new UnsupportedEncodingException("JobName is not valid"));
     }
-    BuildDetails buildDetails = jenkinsRegistryService.getLastSuccessfulBuildForJob(
-        JenkinsRequestResponseMapper.toJenkinsInternalConfig(attributesRequest), attributesRequest.getJobName(),
-        attributesRequest.getArtifactPaths());
-    JenkinsArtifactDelegateResponse jenkinsArtifactDelegateResponse =
-        JenkinsRequestResponseMapper.toJenkinsArtifactDelegateResponse(buildDetails, attributesRequest);
-    return getSuccessTaskExecutionResponse(
-        Collections.singletonList(jenkinsArtifactDelegateResponse), Collections.singletonList(buildDetails));
   }
 
   public ArtifactTaskExecutionResponse triggerBuild(

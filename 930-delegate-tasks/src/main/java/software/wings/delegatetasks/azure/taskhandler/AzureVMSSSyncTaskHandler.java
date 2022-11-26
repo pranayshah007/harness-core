@@ -37,16 +37,16 @@ import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskResponse;
 import io.harness.exception.InvalidRequestException;
 
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.LoadBalancerBackend;
+import com.azure.resourcemanager.network.models.PublicIpAddressDnsSettings;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.compute.PowerState;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.LoadBalancerBackend;
-import com.microsoft.azure.management.network.PublicIPAddressDnsSettings;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
-import com.microsoft.azure.management.resources.Subscription;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -214,11 +214,11 @@ public class AzureVMSSSyncTaskHandler extends AzureVMSSTaskHandler {
   @NotNull
   private Function<VirtualMachineScaleSetVM, AzureVMData> toVMData() {
     return vm -> {
-      String id = vm.inner().id();
-      Optional<PublicIPAddressInner> publicIPAddressOp = azureComputeClient.getVMPublicIPAddress(vm);
-      String publicIp = publicIPAddressOp.map(PublicIPAddressInner::ipAddress).orElse(EMPTY);
+      String id = vm.id();
+      Optional<PublicIpAddressInner> publicIPAddressOp = azureComputeClient.getVMPublicIPAddress(vm);
+      String publicIp = publicIPAddressOp.map(PublicIpAddressInner::ipAddress).orElse(EMPTY);
       String publicDnsName =
-          publicIPAddressOp.map(PublicIPAddressInner::dnsSettings).map(PublicIPAddressDnsSettings::fqdn).orElse(EMPTY);
+          publicIPAddressOp.map(PublicIpAddressInner::dnsSettings).map(PublicIpAddressDnsSettings::fqdn).orElse(EMPTY);
       String powerState = fixPowerState(vm.powerState());
       String size = vm.size() != null ? vm.size().toString() : EMPTY;
       return AzureVMData.builder()

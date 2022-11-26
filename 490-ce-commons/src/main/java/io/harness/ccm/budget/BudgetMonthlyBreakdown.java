@@ -8,6 +8,7 @@
 package io.harness.ccm.budget;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -21,7 +22,7 @@ import lombok.experimental.FieldNameConstants;
 @Schema(description = "The budget monthly breakdown of a Yearly Budget")
 public class BudgetMonthlyBreakdown {
   @Schema(description = "Budget breakdown Monthly/Yearly") BudgetBreakdown budgetBreakdown;
-  @Schema(description = "Budgeted monthly amount for yearly budget") Double[] budgetMonthlyAmount;
+  @Schema(description = "Budgeted monthly amount for yearly budget") List<ValueDataPoint> budgetMonthlyAmount;
   @Schema(description = "Actual monthly cost for yearly budget") Double[] actualMonthlyCost;
   @Schema(description = "Forecasted monthly cost for yearly budget") Double[] forecastMonthlyCost;
   @Schema(description = "Yearly monthly cost for last year budget") Double[] yearlyLastPeriodCost;

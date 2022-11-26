@@ -122,7 +122,7 @@ public class AwsS3DelegateTaskHelper {
     if (buildDetails == new BuildDetails()) {
       return S3BuildResponse.builder().commandExecutionStatus(FAILURE).build();
     } else {
-      filePath = awsTaskParams.getFilePath();
+      filePath = buildDetails.getArtifactPath();
     }
 
     return S3BuildResponse.builder().commandExecutionStatus(SUCCESS).filePath(filePath).build();

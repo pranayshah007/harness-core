@@ -21,6 +21,7 @@ import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 
 import software.wings.delegatetasks.azure.arm.AbstractAzureARMTaskHandler;
 
+import com.azure.core.http.rest.PagedFlux;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
@@ -38,12 +39,12 @@ public class AzureARMListManagementGroupTaskHandler extends AbstractAzureARMTask
   @Override
   protected AzureARMTaskResponse executeTaskInternal(AzureARMTaskParameters azureARMTaskParameters,
       AzureConfig azureConfig, AzureLogCallbackProvider logStreamingTaskClient) {
-    List<ManagementGroupInfo> managementGroupInfos = azureManagementClient.listManagementGroups(azureConfig);
+    PagedFlux<ManagementGroupInfo> managementGroupInfos = azureManagementClient.listManagementGroups(azureConfig);
     return AzureARMListManagementGroupResponse.builder().mngGroups(getManagementGroups(managementGroupInfos)).build();
   }
 
-  private List<ManagementGroupData> getManagementGroups(List<ManagementGroupInfo> managementGroupInfos) {
-    return managementGroupInfos.stream().map(this::toManagementGroupData).collect(Collectors.toList());
+  private List<ManagementGroupData> getManagementGroups(PagedFlux<ManagementGroupInfo> managementGroupInfos) {
+    return managementGroupInfos.toStream().map(this::toManagementGroupData).collect(Collectors.toList());
   }
 
   private ManagementGroupData toManagementGroupData(ManagementGroupInfo group) {

@@ -115,6 +115,8 @@ message GetFileRequest {
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
   io.harness.security.Principal principal = 8;
+  CacheRequestParams cacheRequestParams = 9;
+  EntityType entityType = 10;
 }
 
 message GetFileResponse {
@@ -122,6 +124,7 @@ message GetFileResponse {
   string fileContent = 2;
   ErrorDetails error = 3;
   GitMetaData gitMetaData = 4;
+  CacheResponseParams cacheResponse = 5;
 }
 
 message CreateFileRequest {
@@ -259,6 +262,16 @@ message FileGitDetails {
   ContentType contentType = 4;
 }
 
+message CacheRequestParams {
+  bool useCache = 1;
+}
+
+message CacheResponseParams {
+  CacheState cacheState = 1;
+  uint64 lastUpdateAt = 2;
+  uint64 ttlLeft = 3;
+}
+
 enum ContentType {
   INVALID_CONTENT_TYPE = 0;
   UNKNOWN_CONTENT = 1;
@@ -266,4 +279,17 @@ enum ContentType {
   DIRECTORY = 3;
   SYMLINK = 4;
   GITLINK = 5;
+}
+
+enum EntityType {
+  UNKNOWN_ENTITY = 0;
+  PIPELINE = 1;
+  TEMPLATE = 2;
+  PIPELINE_INPUT_SETS = 3;
+}
+
+enum CacheState {
+  UNKNOWN_STATE = 0;
+  VALID_CACHE = 1;
+  STALE_CACHE = 2;
 }

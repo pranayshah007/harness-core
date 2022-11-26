@@ -27,7 +27,7 @@ import software.wings.beans.AzureConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.KubernetesClusterConfig;
 import software.wings.beans.RancherConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.gke.GkeClusterService;
 import software.wings.delegatetasks.rancher.RancherTaskHelper;
 import software.wings.helpers.ext.azure.AzureDelegateHelperService;
@@ -182,7 +182,12 @@ public class ContainerDeploymentDelegateHelper {
     return kubernetesConfig;
   }
 
-  public boolean useK8sSteadyStateCheck(ContainerServiceParams containerServiceParams, LogCallback logCallback) {
+  public boolean useK8sSteadyStateCheck(
+      boolean isK8sSteadyStateCheckEnabled, ContainerServiceParams containerServiceParams, LogCallback logCallback) {
+    if (!isK8sSteadyStateCheckEnabled) {
+      return false;
+    }
+
     KubernetesConfig kubernetesConfig = getKubernetesConfig(containerServiceParams);
     String versionAsString = kubernetesContainerService.getVersionAsString(kubernetesConfig);
 

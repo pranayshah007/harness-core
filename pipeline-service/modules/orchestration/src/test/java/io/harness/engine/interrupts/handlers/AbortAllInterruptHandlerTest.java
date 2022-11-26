@@ -19,8 +19,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -36,6 +38,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
   @Mock private NodeExecutionService nodeExecutionService;
+  @Mock private PlanExecutionService planExecutionService;
   @Inject @InjectMocks private AbortAllInterruptHandler abortAllInterruptHandler;
   @Inject private MongoTemplate mongoTemplate;
 
@@ -104,6 +107,7 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     Interrupt handledInterrupt = abortAllInterruptHandler.registerInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);

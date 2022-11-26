@@ -424,7 +424,7 @@ public class SettingsServiceHelperTest extends WingsBaseTest {
     GitConfig config = null;
     settingServiceHelper.resetTransientFields(config);
 
-    config = GitConfig.builder().sshSettingAttribute(new SettingAttribute()).build();
+    config = GitConfig.builder().sshSettingAttribute(new SettingAttribute().toDTO()).build();
     settingServiceHelper.resetTransientFields(config);
     assertThat(config.getSshSettingAttribute()).isNull();
   }

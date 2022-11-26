@@ -175,6 +175,7 @@ public class ScimUserServiceImpl implements ScimUserService {
   @Override
   public ScimListResponse<ScimUser> searchUser(String accountId, String filter, Integer count, Integer startIndex) {
     startIndex = startIndex == null ? 0 : startIndex;
+    Integer tempStartIndex = startIndex == 0 ? 0 : startIndex - 1;
     count = count == null ? MAX_RESULT_COUNT : count;
 
     log.info("SCIM: Searching users in account {} with filter: {}", accountId, filter);
@@ -194,7 +195,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
     List<ScimUser> scimUsers = new ArrayList<>();
     try {
-      scimUsers = searchUserByUserName(accountId, searchQuery, count, startIndex);
+      scimUsers = searchUserByUserName(accountId, searchQuery, count, tempStartIndex);
       log.info("SCIM: Scim users in account {} found from query {}", accountId, scimUsers);
       scimUsers.forEach(userResponse::resource);
     } catch (WingsException ex) {

@@ -14,7 +14,8 @@
       "featuresEnabled": [
         "BILLING",
         "VISIBILITY",
-        "OPTIMIZATION"
+        "OPTIMIZATION",
+        "GOVERNANCE"
       ],
       "curAttributes": {
         "reportName": "report_name_utsav",

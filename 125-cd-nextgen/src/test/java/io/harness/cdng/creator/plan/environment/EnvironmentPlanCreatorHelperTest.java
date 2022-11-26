@@ -29,6 +29,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -200,9 +201,11 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
                                                        .setProjectIdentifier(projectId)
                                                        .build();
     // no env with given envRef
-    assertThatThrownBy(()
-                           -> EnvironmentPlanCreatorHelper.getResolvedEnvRefs(planCreationContext, envYamlObj, false,
-                               "serviceRef", null, environmentService, infrastructure))
+    assertThatThrownBy(
+        ()
+            -> EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
+                PlanCreationContext.builder().globalContext(Map.of("metadata", planCreationContext)).build(),
+                envYamlObj, false, "serviceRef", null, environmentService, infrastructure))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("No environment found with " + envId + " identifier in " + projectId + " project in " + orgId
             + " org and " + accountId + " account");
@@ -217,9 +220,11 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
                                   .build();
     doReturn(Optional.of(environment)).when(environmentService).get(accountId, orgId, projectId, envId, false);
 
-    assertThatThrownBy(()
-                           -> EnvironmentPlanCreatorHelper.getResolvedEnvRefs(planCreationContext, envYamlObj, false,
-                               "serviceRef", serviceOverrideService, environmentService, infrastructure))
+    assertThatThrownBy(
+        ()
+            -> EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
+                PlanCreationContext.builder().globalContext(Map.of("metadata", planCreationContext)).build(),
+                envYamlObj, false, "serviceRef", serviceOverrideService, environmentService, infrastructure))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Infrastructure linked with environment " + envId + " does not exists");
   }

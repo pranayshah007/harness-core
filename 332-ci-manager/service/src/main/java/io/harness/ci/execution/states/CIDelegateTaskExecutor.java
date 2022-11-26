@@ -22,6 +22,7 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -60,6 +61,38 @@ public class CIDelegateTaskExecutor {
             .taskSetupAbstractions(setupAbstractions)
             .expressionFunctorToken(taskData.getExpressionFunctorToken())
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
+            .build();
+    RetryPolicy<Object> retryPolicy =
+        getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),
+            format("Failed to submit delegate task  after retrying {} times"));
+    // Make a call to the log service and get back the token
+
+    return Failsafe.with(retryPolicy).get(() -> {
+      return delegateServiceGrpcClient.submitAsyncTask(
+          delegateTaskRequest, delegateCallbackTokenSupplier.get(), Duration.ZERO);
+    });
+  }
+
+  public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
+      List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
+      LinkedHashMap<String, String> logStreamingAbstractions) {
+    String accountId = task.getAccountId();
+    TaskData taskData = task.getData();
+    final DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .parked(taskData.isParked())
+            .accountId(accountId)
+            .serializationFormat(taskData.getSerializationFormat())
+            .taskSelectors(taskSelectors)
+            .taskType(taskData.getTaskType())
+            .logStreamingAbstractions(logStreamingAbstractions)
+            .taskParameters(extractTaskParameters(taskData))
+            .executionTimeout(Duration.ofHours(12))
+            .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
+            .taskSetupAbstractions(setupAbstractions)
+            .expressionFunctorToken(taskData.getExpressionFunctorToken())
+            .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
+            .emitEvent(emitEvent)
             .build();
     RetryPolicy<Object> retryPolicy =
         getRetryPolicy(format("[Retrying failed call to submit delegate task attempt: {}"),

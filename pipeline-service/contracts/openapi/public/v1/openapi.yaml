@@ -1,6 +1,6 @@
 openapi: 3.0.0
 x-stoplight:
-  id: bfet7n314xd4i
+  id: dlx56eyqljwug
 info:
   title: Harness NextGen Software Delivery Platform API Reference
   version: '1.0'
@@ -13,10 +13,6 @@ servers:
 tags:
   - name: Pipelines
     description: This contains APIs for performing CRUD operations on Pipelines.
-x-tagGroups:
-  - name: Pipelines
-    tags:
-      - Pipelines
 paths:
   '/v1/orgs/{org}/projects/{project}/pipelines':
     parameters:
@@ -163,6 +159,16 @@ paths:
           in: query
           name: repo_name
           description: Name of the repository (for Git Experience).
+        - schema:
+            type: boolean
+          in: header
+          name: Load-From-Cache
+          description: Flag to enable loading the remote pipeline from git or git cache
+        - schema:
+            type: boolean
+          in: query
+          name: load_from_fallback_branch
+          description: Flag to load the pipeline from the created non default branch
       tags:
         - Pipelines
       responses:
@@ -214,6 +220,25 @@ paths:
                 example-resp:
                   value: |
                     {}
+  '/v1/orgs/{org}/projects/{project}/pipelines/validate/{uuid}':
+    parameters:
+      - $ref: '#/components/parameters/OrgParam'
+      - $ref: '#/components/parameters/ProjectParam'
+      - $ref: '#/components/parameters/UuidParam'
+    get:
+      summary: Get Pipeline Validation Result
+      operationId: get-pipeline-validate-result
+      security:
+        - x-api-key: []
+      description: Get Pipeline Validation Result for given UUID
+      x-internal: true
+      tags:
+        - Pipelines
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      responses:
+        '200':
+          $ref: '#/components/responses/PipelineValidationResponseBody'
 components:
   schemas:
     GitDetails:
@@ -299,6 +324,10 @@ components:
               fqn: pipeline.steps.step
             fqn: pipeline.name
             hint_message: try changing something
+          cache_response_metadata:
+            cache_state: VALID_CACHE
+            ttl_left: 9223372036854776000
+            last_updated_at: 9223372036854776000
           created: 1234567890
           updated: 1234567890
       type: object
@@ -359,6 +388,8 @@ components:
           description: YAML schema errors.
           items:
             $ref: '#/components/schemas/YAMLSchemaErrorWrapper'
+        cache_response_metadata:
+          $ref: '#/components/schemas/CacheResponseMetadataDTO'
         created:
           type: integer
           description: Creation timestamp for Pipeline.
@@ -367,6 +398,20 @@ components:
           type: integer
           description: Last modification timestamp for Pipeline.
           format: int64
+    PipelineValidationResponseBody:
+      title: Pipeline Validation Response Body
+      description: Pipeline Validation Response Body
+      x-examples:
+        example-get:
+          status: IN_PROGRESS
+      type: object
+      x-stoplight:
+        id: 6c15cb29289e9
+      properties:
+        status:
+          type: string
+          description: Status of the Pipeline Validation Event
+      x-internal: true
     PipelineListResponseBody:
       title: Pipeline List Response Body
       x-stoplight:
@@ -383,23 +428,6 @@ components:
           created: 1234567890
           updated: 1234567890
           modules: CD
-          execution_summary:
-            errors_count:
-              - 1
-              - 2
-              - 3
-              - 4
-              - 5
-              - 6
-              - 7
-            deployments_count:
-              - 1
-              - 2
-              - 3
-              - 4
-              - 5
-              - 6
-              - 7
           recent_execution_info:
             - executor_info:
                 trigger_type: NOOP
@@ -459,8 +487,6 @@ components:
           uniqueItems: true
           items:
             type: string
-        execution_summary:
-          $ref: '#/components/schemas/ExecutionSummary'
         recent_execution_info:
           type: array
           description: Array of recent Execution information
@@ -480,43 +506,6 @@ components:
           description: Specifies whether Pipeline is a valid or not.
         git_details:
           $ref: '#/components/schemas/GitDetails'
-    ExecutionSummary:
-      title: Execution Summary
-      x-stoplight:
-        id: mxtmp0n5g1bsg
-      type: object
-      description: Execution Summary
-      x-examples:
-        example-execution-summary:
-          errors_count:
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5
-            - 6
-            - 7
-          deployments_count:
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5
-            - 6
-            - 7
-      properties:
-        errors_count:
-          type: array
-          description: Number of errors on each of the last 7 days.
-          items:
-            type: integer
-            format: int32
-        deployments_count:
-          type: array
-          description: Number of deployments on each of the last 7 days.
-          items:
-            type: integer
-            format: int32
     PipelineCreateRequestBody:
       title: Pipeline Create Request Body
       x-stoplight:
@@ -1069,6 +1058,32 @@ components:
         - pipeline_yaml
         - slug
         - name
+    CacheResponseMetadataDTO:
+      title: CacheResponseMetadataDTO
+      x-stoplight:
+        id: 8l1kpcrxe390j
+      type: object
+      properties:
+        cache_state:
+          type: string
+          enum:
+            - VALID_CACHE
+            - STALE_CACHE
+            - UNKNOWN
+          description: Tells the state of cache.
+        ttl_left:
+          type: integer
+          format: int64
+          description: Time left till cache expriry.
+        last_updated_at:
+          type: integer
+          format: int64
+          description: Time when the cache was last updated at.
+      x-examples:
+        example-1:
+          cache_state: VALID_CACHE
+          ttl_left: 9223372036854776000
+          last_updated_at: 9223372036854776000
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -1142,9 +1157,7 @@ components:
       schema:
         type: string
         enum:
-          - slug
           - name
-          - created
           - updated
       description: Parameter on the basis of which sorting is done.
     Order:
@@ -1157,6 +1170,13 @@ components:
           - ASC
           - DESC
       description: Order on the basis of which sorting is done.
+    UuidParam:
+      name: uuid
+      in: path
+      required: true
+      schema:
+        type: string
+      description: UUID
   responses:
     PipelineCreateResponseBody:
       description: Pipeline response body
@@ -1175,6 +1195,15 @@ components:
             example-pipeline:
               value: |
                 slug: example_pipeline
+    PipelineValidationResponseBody:
+      description: Pipeline Validation response body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PipelineValidationResponseBody'
+        application/yaml:
+          schema:
+            $ref: '#/components/schemas/PipelineValidationResponseBody'
     PipelineGetResponseBody:
       description: Pipeline response body
       content:
@@ -1220,6 +1249,10 @@ components:
                     fqn: pipeline.steps.step
                   fqn: pipeline.name
                   hint_message: try changing something
+                cache_response_metadata:
+                  cache_state: VALID_CACHE
+                  ttl_left: 9223372036854776000
+                  last_updated_at: 9223372036854776000
                 created: 1234567890
                 updated: 1234567890
         application/yaml:
@@ -1264,6 +1297,10 @@ components:
                     fqn: pipeline.steps.step
                   fqn: pipeline.name
                   hint_message: try changing something
+                cache_response_metadata:
+                  cache_state: VALID_CACHE
+                  ttl_left: 9223372036854776000
+                  last_updated_at: 9223372036854776000
                 created: 1234567890
                 updated: 1234567890
     PipelineListResponseBody:
@@ -1279,7 +1316,7 @@ components:
             example-list-response:
               value:
                 - slug: example_pipeline
-                  name: ExamplePipeline
+                  name: Example Pipeline
                   description: This is an Example Pipeline
                   tags:
                     example-tag-1: example-tag-1-value
@@ -1288,23 +1325,6 @@ components:
                   updated: 1234567890
                   modules:
                     - CD
-                  execution_summary:
-                    errors_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
-                    deployments_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
                   recent_execution_info:
                     - executor_info:
                         trigger_type: NOOP
@@ -1345,23 +1365,6 @@ components:
                   updated: 1234567890
                   modules:
                     - CD
-                  execution_summary:
-                    errors_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
-                    deployments_count:
-                      - 1
-                      - 2
-                      - 3
-                      - 4
-                      - 5
-                      - 6
-                      - 7
                   recent_execution_info:
                     - executor_info:
                         trigger_type: NOOP

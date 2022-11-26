@@ -10,8 +10,6 @@ package io.harness.delegatetasks;
 import static io.harness.delegate.beans.artifact.ArtifactFileMetadata.builder;
 import static io.harness.rule.OwnerRule.AADITI;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -29,12 +27,12 @@ import io.harness.rule.Repeat;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.BambooConfig;
 import software.wings.beans.JenkinsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionTaskHelper;
 
 import com.google.common.base.Charsets;
@@ -99,9 +97,9 @@ public class DelegateFileManagerTest extends CategoryTest {
   private static final String ARTIFACTORY_URL = "ARTIFACTORY_URL";
 
   private SettingAttribute awsSetting =
-      aSettingAttribute()
-          .withUuid(SETTING_ID)
-          .withValue(AwsConfig.builder().secretKey(SECRET_KEY).accessKey(ACCESS_KEY.toCharArray()).build())
+      SettingAttribute.builder()
+          .uuid(SETTING_ID)
+          .value(AwsConfig.builder().secretKey(SECRET_KEY).accessKey(ACCESS_KEY.toCharArray()).build())
           .build();
   private ArtifactStreamAttributes artifactStreamAttributesForS3 =
       ArtifactStreamAttributes.builder()
@@ -113,13 +111,13 @@ public class DelegateFileManagerTest extends CategoryTest {
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
 
-  private SettingAttribute artifactorySetting = aSettingAttribute()
-                                                    .withUuid(SETTING_ID)
-                                                    .withValue(ArtifactoryConfig.builder()
-                                                                   .artifactoryUrl(ARTIFACTORY_URL)
-                                                                   .username("admin")
-                                                                   .password("dummy123!".toCharArray())
-                                                                   .build())
+  private SettingAttribute artifactorySetting = SettingAttribute.builder()
+                                                    .uuid(SETTING_ID)
+                                                    .value(ArtifactoryConfig.builder()
+                                                               .artifactoryUrl(ARTIFACTORY_URL)
+                                                               .username("admin")
+                                                               .password("dummy123!".toCharArray())
+                                                               .build())
                                                     .build();
   private ArtifactStreamAttributes artifactStreamAttributesForArtifactory =
       ArtifactStreamAttributes.builder()
@@ -137,20 +135,20 @@ public class DelegateFileManagerTest extends CategoryTest {
           .metadataOnly(true)
           .metadata(ImmutableMap.of(ArtifactMetadataKeys.buildNo, BUILD_NO, ArtifactMetadataKeys.artifactFileName,
               JENKINS_FILE_NAME, ArtifactMetadataKeys.artifactFileSize, "1233"))
-          .serverSetting(aSettingAttribute().withValue(JenkinsConfig.builder().build()).build())
+          .serverSetting(SettingAttribute.builder().value(JenkinsConfig.builder().build()).build())
           .artifactStreamId(ARTIFACT_STREAM_ID_JENKINS)
           .jobName("scheduler")
           .artifactPaths(Collections.singletonList(JENKINS_FILE_NAME))
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
 
-  private SettingAttribute bambooSetting = aSettingAttribute()
-                                               .withUuid(SETTING_ID)
-                                               .withValue(BambooConfig.builder()
-                                                              .bambooUrl("http://localhost:9095/")
-                                                              .username("admin")
-                                                              .password("admin".toCharArray())
-                                                              .build())
+  private SettingAttribute bambooSetting = SettingAttribute.builder()
+                                               .uuid(SETTING_ID)
+                                               .value(BambooConfig.builder()
+                                                          .bambooUrl("http://localhost:9095/")
+                                                          .username("admin")
+                                                          .password("admin".toCharArray())
+                                                          .build())
                                                .build();
 
   private ArtifactStreamAttributes bambooStreamAttributes =
@@ -181,7 +179,7 @@ public class DelegateFileManagerTest extends CategoryTest {
               NEXUS2_FILE_NAME, ArtifactMetadataKeys.artifactPath, NEXUS2_FILE_PATH,
               ArtifactMetadataKeys.artifactFileSize, "1233"))
           .artifactFileMetadata(asList(builder().fileName("todolist-7.0.war").url(NEXUS2_FILE_PATH).build()))
-          .serverSetting(aSettingAttribute().withValue(NexusConfig.builder().build()).build())
+          .serverSetting(SettingAttribute.builder().value(NexusConfig.builder().build()).build())
           .artifactStreamId(ARTIFACT_STREAM_ID_NEXUS)
           .jobName("releases")
           .groupId("io.harness.test")

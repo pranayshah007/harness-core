@@ -67,6 +67,12 @@ public class YamlChangeSet extends Base {
                  .field(YamlChangeSetKeys.status)
                  .descSortField(Base.CREATED_AT_KEY)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("status_accountId_queuekey_index")
+                 .field(YamlChangeSetKeys.status)
+                 .field(YamlChangeSetKeys.accountId)
+                 .field(YamlChangeSetKeys.queueKey)
+                 .build())
         .build();
   }
 

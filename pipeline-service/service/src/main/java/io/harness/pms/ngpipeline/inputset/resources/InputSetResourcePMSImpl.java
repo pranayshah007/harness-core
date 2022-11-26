@@ -233,7 +233,7 @@ public class InputSetResourcePMSImpl implements InputSetResourcePMS {
     Criteria criteria = PMSInputSetFilterHelper.createCriteriaForGetList(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetListType, searchTerm, false);
     Pageable pageRequest =
-        PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.createdAt));
+        PageUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, InputSetEntityKeys.lastUpdatedAt));
     Page<InputSetEntity> inputSetEntities =
         pmsInputSetService.list(criteria, pageRequest, accountId, orgIdentifier, projectIdentifier);
 

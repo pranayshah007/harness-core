@@ -16,14 +16,19 @@ import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.network.Http;
 import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.InputDefaults;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.secrets.SecretFactory;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.yaml.core.timeout.Timeout;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -34,18 +39,38 @@ import software.wings.beans.ServiceVariableType;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.NGMigrationEntityType;
 
+import io.serializer.HObjectMapper;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.CaseUtils;
+import retrofit2.Retrofit;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class MigratorUtility {
+  public static final ParameterField<String> RUNTIME_INPUT = ParameterField.createValueField("<+input>");
+
+  private MigratorUtility() {}
+
+  public static <T> T getRestClient(ServiceHttpClientConfig ngClientConfig, Class<T> clazz) {
+    OkHttpClient okHttpClient = Http.getOkHttpClient(ngClientConfig.getBaseUrl(), false);
+    Retrofit retrofit = new Retrofit.Builder()
+                            .client(okHttpClient)
+                            .baseUrl(ngClientConfig.getBaseUrl())
+                            .addConverterFactory(JacksonConverterFactory.create(HObjectMapper.NG_DEFAULT_OBJECT_MAPPER))
+                            .build();
+    return retrofit.create(clazz);
+  }
+
   public static String generateManifestIdentifier(String name) {
     return generateIdentifier(name);
   }
@@ -58,6 +83,15 @@ public class MigratorUtility {
     return Character.isDigit(generated.charAt(0)) ? "_" + generated : generated;
   }
 
+  public static ParameterField<Timeout> getTimeout(Integer timeoutInMillis) {
+    if (timeoutInMillis == null) {
+      return ParameterField.createValueField(Timeout.builder().timeoutString("10m").build());
+    }
+    long t = timeoutInMillis / 1000;
+    String timeoutString = t + "s";
+    return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
+  }
+
   public static ParameterField<String> getParameterField(String value) {
     if (StringUtils.isBlank(value)) {
       return ParameterField.createValueField("");
@@ -67,6 +101,12 @@ public class MigratorUtility {
 
   public static void sort(List<NGYamlFile> files) {
     files.sort(Comparator.comparingInt(MigratorUtility::toInt));
+  }
+
+  public static ParameterField<List<TaskSelectorYaml>> getDelegateSelectors(List<String> strings) {
+    return EmptyPredicate.isEmpty(strings)
+        ? ParameterField.createValueField(Collections.emptyList())
+        : ParameterField.createValueField(strings.stream().map(TaskSelectorYaml::new).collect(Collectors.toList()));
   }
 
   // This is for sorting entities while creating
@@ -92,8 +132,10 @@ public class MigratorUtility {
         return 35;
       case SERVICE_VARIABLE:
         return 40;
+      case WORKFLOW:
+        return 70;
       case PIPELINE:
-        return 50;
+        return 100;
       default:
         throw new InvalidArgumentsException("Unknown type found: " + file.getType());
     }
@@ -178,24 +220,31 @@ public class MigratorUtility {
       List<ServiceVariable> serviceVariables, Map<CgEntityId, NGYamlFile> migratedEntities) {
     List<NGVariable> variables = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(serviceVariables)) {
-      serviceVariables.forEach(serviceVariable -> {
-        if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
-          variables.add(SecretNGVariable.builder()
-                            .type(NGVariableType.SECRET)
-                            .value(ParameterField.createValueField(
-                                MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
-                            .name(serviceVariable.getName())
-                            .build());
-        } else {
-          variables.add(StringNGVariable.builder()
-                            .type(NGVariableType.STRING)
-                            .name(serviceVariable.getName())
-                            .value(ParameterField.createValueField(String.valueOf(serviceVariable.getValue())))
-                            .build());
-        }
-      });
+      serviceVariables.forEach(serviceVariable -> variables.add(getNGVariable(serviceVariable, migratedEntities)));
     }
     return variables;
+  }
+
+  public static NGVariable getNGVariable(
+      ServiceVariable serviceVariable, Map<CgEntityId, NGYamlFile> migratedEntities) {
+    if (serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT)) {
+      return SecretNGVariable.builder()
+          .type(NGVariableType.SECRET)
+          .value(ParameterField.createValueField(
+              MigratorUtility.getSecretRef(migratedEntities, serviceVariable.getEncryptedValue())))
+          .name(serviceVariable.getName())
+          .build();
+    } else {
+      String value = "";
+      if (EmptyPredicate.isNotEmpty(serviceVariable.getValue())) {
+        value = (String) MigratorExpressionUtils.render(String.valueOf(serviceVariable.getValue()), new HashMap<>());
+      }
+      return StringNGVariable.builder()
+          .type(NGVariableType.STRING)
+          .name(serviceVariable.getName())
+          .value(ParameterField.createValueField(value))
+          .build();
+    }
   }
 
   public static String generateIdentifier(

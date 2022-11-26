@@ -42,6 +42,7 @@ import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.gitops.UpdateReleaseRepoStep;
+import io.harness.cdng.gitops.steps.FetchLinkedAppsStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
@@ -79,6 +80,10 @@ import io.harness.cdng.provision.terraform.TerraformApplyStep;
 import io.harness.cdng.provision.terraform.TerraformDestroyStep;
 import io.harness.cdng.provision.terraform.TerraformPlanStep;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStep;
+import io.harness.cdng.provision.terragrunt.TerragruntApplyStep;
+import io.harness.cdng.provision.terragrunt.TerragruntDestroyStep;
+import io.harness.cdng.provision.terragrunt.TerragruntPlanStep;
+import io.harness.cdng.provision.terragrunt.TerragruntRollbackStep;
 import io.harness.cdng.rollback.steps.InfrastructureDefinitionStep;
 import io.harness.cdng.rollback.steps.InfrastructureProvisionerStep;
 import io.harness.cdng.rollback.steps.RollbackStepsStep;
@@ -112,6 +117,7 @@ public class NgStepRegistrar {
     engineSteps.put(CreatePRStep.STEP_TYPE, CreatePRStep.class);
     engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(UpdateReleaseRepoStep.STEP_TYPE, UpdateReleaseRepoStep.class);
+    engineSteps.put(FetchLinkedAppsStep.STEP_TYPE, FetchLinkedAppsStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);
@@ -200,6 +206,10 @@ public class NgStepRegistrar {
     engineSteps.put(ElastigroupDeployStep.STEP_TYPE, ElastigroupDeployStep.class);
     engineSteps.put(ElastigroupRollbackStep.STEP_TYPE, ElastigroupRollbackStep.class);
     engineSteps.put(ElastigroupSetupStep.STEP_TYPE, ElastigroupSetupStep.class);
+    engineSteps.put(TerragruntPlanStep.STEP_TYPE, TerragruntPlanStep.class);
+    engineSteps.put(TerragruntApplyStep.STEP_TYPE, TerragruntApplyStep.class);
+    engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
+    engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
 
     return engineSteps;
   }

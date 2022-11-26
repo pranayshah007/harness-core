@@ -210,8 +210,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       executionLogCallback.saveExecutionLog(commandResponse.getOutput());
       commandResponse.setHelmChartInfo(helmChartInfo);
 
-      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-          commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck =
+          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
+              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
       List<KubernetesResourceId> k8sWorkloads = Collections.emptyList();
       if (useK8sSteadyStateCheck) {
         k8sWorkloads = readKubernetesResourcesIds(commandRequest, commandRequest.getVariableOverridesYamlFiles(),
@@ -360,8 +361,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
         commandRequest.getExecutionLogCallback().saveExecutionLog(msg);
         throw new InvalidRequestException(msg, USER);
       }
-      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-          commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
+      boolean useK8sSteadyStateCheck =
+          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
+              commandRequest.getContainerServiceParams(), commandRequest.getExecutionLogCallback());
       if (useK8sSteadyStateCheck) {
         fetchInlineChartUrl(commandRequest, timeoutInMillis);
       }
@@ -608,8 +610,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
       }
 
       List<KubernetesResourceId> k8sRollbackWorkloads = Collections.emptyList();
-      boolean useK8sSteadyStateCheck = containerDeploymentDelegateHelper.useK8sSteadyStateCheck(
-          commandRequest.getContainerServiceParams(), executionLogCallback);
+      boolean useK8sSteadyStateCheck =
+          containerDeploymentDelegateHelper.useK8sSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(),
+              commandRequest.getContainerServiceParams(), executionLogCallback);
 
       if (useK8sSteadyStateCheck) {
         prepareWorkingDirectoryForK8sRollout(commandRequest);

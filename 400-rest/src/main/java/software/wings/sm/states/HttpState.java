@@ -43,8 +43,8 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
