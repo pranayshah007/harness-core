@@ -15,6 +15,7 @@ import static io.harness.encryption.Scope.ORG;
 import static io.harness.encryption.Scope.PROJECT;
 import static io.harness.springdata.SpringDataMongoUtils.populateInFilter;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE;
+
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
@@ -590,32 +591,32 @@ public class NGTemplateServiceHelper {
       VariableMergeServiceResponse variableMergeServiceResponse, String appliedTemplateYaml) {
     try {
       ObjectNode variablesObject =
-              (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
+          (ObjectNode) YamlUtils.readTree(variableMergeServiceResponse.getYaml()).getNode().getCurrJsonNode();
       ObjectNode templateJson =
-              (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
+          (ObjectNode) YamlUtils.readTree(appliedTemplateYaml).getNode().getCurrJsonNode().get(TEMPLATE);
       if (templateJson.get(YAMLFieldNameConstants.VARIABLES) == null) {
         return variableMergeServiceResponse;
       }
       JsonNode templateVariablesJson = templateJson.retain(YAMLFieldNameConstants.VARIABLES);
       VariableMergeServiceResponse templateVariableResponse = YamlVariablesUtils.getTemplateVariablesFromYaml(
-              templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
+          templateVariablesJson.toString(), YAMLFieldNameConstants.VARIABLES);
       variablesObject.setAll(
-              (ObjectNode) YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
+          (ObjectNode) YamlUtils.readTree(templateVariableResponse.getYaml()).getNode().getCurrJsonNode());
       templateVariableResponse.getMetadataMap().values().forEach(variableValue
-              -> variableValue.setYamlProperties(YamlProperties.newBuilder()
-              .setVariableName(variableValue.getYamlProperties().getVariableName())
-              .setFqn(variableValue.getYamlProperties().getVariableName())
-              .setLocalName(variableValue.getYamlProperties().getVariableName())
-              .setVisible(variableValue.getYamlProperties().getVisible())
-              .build()));
+          -> variableValue.setYamlProperties(YamlProperties.newBuilder()
+                                                 .setVariableName(variableValue.getYamlProperties().getVariableName())
+                                                 .setFqn(variableValue.getYamlProperties().getVariableName())
+                                                 .setLocalName(variableValue.getYamlProperties().getVariableName())
+                                                 .setVisible(variableValue.getYamlProperties().getVisible())
+                                                 .build()));
       variableMergeServiceResponse.getMetadataMap().putAll(templateVariableResponse.getMetadataMap());
 
       return VariableMergeServiceResponse.builder()
-              .yaml(YamlUtils.write(variablesObject))
-              .errorResponses(variableMergeServiceResponse.getErrorResponses())
-              .metadataMap(variableMergeServiceResponse.getMetadataMap())
-              .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
-              .build();
+          .yaml(YamlUtils.write(variablesObject))
+          .errorResponses(variableMergeServiceResponse.getErrorResponses())
+          .metadataMap(variableMergeServiceResponse.getMetadataMap())
+          .serviceExpressionPropertiesList(variableMergeServiceResponse.getServiceExpressionPropertiesList())
+          .build();
     } catch (IOException e) {
       throw new InvalidRequestException("Couldn't convert templateYaml to JsonNode");
     }
