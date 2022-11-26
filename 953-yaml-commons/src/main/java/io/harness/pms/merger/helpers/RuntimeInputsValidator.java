@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -55,11 +56,11 @@ public class RuntimeInputsValidator {
 
     // if there are no runtime inputs in source node, return true if nodeToValidate is also null.
     if (isEmpty(sourceNodeInputSetFormatYaml)) {
-      return nodeToValidate == null || nodeToValidate.isEmpty();
+      return EmptyPredicate.isEmpty(nodeToValidate);
     }
 
     // if nodeToValidate is null and there exist runtime inputs in source node, return false.
-    if (nodeToValidate == null || nodeToValidate.isEmpty()) {
+    if (EmptyPredicate.isEmpty(nodeToValidate)) {
       return false;
     }
 

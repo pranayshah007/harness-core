@@ -13,6 +13,7 @@ import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
@@ -283,7 +284,7 @@ public class InputsValidator {
     JsonNode templateVariables = templateNodeValue.get(YAMLFieldNameConstants.VARIABLES);
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode templateVariablesFromPipelineWithRoot = null;
-    if (templateVariables != null && !templateVariables.isEmpty()) {
+    if (EmptyPredicate.isNotEmpty(templateVariables)) {
       templateVariablesFromPipelineWithRoot = mapper.createObjectNode();
       templateVariablesFromPipelineWithRoot.set(YAMLFieldNameConstants.VARIABLES, templateVariables);
     }

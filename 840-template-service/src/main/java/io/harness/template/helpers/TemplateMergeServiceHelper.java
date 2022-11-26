@@ -237,7 +237,6 @@ public class TemplateMergeServiceHelper {
                 .get(YAMLFieldNameConstants.VARIABLES);
       ObjectMapper mapper = new ObjectMapper();
       ObjectNode finalTemplateJson = mapper.createObjectNode();
-      ;
 
       if (templateVariablesJson != null) {
         finalTemplateJson.set(YAMLFieldNameConstants.VARIABLES, templateVariablesJson);

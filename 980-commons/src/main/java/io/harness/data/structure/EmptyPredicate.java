@@ -7,6 +7,7 @@
 
 package io.harness.data.structure;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.ByteString;
@@ -86,6 +87,9 @@ public class EmptyPredicate {
   public static boolean isEmpty(ArrayNode node) {
     return node == null || node.isEmpty();
   }
+  public static boolean isEmpty(JsonNode node) {
+    return node == null || node.isEmpty();
+  }
 
   public static <T extends IsEmpty> boolean isNotEmpty(T structure) {
     return structure != null && !structure.isEmpty();
@@ -141,5 +145,9 @@ public class EmptyPredicate {
 
   public static boolean isNotEmpty(boolean[] array) {
     return array != null && array.length != 0;
+  }
+
+  public static boolean isNotEmpty(JsonNode node) {
+    return node != null && !node.isEmpty();
   }
 }
