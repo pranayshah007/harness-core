@@ -24,6 +24,7 @@ import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.StateExecutionInstance;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -36,7 +37,7 @@ public class UsageMetricsEventPublisherUnitTest extends WingsBaseTest {
   public void testConstructDeploymentEvent() {
     WorkflowExecution workflowExecution = UsageMetricsTestUtils.generateWorkflowExecution(0);
     DeploymentTimeSeriesEvent timeSeriesEvent = usageMetricsEventPublisher.constructDeploymentTimeSeriesEvent(
-        UsageMetricsTestKeys.ACCOUNTID, workflowExecution);
+        UsageMetricsTestKeys.ACCOUNTID, workflowExecution, Collections.emptyMap());
     UsageMetricsTestUtils.validateTimeSeriesEventInfo(timeSeriesEvent, 0);
   }
 

@@ -14,12 +14,13 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 import static io.harness.telemetry.Destination.AMPLITUDE;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
 import io.harness.TelemetryConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -42,6 +43,7 @@ import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
@@ -50,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 @OwnedBy(DEL)
-public class DelegateTelemetryPublisher implements Handler<Account> {
+public class DelegateTelemetryPublisher extends IteratorPumpModeHandler implements Handler<Account> {
   private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
   private static final String ACCOUNT = "Account";
 
@@ -71,25 +73,31 @@ public class DelegateTelemetryPublisher implements Handler<Account> {
     this.accountService = accountService;
   }
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("DelegateTelemetryPublisherIteration")
-            .poolSize(1)
-            .interval(ofMinutes(10))
-            .build(),
-        DelegateTelemetryPublisher.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.delegateTelemetryPublisherIteration)
-            .targetInterval(ofHours(24))
-            .acceptableNoAlertDelay(ofMinutes(4))
-            .acceptableExecutionTime(ofMinutes(2))
-            .handler(this)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       DelegateTelemetryPublisher.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.delegateTelemetryPublisherIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(4))
+                           .acceptableExecutionTime(ofMinutes(2))
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "DelegateTelemetryPublisherIteration";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

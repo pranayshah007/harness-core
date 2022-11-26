@@ -33,6 +33,7 @@ import software.wings.service.impl.SettingValidationService;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,7 +57,13 @@ public class SettingAttributeValidateConnectivityHandlerTest extends WingsBaseTe
   @Owner(developers = GARVIT)
   @Category(UnitTests.class)
   public void shouldRegisterIterators() {
-    settingAttributeValidateConnectivityHandler.registerIterators(5);
+    settingAttributeValidateConnectivityHandler.createAndStartIterator(
+        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+            .name("SettingAttributeValidateConnectivity")
+            .poolSize(5)
+            .interval(Duration.ofMinutes(10))
+            .build(),
+        Duration.ofHours(3));
     verify(persistenceIteratorFactory)
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(SettingAttributeValidateConnectivityHandler.class), any());
   }

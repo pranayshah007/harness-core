@@ -15,7 +15,6 @@ import io.harness.cvng.core.services.api.DeleteEntityByHandler;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget.SLOGraphData;
 import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveFilter;
@@ -24,7 +23,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<ServiceLevelObjective> {
   ServiceLevelObjectiveResponse create(ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO);
@@ -51,7 +49,6 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
       ProjectParams projectParams, SLODashboardApiFilter filter, PageParams pageParams);
 
   ServiceLevelObjective getFromSLIIdentifier(ProjectParams projectParams, String serviceLevelIndicatorIdentifier);
-  Map<ServiceLevelObjective, SLOGraphData> getSLOGraphData(List<ServiceLevelObjective> serviceLevelObjectiveList);
   List<SLOErrorBudgetResetDTO> getErrorBudgetResetHistory(ProjectParams projectParams, String sloIdentifier);
   SLOErrorBudgetResetDTO resetErrorBudget(ProjectParams projectParams, SLOErrorBudgetResetDTO resetDTO);
   void handleNotification(ServiceLevelObjective serviceLevelObjective);
@@ -59,5 +56,5 @@ public interface ServiceLevelObjectiveService extends DeleteEntityByHandler<Serv
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
   void setMonitoredServiceSLOsEnableFlag(
-      ProjectParams projectParams, String monitoreServiceIdentifier, boolean isEnabled);
+      ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled);
 }

@@ -117,7 +117,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject ServiceEntityService serviceEntityService;
   @Inject InstanceDashboardService instanceDashboardService;
-  @Inject ServiceEntityService ServiceEntityServiceImpl;
+  @Inject ServiceEntityService serviceEntityServiceImpl;
 
   private String tableNameCD = "pipeline_execution_summary_cd";
   private String tableNameServiceAndInfra = "service_infra_info";
@@ -917,7 +917,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     long previousStartTime = getStartTimeOfPreviousInterval(startTime, numberOfDays);
 
     List<ServiceEntity> services =
-        ServiceEntityServiceImpl.getAllNonDeletedServices(accountIdentifier, orgIdentifier, projectIdentifier, sort);
+        serviceEntityServiceImpl.getAllNonDeletedServices(accountIdentifier, orgIdentifier, projectIdentifier, sort);
 
     List<WorkloadDeploymentInfo> workloadDeploymentInfoList = getDashboardWorkloadDeployment(
         accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime, previousStartTime, null)
@@ -1797,13 +1797,14 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     Map<String, String> envIdToEnvNameMap = new HashMap<>();
     Map<String, String> buildIdToArtifactPathMap = new HashMap<>();
 
-    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList =
-        instanceDashboardService.getActiveServiceInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    List<ActiveServiceInstanceInfo> activeServiceInstanceGitOpsInfoList =
-        instanceDashboardService.getActiveServiceGitOpsInstanceInfo(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
-    activeServiceInstanceInfoList.addAll(activeServiceInstanceGitOpsInfoList);
+    List<ActiveServiceInstanceInfo> activeServiceInstanceInfoList;
+    if (!Boolean.TRUE.equals(isGitopsEnabled(accountIdentifier, orgIdentifier, projectIdentifier, serviceId))) {
+      activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    } else {
+      activeServiceInstanceInfoList = instanceDashboardService.getActiveServiceGitOpsInstanceInfo(
+          accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+    }
 
     activeServiceInstanceInfoList.forEach(activeServiceInstanceInfo -> {
       final String infraIdentifier = activeServiceInstanceInfo.getInfraIdentifier();
@@ -2077,7 +2078,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   public io.harness.ng.overview.dto.ServiceHeaderInfo getServiceHeaderInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     Optional<ServiceEntity> service =
-        ServiceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
+        serviceEntityServiceImpl.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, false);
     ServiceEntity serviceEntity = service.get();
     Set<String> deploymentTypes =
         getDeploymentType(accountIdentifier, orgIdentifier, projectIdentifier, Arrays.asList(serviceId))
@@ -2250,5 +2251,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       }
     }
     return activeServiceDeploymentsInfoList;
+  }
+
+  private Boolean isGitopsEnabled(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
+    return serviceEntityServiceImpl.getService(accountIdentifier, orgIdentifier, projectIdentifier, serviceId)
+        .get()
+        .getGitOpsEnabled();
   }
 }

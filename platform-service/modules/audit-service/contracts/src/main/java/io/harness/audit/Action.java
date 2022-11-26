@@ -17,6 +17,7 @@ public enum Action {
   UPDATE,
   RESTORE,
   DELETE,
+  FORCE_DELETE,
   UPSERT,
   INVITE,
   RESEND_INVITE,

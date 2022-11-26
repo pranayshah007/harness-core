@@ -20,11 +20,11 @@ import io.harness.exception.NestedExceptionUtils;
 
 import software.wings.helpers.ext.azure.AksClusterCredentials;
 
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.containerservice.models.KubernetesCluster;
 import groovy.lang.Singleton;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -37,10 +37,10 @@ public class AzureKubernetesClientImpl extends AzureClient implements AzureKuber
     if (isBlank(subscriptionId)) {
       throw new IllegalArgumentException(SUBSCRIPTION_ID_NULL_VALIDATION_MSG);
     }
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing Kubernetes clusters for subscriptionId {}", subscriptionId);
-    return new ArrayList<>(azure.kubernetesClusters().list());
+    return azure.kubernetesClusters().list().stream().collect(Collectors.toList());
   }
 
   @Override

@@ -132,7 +132,7 @@ public class PauseAllInterruptHandlerTest extends OrchestrationTestBase {
 
     when(interruptService.fetchActiveInterrupts(interrupt.getPlanExecutionId())).thenReturn(activeInterrupts);
 
-    when(planExecutionService.get(interrupt.getPlanExecutionId())).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId())).thenReturn(planExecution);
     when(planExecutionService.updateStatus(interrupt.getPlanExecutionId(), Status.PAUSING)).thenReturn(null);
 
     when(interruptService.markProcessed(any(), eq(Interrupt.State.PROCESSING))).thenReturn(activeInterrupts.get(0));

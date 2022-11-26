@@ -8,6 +8,9 @@
 package io.harness.cdng.creator;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.join;
+
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,6 +30,7 @@ import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo.CDStageModuleInfoBuilder;
 import io.harness.cdng.pipeline.executions.beans.FreezeExecutionInfo;
 import io.harness.cdng.pipeline.executions.beans.FreezeExecutionSummary;
+import io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary.ArtifactsSummary;
@@ -60,11 +64,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
-@OwnedBy(HarnessTeam.PIPELINE)
+@OwnedBy(HarnessTeam.CDC)
 public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvider {
   @Inject OutcomeService outcomeService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
@@ -142,7 +145,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         && StatusUtils.isFinalStatus(status);
   }
 
-  private boolean isGitopsNodeAndCompleted(StepType stepType, Status status) {
+  private boolean isGitOpsNodeAndCompleted(StepType stepType, Status status) {
     return Objects.equals(stepType, GitopsClustersStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
   }
 
@@ -185,19 +188,19 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
             .infrastructureIdentifier(infrastructureOutcome.getInfraIdentifier())
             .infrastructureName(infrastructureOutcome.getInfraName());
       }
-    } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
+    } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
           ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
-        GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
-        gitopsOutcome.getClustersData()
+        GitopsClustersOutcome gitOpsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
+        gitOpsOutcome.getClustersData()
             .stream()
             .map(GitopsClustersOutcome.ClusterData::getEnvId)
             .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toSet())
             .forEach(cdPipelineModuleInfoBuilder::envIdentifier);
 
-        gitopsOutcome.getClustersData()
+        gitOpsOutcome.getClustersData()
             .stream()
             .map(GitopsClustersOutcome.ClusterData::getEnvGroupId)
             .filter(EmptyPredicate::isNotEmpty)
@@ -263,20 +266,29 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
                                                              .build());
         }
       });
-    } else if (isGitopsNodeAndCompleted(stepType, event.getStatus())) {
+    } else if (isGitOpsNodeAndCompleted(stepType, event.getStatus())) {
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
           event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
-        GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
-        // envId -> ClusterData
-        Map<String, GitopsClustersOutcome.ClusterData> envs = gitopsOutcome.getClustersData().stream().collect(
-            Collectors.toMap(GitopsClustersOutcome.ClusterData::getEnvId, Function.identity(), (k1, k2) -> k1));
-        if (envs.size() == 1) {
-          String envIdentifier = envs.keySet().iterator().next();
-          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
-                                                             .identifier(envIdentifier)
-                                                             .name(envs.get(envIdentifier).getEnvName())
-                                                             .build());
+        final Map<String, List<GitopsClustersOutcome.ClusterData>> clusterData = groupGitOpsClusters(optionalOutcome);
+
+        final GitOpsExecutionSummary gitOpsExecutionSummary = new GitOpsExecutionSummary();
+        clusterData.values().forEach(cd -> {
+          GitopsClustersOutcome.ClusterData data = cd.get(0);
+          if (isNotEmpty(data.getEnvGroupId())) {
+            gitOpsExecutionSummary.addSingleEnvironmentWithinEnvGroup(
+                data.getEnvGroupId(), data.getEnvGroupName(), data.getEnvId(), data.getEnvName());
+          } else if (isNotEmpty(data.getEnvId())) {
+            gitOpsExecutionSummary.addSingleEnvironment(data.getEnvId(), data.getEnvName());
+          }
+        });
+        cdStageModuleInfoBuilder.gitopsExecutionSummary(gitOpsExecutionSummary);
+
+        // to maintain backward compatibility, will be removed in future
+        if (clusterData.size() == 1) {
+          GitopsClustersOutcome.ClusterData cluster = clusterData.values().iterator().next().get(0);
+          cdStageModuleInfoBuilder.infraExecutionSummary(
+              InfraExecutionSummary.builder().identifier(cluster.getEnvId()).name(cluster.getEnvName()).build());
         }
       }
     } else if (isRollbackNodeAndCompleted(stepType, event.getStatus())) {
@@ -286,12 +298,19 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
     return cdStageModuleInfoBuilder.build();
   }
 
+  private Map<String, List<GitopsClustersOutcome.ClusterData>> groupGitOpsClusters(OptionalOutcome optionalOutcome) {
+    GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
+    // envId -> ClusterData
+    return gitopsOutcome.getClustersData().stream().collect(
+        Collectors.groupingBy(c -> join("/", defaultIfBlank(c.getEnvGroupId(), ""), c.getEnvId())));
+  }
+
   @Override
   public boolean shouldRun(OrchestrationEvent event) {
     StepType stepType = AmbianceUtils.getCurrentStepType(event.getAmbiance());
     return isServiceNodeAndCompleted(stepType, event.getStatus())
         || isInfrastructureNodeAndCompleted(stepType, event.getStatus())
-        || isGitopsNodeAndCompleted(stepType, event.getStatus())
+        || isGitOpsNodeAndCompleted(stepType, event.getStatus())
         || isRollbackNodeAndCompleted(stepType, event.getStatus());
   }
 }

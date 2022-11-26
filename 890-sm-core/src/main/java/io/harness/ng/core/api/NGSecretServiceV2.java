@@ -31,7 +31,8 @@ public interface NGSecretServiceV2 {
 
   Optional<Secret> get(IdentifierRef identifierRef);
 
-  boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier);
+  boolean delete(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, boolean forceDelete);
 
   Secret create(String accountIdentifier, SecretDTOV2 dto, boolean draft);
 

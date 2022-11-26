@@ -19,7 +19,7 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import com.microsoft.azure.AzureEnvironment;
+import com.azure.core.management.AzureEnvironment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;

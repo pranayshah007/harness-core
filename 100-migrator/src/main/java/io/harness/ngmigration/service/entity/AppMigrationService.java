@@ -21,7 +21,6 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ngmigration.beans.BaseEntityInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -41,6 +40,8 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.Application;
 import software.wings.beans.Application.ApplicationKeys;
 import software.wings.beans.EntityType;
+import software.wings.beans.Pipeline;
+import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
@@ -81,8 +82,6 @@ public class AppMigrationService extends NgMigrationService {
   @Inject private ServiceVariableService serviceVariableService;
   @Inject private TemplateImportService templateService;
 
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
-
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
     return null;
@@ -98,17 +97,16 @@ public class AppMigrationService extends NgMigrationService {
 
     Set<CgEntityId> children = new HashSet<>();
 
-    // For now we will not discover pipelines.
-    //    List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
-    //                                   .filter(PipelineKeys.accountId, application.getAccountId())
-    //                                   .filter(PipelineKeys.appId, appId)
-    //                                   .project(PipelineKeys.uuid, true)
-    //                                   .asList();
-    //    children.addAll(pipelines.stream()
-    //                        .map(Pipeline::getUuid)
-    //                        .distinct()
-    //                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
-    //                        .collect(Collectors.toSet()));
+    List<Pipeline> pipelines = hPersistence.createQuery(Pipeline.class)
+                                   .filter(PipelineKeys.accountId, application.getAccountId())
+                                   .filter(PipelineKeys.appId, appId)
+                                   .project(PipelineKeys.uuid, true)
+                                   .asList();
+    children.addAll(pipelines.stream()
+                        .map(Pipeline::getUuid)
+                        .distinct()
+                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
+                        .collect(Collectors.toSet()));
 
     List<Service> services = serviceResourceService.findServicesByAppInternal(appId);
     if (EmptyPredicate.isNotEmpty(services)) {
@@ -210,7 +208,7 @@ public class AppMigrationService extends NgMigrationService {
       Map<String, String> variableSpec =
           ImmutableMap.<String, String>builder()
               .put("valueType", "FIXED")
-              .put("fixedValue", (String) migratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
+              .put("fixedValue", (String) MigratorExpressionUtils.render(value, inputDTO.getCustomExpressions()))
               .build();
       Map<String, Object> variable =
           ImmutableMap.<String, Object>builder()
@@ -265,11 +263,5 @@ public class AppMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    return null;
   }
 }

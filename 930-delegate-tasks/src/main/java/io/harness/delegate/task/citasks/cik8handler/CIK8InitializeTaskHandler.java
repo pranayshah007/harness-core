@@ -114,6 +114,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
   private static final String HARNESS_IMAGE_SECRET = "HARNESS_IMAGE_SECRET";
   private static final String HARNESS_SECRETS_LIST = "HARNESS_SECRETS_LIST";
   private static final String HARNESS_ADDITIONAL_CERTS_DIR = "HARNESS_ADDITIONAL_CERTS_DIR";
+  private static final String HARNESS_ADDITIONAL_CERTS_PATH_LIST = "HARNESS_ADDITIONAL_CERTS_LIST";
   private static final String LITE_ENGINE_CERTS_DIR = "/harness-certs/";
 
   @Override
@@ -229,7 +230,8 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
         servicePodParams.getSelectorMap(), servicePodParams.getPorts());
   }
 
-  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams) {
+  private void createImageSecrets(CoreV1Api coreV1Api, String namespace, CIK8PodParams<CIK8ContainerParams> podParams)
+      throws IOException {
     log.info("Creating image secrets for pod name: {}", podParams.getName());
     Stopwatch timer = Stopwatch.createStarted();
     List<CIK8ContainerParams> containerParamsList = new ArrayList<>();
@@ -269,9 +271,14 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       return;
     }
 
+    List<String> allDestPaths = new ArrayList<>();
+
     for (Map.Entry<String, List<String>> entry : srcDestMappings.entrySet()) {
       String srcPath = entry.getKey();
       List<String> destPaths = entry.getValue();
+      for (String path : destPaths) {
+        allDestPaths.add(path);
+      }
       String content;
 
       // Get contents of the file to be mounted
@@ -337,6 +344,14 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
             new V1EnvVarBuilder().withName(HARNESS_ADDITIONAL_CERTS_DIR).withValue(LITE_ENGINE_CERTS_DIR).build();
         c.addEnvItem(certVar);
         continue;
+      }
+
+      if (!isEmpty(allDestPaths)) {
+        V1EnvVar certVar = new V1EnvVarBuilder()
+                               .withName(HARNESS_ADDITIONAL_CERTS_PATH_LIST)
+                               .withValue(String.join(",", allDestPaths))
+                               .build();
+        c.addEnvItem(certVar);
       }
 
       if (c.getImage().contains("kaniko")) {

@@ -7,7 +7,9 @@
 
 package io.harness.steps.custom;
 
+import static io.harness.eraro.ErrorCode.APPROVAL_REJECTION;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.NAMANG;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,6 +31,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
@@ -66,7 +69,7 @@ public class CustomApprovalStepTest extends CategoryTest {
   @Mock ApprovalInstanceService approvalInstanceService;
   @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
-
+  private static final String STATUS = "status";
   @InjectMocks private CustomApprovalStep customApprovalStep;
   private ILogStreamingStepClient logStreamingStepClient;
 
@@ -116,7 +119,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     ResponseData responseData =
         CustomApprovalResponseData.builder()
             .instanceId(UUID.randomUUID().toString())
-            .ticket(CustomApprovalTicketNG.builder().fields(ImmutableMap.of("status", "APPROVED")).build())
+            .ticket(CustomApprovalTicketNG.builder().fields(ImmutableMap.of(STATUS, "APPROVED")).build())
             .build();
 
     StepResponse stepResponse =
@@ -129,7 +132,7 @@ public class CustomApprovalStepTest extends CategoryTest {
     assertThat(stepResponse.getStepOutcomes().stream().findFirst().orElseThrow(IllegalStateException::new).getName())
         .isEqualTo("output");
     assertThat(stepResponse.getStepOutcomes().stream().findFirst().orElseThrow(IllegalStateException::new).getOutcome())
-        .isEqualTo(CustomApprovalOutcome.builder().outputVariables(ImmutableMap.of("status", "APPROVED")).build());
+        .isEqualTo(CustomApprovalOutcome.builder().outputVariables(ImmutableMap.of(STATUS, "APPROVED")).build());
   }
 
   @Test
@@ -158,5 +161,36 @@ public class CustomApprovalStepTest extends CategoryTest {
     customApprovalStep.handleAbort(ambiance, null, null);
     verify(approvalInstanceService).abortByNodeExecutionId(any());
     verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testAsyncResponseRejected() {
+    Ambiance ambiance = Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder().build()).build();
+    ApprovalInstance instance = CustomApprovalInstance.builder().build();
+    instance.setStatus(ApprovalStatus.REJECTED);
+    when(approvalInstanceService.get(anyString())).thenReturn(instance);
+    ResponseData responseData =
+        CustomApprovalResponseData.builder()
+            .instanceId(UUID.randomUUID().toString())
+            .ticket(CustomApprovalTicketNG.builder().fields(ImmutableMap.of(STATUS, "REJECTED")).build())
+            .build();
+
+    StepResponse stepResponse =
+        customApprovalStep.handleAsyncResponse(ambiance, null, ImmutableMap.of("xyz", responseData));
+    verify(logStreamingStepClient).closeAllOpenStreamsWithPrefix(any());
+    assertThat(stepResponse).isNotNull();
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.APPROVAL_REJECTED);
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getFailureTypesList())
+        .containsExactly(FailureType.APPROVAL_REJECTION);
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getMessage())
+        .isEqualTo("Approval Step has been Rejected");
+    assertThat(stepResponse.getFailureInfo().getFailureData(0).getCode()).isEqualTo(APPROVAL_REJECTION.name());
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    assertThat(stepResponse.getStepOutcomes().stream().findFirst().orElseThrow(IllegalStateException::new).getName())
+        .isEqualTo("output");
+    assertThat(stepResponse.getStepOutcomes().stream().findFirst().orElseThrow(IllegalStateException::new).getOutcome())
+        .isEqualTo(CustomApprovalOutcome.builder().outputVariables(ImmutableMap.of(STATUS, "REJECTED")).build());
   }
 }

@@ -15,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.data.validator.uuid.Uuid;
 import io.harness.rule.Owner;
 import io.harness.utils.UuidUtils;
 

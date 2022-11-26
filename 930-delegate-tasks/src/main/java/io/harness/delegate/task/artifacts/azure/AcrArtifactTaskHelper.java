@@ -33,6 +33,7 @@ public class AcrArtifactTaskHelper {
       ArtifactTaskParameters artifactTaskParameters, LogCallback executionLogCallback) {
     AcrArtifactDelegateRequest attributes = (AcrArtifactDelegateRequest) artifactTaskParameters.getAttributes();
     acrArtifactTaskHandler.decryptRequestDTOs(attributes);
+
     ArtifactTaskResponse artifactTaskResponse;
     switch (artifactTaskParameters.getArtifactTaskType()) {
       case GET_BUILDS:

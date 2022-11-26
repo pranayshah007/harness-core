@@ -24,9 +24,13 @@ import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskParameters;
 import io.harness.delegate.beans.ldap.NGLdapTestAuthenticationTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupFailureDetails;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.SecretManagementException;
+import io.harness.exception.TerraformSecretCleanupFailureException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
@@ -121,7 +125,6 @@ import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.ServiceNowConfig;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SlackMessage;
 import software.wings.beans.SlackMessageJSON;
@@ -611,8 +614,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformProvisionParameters.class, 5342);
     kryo.register(TerraformExecutionData.class, 5343);
     kryo.register(ScriptStateExecutionSummary.class, 5346);
-    kryo.register(ServiceVariable.class, 5359);
-    kryo.register(ServiceVariable.OverrideType.class, 5361);
     kryo.register(BambooTask.BambooExecutionResponse.class, 5374);
     kryo.register(HttpStateExecutionResponse.class, 5375);
     kryo.register(ElkLogFetchRequest.class, 5376);
@@ -1000,5 +1001,9 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(AWSPrometheusInfo.class, 90001);
     kryo.register(CustomSecretNGManagerConfig.class, 40114);
     kryo.register(NexusVersion.class, 40115);
+    kryo.register(TerraformSecretCleanupTaskParameters.class, 40116);
+    kryo.register(TerraformSecretCleanupTaskResponse.class, 40117);
+    kryo.register(TerraformSecretCleanupFailureException.class, 40118);
+    kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
   }
 }

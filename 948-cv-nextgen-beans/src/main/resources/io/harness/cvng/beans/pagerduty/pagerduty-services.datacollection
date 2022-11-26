@@ -1,4 +1,9 @@
-Var validationUrl = concat(Env:baseUrl, "services")
+Var nullObj = null
+Var validationUrl = concat(Env:baseUrl, "services?limit=1000")
+if Env:query != Var:nullObj {
+    Var queryString = concat("&query=", Env:query)
+    Var:validationUrl = concat(Var:validationUrl,Var:queryString)
+}
 Var results = sync-call(url=Var:validationUrl, header=Env:commonHeaders)
 Var services = []
 Var entry = extract(Var:results, $.services)

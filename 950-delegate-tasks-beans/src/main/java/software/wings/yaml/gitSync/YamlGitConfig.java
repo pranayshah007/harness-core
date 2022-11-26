@@ -13,7 +13,7 @@ import io.harness.beans.EmbeddedUser;
 
 import software.wings.beans.EntityType;
 import software.wings.beans.GitConfig;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.jersey.JsonViews;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;

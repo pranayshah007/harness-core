@@ -19,7 +19,6 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
-import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDetailsDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
@@ -27,17 +26,13 @@ import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObj
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV2Service;
-import io.harness.cvng.statemachine.entities.CompositeSLOMetricAnalysisState;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
-import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -53,7 +48,6 @@ import org.mockito.Spy;
 
 public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   @Spy @Inject private CompositeSLORecordServiceImpl sloRecordService;
-  @Inject private Clock clock;
   @Inject private HPersistence hPersistence;
   @Inject private ServiceLevelObjectiveV2Service serviceLevelObjectiveV2Service;
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -62,8 +56,6 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
-  private ServiceLevelIndicator serviceLevelIndicator;
-  private CompositeSLOMetricAnalysisState sloMetricAnalysisState;
   ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO;
   CompositeServiceLevelObjective compositeServiceLevelObjective;
   ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1;
@@ -75,7 +67,6 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
     MockitoAnnotations.initMocks(this);
-    SLIRecordServiceImpl.MAX_NUMBER_OF_POINTS = 5;
     MonitoredServiceDTO monitoredServiceDTO1 =
         builderFactory.monitoredServiceDTOBuilder().sources(MonitoredServiceDTO.Sources.builder().build()).build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
@@ -267,30 +258,6 @@ public class CompositeSLORecordServiceImplTest extends CvNextGenTestBase {
     assertThat(sloRecords1.get(4).getRunningBadCount()).isEqualTo(2.0);
     assertThat(sloRecords1.get(4).getRunningGoodCount()).isEqualTo(3.0);
     assertThat(sloRecords1.get(4).getSloVersion()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetGraphData_noData() {
-    assertThat(sloRecordService.getGraphData(compositeServiceLevelObjective, clock.instant(), clock.instant(), 10, 0)
-                   .getSloPerformanceTrend())
-        .isEmpty();
-  }
-
-  @Test
-  @Owner(developers = VARSHA_LALWANI)
-  @Category(UnitTests.class)
-  public void testGetGraphData_withAllStates() {
-    List<Double> runningGoodCount = Arrays.asList(0.75, 1.25, 1.5, 2.25, 2.75);
-    List<Double> runningBadCount = Arrays.asList(0.25, 0.75, 1.5, 1.75, 2.25);
-    createSLORecords(startTime, endTime, runningGoodCount, runningBadCount);
-    SLODashboardWidget.SLOGraphData sloGraphData = sloRecordService.getGraphData(compositeServiceLevelObjective,
-        startTime.minus(Duration.ofHours(1)), endTime.plus(Duration.ofMinutes(11)), 10, 0);
-    assertThat(sloGraphData.getSloPerformanceTrend()).hasSize(5);
-    assertThat(sloGraphData.getSloPerformanceTrend().get(0).getValue()).isEqualTo(75);
-    assertThat(sloGraphData.getErrorBudgetBurndown()).hasSize(5);
-    assertThat(sloGraphData.getErrorBudgetBurndown().get(0).getValue()).isEqualTo(97.5);
   }
 
   private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {

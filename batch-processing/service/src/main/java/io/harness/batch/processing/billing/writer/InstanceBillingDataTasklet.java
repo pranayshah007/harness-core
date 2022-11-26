@@ -221,7 +221,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
       });
       if (isNotEmpty(resourceIds)) {
         awsCustomBillingService.updateAwsEC2BillingDataCache(
-            new ArrayList<>(resourceIds), startTime, endTime, awsDataSetId);
+            new ArrayList<>(resourceIds), startTime, endTime, awsDataSetId, accountId);
       }
 
       if (isNotEmpty(eksFargateResourceIds)) {

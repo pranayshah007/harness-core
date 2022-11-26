@@ -65,6 +65,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import javax.cache.Cache;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +81,7 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
   @Inject @InjectMocks ExecutionInterruptReconServiceImpl executionInterruptReconService;
   @Inject DeploymentReconRecordRepository deploymentReconRecordRepository;
   @Inject private HPersistence persistence;
+  private Cache<String, DeploymentReconRecord> deploymentReconRecordCache;
   @Inject DeploymentExecutionEntity deploymentExecutionEntity;
   @Inject DeploymentStepExecutionEntity deploymentStepExecutionEntity;
   @Inject ExecutionInterruptEntity executionInterruptEntity;
@@ -548,8 +550,11 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
 
     persistence = mock(HPersistence.class);
     on(deploymentReconService).set("persistence", persistence);
+    on(deploymentReconRecordRepository).set("persistence", persistence);
 
-    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000, persistence)).isFalse();
+    assertThat(shouldPerformReconciliation(
+                   reconRecord, System.currentTimeMillis() - 1000, persistence, deploymentReconRecordRepository))
+        .isFalse();
 
     reconRecord = DeploymentReconRecord.builder()
                       .reconciliationStatus(ReconciliationStatus.IN_PROGRESS)
@@ -559,7 +564,8 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
     final UpdateOperations updateOperations = mock(UpdateOperations.class);
     when(persistence.createUpdateOperations(DeploymentReconRecord.class)).thenReturn(updateOperations);
     assertThat(shouldPerformReconciliation(reconRecord,
-                   System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL, persistence))
+                   System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL, persistence,
+                   deploymentReconRecordRepository))
         .isTrue();
 
     verify(persistence, times(1)).createUpdateOperations(DeploymentReconRecord.class);
@@ -570,14 +576,18 @@ public class DeploymentReconServiceImplTest extends WingsBaseTest {
                       .durationEndTs(System.currentTimeMillis() - 2 * DeploymentReconServiceHelper.COOL_DOWN_INTERVAL)
                       .build();
 
-    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis(), persistence)).isTrue();
+    assertThat(shouldPerformReconciliation(
+                   reconRecord, System.currentTimeMillis(), persistence, deploymentReconRecordRepository))
+        .isTrue();
 
     reconRecord = DeploymentReconRecord.builder()
                       .reconciliationStatus(ReconciliationStatus.SUCCESS)
                       .reconEndTs(System.currentTimeMillis() - 1000)
                       .durationEndTs(System.currentTimeMillis() - 1000)
                       .build();
-    assertThat(shouldPerformReconciliation(reconRecord, System.currentTimeMillis() - 1000, persistence)).isFalse();
+    assertThat(shouldPerformReconciliation(
+                   reconRecord, System.currentTimeMillis() - 1000, persistence, deploymentReconRecordRepository))
+        .isFalse();
   }
 
   @Test

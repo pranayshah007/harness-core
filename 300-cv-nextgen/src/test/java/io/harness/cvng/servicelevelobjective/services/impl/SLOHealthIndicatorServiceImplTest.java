@@ -29,7 +29,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
+import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -69,7 +69,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testupsert_insertSuccess() {
     ProjectParams projectParams = builderFactory.getProjectParams();
-    ServiceLevelObjective serviceLevelObjective = builderFactory.getServiceLevelObjectiveBuilder().build();
+    SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());
     sloHealthIndicatorService.upsert(serviceLevelObjective);
@@ -86,7 +86,7 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testupsert_insertSuccess_withDummySLIRecords() {
     ProjectParams projectParams = builderFactory.getProjectParams();
-    ServiceLevelObjective serviceLevelObjective = builderFactory.getServiceLevelObjectiveBuilder().build();
+    SimpleServiceLevelObjective serviceLevelObjective = builderFactory.getSimpleServiceLevelObjectiveBuilder().build();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = builderFactory.getServiceLevelIndicatorDTOBuilder();
     serviceLevelIndicatorDTO.setIdentifier(sliId);
     createAndSaveSLI(projectParams, serviceLevelIndicatorDTO, serviceLevelObjective.getIdentifier());

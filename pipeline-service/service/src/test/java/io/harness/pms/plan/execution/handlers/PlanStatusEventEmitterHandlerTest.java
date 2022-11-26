@@ -14,7 +14,6 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
@@ -40,27 +39,23 @@ public class PlanStatusEventEmitterHandlerTest extends PipelineServiceTestBase {
     NotificationObserver onFailureObserver = new OnFailureObserver();
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build();
 
-    doReturn(PlanExecution.builder().status(Status.SUCCEEDED).build())
-        .when(planExecutionService)
-        .get("planExecutionId");
+    doReturn(Status.SUCCEEDED).when(planExecutionService).getStatus("planExecutionId");
     planStatusEventEmitterHandler.getPlanExecutionSubject().register(onSuccessObserver);
     planStatusEventEmitterHandler.onPlanStatusUpdate(ambiance);
 
-    doReturn(PlanExecution.builder().status(Status.IGNORE_FAILED).build())
-        .when(planExecutionService)
-        .get("planExecutionId");
+    doReturn(Status.IGNORE_FAILED).when(planExecutionService).getStatus("planExecutionId");
     planStatusEventEmitterHandler.onPlanStatusUpdate(ambiance);
 
     planStatusEventEmitterHandler.getPlanExecutionSubject().unregister(onSuccessObserver);
 
     planStatusEventEmitterHandler.getPlanExecutionSubject().register(onPauseObserver);
-    doReturn(PlanExecution.builder().status(Status.PAUSED).build()).when(planExecutionService).get("planExecutionId");
+    doReturn(Status.PAUSED).when(planExecutionService).getStatus("planExecutionId");
     planStatusEventEmitterHandler.onPlanStatusUpdate(ambiance);
 
     planStatusEventEmitterHandler.getPlanExecutionSubject().unregister(onPauseObserver);
 
     planStatusEventEmitterHandler.getPlanExecutionSubject().register(onFailureObserver);
-    doReturn(PlanExecution.builder().status(Status.FAILED).build()).when(planExecutionService).get("planExecutionId");
+    doReturn(Status.FAILED).when(planExecutionService).getStatus("planExecutionId");
     StatusUtils.brokeStatuses().forEach(status -> planStatusEventEmitterHandler.onPlanStatusUpdate(ambiance));
   }
 

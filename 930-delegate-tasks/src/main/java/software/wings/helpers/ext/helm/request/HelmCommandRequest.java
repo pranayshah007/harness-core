@@ -113,7 +113,6 @@ public class HelmCommandRequest implements TaskParameters, ActivityAccess, Execu
                                       .build());
       }
     }
-
     Set<String> delegateSelectors = getDelegateSelectorsFromConfigurations();
     if (isNotEmpty(delegateSelectors)) {
       executionCapabilities.add(SelectorCapability.builder().selectors(delegateSelectors).build());

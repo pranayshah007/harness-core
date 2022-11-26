@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.YamlProcessingLogContext;
@@ -31,7 +32,6 @@ import io.harness.gitsync.core.service.YamlChangeSetService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.queue.QueueController;
 

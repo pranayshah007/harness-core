@@ -11,16 +11,25 @@ import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateMergeServiceHelper;
@@ -36,16 +45,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   @Mock private NGTemplateServiceHelper templateServiceHelper;
-
   @InjectMocks TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @InjectMocks TemplateMergeServiceHelper templateMergeServiceHelper;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
 
   private static final String ACCOUNT_ID = "accountId";
+
+  private String refreshedYaml;
 
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
@@ -57,12 +69,26 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
   }
 
   @Before
-  public void setup() throws IllegalAccessException {
+  public void setup() throws IllegalAccessException, IOException {
     on(templateMergeServiceHelper).set("templateServiceHelper", templateServiceHelper);
     on(templateInputsRefreshHelper).set("templateMergeServiceHelper", templateMergeServiceHelper);
     on(templateInputsRefreshHelper).set("featureFlagHelperService", featureFlagHelperService);
     on(templateInputsRefreshHelper).set("ngManagerReconcileClient", ngManagerReconcileClient);
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+
+    doAnswer(invocationOnMock -> {
+      NgManagerRefreshRequestDTO dto = invocationOnMock.getArgument(3, NgManagerRefreshRequestDTO.class);
+      refreshedYaml = dto.getYaml();
+      return ngManagerReconcileCall;
+    })
+        .when(ngManagerReconcileClient)
+        .refreshYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+
+    doAnswer(invocationOnMock
+        -> Response.success(ResponseDTO.newResponse(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
   }
 
   @Test
@@ -268,5 +294,54 @@ public class TemplateInputsRefreshHelperTest extends TemplateServiceTestBase {
     }
 
     assertThat(yamlNode).isEqualTo(expectedYamlNode);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testNGManagerReconcileResponse() throws IOException {
+    String accountId = ACCOUNT_ID;
+    String orgId = "default";
+    String projId = "test";
+
+    String filename = "stage-template-with-CDstage-incorrect-inputs.yaml";
+    String stageTemplate = readFile(filename);
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(accountId)
+                                        .orgIdentifier(orgId)
+                                        .projectIdentifier(projId)
+                                        .yaml(stageTemplate)
+                                        .identifier("t4")
+                                        .deleted(false)
+                                        .versionLabel("v1")
+                                        .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(accountId, orgId, projId, "t4", "v1", false))
+        .thenReturn(Optional.of(templateEntity));
+
+    String pipelineYamlFile = "pipeline-with-zero-runtime-inputs.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+
+    String expectedPipelineYamlFile = "pipeline-with-CDstage-correct-inputs.yaml";
+    String expectedPipelineYaml = readFile(expectedPipelineYamlFile);
+
+    mockNGManagerReconcileResponse(expectedPipelineYaml);
+
+    String refreshedYaml = templateInputsRefreshHelper.refreshTemplates(accountId, orgId, projId, pipelineYaml);
+
+    assertThat(refreshedYaml).isEqualTo(expectedPipelineYaml);
+  }
+
+  private void mockNGManagerReconcileResponse(String refreshedYaml) throws IOException {
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .refreshYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+
+    doReturn(
+        Response.success(ResponseDTO.newResponse(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
   }
 }

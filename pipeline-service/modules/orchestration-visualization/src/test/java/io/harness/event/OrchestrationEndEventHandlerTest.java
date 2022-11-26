@@ -59,8 +59,8 @@ public class OrchestrationEndEventHandlerTest extends OrchestrationVisualization
   public void setUp() {
     ExecutorService executorService = Mockito.mock(ExecutorService.class);
     OrchestrationEventLogRepository orchestrationEventLogRepository = mock(OrchestrationEventLogRepository.class);
-    orchestrationEndEventHandler = new OrchestrationEndGraphHandler(
-        executorService, planExecutionService, graphGenerationService, orchestrationEventLogRepository);
+    orchestrationEndEventHandler =
+        new OrchestrationEndGraphHandler(executorService, planExecutionService, graphGenerationService);
   }
 
   private static final ExecutionMetadata metadata =

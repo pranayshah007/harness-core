@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.stepinfo.ACRStepInfo;
 import io.harness.beans.steps.stepinfo.ActionStepInfo;
 import io.harness.beans.steps.stepinfo.BackgroundStepInfo;
+import io.harness.beans.steps.stepinfo.BitriseStepInfo;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -44,17 +45,27 @@ import java.util.List;
               SecurityStepInfo.class, RestoreCacheGCSStepInfo.class, RestoreCacheS3StepInfo.class, RunStepInfo.class,
               SaveCacheGCSStepInfo.class, SaveCacheS3StepInfo.class, UploadToGCSStepInfo.class,
               UploadToS3StepInfo.class, UploadToArtifactoryStepInfo.class, RunTestsStepInfo.class, ACRStepInfo.class,
-              GitCloneStepInfo.class, BackgroundStepInfo.class, ActionStepInfo.class})
+              GitCloneStepInfo.class, BackgroundStepInfo.class, ActionStepInfo.class, BitriseStepInfo.class})
 @OwnedBy(CI)
 public interface CIStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;
   int MAX_RETRY = 5;
   long DEFAULT_TIMEOUT = Duration.ofHours(2).toMillis();
+  int DEFAULT_RETRY = 1;
 
   @JsonIgnore TypeInfo getNonYamlInfo();
-  @JsonIgnore int getRetry();
-  @JsonIgnore String getName();
-  @JsonIgnore String getIdentifier();
+  @JsonIgnore
+  default int getRetry() {
+    return DEFAULT_RETRY;
+  }
+  @JsonIgnore
+  default String getName() {
+    return "";
+  }
+  @JsonIgnore
+  default String getIdentifier() {
+    return "";
+  }
   @JsonIgnore
   default long getDefaultTimeout() {
     return DEFAULT_TIMEOUT;

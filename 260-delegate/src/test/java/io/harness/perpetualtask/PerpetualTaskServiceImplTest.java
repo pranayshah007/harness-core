@@ -532,7 +532,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
     PerpetualTaskRecord resultPerpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
 
     assertThat(result).isEqualTo(true);
-    assertThat(resultPerpetualTaskRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(resultPerpetualTaskRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
     assertThat(resultPerpetualTaskRecord.getUnassignedReason())
         .isEqualTo(PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK);
     assertThat(resultPerpetualTaskRecord.getFailedExecutionCount()).isEqualTo(5);
@@ -951,7 +951,7 @@ public class PerpetualTaskServiceImplTest extends WingsBaseTest {
 
     PerpetualTaskRecord updatedPTRecord = perpetualTaskRecordDao.getTask(taskId);
 
-    assertThat(updatedPTRecord.getState()).isEqualTo(PerpetualTaskState.TASK_UNASSIGNED);
+    assertThat(updatedPTRecord.getState()).isEqualTo(PerpetualTaskState.TASK_NON_ASSIGNABLE);
     assertThat(updatedPTRecord.getUnassignedReason())
         .isEqualTo(PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK);
     assertThat(updatedPTRecord.getFailedExecutionCount()).isEqualTo(0);

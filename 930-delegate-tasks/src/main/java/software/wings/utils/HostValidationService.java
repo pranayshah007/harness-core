@@ -13,8 +13,8 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.HostReachabilityInfo;
 import software.wings.beans.HostValidationResponse;
 import software.wings.beans.SSHVaultConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.DelegateTaskType;
 
 import java.util.List;

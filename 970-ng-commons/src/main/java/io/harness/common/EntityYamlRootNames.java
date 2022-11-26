@@ -26,6 +26,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -144,6 +145,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String ACTION_STEP = "Action";
+  public static final String BITRISE_STEP = "Bitrise";
 
   public static final String NG_FILE = "NgFile";
   public static final String QUEUE = "Lock";
@@ -179,4 +181,8 @@ public class EntityYamlRootNames {
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  public static final String TERRAGRUNT_PLAN = "TerragruntPlan";
+  public static final String TERRAGRUNT_APPLY = "TerragruntApply";
+  public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
 }

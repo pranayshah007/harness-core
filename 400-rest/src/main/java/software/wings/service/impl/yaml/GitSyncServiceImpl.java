@@ -443,32 +443,32 @@ public class GitSyncServiceImpl implements GitSyncService {
 
   @Override
   public boolean deleteGitCommits(List<String> gitFileActivitySummaryIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivitySummary.class)
-                                       .filter(GitFileActivitySummaryKeys.accountId, accountId)
-                                       .field(GitFileActivitySummaryKeys.uuid)
-                                       .in(gitFileActivitySummaryIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.uuid)
+                                               .in(gitFileActivitySummaryIds));
   }
 
   public boolean deleteGitCommitsBeforeTime(long expiryTime, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivitySummary.class)
-                                       .filter(GitFileActivitySummaryKeys.accountId, accountId)
-                                       .field(GitFileActivitySummaryKeys.createdAt)
-                                       .lessThan(expiryTime));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivitySummary.class)
+                                               .filter(GitFileActivitySummaryKeys.accountId, accountId)
+                                               .field(GitFileActivitySummaryKeys.createdAt)
+                                               .lessThan(expiryTime));
   }
 
   @Override
   public boolean deleteGitActivity(List<String> gitFileActivityIds, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivity.class)
-                                       .filter(GitFileActivityKeys.accountId, accountId)
-                                       .field(GitFileActivityKeys.uuid)
-                                       .in(gitFileActivityIds));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.uuid)
+                                               .in(gitFileActivityIds));
   }
   @Override
   public boolean deleteGitActivityBeforeTime(long time, String accountId) {
-    return wingsPersistence.delete(wingsPersistence.createQuery(GitFileActivity.class)
-                                       .filter(GitFileActivityKeys.accountId, accountId)
-                                       .field(GitFileActivityKeys.createdAt)
-                                       .lessThan(time));
+    return wingsPersistence.deleteOnServer(wingsPersistence.createQuery(GitFileActivity.class)
+                                               .filter(GitFileActivityKeys.accountId, accountId)
+                                               .field(GitFileActivityKeys.createdAt)
+                                               .lessThan(time));
   }
 
   private void populateConnectorNameInGitFileActivitySummaries(

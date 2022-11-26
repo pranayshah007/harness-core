@@ -38,8 +38,8 @@ public class SecretsImportService implements ImportService {
   @Inject SecretManagerConfigService secretManagerConfigService;
   @Inject DiscoveryService discoveryService;
 
-  private static final Set<EncryptionType> SUPPORTED_SECRET_MANAGERS =
-      Sets.newHashSet(EncryptionType.VAULT, EncryptionType.LOCAL, EncryptionType.AWS_SECRETS_MANAGER);
+  private static final Set<EncryptionType> SUPPORTED_SECRET_MANAGERS = Sets.newHashSet(EncryptionType.VAULT,
+      EncryptionType.LOCAL, EncryptionType.AWS_SECRETS_MANAGER, EncryptionType.GCP_SECRETS_MANAGER);
 
   public DiscoveryResult discover(String authToken, ImportDTO importDTO) {
     try {

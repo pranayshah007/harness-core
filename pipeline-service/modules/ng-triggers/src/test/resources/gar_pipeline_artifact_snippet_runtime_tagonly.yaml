@@ -1,0 +1,23 @@
+pipeline:
+  name: pipeline
+  identifier: pipeline
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: GoogleArtifactRegistry
+                    spec:
+                      connectorRef: account.conn
+                      project: cd-play
+                      region: us-south1
+                      repositoryName: vivek
+                      package: mongo
+                      version: <+input>

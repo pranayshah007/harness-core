@@ -11,6 +11,7 @@ import static io.harness.eraro.ErrorCode.GCP_SECRET_OPERATION_ERROR;
 import static io.harness.govern.IgnoreThrowable.ignoredOnPurpose;
 import static io.harness.rule.OwnerRule.PIYUSH;
 import static io.harness.rule.OwnerRule.SHREYAS;
+import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -284,5 +285,16 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
     when(listSecretsPagedResponse.iterateAll()).thenReturn(secrets);
     assertThat(gcpSecretsManagerEncryptor.validateSecretManagerConfiguration(accountId, gcpSecretsManagerConfig))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void test_RenameSecret_NoChange() {
+    when(gcpSecretsManagerEncryptor.renameSecret(any(), any(SecretText.class), any(), any())).thenCallRealMethod();
+    EncryptedRecord existingRecord = EncryptedRecordData.builder().name(secretName).build();
+    EncryptedRecord updatedRecord = gcpSecretsManagerEncryptor.renameSecret(
+        accountId, SecretText.builder().name(secretName).build(), existingRecord, gcpSecretsManagerConfig);
+    assertThat(updatedRecord).isEqualTo(existingRecord);
   }
 }

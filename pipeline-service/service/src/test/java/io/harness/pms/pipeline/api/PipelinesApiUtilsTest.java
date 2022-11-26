@@ -11,6 +11,7 @@ import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,15 +22,17 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperD
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
-import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
 
 import java.util.ArrayList;
@@ -131,21 +134,27 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testGetPipelines() {
-    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO =
-        PMSPipelineSummaryResponseDTO.builder()
-            .identifier(slug)
-            .name(name)
-            .createdAt(123456L)
-            .lastUpdatedAt(987654L)
-            .executionSummaryInfo(ExecutionSummaryInfoDTO.builder().deployments(Collections.singletonList(1)).build())
-            .storeType(StoreType.INLINE)
-            .build();
+    PMSPipelineSummaryResponseDTO pmsPipelineSummaryResponseDTO = PMSPipelineSummaryResponseDTO.builder()
+                                                                      .identifier(slug)
+                                                                      .name(name)
+                                                                      .createdAt(123456L)
+                                                                      .lastUpdatedAt(987654L)
+                                                                      .storeType(StoreType.INLINE)
+                                                                      .build();
     PipelineListResponseBody listResponseBody = PipelinesApiUtils.getPipelines(pmsPipelineSummaryResponseDTO);
     assertEquals(listResponseBody.getCreated().longValue(), 123456L);
     assertEquals(listResponseBody.getUpdated().longValue(), 987654L);
     assertEquals(listResponseBody.getSlug(), slug);
     assertEquals(listResponseBody.getName(), name);
     assertEquals(listResponseBody.getStoreType(), StoreTypeEnum.INLINE);
-    assertEquals(listResponseBody.getExecutionSummary().getDeploymentsCount().get(0).intValue(), 1);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testBuildPipelineValidationResponseBody() {
+    PipelineValidationEvent event = PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build();
+    PipelineValidationResponseBody responseBody = PipelinesApiUtils.buildPipelineValidationResponseBody(event);
+    assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
   }
 }

@@ -1,0 +1,15 @@
+infrastructureDefinition:
+  name: Infra1
+  identifier: Infra1
+  description: ""
+  tags: {}
+  orgIdentifier: default
+  projectIdentifier: TcSvcOverrideTest
+  environmentRef: EnvAllRuntimeInput
+  deploymentType: Kubernetes
+  type: KubernetesDirect
+  spec:
+    connectorRef: HarnessGitRepo
+    namespace: default
+    releaseName: release-<+INFRA_KEY>
+  allowSimultaneousDeployments: false

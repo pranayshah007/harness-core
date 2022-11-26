@@ -32,7 +32,6 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
-import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -56,8 +55,9 @@ import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
+import io.harness.pms.pipeline.filters.PMSPipelineFilterHelper;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
@@ -99,11 +99,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PMSPipelineRepository pmsPipelineRepository;
   @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
   @Inject private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
+
+  @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
+
+  @Inject private final PipelineGovernanceService pipelineGovernanceService;
   @Inject private final PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
   @Inject private final GitSyncSdkService gitSyncSdkService;
   @Inject private final CommonStepInfo commonStepInfo;
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
-  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private final PipelineSettingsService pipelineSettingsService;
 
@@ -118,7 +121,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   private static final String REPO_LIST_SIZE_EXCEPTION = "The size of unique repository list is greater than [%d]";
 
   @Override
-  public PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity) {
+  public PipelineCRUDResult validateAndCreatePipeline(
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails) {
     checkAndThrowIfLimitReached(pipelineEntity.getAccountIdentifier());
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Creating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
@@ -127,7 +131,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
     try {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
@@ -187,7 +192,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
             clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
 
-    PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = validateAndCreatePipeline(destPipelineEntity, false);
     GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (destGovernanceMetadata.getDeny()) {
       return PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build();
@@ -203,11 +208,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @NotNull
   private PipelineEntity getSourcePipelineEntity(ClonePipelineDTO clonePipelineDTO, String accountId) {
     Optional<PipelineEntity> sourcePipelineEntity =
-        getAndValidatePipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
+        getPipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
             clonePipelineDTO.getSourceConfig().getProjectIdentifier(),
-            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false);
+            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false, false);
 
-    if (!sourcePipelineEntity.isPresent()) {
+    if (sourcePipelineEntity.isEmpty()) {
       log.error(String.format("Pipeline with id [%s] in org [%s] in project [%s] is not present or deleted",
           clonePipelineDTO.getSourceConfig().getPipelineIdentifier(),
           clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
@@ -224,9 +229,16 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        getPipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false);
-    if (!optionalPipelineEntity.isPresent()) {
+    return getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier,
+      String projectIdentifier, String identifier, boolean deleted, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
+    Optional<PipelineEntity> optionalPipelineEntity = getPipeline(
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted, false, loadFromFallbackBranch, loadFromCache);
+    if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
@@ -244,21 +256,30 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
               .build();
       throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO);
     }
-    pmsPipelineServiceHelper.validatePipelineFromRemote(pipelineEntity);
+    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
     return optionalPipelineEntity;
   }
 
   @Override
   public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
       String identifier, boolean deleted, boolean getMetadataOnlyIfApplicable) {
+    return getPipeline(
+        accountId, orgIdentifier, projectIdentifier, identifier, deleted, getMetadataOnlyIfApplicable, false, false);
+  }
+
+  @Override
+  public Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache) {
     Optional<PipelineEntity> optionalPipelineEntity;
+    long start = System.currentTimeMillis();
     try {
       if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
         optionalPipelineEntity =
             pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, identifier, !deleted);
       } else {
-        optionalPipelineEntity = pmsPipelineRepository.find(
-            accountId, orgIdentifier, projectIdentifier, identifier, !deleted, getMetadataOnlyIfApplicable);
+        optionalPipelineEntity = pmsPipelineRepository.find(accountId, orgIdentifier, projectIdentifier, identifier,
+            !deleted, getMetadataOnly, loadFromFallbackBranch, loadFromCache);
       }
     } catch (ExplanationException | HintException | ScmException e) {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
@@ -267,8 +288,11 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving pipeline [%s]: %s", identifier, ExceptionUtils.getMessage(e)));
+    } finally {
+      log.info("[PMS_PipelineService] get Pipeline took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new EntityNotFoundException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgIdentifier, projectIdentifier, identifier));
     }
@@ -276,7 +300,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType) {
+  public PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails) {
     if (pipelineEntity.getIsDraft() != null && pipelineEntity.getIsDraft()) {
       log.info("Updating Draft Pipeline with identifier: {}", pipelineEntity.getIdentifier());
       PipelineEntity updatedEntity = updatePipelineWithoutValidation(pipelineEntity, changeType);
@@ -285,7 +310,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
     if (governanceMetadata.getDeny()) {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }
@@ -313,7 +339,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     Optional<PipelineEntity> optionalOriginalEntity =
         pmsPipelineRepository.findForOldGitSync(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
             pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(), true);
-    if (!optionalOriginalEntity.isPresent()) {
+    if (optionalOriginalEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier()));
     }
@@ -338,9 +364,10 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
 
     Optional<PipelineEntity> optionalPipelineEntity;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(null, false)) {
+      // Get and validate pipeline only for old git exp full sync
       optionalPipelineEntity = getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     }
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(
           PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(orgId, projectId, pipelineId));
     }
@@ -414,8 +441,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public boolean markEntityInvalid(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, String invalidYaml) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        getAndValidatePipeline(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
-    if (!optionalPipelineEntity.isPresent()) {
+        getPipeline(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false, false);
+    if (optionalPipelineEntity.isEmpty()) {
       log.warn(String.format(
           "Marking pipeline [%s] as invalid failed as it does not exist or has been deleted", identifier));
       return false;
@@ -451,7 +478,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> optionalPipelineEntity =
         pmsPipelineRepository.findForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
-    if (!optionalPipelineEntity.isPresent()) {
+    if (optionalPipelineEntity.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
@@ -600,13 +627,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   public String fetchExpandedPipelineJSON(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     Optional<PipelineEntity> pipelineEntityOptional =
-        getAndValidatePipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
-    if (!pipelineEntityOptional.isPresent()) {
+        getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
+    if (pipelineEntityOptional.isEmpty()) {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
 
-    return pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(
+    return pipelineGovernanceService.fetchExpandedPipelineJSONFromYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineEntityOptional.get().getYaml(), false);
   }
 

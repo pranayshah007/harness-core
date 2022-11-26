@@ -18,8 +18,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.settings.SettingValue;

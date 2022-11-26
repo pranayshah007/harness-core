@@ -97,10 +97,10 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepGroupElementConfig;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.contracts.triggers.ParsedPayload;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -174,16 +174,15 @@ public class IntegrationStageUtils {
 
   public static ExecutionSource buildExecutionSource(ExecutionTriggerInfo executionTriggerInfo,
       TriggerPayload triggerPayload, String identifier, ParameterField<Build> parameterFieldBuild,
-      String connectorIdentifier, ConnectorUtils connectorUtils, PlanCreationContextValue planCreationContextValue,
-      CodeBase codeBase) {
+      String connectorIdentifier, ConnectorUtils connectorUtils, PlanCreationContext ctx, CodeBase codeBase) {
     if (!executionTriggerInfo.getIsRerun()) {
       if (executionTriggerInfo.getTriggerType() == TriggerType.MANUAL
           || executionTriggerInfo.getTriggerType() == TriggerType.SCHEDULER_CRON) {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContext(connectorIdentifier, connectorUtils, planCreationContextValue,
-                parsedPayload, codeBase, triggerPayload.getVersion())) {
+        if (treatWebhookAsManualExecutionWithContext(
+                connectorIdentifier, connectorUtils, ctx, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
 
@@ -197,8 +196,8 @@ public class IntegrationStageUtils {
         return handleManualExecution(parameterFieldBuild, identifier);
       } else if (executionTriggerInfo.getRerunInfo().getRootTriggerType() == TriggerType.WEBHOOK) {
         ParsedPayload parsedPayload = triggerPayload.getParsedPayload();
-        if (treatWebhookAsManualExecutionWithContext(connectorIdentifier, connectorUtils, planCreationContextValue,
-                parsedPayload, codeBase, triggerPayload.getVersion())) {
+        if (treatWebhookAsManualExecutionWithContext(
+                connectorIdentifier, connectorUtils, ctx, parsedPayload, codeBase, triggerPayload.getVersion())) {
           return handleManualExecution(parameterFieldBuild, identifier);
         }
         return WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
@@ -293,10 +292,10 @@ public class IntegrationStageUtils {
   }
 
   private static boolean treatWebhookAsManualExecutionWithContext(String connectorIdentifier,
-      ConnectorUtils connectorUtils, PlanCreationContextValue planCreationContextValue, ParsedPayload parsedPayload,
-      CodeBase codeBase, long version) {
-    BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(planCreationContextValue.getAccountIdentifier(),
-        planCreationContextValue.getOrgIdentifier(), planCreationContextValue.getProjectIdentifier());
+      ConnectorUtils connectorUtils, PlanCreationContext ctx, ParsedPayload parsedPayload, CodeBase codeBase,
+      long version) {
+    BaseNGAccess baseNGAccess = IntegrationStageUtils.getBaseNGAccess(
+        ctx.getAccountIdentifier(), ctx.getOrgIdentifier(), ctx.getProjectIdentifier());
 
     ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(baseNGAccess, connectorIdentifier);
     return treatWebhookAsManualExecution(connectorDetails, codeBase, parsedPayload, version);

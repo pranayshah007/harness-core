@@ -15,6 +15,8 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIterator;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistentIterable;
@@ -29,37 +31,42 @@ import software.wings.service.intfc.AccessRequestService;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 
 @OwnedBy(HarnessTeam.PL)
 @TargetModule(_970_RBAC_CORE)
-public class AccessRequestHandler implements Handler<AccessRequest> {
-  private static final int ACCESS_REQUEST_CHECK_INTERVAL = 15;
-
+public class AccessRequestHandler extends IteratorPumpModeHandler implements Handler<AccessRequest> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccessRequestService accessRequestService;
   @Inject private MorphiaPersistenceProvider<AccessRequest> persistenceProvider;
   @Inject private AccountService accountService;
   private PersistenceIterator<PersistentIterable> accessRequestHandler;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("AccessRequestHandler")
-            .poolSize(2)
-            .interval(ofSeconds(5))
-            .build(),
-        AccessRequest.class,
-        MongoPersistenceIterator.<AccessRequest, MorphiaFilterExpander<AccessRequest>>builder()
-            .clazz(AccessRequest.class)
-            .filterExpander(query -> query.filter(AccessRequestKeys.accessActive, Boolean.TRUE))
-            .fieldName(AccessRequestKeys.nextIteration)
-            .targetInterval(ofSeconds(15))
-            .acceptableNoAlertDelay(ofSeconds(15))
-            .acceptableExecutionTime(ofSeconds(10))
-            .handler(this)
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator =
+        (MongoPersistenceIterator<AccessRequest, MorphiaFilterExpander<AccessRequest>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions, AccessRequest.class,
+                MongoPersistenceIterator.<AccessRequest, MorphiaFilterExpander<AccessRequest>>builder()
+                    .clazz(AccessRequest.class)
+                    .filterExpander(query -> query.filter(AccessRequestKeys.accessActive, Boolean.TRUE))
+                    .fieldName(AccessRequestKeys.nextIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofSeconds(15))
+                    .acceptableExecutionTime(ofSeconds(10))
+                    .handler(this)
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "AccessRequestHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

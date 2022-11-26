@@ -27,6 +27,7 @@ import software.wings.ngmigration.CgEntityNode;
 import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,7 @@ public class ValuesManifestRemoteStoreService implements NgManifestService {
   @Inject ManifestMigrationService manifestMigrationService;
 
   @Override
-  public ManifestConfigWrapper getManifestConfigWrapper(ApplicationManifest applicationManifest,
+  public List<ManifestConfigWrapper> getManifestConfigWrapper(ApplicationManifest applicationManifest,
       Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, NGYamlFile> migratedEntities,
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
@@ -52,12 +53,13 @@ public class ValuesManifestRemoteStoreService implements NgManifestService {
                     .spec(manifestMigrationService.getGitStore(gitFileConfig, entitySpec, connector))
                     .build()))
             .build();
-    return ManifestConfigWrapper.builder()
-        .manifest(ManifestConfig.builder()
-                      .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
-                      .type(ManifestConfigType.VALUES)
-                      .spec(valuesManifest)
-                      .build())
-        .build();
+    return Collections.singletonList(
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder()
+                          .identifier(MigratorUtility.generateIdentifier(applicationManifest.getUuid()))
+                          .type(ManifestConfigType.VALUES)
+                          .spec(valuesManifest)
+                          .build())
+            .build());
   }
 }

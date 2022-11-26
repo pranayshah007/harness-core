@@ -9,10 +9,12 @@ package io.harness.template.helpers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
 import static io.harness.pms.merger.helpers.MergeHelper.mergeInputSetFormatYamlToOriginYaml;
 import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 import static io.harness.template.beans.NGTemplateConstants.*;
 
+import io.harness.NgAutoLogContextForMethod;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +27,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
+import io.harness.logging.AutoLogContext;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
@@ -84,16 +87,24 @@ public class TemplateMergeServiceHelper {
   // Gets the Template Entity linked to a YAML
   public TemplateEntityGetResponse getLinkedTemplateEntity(
       String accountId, String orgId, String projectId, JsonNode yaml, Map<String, TemplateEntity> templateCacheMap) {
-    String identifier = yaml.get(TEMPLATE_REF).asText();
-    String versionLabel = "";
-    String versionMarker = STABLE_VERSION;
-    if (yaml.get(TEMPLATE_VERSION_LABEL) != null) {
-      versionLabel = yaml.get(TEMPLATE_VERSION_LABEL).asText();
-      versionMarker = versionLabel;
+    long start = System.currentTimeMillis();
+    try (AutoLogContext ignore1 =
+             new NgAutoLogContextForMethod(projectId, orgId, accountId, "getLinkedTemplateEntity", OVERRIDE_NESTS);) {
+      log.info("[TemplateService] Fetching Template from project {}, org {}, account {}", projectId, orgId, accountId);
+      String identifier = yaml.get(TEMPLATE_REF).asText();
+      String versionLabel = "";
+      String versionMarker = STABLE_VERSION;
+      if (yaml.get(TEMPLATE_VERSION_LABEL) != null) {
+        versionLabel = yaml.get(TEMPLATE_VERSION_LABEL).asText();
+        versionMarker = versionLabel;
+      }
+      TemplateEntity template = getLinkedTemplateEntityHelper(
+          accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker);
+      return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
+    } finally {
+      log.info("[TemplateService] Fetching Template from project {}, org {}, account {} took {}ms ", projectId, orgId,
+          accountId, System.currentTimeMillis() - start);
     }
-    TemplateEntity template = getLinkedTemplateEntityHelper(
-        accountId, orgId, projectId, identifier, versionLabel, templateCacheMap, versionMarker);
-    return new TemplateEntityGetResponse(template, NGTemplateDtoMapper.getEntityGitDetails(template));
   }
 
   // Gets the Template Entity linked to a YAML

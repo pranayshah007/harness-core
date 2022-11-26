@@ -7,7 +7,6 @@
 
 package io.harness.event;
 
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ALEXEI;
 import static io.harness.rule.OwnerRule.FERNANDOD;
@@ -41,6 +40,7 @@ import java.sql.Date;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.Map;
+import javax.cache.Cache;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +58,9 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
 
   @Mock private OrchestrationEventLogRepository repository;
   @Mock private Producer producer;
-  @Mock private OrchestrationLogConfiguration orchestrationLogConfiguration;
+  @Mock Cache<String, Long> orchestrationLogCache;
+  @Mock OrchestrationLogConfiguration orchestrationLogConfiguration;
+  ;
   @InjectMocks private OrchestrationLogPublisher publisher;
 
   @Before
@@ -66,8 +68,9 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
     FieldUtils.writeField(publisher, "producer", producer, true);
     FieldUtils.writeField(publisher, "orchestrationEventLogRepository", repository, true);
 
-    when(orchestrationLogConfiguration.isShouldUseBatching()).thenReturn(false);
     when(producer.send(any())).thenReturn(null);
+    when(orchestrationLogCache.get(any())).thenReturn(5L);
+    when(orchestrationLogConfiguration.getOrchestrationLogBatchSize()).thenReturn(1);
   }
 
   @Test
@@ -185,9 +188,7 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
 
     Message message = messageArgumentCaptor.getValue();
     assertThat(message.getData()).isEqualTo(orchestrationLogEvent.toByteString());
-    assertThat(message.getMetadataMap())
-        .isEqualTo(ImmutableMap.of("nodeExecutionId", emptyIfNull(nodeExecutionId), "planExecutionId", planExecutionId,
-            "eventType", eventType.name()));
+    assertThat(message.getMetadataMap()).isEqualTo(ImmutableMap.of("planExecutionId", planExecutionId));
   }
 
   private OrchestrationEventLog getOrchestrationEventLog(OrchestrationEventType eventType) {

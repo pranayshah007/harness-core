@@ -85,6 +85,11 @@ public class RecentExecutionsInfoHelper {
   the execution has ended. If the info is not there, it means this execution has been going on for too long
   3. make an update call to set this new recent executions list into the pipeline metadata
    */
+
+  /**
+   * @param ambiance
+   * @param planExecution -> planExecution has only entity metadata
+   */
   public void onExecutionUpdate(Ambiance ambiance, PlanExecution planExecution) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);

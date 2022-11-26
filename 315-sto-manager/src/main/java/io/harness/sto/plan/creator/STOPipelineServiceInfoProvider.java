@@ -119,7 +119,6 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
         .setName(stoStepType.getName())
         .setType(stoStepType.getName())
         .setFeatureFlag(stoStepType.getFeatureName().name())
-        .setFeatureRestrictionName(stoStepType.getFeatureName().name())
         .setStepMetaData(StepMetaData.newBuilder().addFolderPaths(stepCategory).build())
         .build();
   }

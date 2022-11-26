@@ -10,7 +10,6 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.BAD;
 import static io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState.GOOD;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -26,10 +25,12 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.params.PageParams;
+import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
+import io.harness.cvng.servicelevelobjective.beans.SLOConsumptionBreakdown;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardWidget;
@@ -45,6 +46,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveV2DTO;
 import io.harness.cvng.servicelevelobjective.beans.slospec.CompositeServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slospec.SimpleServiceLevelObjectiveSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.entities.AbstractServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.CompositeSLORecord;
 import io.harness.cvng.servicelevelobjective.entities.CompositeServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -52,6 +54,7 @@ import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIRecordParam;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.SimpleServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.CompositeSLORecordService;
+import io.harness.cvng.servicelevelobjective.services.api.GraphDataService;
 import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
@@ -86,6 +89,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
   @Inject private SLOErrorBudgetResetService sloErrorBudgetResetService;
   @Inject private CompositeSLORecordService sloRecordService;
+  @Inject private GraphDataService graphDataService;
   private Instant startTime;
   private Instant endTime;
   private String verificationTaskId;
@@ -319,7 +323,6 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
             builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
 
     MonitoredServiceDTO monitoredServiceDTO2 = builderFactory.monitoredServiceDTOBuilder()
-                                                   .sources(MonitoredServiceDTO.Sources.builder().build())
                                                    .serviceRef("service1")
                                                    .environmentRef("env1")
                                                    .identifier("service1_env1")
@@ -330,7 +333,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
         (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
     simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
-    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(generateUuid());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(healthSource.getIdentifier());
     simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
     SimpleServiceLevelObjective simpleServiceLevelObjective2 =
@@ -395,6 +398,89 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertCompositeSLOGraphData(clock.instant().minus(Duration.ofMinutes(10)),
         sloDashboardWidget.getSloPerformanceTrend(), sloDashboardWidget.getErrorBudgetBurndown(), runningGoodCount,
         runningBadCount, 8640);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSloDashboardDetail_CompositeSLO_withMonitoredServiceDetails() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO1.getSpec();
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier);
+    simpleServiceLevelObjectiveSpec.setHealthSourceRef(healthSource.getIdentifier());
+    simpleServiceLevelObjectiveDTO1.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1);
+    SimpleServiceLevelObjective simpleServiceLevelObjective1 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO1.getIdentifier());
+
+    MonitoredServiceDTO monitoredServiceDTO2 = builderFactory.monitoredServiceDTOBuilder()
+                                                   .serviceRef("service1")
+                                                   .environmentRef("env1")
+                                                   .identifier("service1_env1")
+                                                   .build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+    ServiceLevelObjectiveV2DTO simpleServiceLevelObjectiveDTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().identifier("sloIdentifier2").build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec2 =
+        (SimpleServiceLevelObjectiveSpec) simpleServiceLevelObjectiveDTO2.getSpec();
+    simpleServiceLevelObjectiveSpec2.setMonitoredServiceRef(monitoredServiceDTO2.getIdentifier());
+    simpleServiceLevelObjectiveSpec2.setHealthSourceRef(healthSource.getIdentifier());
+    simpleServiceLevelObjectiveDTO2.setSpec(simpleServiceLevelObjectiveSpec2);
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2);
+    SimpleServiceLevelObjective simpleServiceLevelObjective2 =
+        (SimpleServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+            builderFactory.getProjectParams(), simpleServiceLevelObjectiveDTO2.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                                            .weightagePercentage(75.0)
+                                            .accountId(simpleServiceLevelObjective1.getAccountId())
+                                            .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                                            .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef(simpleServiceLevelObjective2.getIdentifier())
+                                  .weightagePercentage(25.0)
+                                  .accountId(simpleServiceLevelObjective2.getAccountId())
+                                  .orgIdentifier(simpleServiceLevelObjective2.getOrgIdentifier())
+                                  .projectIdentifier(simpleServiceLevelObjective2.getProjectIdentifier())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO);
+    compositeServiceLevelObjective = (CompositeServiceLevelObjective) serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO.getIdentifier());
+
+    SLODashboardWidget sloDashboardWidget =
+        sloDashboardService
+            .getSloDashboardDetail(builderFactory.getProjectParams(), compositeServiceLevelObjective.getIdentifier(),
+                startTime.toEpochMilli(), endTime.toEpochMilli())
+            .getSloDashboardWidget();
+    assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(compositeServiceLevelObjective.getIdentifier());
+    assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjectiveV2DTO.getTags());
+    assertThat(sloDashboardWidget.getSloTargetType())
+        .isEqualTo(compositeServiceLevelObjective.getSloTarget().getType());
+    List<SLODashboardWidget.MonitoredServiceDetail> monitoredServiceDetails =
+        sloDashboardWidget.getMonitoredServiceDetails();
+    assertThat(monitoredServiceDetails.size()).isEqualTo(2);
+    SLODashboardWidget.MonitoredServiceDetail monitoredServiceDetail = monitoredServiceDetails.get(0);
+    assertThat(monitoredServiceDetail.getMonitoredServiceName()).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(monitoredServiceDetail.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceDTO.getIdentifier());
+    assertThat(monitoredServiceDetail.getServiceIdentifier()).isEqualTo(monitoredServiceDTO.getServiceRef());
+    assertThat(monitoredServiceDetail.getEnvironmentIdentifier()).isEqualTo(monitoredServiceDTO.getEnvironmentRef());
+    assertThat(monitoredServiceDetail.getHealthSourceIdentifier()).isEqualTo(healthSource.getIdentifier());
   }
 
   @Test
@@ -671,6 +757,117 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(pageResponse.getTotalItems()).isEqualTo(2);
     List<SLOHealthListView> sloDashboardWidgets = pageResponse.getContent();
     assertThat(sloDashboardWidgets).hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testGetSLOConsumptionBreakdownView() {
+    String monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    MonitoredServiceDTO monitoredServiceDTO1 = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO1);
+
+    MonitoredServiceDTO monitoredServiceDTO2 =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier + '1').build();
+    monitoredServiceDTO2.setServiceRef("new");
+    monitoredServiceDTO2.setEnvironmentRef("one");
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO2);
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO1 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    serviceLevelObjectiveV2DTO1.setName("new two");
+    serviceLevelObjectiveV2DTO1.setIdentifier("new_two");
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO1);
+    AbstractServiceLevelObjective serviceLevelObjective1 = serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO1.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO serviceLevelObjectiveV2DTO2 =
+        builderFactory.getSimpleServiceLevelObjectiveV2DTOBuilder().build();
+    SimpleServiceLevelObjectiveSpec simpleServiceLevelObjectiveSpec =
+        (SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec();
+    simpleServiceLevelObjectiveSpec.setMonitoredServiceRef(monitoredServiceIdentifier + '1');
+    serviceLevelObjectiveV2DTO2.setSpec(simpleServiceLevelObjectiveSpec);
+    serviceLevelObjectiveV2DTO2.setName("new three");
+    serviceLevelObjectiveV2DTO2.setIdentifier("new_three");
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2);
+    AbstractServiceLevelObjective serviceLevelObjective2 = serviceLevelObjectiveV2Service.getEntity(
+        builderFactory.getProjectParams(), serviceLevelObjectiveV2DTO2.getIdentifier());
+
+    ServiceLevelObjectiveV2DTO compositeSLO =
+        builderFactory.getCompositeServiceLevelObjectiveV2DTOBuilder()
+            .spec(CompositeServiceLevelObjectiveSpec.builder()
+                      .serviceLevelObjectivesDetails(
+                          Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                                            .serviceLevelObjectiveRef("new_two")
+                                            .weightagePercentage(75.0)
+                                            .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                            .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                            .accountId(builderFactory.getContext().getAccountId())
+                                            .build(),
+                              ServiceLevelObjectiveDetailsDTO.builder()
+                                  .serviceLevelObjectiveRef("new_three")
+                                  .weightagePercentage(25.0)
+                                  .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
+                                  .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
+                                  .accountId(builderFactory.getContext().getAccountId())
+                                  .build()))
+                      .build())
+            .build();
+    serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
+
+    ServiceLevelIndicator serviceLevelIndicator1 =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO1.getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    createData(clock.instant().minus(Duration.ofMinutes(10)), Arrays.asList(GOOD, BAD, BAD, GOOD),
+        serviceLevelIndicator1.getUuid());
+    SLODashboardWidget.SLOGraphData sloGraphData1 =
+        graphDataService.getGraphData(serviceLevelObjective1, clock.instant().minus(Duration.ofDays(1)),
+            clock.instant(), 8640, TimeRangeParams.builder().startTime(startTime).endTime(endTime).build());
+
+    ServiceLevelIndicator serviceLevelIndicator2 =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    createData(clock.instant().minus(Duration.ofMinutes(10)), Arrays.asList(BAD, BAD, BAD, BAD),
+        serviceLevelIndicator2.getUuid());
+    SLODashboardWidget.SLOGraphData sloGraphData2 =
+        graphDataService.getGraphData(serviceLevelObjective2, clock.instant().minus(Duration.ofDays(1)),
+            clock.instant(), 8640, TimeRangeParams.builder().startTime(startTime).endTime(endTime).build());
+
+    PageResponse<SLOConsumptionBreakdown> pageResponse =
+        sloDashboardService.getSLOConsumptionBreakdownView(builderFactory.getProjectParams(),
+            compositeSLO.getIdentifier(), startTime.toEpochMilli(), endTime.toEpochMilli());
+    assertThat(pageResponse.getPageItemCount()).isEqualTo(2);
+    assertThat(pageResponse.getTotalItems()).isEqualTo(2);
+    List<SLOConsumptionBreakdown> sloConsumptionBreakdownList = pageResponse.getContent();
+    assertThat(sloConsumptionBreakdownList).hasSize(2);
+
+    SLOConsumptionBreakdown sloBreakdown = sloConsumptionBreakdownList.get(0);
+    assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO1.getIdentifier());
+    assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO1.getName());
+    assertThat(sloBreakdown.getSliType())
+        .isEqualTo(
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO1.getSpec()).getServiceLevelIndicatorType());
+    assertThat(sloBreakdown.getSloTargetPercentage())
+        .isEqualTo(serviceLevelObjectiveV2DTO1.getSloTarget().getSloTargetPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
+    assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData1.getSliStatusPercentage());
+
+    sloBreakdown = sloConsumptionBreakdownList.get(1);
+    assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
+    assertThat(sloBreakdown.getSloName()).isEqualTo(serviceLevelObjectiveV2DTO2.getName());
+    assertThat(sloBreakdown.getSliType())
+        .isEqualTo(
+            ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO2.getSpec()).getServiceLevelIndicatorType());
+    assertThat(sloBreakdown.getSloTargetPercentage())
+        .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());
+    assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData2.getSliStatusPercentage());
   }
 
   @Test

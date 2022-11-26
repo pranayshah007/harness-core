@@ -119,6 +119,7 @@ public final class InstanceData implements PersistentEntity, UuidAware, CreatedA
   Map<String, String> labels;
   Map<String, String> namespaceLabels;
   Map<String, String> metaData;
+  Map<String, String> topOwnerLabels;
   Instant usageStartTime;
   Instant usageStopTime;
   Instant activeInstanceIterator;

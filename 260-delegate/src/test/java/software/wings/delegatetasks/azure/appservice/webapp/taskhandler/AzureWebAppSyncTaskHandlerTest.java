@@ -40,8 +40,8 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.WebApp;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.WebApp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;

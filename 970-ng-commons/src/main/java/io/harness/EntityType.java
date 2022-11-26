@@ -408,6 +408,9 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(EntityTypeConstants.GITOPS_FETCH_LINKED_APPS)
+  GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
+      EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
@@ -423,7 +426,21 @@ public enum EntityType {
   ACTION_STEP(ModuleType.CI, EntityTypeConstants.ACTION_STEP, IdentifierRef.class, EntityYamlRootNames.ACTION_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SETUP)
   ELASTIGROUP_SETUP_STEP(
-      ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP);
+      ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
+  @JsonProperty(EntityTypeConstants.BITRISE_STEP)
+  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_PLAN)
+  TERRAGRUNT_PLAN_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_PLAN, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_PLAN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_APPLY)
+  TERRAGRUNT_APPLY_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_APPLY, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_APPLY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_DESTROY)
+  TERRAGRUNT_DESTROY_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_DESTROY, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_DESTROY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
+  TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

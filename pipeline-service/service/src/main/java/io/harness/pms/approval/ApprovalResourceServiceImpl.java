@@ -17,7 +17,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
-import io.harness.execution.PlanExecution;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
 import io.harness.ng.core.user.UserInfo;
@@ -127,8 +126,8 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
 
     // Check if the user is the pipeline executor.
     if (instance.getApprovers().isDisallowPipelineExecutor()) {
-      PlanExecution planExecution = planExecutionService.get(instance.getAmbiance().getPlanExecutionId());
-      ExecutionMetadata metadata = planExecution.getMetadata();
+      ExecutionMetadata metadata =
+          planExecutionService.getExecutionMetadataFromPlanExecution(instance.getAmbiance().getPlanExecutionId());
       if (metadata != null && metadata.hasTriggerInfo() && metadata.getTriggerInfo().hasTriggeredBy()
           && metadata.getTriggerInfo().getTriggeredBy().getUuid().equals(user.getUuid())) {
         return HarnessApprovalInstanceAuthorizationDTO.builder()
