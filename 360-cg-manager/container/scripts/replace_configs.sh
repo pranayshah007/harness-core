@@ -1052,4 +1052,20 @@ if [[ "" != "$AGENT_MTLS_SUBDOMAIN" ]]; then
   export AGENT_MTLS_SUBDOMAIN; yq -i '.agentMtlsSubdomain=env(AGENT_MTLS_SUBDOMAIN)' $CONFIG_FILE
 fi
 
+if [[ "" != "$DATA_RECONCILIATION_CORE_SIZE" ]]; then
+  export $DATA_RECONCILIATION_CORE_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.corePoolSize=env($DATA_RECONCILIATION_CORE_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_MAX_SIZE" ]]; then
+  export $DATA_RECONCILIATION_MAX_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.maxPoolSize=env($DATA_RECONCILIATION_MAX_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME; yq -i '.executorsConfig.dataReconciliationExecutorConfig.idleTime=env($DATA_RECONCILIATION_IDLE_TIME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
+fi
+
 replace_key_value cdTsDbRetentionPeriodMonths "$CD_TSDB_RETENTION_PERIOD_MONTHS"
