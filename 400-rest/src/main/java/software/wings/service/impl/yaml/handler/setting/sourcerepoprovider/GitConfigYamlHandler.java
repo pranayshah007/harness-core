@@ -77,6 +77,9 @@ public class GitConfigYamlHandler extends SourceRepoProviderYamlHandler<Yaml, Gi
             .providerType(yaml.getProviderType())
             .disableUserGitConfig(yaml.getDisableUserGitConfig())
             .build();
+    if (previous != null) {
+      config.setWebhookToken(((GitConfig) previous.getValue()).getWebhookToken());
+    }
     return buildSettingAttribute(accountId, changeContext.getChange().getFilePath(), uuid, config);
   }
 
