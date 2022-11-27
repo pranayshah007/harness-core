@@ -75,6 +75,7 @@ public class DelegateTaskResource {
   @ExceptionMetered
   public void updateTaskResponseV2(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
       @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponse delegateTaskResponse) {
+    delegateTaskResponse.setUsingKryoWithoutReference(true);
     updateTaskResponse(delegateId, taskId, accountId, delegateTaskResponse);
   }
 }
