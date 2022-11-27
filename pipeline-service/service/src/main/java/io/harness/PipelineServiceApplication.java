@@ -153,7 +153,7 @@ import io.harness.serializer.jackson.PipelineServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.steps.approval.step.custom.CustomApprovalInstanceHandler;
 import io.harness.steps.barriers.BarrierInitializer;
@@ -562,7 +562,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
         injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
   }
 
   /**------------------API auth telemetry -----------------------------------------------*/

@@ -188,7 +188,7 @@ import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
 import io.harness.service.stats.statscollector.InstanceStatsIteratorHandler;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.springdata.HMongoTemplate;
 import io.harness.telemetry.NGTelemetryRecordsJob;
 import io.harness.telemetry.TelemetryReporter;
@@ -881,7 +881,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       registerNextGenAuthFilter(configuration, environment,
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
           injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-          injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED"))));
+          injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED"))));
       registerInternalApiAuthFilter(configuration, environment);
     }
   }
@@ -909,7 +909,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
   private void registerNextGenAuthFilter(NextGenConfiguration configuration, Environment environment,
       TokenClient tokenClient, NGSettingsClient ngSettingsClient,
-      ServiceAccountPrincipalClient serviceAccountPrincipalClient) {
+      ServiceAccountClient serviceAccountPrincipalClient) {
     Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate =
         (getAuthenticationExemptedRequestsPredicate().negate())
             .and((getAuthFilterPredicate(InternalApi.class)).negate());

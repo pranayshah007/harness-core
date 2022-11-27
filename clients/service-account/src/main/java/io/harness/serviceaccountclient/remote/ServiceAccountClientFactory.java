@@ -17,16 +17,16 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(PL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Singleton
-public class ServiceAccountPrincipalClientFactory
-    extends AbstractHttpClientFactory implements Provider<ServiceAccountPrincipalClient> {
-  public ServiceAccountPrincipalClientFactory(ServiceHttpClientConfig httpClientConfig, String serviceSecret,
-      ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
-      ClientMode clientMode) {
+public class ServiceAccountClientFactory
+    extends AbstractHttpClientFactory implements Provider<ServiceAccountClient> {
+  public ServiceAccountClientFactory(ServiceHttpClientConfig httpClientConfig, String serviceSecret,
+                                     ServiceTokenGenerator tokenGenerator, KryoConverterFactory kryoConverterFactory, String clientId,
+                                     ClientMode clientMode) {
     super(httpClientConfig, serviceSecret, tokenGenerator, kryoConverterFactory, clientId, false, clientMode);
   }
 
   @Override
-  public ServiceAccountPrincipalClient get() {
-    return getRetrofit().create(ServiceAccountPrincipalClient.class);
+  public ServiceAccountClient get() {
+    return getRetrofit().create(ServiceAccountClient.class);
   }
 }

@@ -137,7 +137,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.CENextGenModuleRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
@@ -286,7 +286,7 @@ public class CENextGenModule extends AbstractModule {
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(new NGSettingsClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
-    install(new ServiceAccountPrincipalClientModule(configuration.getNgManagerClientConfig(),
+    install(new ServiceAccountClientModule(configuration.getNgManagerClientConfig(),
         configuration.getNgManagerServiceSecret(), CE_NEXT_GEN.getServiceId()));
     install(VersionModule.getInstance());
     install(PrimaryVersionManagerModule.getInstance());

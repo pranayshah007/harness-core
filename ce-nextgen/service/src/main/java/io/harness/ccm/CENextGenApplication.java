@@ -55,7 +55,7 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -297,7 +297,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
         injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerInternalApiAuthFilter(CENextGenConfiguration configuration, Environment environment) {

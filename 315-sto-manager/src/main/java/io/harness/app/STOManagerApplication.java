@@ -73,7 +73,7 @@ import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.sto.GenerateOpenApiSpecCommand;
 import io.harness.sto.plan.creator.STOPipelineServiceInfoProvider;
 import io.harness.sto.registrars.STOExecutionRegistrar;
@@ -461,7 +461,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
           injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-          injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+          injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
     }
   }
 

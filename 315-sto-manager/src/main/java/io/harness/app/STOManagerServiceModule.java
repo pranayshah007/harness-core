@@ -67,7 +67,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -250,7 +250,7 @@ public class STOManagerServiceModule extends AbstractModule {
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(new NGSettingsClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
-    install(new ServiceAccountPrincipalClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
+    install(new ServiceAccountClientModule(stoManagerConfiguration.getNgManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId()));
     install(PersistentLockModule.getInstance());
 

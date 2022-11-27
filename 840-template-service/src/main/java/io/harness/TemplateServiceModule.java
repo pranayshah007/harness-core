@@ -65,7 +65,7 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ServiceResourceClientModule;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.template.event.OrgEntityCrudStreamListener;
 import io.harness.template.event.ProjectEntityCrudStreamListener;
 import io.harness.template.events.TemplateOutboxEventHandler;
@@ -195,7 +195,7 @@ public class TemplateServiceModule extends AbstractModule {
     install(new NGSettingsClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(
-        new ServiceAccountPrincipalClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
+        new ServiceAccountClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
             this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(YamlSdkModule.getInstance());
     Map<String, YamlSchemaHttpClientConfig> yamlSchemaHttpClientConfigMap = new HashMap<>();

@@ -185,8 +185,8 @@ import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.PipelineServiceUtilAdviserRegistrar;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.token.TokenClientModule;
 import io.harness.token.remote.TokenClient;
 import io.harness.waiter.NotifyEvent;
@@ -443,7 +443,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new NGSettingsClientModule(
         ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
         configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
-    modules.add(new ServiceAccountPrincipalClientModule(
+    modules.add(new ServiceAccountClientModule(
         ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
         configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));
     YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
@@ -1037,7 +1037,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
         injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
     environment.jersey().register(injector.getInstance(CVNGAuthenticationFilter.class));
   }
 

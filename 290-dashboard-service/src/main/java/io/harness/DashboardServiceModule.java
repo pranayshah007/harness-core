@@ -22,7 +22,7 @@ import io.harness.pipeline.dashboards.PMSLandingDashboardResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.serializer.DashboardServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
 
@@ -71,7 +71,7 @@ public class DashboardServiceModule extends AbstractModule {
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(), DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
     install(new NGSettingsClientModule(config.getNgManagerClientConfig(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(), DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
-    install(new ServiceAccountPrincipalClientModule(config.getNgManagerClientConfig(),
+    install(new ServiceAccountClientModule(config.getNgManagerClientConfig(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(), DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
     bind(OverviewDashboardService.class).to(OverviewDashboardServiceImpl.class);
     bind(DashboardRBACService.class).to(DashboardRBACServiceImpl.class);

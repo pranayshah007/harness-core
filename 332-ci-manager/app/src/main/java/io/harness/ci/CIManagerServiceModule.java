@@ -80,7 +80,7 @@ import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.ScmServiceClient;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -284,7 +284,7 @@ public class CIManagerServiceModule extends AbstractModule {
 
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
-    install(new ServiceAccountPrincipalClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
+    install(new ServiceAccountClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
     install(new NGSettingsClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));

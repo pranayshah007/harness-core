@@ -23,7 +23,7 @@ import io.harness.overviewdashboard.GenerateOpenApiSpecCommand;
 import io.harness.request.RequestContextFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.token.remote.TokenClient;
@@ -146,7 +146,7 @@ public class DashboardApplication extends Application<DashboardServiceConfig> {
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
         injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-        injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+        injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerCorsFilter(DashboardServiceConfig appConfig, Environment environment) {

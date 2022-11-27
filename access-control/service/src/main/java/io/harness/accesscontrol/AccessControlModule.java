@@ -120,8 +120,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
-import io.harness.serviceaccount.ServiceAccountClientModule;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
 import io.harness.spec.server.accesscontrol.v1.AccountRoleAssignmentsApi;
 import io.harness.spec.server.accesscontrol.v1.AccountRolesApi;
 import io.harness.spec.server.accesscontrol.v1.OrgRoleAssignmentsApi;
@@ -255,7 +254,7 @@ public class AccessControlModule extends AbstractModule {
     install(new ValidationModule(validatorFactory));
     install(new MetricsModule());
     install(
-        new ServiceAccountClientModule(config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
+        new io.harness.serviceaccount.ServiceAccountClientModule(config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
             config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
             ACCESS_CONTROL_SERVICE.getServiceId()));
 
@@ -313,7 +312,7 @@ public class AccessControlModule extends AbstractModule {
     install(new NGSettingsClientModule(config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
         config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
         ACCESS_CONTROL_SERVICE.getServiceId()));
-    install(new ServiceAccountPrincipalClientModule(
+    install(new ServiceAccountClientModule(
         config.getServiceAccountClientConfiguration().getServiceAccountServiceConfig(),
         config.getServiceAccountClientConfiguration().getServiceAccountServiceSecret(),
         ACCESS_CONTROL_SERVICE.getServiceId()));

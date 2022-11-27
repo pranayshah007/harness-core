@@ -55,7 +55,7 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.jackson.TemplateServiceJacksonModule;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateSyncServiceImpl;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.template.GenerateOpenApiSpecCommand;
 import io.harness.template.InspectCommand;
 import io.harness.template.beans.yaml.NGTemplateConfig;
@@ -287,7 +287,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
           injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
           injector.getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
-          injector.getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+          injector.getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
     }
   }
 

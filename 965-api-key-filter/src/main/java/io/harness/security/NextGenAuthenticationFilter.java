@@ -9,9 +9,12 @@ package io.harness.security;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_INPUT_SET;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
+import static io.harness.eraro.ErrorCode.UNEXPECTED;
 import static io.harness.exception.WingsException.USER;
 
 import static javax.ws.rs.Priorities.AUTHENTICATION;
@@ -36,12 +39,13 @@ import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serviceaccount.ServiceAccountDTO;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.token.remote.TokenClient;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -50,13 +54,30 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.Priority;
+import javax.net.ssl.SSLHandshakeException;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
+import org.jose4j.jwt.NumericDate;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.jwt.consumer.JwtContext;
+import org.jose4j.keys.resolvers.JwksVerificationKeyResolver;
+import org.jose4j.keys.resolvers.VerificationKeyResolver;
+import org.jose4j.lang.JoseException;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
@@ -68,22 +89,18 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   public static final String X_API_KEY = "X-Api-Key";
   public static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String delimiter = "\\.";
-  private static final String X_API_KEY_OLD_TYPE = "X-Api-Key"
-      + "-OLD";
-  private static final String X_API_KEY_NEW_TYPE = "X-Api-Key"
-      + "-NEW";
-  private static final String JWT_TOKEN_TYPE = "JWT-TOKEN";
+  private static final String ISSUER_HARNESS_CONST = "Harness Inc";
 
   private TokenClient tokenClient;
   private NGSettingsClient settingsClient;
-  private ServiceAccountPrincipalClient serviceAccountClient;
+  private ServiceAccountClient serviceAccountClient;
   // private AccountClient accountClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
       @Named("PRIVILEGED") TokenClient tokenClient, @Named("PRIVILEGED") NGSettingsClient settingsClient,
-      @Named("PRIVILEGED") ServiceAccountPrincipalClient serviceAccountClient) {
+      @Named("PRIVILEGED") ServiceAccountClient serviceAccountClient) {
     super(predicate, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
     this.tokenClient = tokenClient;
     this.settingsClient = settingsClient;
@@ -97,17 +114,17 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       // Predicate testing failed with the current request context
       return;
     }
-
+    boolean isScimCall = isScimAPI();
     Optional<String> apiKeyOptional =
-        isScimAPI() ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
+        isScimCall ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
 
     if (apiKeyOptional.isPresent()) {
       Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(containerRequestContext);
-      if (!accountIdentifierOptional.isPresent()) {
+      if (accountIdentifierOptional.isEmpty()) {
         throw new InvalidRequestException("Account detail is not present in the request");
       }
       String accountIdentifier = accountIdentifierOptional.get();
-      validateApiKey(accountIdentifier, apiKeyOptional.get());
+      validateApiKey(accountIdentifier, apiKeyOptional.get(), isScimCall);
     } else {
       super.filter(containerRequestContext);
     }
@@ -120,36 +137,51 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     return resourceMethod.getAnnotation(ScimAPI.class) != null || resourceClass.getAnnotation(ScimAPI.class) != null;
   }
 
-  private void validateApiKey(String accountIdentifier, String apiKey) {
+  private void validateApiKey(String accountIdentifier, String apiKey, boolean isScimCall) {
     String[] splitToken = apiKey.split(delimiter);
     checkIfTokenLengthMatches(splitToken);
     if (EmptyPredicate.isNotEmpty(splitToken)) {
-      boolean isJwtTokenType = isJWTTokenType(splitToken);
-      String tokenId = isOldApiKeyToken(splitToken) ? (isJwtTokenType ? null : splitToken[1]) : splitToken[2];
-      TokenDTO tokenDTO = null;
-      // ServiceAccountPrincipal
-      if (isNotEmpty(tokenId)) {
-        tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(tokenId));
-      } else if (isJwtTokenType) {
-        // JWT token flow
+      String tokenId = null;
 
-        return;
+      if (isNewApiKeyToken(splitToken)) {
+        tokenId = splitToken[2];
+      } else if (splitToken.length == 3) {
+        boolean isJwtTokenType = isJWTTokenType(splitToken, accountIdentifier);
+        if (isJwtTokenType) {
+          // tokenId = null;
+          if (isScimCall) {
+            handleSCIMJwtTokenFlow(accountIdentifier, apiKey);
+          } else {
+            logAndThrowTokenException(
+                "NG_SCIM_JWT: Invalid API call: Externally issued OAuth JWT token can be only used for SCIM APIs",
+                UNEXPECTED);
+          }
+        } else {
+          tokenId = splitToken[1];
+        }
       }
 
-      if (tokenDTO != null) {
-        checkIfAccountIdMatches(accountIdentifier, tokenDTO, tokenId);
-        checkIfAccountIdInTokenMatches(splitToken, tokenDTO, tokenId);
-        checkIfPrefixMatches(splitToken, tokenDTO, tokenId);
-        checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
-        checkIfApiKeyHasExpired(tokenId, tokenDTO);
-        Principal principal = getPrincipal(tokenDTO);
-        SecurityContextBuilder.setContext(principal);
-        SourcePrincipalContextBuilder.setSourcePrincipal(principal);
-      } else {
-        logAndThrowTokenException(String.format("Invalid API token %s: Token not found", tokenId), INVALID_TOKEN);
+      if (isNotEmpty(tokenId)) {
+        handleAPIKeyTokenFlow(accountIdentifier, splitToken, tokenId);
       }
     } else {
       logAndThrowTokenException("Invalid API token: Token is Empty", INVALID_TOKEN);
+    }
+  }
+
+  private void handleAPIKeyTokenFlow(String accountIdentifier, String[] splitToken, String apiTokenId) {
+    TokenDTO tokenDTO = NGRestUtils.getResponse(tokenClient.getToken(apiTokenId));
+    if (tokenDTO != null) {
+      checkIfAccountIdMatches(accountIdentifier, tokenDTO, apiTokenId);
+      checkIfAccountIdInTokenMatches(splitToken, tokenDTO, apiTokenId);
+      checkIfPrefixMatches(splitToken, tokenDTO, apiTokenId);
+      checkIFRawPasswordMatches(splitToken, apiTokenId, tokenDTO);
+      checkIfApiKeyHasExpired(apiTokenId, tokenDTO);
+      Principal principal = getPrincipal(tokenDTO);
+      SecurityContextBuilder.setContext(principal);
+      SourcePrincipalContextBuilder.setSourcePrincipal(principal);
+    } else {
+      logAndThrowTokenException(String.format("Invalid API token %s: Token not found", apiTokenId), INVALID_TOKEN);
     }
   }
 
@@ -259,36 +291,177 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     return splitToken.length == 4;
   }
 
-  private boolean isJWTTokenType(String[] splitToken) {
+  private boolean isJWTTokenType(String[] splitToken, String accountIdentifier) {
     if (splitToken.length == 3) {
-      JSONObject header =
-          new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[0]), StandardCharsets.UTF_8));
-      String tokenType = header.getString("typ");
-      return "JWT".equals(tokenType);
-      // JSONObject payload = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1]),
-      // StandardCharsets.UTF_8));
+      if (!("pat".equalsIgnoreCase(splitToken[0]) || "sat".equalsIgnoreCase(splitToken[0]))) {
+        try {
+          JSONObject header =
+              new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[0]), StandardCharsets.UTF_8));
+          // String tokenType = header.getString("typ");
+          // return isNotEmpty(tokenType) && tokenType.toLowerCase().contains("jwt");
+          return true;
+        } catch (JSONException err) {
+          logAndThrowTokenException(
+              String.format("NG_SCIM_JWT: Cannot construct valid json header for jwt token, on requests to account: %s",
+                  accountIdentifier),
+              INVALID_TOKEN);
+        }
+      }
     }
     return false;
-  }
-
-  private void checkIfJwtTokenMatchesSettingConfig(String[] splitToken, String accountIdentifier) {
-    if (splitToken.length == 3) {
-      JSONObject payload =
-          new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1]), StandardCharsets.UTF_8));
-      List<SettingResponseDTO> settingsResponse = NGRestUtils.getResponse(settingsClient.listSettings(accountIdentifier,
-          null, null, SettingCategory.SCIM, SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_GROUP_IDENTIFIER));
-      Optional<SettingResponseDTO> matchedSettings =
-          settingsResponse.stream()
-              .filter(s
-                  -> s.getSetting() != null
-                      && SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER.equals(
-                          s.getSetting().getIdentifier()))
-              .findAny();
-    }
   }
 
   private Principal getPrincipalFromServiceAccountDto(ServiceAccountDTO serviceAccountDto) {
     return new ServiceAccountPrincipal(
         serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(), serviceAccountDto.getEmail());
+  }
+
+  private void validateJwtToken(
+      String jwtToken, String toMatchClaimKey, String toMatchClaimValue, String publicKeys, String accountIdentifier) {
+    final int secondsOfAllowedClockSkew = 30; // 30 seconds is the allowed clockSkew in flow
+    JsonWebKeySet jsonWebKeySet = null;
+
+    try {
+      jsonWebKeySet = new JsonWebKeySet(publicKeys);
+    } catch (JoseException jse) {
+      logAndThrowTokenException(
+          String.format(
+              "NG_SCIM_JWT: Cannot construct valid json key set from the public keys for requests to account: %s",
+              accountIdentifier),
+          INVALID_TOKEN);
+    }
+
+    JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                                  .setSkipAllValidators()
+                                  .setDisableRequireSignature()
+                                  .setSkipSignatureVerification()
+                                  .build();
+
+    try {
+      JwtContext jwtContext = jwtConsumer.process(jwtToken);
+      JwtClaims jwtTokenClaims = jwtContext.getJwtClaims();
+
+      // validate expiry
+      if (jwtTokenClaims.getExpirationTime() != null
+          && (NumericDate.now().getValue() - secondsOfAllowedClockSkew)
+              >= jwtTokenClaims.getExpirationTime().getValue()) {
+        // token expired
+        logAndThrowTokenException("NG_SCIM_JWT: JWT Token used for SCIM APIs has expired", INVALID_TOKEN);
+      }
+
+      if (jsonWebKeySet != null) {
+        VerificationKeyResolver verificationKeyResolver =
+            new JwksVerificationKeyResolver(jsonWebKeySet.getJsonWebKeys());
+        jwtConsumer = new JwtConsumerBuilder()
+                          .setRequireExpirationTime()
+                          .setVerificationKeyResolver(verificationKeyResolver)
+                          .build();
+
+        // validates 'authenticity' through signature verification and get jwtTokenClaims
+        jwtConsumer.processContext(jwtContext);
+        jwtTokenClaims = jwtContext.getJwtClaims();
+        String jwtTokenIssuer = jwtTokenClaims.getIssuer();
+
+        if (ISSUER_HARNESS_CONST.equals(jwtTokenIssuer)) {
+          logAndThrowTokenException(
+              "NG_SCIM_JWT: Invalid API call: Externally issued OAuth JWT token can be only used for SCIM APIs, not 'Harness Inc' issued JWT token",
+              UNEXPECTED);
+        }
+
+        String actualClaimValueInJwt = jwtTokenClaims.getStringClaimValue(toMatchClaimKey);
+
+        if (!(isNotEmpty(actualClaimValueInJwt) && actualClaimValueInJwt.trim().equals(toMatchClaimValue.trim()))) {
+          final String errorMessage = String.format(
+              "NG_SCIM_JWT: JWT validated correctly, but the claims value did not match configured settings value in account: %s",
+              accountIdentifier);
+          log.warn(errorMessage);
+          throw new InvalidRequestException(errorMessage, INVALID_INPUT_SET, USER);
+        }
+      }
+    } catch (InvalidJwtException | MalformedClaimException e) {
+      logAndThrowTokenException(
+          String.format(
+              "NG_SCIM_JWT: JWT token's signature couldn't be verified or required claims are malformed for SCIM requests on account: %s",
+              accountIdentifier),
+          INVALID_TOKEN);
+    }
+  }
+
+  private void handleSCIMJwtTokenFlow(String accountIdentifier, String jwtToken) {
+    List<SettingResponseDTO> settingsResponse = NGRestUtils.getResponse(settingsClient.listSettings(accountIdentifier,
+        null, null, SettingCategory.SCIM, SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_GROUP_IDENTIFIER));
+
+    if (isEmpty(settingsResponse)) {
+      // No account settings configuration found so cannot process request coming with OAuth JWT token
+      // Add Feature flag rules here as well, need Account Client hence
+      logAndThrowTokenException(
+          String.format(
+              "NG_SCIM_JWT: SCIM JWT token NG account settings not configured at account [%s]", accountIdentifier),
+          UNEXPECTED);
+      return;
+    }
+
+    String keySettingStr, valueSettingStr, publicKeysUrlSettingStr, serviceAccountSettingStr;
+    keySettingStr = valueSettingStr = publicKeysUrlSettingStr = serviceAccountSettingStr = null;
+
+    for (SettingResponseDTO settingResponseDto : settingsResponse) {
+      if (settingResponseDto != null && settingResponseDto.getSetting() != null) {
+        if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER.equals(
+                settingResponseDto.getSetting().getIdentifier())) {
+          keySettingStr = settingResponseDto.getSetting().getValue();
+        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER.equals(
+                       settingResponseDto.getSetting().getIdentifier())) {
+          valueSettingStr = settingResponseDto.getSetting().getValue();
+        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_IDENTIFIER.equals(
+                       settingResponseDto.getSetting().getIdentifier())) {
+          publicKeysUrlSettingStr = settingResponseDto.getSetting().getValue();
+        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER.equals(
+                       settingResponseDto.getSetting().getIdentifier())) {
+          serviceAccountSettingStr = settingResponseDto.getSetting().getValue();
+        }
+      }
+    }
+
+    if (isEmpty(keySettingStr) || isEmpty(valueSettingStr) || isEmpty(publicKeysUrlSettingStr)
+        || isEmpty(serviceAccountSettingStr)) {
+      logAndThrowTokenException(
+          String.format(
+              "NG_SCIM_JWT: Some or all values for SCIM JWT token configuration at NG account settings are not populated in account [%s]",
+              accountIdentifier),
+          UNEXPECTED);
+    } else {
+      Request httpGetRequest = new Request.Builder().url(publicKeysUrlSettingStr).method("GET", null).build();
+      OkHttpClient client = new OkHttpClient();
+      try (Response response = client.newCall(httpGetRequest).execute()) {
+        if (response.isSuccessful()) {
+          ResponseBody responseBody = response.body();
+          if (responseBody != null) {
+            String publicKeysString = responseBody.string();
+            validateJwtToken(jwtToken, keySettingStr, valueSettingStr, publicKeysString, accountIdentifier);
+            ServiceAccountDTO serviceAccountDTO = NGRestUtils.getResponse(
+                serviceAccountClient.getServiceAccount(serviceAccountSettingStr, accountIdentifier));
+            Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
+            SecurityContextBuilder.setContext(servicePrincipal);
+            SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
+          }
+        } else {
+          logAndThrowTokenException(
+              String.format("NG_SCIM_JWT: Invalid public key URL: %s, for requests in account %s: ",
+                  publicKeysUrlSettingStr, accountIdentifier),
+              INVALID_INPUT_SET);
+        }
+      } catch (SSLHandshakeException sslExc) {
+        logAndThrowTokenException(
+            String.format(
+                "NG_SCIM_JWT: Certificate chain not trusted for public keys URL: %s host, configured at settings in account: %s",
+                publicKeysUrlSettingStr, accountIdentifier),
+            INVALID_INPUT_SET);
+      } catch (IOException e) {
+        logAndThrowTokenException(
+            String.format("NG_SCIM_JWT: Error fetching public certificate from public keys URL: %s, in account %s: ",
+                publicKeysUrlSettingStr, accountIdentifier),
+            INVALID_INPUT_SET);
+      }
+    }
   }
 }

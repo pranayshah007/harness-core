@@ -47,8 +47,8 @@ import io.harness.security.InternalApiAuthFilter;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.InternalApi;
 import io.harness.security.annotations.PublicApi;
-import io.harness.serviceaccountclient.ServiceAccountPrincipalClientModule;
-import io.harness.serviceaccountclient.remote.ServiceAccountPrincipalClient;
+import io.harness.serviceaccountclient.ServiceAccountClientModule;
+import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -178,7 +178,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
             appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
             AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
     godInjector.put(PLATFORM_SERVICE,
-        Guice.createInjector(new ServiceAccountPrincipalClientModule(appConfig.getRbacServiceConfig(),
+        Guice.createInjector(new ServiceAccountClientModule(appConfig.getRbacServiceConfig(),
             appConfig.getPlatformSecrets().getNgManagerServiceSecret(),
             AuthorizationServiceHeader.PLATFORM_SERVICE.getServiceId())));
 
@@ -297,7 +297,7 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         injector.get(PLATFORM_SERVICE).getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED"))),
         injector.get(PLATFORM_SERVICE).getInstance(Key.get(NGSettingsClient.class, Names.named("PRIVILEGED"))),
         injector.get(PLATFORM_SERVICE)
-            .getInstance(Key.get(ServiceAccountPrincipalClient.class, Names.named("PRIVILEGED")))));
+            .getInstance(Key.get(ServiceAccountClient.class, Names.named("PRIVILEGED")))));
   }
 
   private void registerInternalApiAuthFilter(PlatformConfiguration configuration, Environment environment) {
