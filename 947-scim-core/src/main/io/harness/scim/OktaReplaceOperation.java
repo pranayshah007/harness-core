@@ -62,9 +62,8 @@ public class OktaReplaceOperation extends ScimPatchOperation {
       log.info("GetValues Logging " + getValues(cls).toString());
       if (isNotEmpty(getValues(cls)) && getValues(cls).get(0) != null) {
         log.info("GetValues Inside " + getValues(cls).get(0).toString());
+        return getValues(cls).get(0);
       }
-
-      return getValues(cls).get(0);
     }
     return jsonObjectMapper.treeToValue(value, cls);
   }
