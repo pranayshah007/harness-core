@@ -923,7 +923,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     }
   }
 
-  static EntityScopeInfo getEntityScopeInfoFromUserGroup(UserGroup userGroup) {
+  private static EntityScopeInfo getEntityScopeInfoFromUserGroup(UserGroup userGroup) {
     return EntityScopeInfo.builder()
         .accountIdentifier(userGroup.getAccountIdentifier())
         .orgIdentifier(isBlank(userGroup.getOrgIdentifier()) ? null : userGroup.getOrgIdentifier())
@@ -932,7 +932,7 @@ public class UserGroupServiceImpl implements UserGroupService {
         .build();
   }
 
-  static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+  private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
     return EntityScopeInfo.builder()
         .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
         .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())

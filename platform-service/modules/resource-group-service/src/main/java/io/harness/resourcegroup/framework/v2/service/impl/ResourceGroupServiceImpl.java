@@ -14,13 +14,15 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
+import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.TRUE;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.acl.api.*;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -29,7 +31,10 @@ import io.harness.beans.SortOrder;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.dto.EntityScopeInfo;
+import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.outbox.api.OutboxService;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupCreateEvent;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupDeleteEvent;
@@ -50,9 +55,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -221,9 +225,67 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
             ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
             Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
       List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
-      resourceGroups = getPermittedUserGroups
+      resourceGroups = getPermittedResourceGroups(resourceGroups);
+      if (isEmpty(resourceGroups)) {
+        return Page.empty();
+      }
+      criteria.and(ResourceGroupKeys.identifier)
+          .in(resourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toList()));
     }
     return resourceGroupV2Repository.findAll(criteria, page).map(ResourceGroupMapper::toResponseWrapper);
+  }
+
+  private List<ResourceGroup> getPermittedResourceGroups(List<ResourceGroup> resourceGroups) {
+    if (isEmpty(resourceGroups)) {
+      return Collections.emptyList();
+    }
+
+    Map<EntityScopeInfo, List<ResourceGroup>> entityScopeInfoListMap = resourceGroups.stream().collect(
+        Collectors.groupingBy(ResourceGroupServiceImpl::getEntityScopeInfoFromResourceGroup));
+
+    List<PermissionCheckDTO> permissionChecks =
+        resourceGroups.stream()
+            .map(usergroup
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_RESOURCEGROUP_PERMISSION)
+                       .resourceIdentifier(usergroup.getIdentifier())
+                       .resourceScope(ResourceScope.of(usergroup.getAccountIdentifier(), usergroup.getOrgIdentifier(),
+                           usergroup.getProjectIdentifier()))
+                       .resourceType(RESOURCE_GROUP)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    List<ResourceGroup> permittedResourceGroup = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedResourceGroup.add(
+            entityScopeInfoListMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+    return permittedResourceGroup;
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+        .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getOrgIdentifier())
+        .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getProjectIdentifier())
+        .identifier(accessControlDTO.getResourceIdentifier())
+        .build();
+  }
+
+  private static EntityScopeInfo getEntityScopeInfoFromResourceGroup(ResourceGroup resourceGroup) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(resourceGroup.getAccountIdentifier())
+        .orgIdentifier(isBlank(resourceGroup.getOrgIdentifier()) ? null : resourceGroup.getOrgIdentifier())
+        .projectIdentifier(isBlank(resourceGroup.getProjectIdentifier()) ? null : resourceGroup.getProjectIdentifier())
+        .identifier(resourceGroup.getIdentifier())
+        .build();
   }
 
   @Override
