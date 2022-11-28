@@ -150,11 +150,11 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
   public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
     return (InfrastructureOutcome) outcomeService.resolve(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
   }
 
   public TaskChainResponse startChainLink(
-      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters){
+      ElastigroupStepExecutor elastigroupStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     OptionalOutcome startupScriptOptionalOutcome = outcomeService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.STARTUP_SCRIPT));
 
@@ -192,10 +192,20 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         if (isNotEmpty(startupScript)) {
           startupScript = renderExpression(ambiance, startupScript);
         }
+      } else {
+        return stepFailureTaskResponseWithMessage(
+            unitProgressData, "Store Type provided for Startup Script Not Supported");
       }
+    } else {
+      logCallback.saveExecutionLog(
+          color(format("Startup Script Not Available.", "startupScript"), LogColor.White, LogWeight.Bold), INFO,
+          CommandExecutionStatus.SUCCESS);
+      unitProgressData = getCommandUnitProgressData(
+          ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), CommandExecutionStatus.SUCCESS);
     }
+
     return fetchElastigroupParameters(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-            startupScript, infrastructureOutcome);
+        startupScript, infrastructureOutcome);
   }
 
   private TaskChainResponse fetchElastigroupParameters(ElastigroupStepExecutor elastigroupStepExecutor,
@@ -203,10 +213,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       String startupScript, InfrastructureOutcome infrastructureOutcome) {
     LogCallback logCallback =
         getLogCallback(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(), ambiance, true);
-
-    if(unitProgressData == null) {
-      unitProgressData = UnitProgressData.builder().unitProgresses(Arrays.asList()).build();
-    }
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput = null;
     OptionalSweepingOutput optionalElastigroupConfigurationOutput =
@@ -220,12 +226,13 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       StoreConfig storeConfig = elastigroupConfigurationOutput.getStoreConfig();
       if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
         elastigroupParameters =
-                fetchElastigroupJsonFilesContentFromLocalStore(ambiance, elastigroupConfigurationOutput, logCallback).get(0);
+            fetchElastigroupJsonFilesContentFromLocalStore(ambiance, elastigroupConfigurationOutput, logCallback)
+                .get(0);
         unitProgressData.getUnitProgresses().add(
-                UnitProgress.newBuilder()
-                        .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
-                        .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
-                        .build());
+            UnitProgress.newBuilder()
+                .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
+                .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
+                .build());
 
         //     Render expressions for all file content fetched from Harness File Store
         if (elastigroupParameters != null) {
@@ -233,29 +240,31 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         }
       } else if (ManifestStoreType.INLINE.equals(storeConfig.getKind())) {
         logCallback.saveExecutionLog(
-                color(format("Fetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
+            color(format("Fetching %s from Inline Store", "elastigroup json"), LogColor.White, LogWeight.Bold));
         elastigroupParameters = ((InlineStoreConfig) storeConfig).extractContent();
         logCallback.saveExecutionLog("Fetched Elastigroup Json", INFO, CommandExecutionStatus.SUCCESS);
         unitProgressData.getUnitProgresses().add(
-                UnitProgress.newBuilder()
-                        .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
-                        .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
-                        .build());
+            UnitProgress.newBuilder()
+                .setUnitName(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString())
+                .setStatus(CommandExecutionStatus.SUCCESS.getUnitStatus())
+                .build());
 
         // Render expressions for all file content fetched from Harness File Store
         if (elastigroupParameters != null) {
           elastigroupParameters = renderExpression(ambiance, elastigroupParameters);
         }
+      } else {
+        return stepFailureTaskResponseWithMessage(
+            unitProgressData, "Store Type provided for Elastigroup Json Not Supported");
       }
     }
 
     if (isEmpty(elastigroupParameters)) {
-      return stepFailureTaskResponseWithMessage(
-              unitProgressData, "Either Store Type Not Supported For Elastigroup Json or content inside it is empty");
+      return stepFailureTaskResponseWithMessage(unitProgressData, "Elastigroup Json provided is empty");
     }
 
     return executeElastigroupTask(elastigroupStepExecutor, ambiance, stepElementParameters, unitProgressData,
-            startupScript, infrastructureOutcome, elastigroupParameters);
+        startupScript, infrastructureOutcome, elastigroupParameters);
   }
 
   public ElastiGroup fetchOldElasticGroup(ElastigroupSetupResult elastigroupSetupResult) {
@@ -274,7 +283,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
     TaskChainResponse taskChainResponse = null;
     try {
       if (responseData instanceof ElastigroupStartupScriptFetchResponse) {
-
         ElastigroupStartupScriptFetchResponse elastigroupStartupScriptFetchResponse =
             (ElastigroupStartupScriptFetchResponse) responseData;
         ElastigroupStartupScriptFetchPassThroughData elastigroupStartupScriptFetchPassThroughData =
@@ -283,7 +291,6 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
         taskChainResponse = handleElastigroupStartupScriptFetchFilesResponse(elastigroupStartupScriptFetchResponse,
             elastigroupStepExecutor, ambiance, stepElementParameters, elastigroupStartupScriptFetchPassThroughData);
       } else if (responseData instanceof ElastigroupParametersFetchResponse) {
-
         ElastigroupParametersFetchResponse elastigroupParametersFetchResponse =
             (ElastigroupParametersFetchResponse) responseData;
         ElastigroupParametersFetchPassThroughData elastigroupParametersFetchPassThroughData =
@@ -369,8 +376,7 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       image = amiArtifactOutcome.getAmiId();
     }
     if (isEmpty(image)) {
-      return stepFailureTaskResponseWithMessage(
-          unitProgressData, "AMI not available. Please specify the AMI artifact");
+      return stepFailureTaskResponseWithMessage(unitProgressData, "AMI not available. Please specify the AMI artifact");
     }
 
     ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder()
