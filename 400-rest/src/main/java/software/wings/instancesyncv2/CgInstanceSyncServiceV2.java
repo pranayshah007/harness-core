@@ -326,8 +326,8 @@ public class CgInstanceSyncServiceV2 {
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
     for (String taskDetailsId : instanceSyncDataListPerTask.keySet()) {
       Map<CgReleaseIdentifiers, List<DeploymentSummary>> deploymentSummaries = new HashMap<>();
-      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances = new HashMap<>();
-      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap = new HashMap<>();
+      Map<CgReleaseIdentifiers, List<Instance>> deployedInstances;
+      Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap;
 
       List<InstanceSyncData> instanceSyncDataList = instanceSyncDataListPerTask.get(taskDetailsId);
       InstanceSyncTaskDetails taskDetails = taskDetailsService.getForId(taskDetailsId);
@@ -371,7 +371,7 @@ public class CgInstanceSyncServiceV2 {
 
       Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
       Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
-      for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersInstanceSyncDataMap.keySet()) {
+      for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
         log.info("For cgReleaseIdentifiers : [{}]", cgReleaseIdentifiers);
         List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
         List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
