@@ -41,6 +41,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
@@ -57,6 +58,7 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "LdapSettingsKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 @JsonTypeName("LDAP")
 public class LdapSettings extends SSOSettings implements ExecutionCapabilityDemander, PersistentCronIterable {
   @NotBlank String accountId;
