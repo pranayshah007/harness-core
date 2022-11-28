@@ -406,7 +406,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private Set<CgReleaseIdentifiers> createReleaseIdentifiersContainerDeploymentInfoWithLabels(
       DeploymentSummary deploymentSummary) {
     DeploymentInfo deploymentInfo = deploymentSummary.getDeploymentInfo();
-    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
     ContainerDeploymentInfoWithLabels containerDeploymentInfo = (ContainerDeploymentInfoWithLabels) deploymentInfo;
     Set<String> namespaces =
         getNamespaces(containerDeploymentInfo.getNamespaces(), containerDeploymentInfo.getNamespace());
@@ -420,6 +419,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                   .map(io.harness.container.ContainerInfo::getWorkloadName)
                                   .filter(EmptyPredicate::isNotEmpty)
                                   .collect(Collectors.toSet());
+
+    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
     if (isNotEmpty(controllers)) {
       for (String namespace : namespaces) {
         cgReleaseIdentifiersSet.addAll(
@@ -457,7 +458,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
   private Set<CgReleaseIdentifiers> createReleaseIdentifiersK8sDeploymentInfo(DeploymentSummary deploymentSummary) {
     DeploymentInfo deploymentInfo = deploymentSummary.getDeploymentInfo();
-    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
     K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentInfo;
     Set<String> namespaces = getNamespaces(k8sDeploymentInfo.getNamespaces(), k8sDeploymentInfo.getNamespace());
     if (CollectionUtils.isEmpty(namespaces)) {
@@ -471,7 +471,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
               .color(k8sDeploymentInfo.getBlueGreenStageColor())
               .build()
         : BasicDeploymentIdentifier.builder().lastDeploymentSummaryUuid(deploymentSummary.getUuid()).build();
-
+    Set<CgReleaseIdentifiers> cgReleaseIdentifiersSet = new HashSet<>();
     for (String namespace : namespaces) {
       cgReleaseIdentifiersSet.add(CgK8sReleaseIdentifier.builder()
                                       .clusterName(k8sDeploymentInfo.getClusterName())
