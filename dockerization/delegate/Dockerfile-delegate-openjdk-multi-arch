@@ -6,8 +6,6 @@ RUN apt-get update && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
 
-ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
-
 COPY scripts /opt/harness-delegate/
 
 RUN chmod +x /opt/harness-delegate/*.sh
@@ -17,6 +15,8 @@ WORKDIR /opt/harness-delegate
 ARG TARGETARCH
 
 RUN ./client_tools.sh false $TARGETARCH && chmod -R 755 /opt/harness-delegate
+
+ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
 
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
 

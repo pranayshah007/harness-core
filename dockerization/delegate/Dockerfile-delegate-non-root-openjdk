@@ -6,8 +6,6 @@ RUN apt-get update && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
 
-ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
-
 RUN groupadd -r harness -g 1000560000 && useradd --no-log-init -r -u 1000560000 -g harness harness
 
 COPY scripts /opt/harness-delegate/
@@ -33,6 +31,8 @@ ENV PATH="/home/harness/bin:${PATH}"
 WORKDIR /opt/harness-delegate
 
 RUN ./client_tools.sh false amd64 && chmod -R 755 /opt/harness-delegate
+
+ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
 
 RUN curl -s https://app.harness.io/public/shared/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz | tar -xz
 
