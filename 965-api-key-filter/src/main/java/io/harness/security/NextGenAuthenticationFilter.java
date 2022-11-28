@@ -346,7 +346,9 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           && (NumericDate.now().getValue() - secondsOfAllowedClockSkew)
               >= jwtTokenClaims.getExpirationTime().getValue()) {
         // token expired
-        logAndThrowTokenException("NG_SCIM_JWT: JWT Token used for SCIM APIs has expired", INVALID_TOKEN);
+        logAndThrowTokenException(
+            String.format("NG_SCIM_JWT: JWT Token used for SCIM APIs in account: %s has expired", accountIdentifier),
+            INVALID_TOKEN);
       }
 
       if (jsonWebKeySet != null) {
@@ -354,6 +356,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
             new JwksVerificationKeyResolver(jsonWebKeySet.getJsonWebKeys());
         jwtConsumer = new JwtConsumerBuilder()
                           .setRequireExpirationTime()
+                          .setSkipDefaultAudienceValidation() // skipping audience check
                           .setVerificationKeyResolver(verificationKeyResolver)
                           .build();
 
@@ -364,7 +367,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
         if (ISSUER_HARNESS_CONST.equals(jwtTokenIssuer)) {
           logAndThrowTokenException(
-              "NG_SCIM_JWT: Invalid API call: Externally issued OAuth JWT token can be only used for SCIM APIs, not 'Harness Inc' issued JWT token",
+              "NG_SCIM_JWT: Invalid API call: Externally issued OAuth JWT token can be only used for SCIM APIs, 'Harness Inc' issued JWT token cannot",
               UNEXPECTED);
         }
 
@@ -377,6 +380,9 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           log.warn(errorMessage);
           throw new InvalidRequestException(errorMessage, INVALID_INPUT_SET, USER);
         }
+        log.info(String.format(
+            "NG_SCIM_JWT: JWT validated correctly, and the claims value also matched with configured account settings value in account: %s. Proceeding with SCIM request using externally issued  JWT token.",
+            accountIdentifier));
       }
     } catch (InvalidJwtException | MalformedClaimException e) {
       logAndThrowTokenException(
