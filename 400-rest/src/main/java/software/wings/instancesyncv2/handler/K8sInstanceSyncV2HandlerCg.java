@@ -288,49 +288,27 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(
         deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
     log.info("All instancesInDb: [{}]", instancesInDb);
-    Map<CgReleaseIdentifiers, List<Instance>> instancesMap = new HashMap<>();
+    Map<CgReleaseIdentifiers, List<Instance>> instancesMap = fetchInstancesFromDb(
+        cgReleaseIdentifierList, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
 
-    // Todo: should be subject to optimisation, it’s ineffective and theoretically can be reduced to just creating
-    // CgReleaseIdentifier based on instance
-    for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifierList) {
-      List<Instance> instances = new ArrayList<>();
-      CgK8sReleaseIdentifier cgK8sReleaseIdentifier = (CgK8sReleaseIdentifier) cgReleaseIdentifiers;
-      log.info("For cgK8sReleaseIdentifier: [{}]", cgK8sReleaseIdentifier);
-      for (Instance instanceInDb : instancesInDb) {
-        log.info("For instanceInDb: [{}]", instanceInDb);
-        ContainerInfo containerInfo = (ContainerInfo) instanceInDb.getInstanceInfo();
-        String containerSvcName = null;
-        String namespace = null;
-        String releaseName = null;
-        boolean isHelmDeployment = false;
-        if (containerInfo instanceof KubernetesContainerInfo) {
-          namespace = ((KubernetesContainerInfo) containerInfo).getNamespace();
-          releaseName = ((KubernetesContainerInfo) containerInfo).getReleaseName();
-          containerSvcName = ((KubernetesContainerInfo) containerInfo).getControllerName();
-          isHelmDeployment = true;
-        } else if (containerInfo instanceof K8sPodInfo) {
-          K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentSummary.getDeploymentInfo();
-          K8sPodInfo k8sPodInfo = (K8sPodInfo) containerInfo;
-          namespace = k8sPodInfo.getNamespace();
-          releaseName = k8sPodInfo.getReleaseName();
-          if (!colorCheck(k8sPodInfo.getBlueGreenColor(), k8sDeploymentInfo.getBlueGreenStageColor())) {
-            continue;
-          }
-        } else {
-          log.error("Not Supported containerInfo type : [{}]", containerInfo.getClass());
-        }
-
-        if (filterInstanceBasedOnCgK8sReleaseIdentifierCondition(
-                cgK8sReleaseIdentifier, namespace, releaseName, containerSvcName, isHelmDeployment)) {
-          instances.add(instanceInDb);
-        }
+    if (deploymentSummary.getDeploymentInfo() instanceof K8sDeploymentInfo) {
+      K8sDeploymentInfo k8sDeploymentInfo = (K8sDeploymentInfo) deploymentSummary.getDeploymentInfo();
+      for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifierList) {
+        List<Instance> instances =
+            instancesMap.get(cgReleaseIdentifiers)
+                .stream()
+                .filter(instance -> {
+                  if (instance.getInstanceInfo() instanceof K8sPodInfo) {
+                    return colorCheck(((K8sPodInfo) instance.getInstanceInfo()).getBlueGreenColor(),
+                        k8sDeploymentInfo.getBlueGreenStageColor());
+                  } else {
+                    return true;
+                  }
+                })
+                .collect(Collectors.toList());
+        instancesMap.put(cgReleaseIdentifiers, instances);
       }
-      log.info("filtered instanceInDb: [{}]", instances);
-      instancesMap.put(cgReleaseIdentifiers, instances);
     }
-    log.info("Nested For Loop End");
-    log.info("instancesMap in DB: [{}]", instancesMap);
-    log.info("fetchInstancesFromDb Method Ends");
     return instancesMap;
   }
 
@@ -461,7 +439,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                                     .collect(Collectors.toSet());
       if (isNotEmpty(controllers)) {
         for (String namespace : namespaces) {
-          cgReleaseIdentifiersSet.addAll(controllers.parallelStream()
+          cgReleaseIdentifiersSet.addAll(controllers.stream()
                                              .map(controller
                                                  -> CgK8sReleaseIdentifier.builder()
                                                         .containerServiceName(isEmpty(controller) ? null : controller)
@@ -533,7 +511,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     List<CgDeploymentReleaseDetails> releaseDetails = new ArrayList<>();
     taskDetails.getReleaseIdentifiers()
-        .parallelStream()
+        .stream()
         .filter(releaseIdentifier -> releaseIdentifier instanceof CgK8sReleaseIdentifier)
         .map(releaseIdentifier -> (CgK8sReleaseIdentifier) releaseIdentifier)
         .forEach(releaseIdentifier
@@ -578,7 +556,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
 
     SetView<String> difference = Sets.difference(instanceKeyMapList1.keySet(), instanceKeyMapList2.keySet());
 
-    return difference.parallelStream().map(instanceKeyMapList1::get).collect(Collectors.toList());
+    return difference.stream().map(instanceKeyMapList1::get).collect(Collectors.toList());
   }
   @Override
   public List<Instance> instancesToDelete(List<Instance> instanceInDb, List<Instance> instances) {
@@ -653,7 +631,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
       List<InstanceInfo> instanceInfos =
           instanceSyncDataMap.get(cgReleaseIdentifier)
               .getInstanceDataList()
-              .parallelStream()
+              .stream()
               .map(instance -> (InstanceInfo) kryoSerializer.asObject(instance.toByteArray()))
               .collect(Collectors.toList());
 
@@ -674,7 +652,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
                       : DEPLOYMENT_NO_COLOR;
                 }, Function.identity()));
         instances = getInstancesForK8sPods(deploymentSummaryMap, infrastructureMapping,
-            instanceInfos.parallelStream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
+            instanceInfos.stream().map(K8sPodInfo.class ::cast).collect(Collectors.toList()));
       } else if (instanceInfos.get(0) instanceof KubernetesContainerInfo) {
         ContainerInfrastructureMapping containerInfraMapping = (ContainerInfrastructureMapping) infrastructureMapping;
         List<DeploymentSummary> deploymentSummaryList = deploymentSummaries.get(cgReleaseIdentifier);
@@ -684,7 +662,7 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
         }
         DeploymentSummary deploymentSummary = deploymentSummaryList.get(0);
         instances = getInstancesForContainerPods(deploymentSummary, containerInfraMapping,
-            instanceInfos.parallelStream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
+            instanceInfos.stream().map(ContainerInfo.class ::cast).collect(Collectors.toList()));
       } else {
         log.error("Not Supported containerInfo type : [{}]", instanceInfos.get(0).getClass());
       }

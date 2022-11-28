@@ -211,7 +211,7 @@ public class CgInstanceSyncServiceV2 {
     log.info("DB instances inside handleInstances Method: [{}]", instancesInDb);
 
     List<Instance> instancesToDelete = instanceSyncHandler.instancesToDelete(instancesInDb, instances);
-    Set<String> instanceIdsToDelete = instancesToDelete.parallelStream().map(Instance::getUuid).collect(toSet());
+    Set<String> instanceIdsToDelete = instancesToDelete.stream().map(Instance::getUuid).collect(toSet());
     log.info("Instances to delete: [{}]", instanceIdsToDelete);
     instanceService.delete(instanceIdsToDelete);
 
@@ -297,7 +297,7 @@ public class CgInstanceSyncServiceV2 {
       log.info("[InstanceSyncV2Tracking]: for PT: [{}], and taskId: [{}], found instances: [{}]", perpetualTaskId,
           instanceSyncData.getTaskDetailsId(),
           instanceSyncData.getInstanceDataList()
-              .parallelStream()
+              .stream()
               .map(instance -> kryoSerializer.asObject(instance.toByteArray()))
               .collect(Collectors.toList()));
     });
@@ -397,7 +397,7 @@ public class CgInstanceSyncServiceV2 {
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
 
     List<CgDeploymentReleaseDetails> deploymentReleaseDetails = new ArrayList<>();
-    instanceSyncTaskDetails.parallelStream().forEach(taskDetails -> {
+    instanceSyncTaskDetails.stream().forEach(taskDetails -> {
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2Handler instanceSyncHandler =
