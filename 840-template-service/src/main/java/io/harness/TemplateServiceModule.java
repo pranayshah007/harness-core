@@ -20,6 +20,7 @@ import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
 import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.account.AccountClientModule;
@@ -332,6 +333,8 @@ public class TemplateServiceModule extends AbstractModule {
         SECRET_MANAGER, injector.getInstance(SecretManagerTemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
         ARTIFACT_SOURCE, injector.getInstance(TemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        STEP_GROUP, injector.getInstance(TemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 
