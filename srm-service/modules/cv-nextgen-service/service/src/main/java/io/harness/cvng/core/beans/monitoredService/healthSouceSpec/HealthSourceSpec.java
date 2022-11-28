@@ -46,7 +46,8 @@ import org.hibernate.validator.constraints.NotEmpty;
       @JsonSubTypes.Type(value = AwsPrometheusHealthSourceSpec.class, name = "AwsPrometheus"),
       // TODO require major refactoring and a single new spec., Keep name called common or something discuss later
       @JsonSubTypes.Type(value = SumologicLogHealthSourceSpec.class, name = "SumologicLog"),
-      @JsonSubTypes.Type(value = SumologicMetricHealthSourceSpec.class, name = "SumologicMetrics")
+      @JsonSubTypes.Type(value = SumologicMetricHealthSourceSpec.class, name = "SumologicMetrics"),
+      @JsonSubTypes.Type(value = NextGenHealthSourceSpec.class, name = "NextGenHealthSource")
 })
 @Schema(name = "HealthSource", description = "This is the Health Source entity defined in Harness")
 public abstract class HealthSourceSpec {
