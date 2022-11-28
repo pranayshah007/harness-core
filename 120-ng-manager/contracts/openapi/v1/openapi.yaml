@@ -6,7 +6,7 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://app.harness.io'
+  - url: 'http://api.harness.io'
     description: Harness host url
 tags:
   - name: Organization
@@ -21,12 +21,6 @@ tags:
     description: Everything about project scoped secret
   - name: Project Services
     description: This contains APIs for performing CRUD operations on Services.
-  - name: Account Connector
-    description: Everything about account scoped connector
-  - name: Org Connector
-    description: Everything about org scoped connector
-  - name: Project Connector
-    description: Everything about project scoped connector
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:

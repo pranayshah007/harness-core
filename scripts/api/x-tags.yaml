@@ -41,3 +41,7 @@
     - Account Role Assignments
     - Org Role Assignments
     - Project Role Assignments
+- name: Error Models
+  tags:
+    - Error Response
+    - Governance Metadata

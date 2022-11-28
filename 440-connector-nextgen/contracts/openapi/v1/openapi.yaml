@@ -6,7 +6,7 @@ info:
   contact:
     email: contact@harness.io
 servers:
-  - url: 'http://app.harness.io'
+  - url: 'http://api.harness.io'
     description: Harness host url
 tags:
   - name: Account Connector
