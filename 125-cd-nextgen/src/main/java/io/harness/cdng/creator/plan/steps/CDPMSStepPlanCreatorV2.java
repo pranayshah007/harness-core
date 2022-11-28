@@ -463,8 +463,13 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     List<YamlNode> stepsInsideStepGroup = stepGroup.getField(STEPS).getNode().asArray();
     for (YamlNode stepsNodeInsideStepGroup : stepsInsideStepGroup) {
       YamlNode parallelStepNode = getParallelStep(stepsNodeInsideStepGroup);
-      stepFqn = parallelStepNode != null ? getStepFqnFromParallelNode(parallelStepNode, stepNodeType)
-                                         : getFqnFromStepNode(stepsNodeInsideStepGroup, stepNodeType);
+      if (parallelStepNode != null) {
+        stepFqn = getStepFqnFromParallelNode(parallelStepNode, stepNodeType);
+      } else {
+        YamlNode stepGroupInsideStepGroup = getStepGroup(stepsNodeInsideStepGroup);
+        stepFqn = stepGroupInsideStepGroup != null ? getStepFqnFromStepGroup(stepGroupInsideStepGroup, stepNodeType)
+                                                   : getFqnFromStepNode(stepsNodeInsideStepGroup, stepNodeType);
+      }
       if (stepFqn != null) {
         return stepFqn;
       }
@@ -483,7 +488,9 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     String stepFqn = null;
     List<YamlNode> stepsInParallelNode = parallelStepNode.asArray();
     for (YamlNode stepInParallelNode : stepsInParallelNode) {
-      stepFqn = getFqnFromStepNode(stepInParallelNode, stepNodeType);
+      YamlNode stepGroupInsideParallelNode = getStepGroup(stepInParallelNode);
+      stepFqn = stepGroupInsideParallelNode != null ? getStepFqnFromStepGroup(stepGroupInsideParallelNode, stepNodeType)
+                                                    : getFqnFromStepNode(stepInParallelNode, stepNodeType);
       if (stepFqn != null) {
         return stepFqn;
       }
