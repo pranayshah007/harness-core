@@ -145,6 +145,7 @@ ciExecutionServiceConfig:
   addonImage: harness/ci-addon:1.14.19
   liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
+  queueServiceToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
     serviceKey: "gcp_service_key"
@@ -314,7 +315,7 @@ pmsPlanCreatorServicePoolConfig:
 enableOpentelemetry: false
 
 queueServiceClient:
-  queueServiceClientConfig:
+  queueServiceConfig:
     baseUrl: http://localhost:9091/
     connectTimeOutSeconds: 15
     readTimeOutSeconds: 15

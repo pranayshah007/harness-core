@@ -35,6 +35,8 @@ import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.CIInitTaskMessageProcessor;
+import io.harness.ci.execution.CIInitTaskMessageProcessorImpl;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.ProtobufStepSerializer;
@@ -108,10 +110,11 @@ public class CIExecutionServiceModule extends AbstractModule {
         .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder().setNameFormat("Background-Task-Handler-%d").build()));
     bind(ExecutorService.class)
-            .annotatedWith(Names.named("ciInitTaskExecutor"))
-            .toInstance(ThreadPool.create(10, 30, 5, TimeUnit.SECONDS,
-                    new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
+        .annotatedWith(Names.named("ciInitTaskExecutor"))
+        .toInstance(ThreadPool.create(
+            10, 30, 5, TimeUnit.SECONDS, new ThreadFactoryBuilder().setNameFormat("Init-Task-Handler-%d").build()));
     this.bind(CIExecutionServiceConfig.class).toInstance(this.ciExecutionServiceConfig);
+    bind(CIInitTaskMessageProcessor.class).to(CIInitTaskMessageProcessorImpl.class);
     bind(new TypeLiteral<ProtobufStepSerializer<RunStepInfo>>() {}).toInstance(new RunStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<PluginStepInfo>>() {}).toInstance(new PluginStepProtobufSerializer());
     bind(new TypeLiteral<ProtobufStepSerializer<RunTestsStepInfo>>() {

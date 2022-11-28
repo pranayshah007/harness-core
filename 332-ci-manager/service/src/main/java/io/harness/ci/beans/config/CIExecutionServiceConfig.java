@@ -28,6 +28,7 @@ public class CIExecutionServiceConfig {
   String addonImage;
   String liteEngineImage;
   String ciImageTag;
+  String queueServiceToken;
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
   ExecutionLimits executionLimits;

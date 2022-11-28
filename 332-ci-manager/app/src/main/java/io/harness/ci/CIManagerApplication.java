@@ -31,6 +31,7 @@ import io.harness.ci.enforcement.BuildRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerDayRestrictionUsageImpl;
 import io.harness.ci.enforcement.BuildsPerMonthRestrictionUsageImpl;
 import io.harness.ci.enforcement.TotalBuildsRestrictionUsageImpl;
+import io.harness.ci.execution.CIExecutionPoller;
 import io.harness.ci.execution.ObserverEventConsumer;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
@@ -438,6 +439,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(PipelineEventConsumerController.class));
+    environment.lifecycle().manage(injector.getInstance(CIExecutionPoller.class));
   }
 
   private void registerPmsSdkEvents(Injector injector) {

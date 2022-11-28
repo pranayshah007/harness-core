@@ -283,7 +283,9 @@ public class CIManagerServiceModule extends AbstractModule {
     install(new DelegateServiceDriverGrpcClientModule(ciManagerConfiguration.getManagerServiceSecret(),
         ciManagerConfiguration.getManagerTarget(), ciManagerConfiguration.getManagerAuthority(), true));
 
-    install(new io.harness.hsqs.client.HsqsServiceClientModule(ciManagerConfiguration.getQueueServiceClient().getQueueServiceConfig(), ciManagerConfiguration.getQueueServiceClient().getAuthToken(), "ci-manager"));
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        ciManagerConfiguration.getQueueServiceClient().getQueueServiceConfig(),
+        ciManagerConfiguration.getQueueServiceClient().getAuthToken(), "ci-manager"));
 
     install(new TokenClientModule(ciManagerConfiguration.getNgManagerClientConfig(),
         ciManagerConfiguration.getNgManagerServiceSecret(), CI_MANAGER.getServiceId()));
