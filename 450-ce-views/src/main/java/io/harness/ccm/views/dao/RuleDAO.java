@@ -10,6 +10,7 @@ package io.harness.ccm.views.dao;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.Rule.RuleId;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleList;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -40,7 +41,8 @@ public class RuleDAO {
     return hPersistence.delete(query);
   }
 
-  public List<Rule> list(GovernanceRuleFilter governancePolicyFilter) {
+  public RuleList list(GovernanceRuleFilter governancePolicyFilter) {
+    RuleList ruleList = RuleList.builder().build();
     Query<Rule> rules = hPersistence.createQuery(Rule.class)
                             .field(RuleId.accountId)
                             .in(Arrays.asList(governancePolicyFilter.getAccountId(), GLOBAL_ACCOUNT_ID))
@@ -53,15 +55,21 @@ public class RuleDAO {
       rules.field(RuleId.uuid).in(governancePolicyFilter.getPolicyIds());
     }
     if (governancePolicyFilter.getIsOOTB() != null) {
-      log.info("IsOOTB IS NOT NULL");
       if (governancePolicyFilter.getIsOOTB()) {
-        return rules.field(RuleId.accountId).equal(GLOBAL_ACCOUNT_ID).asList();
+        rules.field(RuleId.accountId).equal(GLOBAL_ACCOUNT_ID);
       }
-      return rules.field(RuleId.accountId).equal(governancePolicyFilter.getAccountId()).asList();
+      rules.field(RuleId.accountId).equal(governancePolicyFilter.getAccountId());
     }
+    if (governancePolicyFilter.getSearch() != null) {
+      rules.field(RuleId.name).containsIgnoreCase(governancePolicyFilter.getSearch());
+    }
+    ruleList.setTotalItems(rules.asList().size());
 
-    log.info("Adding all available rules");
-    return rules.asList();
+    ruleList.setRule(rules.limit(governancePolicyFilter.getLimit())
+                         .offset(governancePolicyFilter.getOffset())
+                         .order(Sort.descending(RuleId.name))
+                         .asList());
+    return ruleList;
   }
 
   public Rule fetchByName(String accountId, String name, boolean create) {

@@ -7,7 +7,7 @@
 
 package io.harness.ccm.views.helper;
 
-import io.harness.ccm.views.entities.RuleExecution;
+import io.harness.ccm.views.entities.Rule;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -21,13 +21,13 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(description = "This object will contain the complete definition of a Cloud Cost Enforcement List")
+@Schema(description = "This object will contain the complete definition of a Cloud Cost Rule List")
 
-public final class RuleExecutionList {
+public class RuleList {
   @Schema(description = "Total items") int totalItems;
-  @Schema(description = "List of rules executions") List<RuleExecution> ruleExecution;
+  @Schema(description = "List of rules executions") List<Rule> rule;
 
-  public RuleExecutionList toDTO() {
-    return RuleExecutionList.builder().totalItems(getTotalItems()).ruleExecution(getRuleExecution()).build();
+  public RuleList toDTO() {
+    return RuleList.builder().totalItems(getTotalItems()).rule(getRule()).build();
   }
 }

@@ -31,12 +31,19 @@ public class RuleSetFilter {
   @Schema(description = NGCommonEntityConstants.TAGS) String tags;
   @Schema(description = "cloudProvider") String cloudProvider;
   @Schema(description = "ruleSetIds") List<String> ruleSetIds;
+  @Schema(description = "search") String search;
+  @Schema(description = "limit") int limit;
+  @Schema(description = "offset") int offset;
 
   @Builder
-  public RuleSetFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> ruleSetIds) {
+  public RuleSetFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> ruleSetIds, String search,
+      int limit, int offset) {
     this.accountId = accountId;
     this.cloudProvider = cloudProvider;
     this.isOOTB = isOOTB;
     this.ruleSetIds = ruleSetIds;
+    this.search = search;
+    this.limit = limit;
+    this.offset = offset;
   }
 }
