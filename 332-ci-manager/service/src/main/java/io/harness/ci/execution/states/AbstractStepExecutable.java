@@ -654,6 +654,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                                   .taskType(LE_STATUS_TASK_TYPE)
                                   .parameters(new Object[] {StepStatusTaskParameters.builder().build()})
                                   .timeout(timeout)
+                                  .expressionFunctorToken((int) ambiance.getExpressionFunctorToken())
                                   .build();
 
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
