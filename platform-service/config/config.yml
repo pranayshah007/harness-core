@@ -85,6 +85,7 @@ notificationServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -118,6 +119,7 @@ auditServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -198,6 +200,7 @@ resourceGroupServiceConfig:
     params:
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO

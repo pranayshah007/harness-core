@@ -25,10 +25,7 @@ public class DebeziumConfiguration {
   public static final String VALUE_CONVERTER_SCHEMAS_ENABLE = "value.converter.schemas.enable";
   public static final String OFFSET_FLUSH_INTERVAL_MS = "offset.flush.interval.ms";
   public static final String CONNECTOR_CLASS = "connector.class";
-  public static final String MONGODB_HOSTS = "mongodb.hosts";
   public static final String MONGODB_NAME = "mongodb.name";
-  public static final String MONGODB_USER = "mongodb.user";
-  public static final String MONGODB_PASSWORD = "mongodb.password";
   public static final String MONGODB_SSL_ENABLED = "mongodb.ssl.enabled";
   public static final String DATABASE_INCLUDE_LIST = "database.include.list";
   public static final String COLLECTION_INCLUDE_LIST = "collection.include.list";
@@ -50,6 +47,7 @@ public class DebeziumConfiguration {
   public static final String POLL_INTERVAL_MS = "poll.interval.ms";
   public static final String FIELD_EXCLUDE_LIST = "field.exclude.list";
   public static final String HEARTBEAT_INTERVAL_MS = "heartbeat.interval.ms";
+  public static final String MONGODB_CONNECTION_STRING = "mongodb.connection.string";
 
   public static Properties getDebeziumProperties(DebeziumConfig debeziumConfig, RedisConfig redisLockConfig) {
     Properties props = new Properties();
@@ -70,18 +68,16 @@ public class DebeziumConfiguration {
     Optional.ofNullable(debeziumConfig.getFieldExcludeList())
         .filter(x -> !x.isEmpty())
         .ifPresent(x -> props.setProperty(FIELD_EXCLUDE_LIST, x));
+    Optional.ofNullable(debeziumConfig.getMongodbConnectionString())
+        .filter(x -> !x.isEmpty())
+        .ifPresent(x -> props.setProperty(MONGODB_CONNECTION_STRING, x));
+    Optional.ofNullable(debeziumConfig.getSslEnabled())
+        .filter(x -> !x.isEmpty())
+        .ifPresent(x -> props.setProperty(MONGODB_SSL_ENABLED, x));
 
     /* begin connector properties */
     props.setProperty(CONNECTOR_CLASS, MONGO_DB_CONNECTOR);
-    props.setProperty(MONGODB_HOSTS, debeziumConfig.getMongodbHosts());
     props.setProperty(MONGODB_NAME, debeziumConfig.getMongodbName());
-    Optional.ofNullable(debeziumConfig.getMongodbUser())
-        .filter(x -> !x.isEmpty())
-        .ifPresent(x -> props.setProperty(MONGODB_USER, x));
-    Optional.ofNullable(debeziumConfig.getMongodbPassword())
-        .filter(x -> !x.isEmpty())
-        .ifPresent(x -> props.setProperty(MONGODB_PASSWORD, x));
-    props.setProperty(MONGODB_SSL_ENABLED, debeziumConfig.getSslEnabled());
     props.setProperty(DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
     props.setProperty(TRANSFORMS, "unwrap");
     props.setProperty(TRANSFORMS_UNWRAP_TYPE, DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);

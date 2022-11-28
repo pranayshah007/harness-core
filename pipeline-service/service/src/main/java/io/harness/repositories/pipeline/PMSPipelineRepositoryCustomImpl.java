@@ -204,7 +204,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
     PipelineEntity savedEntity =
-        getPipelineEntityMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
+        getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted, getMetadataOnly);
     if (savedEntity == null) {
       return Optional.empty();
     }
@@ -225,13 +225,15 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return Optional.of(savedEntity);
   }
 
-  private PipelineEntity getPipelineEntityMetadata(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted) {
+  private PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, boolean notDeleted, boolean metadataOnly) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     Query query = new Query(criteria);
-    for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
-      query.fields().exclude(nonMetadataField);
+    if (metadataOnly) {
+      for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+        query.fields().exclude(nonMetadataField);
+      }
     }
     return mongoTemplate.findOne(query, PipelineEntity.class);
   }

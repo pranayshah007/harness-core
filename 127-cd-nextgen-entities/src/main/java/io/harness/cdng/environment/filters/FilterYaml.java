@@ -41,7 +41,7 @@ public class FilterYaml implements Visitable {
 
   @NotNull @JsonProperty("type") FilterType type;
 
-  @NotNull private EnumSet<Entity> on;
+  @NotNull private EnumSet<Entity> entities;
 
   @NotNull
   @JsonProperty("spec")

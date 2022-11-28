@@ -235,7 +235,7 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     YamlChangeSet updatedChangeSetWithLessRetries =
         yamlChangeSetService.get(accountId, changeSetNotToBeSkipped.getUuid());
     assertThat(updatedChangeSetWithLessRetries.getStatus()).isEqualTo(QUEUED);
-    assertThat(updatedChangeSetWithLessRetries.getMessageCode()).isEqualTo(null);
+    assertThat(updatedChangeSetWithLessRetries.getMessageCode()).isNull();
   }
 
   @Test
@@ -328,5 +328,132 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     persistence.save(yamlChangeSet4);
     long count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
     assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void test_getQueuedChangeSetForWaitingQueueKey_new() throws Exception {
+    final String accountid = "accountid";
+    final YamlChangeSet harnessToGitChangeSet =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(false)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(false)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+
+    final YamlChangeSet gitToHarnessChangeSet =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(false)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(true)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+
+    final YamlChangeSet fullSyncChangeSet =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(true)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(false)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+
+    final YamlChangeSet fullSyncChangeSet1 =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(true)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(false)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey1")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+
+    final YamlChangeSet harnessToGitChangeSet1 =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(false)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(false)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey1")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+
+    final YamlChangeSet gitToHarnessChangeSet1 =
+        yamlChangeSetService.save(YamlChangeSet.builder()
+                                      .fullSync(false)
+                                      .status(QUEUED)
+                                      .accountId(accountid)
+                                      .gitToHarness(true)
+                                      .appId(GLOBAL_APP_ID)
+                                      .gitFileChanges(Collections.emptyList())
+                                      .queueKey("queuekey1")
+                                      .gitSyncMetadata(GitSyncMetadata.builder().build())
+                                      .build());
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(fullSyncChangeSet.getUuid());
+    }
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey1", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(fullSyncChangeSet1.getUuid());
+    }
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey", 2);
+      assertThat(selectedChangeSet).isNull();
+      yamlChangeSetService.updateStatus(accountid, fullSyncChangeSet.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
+
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey1", 2);
+      assertThat(selectedChangeSet).isNull();
+      yamlChangeSetService.updateStatus(accountid, fullSyncChangeSet1.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(gitToHarnessChangeSet.getUuid());
+      yamlChangeSetService.updateStatus(accountid, gitToHarnessChangeSet.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
+
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey1", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(gitToHarnessChangeSet1.getUuid());
+      yamlChangeSetService.updateStatus(accountid, gitToHarnessChangeSet1.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
+
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(harnessToGitChangeSet.getUuid());
+      yamlChangeSetService.updateStatus(accountid, harnessToGitChangeSet.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
+    {
+      final YamlChangeSet selectedChangeSet =
+          yamlChangeSetService.getQueuedChangeSetForWaitingQueueKey(accountid, "queuekey1", 2);
+      assertThat(selectedChangeSet.getUuid()).isEqualTo(harnessToGitChangeSet1.getUuid());
+      yamlChangeSetService.updateStatus(accountid, harnessToGitChangeSet1.getUuid(), YamlChangeSet.Status.COMPLETED);
+    }
   }
 }

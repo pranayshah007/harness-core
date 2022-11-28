@@ -13,15 +13,18 @@ import io.harness.annotations.dev.OwnedBy;
 import java.util.HashSet;
 import java.util.Set;
 import javax.validation.constraints.NotEmpty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @OwnedBy(HarnessTeam.CDC)
+@Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class GitOpsExecutionSummary {
-  @Getter private final Set<Environment> environments = new HashSet<>();
+  Set<Environment> environments = new HashSet<>();
 
   public void addSingleEnvironment(@NotEmpty String envId, @NotEmpty String envName) {
     environments.add(Environment.builder().identifier(envId).name(envName).build());

@@ -20,10 +20,8 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.gitsync.GitPRCreateRequest;
-import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -41,15 +39,14 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.gitapi.client.impl.AzureRepoApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
 import io.harness.delegate.task.gitapi.client.impl.GitlabApiClient;
+import io.harness.delegate.task.gitops.GitOpsTaskHelper;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.git.model.FetchFilesResult;
@@ -108,6 +105,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GithubApiClient githubApiClient;
   @Inject private GitlabApiClient gitlabApiClient;
   @Inject private AzureRepoApiClient azureRepoApiClient;
+  @Inject public GitOpsTaskHelper gitOpsTaskHelper;
 
   private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -218,8 +216,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public FetchFilesResult getFiles(NGGitOpsTaskParams gitOpsTaskParams, CommandUnitsProgress commandUnitsProgress)
       throws IOException, ParseException {
     try {
-      FetchFilesResult fetchFilesResult =
-          getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
+      FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
+          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback);
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
@@ -309,21 +307,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     }
-  }
-
-  private FetchFilesResult getFetchFilesResult(GitFetchFilesConfig gitFetchFilesConfig, String accountId)
-      throws IOException {
-    logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
-
-    FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
-
-    if (fetchFilesResult.getFiles().isEmpty()) {
-      return fetchFilesResult;
-    }
-
-    logCallback.saveExecutionLog(
-        color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
-    return fetchFilesResult;
   }
 
   public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
@@ -560,46 +543,5 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public String convertJsonToYaml(String jsonString) throws IOException {
     JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonString);
     return new YAMLMapper().disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER).writeValueAsString(jsonNodeTree);
-  }
-
-  public FetchFilesResult fetchFilesFromRepo(
-      GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback, String accountId) throws IOException {
-    GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
-    executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
-    String fetchTypeInfo = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH
-        ? "Branch: " + gitStoreDelegateConfig.getBranch()
-        : "CommitId: " + gitStoreDelegateConfig.getCommitId();
-
-    executionLogCallback.saveExecutionLog(fetchTypeInfo);
-
-    List<String> filePathsToFetch = null;
-    if (EmptyPredicate.isNotEmpty(gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths())) {
-      filePathsToFetch = gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths();
-      executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback);
-    }
-
-    FetchFilesResult gitFetchFilesResult;
-    if (gitStoreDelegateConfig.isOptimizedFilesFetch()) {
-      executionLogCallback.saveExecutionLog("Using optimized file fetch");
-      secretDecryptionService.decrypt(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
-      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-          GitApiAccessDecryptionHelper.getAPIAccessDecryptableEntity(gitStoreDelegateConfig.getGitConfigDTO()),
-          gitStoreDelegateConfig.getApiAuthEncryptedDataDetails());
-      gitFetchFilesResult = scmFetchFilesHelper.fetchFilesFromRepoWithScm(gitStoreDelegateConfig, filePathsToFetch);
-    } else {
-      GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO());
-      gitDecryptionHelper.decryptGitConfig(gitConfigDTO, gitStoreDelegateConfig.getEncryptedDataDetails());
-      SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(
-          gitStoreDelegateConfig.getSshKeySpecDTO(), gitStoreDelegateConfig.getEncryptedDataDetails());
-      gitFetchFilesResult =
-          ngGitService.fetchFilesByPath(gitStoreDelegateConfig, accountId, sshSessionConfig, gitConfigDTO);
-    }
-
-    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, gitFetchFilesResult.getFiles());
-
-    return gitFetchFilesResult;
   }
 }

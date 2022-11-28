@@ -217,8 +217,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                                                      .build(),
             sloDetail.getSloIdentifier());
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
-        timePeriod.getStartTime(compositeServiceLevelObjective.getZoneOffset()), currentTimeMinute,
-        sloDetail.getTotalErrorBudget(), filter);
+        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), sloDetail.getTotalErrorBudget(), filter);
 
     return SLOConsumptionBreakdown.builder()
         .sloIdentifier(sloDetail.getSloIdentifier())

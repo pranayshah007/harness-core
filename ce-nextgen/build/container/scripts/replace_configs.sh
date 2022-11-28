@@ -149,6 +149,7 @@ replace_key_value governanceConfig.callbackApiEndpoint "$GOVERNANCE_CALLBACK_API
 replace_key_value governanceConfig.dkronJobEnabled "$GOVERNANCE_DKRON_JOB_ENABLED"
 replace_key_value governanceConfig.awsFaktoryJobType "$GOVERNANCE_AWS_FAKTORY_JOB_TYPE"
 replace_key_value governanceConfig.awsFaktoryQueueName "$GOVERNANCE_AWS_FAKTORY_QUEUE_NAME"
+replace_key_value governanceConfig.OOTBAccount "$GOVERNANCE_OOTB_ACCOUNT"
 
 replace_key_value dkronClientConfig.baseUrl "$DKRON_CLIENT_BASEURL"
 replace_key_value dkronClientConfig.connectTimeOutSeconds "$DKRON_CLIENT_CONNECTTIMEOUT"

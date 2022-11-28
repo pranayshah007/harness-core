@@ -23,6 +23,7 @@ public class CDStageModuleInfo implements StageModuleInfo {
   ServiceExecutionSummary serviceInfo;
   InfraExecutionSummary infraExecutionSummary;
   GitOpsExecutionSummary gitopsExecutionSummary;
+  GitOpsAppSummary gitOpsAppSummary;
   FreezeExecutionSummary freezeExecutionSummary;
   String nodeExecutionId;
   long rollbackDuration;

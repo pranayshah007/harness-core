@@ -495,12 +495,16 @@ public enum FeatureName {
   GITOPS_DR_ENABLED("Enable disaster recovery feature", HarnessTeam.GITOPS),
   GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
   CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
+  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
   SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
+  SPG_INSTANCE_OPTIMIZE_DELETED_APPS("Optimizes the instance deleted apps fetching.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
-  SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV);
+  SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
+  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

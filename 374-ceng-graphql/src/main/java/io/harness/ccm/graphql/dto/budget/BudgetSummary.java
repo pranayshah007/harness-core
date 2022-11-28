@@ -8,6 +8,7 @@
 package io.harness.ccm.graphql.dto.budget;
 
 import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetType;
 
@@ -36,4 +37,5 @@ public class BudgetSummary {
   @GraphQLNonNull BudgetType type;
   @GraphQLNonNull Double growthRate;
   @GraphQLNonNull long startTime;
+  BudgetMonthlyBreakdown budgetMonthlyBreakdown;
 }

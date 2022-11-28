@@ -113,9 +113,6 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     doReturn(true)
         .when(gitSyncSdkService)
         .isGitSimplificationEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
-    for (String excludedField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
-      query.fields().exclude(excludedField);
-    }
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {
@@ -201,6 +198,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  // Test pipeline entity properties for inline pipeline (both with and without metadata flag)
   public void testFindInlinePipeline() {
     PipelineEntity inlinePipelineEntity = PipelineEntity.builder()
                                               .accountId(accountIdentifier)
@@ -215,7 +213,30 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     Optional<PipelineEntity> optionalPipelineEntity = pipelineRepository.find(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
-    assertThat(optionalPipelineEntity.get()).isEqualTo(inlinePipelineEntity);
+    PipelineEntity pipelineEntityFound = optionalPipelineEntity.get();
+    assertThat(pipelineEntityFound).isEqualTo(inlinePipelineEntity);
+    assertThat(pipelineEntityFound.getYaml()).isNotEmpty();
+    verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
+
+    Query withMetadataQuery = query;
+    for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+      withMetadataQuery.fields().exclude(nonMetadataField);
+    }
+    PipelineEntity withMetadataEntity = PipelineEntity.builder()
+                                            .accountId(accountIdentifier)
+                                            .orgIdentifier(orgIdentifier)
+                                            .projectIdentifier(projectIdentifier)
+                                            .identifier(pipelineId)
+                                            .storeType(StoreType.INLINE)
+                                            .build();
+
+    doReturn(withMetadataEntity).when(mongoTemplate).findOne(withMetadataQuery, PipelineEntity.class);
+    optionalPipelineEntity = pipelineRepository.find(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, true, false, false);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    pipelineEntityFound = optionalPipelineEntity.get();
+    assertThat(pipelineEntityFound).isEqualTo(withMetadataEntity);
+    assertThat(pipelineEntityFound.getYaml()).isNullOrEmpty();
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
   }
 
@@ -239,8 +260,24 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     Optional<PipelineEntity> optionalPipelineEntity = pipelineRepository.find(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, false, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
-    assertThat(optionalPipelineEntity.get()).isEqualTo(remotePipelineWithYAML);
+    PipelineEntity pipelineEntityFound = optionalPipelineEntity.get();
+    assertThat(pipelineEntityFound).isEqualTo(remotePipelineWithYAML);
+    assertThat(pipelineEntityFound.getYaml()).isNotEmpty();
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
+
+    // With metadata flag true test
+    Query withMetadataQuery = query;
+    for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+      withMetadataQuery.fields().exclude(nonMetadataField);
+    }
+
+    doReturn(remotePipelineFromDB).when(mongoTemplate).findOne(withMetadataQuery, PipelineEntity.class);
+    optionalPipelineEntity = pipelineRepository.find(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, true, true, false, false);
+    assertThat(optionalPipelineEntity.isPresent()).isTrue();
+    pipelineEntityFound = optionalPipelineEntity.get();
+    assertThat(pipelineEntityFound).isEqualTo(remotePipelineFromDB);
+    assertThat(pipelineEntityFound.getYaml()).isNullOrEmpty();
   }
 
   @Test

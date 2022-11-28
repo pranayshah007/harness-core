@@ -150,6 +150,7 @@ public abstract class NgMigrationService {
     if (resp.code() >= 200 && resp.code() < 300) {
       return MigrationImportSummaryDTO.builder().success(true).errors(Collections.emptyList()).build();
     }
+    log.info("The Yaml of the generated data was - {}", yamlFile.getYaml());
     Map<String, Object> error = JsonUtils.asObject(
         resp.errorBody() != null ? resp.errorBody().string() : "{}", new TypeReference<Map<String, Object>>() {});
     log.error(String.format("There was error creating the %s. Response from NG - %s with error body errorBody -  %s",

@@ -67,7 +67,7 @@ public class RuleSetServiceImpl implements RuleSetService {
         ruleSetIdentifier.remove(it.getUuid());
       }
       if (!ruleSetIdentifier.isEmpty()) {
-        throw new InvalidRequestException("No such rules exist:" + ruleSetIdentifier.toString());
+        throw new InvalidRequestException("No such ruleSet exist:" + ruleSetIdentifier.toString());
       }
     }
   }

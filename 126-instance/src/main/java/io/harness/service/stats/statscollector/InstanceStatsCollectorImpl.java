@@ -39,6 +39,8 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private static final int SYNC_INTERVAL_MINUTES = 30;
   private static final long SYNC_INTERVAL = TimeUnit.MINUTES.toMinutes(SYNC_INTERVAL_MINUTES);
   private static final long RELAXED_SYNC_INTERVAL_IN_MILLIS = 15 * 60 * 1000L;
+  // Data points for 1 day
+  private static final int MAX_EVENTS_PER_PROJECT = 60 / SYNC_INTERVAL_MINUTES * 24;
 
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
@@ -47,11 +49,12 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
   @Override
   public boolean createStats(String accountId) {
-    // Currently we are fetching last snapshot for each service separately in the loop.
+    // Currently we are fetching last snapshot for each project separately in the loop.
     // We explored other options as well, these can be revisited if we see any perf issues,
-    // - group by org, project, service - takes more than a minute
-    // - IN / UNION query for each org, project, service combination
+    // - group by org, project - takes more than a minute
+    // - IN / UNION query for each org, project combination
     // - store metadata and latest time snapshot in a separate table
+
     boolean ranAtLeastOnce = false;
     log.info("Collect and publish stats. Account: {}", accountId);
     try (HIterator<Project> projects =
@@ -65,13 +68,22 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
             ranAtLeastOnce = ranAtLeastOnce || success;
           } else {
             SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+            int eventsPerProject = 0;
             while (snapshotTimeProvider.hasNext()) {
+              if (eventsPerProject >= MAX_EVENTS_PER_PROJECT) {
+                log.warn("Published {} events for project {}. Pending backlog will be published in the next iteration",
+                    MAX_EVENTS_PER_PROJECT, project.getId());
+                break;
+              }
               Instant nextTs = snapshotTimeProvider.next();
               if (nextTs == null) {
                 throw new IllegalStateException(
                     "nextTs is null even though hasNext() returned true. Shouldn't be possible");
               }
               boolean success = createStats(project, nextTs);
+              if (success) {
+                ++eventsPerProject;
+              }
               ranAtLeastOnce = ranAtLeastOnce || success;
             }
           }

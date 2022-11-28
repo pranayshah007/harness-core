@@ -31,6 +31,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.steps.customstage.CustomStageConfig;
 import io.harness.steps.customstage.CustomStageNode;
+import io.harness.steps.wait.WaitStepInfo;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -259,11 +261,28 @@ public abstract class WorkflowHandler {
                  .stageStatus(SUCCESS)
                  .build();
     }
+
+    List<ExecutionWrapperConfig> allSteps = new ArrayList<>();
+
+    // Handle Wait Interval
+    Integer waitInterval = phaseStep.getWaitInterval();
+    if (waitInterval != null && waitInterval > 0) {
+      WaitStepNode waitStepNode = new WaitStepNode();
+      waitStepNode.setName("Wait");
+      waitStepNode.setIdentifier("wait");
+      waitStepNode.setWaitStepInfo(
+          WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+      ExecutionWrapperConfig waitStep =
+          ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
+      allSteps.add(waitStep);
+    }
+    allSteps.addAll(steps);
+
     return ExecutionWrapperConfig.builder()
         .stepGroup(JsonPipelineUtils.asTree(StepGroupElementConfig.builder()
                                                 .identifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
                                                 .name(phaseStep.getName())
-                                                .steps(steps)
+                                                .steps(allSteps)
                                                 .skipCondition(null)
                                                 .when(when)
                                                 .failureStrategies(null)

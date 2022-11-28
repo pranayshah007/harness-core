@@ -75,7 +75,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     ArgumentCaptor<EntityDetailProtoDTO> referredByCaptor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
     ArgumentCaptor<Set> referredCaptor = ArgumentCaptor.forClass(Set.class);
     verify(setupUsageHelper, times(1))
-        .publishEntitySetupUsage(referredByCaptor.capture(), referredCaptor.capture(), eq(ACCOUNT));
+        .publishInfraEntitySetupUsage(referredByCaptor.capture(), referredCaptor.capture(), eq(ACCOUNT));
 
     final EntityDetailProtoDTO referredByEntity = referredByCaptor.getValue();
     verifyInfrastructureReferredByEntity(infrastructure, referredByEntity);
@@ -100,7 +100,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     infraSetupUsageHelper.updateSetupUsages(infrastructure);
 
     ArgumentCaptor<EntityDetailProtoDTO> captor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
-    verify(setupUsageHelper, times(1)).deleteSetupUsages(captor.capture(), eq(ACCOUNT));
+    verify(setupUsageHelper, times(1)).deleteInfraSetupUsages(captor.capture(), eq(ACCOUNT));
     final EntityDetailProtoDTO entityDetailProtoDTO = captor.getValue();
     verifyInfrastructureReferredByEntity(infrastructure, entityDetailProtoDTO);
   }
@@ -114,7 +114,7 @@ public class InfrastructureEntitySetupUsageHelperTest extends CategoryTest {
     infraSetupUsageHelper.deleteSetupUsages(infrastructure);
 
     ArgumentCaptor<EntityDetailProtoDTO> captor = ArgumentCaptor.forClass(EntityDetailProtoDTO.class);
-    verify(setupUsageHelper, times(1)).deleteSetupUsages(captor.capture(), eq(ACCOUNT));
+    verify(setupUsageHelper, times(1)).deleteInfraSetupUsages(captor.capture(), eq(ACCOUNT));
     final EntityDetailProtoDTO entityDetailProtoDTO = captor.getValue();
     verifyInfrastructureReferredByEntity(infrastructure, entityDetailProtoDTO);
   }

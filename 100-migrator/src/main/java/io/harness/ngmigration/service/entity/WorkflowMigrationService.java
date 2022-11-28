@@ -294,13 +294,16 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+    String yaml = YamlUtils.write(yamlFile.getYaml());
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
         templateClient
             .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
             .execute();
     log.info("Workflow creation Response details {} {}", resp.code(), resp.message());
+    if (resp.code() >= 400) {
+      log.info("The WF template is \n - {}", yaml);
+    }
     return handleResp(yamlFile, resp);
   }
 

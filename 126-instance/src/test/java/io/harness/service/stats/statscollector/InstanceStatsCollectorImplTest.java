@@ -47,6 +47,7 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final String SERVICE_ID = "svc";
   private static final String ENV_ID = "env";
   private static final int SYNC_INTERVAL_MINUTES = 30;
+  private static final int MAX_EVENTS_PER_PROJECT = 48;
 
   @Mock private InstanceStatsService instanceStatsService;
   @Mock private InstanceService instanceService;
@@ -68,6 +69,21 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
         .thenReturn(Collections.singletonList(instanceCountByServiceAndEnv));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
     verify(instanceService, times(2)).getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong());
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void createStatsLimitTest() throws Exception {
+    Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES * (MAX_EVENTS_PER_PROJECT + 1) + 5) * 60L);
+    Project mockProject = mockProject();
+    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv();
+    when(instanceStatsService.getLastSnapshotTime(mockProject)).thenReturn(lastSnapshot);
+    when(instanceService.getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong()))
+        .thenReturn(Collections.singletonList(instanceCountByServiceAndEnv));
+    assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
+    verify(instanceService, times(MAX_EVENTS_PER_PROJECT))
+        .getActiveInstancesByServiceAndEnv(eq(mockProject), anyLong());
   }
 
   @Test

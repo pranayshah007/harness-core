@@ -32,8 +32,8 @@ public class DebeziumConfigurationTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetDebeziumProperties() {
     DebeziumConfig debeziumConfig = new DebeziumConfig(false, "testConnector", "offset_file", "offsets", "false",
-        "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "rs0/host1", "shop", "", "", "false",
-        "products", "", "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "");
+        "false", "6000", "1000", "10000", 60, "3", "MongoDbConnectorClass", 1000, "shop", "false", "products", "",
+        "2000", 1000, "initial", "document", "4", "1", 1000, "1000", "100", "", "uri");
     RedisConfig redisConfig = new RedisConfig();
     Properties expectedProps = new Properties();
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_ARRAY_ENCODING, "document");
@@ -52,18 +52,16 @@ public class DebeziumConfigurationTest extends CategoryTest {
 
     /* begin connector properties */
     expectedProps.setProperty(DebeziumConfiguration.CONNECTOR_CLASS, DebeziumConfiguration.MONGO_DB_CONNECTOR);
-    expectedProps.setProperty(DebeziumConfiguration.MONGODB_HOSTS, debeziumConfig.getMongodbHosts());
     expectedProps.setProperty(DebeziumConfiguration.MONGODB_NAME, debeziumConfig.getMongodbName());
     Optional.ofNullable(debeziumConfig.getFieldExcludeList())
         .filter(x -> !x.isEmpty())
         .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.FIELD_EXCLUDE_LIST, x));
-    Optional.ofNullable(debeziumConfig.getMongodbUser())
+    Optional.ofNullable(debeziumConfig.getSslEnabled())
         .filter(x -> !x.isEmpty())
-        .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.MONGODB_USER, x));
-    Optional.ofNullable(debeziumConfig.getMongodbPassword())
+        .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.MONGODB_SSL_ENABLED, x));
+    Optional.ofNullable(debeziumConfig.getMongodbConnectionString())
         .filter(x -> !x.isEmpty())
-        .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.MONGODB_PASSWORD, x));
-    expectedProps.setProperty(DebeziumConfiguration.MONGODB_SSL_ENABLED, debeziumConfig.getSslEnabled());
+        .ifPresent(x -> expectedProps.setProperty(DebeziumConfiguration.MONGODB_CONNECTION_STRING, x));
     expectedProps.setProperty(DebeziumConfiguration.DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS, "unwrap");
     expectedProps.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_TYPE,

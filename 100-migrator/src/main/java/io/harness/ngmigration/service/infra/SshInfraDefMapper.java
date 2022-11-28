@@ -105,7 +105,7 @@ public class SshInfraDefMapper implements InfraDefMapper {
       case AZURE:
         return getAzureSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
       case PHYSICAL_DATA_CENTER:
-        return getPdcSshInfra(migratedEntities, infrastructureDefinition.getInfrastructure());
+        return getPdcSshInfra(infrastructureDefinition.getInfrastructure());
       default:
         throw new InvalidRequestException("Unsupported Infra for ssh deployment");
     }
@@ -154,20 +154,12 @@ public class SshInfraDefMapper implements InfraDefMapper {
         .build();
   }
 
-  private Infrastructure getPdcSshInfra(
-      Map<CgEntityId, NGYamlFile> migratedEntities, InfraMappingInfrastructureProvider infrastructure) {
+  private Infrastructure getPdcSshInfra(InfraMappingInfrastructureProvider infrastructure) {
     PhysicalInfra pdcInfra = (PhysicalInfra) infrastructure;
-    PdcInfrastructureBuilder builder = PdcInfrastructure.builder().credentialsRef(ParameterField.createValueField(
-        MigratorUtility.getSecretRef(migratedEntities, pdcInfra.getHostConnectionAttrs(), CONNECTOR)
-            .toSecretRefStringValue()));
+    PdcInfrastructureBuilder builder = PdcInfrastructure.builder();
     if (isNotEmpty(pdcInfra.getHosts())) {
       builder.hosts(ParameterField.createValueField(getPdcSShHosts(pdcInfra.getHosts())));
     } else {
-      // TODO: Uncomment after PDC connector mapping is available
-      //      NgEntityDetail connectorDetail =
-      //          migratedEntities.get(CgEntityId.builder().type(CONNECTOR).id(pdcInfra.getCloudProviderId()).build())
-      //              .getNgEntityDetail();
-      //      builder.connectorRef(ParameterField.createValueField(MigratorUtility.getIdentifierWithScope(connectorDetail)));
       if (isNotEmpty(pdcInfra.getHostNames())) {
         builder.hostFilter(
             HostFilter.builder()

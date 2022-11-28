@@ -44,7 +44,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class PipelineMetadataV2 {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        // Unique index because pipeline metadata like runSequence and RecentExecutionSummaryInfo belong to
+        // pipelineIdentifier and not git details
         .add(CompoundMongoIndex.builder()
                  .name("account_org_project_pipeline")
                  .unique(true)

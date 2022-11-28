@@ -567,7 +567,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
                                  List.of(FilterYaml.builder()
                                              .type(FilterType.tags)
                                              .spec(TagsFilter.builder().build())
-                                             .on(EnumSet.of(Entity.environments, Entity.infrastructures))
+                                             .entities(EnumSet.of(Entity.environments, Entity.infrastructures))
                                              .build())))
                              .build())
             .deploymentType(KUBERNETES)

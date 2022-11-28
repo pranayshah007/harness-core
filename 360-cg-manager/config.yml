@@ -292,6 +292,7 @@ mongo:
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -310,6 +311,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -693,6 +695,14 @@ iteratorsConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
   gitSyncPollingIteratorConfig:
       threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
+
+executorsConfig:
+  dataReconciliationExecutorConfig:
+    corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+    maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+    idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+    timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 
 disableDelegateMgmtInManager: false
 

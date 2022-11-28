@@ -239,7 +239,7 @@ public class GraphDataServiceImpl implements GraphDataService {
               .isRecalculatingSLI(isReCalculatingSLI)
               .isCalculatingSLI(isCalculatingSLI)
               .sliStatusPercentage(sliStatusPercentage)
-              .errorBudgetBurned(badCountTillRangeEndTime - badCountTillRangeStartTime)
+              .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
               .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
               .build();
         }
@@ -294,7 +294,7 @@ public class GraphDataServiceImpl implements GraphDataService {
         .isRecalculatingSLI(isReCalculatingSLI)
         .isCalculatingSLI(isCalculatingSLI)
         .errorBudgetRemainingPercentage(errorBudgetRemainingPercentage)
-        .errorBudgetBurned(badCountTillRangeEndTime - badCountTillRangeStartTime)
+        .errorBudgetBurned(Math.max(badCountTillRangeEndTime - badCountTillRangeStartTime, 0))
         .sliStatusPercentage(sliStatusPercentage)
         .build();
   }

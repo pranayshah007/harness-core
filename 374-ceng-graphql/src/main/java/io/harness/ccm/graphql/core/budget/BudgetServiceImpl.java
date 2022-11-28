@@ -133,8 +133,8 @@ public class BudgetServiceImpl implements BudgetService {
   }
 
   @Override
-  public BudgetData getBudgetTimeSeriesStats(Budget budget) {
-    return budgetCostService.getBudgetTimeSeriesStats(budget);
+  public BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown) {
+    return budgetCostService.getBudgetTimeSeriesStats(budget, breakdown);
   }
 
   private void validatePerspective(Budget budget) {

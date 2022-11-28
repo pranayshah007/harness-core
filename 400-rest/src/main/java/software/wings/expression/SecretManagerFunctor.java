@@ -95,7 +95,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
           return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
         }
       }
-      log.warn("Expression evaluation is being processed synchronously");
+      log.debug("Expression evaluation is being processed synchronously");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);

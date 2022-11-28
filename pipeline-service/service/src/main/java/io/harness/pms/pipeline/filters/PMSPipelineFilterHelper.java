@@ -91,8 +91,6 @@ public class PMSPipelineFilterHelper {
   public List<String> getPipelineNonMetadataFields() {
     List<String> fields = new LinkedList<>();
     fields.add(PipelineEntityKeys.yaml);
-    // As this is deprecated field
-    fields.add(PipelineEntityKeys.executionSummaryInfo);
     return fields;
   }
 }

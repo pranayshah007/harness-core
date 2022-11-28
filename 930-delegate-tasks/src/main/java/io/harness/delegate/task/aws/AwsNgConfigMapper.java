@@ -19,6 +19,7 @@ import io.harness.aws.AwsAccessKeyCredential;
 import io.harness.aws.AwsConfig;
 import io.harness.aws.CrossAccountAccess;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
@@ -66,16 +67,26 @@ public class AwsNgConfigMapper {
     AwsCredentialDTO credential = awsConnectorDTO.getCredential();
     if (MANUAL_CREDENTIALS == credential.getAwsCredentialType()) {
       AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) credential.getConfig();
-      String accessKey = getSecretAsStringFromPlainTextOrSecretRef(
-          awsManualConfigSpecDTO.getAccessKey(), awsManualConfigSpecDTO.getAccessKeyRef());
-      if (accessKey == null) {
+
+      String accessKey = "";
+
+      if (awsManualConfigSpecDTO != null) {
+        accessKey = getSecretAsStringFromPlainTextOrSecretRef(
+            awsManualConfigSpecDTO.getAccessKey(), awsManualConfigSpecDTO.getAccessKeyRef());
+      }
+
+      if (EmptyPredicate.isEmpty(accessKey)) {
         throw new InvalidArgumentsException(Pair.of("accessKey", "Missing or empty"));
       }
 
-      awsInternalConfig = AwsInternalConfig.builder()
-                              .accessKey(accessKey.toCharArray())
-                              .secretKey(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue())
-                              .build();
+      char[] secretKey = null;
+
+      if (awsManualConfigSpecDTO != null && awsManualConfigSpecDTO.getSecretKeyRef() != null) {
+        secretKey = awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue();
+      }
+
+      awsInternalConfig = AwsInternalConfig.builder().accessKey(accessKey.toCharArray()).secretKey(secretKey).build();
+
     } else if (INHERIT_FROM_DELEGATE == credential.getAwsCredentialType()) {
       awsInternalConfig.setUseEc2IamCredentials(true);
     } else if (IRSA == credential.getAwsCredentialType()) {
