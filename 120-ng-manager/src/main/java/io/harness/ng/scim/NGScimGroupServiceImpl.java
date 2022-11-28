@@ -336,8 +336,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     }
 
     if (!"members".equals(patchOperation.getPath())) {
-      log.warn(
-          "NGSCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
+      log.error(
+          "SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
           patchOperation.getPath(), accountId, groupId);
       return Collections.emptySet();
     }
