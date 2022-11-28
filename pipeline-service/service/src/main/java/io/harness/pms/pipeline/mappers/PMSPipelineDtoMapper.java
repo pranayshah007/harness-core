@@ -22,6 +22,7 @@ import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
@@ -29,6 +30,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.pipeline.CacheResponseMetadataDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
@@ -65,6 +67,7 @@ public class PMSPipelineDtoMapper {
         .modules(pipelineEntity.getFilters().keySet())
         .gitDetails(getEntityGitDetails(pipelineEntity))
         .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
+        .cacheResponse(getCacheResponse(pipelineEntity))
         .build();
   }
 
@@ -73,6 +76,20 @@ public class PMSPipelineDtoMapper {
         : pipelineEntity.getStoreType() == StoreType.REMOTE
         ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
         : null;
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse(PipelineEntity pipelineEntity) {
+    if (pipelineEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+      if (cacheResponse != null) {
+        return CacheResponseMetadataDTO.builder()
+            .cacheState(cacheResponse.getCacheState())
+            .ttlLeft(cacheResponse.getTtlLeft())
+            .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+            .build();
+      }
+    }
+    return null;
   }
 
   private EntityGitDetails getEntityGitDetailsForMetadataResponse(PipelineEntity pipelineEntity) {

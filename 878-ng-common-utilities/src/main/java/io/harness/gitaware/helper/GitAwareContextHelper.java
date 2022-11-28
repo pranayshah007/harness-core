@@ -17,6 +17,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmGitMetaDataContext;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.manage.GlobalContextManager;
 import io.harness.persistence.gitaware.GitAware;
@@ -79,6 +80,14 @@ public class GitAwareContextHelper {
         .commitId(scmGitMetaData.getCommitId())
         .fileUrl(scmGitMetaData.getFileUrl())
         .build();
+  }
+
+  public CacheResponse getCacheResponseFromScmGitMetadata() {
+    ScmGitMetaData scmGitMetaData = getScmGitMetaData();
+    if (scmGitMetaData == null || scmGitMetaData.getCacheResponse() == null) {
+      return null;
+    }
+    return scmGitMetaData.getCacheResponse();
   }
 
   public EntityGitDetails getEntityGitDetails(GitAware gitAware) {

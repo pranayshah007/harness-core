@@ -29,8 +29,10 @@ import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
@@ -122,7 +124,21 @@ public class PipelinesApiUtils {
     pipelineGetResponseBody.setCreated(pipelineEntity.getCreatedAt());
     pipelineGetResponseBody.setUpdated(pipelineEntity.getLastUpdatedAt());
     pipelineGetResponseBody.setValid(true);
+    pipelineGetResponseBody.setCacheResponseMetadata(
+        getCacheResponseMetadataDTO(PMSPipelineDtoMapper.getCacheResponse(pipelineEntity)));
     return pipelineGetResponseBody;
+  }
+
+  public static CacheResponseMetadataDTO getCacheResponseMetadataDTO(
+      io.harness.pms.pipeline.CacheResponseMetadataDTO cacheResponseMetadata) {
+    if (cacheResponseMetadata == null) {
+      return null;
+    }
+    CacheResponseMetadataDTO cacheResponseMetadataDTO = new CacheResponseMetadataDTO();
+    cacheResponseMetadataDTO.setCacheState(CacheStateMapper.getCacheStateEnum(cacheResponseMetadata.getCacheState()));
+    cacheResponseMetadataDTO.setTtlLeft(cacheResponseMetadata.getTtlLeft());
+    cacheResponseMetadataDTO.setLastUpdatedAt(cacheResponseMetadata.getLastUpdatedAt());
+    return cacheResponseMetadataDTO;
   }
 
   public static Map<String, String> getTagsFromNGTag(List<NGTag> ngTags) {
