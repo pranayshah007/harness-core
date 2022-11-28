@@ -397,7 +397,7 @@ public class CgInstanceSyncServiceV2 {
     Map<String, SettingAttribute> cloudProviders = new ConcurrentHashMap<>();
 
     List<CgDeploymentReleaseDetails> deploymentReleaseDetails = new ArrayList<>();
-    instanceSyncTaskDetails.stream().forEach(taskDetails -> {
+    instanceSyncTaskDetails.stream().forEach((InstanceSyncTaskDetails taskDetails) -> {
       SettingAttribute cloudProvider =
           cloudProviders.computeIfAbsent(taskDetails.getCloudProviderId(), cloudProviderService::get);
       CgInstanceSyncV2Handler instanceSyncHandler =
