@@ -7,7 +7,7 @@
 
 package io.harness.ccm.audittrails.events;
 
-import static io.harness.audit.ResourceTypeConstants.GOVERNANCE_POLICY_SET;
+import static io.harness.audit.ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET;
 
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.event.Event;
@@ -44,6 +44,10 @@ public abstract class RuleSetEvent implements Event {
   public Resource getResource() {
     Map<String, String> labels = new HashMap<>();
     labels.put(ResourceConstants.LABEL_KEY_RESOURCE_NAME, ruleSet.getName());
-    return Resource.builder().identifier(ruleSet.getUuid()).type(GOVERNANCE_POLICY_SET).labels(labels).build();
+    return Resource.builder()
+        .identifier(ruleSet.getUuid())
+        .type(CLOUD_ASSET_GOVERNANCE_RULE_SET)
+        .labels(labels)
+        .build();
   }
 }
