@@ -22,11 +22,11 @@ import lombok.ToString;
 @NoArgsConstructor
 @ToString(callSuper = true, includeFieldNames = true)
 public final class PatchRequest extends ScimBaseResource {
-  @JsonProperty(value = "Operations", required = true) private List<PatchOperation> operations;
+  @JsonProperty(value = "Operations", required = true) private List<ScimPatchOperation> operations;
   @JsonProperty(value = "schemas", required = true) private Set<String> schemas;
 
   @JsonCreator
-  public PatchRequest(@JsonProperty(value = "Operations", required = true) final List<PatchOperation> operations) {
+  public PatchRequest(@JsonProperty(value = "Operations", required = true) final List<ScimPatchOperation> operations) {
     this.operations = Collections.unmodifiableList(operations);
   }
 }

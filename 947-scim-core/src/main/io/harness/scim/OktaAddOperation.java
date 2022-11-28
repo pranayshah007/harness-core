@@ -17,7 +17,7 @@ import java.util.List;
 import lombok.ToString;
 
 @ToString(callSuper = true, includeFieldNames = true)
-public class OktaAddOperation extends PatchOperation {
+public class OktaAddOperation extends ScimPatchOperation {
   @JsonProperty protected final JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();

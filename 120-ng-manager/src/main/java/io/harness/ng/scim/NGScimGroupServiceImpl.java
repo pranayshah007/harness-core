@@ -27,11 +27,11 @@ import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.scim.Member;
-import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimGroup;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimMultiValuedObject;
+import io.harness.scim.ScimPatchOperation;
 import io.harness.scim.service.ScimGroupService;
 
 import com.google.inject.Inject;
@@ -204,7 +204,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     }
   }
 
-  private String processReplaceOperationOnGroup(String groupId, String accountId, PatchOperation patchOperation) {
+  private String processReplaceOperationOnGroup(String groupId, String accountId, ScimPatchOperation patchOperation) {
     if (!DISPLAY_NAME.equals(patchOperation.getPath())) {
       log.error(
           "NGSCIM: Expected replace operation only on the displayName. Received it on path: {}, for accountId: {}, for GroupId {}",
@@ -221,7 +221,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     throw new InvalidRequestException("Failed to update group name");
   }
 
-  private String processOktaReplaceOperationOnGroup(String groupId, String accountId, PatchOperation patchOperation) {
+  private String processOktaReplaceOperationOnGroup(
+      String groupId, String accountId, ScimPatchOperation patchOperation) {
     try {
       if (patchOperation.getValue(ScimMultiValuedObject.class) != null) {
         return patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName();
@@ -258,7 +259,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     Set<String> newMemberIds = new HashSet<>(existingMemberIds);
     String newGroupName = null;
 
-    for (PatchOperation patchOperation : patchRequest.getOperations()) {
+    for (ScimPatchOperation patchOperation : patchRequest.getOperations()) {
       Set<String> userIdsFromOperation = getUserIdsFromOperation(patchOperation, accountId, groupId);
       switch (patchOperation.getOpType()) {
         case REPLACE: {
@@ -319,7 +320,7 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     }
   }
 
-  private Set<String> getUserIdsFromOperation(PatchOperation patchOperation, String accountId, String groupId) {
+  private Set<String> getUserIdsFromOperation(ScimPatchOperation patchOperation, String accountId, String groupId) {
     if (patchOperation.getPath() != null && patchOperation.getPath().contains("members[")) {
       try {
         Set<String> userIds = new HashSet<>();
@@ -335,8 +336,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     }
 
     if (!"members".equals(patchOperation.getPath())) {
-      log.error(
-          "SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
+      log.warn(
+          "NGSCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
           patchOperation.getPath(), accountId, groupId);
       return Collections.emptySet();
     }

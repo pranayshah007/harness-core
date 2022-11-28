@@ -15,8 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.ToString;
+
 @ToString(callSuper = true, includeFieldNames = true)
-public class AddOperation extends PatchOperation {
+public class AddOperation extends ScimPatchOperation {
   @JsonProperty protected final JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();

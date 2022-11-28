@@ -26,10 +26,10 @@ import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.remote.client.CGRestUtils;
-import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimMultiValuedObject;
+import io.harness.scim.ScimPatchOperation;
 import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
@@ -262,7 +262,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   }
 
   private void applyUserUpdateOperation(String accountId, String userId, UserMetadataDTO userMetadataDTO,
-      PatchOperation patchOperation) throws JsonProcessingException {
+      ScimPatchOperation patchOperation) throws JsonProcessingException {
     // Not sure why this needs to be done for displayName as well as ScimMultiValuedObject
     // Relying on CG implementation as it has been around for a while
     if ("displayName".equals(patchOperation.getPath())

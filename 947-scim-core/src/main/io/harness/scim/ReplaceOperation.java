@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.ToString;
 @ToString(callSuper = true, includeFieldNames = true)
-public class ReplaceOperation extends PatchOperation {
+public class ReplaceOperation extends ScimPatchOperation {
   @JsonProperty private final JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();

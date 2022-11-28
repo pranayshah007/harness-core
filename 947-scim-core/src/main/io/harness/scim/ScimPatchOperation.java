@@ -25,10 +25,10 @@ import lombok.ToString;
       @JsonSubTypes.Type(value = OktaReplaceOperation.class, name = "replace")
 })
 @ToString
-public abstract class PatchOperation {
+public abstract class ScimPatchOperation {
   @JsonProperty private String path;
 
-  PatchOperation(final String path) {
+  ScimPatchOperation(final String path) {
     this.path = path;
   }
 

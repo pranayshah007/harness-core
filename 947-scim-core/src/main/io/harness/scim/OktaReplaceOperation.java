@@ -7,6 +7,8 @@
 
 package io.harness.scim;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ToString(callSuper = true, includeFieldNames = true)
 @Slf4j
-public class OktaReplaceOperation extends PatchOperation {
+public class OktaReplaceOperation extends ScimPatchOperation {
   @JsonProperty private final JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();
@@ -57,8 +59,8 @@ public class OktaReplaceOperation extends PatchOperation {
     log.info("Fetching Values for " + cls.getName());
     log.info("Value logging {}", value);
     if (value.isArray()) {
-      log.info("GetValues Logging" + getValues(cls).toString());
-      if (getValues(cls).get(0) != null) {
+      log.info("GetValues Logging " + getValues(cls).toString());
+      if (isNotEmpty(getValues(cls)) && getValues(cls).get(0) != null) {
         log.info("GetValues Inside " + getValues(cls).get(0).toString());
       }
 

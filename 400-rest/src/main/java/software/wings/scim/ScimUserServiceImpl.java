@@ -15,10 +15,10 @@ import io.harness.beans.FeatureName;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
-import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimMultiValuedObject;
+import io.harness.scim.ScimPatchOperation;
 import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
@@ -242,7 +242,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     return getUser(userId, accountId);
   }
 
-  private void applyUserUpdateOperation(String accountId, String userId, PatchOperation patchOperation)
+  private void applyUserUpdateOperation(String accountId, String userId, ScimPatchOperation patchOperation)
       throws JsonProcessingException {
     User user = userService.get(accountId, userId);
     if (user == null) {
@@ -281,7 +281,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     }
   }
 
-  private void updateUser(PatchOperation patchOperation, User user, String key) throws JsonProcessingException {
+  private void updateUser(ScimPatchOperation patchOperation, User user, String key) throws JsonProcessingException {
     UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
     updateOperation.set(key, patchOperation.getValue(String.class));
     userService.updateUser(user.getUuid(), updateOperation);
