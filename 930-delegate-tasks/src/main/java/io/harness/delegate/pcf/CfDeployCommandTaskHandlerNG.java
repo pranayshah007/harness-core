@@ -113,7 +113,6 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler{
 
             ApplicationDetail details = cfCommandTaskHelperNG.getNewlyCreatedApplication(
                     cfRequestConfig, cfDeployCommandRequestNG, cfDeploymentManager);
-            // No of instances to be added to newly created application in this deploy stage
             Integer stepDecrease = cfDeployCommandRequestNG.getDownSizeCount();
 
             // downsize previous apps with non zero instances by same count new app was upsized

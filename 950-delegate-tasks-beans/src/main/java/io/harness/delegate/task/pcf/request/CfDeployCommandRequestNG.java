@@ -21,31 +21,19 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 public class CfDeployCommandRequestNG implements CfCommandRequestNG {
     String accountId;
-    CfCommandTypeNG pcfCommandType;
+    CfCommandTypeNG cfCommandType;
     String commandName;
     CommandUnitsProgress commandUnitsProgress;
     Integer timeoutIntervalInMin;
     @NotNull TasInfraConfig tasInfraConfig;
     String newReleaseName;
     List<String> routeMaps;
-
-    /**
-     * This is not desired count but update count, means upsize new app by currentCount + 5,
-     * delegating calculating actual desiredInstanceCount to PCFCommandTask
-     * (delegate), makes sure in all deploy state, we calculate based on most current data.
-     *
-     */
-    Integer updateCount;
+    Integer upsizeCount;
     Integer downSizeCount;
     Integer totalPreviousInstanceCount;
     CfAppSetupTimeDetails downsizeAppDetail;
-    Integer maxCount;
     PcfManifestsPackage pcfManifestsPackage;
-    /**
-     * This will be empty for deploy_state, so deploy will figureOut old versions and scale them down by 5
-     * This will be set by Rollback, Rollback will use same request and PCFCommand.DEPLOY,
-     * and looking at this list, we will know its coming from deploy state or rollback state
-     */
+    Integer maxCount;
     List<CfServiceData> instanceData;
     ResizeStrategy resizeStrategy;
     boolean isStandardBlueGreen;

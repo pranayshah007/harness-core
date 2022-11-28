@@ -58,4 +58,6 @@ public class OutcomeExpressionConstants {
   public final String ELASTIGROUP_CONFIGURATION_OUTPUT = "elastigroupConfigurationOutput";
   public final String FREEZE_OUTCOME = "freezeOutcome";
   public final String ELASTIGROUP_SETUP_OUTCOME = "elastgroupSetupOutcome";
+  public final String TAS_APP_SETUP_OUTCOME = "TasAppSetupOutcome";
+  public final String TAS_APP_RESIZE_OUTCOME = "TasAppResizeOutcome";
 }
