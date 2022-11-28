@@ -91,7 +91,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -243,7 +242,8 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
     try {
       return k8sStateHelper.fetchPodListForCluster(containerInfraMapping, cgK8sReleaseIdentifier.getNamespace(),
           cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getClusterName());
-    } catch (Exception e) {
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
       throw new K8sPodSyncException(format("Exception in fetching podList for release %s, namespace %s",
                                         cgK8sReleaseIdentifier.getReleaseName(), cgK8sReleaseIdentifier.getNamespace()),
           e);
@@ -284,10 +284,6 @@ public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   @Override
   public Map<CgReleaseIdentifiers, List<Instance>> fetchDbInstancesForNewDeployment(
       Set<CgReleaseIdentifiers> cgReleaseIdentifierList, DeploymentSummary deploymentSummary) {
-    log.info("fetchInstancesFromDb Method Starts");
-    List<Instance> instancesInDb = instanceService.getInstancesForAppAndInframapping(
-        deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
-    log.info("All instancesInDb: [{}]", instancesInDb);
     Map<CgReleaseIdentifiers, List<Instance>> instancesMap = fetchInstancesFromDb(
         cgReleaseIdentifierList, deploymentSummary.getAppId(), deploymentSummary.getInfraMappingId());
 
