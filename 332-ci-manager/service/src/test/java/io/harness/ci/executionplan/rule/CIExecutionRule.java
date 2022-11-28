@@ -56,6 +56,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.hsqs.client.HsqsServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -244,6 +245,15 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         return mock(AccessControlClient.class);
       }
     });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      HsqsServiceClientModule queueServiceClient() {
+        return mock(HsqsServiceClientModule.class);
+      }
+    });
+
     modules.add(new SCMGrpcClientModule(ScmConnectionConfig.builder().url("dummyurl").build()));
 
     modules.add(TimeModule.getInstance());
