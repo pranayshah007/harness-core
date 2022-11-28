@@ -7,12 +7,17 @@
 
 package io.harness.ci.executionplan.rule;
 
-import static io.harness.cache.CacheBackend.CAFFEINE;
-import static io.harness.cache.CacheBackend.NOOP;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
-import static org.mockito.Mockito.mock;
-
+import com.google.common.base.Suppliers;
+import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import io.grpc.inprocess.InProcessChannelBuilder;
 import io.harness.ModuleType;
 import io.harness.SCMGrpcClientModule;
 import io.harness.ScmConnectionConfig;
@@ -60,7 +65,6 @@ import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.hsqs.client.HsqsServiceClient;
-import io.harness.hsqs.client.HsqsServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -83,29 +87,23 @@ import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.Rule;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
-import com.google.common.base.Suppliers;
-import com.google.inject.AbstractModule;
-import com.google.inject.Injector;
-import com.google.inject.Module;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.MapBinder;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
-import io.grpc.inprocess.InProcessChannelBuilder;
 import java.io.Closeable;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.Rule;
-import org.junit.rules.MethodRule;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
+
+import static io.harness.cache.CacheBackend.CAFFEINE;
+import static io.harness.cache.CacheBackend.NOOP;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static org.mockito.Mockito.mock;
 
 /**
  * Initiates mongo connection and register classes for running UTs
