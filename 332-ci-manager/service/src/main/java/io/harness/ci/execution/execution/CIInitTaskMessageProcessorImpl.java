@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcessor {
   @Inject InitializeTaskStepV2 initializeTaskStepV2;
   @Inject CIBuildEnforcer buildEnforcer;
-  @Inject @Named("ciInitTaskExecutor") private ExecutorService initTaskExecutor;
+  @Inject @Named("ciInitTaskExecutor") ExecutorService initTaskExecutor;
 
   @Override
   public Boolean processMessage(DequeueResponse dequeueResponse) {
@@ -30,7 +30,7 @@ public class CIInitTaskMessageProcessorImpl implements CIInitTaskMessageProcesso
       byte[] payload = dequeueResponse.getPayload();
       CIExecutionArgs ciExecutionArgs = RecastOrchestrationUtils.fromBytes(payload, CIExecutionArgs.class);
       Ambiance ambiance = ciExecutionArgs.getAmbiance();
-      if (buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance))) {
+      if (!buildEnforcer.checkBuildEnforcement(AmbianceUtils.getAccountId(ambiance))) {
         log.info(String.format("skipping execution for account id: %s because of concurrency enforcement failure",
             AmbianceUtils.getAccountId(ambiance)));
         return false;

@@ -243,11 +243,10 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(
         accountId, taskData, abstractions, generateLogAbstractions(ambiance));
 
-    String taskId = ciDelegateTaskExecutor.queueTask(abstractions, task,
+    return ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
         executeOnHarnessHostedDelegates, emitEvent,
         DelegateCallbackToken.newBuilder().setToken(delegateCallbackToken).build(), generateLogAbstractions(ambiance));
-    return taskId;
   }
 
   @Override

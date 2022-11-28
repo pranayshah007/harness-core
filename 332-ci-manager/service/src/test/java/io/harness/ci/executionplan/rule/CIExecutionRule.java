@@ -42,6 +42,7 @@ import io.harness.ci.license.CILicenseNoopServiceImpl;
 import io.harness.ci.license.CILicenseService;
 import io.harness.ci.registrars.ExecutionAdvisers;
 import io.harness.ci.registrars.ExecutionRegistrar;
+import io.harness.ci.validation.CIYAMLSanitizationService;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
 import io.harness.cistatus.service.azurerepo.AzureRepoService;
@@ -58,6 +59,7 @@ import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.hsqs.client.HsqsServiceClient;
 import io.harness.hsqs.client.HsqsServiceClientModule;
 import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
@@ -252,8 +254,16 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
-      HsqsServiceClientModule queueServiceClient() {
-        return mock(HsqsServiceClientModule.class);
+      HsqsServiceClient queueServiceClient() {
+        return mock(HsqsServiceClient.class);
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      CIYAMLSanitizationService yamlSanitizationService() {
+        return mock(CIYAMLSanitizationService.class);
       }
     });
 
