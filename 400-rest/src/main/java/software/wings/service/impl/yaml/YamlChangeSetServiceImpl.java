@@ -257,6 +257,10 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     if (headChangeSet != null && isFullSync(headChangeSet)) {
       selectedYamlChangeSet = headChangeSet;
     }
+    YamlChangeSet fullSyncChangeset = getAnyFullSyncChangeset(accountId, queueKey);
+    if (fullSyncChangeset != null) {
+      selectedYamlChangeSet = fullSyncChangeset;
+    }
 
     if (selectedYamlChangeSet == null) {
       final YamlChangeSet oldestGitToHarnessChangeSet = getOldestGitToHarnessChangeSet(accountId, queueKey);
@@ -313,6 +317,15 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
                .filter(YamlChangeSetKeys.status, Status.RUNNING)
                .count()
         > 0;
+  }
+
+  private YamlChangeSet getAnyFullSyncChangeset(String accountId, String queueKey) {
+    return wingsPersistence.createQuery(YamlChangeSet.class)
+        .filter(YamlChangeSetKeys.accountId, accountId)
+        .filter(YamlChangeSetKeys.queueKey, queueKey)
+        .filter(YamlChangeSetKeys.status, Status.QUEUED)
+        .filter(YamlChangeSetKeys.fullSync, true)
+        .get();
   }
 
   @Override

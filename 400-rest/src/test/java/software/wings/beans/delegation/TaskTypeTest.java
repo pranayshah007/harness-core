@@ -403,6 +403,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(363, "TERRAGRUNT_APPLY_TASK_NG");
     taskTypeOrdinalMapping.put(364, "TERRAGRUNT_DESTROY_TASK_NG");
     taskTypeOrdinalMapping.put(365, "TERRAGRUNT_ROLLBACK_TASK_NG");
+    taskTypeOrdinalMapping.put(366, "GITOPS_FETCH_APP_TASK");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

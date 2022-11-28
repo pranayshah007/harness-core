@@ -44,6 +44,7 @@ public class MongoOffsetBackingStore extends MemoryOffsetBackingStore {
                                                        .retryWrites(true)
                                                        .connectTimeout(30000)
                                                        .serverSelectionTimeout(90000)
+                                                       .socketTimeout(360000)
                                                        .maxConnectionIdleTime(600000)
                                                        .connectionsPerHost(300)
                                                        .readPreference(ReadPreference.primary())

@@ -23,6 +23,7 @@ import io.harness.migrations.timescaledb.AddFieldsToWorkflowCVMetrics;
 import io.harness.migrations.timescaledb.AddIdleUnallocatedColumns;
 import io.harness.migrations.timescaledb.AddIndexToInstanceV2Migration;
 import io.harness.migrations.timescaledb.AddIndicesForCostEvents;
+import io.harness.migrations.timescaledb.AddInfraIdsToDeploymentsEnvIdsToInfraTable;
 import io.harness.migrations.timescaledb.AddInstancesDeployedToDeployment;
 import io.harness.migrations.timescaledb.AddMaxStorageColumns;
 import io.harness.migrations.timescaledb.AddMaxUtilColumns;
@@ -170,6 +171,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(73, BaseTimeScaleDBMigration.class))
         .add(Pair.of(74, AddOnDemandRollbackDetailsToDeployment.class))
         .add(Pair.of(75, ChangeChunkSizeForDeploymentsTable.class))
+        .add(Pair.of(76, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
         .build();
   }
 }

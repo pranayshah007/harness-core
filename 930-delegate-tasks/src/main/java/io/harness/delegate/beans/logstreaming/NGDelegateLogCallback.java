@@ -63,6 +63,10 @@ public class NGDelegateLogCallback implements LogCallback {
       iLogStreamingTaskClient.closeStream(commandUnitName);
     }
 
+    if (commandUnitsProgress == null) {
+      // When no units
+      return;
+    }
     LinkedHashMap<String, CommandUnitProgress> commandUnitProgressMap =
         commandUnitsProgress.getCommandUnitProgressMap();
 

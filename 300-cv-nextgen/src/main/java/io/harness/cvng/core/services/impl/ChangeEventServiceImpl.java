@@ -338,14 +338,12 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   }
 
   private Criteria[] getCriteriasForInfraEvents(Query<Activity> q, ProjectParams projectParams, Instant startTime,
-      Instant endTime, List<String> monitoredServiceIdentifier, List<ChangeCategory> changeCategories,
+      Instant endTime, List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes) {
     List<Criteria> criterias = getCriterias(q, projectParams, changeCategories, changeSourceTypes, startTime, endTime);
-    if (CollectionUtils.isNotEmpty(monitoredServiceIdentifier)) {
-      criterias.add(q.criteria(KubernetesClusterActivityKeys.relatedAppServices + "."
-                         + ServiceEnvironmentKeys.monitoredServiceIdentifier)
-                        .in(monitoredServiceIdentifier));
-    }
+    criterias.add(q.criteria(KubernetesClusterActivityKeys.relatedAppServices + "."
+                       + ServiceEnvironmentKeys.monitoredServiceIdentifier)
+                      .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers)));
     return criterias.toArray(new Criteria[criterias.size()]);
   }
 
@@ -353,9 +351,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
       Instant endTime, List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes) {
     List<Criteria> criterias = getCriterias(q, projectParams, changeCategories, changeSourceTypes, startTime, endTime);
-    if (CollectionUtils.isNotEmpty(monitoredServiceIdentifiers)) {
-      criterias.add(q.criteria(ActivityKeys.monitoredServiceIdentifier).in(monitoredServiceIdentifiers));
-    }
+    criterias.add(q.criteria(ActivityKeys.monitoredServiceIdentifier)
+                      .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers)));
     return criterias.toArray(new Criteria[criterias.size()]);
   }
 
@@ -400,13 +397,12 @@ public class ChangeEventServiceImpl implements ChangeEventService {
     }
     query = query.field(ActivityKeys.type)
                 .in(changeSourceTypeStream.map(ChangeSourceType::getActivityType).collect(Collectors.toList()));
-    if (isNotEmpty(monitoredServiceIdentifiers)) {
-      query.or(new Criteria[] {query.criteria(ActivityKeys.monitoredServiceIdentifier).in(monitoredServiceIdentifiers),
-          query
-              .criteria(KubernetesClusterActivityKeys.relatedAppServices + "."
-                  + ServiceEnvironmentKeys.monitoredServiceIdentifier)
-              .in(monitoredServiceIdentifiers)});
-    }
+    query.or(new Criteria[] {query.criteria(ActivityKeys.monitoredServiceIdentifier)
+                                 .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers)),
+        query
+            .criteria(KubernetesClusterActivityKeys.relatedAppServices + "."
+                + ServiceEnvironmentKeys.monitoredServiceIdentifier)
+            .in(CollectionUtils.emptyIfNull(monitoredServiceIdentifiers))});
     return query;
   }
 
