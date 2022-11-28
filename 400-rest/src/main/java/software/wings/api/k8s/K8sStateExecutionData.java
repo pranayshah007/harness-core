@@ -20,28 +20,22 @@ import io.harness.k8s.model.KubernetesResourceId;
 import software.wings.api.ExecutionDataValue;
 import software.wings.beans.TaskType;
 import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.infrastructure.instance.info.K8sContainerInfo;
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.sm.InstanceStatusSummary;
 import software.wings.sm.StateExecutionData;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
-import org.jetbrains.annotations.NotNull;
 
 @Data
 @Builder

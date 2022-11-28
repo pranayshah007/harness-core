@@ -15,7 +15,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.k8s.model.KubernetesResourceId;
 
-import software.wings.beans.infrastructure.instance.info.K8sPodInfo;
 import software.wings.sm.StepExecutionSummary;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

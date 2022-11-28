@@ -14,7 +14,19 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.infrastructure.instance.InstanceType.KUBERNETES_CONTAINER_INSTANCE;
-import static software.wings.service.impl.instance.InstanceSyncTestConstants.*;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.ACCOUNT_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_NAME;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.COMPUTE_PROVIDER_NAME;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.COMPUTE_PROVIDER_SETTING_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.ENV_NAME;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.INFRA_MAPPING_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.INSTANCE_1_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.INSTANCE_2_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.KUBE_CLUSTER;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.SERVICE_ID;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.SERVICE_NAME;
 import static software.wings.utils.WingsTestConstants.UUID;
 
 import static java.util.Arrays.asList;
