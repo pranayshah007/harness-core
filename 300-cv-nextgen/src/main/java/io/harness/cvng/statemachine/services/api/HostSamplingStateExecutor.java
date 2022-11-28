@@ -43,8 +43,8 @@ public abstract class HostSamplingStateExecutor<T extends HostSamplingState> ext
 
   @Override
   public AnalysisState execute(HostSamplingState analysisState) {
-    VerificationJobInstance verificationJobInstance =
-        verificationJobInstanceService.getVerificationJobInstance(analysisState.getVerificationJobInstanceId());
+    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
+        analysisState.getInputs().getVerificationJobInstanceId());
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
 
     Set<String> preDeploymentHosts =

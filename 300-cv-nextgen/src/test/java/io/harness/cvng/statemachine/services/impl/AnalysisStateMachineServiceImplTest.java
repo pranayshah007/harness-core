@@ -50,6 +50,7 @@ import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
+import io.harness.cvng.statemachine.entities.DeploymentMetricHostSamplingState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
 import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
@@ -648,8 +649,9 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
                                .endTime(Instant.now())
                                .build();
 
-    AnalysisStateMachine stateMachine = stateMachineService.createStateMachine(inputs);
-    assertEquals(stateMachine.getCurrentState().getClass(), HostSamplingState.class);
+    AnalysisStateMachine stateMachine =
+        taskTypeAnalysisStateMachineServiceMap.get(VerificationTask.TaskType.DEPLOYMENT).createStateMachine(inputs);
+    assertEquals(stateMachine.getCurrentState().getClass(), DeploymentMetricHostSamplingState.class);
     assertThat(stateMachine).isNotNull();
   }
 }

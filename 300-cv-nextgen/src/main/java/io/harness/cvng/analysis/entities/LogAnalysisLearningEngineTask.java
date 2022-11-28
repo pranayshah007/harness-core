@@ -7,6 +7,7 @@
 
 package io.harness.cvng.analysis.entities;
 
+import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,4 +17,6 @@ public abstract class LogAnalysisLearningEngineTask extends LearningEngineTask {
   private String controlDataUrl;
   private String testDataUrl;
   private String previousAnalysisUrl;
+  Set<String> controlHosts;
+  Set<String> testHosts;
 }

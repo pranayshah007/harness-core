@@ -8,6 +8,7 @@ import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.DeploymentLogAnalysisState;
+import io.harness.cvng.statemachine.entities.DeploymentTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -53,9 +54,10 @@ public class DeploymentMetricHostSamplingStateExecutor extends HostSamplingState
   @Override
   public AnalysisState handleTransition(HostSamplingState analysisState) {
     analysisState.setStatus(AnalysisStatus.SUCCESS);
-    DeploymentLogAnalysisState deploymentLogAnalysisState = DeploymentLogAnalysisState.builder().build();
-    deploymentLogAnalysisState.setInputs(analysisState.getInputs());
-    deploymentLogAnalysisState.setStatus(AnalysisStatus.CREATED);
-    return deploymentLogAnalysisState;
+    DeploymentTimeSeriesAnalysisState deploymentTimeSeriesAnalysisState = new DeploymentTimeSeriesAnalysisState();
+    deploymentTimeSeriesAnalysisState.setInputs(analysisState.getInputs());
+    deploymentTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
+    deploymentTimeSeriesAnalysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
+    return deploymentTimeSeriesAnalysisState;
   }
 }

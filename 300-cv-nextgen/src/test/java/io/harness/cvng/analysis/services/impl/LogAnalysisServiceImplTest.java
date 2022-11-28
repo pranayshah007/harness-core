@@ -459,7 +459,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
     assertThat(testLogAnalysisLearningEngineTask.getControlDataUrl()).isNull();
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
   }
 
   @Test
@@ -496,7 +496,7 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
             + baselineVerificationTaskId + "&analysisStartTime=1595846760000&analysisEndTime=1595847660000");
     assertThat(testLogAnalysisLearningEngineTask.getTestDataUrl())
         .isEqualTo(CVConstants.SERVICE_BASE_URL + "/log-analysis/test-data?verificationTaskId=" + verificationTaskId
-            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000");
+            + "&analysisStartTime=1595846951000&analysisEndTime=1595847011000&hosts=");
   }
   @Test
   @Owner(developers = KAMAL)
