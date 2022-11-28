@@ -46,9 +46,9 @@ import io.harness.rule.Owner;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
@@ -149,7 +149,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(any(), any());
     doReturn(Optional.of(PipelineEntity.builder().build()))
         .when(pmsPipelineService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean());
 
     doReturn(null).when(pmsGitSyncHelper).getGitSyncBranchContextBytesThreadLocal();
 
@@ -178,7 +178,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     doReturn(criteria)
         .when(pmsExecutionService)
         .formCriteria(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, null, null,
-            false, false, gitSyncBranchContext, true);
+            false, false, true);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PlanExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
@@ -211,7 +211,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     Criteria criteria = Criteria.where("a").is("b");
     doReturn(criteria)
         .when(pmsExecutionService)
-        .formCriteriaV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST);
+        .formCriteriaOROperatorOnModules(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, null, null);
 
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineExecutionSummaryKeys.startTs));
     Page<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntities =
@@ -220,10 +221,10 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .when(pmsExecutionService)
         .getPipelineExecutionSummaryEntity(criteria, pageable);
 
-    Page<PipelineExecutionSummaryDTO> content =
-        executionDetailsResource
-            .getListOfExecutionsV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, 0, 10)
-            .getData();
+    Page<PipelineExecutionSummaryDTO> content = executionDetailsResource
+                                                    .getListOfExecutionsWithOrOperator(ACCOUNT_ID, ORG_IDENTIFIER,
+                                                        PROJ_IDENTIFIER, PIPELINE_IDENTIFIER_LIST, 0, 10, null, null)
+                                                    .getData();
     assertThat(content).isNotEmpty();
     assertThat(content.getNumberOfElements()).isEqualTo(1);
 
@@ -279,7 +280,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListOfRepos() {
-    HashSet<String> repoList = new HashSet<>();
+    List<String> repoList = new ArrayList<>();
     repoList.add("testRepo");
     repoList.add("testRepo2");
 
@@ -297,7 +298,7 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
   @Owner(developers = ADITHYA)
   @Category(UnitTests.class)
   public void testGetListOfBranch() {
-    HashSet<String> branchList = new HashSet<>();
+    List<String> branchList = new ArrayList<>();
     branchList.add("main");
     branchList.add("main-patch");
 

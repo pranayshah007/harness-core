@@ -44,6 +44,7 @@ import software.wings.service.intfc.UsageRestrictionsService;
 import software.wings.service.intfc.newrelic.NewRelicService;
 
 import com.google.inject.Inject;
+import java.time.Duration;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.junit.Test;
@@ -79,7 +80,13 @@ public class SettingAttributesSecretsMigrationHandlerTest extends WingsBaseTest 
   public void testRegisterIterators_featureFlagEnabled() {
     ArgumentCaptor<MongoPersistenceIteratorBuilder> captor =
         ArgumentCaptor.forClass(MongoPersistenceIteratorBuilder.class);
-    settingAttributesSecretsMigrationHandler.registerIterators();
+    settingAttributesSecretsMigrationHandler.createAndStartIterator(
+        PersistenceIteratorFactory.PumpExecutorOptions.builder()
+            .name("SettingAttributesSecretsMigrationHandler")
+            .poolSize(2)
+            .interval(Duration.ofSeconds(30))
+            .build(),
+        Duration.ofMinutes(30));
     verify(persistenceIteratorFactory, times(1))
         .createPumpIteratorWithDedicatedThreadPool(any(), eq(SettingAttribute.class), captor.capture());
     MongoPersistenceIteratorBuilder mongoPersistenceIteratorBuilder = captor.getValue();

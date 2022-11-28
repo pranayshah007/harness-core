@@ -13,6 +13,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_JSON_FILE_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.TMACARI;
@@ -92,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -120,6 +122,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ArtifactoryNgService artifactoryNgService;
   @Mock ArtifactoryRequestMapper artifactoryRequestMapper;
 
+  private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
       EncryptedRecordData.builder().name("planName").encryptedValue("encryptedPlan".toCharArray()).build();
 
@@ -127,6 +130,12 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     spyTerraformBaseHelper = spy(terraformBaseHelper);
+    tfBackendConfig = createBackendConfigFile("a1 = b1\na2 = b2\na3 = b3", "backendConfigFile.txt");
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    FileIo.deleteFileIfExists(tfBackendConfig.getAbsolutePath());
   }
 
   @Test
@@ -251,6 +260,14 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
   }
 
+  private File createBackendConfigFile(String content, String fileName) throws IOException {
+    final File file = File.createTempFile("abc", fileName);
+    try (FileWriter fileWriter = new FileWriter(file)) {
+      fileWriter.write(content);
+    }
+    return file;
+  }
+
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
@@ -295,6 +312,26 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHAFromLocalRepo(any(GitBaseRequest.class));
 
     terraformBaseHelper.addVarFilesCommitIdsToMap("configFileIdentifier", getGitTerraformFileInfoList(), commitIdMap);
+    assertThat(commitIdMap).isNotNull();
+    assertThat(commitIdMap.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testAddVarFiesCommitIdsToMapBackendConfig() {
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
+    TerraformBackendConfigFileInfo configFile =
+        RemoteTerraformBackendConfigFileInfo.builder()
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .build();
+
+    Map<String, String> commitIdMap = new HashMap<>();
+    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHA(new File("repoDir"));
+    doReturn("repoDir").when(gitClientHelper).getRepoDirectory(any(GitBaseRequest.class));
+    doReturn("commitsha").when(spyTerraformBaseHelper).getLatestCommitSHAFromLocalRepo(any(GitBaseRequest.class));
+
+    terraformBaseHelper.addBackendFileCommitIdsToMap("configFileIdentifier", configFile, commitIdMap);
     assertThat(commitIdMap).isNotNull();
     assertThat(commitIdMap.size()).isEqualTo(1);
   }
@@ -529,6 +566,27 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = JELENA)
+  @Category(UnitTests.class)
+  public void testCheckoutRemoteBackendConfigFileAndConvertToFilePath() throws IOException {
+    String scriptDirectory = "repository/testSaveAndGetTerraformPlanFile";
+    FileIo.createDirectoryIfDoesNotExist(scriptDirectory);
+    String configDir = "repository/backendConfigDir";
+    FileIo.createDirectoryIfDoesNotExist(configDir);
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig();
+    TerraformBackendConfigFileInfo configFile =
+        RemoteTerraformBackendConfigFileInfo.builder()
+            .gitFetchFilesConfig(GitFetchFilesConfig.builder().gitStoreDelegateConfig(gitStoreDelegateConfig).build())
+            .build();
+
+    String filePath = terraformBaseHelper.checkoutRemoteBackendConfigFileAndConvertToFilePath(
+        configFile, scriptDirectory, logCallback, "accountId", configDir);
+    assertThat(filePath).isNotNull();
+    assertThat(filePath).isEqualTo(Paths.get(configDir).toAbsolutePath() + "/"
+        + "filepath1");
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testCheckoutRemoteArtifactoryVarFileAndConvertToVarFilePaths() throws IOException {
@@ -669,7 +727,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
   private TerraformExecuteStepRequestBuilder getTerraformExecuteStepRequest() {
     return TerraformExecuteStepRequest.builder()
-        .tfBackendConfigsFile("backendConfigFile.txt")
+        .tfBackendConfigsFile(tfBackendConfig.getAbsolutePath())
         .tfOutputsFile("outputfile.txt")
         .scriptDirectory("scriptDirectory")
         .envVars(new HashMap<>())

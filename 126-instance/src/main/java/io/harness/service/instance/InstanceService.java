@@ -14,6 +14,8 @@ import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.entities.Project;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,16 +41,7 @@ public interface InstanceService {
 
   Optional<InstanceDTO> findAndReplace(InstanceDTO instanceDTO);
 
-  List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, long timestamp);
-
-  List<InstanceDTO> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
-
-  List<InstanceDTO> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp);
-
-  List<InstanceDTO> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
+  List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp);
 
   List<InstanceDTO> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
@@ -82,4 +75,14 @@ public interface InstanceService {
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);
 
   void updateInfrastructureMapping(List<String> instanceIds, String id);
+
+  long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS);
 }

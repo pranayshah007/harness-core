@@ -119,7 +119,7 @@ public class ExportExecutionsRequestService {
 
   public ExportExecutionsRequestLimitChecks prepareLimitChecks(
       @NotNull String accountId, @NotNull Query<WorkflowExecution> query) {
-    long currQueuedRequests = wingsPersistence.createQuery(ExportExecutionsRequest.class)
+    long currQueuedRequests = wingsPersistence.createAnalyticsQuery(ExportExecutionsRequest.class)
                                   .filter(ExportExecutionsRequestKeys.accountId, accountId)
                                   .filter(ExportExecutionsRequestKeys.status, Status.QUEUED)
                                   .count(new CountOptions().readPreference(ReadPreference.secondaryPreferred()));
@@ -218,7 +218,7 @@ public class ExportExecutionsRequestService {
   }
 
   public long getTotalRequestsInLastDay(@NotNull String accountId) {
-    return wingsPersistence.createQuery(ExportExecutionsRequest.class)
+    return wingsPersistence.createAnalyticsQuery(ExportExecutionsRequest.class)
         .filter(ExportExecutionsRequestKeys.accountId, accountId)
         .field(ExportExecutionsRequestKeys.createdAt)
         .greaterThan(Instant.now().minus(1, ChronoUnit.DAYS).toEpochMilli())

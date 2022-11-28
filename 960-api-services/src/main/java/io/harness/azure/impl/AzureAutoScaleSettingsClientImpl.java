@@ -18,21 +18,24 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.AzureClient;
 import io.harness.azure.client.AzureAutoScaleSettingsClient;
+import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.monitor.fluent.AutoscaleSettingsClient;
+import com.azure.resourcemanager.monitor.fluent.MonitorClient;
+import com.azure.resourcemanager.monitor.fluent.models.AutoscaleProfileInner;
+import com.azure.resourcemanager.monitor.fluent.models.AutoscaleSettingResourceInner;
+import com.azure.resourcemanager.monitor.implementation.MonitorClientBuilder;
+import com.azure.resourcemanager.monitor.models.AutoscaleProfile;
+import com.azure.resourcemanager.monitor.models.AutoscaleSetting;
+import com.azure.resourcemanager.monitor.models.ScaleCapacity;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.monitor.AutoscaleProfile;
-import com.microsoft.azure.management.monitor.AutoscaleSetting;
-import com.microsoft.azure.management.monitor.ScaleCapacity;
-import com.microsoft.azure.management.monitor.implementation.AutoscaleProfileInner;
-import com.microsoft.azure.management.monitor.implementation.AutoscaleSettingResourceInner;
-import com.microsoft.azure.serializer.AzureJacksonAdapter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,14 +57,13 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
 
     if (autoScaleSettingOp.isPresent()) {
       AutoscaleSetting autoscaleSetting = autoScaleSettingOp.get();
-      AutoscaleSettingResourceInner autoscaleSettingResourceInner = autoscaleSetting.inner();
-      AzureJacksonAdapter adapter = new AzureJacksonAdapter();
+      AutoscaleSettingResourceInner autoscaleSettingResourceInner = autoscaleSetting.innerModel();
 
       log.debug(
           "Start serializing AutosScaleSettingResourceInner by subscriptionId: {}, resourceGroupName: {}, targetResourceId: {}",
           subscriptionId, resourceGroupName, targetResourceId);
       try {
-        return Optional.of(adapter.serialize(autoscaleSettingResourceInner));
+        return Optional.of(serializerAdapter.serialize(autoscaleSettingResourceInner, serializerEncoding));
       } catch (IOException e) {
         throw new InvalidRequestException(
             format(
@@ -98,11 +100,12 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
       throw new IllegalArgumentException(TARGET_RESOURCE_ID_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug("Start listing AutosScale settings by subscriptionId: {}, resourceGroupName: {}, targetResourceId: {}",
         subscriptionId, resourceGroupName, targetResourceId);
-    PagedList<AutoscaleSetting> autosScaleSettings = azure.autoscaleSettings().listByResourceGroup(resourceGroupName);
+    PagedIterable<AutoscaleSetting> autosScaleSettings =
+        azure.autoscaleSettings().listByResourceGroup(resourceGroupName);
     for (AutoscaleSetting autoScaleSetting : autosScaleSettings) {
       if (autoScaleSetting.autoscaleEnabled() && targetResourceId.equals(autoScaleSetting.targetResourceId())) {
         return Optional.of(autoScaleSetting);
@@ -114,14 +117,34 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
   @Override
   public void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
       final String resourceGroupName, final String targetResourceId, final String autoScaleSettingResourceInnerJson) {
-    attachAutoScaleSettingToTargetResourceId(
-        azureConfig, subscriptionId, resourceGroupName, targetResourceId, autoScaleSettingResourceInnerJson, null);
+    AutoscaleSettingsClient autoscaleSettingsClient =
+        getMonitorClient(azureConfig, subscriptionId).getAutoscaleSettings();
+    attachAutoScaleSettingToTargetResourceId(azureConfig, subscriptionId, resourceGroupName, targetResourceId,
+        autoScaleSettingResourceInnerJson, autoscaleSettingsClient);
+  }
+
+  @Override
+  public void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, String subscriptionId,
+      final String resourceGroupName, final String targetResourceId, final String autoScaleSettingResourceInnerJson,
+      AutoscaleSettingsClient autoscaleSettingsClient) {
+    attachAutoScaleSettingToTargetResourceId(azureConfig, subscriptionId, resourceGroupName, targetResourceId,
+        autoScaleSettingResourceInnerJson, null, autoscaleSettingsClient);
   }
 
   @Override
   public void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, final String subscriptionId,
       final String resourceGroupName, final String targetResourceId, final String autoScaleSettingResourceInnerJson,
       ScaleCapacity defaultProfileScaleCapacity) {
+    AutoscaleSettingsClient autoscaleSettingsClient =
+        getMonitorClient(azureConfig, subscriptionId).getAutoscaleSettings();
+    attachAutoScaleSettingToTargetResourceId(azureConfig, subscriptionId, resourceGroupName, targetResourceId,
+        autoScaleSettingResourceInnerJson, null, autoscaleSettingsClient);
+  }
+
+  @Override
+  public void attachAutoScaleSettingToTargetResourceId(AzureConfig azureConfig, final String subscriptionId,
+      final String resourceGroupName, final String targetResourceId, final String autoScaleSettingResourceInnerJson,
+      ScaleCapacity defaultProfileScaleCapacity, AutoscaleSettingsClient autoscaleSettingsClient) {
     if (isBlank(resourceGroupName)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
@@ -137,16 +160,13 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
       throw new IllegalArgumentException(AzureConstants.AUTOSCALE_SETTINGS_RESOURCE_JSON_NULL_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
-    AzureJacksonAdapter adapter = new AzureJacksonAdapter();
-
     AutoscaleSettingResourceInner autoScaleSettingResourceInner;
     try {
       log.debug(
           "Start deserialize AutosScaleSettingResourceInner by subscriptionId: {}, resourceGroupName: {}, targetResourceId: {}",
           subscriptionId, resourceGroupName, targetResourceId);
-      autoScaleSettingResourceInner =
-          adapter.deserialize(autoScaleSettingResourceInnerJson, AutoscaleSettingResourceInner.class);
+      autoScaleSettingResourceInner = serializerAdapter.deserialize(
+          autoScaleSettingResourceInnerJson, AutoscaleSettingResourceInner.class, serializerEncoding);
     } catch (IOException e) {
       throw new InvalidRequestException(
           format("Unable to deserialize AutoScaleSettingResourceInner, subscriptionId: %s, resourceGroupName: %s, "
@@ -158,7 +178,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
     String newCustomAutoScalingSettingsName = getNewCustomAutoScalingSettingsName(targetResourceId);
 
     autoScaleSettingResourceInner.withTargetResourceUri(targetResourceId);
-    autoScaleSettingResourceInner.withAutoscaleSettingResourceName(newCustomAutoScalingSettingsName);
+    autoScaleSettingResourceInner.withNamePropertiesName(newCustomAutoScalingSettingsName);
 
     // set min, max and desired capacity on default AutoScaleProfile
     setDefaultAutoScaleProfileCapacity(defaultProfileScaleCapacity, autoScaleSettingResourceInner);
@@ -167,7 +187,8 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
     log.debug(
         "Start creating or updating AutosScaleSetting by subscriptionId: {}, resourceGroupName: {}, targetResourceId: {}, newCustomAutoScalingSettingsName: {}",
         subscriptionId, resourceGroupName, targetResourceId, newCustomAutoScalingSettingsName);
-    azure.autoscaleSettings().inner().createOrUpdate(
+
+    autoscaleSettingsClient.createOrUpdateAsync(
         resourceGroupName, newCustomAutoScalingSettingsName, autoScaleSettingResourceInner);
   }
 
@@ -210,7 +231,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
   @Override
   public void clearAutoScaleSettingOnTargetResourceId(
       AzureConfig azureConfig, String subscriptionId, final String resourceGroupName, final String targetResourceId) {
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     Optional<AutoscaleSetting> autoScaleSettingOp =
         getAutoScaleSettingByTargetResourceId(azureConfig, subscriptionId, resourceGroupName, targetResourceId);
@@ -269,8 +290,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
 
     if (autoScaleSettingOp.isPresent()) {
       AutoscaleSetting autoscaleSetting = autoScaleSettingOp.get();
-      AutoscaleSettingResourceInner autoScaleSettingInner = autoscaleSetting.inner();
-      AzureJacksonAdapter adapter = new AzureJacksonAdapter();
+      AutoscaleSettingResourceInner autoScaleSettingInner = autoscaleSetting.innerModel();
 
       log.debug("Start listing AutosScale profiles by subscriptionId: {}, resourceGroupName: {}, targetResourceId: {}",
           subscriptionId, resourceGroupName, targetResourceId);
@@ -278,7 +298,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
           .stream()
           .map(profile -> {
             try {
-              return adapter.serialize(profile);
+              return serializerAdapter.serialize(profile, serializerEncoding);
             } catch (IOException e) {
               throw new InvalidRequestException(
                   format("Unable to serialize AutoScaleProfile, subscriptionId: %s, resourceGroupName: %s, "
@@ -292,5 +312,20 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
     } else {
       return Collections.emptyList();
     }
+  }
+
+  protected MonitorClient getMonitorClient(AzureClientContext context) {
+    return getMonitorClient(context.getAzureConfig(), context.getSubscriptionId());
+  }
+
+  protected MonitorClient getMonitorClient(AzureConfig azureConfig) {
+    return getMonitorClient(azureConfig, null);
+  }
+
+  protected MonitorClient getMonitorClient(AzureConfig azureConfig, String subscriptionId) {
+    return new MonitorClientBuilder()
+        .subscriptionId(subscriptionId)
+        .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .buildClient();
   }
 }

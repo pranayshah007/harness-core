@@ -97,6 +97,7 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
                                                .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                .setMessage("Experiment did not finish Successfully")
                                                .build())
+                           .setErrorMessage("Experiment did not finish Successfully")
                            .build())
           .build();
     }
@@ -112,6 +113,8 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
                                                    "Score %2.2f is less than expected Resiliency Score of %2.2f",
                                                    data.getResiliencyScore(), params.getExpectedResilienceScore()))
                                                .build())
+                           .setErrorMessage(String.format("Score %2.2f is less than expected Resiliency Score of %2.2f",
+                               data.getResiliencyScore(), params.getExpectedResilienceScore()))
                            .build())
           .build();
     }
@@ -125,6 +128,7 @@ public class ChaosStep implements AsyncExecutable<StepElementParameters> {
                                                .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                .setMessage("Assertion failed")
                                                .build())
+                           .setErrorMessage("Assertion failed")
                            .build())
           .build();
     }

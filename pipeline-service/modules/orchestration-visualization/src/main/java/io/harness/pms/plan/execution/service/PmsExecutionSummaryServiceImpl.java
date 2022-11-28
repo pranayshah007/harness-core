@@ -101,7 +101,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                  .get(nodeExecution.getNodeId())
                  .getNodeType()
                  .equals(StrategyType.PARALLELISM.name())) {
-          updateApplied = updateApplied || updateStrategyNodeFields(nodeExecution, update, true);
+          updateApplied = updateStrategyNodeFields(nodeExecution, update, true) || updateApplied;
         }
 
         String stageSetupId = getStageSetupId(childrenNodeExecution, graphLayoutNode, nodeExecution);
@@ -111,9 +111,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
                    .getEdgeLayoutList()
                    .getCurrentNodeChildren()
                    .contains(childNodeExecution.getUuid())) {
-            updateApplied = updateApplied
-                || addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
-                    graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId);
+            updateApplied = addStageIdentityNodeInGraphIfUnderStrategy(planExecutionId, childNodeExecution, update,
+                                graphLayoutNode.get(stageSetupId), nodeExecution.getNodeId(), stageSetupId)
+                || updateApplied;
           }
         }
       }
@@ -201,7 +201,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     Ambiance ambiance = nodeExecution.getAmbiance();
     Optional<PipelineExecutionSummaryEntity> entity = getPipelineExecutionSummary(AmbianceUtils.getAccountId(ambiance),
         AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), planExecutionId);
-    if (!entity.isPresent()) {
+    if (entity.isEmpty()) {
       return false;
     }
     PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
@@ -310,6 +310,10 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeIdentifier, nodeExecution.getIdentifier());
     update.set(baseKey + GraphLayoutNodeDTOKeys.name, nodeExecution.getName());
     update.set(baseKey + GraphLayoutNodeDTOKeys.nodeUuid, nodeExecution.getNodeId());
+
+    boolean isRollbackStageNode =
+        nodeExecution.getNodeId().endsWith(NGCommonUtilPlanCreationConstants.ROLLBACK_STAGE_UUID_SUFFIX);
+    update.set(baseKey + GraphLayoutNodeDTOKeys.isRollbackStageNode, isRollbackStageNode);
   }
 
   private String getStageSetupId(List<NodeExecution> childrenNodeExecution,

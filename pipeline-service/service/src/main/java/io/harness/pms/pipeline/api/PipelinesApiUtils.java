@@ -25,13 +25,12 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
-import io.harness.pms.pipeline.ExecutionSummaryInfoDTO;
 import io.harness.pms.pipeline.ExecutorInfoDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
-import io.harness.spec.server.pipeline.v1.model.ExecutionSummary;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.GitCreateDetails;
@@ -43,6 +42,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
@@ -257,7 +257,6 @@ public class PipelinesApiUtils {
     if (pipelineDTO.getModules() != null) {
       responseBody.setModules(new ArrayList<>(pipelineDTO.getModules()));
     }
-    responseBody.setExecutionSummary(getExecutionSummary(pipelineDTO.getExecutionSummaryInfo()));
     responseBody.setStoreType(getStoreType(pipelineDTO.getStoreType()));
     responseBody.setConnectorRef(pipelineDTO.getConnectorRef());
     responseBody.setValid((pipelineDTO.getIsDraft() == null) ? null : !pipelineDTO.getIsDraft());
@@ -269,16 +268,6 @@ public class PipelinesApiUtils {
                                               .collect(Collectors.toList()));
     }
     return responseBody;
-  }
-
-  public static ExecutionSummary getExecutionSummary(ExecutionSummaryInfoDTO executionSummaryInfo) {
-    if (executionSummaryInfo == null) {
-      return null;
-    }
-    ExecutionSummary executionSummary = new ExecutionSummary();
-    executionSummary.setErrorsCount(executionSummaryInfo.getNumOfErrors());
-    executionSummary.setDeploymentsCount(executionSummaryInfo.getDeployments());
-    return executionSummary;
   }
 
   public static StoreTypeEnum getStoreType(StoreType storeType) {
@@ -346,26 +335,25 @@ public class PipelinesApiUtils {
 
   public static List<String> getSorting(String field, String order) {
     if (field == null) {
+      if (order != null) {
+        throw new InvalidRequestException("Order of sorting provided without Sort field.");
+      }
       return null;
     }
-    if (order == null || (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc"))) {
-      throw new InvalidRequestException("Order of sorting unidentified or null. Accepted values: ASC / DESC");
-    }
     switch (field) {
-      case "slug":
-        field = "identifier";
-        break;
       case "name":
-        break;
-      case "created":
-        field = "createdAt";
         break;
       case "updated":
         field = "lastUpdatedAt";
         break;
       default:
-        throw new InvalidRequestException(
-            "Field provided for sorting unidentified. Accepted values: slug / name / created / updated");
+        throw new InvalidRequestException("Field provided for sorting unidentified. Accepted values: name / updated");
+    }
+    if (order == null) {
+      order = "DESC";
+    }
+    if (!order.equalsIgnoreCase("asc") && !order.equalsIgnoreCase("desc")) {
+      throw new InvalidRequestException("Order of sorting unidentified. Accepted values: ASC / DESC");
     }
     return new ArrayList<>(Collections.singleton(field + "," + order));
   }
@@ -397,6 +385,10 @@ public class PipelinesApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .repoName(gitDetails.getRepoName())
+        .storeType(StoreType.getFromStringOrNull(
+            (gitDetails.getStoreType() == null) ? null : gitDetails.getStoreType().value()))
+        .connectorRef(gitDetails.getConnectorRef())
         .build();
   }
 
@@ -424,5 +416,9 @@ public class PipelinesApiUtils {
         .description(updateRequestBody.getDescription())
         .tags(updateRequestBody.getTags())
         .build();
+  }
+
+  public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
+    return new PipelineValidationResponseBody().status(event.getStatus().name());
   }
 }

@@ -23,5 +23,7 @@ public enum SettingCategory {
   PMS,
   TEMPLATESERVICE,
   GOVERNANCE,
-  CHAOS;
+  CHAOS,
+  SCIM,
+  GIT_EXPERIENCE
 }

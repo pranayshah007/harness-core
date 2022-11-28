@@ -8,6 +8,7 @@
 package io.harness.delegate.ecs;
 
 import static io.harness.rule.OwnerRule.ALLU_VAMSI;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 
 import static software.wings.beans.LogHelper.color;
 
@@ -38,6 +39,7 @@ import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
 import java.util.Arrays;
+import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,6 +49,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import software.amazon.awssdk.services.ecs.model.CreateServiceRequest;
+import software.amazon.awssdk.services.ecs.model.Service;
 
 public class EcsRollingRollbackCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -156,5 +159,42 @@ public class EcsRollingRollbackCommandTaskHandlerTest extends CategoryTest {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     ecsRollingRollbackCommandTaskHandler.executeTaskInternal(
         ecsRollingDeployRequest, iLogStreamingTaskClient, commandUnitsProgress);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void executeRollbackTaskForMaxDesiredCountTest() throws Exception {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    EcsRollingRollbackConfig ecsRollingRollbackConfig = EcsRollingRollbackConfig.builder().build();
+    EcsRollingRollbackRequest ecsRollingRollbackRequest = EcsRollingRollbackRequest.builder()
+                                                              .ecsInfraConfig(EcsInfraConfig.builder().build())
+                                                              .ecsRollingRollbackConfig(ecsRollingRollbackConfig)
+                                                              .timeoutIntervalInMin(10)
+                                                              .build();
+    CreateServiceRequest.Builder createServiceRequestBuilder = CreateServiceRequest.builder().desiredCount(8);
+    Optional<Service> optionalService = Optional.of(Service.builder().desiredCount(10).build());
+
+    doReturn(rollbackLogCallback)
+        .when(ecsTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, EcsCommandUnitConstants.rollback.toString(), true, commandUnitsProgress);
+    doReturn(createServiceRequestBuilder)
+        .when(ecsCommandTaskHelper)
+        .parseYamlAsObject(ecsRollingRollbackConfig.getCreateServiceRequestBuilderString(),
+            CreateServiceRequest.serializableBuilderClass());
+    doReturn(true).when(ecsCommandTaskHelper).isServiceActive(optionalService.get());
+    doReturn(optionalService)
+        .when(ecsCommandTaskHelper)
+        .describeService(ecsRollingRollbackRequest.getEcsInfraConfig().getCluster(),
+            createServiceRequestBuilder.build().serviceName(),
+            ecsRollingRollbackRequest.getEcsInfraConfig().getRegion(),
+            ecsRollingRollbackRequest.getEcsInfraConfig().getAwsConnectorDTO());
+    ecsRollingRollbackCommandTaskHandler.executeTaskInternal(
+        ecsRollingRollbackRequest, iLogStreamingTaskClient, commandUnitsProgress);
+
+    verify(ecsCommandTaskHelper)
+        .createOrUpdateService(CreateServiceRequest.builder().desiredCount(10).build(), null, null,
+            EcsInfraConfig.builder().build(), rollbackLogCallback, 600000L, false, false);
   }
 }

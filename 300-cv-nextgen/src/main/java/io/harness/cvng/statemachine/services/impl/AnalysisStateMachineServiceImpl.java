@@ -8,50 +8,25 @@
 package io.harness.cvng.statemachine.services.impl;
 
 import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES;
-import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_DEFAULT;
-import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO;
-import static io.harness.cvng.CVConstants.STATE_MACHINE_IGNORE_MINUTES_FOR_SLI;
-import static io.harness.cvng.models.VerificationType.LOG;
-import static io.harness.cvng.models.VerificationType.TIME_SERIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.cvng.analysis.beans.LogClusterLevel;
-import io.harness.cvng.beans.job.VerificationJobType;
-import io.harness.cvng.core.beans.TimeRange;
-import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.VerificationTask;
-import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
-import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
-import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.metrics.CVNGMetricsUtils;
 import io.harness.cvng.metrics.services.impl.MetricContextBuilder;
-import io.harness.cvng.models.VerificationType;
-import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine;
 import io.harness.cvng.statemachine.entities.AnalysisStateMachine.AnalysisStateMachineKeys;
-import io.harness.cvng.statemachine.entities.CanaryTimeSeriesAnalysisState;
-import io.harness.cvng.statemachine.entities.DeploymentLogClusterState;
-import io.harness.cvng.statemachine.entities.HostSamplingState;
-import io.harness.cvng.statemachine.entities.PreDeploymentLogClusterState;
-import io.harness.cvng.statemachine.entities.SLIMetricAnalysisState;
-import io.harness.cvng.statemachine.entities.ServiceGuardLogClusterState;
-import io.harness.cvng.statemachine.entities.ServiceGuardTimeSeriesAnalysisState;
-import io.harness.cvng.statemachine.entities.TestTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.exception.AnalysisStateMachineException;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
-import io.harness.cvng.verificationjob.entities.VerificationJob;
-import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
@@ -65,10 +40,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
@@ -298,129 +271,6 @@ public class AnalysisStateMachineServiceImpl implements AnalysisStateMachineServ
 
   @Override
   public AnalysisStateMachine createStateMachine(AnalysisInput inputForAnalysis) {
-    // TODO: refactor this to make this polymorphic.
-    AnalysisStateMachine stateMachine = AnalysisStateMachine.builder()
-                                            .verificationTaskId(inputForAnalysis.getVerificationTaskId())
-                                            .analysisStartTime(inputForAnalysis.getStartTime())
-                                            .analysisEndTime(inputForAnalysis.getEndTime())
-                                            .status(AnalysisStatus.CREATED)
-                                            .build();
-
-    VerificationTask verificationTask = verificationTaskService.get(inputForAnalysis.getVerificationTaskId());
-    VerificationTask.TaskType verificationTaskType = verificationTask.getTaskInfo().getTaskType();
-    if (TaskType.LIVE_MONITORING.equals(verificationTaskType)) {
-      String cvConfigId = verificationTaskService.getCVConfigId(inputForAnalysis.getVerificationTaskId());
-      CVConfig cvConfig = cvConfigService.get(cvConfigId);
-      VerificationType verificationType = cvConfig.getVerificationType();
-      AnalysisState firstState = null;
-      switch (verificationType) {
-        case TIME_SERIES:
-          firstState = ServiceGuardTimeSeriesAnalysisState.builder().build();
-          break;
-        case LOG:
-          firstState = ServiceGuardLogClusterState.builder().clusterLevel(LogClusterLevel.L1).build();
-          break;
-        default:
-          throw new AnalysisStateMachineException(
-              "Unimplemented verification type for orchestration : " + verificationType);
-      }
-      if (cvConfig.isDemo()) {
-        stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_DEMO);
-      } else {
-        stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
-      }
-      firstState.setStatus(AnalysisStatus.CREATED);
-      firstState.setInputs(inputForAnalysis);
-      stateMachine.setAccountId(cvConfig.getAccountId());
-      stateMachine.setCurrentState(firstState);
-    } else if (TaskType.DEPLOYMENT.equals(verificationTaskType)) {
-      DeploymentInfo deploymentInfo = (DeploymentInfo) verificationTask.getTaskInfo();
-      String cvConfigId = deploymentInfo.getCvConfigId();
-      VerificationJobInstance verificationJobInstance =
-          verificationJobInstanceService.getVerificationJobInstance(deploymentInfo.getVerificationJobInstanceId());
-      Preconditions.checkNotNull(verificationJobInstance, "verificationJobInstance can not be null");
-      VerificationJob resolvedVerificationJob = verificationJobInstance.getResolvedJob();
-      CVConfig cvConfigForDeployment = null;
-      if (Objects.nonNull(resolvedVerificationJob)) {
-        List<CVConfig> cvConfigs = resolvedVerificationJob.getCvConfigs();
-        if (CollectionUtils.isNotEmpty(cvConfigs)) {
-          cvConfigForDeployment =
-              cvConfigs.stream().filter(cvConfig -> cvConfig.getUuid().equals(cvConfigId)).findFirst().orElse(null);
-        }
-      }
-      if (Objects.isNull(cvConfigForDeployment)) {
-        cvConfigForDeployment = cvConfigService.get(cvConfigId);
-      }
-      Preconditions.checkNotNull(cvConfigForDeployment, "cvConfigForDeployment can not be null");
-      stateMachine.setAccountId(verificationTask.getAccountId());
-      stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_DEFAULT);
-      createDeploymentAnalysisState(stateMachine, inputForAnalysis, verificationJobInstance, cvConfigForDeployment);
-    } else if (TaskType.SLI.equals(verificationTaskType)) {
-      String sliId = verificationTaskService.getSliId(inputForAnalysis.getVerificationTaskId());
-      ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.get(sliId);
-      Preconditions.checkNotNull(serviceLevelIndicator, "Service Level Indicator can't be null");
-      AnalysisState firstState = SLIMetricAnalysisState.builder().build();
-      firstState.setStatus(AnalysisStatus.CREATED);
-      firstState.setInputs(inputForAnalysis);
-      stateMachine.setAccountId(serviceLevelIndicator.getAccountId());
-      stateMachine.setStateMachineIgnoreMinutes(STATE_MACHINE_IGNORE_MINUTES_FOR_SLI);
-      stateMachine.setCurrentState(firstState);
-    } else {
-      throw new IllegalStateException("Invalid verificationType");
-    }
-    executionLogService.getLogger(stateMachine)
-        .log(stateMachine.getLogLevel(), "Analysis state machine status: " + stateMachine.getStatus());
-    return stateMachine;
-  }
-
-  private void createDeploymentAnalysisState(AnalysisStateMachine stateMachine, AnalysisInput inputForAnalysis,
-      VerificationJobInstance verificationJobInstance, CVConfig cvConfigForDeployment) {
-    switch (cvConfigForDeployment.getVerificationType()) {
-      case TIME_SERIES:
-        if (verificationJobInstance.getResolvedJob().getType() == VerificationJobType.TEST) {
-          TestTimeSeriesAnalysisState testTimeSeriesAnalysisState = TestTimeSeriesAnalysisState.builder().build();
-          testTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
-          testTimeSeriesAnalysisState.setInputs(inputForAnalysis);
-          stateMachine.setCurrentState(testTimeSeriesAnalysisState);
-        } else if (featureFlagService.isFeatureFlagEnabled(
-                       stateMachine.getAccountId(), FeatureFlagNames.SRM_HOST_SAMPLING_ENABLE)) {
-          HostSamplingState hostSamplingState = new HostSamplingState();
-          hostSamplingState.setStatus(AnalysisStatus.CREATED);
-          hostSamplingState.setInputs(inputForAnalysis);
-          hostSamplingState.setVerificationJobInstanceId(verificationJobInstance.getUuid());
-          stateMachine.setCurrentState(hostSamplingState);
-        } else {
-          CanaryTimeSeriesAnalysisState canaryTimeSeriesAnalysisState = CanaryTimeSeriesAnalysisState.builder().build();
-          canaryTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
-          canaryTimeSeriesAnalysisState.setInputs(inputForAnalysis);
-          stateMachine.setCurrentState(canaryTimeSeriesAnalysisState);
-        }
-        break;
-      case LOG:
-        AnalysisState analysisState = createDeploymentLogState(inputForAnalysis, verificationJobInstance);
-        analysisState.setStatus(AnalysisStatus.CREATED);
-        analysisState.setInputs(inputForAnalysis);
-        stateMachine.setCurrentState(analysisState);
-        break;
-      default:
-        throw new IllegalStateException("Invalid verificationType");
-    }
-  }
-
-  private AnalysisState createDeploymentLogState(
-      AnalysisInput analysisInput, VerificationJobInstance verificationJobInstance) {
-    Optional<TimeRange> preDeploymentTimeRange =
-        verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstance.getUuid());
-    if (preDeploymentTimeRange.isPresent()
-        && analysisInput.getTimeRange().getStartTime().isBefore(preDeploymentTimeRange.get().getEndTime())) {
-      // first task so needs to enqueue clustering task
-      PreDeploymentLogClusterState preDeploymentLogClusterState = PreDeploymentLogClusterState.builder().build();
-      preDeploymentLogClusterState.setClusterLevel(LogClusterLevel.L1);
-      return preDeploymentLogClusterState;
-    } else {
-      DeploymentLogClusterState deploymentLogClusterState = DeploymentLogClusterState.builder().build();
-      deploymentLogClusterState.setClusterLevel(LogClusterLevel.L1);
-      return deploymentLogClusterState;
-    }
+    throw new IllegalStateException("Invalid verificationType");
   }
 }

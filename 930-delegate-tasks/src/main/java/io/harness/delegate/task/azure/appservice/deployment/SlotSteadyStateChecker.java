@@ -33,6 +33,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -90,21 +91,39 @@ public class SlotSteadyStateChecker {
 
   private void startPollingTask(long steadyCheckTimeoutInMinutes, long statusCheckIntervalInSeconds,
       LogCallback logCallback, String commandUnitName, SlotStatusVerifier slotStatusVerifier) throws Exception {
-    Callable<Object> objectCallable = () -> {
-      while (true) {
-        sleep(ofSeconds(statusCheckIntervalInSeconds));
-
-        if (slotStatusVerifier.operationFailed()) {
-          String errorMessage = slotStatusVerifier.getErrorMessage();
-          logCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, FAILURE);
-          throw new AzureAppServicesSlotSteadyStateException(
-              errorMessage, commandUnitName, steadyCheckTimeoutInMinutes, null);
-        }
-
-        if (slotStatusVerifier.hasReachedSteadyState()) {
-          return Boolean.TRUE;
+    Callable<AtomicReference<Boolean>> objectCallable = () -> {
+      AtomicReference<Boolean> result = new AtomicReference<>();
+      if (slotStatusVerifier.getResponseMono() != null) {
+        // checking slot status
+        slotStatusVerifier.getResponseMono()
+            .doOnError(error -> {
+              logCallback.saveExecutionLog(error.getMessage(), LogLevel.ERROR, FAILURE);
+              throw new AzureAppServicesSlotSteadyStateException(
+                  error.getMessage(), commandUnitName, steadyCheckTimeoutInMinutes, null);
+            })
+            .doOnSuccess(response -> {
+              if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                result.set(Boolean.TRUE);
+              } else {
+                String errorMsg = format("Task has failed with response code [%s]", response.getStatusCode());
+                logCallback.saveExecutionLog(errorMsg, LogLevel.ERROR, FAILURE);
+                throw new AzureAppServicesSlotSteadyStateException(
+                    errorMsg, commandUnitName, steadyCheckTimeoutInMinutes, null);
+              }
+            })
+            .block(Duration.ofMinutes(steadyCheckTimeoutInMinutes));
+      } else {
+        // checking slot deployment status
+        while (true) {
+          sleep(ofSeconds(statusCheckIntervalInSeconds));
+          if (slotStatusVerifier.hasReachedSteadyState()) {
+            result.set(Boolean.TRUE);
+            break;
+          }
         }
       }
+
+      return result;
     };
 
     HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(steadyCheckTimeoutInMinutes), objectCallable);

@@ -1,20 +1,10 @@
 #Any edit in this file should accompany an increment in version.
 name : settingsConfiguration
-version : 4
+version : 9
 settings :
-  - identifier: mandate_webhook_secrets_for_github_triggers_CD
-    name: Mandate Webhook Secrets for Github Triggers - CD
-    category: CD
-    defaultValue: false
-    valueType: BOOLEAN
-    allowOverrides: true
-    allowedScopes:
-      - ACCOUNT
-      - ORGANIZATION
-      - PROJECT
-  - identifier: mandate_webhook_secrets_for_github_triggers_CI
-    name: Mandate Webhook Secrets for Github Triggers - CI
-    category: CI
+  - identifier: mandate_webhook_secrets_for_github_triggers
+    name: Mandate Webhook Secrets for Github Triggers
+    category: CORE
     defaultValue: false
     valueType: BOOLEAN
     allowOverrides: true
@@ -28,4 +18,61 @@ settings :
     defaultValue: false
     valueType : BOOLEAN
     allowedScopes :
+      - ACCOUNT
+  - identifier: mandate_custom_webhook_authorization
+    name: Mandate Authorization for Custom Webhook Triggers
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: true
+    allowedScopes:
+      - ACCOUNT
+      - ORGANIZATION
+      - PROJECT
+  - identifier: scim_jwt_token_key_field
+    name: SCIM JWT token Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_value_field
+    name: SCIM JWT token value to be matched for Key field
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_jwks_keys_url
+    name: SCIM JWT token jwks keys public URL
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: scim_jwt_token_service_account_id
+    name: SCIM JWT token mapped Service Account identifier
+    category: SCIM
+    groupIdentifier: scim_jwt_token_configuration_g1
+    valueType: STRING
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_git_commands
+    name: Use Git client for commits
+    category: GIT_EXPERIENCE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowOverrides: false
+    allowedScopes:
+      - ACCOUNT
+  - identifier: enable_force_delete
+    name: Enable Force Delete of Harness Resources
+    category: CORE
+    defaultValue: false
+    valueType: BOOLEAN
+    allowedScopes:
       - ACCOUNT

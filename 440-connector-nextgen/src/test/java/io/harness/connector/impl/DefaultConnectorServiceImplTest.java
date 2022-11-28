@@ -21,7 +21,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,18 +51,19 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.SettingValueType;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngsettings.dto.SettingValueResponseDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -84,6 +84,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import retrofit2.Call;
@@ -95,7 +96,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock KubernetesConnectionValidator kubernetesConnectionValidator;
   @Inject ConnectorRepository connectorRepository;
   @Mock private Map<String, ConnectionValidator> connectionValidatorMap;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
@@ -103,7 +104,11 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock NGSettingsClient settingsClient;
   @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
   @Mock AccountClient accountClient;
-  @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
+
+  @Mock Call<RestResponse<Boolean>> featureFlagCall1;
+  @Mock Call<RestResponse<Boolean>> featureFlagCall2;
+
+  @Spy @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
   @Inject MongoTemplate mongoTemplate;
 
   String userName = "userName";
@@ -378,15 +383,127 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDelete() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOff_settingsFFOFF() {
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(false);
+    createConnector(identifier, name);
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
     }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFOFF() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFON_settingsDisabled() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsDisabled() {
+    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsEnabled() {
+    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+             any(ConnectorInfoDTO.class), anyString()))
+        .thenReturn(true);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
+    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue_throwsException() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
+             any(ConnectorInfoDTO.class), anyString()))
+        .thenThrow(RuntimeException.class);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
     assertThat(deleted).isTrue();
   }
 
@@ -395,27 +512,21 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDeleteWithEntitiesReferenced_throwsException() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
-    }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-    try {
-      connectorService.delete(accountIdentifier, null, null, identifier);
+      connectorService.delete(accountIdentifier, null, null, identifier, false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
     }
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
 
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testDeleteWhenConnectorDoesNotExists() {
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     assertThat(deleted).isFalse();
   }
 

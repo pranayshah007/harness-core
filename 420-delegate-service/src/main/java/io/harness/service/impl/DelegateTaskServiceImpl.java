@@ -34,6 +34,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.dto.RetryDelegate;
+import io.harness.service.intfc.DelegateCache;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateCallbackService;
 import io.harness.service.intfc.DelegateTaskRetryObserver;
@@ -49,6 +50,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +71,14 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
 
   @Inject private DelegateMetricsService delegateMetricsService;
+
+  @Inject private DelegateCache delegateCache;
+
+  @Override
+  public boolean isTaskTypeSupportedByAllDelegates(String accountId, String taskType) {
+    Set<String> supportedTaskTypes = delegateCache.getDelegateSupportedTaskTypes(accountId);
+    return supportedTaskTypes.contains(taskType);
+  }
 
   @Override
   public void touchExecutingTasks(String accountId, String delegateId, List<String> delegateTaskIds) {

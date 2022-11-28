@@ -12,6 +12,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.CDStageMetaDataDTO;
+import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.OrganizationResponse;
 import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -79,4 +81,7 @@ public interface NextGenClient {
   @GET("organizations/{orgIdentifier}")
   Call<ResponseDTO<OrganizationResponse>> getOrganization(
       @Path("orgIdentifier") String orgIdentifier, @Query("accountIdentifier") String accountId);
+
+  @POST("cdStage/metadata")
+  Call<ResponseDTO<CDStageMetaDataDTO>> getCDStageMetaData(@Body CdDeployStageMetadataRequestDTO requestDTO);
 }

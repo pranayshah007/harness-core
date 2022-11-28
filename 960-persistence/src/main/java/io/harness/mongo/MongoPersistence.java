@@ -224,8 +224,16 @@ public class MongoPersistence implements HPersistence {
     return getDatastore(cls).createQuery(cls);
   }
 
+  @Override
   public <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls) {
     return getDefaultAnalyticsDatastore(cls).createQuery(cls);
+  }
+
+  @Override
+  public <T extends PersistentEntity> Query<T> createAnalyticsQuery(Class<T> cls, Set<QueryChecks> queryChecks) {
+    Query<T> query = getDefaultAnalyticsDatastore(cls).createQuery(cls);
+    ((HQuery) query).setQueryChecks(queryChecks);
+    return query;
   }
 
   @Override
@@ -498,8 +506,8 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error(
-          "findAndModify query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      log.error("findAndModify query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
       throw ex;
     }
   }
@@ -512,7 +520,7 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndModify(query, updateOperations, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error("findAndModifySystemData query exceeded max time limit for entityClass {} with error {}",
+      log.error("findAndModifySystemData query {} exceeded max time limit for entityClass {} with error {}", query,
           query.getEntityClass(), ex);
       throw ex;
     }
@@ -525,8 +533,8 @@ public class MongoPersistence implements HPersistence {
       setMaxTimeInOptions(datastore, findAndModifyOptions);
       return HPersistence.retry(() -> datastore.findAndDelete(query, findAndModifyOptions));
     } catch (MongoExecutionTimeoutException ex) {
-      log.error(
-          "findAndDelete query exceeded max time limit for entityClass {} with error {}", query.getEntityClass(), ex);
+      log.error("findAndDelete query {} exceeded max time limit for entityClass {} with error {}", query,
+          query.getEntityClass(), ex);
       throw ex;
     }
   }

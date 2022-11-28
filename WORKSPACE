@@ -1,3 +1,8 @@
+# Copyright 2021 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 workspace(name = "harness_monorepo")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -280,7 +285,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.18.1")
+go_register_toolchains(version = "1.18.7")
 
 gazelle_dependencies()
 
@@ -1184,8 +1189,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:etbHrY65OMp3/vjs4LHW4zNcb9av8VHJRVA4E7MZxes=",
-    version = "v1.27.1-0.20220927200245-ed290da0ed40",
+    sum = "h1:OYTRTah/I9YdJ2WidqpLu+N9KH8iyum/1yfueOePzIk=",
+    version = "v1.27.1-0.20221110140757-b29a0d2b0f30",
 )
 
 go_repository(
@@ -4501,6 +4506,7 @@ plain_artifacts = [
     "com.azure:azure-core:1.29.1",
     "com.azure:azure-identity:1.5.0",
     "com.azure:azure-core-http-netty:1.11.9",
+    "com.azure:azure-core-http-okhttp:1.10.1",
     "com.azure:azure-containers-containerregistry:1.0.3",
     "com.azure:azure-core-management:1.6.2",
     "com.azure.resourcemanager:azure-resourcemanager:2.14.0",
@@ -4650,8 +4656,9 @@ plain_artifacts = [
     "com.intellij:annotations:12.0",
     "com.j256.two-factor-auth:two-factor-auth:1.0",
     "com.jakewharton.retrofit:retrofit1-okhttp3-client:1.1.0",
+    "com.jakewharton.retrofit:retrofit2-reactor-adapter:2.1.0",
     "com.jayway.jsonpath:json-path:2.2.0",
-    "com.github.mwiede:jsch:0.1.72",
+    "com.jcraft.harness:jsch-0-1-54-harness-patch:1.1",
     "com.jcraft:jzlib:1.1.3",
     "com.lmax:disruptor:jar:3.4.2",
     "com.mashape.unirest:unirest-java:1.4.9",
@@ -4714,10 +4721,11 @@ plain_artifacts = [
     "com.spotify:docker-client:8.16.0",
     "com.squareup.okhttp:okhttp:2.7.5",
     "com.squareup.okhttp:logging-interceptor:2.7.5",
-    "com.squareup.okhttp3:logging-interceptor:3.14.3",
-    "com.squareup.okhttp3:okhttp-urlconnection:3.12.2",
-    "com.squareup.okhttp3:okhttp:3.12.2",
-    "com.squareup.okio:okio:1.15.0",
+    "com.squareup.okhttp3:logging-interceptor:4.9.2",
+    "com.squareup.okhttp3:okhttp-urlconnection:4.9.2",
+    "com.squareup.okhttp3:okhttp:4.9.2",
+    "com.squareup.okhttp3:mockwebserver:4.9.2",
+    "com.squareup.okio:okio:2.8.0",
     "com.squareup.retrofit2:converter-protobuf:2.9.0",
     "com.squareup.retrofit2:adapter-rxjava:2.7.2",
     "com.squareup.retrofit2:converter-gson:2.3.0",
@@ -4845,7 +4853,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.50.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.42-RELEASE",
-    "io.harness:ff-java-server-sdk:1.0.5.2",
+    "io.harness:ff-java-server-sdk:1.0.5.3",
     "io.harness:access-control-server-spec:1.0.9",
     "io.harness:common-models:1.0.4",
     "io.harness:ng-manager-server-spec:1.0.25",
@@ -4955,17 +4963,17 @@ plain_artifacts = [
     "org.apache.commons:commons-lang3:3.10",
     "org.apache.commons:commons-math3:3.6.1",
     "org.apache.commons:commons-text:1.10.0",
-    "org.apache.cxf:cxf-core:3.4.7",
-    "org.apache.cxf:cxf-rt-bindings-soap:3.3.10",
-    "org.apache.cxf:cxf-rt-bindings-xml:3.3.10",
-    "org.apache.cxf:cxf-rt-databinding-jaxb:3.3.10",
-    "org.apache.cxf:cxf-rt-frontend-jaxws:3.3.10",
-    "org.apache.cxf:cxf-rt-frontend-simple:3.3.10",
-    "org.apache.cxf:cxf-rt-transports-http-hc:3.3.10",
-    "org.apache.cxf:cxf-rt-transports-http:3.3.10",
-    "org.apache.cxf:cxf-rt-ws-addr:3.3.10",
-    "org.apache.cxf:cxf-rt-ws-policy:3.3.10",
-    "org.apache.cxf:cxf-rt-wsdl:3.3.10",
+    "org.apache.cxf:cxf-core:3.5.4",
+    "org.apache.cxf:cxf-rt-bindings-soap:3.5.4",
+    "org.apache.cxf:cxf-rt-bindings-xml:3.5.4",
+    "org.apache.cxf:cxf-rt-databinding-jaxb:3.5.4",
+    "org.apache.cxf:cxf-rt-frontend-jaxws:3.5.4",
+    "org.apache.cxf:cxf-rt-frontend-simple:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http-hc:3.5.4",
+    "org.apache.cxf:cxf-rt-transports-http:3.5.4",
+    "org.apache.cxf:cxf-rt-ws-addr:3.5.4",
+    "org.apache.cxf:cxf-rt-ws-policy:3.5.4",
+    "org.apache.cxf:cxf-rt-wsdl:3.5.4",
     "org.apache.geronimo.specs:geronimo-jta_1.1_spec:1.1.1",
     "org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.3",
     "org.apache.httpcomponents:fluent-hc:4.5.13",
@@ -5211,7 +5219,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-models:2.2.0",
     "io.swagger.core.v3:swagger-integration:2.2.0",
     "io.opentelemetry:opentelemetry-api:1.18.0",
-    "io.harness:smp-license:1.0.7",
+    "io.harness:smp-license:1.0.11",
 ]
 
 amazon_artifacts = [
@@ -5389,7 +5397,7 @@ maven_install(
         ),
         maven_test_artifact("com.github.tomakehurst:wiremock-jre8-standalone:2.27.2"),
         maven_test_artifact("com.icegreen:greenmail:1.5.0"),
-        maven_test_artifact("com.squareup.okhttp3:mockwebserver:3.6.0"),
+        maven_test_artifact("com.squareup.okhttp3:mockwebserver:4.9.2"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server-core:1.34.0"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server-memory-backend:1.34.0"),
         maven_test_artifact("de.bwaldvogel:mongo-java-server:1.34.0"),
@@ -5415,7 +5423,7 @@ maven_install(
     maven_install_json = "//project:main_maven_install.json",
     override_targets = {
         "org.apache.commons:commons-io": "@maven//:commons_io_commons_io",
-        "com.jcraft:jsch": "@maven//:com_github_mwiede_jsch",
+        "com.jcraft:jsch": "@maven//:com_jcraft_harness_jsch_0_1_54_harness_patch",
         "org.mongodb:mongodb-driver": "@maven//:org_mongodb_mongo_java_driver",
     },
     repositories = [
@@ -5498,15 +5506,15 @@ maven_install(
     ],
 )
 
-# Adding maven rule for upgraded version of debezium (1.8.0.Final) and required version of mongodb java driver for debezium service
+# Adding maven rule for upgraded version of debezium (2.0.0.Final) and required version of mongodb java driver for debezium service
 maven_install(
     name = "maven_debezium",
     artifacts = [
         "org.mongodb:mongodb-driver-core:4.0.4",
         "org.mongodb:mongodb-driver-sync:4.0.4",
-        "io.debezium:debezium-api:1.8.0.Final",
-        "io.debezium:debezium-connector-mongodb:1.8.0.Final",
-        "io.debezium:debezium-core:1.8.0.Final",
+        "io.debezium:debezium-api:2.0.0.Final",
+        "io.debezium:debezium-connector-mongodb:2.0.0.Final",
+        "io.debezium:debezium-core:2.0.0.Final",
         maven.artifact(
             artifact = "debezium-embedded",
             exclusions = [
@@ -5514,7 +5522,7 @@ maven_install(
                 "org.slf4j:slf4j-log4j12",
             ],
             group = "io.debezium",
-            version = "1.8.0.Final",
+            version = "2.0.0.Final",
         ),
     ],
     repositories = [

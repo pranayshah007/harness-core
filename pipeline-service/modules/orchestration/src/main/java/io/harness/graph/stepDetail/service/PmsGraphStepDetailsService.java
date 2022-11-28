@@ -21,7 +21,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface PmsGraphStepDetailsService {
   void addStepDetail(String nodeExecutionId, String planExecutionId, PmsStepDetails stepDetails, String name);
-  void addStepInputs(String nodeExecutionId, String planExecutionId, PmsStepParameters stepParameters);
+  void saveNodeExecutionInfo(String nodeExecutionId, String planExecutionId, PmsStepParameters stepParameters);
 
   PmsStepParameters getStepInputs(String planExecutionId, String nodeExecutionId);
 

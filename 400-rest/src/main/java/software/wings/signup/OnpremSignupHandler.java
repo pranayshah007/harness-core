@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._950_NG_SIGNUP;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 
 import static org.mindrot.jbcrypt.BCrypt.hashpw;
 
@@ -33,6 +34,7 @@ import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -51,27 +53,57 @@ public class OnpremSignupHandler implements SignupHandler {
   public boolean handle(UserInvite userInvite) {
     validate(userInvite);
     userInvite.setPasswordHash(hashpw(new String(userInvite.getPassword()), BCrypt.gensalt()));
-    userService.saveUserInvite(userInvite);
-    userService.completeTrialSignupAndSignIn(userInvite);
+    Optional<Account> defaultAccount = fetchDefaultAccount();
+    if (defaultAccount.isPresent()) {
+      userService.createNewUserAndSignIn(
+          mapUserInviteToUser(userInvite, defaultAccount.get()), defaultAccount.get().getUuid());
+    } else {
+      userService.saveUserInvite(userInvite);
+      userService.completeTrialSignupAndSignIn(userInvite);
+    }
     accountService.updateFeatureFlagsForOnPremAccount();
-
     return true;
+  }
+
+  private User mapUserInviteToUser(UserInvite userInvite, Account account) {
+    User user = User.Builder.anUser()
+                    .appId(GLOBAL_APP_ID)
+                    .email(userInvite.getEmail())
+                    .name(userInvite.getName())
+                    .passwordHash(userInvite.getPasswordHash())
+                    .emailVerified(true)
+                    .utmInfo(userInvite.getUtmInfo())
+                    .build();
+    user.getAccounts().add(account);
+    return user;
+  }
+
+  private Optional<Account> fetchDefaultAccount() {
+    return accountService.getOnPremAccount();
   }
 
   private void validate(UserInvite userInvite) {
     if (!mainConfiguration.isTrialRegistrationAllowedForBugathon()) {
       validateDeployMode();
       validateCountOfAccount();
+      validateCountOfUsers();
     }
     signupService.validateEmail(userInvite.getEmail());
     signupService.validateName(userInvite.getName());
     signupService.validatePassword(userInvite.getPassword());
   }
 
-  private void validateCountOfAccount() {
-    if (getAccountCount() > 0) {
+  private void validateCountOfUsers() {
+    if (getUserCount() > 0) {
       throw new SignupException(
-          "An account already exists in the database. This API should only be used for initializing on-prem database");
+          "One or more users already exist. Onprem environment does not allow multiple user signup");
+    }
+  }
+
+  private void validateCountOfAccount() {
+    if (getAccountCount() > 1) {
+      throw new SignupException(
+          "Multiple account already exists in the database. This API should only be used to sign-up on SMP");
     }
   }
 
@@ -93,5 +125,9 @@ public class OnpremSignupHandler implements SignupHandler {
 
   private long getAccountCount() {
     return wingsPersistence.createQuery(Account.class).field(AccountKeys.uuid).notEqual(GLOBAL_ACCOUNT_ID).count();
+  }
+
+  private long getUserCount() {
+    return wingsPersistence.createQuery(User.class).count();
   }
 }

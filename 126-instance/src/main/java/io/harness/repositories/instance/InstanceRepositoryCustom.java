@@ -14,6 +14,8 @@ import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.ng.core.entities.Project;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.List;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
@@ -26,16 +28,7 @@ public interface InstanceRepositoryCustom {
 
   Instance findAndModify(Criteria criteria, Update update);
 
-  List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceIdentifier, long timestamp);
-
-  List<Instance> getInstancesDeployedInInterval(String accountIdentifier, long startTimestamp, long endTimeStamp);
-
-  List<Instance> getInstancesDeployedInInterval(
-      String accountIdentifier, String organizationId, String projectId, long startTimestamp, long endTimeStamp);
-
-  List<Instance> getInstances(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
+  AggregationResults<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp);
 
   List<Instance> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);
@@ -71,4 +64,14 @@ public interface InstanceRepositoryCustom {
   Instance findFirstInstance(Criteria criteria);
 
   void updateInfrastructureMapping(String instanceId, String infrastructureMappingId);
+
+  long countServiceInstancesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  long countServiceInstancesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(String accountId, long startTS, long endTS);
+
+  long countDistinctActiveServicesDeployedInInterval(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
 }

@@ -19,6 +19,8 @@ public class ServiceV2Factory {
   private static final ServiceV2Mapper sshServiceV2Mapper = new SshServiceV2Mapper();
   private static final ServiceV2Mapper winrmServiceV2Mapper = new WinrmServiceV2Mapper();
   private static final ServiceV2Mapper nativeHelmServiceV2Mapper = new NativeHelmServiceV2Mapper();
+  private static final ServiceV2Mapper ecsServiceV2Mapper = new EcsServiceV2Mapper();
+  private static final ServiceV2Mapper azureWebappServiceV2Mapper = new AzureWebappServiceV2Mapper();
   private static final ServiceV2Mapper unsupportedServiceV2Mapper = new UnsupportedServiceV2Mapper();
 
   public static ServiceV2Mapper getService2Mapper(Service service) {
@@ -33,6 +35,12 @@ public class ServiceV2Factory {
     }
     if (DeploymentType.WINRM.equals(service.getDeploymentType())) {
       return winrmServiceV2Mapper;
+    }
+    if (DeploymentType.ECS.equals(service.getDeploymentType())) {
+      return ecsServiceV2Mapper;
+    }
+    if (DeploymentType.AZURE_WEBAPP.equals(service.getDeploymentType())) {
+      return azureWebappServiceV2Mapper;
     }
     return unsupportedServiceV2Mapper;
   }

@@ -12,8 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryCapabilityHelper;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.docker.DockerCapabilityHelper;
+import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.connector.nexusconnector.NexusCapabilityHelper;
 import io.harness.delegate.beans.connector.nexusconnector.NexusConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -101,6 +103,14 @@ public class AzureWebAppSlotDeploymentRequest extends AbstractSlotDataRequest {
           case NEXUS3_REGISTRY:
             capabilities.addAll(NexusCapabilityHelper.fetchRequiredExecutionCapabilities(
                 maskingEvaluator, (NexusConnectorDTO) azurePackageArtifactConfig.getConnectorConfig()));
+            break;
+          case JENKINS:
+            capabilities.addAll(JenkinsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
+            break;
+          case AZURE_ARTIFACTS:
+            capabilities.addAll(AzureArtifactsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                azurePackageArtifactConfig.getConnectorConfig(), maskingEvaluator));
             break;
           default:
             // no capabilities to add

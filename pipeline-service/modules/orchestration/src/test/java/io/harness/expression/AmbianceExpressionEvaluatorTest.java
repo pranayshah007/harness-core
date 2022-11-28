@@ -76,7 +76,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
 
   @Before
   public void setup() {
-    when(planExecutionService.get(anyString())).thenReturn(null);
+    when(planExecutionService.getPlanExecutionMetadata(anyString())).thenReturn(null);
   }
 
   @Test

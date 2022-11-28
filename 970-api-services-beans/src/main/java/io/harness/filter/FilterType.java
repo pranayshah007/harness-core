@@ -29,7 +29,8 @@ public enum FilterType {
   @JsonProperty("FileStore") FILESTORE("FileStore"),
   @JsonProperty("CCMRecommendation") CCMRECOMMENDATION("CCMRecommendation"),
   @JsonProperty("Anomaly") ANOMALY("Anomaly"),
-  @JsonProperty("Environment") ENVIRONMENT("Environment");
+  @JsonProperty("Environment") ENVIRONMENT("Environment"),
+  @JsonProperty("RuleExecution") POLICYEXECUTION("RuleExecution");
 
   private String value;
 

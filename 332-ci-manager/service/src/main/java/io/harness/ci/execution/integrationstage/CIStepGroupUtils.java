@@ -121,19 +121,21 @@ public class CIStepGroupUtils {
     List<ExecutionWrapperConfig> initializeExecutionSections = new ArrayList<>();
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     Caching caching = integrationStageConfig.getCaching();
-    boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), true);
+    boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
     CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
     boolean featureCacheEnabled = featureFlagService.isEnabled(CI_CACHE_INTELLIGENCE, accountId);
+    boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM);
     if (gitClone) {
       initializeExecutionSections.add(
           getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
-    if (featureCacheEnabled && saveCache) {
+    boolean enableCacheIntel = featureCacheEnabled && saveCache && isHosted;
+    if (enableCacheIntel) {
       initializeExecutionSections.add(getRestoreCacheStep(caching, accountId, cacheIntelligenceConfig));
     }
     initializeExecutionSections.addAll(executionSections);
 
-    if (featureCacheEnabled && saveCache) {
+    if (enableCacheIntel) {
       initializeExecutionSections.add(getSaveCacheStep(caching, accountId, cacheIntelligenceConfig));
     }
     if (isNotEmpty(initializeExecutionSections)) {
@@ -408,11 +410,11 @@ public class CIStepGroupUtils {
   private void setCacheEnvVariables(Map<String, String> envVariables, CICacheIntelligenceConfig cacheIntelligenceConfig,
       Caching caching, String accountId) {
     List<String> cacheDir = new ArrayList<>();
-    if (caching.getPaths() != null) {
+    if (caching != null && caching.getPaths() != null) {
       cacheDir = RunTimeInputHandler.resolveListParameter(
           "paths", "implicit restore cache", "internal restore cache", caching.getPaths(), false);
     }
-    envVariables.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
+
     envVariables.put(PLUGIN_AUTO_DETECT_CACHE, STRING_TRUE);
     envVariables.put(PLUGIN_AUTO_CACHE_ACCOUNT_ID, accountId);
     if (cacheDir != null && cacheDir.size() > 0) {
@@ -422,6 +424,7 @@ public class CIStepGroupUtils {
     envVariables.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
     envVariables.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
     envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, TEN_K_SECONDS);
+    envVariables.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
     envVariables.put(PLUGIN_JSON_KEY, cacheIntelligenceConfig.getServiceKey());
   }
 }

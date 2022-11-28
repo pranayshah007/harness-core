@@ -78,7 +78,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateInputSetForNonExistentPipeline() {
-    doReturn(Optional.empty()).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty())
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
                                         .orgIdentifier(orgId)
@@ -97,7 +99,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetForInvalidStoreType() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
@@ -117,7 +119,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetWithoutIdentifier() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     String yaml = "inputSet:\n"
         + "  name: abc";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -138,7 +140,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testForLengthCheckOnInputSetIdentifiers() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     String yaml = "inputSet:\n"
         + "  identifier: abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
@@ -159,7 +161,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetWithNoOrgAndProjectID() {
     doReturn(Optional.of(PipelineEntity.builder().storeType(StoreType.INLINE).build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String inputSetFileWithNoProjOrOrg = "inputSet1.yml";
     String inputSetYamlWithNoProjOrOrg = readFile(inputSetFileWithNoProjOrOrg);
@@ -198,7 +200,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   public void testValidateInputSetWithNoErrors() {
     setupGitContext(GitEntityInfo.builder().storeType(StoreType.REMOTE).build());
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.REMOTE).build();
-    doReturn(Optional.of(pipelineEntity)).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String inputSetFile = "inputset1-with-org-proj-id.yaml";
     String inputSetYaml = readFile(inputSetFile);
@@ -224,7 +228,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateInputSetWithErrors() {
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.INLINE).build();
-    doReturn(Optional.of(pipelineEntity)).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String inputSetFile = "inputSetWrong1.yml";
     String inputSetYaml = readFile(inputSetFile);
@@ -246,7 +252,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateInputSetForOldGitSync() {
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
-    doReturn(Optional.of(pipelineEntity)).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String inputSetFile = "inputset1-with-org-proj-id.yaml";
     String inputSetYaml = readFile(inputSetFile);
@@ -270,7 +278,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateInputSetForOldGitSyncWithErrors() {
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).storeType(StoreType.INLINE).build();
-    doReturn(Optional.of(pipelineEntity)).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.of(pipelineEntity))
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
 
     String inputSetFile = "inputSetWrong1.yml";
     String inputSetYaml = readFile(inputSetFile);
@@ -296,7 +306,9 @@ public class InputSetValidationHelperTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateInputSetForOldGitSyncWithNonExistentPipeline() {
-    doReturn(Optional.empty()).when(pipelineService).get(accountId, orgId, projectId, pipelineId, false);
+    doReturn(Optional.empty())
+        .when(pipelineService)
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     String inputSetYaml = "anything";
     InputSetEntity inputSetEntity = InputSetEntity.builder()
                                         .accountId(accountId)
@@ -335,7 +347,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     doReturn(Optional.of(PipelineEntity.builder().yaml("pipeline: yaml").build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     InputSetEntity overlayEntity =
         InputSetEntity.builder().inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET).build();
     doReturn(Optional.of(overlayEntity))
@@ -362,7 +374,7 @@ public class InputSetValidationHelperTest extends CategoryTest {
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     doReturn(Optional.of(PipelineEntity.builder().yaml("pipeline: yaml").build()))
         .when(pipelineService)
-        .get(accountId, orgId, projectId, pipelineId, false);
+        .getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false);
     InputSetEntity overlayEntity = InputSetEntity.builder()
                                        .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                        .storeType(StoreType.REMOTE)

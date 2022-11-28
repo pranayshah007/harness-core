@@ -18,10 +18,6 @@ import io.harness.smp.license.models.SMPLicenseEnc;
 import io.harness.smp.license.models.SMPLicenseValidationResult;
 
 public class SMPLicenseMapper {
-  public SMPEncLicenseDTO toSMPEncLicenseDTO(SMPLicenseEnc smpLicenseEnc) {
-    return SMPEncLicenseDTO.builder().encryptedLicense(smpLicenseEnc.getEncryptedSMPLicense()).build();
-  }
-
   public SMPLicenseEnc toSMPLicenseEnc(SMPEncLicenseDTO smpEncLicenseDTO) {
     return SMPLicenseEnc.builder().encryptedSMPLicense(smpEncLicenseDTO.getEncryptedLicense()).build();
   }
@@ -30,6 +26,7 @@ public class SMPLicenseMapper {
     LicenseMeta licenseMeta = new LicenseMeta();
     licenseMeta.setLicenseVersion(Integer.parseInt(decLicenseDTO.getLicenseVersion()));
     licenseMeta.setLibraryVersion(LibraryVersion.V1);
+    licenseMeta.setAccountOptional(decLicenseDTO.isAccountOptional());
     licenseMeta.setAccountDTO(AccountInfo.builder()
                                   .companyName(decLicenseDTO.getCompanyName())
                                   .identifier(decLicenseDTO.getAccountIdentifier())

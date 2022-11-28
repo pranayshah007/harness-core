@@ -12,8 +12,10 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
 import io.harness.common.NGTaskType;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
@@ -34,6 +36,7 @@ import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
@@ -43,6 +46,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -53,14 +57,19 @@ public class CustomResourceServiceImpl implements CustomResourceService {
 
   @Override
   public List<BuildDetails> getBuilds(String script, String versionPath, String arrayPath, Map<String, String> inputs,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, int secretFunctor,
+      List<TaskSelectorYaml> delegateSelector) {
     BaseNGAccess baseNGAccess = getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
+    CustomScriptSecretExpressionEvaluator customScriptSecretExpressionEvaluator =
+        new CustomScriptSecretExpressionEvaluator(script, secretFunctor);
+    script = customScriptSecretExpressionEvaluator.renderExpression(script);
     CustomArtifactDelegateRequest customArtifactDelegateRequest = ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         arrayPath, null, "Inline", ArtifactSourceType.CUSTOM_ARTIFACT, versionPath, script, Collections.emptyMap(),
         inputs, null, null, 10, accountIdentifier);
     try {
-      ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(customArtifactDelegateRequest,
-          ArtifactTaskType.GET_BUILDS, baseNGAccess, "Custom Get Build task failure due to error");
+      ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+          executeSyncTask(customArtifactDelegateRequest, ArtifactTaskType.GET_BUILDS, baseNGAccess,
+              "Custom Get Build task failure due to error", secretFunctor, delegateSelector);
       return artifactTaskExecutionResponse.getBuildDetails();
     } catch (DelegateServiceDriverException ex) {
       throw new HintException(
@@ -73,25 +82,34 @@ public class CustomResourceServiceImpl implements CustomResourceService {
   }
 
   private ArtifactTaskExecutionResponse executeSyncTask(CustomArtifactDelegateRequest customArtifactDelegateRequest,
-      ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage) {
-    DelegateResponseData responseData = getResponseData(ngAccess, customArtifactDelegateRequest, taskType);
+      ArtifactTaskType taskType, BaseNGAccess ngAccess, String ifFailedMessage, int secretFunctor,
+      List<TaskSelectorYaml> delegateSelector) {
+    DelegateResponseData responseData =
+        getResponseData(ngAccess, customArtifactDelegateRequest, taskType, secretFunctor, delegateSelector);
     return getTaskExecutionResponse(responseData, ifFailedMessage);
   }
 
-  private DelegateResponseData getResponseData(
-      BaseNGAccess ngAccess, CustomArtifactDelegateRequest delegateRequest, ArtifactTaskType artifactTaskType) {
+  private DelegateResponseData getResponseData(BaseNGAccess ngAccess, CustomArtifactDelegateRequest delegateRequest,
+      ArtifactTaskType artifactTaskType, int secretFunctor, List<TaskSelectorYaml> delegateSelector) {
     ArtifactTaskParameters artifactTaskParameters = ArtifactTaskParameters.builder()
                                                         .accountId(ngAccess.getAccountIdentifier())
                                                         .artifactTaskType(artifactTaskType)
                                                         .attributes(delegateRequest)
                                                         .build();
+    List<TaskSelector> delegateSelectors = EmptyPredicate.isNotEmpty(delegateSelector)
+        ? delegateSelector.stream().map(TaskSelectorYaml::toTaskSelector).collect(Collectors.toList())
+        : Collections.EMPTY_LIST;
     DelegateTaskRequestBuilder delegateTaskRequestBuilder =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.CUSTOM_ARTIFACT_NG.name())
+            .expressionFunctorToken(secretFunctor)
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("ng", "true");
+            .taskSetupAbstraction("ng", "true")
+            .taskSelectors(EmptyPredicate.isNotEmpty(delegateSelector)
+                    ? delegateSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList())
+                    : Collections.EMPTY_LIST);
     if (EmptyPredicate.isEmpty(ngAccess.getOrgIdentifier())
         && EmptyPredicate.isEmpty(ngAccess.getProjectIdentifier())) {
       delegateTaskRequestBuilder.taskSetupAbstraction("owner", ngAccess.getAccountIdentifier());

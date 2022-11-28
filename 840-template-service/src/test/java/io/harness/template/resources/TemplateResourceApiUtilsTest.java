@@ -30,7 +30,6 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.ng.core.template.TemplateEntityType;
-import io.harness.ng.core.template.TemplateListType;
 import io.harness.pms.contracts.plan.YamlOutputProperties;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariableResponseMapValueProto;
@@ -221,15 +220,15 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     templateResponse.setUpdated(entity.getLastUpdatedAt());
     templateResponse.setConnectorRef(entity.getConnectorRef());
     templateResponse.setStableTemplate(entity.isStableTemplate());
-    templateWithInputsResponse.setTemplateResponse(templateResponse);
-    templateWithInputsResponse.setInputYaml("Input YAML not requested");
+    templateWithInputsResponse.setTemplate(templateResponse);
+    templateWithInputsResponse.setInputs("Input YAML not requested");
     when(templateResourceApiMapper.toTemplateResponseDefault(any())).thenReturn(templateWithInputsResponse);
     Response response = templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
         TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, null, null, null, null, false);
     TemplateWithInputsResponse templateResponseInput = (TemplateWithInputsResponse) response.getEntity();
     assertThat(response.getEntityTag().getValue()).isEqualTo("1");
-    assertEquals(templateResponseInput.getTemplateResponse().getSlug(), TEMPLATE_IDENTIFIER);
-    assertEquals(templateResponseInput.getInputYaml(), INPUT_YAML);
+    assertEquals(templateResponseInput.getTemplate().getSlug(), TEMPLATE_IDENTIFIER);
+    assertEquals(templateResponseInput.getInputs(), INPUT_YAML);
     verify(accessControlClient)
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER),
             Resource.of(TEMPLATE, TEMPLATE_IDENTIFIER), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
@@ -349,8 +348,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     when(templateResourceApiMapper.mapToTemplateMetadataResponse(any())).thenReturn(templateMetadataSummaryResponse);
     doReturn(templateEntities).when(templateService).listTemplateMetadata(any(), any(), any(), any(), any());
     Response response = templateResourceApiUtils.getTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null,
-        null, null, TemplateListType.ALL_TEMPLATE_TYPE.toString(), false, null, null, null,
-        Collections.singletonList("Stage"), null);
+        null, null, "ALL", false, null, null, null, Collections.singletonList("Stage"), null);
     List<TemplateMetadataSummaryResponse> templates = (List<TemplateMetadataSummaryResponse>) response.getEntity();
     assertThat(templates).isNotEmpty();
     assertThat(templates.size()).isEqualTo(1);

@@ -36,6 +36,8 @@ import io.harness.cdng.service.beans.ServicesYaml;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
@@ -294,8 +296,7 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
       final String projectIdentifier = ctx.get(NGCommonEntityConstants.PROJECT_KEY);
 
       final List<InfraStructureDefinitionYaml> infrastructures =
-          environmentYamlV2.getInfrastructureDefinitions()
-              .getValue()
+          CollectionUtils.emptyIfNull(environmentYamlV2.getInfrastructureDefinitions().getValue())
               .stream()
               .filter(infra -> !infra.getIdentifier().isExpression())
               .collect(Collectors.toList());
@@ -374,7 +375,12 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
         NGServiceOverrideConfig serviceOverrideConfig =
             NGServiceOverrideEntityConfigMapper.toNGServiceOverrideConfig(serviceOverridesEntity.get());
         List<NGVariable> variableOverrides = serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables();
-        variables.addAll(variableOverrides.stream().map(NGVariable::getName).collect(Collectors.toSet()));
+        if (EmptyPredicate.isNotEmpty(variableOverrides)) {
+          variables.addAll(variableOverrides.stream()
+                               .map(NGVariable::getName)
+                               .filter(EmptyPredicate::isNotEmpty)
+                               .collect(Collectors.toSet()));
+        }
       }
     }
     return variables;
@@ -481,16 +487,18 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
           for (SidecarArtifactWrapper sideCarArtifact : sidecarArtifactWrapperList) {
             SidecarArtifact sidecar = sideCarArtifact.getSidecar();
             String identifier = sidecar.getIdentifier();
-            ArtifactOutcome sideCarArtifactOutcome =
-                ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
-            List<String> sideCarOutputExpressions =
-                VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
+            if (sidecar.getSpec() != null) {
+              ArtifactOutcome sideCarArtifactOutcome =
+                  ArtifactResponseToOutcomeMapper.toArtifactOutcome(sidecar.getSpec(), null, false);
+              List<String> sideCarOutputExpressions =
+                  VariableCreatorHelper.getExpressionsInObject(sideCarArtifactOutcome, identifier);
 
-            for (String outputExpression : sideCarOutputExpressions) {
-              outputProperties.add(YamlProperties.newBuilder()
-                                       .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
-                                       .setVisible(true)
-                                       .build());
+              for (String outputExpression : sideCarOutputExpressions) {
+                outputProperties.add(YamlProperties.newBuilder()
+                                         .setLocalName(SIDECARS_PREFIX + "." + outputExpression)
+                                         .setVisible(true)
+                                         .build());
+              }
             }
           }
         }
@@ -523,16 +531,19 @@ public class DeploymentStageVariableCreator extends AbstractStageVariableCreator
 
   private void populateExpressionsForArtifact(
       List<YamlProperties> outputProperties, ArtifactConfig spec, Set<String> expressions) {
-    ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
-    List<String> primaryArtifactExpressions =
-        VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
+    // in case of template source, spec will be null
+    if (spec != null) {
+      ArtifactOutcome primaryArtifactOutcome = ArtifactResponseToOutcomeMapper.toArtifactOutcome(spec, null, false);
+      List<String> primaryArtifactExpressions =
+          VariableCreatorHelper.getExpressionsInObject(primaryArtifactOutcome, PRIMARY);
 
-    for (String outputExpression : primaryArtifactExpressions) {
-      if (expressions.add(outputExpression)) {
-        outputProperties.add(YamlProperties.newBuilder()
-                                 .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
-                                 .setVisible(true)
-                                 .build());
+      for (String outputExpression : primaryArtifactExpressions) {
+        if (expressions.add(outputExpression)) {
+          outputProperties.add(YamlProperties.newBuilder()
+                                   .setLocalName(OutcomeExpressionConstants.ARTIFACTS + "." + outputExpression)
+                                   .setVisible(true)
+                                   .build());
+        }
       }
     }
   }

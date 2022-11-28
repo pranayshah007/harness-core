@@ -10,8 +10,6 @@ package software.wings.delegatetasks.aws.ecs.ecstaskhandler.deploy;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.threading.Morpheus.sleep;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
@@ -31,8 +29,8 @@ import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHandler;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsRunTaskDeployRequest;
@@ -85,7 +83,7 @@ public class EcsRunTaskDeployCommandHandler extends EcsCommandTaskHandler {
       EcsRunTaskDeployRequest ecsRunTaskDeployRequest = (EcsRunTaskDeployRequest) ecsCommandRequest;
 
       SettingAttribute cloudProviderSetting =
-          aSettingAttribute().withValue(ecsRunTaskDeployRequest.getAwsConfig()).build();
+          SettingAttribute.builder().value(ecsRunTaskDeployRequest.getAwsConfig()).build();
 
       ecsRunTaskDeployResponse.setNewRegisteredRunTaskDefinitions(new ArrayList<>());
       ecsRunTaskDeployResponse.setPreviousRegisteredRunTaskDefinitions(new ArrayList<>());

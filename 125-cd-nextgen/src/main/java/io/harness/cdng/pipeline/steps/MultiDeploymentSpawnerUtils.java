@@ -79,8 +79,9 @@ public class MultiDeploymentSpawnerUtils {
     }
     if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
       matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
+    } else {
+      matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     }
-    matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }
@@ -92,11 +93,14 @@ public class MultiDeploymentSpawnerUtils {
     if (config.getServices() != null) {
       return config.getServices().getUuid();
     }
-    if (config.getEnvironments() != null) {
-      return config.getEnvironments().getUuid();
-    }
-    if (config.getEnvironmentGroup() != null && !config.getGitOpsEnabled()) {
-      return config.getEnvironmentGroup().getUuid();
+
+    if (!config.getGitOpsEnabled()) {
+      if (config.getEnvironments() != null) {
+        return config.getEnvironments().getUuid();
+      }
+      if (config.getEnvironmentGroup() != null) {
+        return config.getEnvironmentGroup().getUuid();
+      }
     }
     return node.getUuid();
   }

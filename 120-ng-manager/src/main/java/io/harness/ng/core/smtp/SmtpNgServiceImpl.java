@@ -88,7 +88,7 @@ public class SmtpNgServiceImpl implements SmtpNgService {
   public NgSmtpDTO getSmtpSettings(String accountId) throws IOException {
     SettingAttribute response = getResponse(ngSMTPSettingsHttpClient.getSmtpSettings(accountId));
     if (response == null) {
-      log.error("Smtp is not configured. Please create a new config");
+      log.info("Smtp is not configured. Please create a new config");
       return null;
     }
     return NgSmtpDTOMapper.getDTOFromSettingAttribute(response);

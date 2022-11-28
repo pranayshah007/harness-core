@@ -1127,7 +1127,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("222");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)
@@ -1165,7 +1165,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("444");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)
@@ -1200,7 +1200,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
                               .build();
 
     persistence.save(userGroup);
-
+    when(appService.getAccountIdByAppId(any())).thenReturn(accountId);
     userGroupService.pruneByApplication("111");
 
     UserGroup prunedGroup = persistence.createQuery(UserGroup.class, excludeAuthority)

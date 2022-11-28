@@ -101,6 +101,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
@@ -204,7 +205,7 @@ import org.jetbrains.annotations.Nullable;
 @Singleton
 @OwnedBy(CE)
 public class ViewsBillingServiceImpl implements ViewsBillingService {
-  private static final int months = 12;
+  private static final int MONTHS = 12;
   @Inject private ViewsQueryBuilder viewsQueryBuilder;
   @Inject private CEViewService viewService;
   @Inject private ViewsQueryHelper viewsQueryHelper;
@@ -411,12 +412,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     QLCEViewGridData gridData = null;
     List<QLCEViewGroupBy> groupByExcludingGroupByTime =
         groupBy.stream().filter(g -> g.getEntityGroupBy() != null).collect(Collectors.toList());
-    if (!viewsQueryHelper.isGroupByBusinessMappingPresent(groupBy)) {
-      ViewQueryParams queryParamsForGrid = viewsQueryHelper.buildQueryParams(
-          queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
-      gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
-          cloudProviderTableName, limit, 0, queryParamsForGrid);
-    }
+
+    ViewQueryParams queryParamsForGrid =
+        viewsQueryHelper.buildQueryParams(queryParams.getAccountId(), false, true, queryParams.isClusterQuery(), false);
+    gridData = getEntityStatsDataPointsNg(bigQuery, filters, groupByExcludingGroupByTime, aggregateFunction, sort,
+        cloudProviderTableName, limit, 0, queryParamsForGrid);
+
     SelectQuery query = getQuery(getModifiedFiltersForTimeSeriesStats(filters, gridData, groupByExcludingGroupByTime),
         groupBy, aggregateFunction, sort, cloudProviderTableName, queryParams);
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
@@ -698,7 +699,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams) {
+      ViewQueryParams queryParams, boolean lastPeriod) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
@@ -716,11 +717,22 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       return null;
     }
 
-    Double[] monthlyCosts = new Double[months];
-    int i = ((Long) result.getTotalRows()).intValue();
-    for (FieldValueList row : result.iterateAll()) {
-      monthlyCosts[months - i] = row.get("cost").getNumericValue().doubleValue();
-      i--;
+    String colName = isClusterTableQuery ? BILLING_AMOUNT : COST;
+    Double[] monthlyCosts = new Double[MONTHS];
+    Arrays.fill(monthlyCosts, 0.0D);
+    if (lastPeriod) {
+      int startPosition = ((Long) result.getTotalRows()).intValue();
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[MONTHS - startPosition] =
+            BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
+        startPosition--;
+      }
+    } else {
+      int startPosition = 0;
+      for (FieldValueList row : result.iterateAll()) {
+        monthlyCosts[startPosition] = BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
+        startPosition++;
+      }
     }
     return monthlyCosts;
   }

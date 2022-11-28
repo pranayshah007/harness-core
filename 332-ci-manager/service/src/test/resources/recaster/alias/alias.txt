@@ -91,6 +91,7 @@ io.harness.logging.CommandExecutionStatus
 io.harness.beans.steps.stepinfo.CleanupStepInfo
 io.harness.beans.sweepingoutputs.DliteVmStageInfraDetails
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.beans.sweepingoutputs.ContainerPortDetails
 io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml
 io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig
@@ -204,3 +205,19 @@ io.harness.beans.steps.nodes.SecurityNode
 io.harness.beans.steps.nodes.GCSUploadNode
 io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput
 io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput
+io.harness.beans.steps.stepinfo.ActionStepInfo
+io.harness.beans.steps.nodes.ActionStepNode
+io.harness.beans.steps.stepinfo.BitriseStepInfo
+io.harness.beans.steps.nodes.BitriseStepNode
+io.harness.beans.Clone
+io.harness.beans.stages.V1.IntegrationStageNodeV1
+io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1
+io.harness.beans.steps.nodes.V1.ScriptStepNode
+io.harness.beans.Repository
+io.harness.beans.steps.stepinfo.V1.ScriptStepInfo
+io.harness.beans.yaml.extended.reports.V1.Report
+io.harness.beans.yaml.extended.volumes.V1.TempVolume
+io.harness.beans.yaml.extended.volumes.V1.HostVolume
+io.harness.beans.yaml.extended.volumes.V1.ClaimVolume
+io.harness.beans.steps.nodes.V1.PluginStepNodeV1
+io.harness.beans.steps.stepinfo.V1.PluginStepInfoV1

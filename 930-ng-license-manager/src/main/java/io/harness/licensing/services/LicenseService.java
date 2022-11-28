@@ -48,4 +48,6 @@ public interface LicenseService extends LicenseCrudService {
   SMPValidationResultDTO validateSMPLicense(SMPEncLicenseDTO licenseDTO);
 
   SMPEncLicenseDTO generateSMPLicense(String accountId, SMPLicenseRequestDTO licenseRequest);
+
+  void applySMPLicense(SMPEncLicenseDTO encLicenseDTO);
 }

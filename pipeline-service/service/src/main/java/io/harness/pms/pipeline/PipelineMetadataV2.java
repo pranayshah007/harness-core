@@ -13,9 +13,9 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -44,7 +44,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 public class PipelineMetadataV2 {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        // Unique index because pipeline metadata like runSequence and RecentExecutionSummaryInfo belong to
+        // pipelineIdentifier and not git details
         .add(CompoundMongoIndex.builder()
                  .name("account_org_project_pipeline")
                  .unique(true)
@@ -52,13 +55,6 @@ public class PipelineMetadataV2 {
                  .field(PipelineMetadataV2Keys.orgIdentifier)
                  .field(PipelineMetadataV2Keys.projectIdentifier)
                  .field(PipelineMetadataV2Keys.identifier)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("account_org_project_last_executed")
-                 .field(PipelineMetadataV2Keys.accountIdentifier)
-                 .field(PipelineMetadataV2Keys.orgIdentifier)
-                 .field(PipelineMetadataV2Keys.projectIdentifier)
-                 .descRangeField(PipelineMetadataV2Keys.lastExecutedAt)
                  .build())
         .build();
   }
@@ -73,4 +69,5 @@ public class PipelineMetadataV2 {
   // the zeroth element will be the most recent execution
   List<RecentExecutionInfo> recentExecutionInfoList;
   Long lastExecutedAt;
+  EntityGitDetails entityGitDetails;
 }

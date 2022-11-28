@@ -1,4 +1,4 @@
-FROM redhat/ubi8-minimal:8.4
+FROM redhat/ubi8-minimal:latest
 
 LABEL name="harness/delegate-immutable" \
       vendor="Harness" \

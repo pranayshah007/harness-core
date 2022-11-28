@@ -108,6 +108,10 @@ public class InstanceDataBulkWriteServiceImpl implements InstanceDataBulkWriteSe
       instanceInfoDocument.append(InstanceDataKeys.namespaceLabels, instanceInfo.getNamespaceLabels());
     }
 
+    if (!isNull(instanceInfo.getTopOwnerLabels()) && !instanceInfo.getTopOwnerLabels().isEmpty()) {
+      instanceInfoDocument.append(InstanceDataKeys.topOwnerLabels, instanceInfo.getTopOwnerLabels());
+    }
+
     if (!isNull(instanceInfo.getMetaData())) {
       instanceInfoDocument.append(InstanceDataKeys.metaData, instanceInfo.getMetaData());
     }

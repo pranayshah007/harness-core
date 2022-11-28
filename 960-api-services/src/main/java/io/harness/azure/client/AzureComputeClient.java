@@ -17,14 +17,18 @@ import io.harness.azure.model.VirtualMachineData;
 
 import software.wings.beans.AzureImageGallery;
 
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.network.LoadBalancer;
-import com.microsoft.azure.management.network.VirtualMachineScaleSetNetworkInterface;
-import com.microsoft.azure.management.network.implementation.PublicIPAddressInner;
-import com.microsoft.azure.management.resources.Subscription;
+import com.azure.core.management.exception.ManagementException;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.network.fluent.models.PublicIpAddressInner;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.network.models.VirtualMachineScaleSetNetworkInterface;
+import com.azure.resourcemanager.resources.models.Subscription;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -145,8 +149,8 @@ public interface AzureComputeClient {
    * @param webAppName
    * @return
    */
-  List<DeploymentSlot> listWebAppDeploymentSlots(
-      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName);
+  List<WebDeploymentSlotBasic> listWebAppDeploymentSlots(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroup, String webAppName) throws ManagementException;
 
   /**
    * List Resource Groups names by Subscription Id
@@ -192,11 +196,12 @@ public interface AzureComputeClient {
    * @param azureUserAuthVMInstanceData
    * @param imageArtifact
    * @param tags
+   * @return
    */
-  void createVirtualMachineScaleSet(AzureConfig azureConfig, String subscriptionId,
-      VirtualMachineScaleSet baseVirtualMachineScaleSet, String newVirtualMachineScaleSetName,
-      AzureUserAuthVMInstanceData azureUserAuthVMInstanceData, AzureMachineImageArtifact imageArtifact,
-      AzureVMSSTagsData tags);
+  SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> createVirtualMachineScaleSet(
+      AzureConfig azureConfig, String subscriptionId, VirtualMachineScaleSet baseVirtualMachineScaleSet,
+      String newVirtualMachineScaleSetName, AzureUserAuthVMInstanceData azureUserAuthVMInstanceData,
+      AzureMachineImageArtifact imageArtifact, AzureVMSSTagsData tags);
 
   /**
    * Attach virtual machine scale set to load balancer backend pools.
@@ -287,7 +292,7 @@ public interface AzureComputeClient {
    * @param vm
    * @return
    */
-  Optional<PublicIPAddressInner> getVMPublicIPAddress(VirtualMachineScaleSetVM vm);
+  Optional<PublicIpAddressInner> getVMPublicIPAddress(VirtualMachineScaleSetVM vm);
 
   /**
    * List Virtual Machine network interfaces.

@@ -1,0 +1,29 @@
+service:
+  name: artsource
+  identifier: artsource
+  tags: {}
+  serviceDefinition:
+    spec:
+      artifacts:
+        primary:
+          primaryArtifactRef: $PRIMARY_ARTIFACT_REF
+          sources:
+            - name: fromtemp1
+              identifier: fromtemp1
+              template:
+                templateRef: art_temp1
+                versionLabel: v1
+                templateInputs:
+                  type: DockerRegistry
+                  spec:
+                    tag: latest
+        sidecars:
+          - sidecar:
+              identifier: sidecar1
+              type: DockerRegistry
+              spec:
+                connectorRef: connector
+                imagePath: nginx
+                tag: "latest"
+    type: Kubernetes
+  gitOpsEnabled: false

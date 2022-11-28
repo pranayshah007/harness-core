@@ -9,7 +9,7 @@ package io.harness.azure.model.image;
 
 import io.harness.azure.model.AzureMachineImageArtifact;
 
-import com.microsoft.azure.management.compute.implementation.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
 
 public abstract class AzureMachineImage {
   protected AzureMachineImageArtifact image;

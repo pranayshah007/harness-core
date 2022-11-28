@@ -206,6 +206,8 @@ public class WatcherServiceImpl implements WatcherService {
     multiVersion = isEmpty(deployMode) || !deployMode.equals("KUBERNETES_ONPREM");
   }
   private static final String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
+
+  private static final boolean IsShellDelegate = "SHELL_SCRIPT".equals(DELEGATE_TYPE);
   private static final String DELEGATE_SCRIPT = "delegate.sh";
 
   @Inject @Named("inputExecutor") private ScheduledExecutorService inputExecutor;
@@ -230,6 +232,8 @@ public class WatcherServiceImpl implements WatcherService {
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
   private final AtomicReference<List<String>> cachedDelegateVersion = new AtomicReference<>();
+
+  private final AtomicBoolean frozen = new AtomicBoolean(false);
 
   @Override
   public void run(boolean upgrade) {
@@ -455,11 +459,11 @@ public class WatcherServiceImpl implements WatcherService {
     runningDelegates.addAll(
         Optional.ofNullable(messageService.getData(WATCHER_DATA, RUNNING_DELEGATES, List.class)).orElse(emptyList()));
 
+    scheduleLocalHeartbeat();
+
     inputExecutor.scheduleWithFixedDelay(
         new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions), 0,
         DELEGATE_VERSION_CHECK_FREQ_MINS, MINUTES);
-    heartbeatExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
     heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
@@ -472,6 +476,11 @@ public class WatcherServiceImpl implements WatcherService {
     try (AutoLogContext ignore = new AutoLogContext(obtainPerformance(), OVERRIDE_NESTS)) {
       log.info("Current performance");
     }
+  }
+
+  private void scheduleLocalHeartbeat() {
+    heartbeatExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
   }
 
   public Map<String, String> obtainPerformance() {
@@ -608,7 +617,13 @@ public class WatcherServiceImpl implements WatcherService {
               obsolete.add(delegateProcess);
             } else if (delegateData.containsKey(DELEGATE_SELF_DESTRUCT)
                 && (Boolean) delegateData.get(DELEGATE_SELF_DESTRUCT)) {
-              selfDestruct();
+              // we should self-destruct only for shell delegates and not for containerised delegates since pod will
+              // restart itself again based on liveliness probe
+              if (IsShellDelegate) {
+                selfDestruct();
+              } else {
+                freeze();
+              }
             } else if (delegateData.containsKey(DELEGATE_MIGRATE)) {
               migrate((String) delegateData.get(DELEGATE_MIGRATE));
             } else if (delegateData.containsKey(DELEGATE_SWITCH_STORAGE)
@@ -952,7 +967,13 @@ public class WatcherServiceImpl implements WatcherService {
       }
 
       if ("DELETED".equals(restResponse.getResource())) {
-        selfDestruct();
+        // we should self-destruct only for shell delegates and not for containerised delegates since pod will restart
+        // itself again based on liveliness probe
+        if (IsShellDelegate) {
+          selfDestruct();
+        } else {
+          freeze();
+        }
       }
     } catch (Exception e) {
       // Ignore
@@ -1005,7 +1026,13 @@ public class WatcherServiceImpl implements WatcherService {
         DelegateConfiguration config = restResponse.getResource();
 
         if (config != null && config.getAction() == SELF_DESTRUCT) {
-          selfDestruct();
+          // we should self-destruct only for shell delegates and not for containerised delegates since pod will restart
+          // itself again based on liveliness probe
+          if (IsShellDelegate) {
+            selfDestruct();
+          } else {
+            freeze();
+          }
         }
 
         if (config != null) {
@@ -1729,5 +1756,20 @@ public class WatcherServiceImpl implements WatcherService {
     }
 
     System.exit(0);
+  }
+
+  private void freeze() {
+    log.info("Putting watcher in freeze mode...");
+    frozen.set(true);
+
+    // shutdown all the executors
+    inputExecutor.shutdown();
+    heartbeatExecutor.shutdown();
+    executorService.shutdown();
+    watchExecutor.shutdown();
+    upgradeExecutor.shutdown();
+
+    // schedule heartbeat so that delegate pod liveliness probe doesn't fail
+    scheduleLocalHeartbeat();
   }
 }

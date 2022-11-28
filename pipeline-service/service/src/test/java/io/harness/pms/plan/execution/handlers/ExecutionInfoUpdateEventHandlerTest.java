@@ -74,10 +74,11 @@ public class ExecutionInfoUpdateEventHandlerTest extends PipelineServiceTestBase
                                                                   .build())
                                         .build();
 
-    when(pmsPipelineService.get(anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(pmsPipelineService.getPipeline(anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean()))
         .thenReturn(Optional.of(pipelineEntity));
 
-    when(planExecutionService.get(anyString())).thenReturn(PlanExecution.builder().status(Status.FAILED).build());
+    when(planExecutionService.getPlanExecutionMetadata(anyString()))
+        .thenReturn(PlanExecution.builder().status(Status.FAILED).build());
 
     ArgumentCaptor<ExecutionSummaryInfo> captor = ArgumentCaptor.forClass(ExecutionSummaryInfo.class);
     doNothing()

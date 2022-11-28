@@ -44,6 +44,8 @@ service DelegateService {
   // This API is temporary to allow for querying objects from collections to allow for integration
   // before the rest of the micro services are promoted
   rpc ObtainDocument(ObtainDocumentRequest) returns (ObtainDocumentResponse);
+
+  rpc isTaskTypeSupported(SupportedTaskTypeRequest) returns (SupportedTaskTypeResponse);
 }
 
 // Next ID: 11
@@ -204,6 +206,15 @@ message Document {
 
 message ObtainDocumentResponse {
   repeated Document documents = 1;
+}
+
+message SupportedTaskTypeRequest {
+  string accountId = 1;
+  string taskType = 2;
+}
+
+message SupportedTaskTypeResponse {
+  bool isTaskTypeSupported = 1;
 }
 
 // }}

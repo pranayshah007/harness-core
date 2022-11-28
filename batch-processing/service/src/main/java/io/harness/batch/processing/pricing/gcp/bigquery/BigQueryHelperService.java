@@ -19,7 +19,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.CE)
 public interface BigQueryHelperService {
   Map<String, VMInstanceBillingData> getAwsEC2BillingData(
-      List<String> resourceId, Instant startTime, Instant endTime, String dataSetId);
+      List<String> resourceId, Instant startTime, Instant endTime, String dataSetId, String accountId);
 
   Map<String, VMInstanceBillingData> getEKSFargateBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);

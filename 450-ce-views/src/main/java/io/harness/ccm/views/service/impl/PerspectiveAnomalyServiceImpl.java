@@ -10,10 +10,8 @@ package io.harness.ccm.views.service.impl;
 import io.harness.ccm.commons.dao.anomaly.AnomalyDao;
 import io.harness.ccm.commons.entities.CCMFilter;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
-import io.harness.ccm.commons.entities.anomaly.AnomalyQueryDTO;
 import io.harness.ccm.commons.utils.AnomalyQueryBuilder;
 import io.harness.ccm.commons.utils.AnomalyUtils;
-import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.helper.PerspectiveToAnomalyQueryHelper;
 import io.harness.ccm.views.service.CEViewService;
@@ -28,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import lombok.NonNull;
 import org.jooq.Condition;
-import org.jooq.impl.DSL;
 
 public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService {
   @Inject CEViewService viewService;
@@ -43,39 +40,18 @@ public class PerspectiveAnomalyServiceImpl implements PerspectiveAnomalyService 
   public List<AnomalyData> listPerspectiveAnomaliesForDate(
       @NonNull String accountIdentifier, @NonNull String perspectiveId, Instant date) {
     CEView perspective = viewService.get(perspectiveId);
-    CCMFilter filters =
-        perspectiveToAnomalyQueryHelper.getConvertedFiltersForPerspective(perspective, getDefaultPerspectiveQuery());
-    return listAnomalies(accountIdentifier,
-        AnomalyQueryDTO.builder()
-            .filter(filters)
-            .orderBy(Collections.emptyList())
-            .limit(DEFAULT_LIMIT)
-            .offset(DEFAULT_OFFSET)
-            .build(),
-        date);
-  }
-
-  private List<AnomalyData> listAnomalies(
-      @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, Instant date) {
-    if (anomalyQuery == null) {
-      anomalyQuery = AnomalyUtils.getDefaultAnomalyQuery();
-    }
-    Condition condition = anomalyQuery.getFilter() != null
-        ? anomalyQueryBuilder.applyAllFilters(anomalyQuery.getFilter())
-        : DSL.noCondition();
-
-    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForDate(accountIdentifier, condition,
-        anomalyQueryBuilder.getOrderByFields(
-            anomalyQuery.getOrderBy() != null ? anomalyQuery.getOrderBy() : Collections.emptyList()),
-        anomalyQuery.getOffset() != null ? anomalyQuery.getOffset() : DEFAULT_OFFSET,
-        anomalyQuery.getLimit() != null ? anomalyQuery.getLimit() : DEFAULT_LIMIT, date.truncatedTo(ChronoUnit.DAYS));
-
+    List<CCMFilter> filters = perspectiveToAnomalyQueryHelper.getConvertedRulesForPerspective(perspective);
+    Condition condition = anomalyQueryBuilder.applyPerspectiveRuleFilters(filters);
+    List<Anomalies> anomalies = anomalyDao.fetchAnomaliesForNotification(accountIdentifier, condition,
+        anomalyQueryBuilder.getOrderByFields(Collections.emptyList()), DEFAULT_OFFSET, DEFAULT_LIMIT,
+        date.truncatedTo(ChronoUnit.DAYS));
     List<AnomalyData> anomalyData = new ArrayList<>();
     anomalies.forEach(anomaly -> anomalyData.add(AnomalyUtils.buildAnomalyData(anomaly)));
     return anomalyData;
   }
 
-  private PerspectiveQueryDTO getDefaultPerspectiveQuery() {
-    return PerspectiveQueryDTO.builder().filters(null).groupBy(null).build();
+  @Override
+  public void updateAnomalySentStatus(@NonNull String accountId, String anomalyId, boolean notificationSentStatus) {
+    anomalyDao.updateAnomalyNotificationSentStatus(accountId, anomalyId, notificationSentStatus);
   }
 }

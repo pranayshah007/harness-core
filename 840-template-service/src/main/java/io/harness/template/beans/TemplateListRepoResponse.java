@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.HashSet;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -25,5 +25,5 @@ import lombok.Value;
 public class TemplateListRepoResponse {
   @Hidden
   @Schema(description = "Contains the list of unique repositories for given scope of template listing")
-  HashSet<String> repositories;
+  List<String> repositories;
 }

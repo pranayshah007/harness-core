@@ -8,6 +8,7 @@
 package io.harness.ng.core.remote;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.FORCE_DELETE_MESSAGE;
 import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
@@ -107,6 +108,12 @@ import retrofit2.http.Body;
       , @Content(mediaType = "application/yaml", schema = @Schema(implementation = FailureDTO.class))
     })
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Internal server error",
+    content =
+    {
+      @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
+      , @Content(mediaType = "application/yaml", schema = @Schema(implementation = ErrorDTO.class))
+    })
+@io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "Not Found",
     content =
     {
       @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorDTO.class))
@@ -372,7 +379,9 @@ public class NGSecretResourceV2 {
           NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = FORCE_DELETE_MESSAGE) @QueryParam(NGCommonEntityConstants.FORCE_DELETE) @DefaultValue(
+          "false") boolean forceDelete) {
     SecretResponseWrapper secret =
         ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).orElse(null);
     secretPermissionValidator.checkForAccessOrThrow(
@@ -380,7 +389,7 @@ public class NGSecretResourceV2 {
         Resource.of(SECRET_RESOURCE_TYPE, identifier), SECRET_DELETE_PERMISSION,
         secret != null ? secret.getSecret().getOwner() : null);
     return ResponseDTO.newResponse(
-        ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier));
+        ngSecretService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, forceDelete));
   }
 
   @PUT

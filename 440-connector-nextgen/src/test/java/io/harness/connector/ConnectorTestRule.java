@@ -23,7 +23,6 @@ import io.harness.connector.helper.DecryptionHelperViaManager;
 import io.harness.connector.impl.ConnectorActivityServiceImpl;
 import io.harness.connector.services.ConnectorActivityService;
 import io.harness.connector.services.ConnectorService;
-import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.impl.noop.NoOpProducer;
@@ -43,6 +42,7 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
 import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.services.OrganizationService;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.validator.service.api.NGHostValidationService;
@@ -149,6 +149,7 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
         bind(NGSettingsClient.class).toInstance(mock(NGSettingsClient.class));
+        bind(EntitySetupUsageService.class).toInstance(mock(EntitySetupUsageService.class));
       }
     });
     modules.add(mongoTypeModule(annotations));
@@ -159,8 +160,6 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build()));
     modules.add(KryoModule.getInstance());
     modules.add(YamlSdkModule.getInstance());
-    modules.add(new EntitySetupUsageClientModule(
-        ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build(), "test_secret", "Service"));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton

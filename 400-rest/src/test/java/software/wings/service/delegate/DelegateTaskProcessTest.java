@@ -494,7 +494,7 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     TerraformProvisionParameters parameters = TerraformProvisionParameters.builder()
                                                   .sourceRepo(GitConfig.builder()
                                                                   .repoUrl("https://github.com/testtp")
-                                                                  .sshSettingAttribute(sshSettingAttribute)
+                                                                  .sshSettingAttribute(sshSettingAttribute.toDTO())
                                                                   .build())
                                                   .secretManagerConfig(null)
                                                   .isGitHostConnectivityCheck(true)

@@ -62,6 +62,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
@@ -80,14 +83,17 @@ public class PMSYamlSchemaServiceImplTest {
   @Mock PmsSdkInstanceService pmsSdkInstanceService;
   @Mock YamlSchemaValidator yamlSchemaValidator;
   @InjectMocks private PMSYamlSchemaServiceImpl pmsYamlSchemaService;
+  @Mock private ExecutorService yamlSchemaExecutor;
 
   private static final String ACC_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PRJ_ID = "projectId";
 
   @Before
-  public void setUp() {
+  public void setUp() throws ExecutionException, InterruptedException, TimeoutException {
     MockitoAnnotations.initMocks(this);
+    pmsYamlSchemaService = new PMSYamlSchemaServiceImpl(yamlSchemaProvider, yamlSchemaValidator, pmsSdkInstanceService,
+        pmsYamlSchemaHelper, schemaFetcher, 25, yamlSchemaExecutor);
   }
 
   @Test
@@ -191,7 +197,7 @@ public class PMSYamlSchemaServiceImplTest {
   public void shouldNotValidateYamlSchema() throws IOException {
     when(pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, ACC_ID))
         .thenReturn(true);
-    pmsYamlSchemaService.validateYamlSchema(ACC_ID, ORG_ID, PRJ_ID, "");
+    pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, "");
     verify(yamlSchemaValidator, never()).validate(anyString(), anyString(), anyBoolean(), anyInt(), anyString());
   }
 
@@ -212,7 +218,7 @@ public class PMSYamlSchemaServiceImplTest {
     try (MockedStatic<JsonPipelineUtils> pipelineUtils = mockStatic(JsonPipelineUtils.class)) {
       pipelineUtils.when(() -> JsonPipelineUtils.writeJsonString(any())).thenReturn(schemaString);
       prepareAndAssertGetPipelineYamlSchemaInternal(
-          scope, () -> pmsYamlSchemaService.validateYamlSchema(ACC_ID, ORG_ID, PRJ_ID, yaml));
+          scope, () -> pmsYamlSchemaService.validateYamlSchemaInternal(ACC_ID, ORG_ID, PRJ_ID, yaml));
     }
 
     verify(yamlSchemaValidator).validate(eq(yaml), eq(schemaString), anyBoolean(), anyInt(), anyString());

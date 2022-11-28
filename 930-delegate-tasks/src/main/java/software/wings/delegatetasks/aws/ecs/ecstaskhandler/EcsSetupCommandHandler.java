@@ -7,8 +7,6 @@
 
 package software.wings.delegatetasks.aws.ecs.ecstaskhandler;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionUtils;
@@ -18,11 +16,11 @@ import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.ContainerSetupCommandUnitExecutionDataBuilder;
 import software.wings.beans.command.EcsSetupParams;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.aws.EcsContainerService;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceSetupRequest;
@@ -77,7 +75,7 @@ public class EcsSetupCommandHandler extends EcsCommandTaskHandler {
       commandExecutionDataBuilder.ecsRegion(setupParams.getRegion());
 
       SettingAttribute cloudProviderSetting =
-          aSettingAttribute().withValue(ecsServiceSetupRequest.getAwsConfig()).build();
+          SettingAttribute.builder().value(ecsServiceSetupRequest.getAwsConfig()).build();
 
       // Rollback Setup happens for ECS Daemon service, as for daemon scheduling strategy actual deployment happens in
       // setup state. In this case, we don't need to launch actual tasks, as ECS will schedule 1 task per instance in

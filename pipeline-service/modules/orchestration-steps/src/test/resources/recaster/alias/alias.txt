@@ -10,6 +10,7 @@ barrierSpecParameters
 io.harness.advisers.rollback.OnFailRollbackOutput
 io.harness.steps.jira.update.JiraUpdateSpecParameters
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
+io.harness.steps.group.GroupStepParametersV1
 io.harness.plancreator.execution.ExecutionElementConfig
 io.harness.steps.cf.FlagConfigurationStepParameters
 io.harness.steps.http.HttpStepParameters
@@ -146,3 +147,8 @@ io.harness.steps.wait.WaitStepInfo
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
+io.harness.steps.plugin.ContainerStepNode
+io.harness.steps.plugin.ContainerStepInfo
+io.harness.steps.plugin.ContainerStepOutcome
+io.harness.steps.plugin.ContainerStepParameters
+io.harness.beans.yaml.extended.ImagePullPolicy

@@ -10,22 +10,24 @@ package io.harness.delegate.task.azure.appservice.deployment.verifier;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureServiceCallBack;
 import io.harness.azure.client.AzureWebClient;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.delegate.task.azure.appservice.deployment.context.StatusVerifierContext;
 import io.harness.logging.LogCallback;
 
+import com.azure.core.http.rest.Response;
+import reactor.core.publisher.Mono;
+
 @OwnedBy(CDP)
 public class StopSlotStatusVerifier extends SlotStatusVerifier {
   public StopSlotStatusVerifier(LogCallback logCallback, String slotName, AzureWebClient azureWebClient,
-      AzureWebClientContext azureWebClientContext, AzureServiceCallBack restCallBack) {
-    super(logCallback, slotName, azureWebClient, azureWebClientContext, restCallBack);
+      AzureWebClientContext azureWebClientContext, Mono<Response<Void>> responseMono) {
+    super(logCallback, slotName, azureWebClient, azureWebClientContext, responseMono);
   }
 
   public StopSlotStatusVerifier(StatusVerifierContext context) {
     super(context.getLogCallback(), context.getSlotName(), context.getAzureWebClient(),
-        context.getAzureWebClientContext(), context.getRestCallBack());
+        context.getAzureWebClientContext(), context.getResponseMono());
   }
 
   @Override

@@ -556,22 +556,21 @@ public class HelmTaskHelperBase {
 
   public void fetchChartFromRepo(String repoName, String repoDisplayName, String chartName, String chartVersion,
       String chartDirectory, HelmVersion helmVersion, HelmCommandFlag helmCommandFlag, long timeoutInMillis,
-      boolean checkIncorrectChartVersion, String cacheDir) {
+      String cacheDir) {
     String helmFetchCommand =
         getHelmFetchCommand(chartName, chartVersion, repoName, chartDirectory, helmVersion, helmCommandFlag);
     if (isEmpty(cacheDir)) {
-      executeFetchChartFromRepo(chartName, chartDirectory, repoDisplayName, helmFetchCommand, timeoutInMillis,
-          chartVersion, checkIncorrectChartVersion);
+      executeFetchChartFromRepo(
+          chartName, chartDirectory, repoDisplayName, helmFetchCommand, timeoutInMillis, chartVersion);
       return;
     }
 
     executeFetchChartFromRepoUseRepoFlag(chartName, chartDirectory, repoDisplayName, helmFetchCommand, timeoutInMillis,
-        repoName, cacheDir, chartVersion, checkIncorrectChartVersion);
+        repoName, cacheDir, chartVersion);
   }
 
   public void executeFetchChartFromRepoUseRepoFlag(String chartName, String chartDirectory, String repoDisplayName,
-      String helmFetchCommand, long timeoutInMillis, String repoName, String dir, String chartVersion,
-      boolean checkIncorrectChartVersion) {
+      String helmFetchCommand, long timeoutInMillis, String repoName, String dir, String chartVersion) {
     Map<String, String> environment = new HashMap<>();
     environment.put(
         HELM_CACHE_HOME, HELM_CACHE_HOME_PATH.replace(REPO_NAME, repoName).replace(HELM_CACHE_HOME_PLACEHOLDER, dir));
@@ -594,17 +593,15 @@ public class HelmTaskHelperBase {
       throw new HelmClientException(builder.toString(), HelmCliCommandType.FETCH);
     }
 
-    if (checkIncorrectChartVersion) {
-      if (!checkChartVersion(chartVersion, chartDirectory, chartName)) {
-        throw new HelmClientException(
-            "Chart version specified and fetched don't match. Please check the input chart version",
-            HelmCliCommandType.FETCH);
-      }
+    if (!checkChartVersion(chartVersion, chartDirectory, chartName)) {
+      throw new HelmClientException(
+          "Chart version specified and fetched don't match. Please check the input chart version",
+          HelmCliCommandType.FETCH);
     }
   }
 
   public void executeFetchChartFromRepo(String chartName, String chartDirectory, String repoDisplayName,
-      String helmFetchCommand, long timeoutInMillis, String chartVersion, boolean checkIncorrectChartVersion) {
+      String helmFetchCommand, long timeoutInMillis, String chartVersion) {
     log.info(helmFetchCommand);
 
     ProcessResult processResult = executeCommand(Collections.emptyMap(), helmFetchCommand, chartDirectory,
@@ -622,16 +619,14 @@ public class HelmTaskHelperBase {
       throw new HelmClientException(builder.toString(), HelmCliCommandType.FETCH);
     }
 
-    if (checkIncorrectChartVersion) {
-      if (!checkChartVersion(chartVersion, chartDirectory, chartName)) {
-        throw new HelmClientException(
-            "Chart version specified and fetched don't match. Please check the input chart version",
-            HelmCliCommandType.FETCH);
-      }
+    if (!checkChartVersion(chartVersion, chartDirectory, chartName)) {
+      throw new HelmClientException(
+          "Chart version specified and fetched don't match. Please check the input chart version",
+          HelmCliCommandType.FETCH);
     }
   }
 
-  private boolean checkChartVersion(String chartVersion, String chartDirectory, String chartName) {
+  public boolean checkChartVersion(String chartVersion, String chartDirectory, String chartName) {
     if (isEmpty(chartVersion)) {
       return true;
     }
@@ -672,7 +667,7 @@ public class HelmTaskHelperBase {
           timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
       fetchChartFromRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
           manifest.getChartName(), manifest.getChartVersion(), destinationDirectory, manifest.getHelmVersion(),
-          manifest.getHelmCommandFlag(), timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
+          manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir);
     } finally {
       if (isNotEmpty(cacheDir) && !manifest.isUseCache()) {
         try {
@@ -704,7 +699,7 @@ public class HelmTaskHelperBase {
           Paths.get(ociHelmConnector.getHelmRepoUrl(), storeDelegateConfig.getBasePath()).normalize());
       fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
           manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
-          timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
+          timeoutInMillis, cacheDir);
     } finally {
       if (!manifest.isUseCache()) {
         try {
@@ -764,8 +759,7 @@ public class HelmTaskHelperBase {
       addChartMuseumRepo(repoName, repoDisplayName, chartMuseumServer.getPort(), destinationDirectory,
           manifest.getHelmVersion(), timeoutInMillis, cacheDir, manifest.getHelmCommandFlag());
       fetchChartFromRepo(repoName, repoDisplayName, manifest.getChartName(), manifest.getChartVersion(),
-          destinationDirectory, manifest.getHelmVersion(), manifest.getHelmCommandFlag(), timeoutInMillis, false,
-          cacheDir);
+          destinationDirectory, manifest.getHelmVersion(), manifest.getHelmCommandFlag(), timeoutInMillis, cacheDir);
 
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {

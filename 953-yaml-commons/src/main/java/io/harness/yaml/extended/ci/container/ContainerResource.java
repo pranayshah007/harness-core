@@ -35,11 +35,13 @@ public class ContainerResource {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   String uuid;
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) Limits requests;
   @NotNull Limits limits;
 
   @Builder
   @JsonCreator
-  public ContainerResource(@JsonProperty("limits") Limits limits) {
+  public ContainerResource(@JsonProperty("requests") Limits requests, @JsonProperty("limits") Limits limits) {
+    this.requests = Optional.ofNullable(requests).orElse(Limits.builder().build());
     this.limits = Optional.ofNullable(limits).orElse(Limits.builder().build());
   }
 

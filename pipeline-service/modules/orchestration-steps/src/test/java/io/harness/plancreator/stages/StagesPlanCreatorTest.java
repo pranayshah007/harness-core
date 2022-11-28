@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
@@ -102,6 +103,7 @@ public class StagesPlanCreatorTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  @Ignore("CI-6025: TI team to follow up")
   public void testCreatePlanForChildrenNodes() {
     doReturn(new byte[2]).when(kryoSerializer).asBytes(any());
     List<YamlNode> stages = stagesYamlField.getNode().asArray();

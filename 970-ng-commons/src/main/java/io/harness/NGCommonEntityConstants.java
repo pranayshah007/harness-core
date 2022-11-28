@@ -23,6 +23,8 @@ public class NGCommonEntityConstants {
   public static final String ORG_KEY = "orgIdentifier";
   public static final String ORGS_KEY = "orgIdentifiers";
   public static final String PROJECT_KEY = "projectIdentifier";
+
+  public static final String FORCE_DELETE = "forceDelete";
   public static final String VERSION_LABEL_KEY = "versionLabel";
   public static final String SERVICE_KEY = "serviceId";
   public static final String ENVIRONMENT_KEY = "envId";
@@ -64,6 +66,7 @@ public class NGCommonEntityConstants {
   public static final String PREVIOUS_REL = "previous";
   public static final String NEXT_REL = "next";
   public static final String SIZE = "size";
+  public static final String OPERATOR = "criteriaOperator";
   public static final String MASK_SECRETS = "maskSecrets";
   public static final String CONNECTOR_IDENTIFIER_REF = "connectorIdentifierRef";
   public static final String CONNECTOR_TYPE = "connectorType";
@@ -83,6 +86,8 @@ public class NGCommonEntityConstants {
   public static final String ORG_PARAM_MESSAGE = "Organization Identifier for the Entity.";
   public static final String ORG_LIST_PARAM_MESSAGE = "List of Organization Identifiers for the Entities.";
   public static final String PROJECT_PARAM_MESSAGE = "Project Identifier for the Entity.";
+  public static final String FORCE_DELETE_MESSAGE =
+      "If true, the Entity will be forced delete, without checking any references/usages";
   public static final String IDENTIFIER_PARAM_MESSAGE = "Identifier for the Entity.";
   public static final String TAGS = "Tags";
   public static final String DESCRIPTION = "Description of the entity";
@@ -118,6 +123,9 @@ public class NGCommonEntityConstants {
   public static final String INTERNAL_SERVER_ERROR_CODE = "500";
   public static final String APPLICATION_JSON_MEDIA_TYPE = "application/json";
   public static final String APPLICATION_YAML_MEDIA_TYPE = "application/yaml";
+  public static final String OPERATOR_PARAM_MESSAGE = "Operator Criteria for Criterias ";
+  public static final String RESOURCE = "Resource it targets (For icons)";
+  public static final String POLICY = "Get YAML of the policy";
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
@@ -150,4 +158,5 @@ public class NGCommonEntityConstants {
   public static final String ARTIFACT_PATH = "artifactPath";
   public static final String PARENT_JOB_NAME = "parentJobName";
   public static final String HARNESS_IMAGE = "harnessImage";
+  public static final String METHOD_NAME = "methodName";
 }

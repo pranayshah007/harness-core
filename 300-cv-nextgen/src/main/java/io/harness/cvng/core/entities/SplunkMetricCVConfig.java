@@ -15,6 +15,7 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
 import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
@@ -53,7 +54,7 @@ public class SplunkMetricCVConfig extends MetricCVConfig<SplunkMetricInfo> {
                                 .accountId(getAccountId())
                                 .dataSourceType(DataSourceType.SPLUNK_METRIC)
                                 .projectIdentifier(getProjectIdentifier())
-                                .identifier(category.getDisplayName())
+                                .identifier(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER)
                                 .build();
 
     metricDefinitions.forEach(metricDefinition -> {

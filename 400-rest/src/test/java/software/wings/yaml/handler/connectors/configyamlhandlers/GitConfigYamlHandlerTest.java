@@ -7,6 +7,7 @@
 
 package software.wings.yaml.handler.connectors.configyamlhandlers;
 
+import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.DHRUV;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -74,7 +75,7 @@ public class GitConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTestB
     assertThat(gitConfig.getCommitMessage()).isEqualTo(SAMPLE_STRING);
     assertThat(gitConfig.getAuthorEmailId()).isEqualTo(SAMPLE_STRING);
     assertThat(gitConfig.getAuthorName()).isEqualTo(SAMPLE_STRING);
-    assertThat(gitConfig.getSshSettingId()).isEqualTo(null);
+    assertThat(gitConfig.getSshSettingId()).isNull();
     assertThat(gitConfig.getUsername()).isEqualTo(SAMPLE_STRING);
     assertThat(gitConfig.getBranch()).isEqualTo(SAMPLE_STRING);
     assertThat(gitConfig.getRepoUrl()).isEqualTo(SAMPLE_STRING);
@@ -97,7 +98,7 @@ public class GitConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTestB
                               .providerType(ProviderType.GIT)
                               .build();
 
-    SettingValue settingValue = (SettingValue) gitConfig;
+    SettingValue settingValue = gitConfig;
     SettingAttribute settingAttribute = SettingAttribute.Builder.aSettingAttribute()
                                             .withName(SAMPLE_STRING)
                                             .withUuid(null)
@@ -112,8 +113,61 @@ public class GitConfigYamlHandlerTest extends SettingValueConfigYamlHandlerTestB
     assertThat(yaml.getAuthorName()).isEqualTo(SAMPLE_STRING);
     assertThat(yaml.getBranch()).isEqualTo(SAMPLE_STRING);
     assertThat(yaml.getDescription()).isEqualTo(SAMPLE_STRING);
-    assertThat(yaml.getSshKeyName()).isEqualTo(null);
+    assertThat(yaml.getSshKeyName()).isNull();
     assertThat(yaml.getDelegateSelectors()).isEqualTo(Collections.emptyList());
     assertThat(yaml.getProviderType()).isEqualTo(ProviderType.GIT);
+  }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testToBean_1() {
+    SettingAttribute prev = SettingAttribute.Builder.aSettingAttribute()
+                                .withUuid("uuid")
+                                .withCategory(SettingAttribute.SettingCategory.CONNECTOR)
+                                .withValue(GitConfig.builder().webhookToken("test").build())
+                                .build();
+
+    GitConfig.Yaml yaml = GitConfig.Yaml.builder()
+                              .branch(SAMPLE_STRING)
+                              .reference(SAMPLE_STRING)
+                              .keyAuth(true)
+                              .sshKeyName(null)
+                              .authorName(SAMPLE_STRING)
+                              .authorEmailId(SAMPLE_STRING)
+                              .commitMessage(SAMPLE_STRING)
+                              .description(SAMPLE_STRING)
+                              .password(SAMPLE_STRING)
+                              .username(SAMPLE_STRING)
+                              .url(SAMPLE_STRING)
+                              .delegateSelectors(Collections.emptyList())
+                              .providerType(ProviderType.GIT)
+                              .build();
+
+    Change change = Change.Builder.aFileChange()
+                        .withAccountId("ABC")
+                        .withFilePath("Setup/Source Repo Provider/test-harness.yaml")
+                        .build();
+    ChangeContext<GitConfig.Yaml> changeContext = ChangeContext.Builder.aChangeContext()
+                                                      .withYamlType(YamlType.SOURCE_REPO_PROVIDER)
+                                                      .withYaml(yaml)
+                                                      .withChange(change)
+                                                      .build();
+
+    SettingAttribute settingAttribute = yamlHandler.toBean(prev, changeContext, null);
+    GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
+
+    assertThat(gitConfig).isNotNull();
+    assertThat(gitConfig.getCommitMessage()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getAuthorEmailId()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getAuthorName()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getSshSettingId()).isNull();
+    assertThat(gitConfig.getUsername()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getBranch()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getRepoUrl()).isEqualTo(SAMPLE_STRING);
+    assertThat(gitConfig.getDelegateSelectors()).isEqualTo(Collections.emptyList());
+    assertThat(gitConfig.getProviderType()).isEqualTo(ProviderType.GIT);
+    assertThat(gitConfig.getWebhookToken()).isNotBlank();
+    assertThat(settingAttribute.getUuid()).isNotEmpty();
   }
 }

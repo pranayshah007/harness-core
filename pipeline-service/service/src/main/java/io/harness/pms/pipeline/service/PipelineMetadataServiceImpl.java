@@ -8,6 +8,8 @@
 package io.harness.pms.pipeline.service;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -44,13 +46,15 @@ public class PipelineMetadataServiceImpl implements PipelineMetadataService {
     int count = incrementExecutionCounter(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getIdentifier());
     if (count == -1) {
       try {
-        PipelineMetadataV2 metadata = PipelineMetadataV2.builder()
-                                          .accountIdentifier(pipelineEntity.getAccountIdentifier())
-                                          .orgIdentifier(orgIdentifier)
-                                          .projectIdentifier(projectIdentifier)
-                                          .runSequence(pipelineEntity.getRunSequence() + 1)
-                                          .identifier(pipelineEntity.getIdentifier())
-                                          .build();
+        PipelineMetadataV2 metadata =
+            PipelineMetadataV2.builder()
+                .accountIdentifier(pipelineEntity.getAccountIdentifier())
+                .orgIdentifier(orgIdentifier)
+                .projectIdentifier(projectIdentifier)
+                .runSequence(pipelineEntity.getRunSequence() + 1)
+                .identifier(pipelineEntity.getIdentifier())
+                .entityGitDetails(EntityGitDetails.builder().branch(GitContextHelper.getBranch()).build())
+                .build();
         return save(metadata).getRunSequence();
       } catch (DuplicateKeyException exception) {
         // retry insert if above fails

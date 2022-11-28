@@ -15,7 +15,7 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.model.blueprint.assignment.WhoIsBlueprintContract;
 import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation;
 
-import com.microsoft.azure.PagedList;
+import com.azure.core.http.rest.PagedFlux;
 
 public interface AzureBlueprintClient {
   /**
@@ -86,7 +86,7 @@ public interface AzureBlueprintClient {
    * @param blueprintName
    * @return
    */
-  PagedList<PublishedBlueprint> listPublishedBlueprintVersions(
+  PagedFlux<PublishedBlueprint> listPublishedBlueprintVersions(
       AzureConfig azureConfig, String resourceScope, String blueprintName);
 
   /**
@@ -118,7 +118,7 @@ public interface AzureBlueprintClient {
    * @param resourceScope
    * @return
    */
-  PagedList<Assignment> listAssignments(AzureConfig azureConfig, String resourceScope);
+  PagedFlux<Assignment> listAssignments(AzureConfig azureConfig, String resourceScope);
 
   /**
    * List operations for given blueprint assignment within a subscription or a management group.
@@ -128,7 +128,7 @@ public interface AzureBlueprintClient {
    * @param assignmentName
    * @return
    */
-  PagedList<AssignmentOperation> listAssignmentOperations(
+  PagedFlux<AssignmentOperation> listAssignmentOperations(
       AzureConfig azureConfig, String resourceScope, String assignmentName);
 
   /**

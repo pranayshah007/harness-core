@@ -73,6 +73,8 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 
 import software.wings.DataStorageMode;
 import software.wings.app.AuthModule;
+import software.wings.app.ExecutorConfig;
+import software.wings.app.ExecutorsConfig;
 import software.wings.app.GcpMarketplaceIntegrationModule;
 import software.wings.app.IndexMigratorModule;
 import software.wings.app.MainConfiguration;
@@ -388,6 +390,9 @@ public class FunctionalTestRule implements MethodRule, InjectorRuleMixin, MongoR
     grpcServerConfig.setConnectors(Arrays.asList(
         Connector.builder().port(9880).secure(true).keyFilePath("key.pem").certFilePath("cert.pem").build()));
     configuration.setGrpcServerConfig(grpcServerConfig);
+
+    configuration.setExecutorsConfig(
+        ExecutorsConfig.builder().dataReconciliationExecutorConfig(ExecutorConfig.builder().build()).build());
 
     configuration.setGrpcDelegateServiceClientConfig(
         GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());

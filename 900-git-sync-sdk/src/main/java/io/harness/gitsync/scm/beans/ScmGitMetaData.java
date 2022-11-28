@@ -9,10 +9,12 @@ package io.harness.gitsync.scm.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.sdk.CacheResponse;
 
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 @OwnedBy(HarnessTeam.PL)
@@ -20,11 +22,12 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ScmGitMetaData {
-  String repoName;
+  @Setter String repoName;
   String branchName;
   String commitId;
   String filePath;
   String blobId;
   String fileUrl;
   String repoUrl;
+  @Setter CacheResponse cacheResponse;
 }

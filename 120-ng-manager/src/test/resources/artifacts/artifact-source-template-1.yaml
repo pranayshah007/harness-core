@@ -1,0 +1,14 @@
+template:
+  name: nginx
+  identifier: nginx
+  versionLabel: v1
+  type: ArtifactSource
+  projectIdentifier: testsvcenv
+  orgIdentifier: default
+  tags: {}
+  spec:
+    type: DockerRegistry
+    spec:
+      imagePath: library/<+service.name>
+      tag: <+input>
+      connectorRef: account.harnessImage

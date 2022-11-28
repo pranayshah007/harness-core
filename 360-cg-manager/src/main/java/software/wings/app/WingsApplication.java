@@ -7,7 +7,6 @@
 
 package software.wings.app;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -81,7 +80,6 @@ import io.harness.eventframework.dms.DmsEventConsumerService;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerEventConsumerService;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.MongoExecutionTimeoutExceptionMapper;
 import io.harness.exception.WingsException;
@@ -96,6 +94,8 @@ import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.iterator.DelegateDisconnectDetectorIterator;
 import io.harness.iterator.FailDelegateTaskIterator;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorExecutionHandlerImpl;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLocker;
@@ -110,7 +110,6 @@ import io.harness.migrations.MigrationModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.QuartzCleaner;
 import io.harness.mongo.QueryFactory;
-import io.harness.mongo.iterator.IteratorConfig;
 import io.harness.mongo.tracing.TraceMode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.CorrelationFilter;
@@ -146,7 +145,12 @@ import io.harness.persistence.UserProvider;
 import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
+import io.harness.queue.RedisConsumerControllerCg;
 import io.harness.queue.TimerScheduledExecutorService;
+import io.harness.queue.consumers.GeneralEventConsumerCg;
+import io.harness.queue.consumers.NotifyEventConsumerCg;
+import io.harness.queue.publishers.CgGeneralEventPublisher;
+import io.harness.queue.publishers.CgNotifyEventPublisher;
 import io.harness.reflection.HarnessReflections;
 import io.harness.request.RequestContextFilter;
 import io.harness.scheduler.PersistentScheduler;
@@ -173,7 +177,6 @@ import io.harness.threading.ExecutorModule;
 import io.harness.threading.Schedulable;
 import io.harness.threading.ThreadPool;
 import io.harness.timeout.TimeoutEngine;
-import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.validation.SuppressValidation;
 import io.harness.waiter.NotifierScheduledExecutorService;
@@ -300,6 +303,7 @@ import software.wings.yaml.gitSync.GitChangeSetRunnable;
 import software.wings.yaml.gitSync.GitSyncEntitiesExpiryHandler;
 import software.wings.yaml.gitSync.GitSyncPollingIterator;
 
+import com.codahale.metrics.InstrumentedExecutorService;
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -349,7 +353,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -390,6 +393,7 @@ public class WingsApplication extends Application<MainConfiguration> {
   private static final SecureRandom random = new SecureRandom();
 
   private final MetricRegistry metricRegistry = new MetricRegistry();
+  private final MetricRegistry threadPoolMetricRegistry = new MetricRegistry();
   private HarnessMetricRegistry harnessMetricRegistry;
   private StartupMode startupMode;
 
@@ -485,10 +489,12 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
-    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(
-        configuration.getCommonPoolConfig().getCorePoolSize(), configuration.getCommonPoolConfig().getMaxPoolSize(),
-        configuration.getCommonPoolConfig().getIdleTime(), configuration.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    ExecutorService mainPoolExecutor = ThreadPool.create(configuration.getCommonPoolConfig().getCorePoolSize(),
+        configuration.getCommonPoolConfig().getMaxPoolSize(), configuration.getCommonPoolConfig().getIdleTime(),
+        configuration.getCommonPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
+    ExecutorModule.getInstance().setExecutorService(
+        new InstrumentedExecutorService(mainPoolExecutor, threadPoolMetricRegistry, "main"));
 
     List<Module> modules = new ArrayList<>();
     addModules(configuration, modules);
@@ -726,7 +732,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
     initMetrics(injector);
 
-    registerWaitEnginePublishers(injector);
+    registerWaitEnginePublishers(injector, configuration.isRedisNotifyEvent());
     if (isManager()) {
       registerQueueListeners(configuration, injector);
     }
@@ -758,13 +764,34 @@ public class WingsApplication extends Application<MainConfiguration> {
     // Register collection iterators
     log.info("The value for enableIterators is : {} ", configuration.isEnableIterators());
     if (configuration.isEnableIterators()) {
+      /*
+       * If "iteratorConfigPath" is empty then default to the local bazel path where the
+       * config file will be present else use the path provided to fetch the config file.
+       * It will be empty for local environment and non-empty for container environment.
+       */
+      String iteratorConfigPath = "";
+      String iteratorConfigFile = "";
+      if ((configuration.getIteratorConfigPath() == null) || (configuration.getIteratorConfigPath().isEmpty())) {
+        iteratorConfigPath = System.getProperty("user.dir") + "/360-cg-manager";
+      } else {
+        iteratorConfigPath = configuration.getIteratorConfigPath();
+      }
+
+      iteratorConfigFile = iteratorConfigPath + "/iterator_config.json";
+      log.info("Iterator config will be read from {} ", iteratorConfigFile);
+      // Create the Iterator Execution Handler instance.
+      IteratorExecutionHandler iteratorExecutionHandler =
+          new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile);
+
       if (isManager()) {
-        registerIteratorsManager(
-            configuration.getIteratorsConfig(), injector, configuration.getDisableInstanceSyncIterator());
+        registerIteratorsManager(injector, iteratorExecutionHandler);
       }
       if (shouldEnableDelegateMgmt) {
-        registerIteratorsDelegateService(configuration.getIteratorsConfig(), injector);
+        registerIteratorsDelegateService(injector, iteratorExecutionHandler);
       }
+
+      // Start all the iterators.
+      iteratorExecutionHandler.startIterators();
     }
   }
 
@@ -909,10 +936,11 @@ public class WingsApplication extends Application<MainConfiguration> {
     modules.add(new IndexMigratorModule());
     modules.add(new YamlModule());
     modules.add(new ManagerQueueModule());
+    modules.add(new ManagerEventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
 
     modules.add(new ManagerExecutorModule());
     modules.add(new TemplateModule());
-    modules.add(new MetricRegistryModule(metricRegistry));
+    modules.add(new MetricRegistryModule(metricRegistry, threadPoolMetricRegistry));
     modules.add(new EventsModule(configuration));
     if (configuration.isGraphQLEnabled()) {
       modules.add(GraphQLModule.getInstance());
@@ -967,17 +995,6 @@ public class WingsApplication extends Application<MainConfiguration> {
       }
     });
 
-    modules.add(new AbstractPersistenceTracerModule() {
-      @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return configuration.getEventsFrameworkConfiguration();
-      }
-
-      @Override
-      protected String serviceIdProvider() {
-        return MANAGER.getServiceId();
-      }
-    });
     modules.add(DmsModule.getInstance(shouldEnableDelegateMgmt(configuration)));
   }
 
@@ -1171,6 +1188,7 @@ public class WingsApplication extends Application<MainConfiguration> {
     environment.lifecycle().manage((Managed) injector.getInstance(ExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(MaintenanceController.class));
     environment.lifecycle().manage(injector.getInstance(AuditCleanupJob.class));
+    environment.lifecycle().manage(injector.getInstance(RedisConsumerControllerCg.class));
   }
 
   private void registerManagedBeansManager(
@@ -1188,13 +1206,20 @@ public class WingsApplication extends Application<MainConfiguration> {
     }
   }
 
-  private void registerWaitEnginePublishers(Injector injector) {
-    final QueuePublisher<NotifyEvent> publisher =
-        injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
-    final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
-        injector.getInstance(NotifyQueuePublisherRegister.class);
-    notifyQueuePublisherRegister.register(GENERAL, payload -> publisher.send(asList(GENERAL), payload));
-    notifyQueuePublisherRegister.register(ORCHESTRATION, payload -> publisher.send(asList(ORCHESTRATION), payload));
+  private void registerWaitEnginePublishers(Injector injector, boolean redisNotifyEvent) {
+    if (redisNotifyEvent) {
+      final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+          injector.getInstance(NotifyQueuePublisherRegister.class);
+      notifyQueuePublisherRegister.register(GENERAL, injector.getInstance(CgGeneralEventPublisher.class));
+      notifyQueuePublisherRegister.register(ORCHESTRATION, injector.getInstance(CgNotifyEventPublisher.class));
+    } else {
+      final QueuePublisher<NotifyEvent> publisher =
+          injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
+      final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
+          injector.getInstance(NotifyQueuePublisherRegister.class);
+      notifyQueuePublisherRegister.register(GENERAL, payload -> publisher.send(asList(GENERAL), payload));
+      notifyQueuePublisherRegister.register(ORCHESTRATION, payload -> publisher.send(asList(ORCHESTRATION), payload));
+    }
   }
 
   private void registerCorrelationFilter(Environment environment, Injector injector) {
@@ -1213,31 +1238,38 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Initializing queue listeners...");
 
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
+    EventListenersCountConfig listenerConfig = configuration.getEventListenersCountConfig();
+
     EventListener genericEventListener =
         injector.getInstance(Key.get(EventListener.class, Names.named("GenericEventListener")));
     queueListenerController.register((QueueListener) genericEventListener, 1);
 
     queueListenerController.register(injector.getInstance(ArtifactCollectEventListener.class), 1);
     queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
-    queueListenerController.register(injector.getInstance(DeploymentEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentEventListenerCount());
-    queueListenerController.register(injector.getInstance(InstanceEventListener.class),
-        configuration.getEventListenersCountConfig().getInstanceEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(DeploymentEventListener.class), listenerConfig.getDeploymentEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(InstanceEventListener.class), listenerConfig.getInstanceEventListenerCount());
     queueListenerController.register(injector.getInstance(DeploymentTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentTimeSeriesEventListenerCount());
+        listenerConfig.getDeploymentTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(DeploymentStepTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getDeploymentStepTimeSeriesEventListenerCount());
+        listenerConfig.getDeploymentStepTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(ExecutionInterruptTimeSeriesEventListener.class),
-        configuration.getEventListenersCountConfig().getExecutionInterruptTimeSeriesEventListenerCount());
+        listenerConfig.getExecutionInterruptTimeSeriesEventListenerCount());
     queueListenerController.register(injector.getInstance(EmailNotificationListener.class), 1);
-    queueListenerController.register(injector.getInstance(ExecutionEventListener.class),
-        configuration.getEventListenersCountConfig().getExecutionEventListenerCount());
+    queueListenerController.register(
+        injector.getInstance(ExecutionEventListener.class), listenerConfig.getExecutionEventListenerCount());
     queueListenerController.register(injector.getInstance(SecretMigrationEventListener.class), 1);
-    queueListenerController.register(injector.getInstance(GeneralNotifyEventListener.class),
-        configuration.getEventListenersCountConfig().getGeneralNotifyEventListenerCount());
-    queueListenerController.register(injector.getInstance(OrchestrationNotifyEventListener.class),
-        configuration.getEventListenersCountConfig().getOrchestrationNotifyEventListenerCount());
     queueListenerController.register(injector.getInstance(PruneEntityListener.class), 1);
+
+    queueListenerController.register(
+        injector.getInstance(GeneralNotifyEventListener.class), listenerConfig.getGeneralNotifyEventListenerCount());
+    queueListenerController.register(injector.getInstance(OrchestrationNotifyEventListener.class),
+        listenerConfig.getOrchestrationNotifyEventListenerCount());
+
+    RedisConsumerControllerCg controller = injector.getInstance(RedisConsumerControllerCg.class);
+    controller.register(injector.getInstance(NotifyEventConsumerCg.class), listenerConfig.getNotifyConsumerCount());
+    controller.register(injector.getInstance(GeneralEventConsumerCg.class), listenerConfig.getGeneralConsumerCount());
   }
 
   private void scheduleJobsManager(
@@ -1451,69 +1483,47 @@ public class WingsApplication extends Application<MainConfiguration> {
     ObserversHelper.registerSharedObservers(injector);
   }
 
-  public static void registerIteratorsDelegateService(IteratorsConfig iteratorsConfig, Injector injector) {
-    injector.getInstance(PerpetualTaskRecordHandler.class)
-        .registerIterators(iteratorsConfig.getPerpetualTaskAssignmentIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateDisconnectDetectorIterator.class)
-        .registerIterators(iteratorsConfig.getDelegateDisconnectDetectorIteratorConfig().getThreadPoolSize());
-    injector.getInstance(FailDelegateTaskIterator.class)
-        .registerIterators(iteratorsConfig.getFailDelegateTaskIteratorConfig().getThreadPoolSize());
-    injector.getInstance(DelegateTelemetryPublisher.class).registerIterators();
+  public static void registerIteratorsDelegateService(
+      Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+    injector.getInstance(PerpetualTaskRecordHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DelegateDisconnectDetectorIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(FailDelegateTaskIterator.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DelegateTelemetryPublisher.class).registerIterator(iteratorExecutionHandler);
   }
 
-  public static void registerIteratorsManager(
-      IteratorsConfig iteratorsConfig, Injector injector, Boolean disableInstanceSyncIterator) {
-    final ScheduledThreadPoolExecutor artifactCollectionExecutor =
-        new ScheduledThreadPoolExecutor(iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize(),
-            new ThreadFactoryBuilder().setNameFormat("Iterator-ArtifactCollection").build());
-    final ScheduledThreadPoolExecutor eventDeliveryExecutor =
-        new ScheduledThreadPoolExecutor(iteratorsConfig.getEventDeliveryIteratorConfig().getThreadPoolSize(),
-            new ThreadFactoryBuilder().setNameFormat("Iterator-Event-Delivery").build());
-
-    injector.getInstance(AlertReconciliationHandler.class).registerIterators();
-    injector.getInstance(ArtifactCollectionHandler.class)
-        .registerIterators(
-            artifactCollectionExecutor, iteratorsConfig.getArtifactCollectionIteratorConfig().getThreadPoolSize());
-    injector.getInstance(ArtifactCleanupHandler.class).registerIterators(artifactCollectionExecutor);
-    injector.getInstance(EventDeliveryHandler.class).registerIterators(eventDeliveryExecutor);
-    if (!Boolean.TRUE.equals(disableInstanceSyncIterator)) {
-      injector.getInstance(InstanceSyncHandler.class)
-          .registerIterators(iteratorsConfig.getInstanceSyncIteratorConfig().getThreadPoolSize());
-    }
-    injector.getInstance(LicenseCheckHandler.class).registerIterators();
-    injector.getInstance(ApprovalPollingHandler.class).registerIterators();
-    injector.getInstance(GCPBillingHandler.class).registerIterators();
-    injector.getInstance(SegmentGroupEventJob.class).registerIterators();
-    injector.getInstance(BarrierServiceImpl.class).registerIterators();
-    injector.getInstance(EntityAuditRecordHandler.class).registerIterators();
-    injector.getInstance(UsageMetricsHandler.class).registerIterators();
-    injector.getInstance(ResourceConstraintBackupHandler.class)
-        .registerIterators(iteratorsConfig.getResourceConstraintBackupIteratorConfig().getThreadPoolSize());
-    injector.getInstance(WorkflowExecutionMonitorHandler.class)
-        .registerIterators(iteratorsConfig.getWorkflowExecutionMonitorIteratorConfig().getThreadPoolSize());
-    injector.getInstance(SettingAttributeValidateConnectivityHandler.class)
-        .registerIterators(iteratorsConfig.getSettingAttributeValidateConnectivityIteratorConfig().getThreadPoolSize());
-    injector.getInstance(VaultSecretManagerRenewalHandler.class)
-        .registerIterators(iteratorsConfig.getVaultSecretManagerRenewalIteratorConfig().getThreadPoolSize());
-    injector.getInstance(SettingAttributesSecretsMigrationHandler.class).registerIterators();
-    injector.getInstance(GitSyncEntitiesExpiryHandler.class).registerIterators();
-    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterators();
-    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterators();
-    injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterators();
-    injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterators();
-    injector.getInstance(CeLicenseExpiryHandler.class).registerIterators();
-    injector.getInstance(DeleteAccountHandler.class).registerIterators();
-    injector.getInstance(DeletedEntityHandler.class).registerIterators();
-    injector.getInstance(ResourceLookupSyncHandler.class).registerIterators();
-    injector.getInstance(AccessRequestHandler.class).registerIterators();
-    injector.getInstance(ScheduledTriggerHandler.class).registerIterators();
-    injector.getInstance(LdapGroupScheduledHandler.class).registerIterators();
-    injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterators();
-    injector.getInstance(TimeoutEngine.class)
-        .registerIterators(
-            IteratorConfig.builder().enabled(true).targetIntervalInSeconds(10).threadPoolCount(5).build());
-    injector.getInstance(GitSyncPollingIterator.class)
-        .registerIterators(iteratorsConfig.getGitSyncPollingIteratorConfig().getThreadPoolSize());
+  public static void registerIteratorsManager(Injector injector, IteratorExecutionHandler iteratorExecutionHandler) {
+    injector.getInstance(AlertReconciliationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ArtifactCollectionHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ArtifactCleanupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EventDeliveryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(InstanceSyncHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(LicenseCheckHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ApprovalPollingHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GCPBillingHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SegmentGroupEventJob.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(BarrierServiceImpl.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EntityAuditRecordHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(UsageMetricsHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ResourceConstraintBackupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(WorkflowExecutionMonitorHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SettingAttributeValidateConnectivityHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(VaultSecretManagerRenewalHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(SettingAttributesSecretsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GitSyncEntitiesExpiryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ExportExecutionsRequestHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ExportExecutionsRequestCleanupHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeploymentFreezeActivationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeploymentFreezeDeactivationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(CeLicenseExpiryHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeleteAccountHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(DeletedEntityHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ResourceLookupSyncHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(AccessRequestHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(ScheduledTriggerHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(LdapGroupScheduledHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(EncryptedDataLocalToGcpKmsMigrationHandler.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(TimeoutEngine.class).registerIterator(iteratorExecutionHandler);
+    injector.getInstance(GitSyncPollingIterator.class).registerIterator(iteratorExecutionHandler);
   }
 
   private void registerCronJobs(Injector injector) {

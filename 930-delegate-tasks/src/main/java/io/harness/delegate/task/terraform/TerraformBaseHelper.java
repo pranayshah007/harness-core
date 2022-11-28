@@ -60,6 +60,9 @@ public interface TerraformBaseHelper {
   void addVarFilesCommitIdsToMap(
       String accountId, List<TerraformVarFileInfo> varFileInfo, Map<String, String> commitIdForConfigFilesMap);
 
+  void addBackendFileCommitIdsToMap(
+      String accountId, TerraformBackendConfigFileInfo fileInfo, Map<String, String> commitIdForConfigFilesMap);
+
   String fetchConfigFileAndPrepareScriptDir(GitBaseRequest gitBaseRequestForConfigFile, String accountId,
       String workspace, String currentStateFileId, GitStoreDelegateConfig confileFileGitStore, LogCallback logCallback,
       String scriptPath, String workingDir);
@@ -77,6 +80,9 @@ public interface TerraformBaseHelper {
 
   List<String> checkoutRemoteVarFileAndConvertToVarFilePaths(List<TerraformVarFileInfo> varFileInfo, String scriptDir,
       LogCallback logCallback, String accountId, String tfVarDirectory) throws IOException;
+
+  String checkoutRemoteBackendConfigFileAndConvertToFilePath(TerraformBackendConfigFileInfo bcFileInfo,
+      String scriptDir, LogCallback logCallback, String accountId, String tfVarDirectory) throws IOException;
 
   EncryptedRecordData encryptPlan(byte[] content, String planName, EncryptionConfig encryptionConfig);
 

@@ -306,6 +306,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
   }
 
+  @Override
+  public Page<NodeExecution> fetchAllNodeExecutionsByStatus(
+      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable) {
+    Query query = query(where(NodeExecutionKeys.status).in(statuses));
+
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+  }
+
   /**
    * This is deprecated, use below update to get only required fields
    */
@@ -361,9 +372,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @VisibleForTesting
   @Override
   public boolean shouldLog(Update updateOps) {
-    if (!orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-      return false;
-    }
     Set<String> fieldsUpdated = new HashSet<>();
     if (updateOps.getUpdateObject().containsKey("$set")) {
       fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
@@ -382,26 +390,23 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public NodeExecution save(NodeExecution nodeExecution) {
     if (nodeExecution.getVersion() == null) {
-      // Havnt added triggerPayload in the event as no one is consuming triggerPayload on NodeExecutionStart
-      Builder builder = OrchestrationEvent.newBuilder()
-                            .setAmbiance(nodeExecution.getAmbiance())
-                            .setStatus(nodeExecution.getStatus())
-                            .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
-                            .setServiceName(nodeExecution.getModule());
-
-      if (nodeExecution.getResolvedStepParameters() != null) {
-        builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
-      }
-      eventEmitter.emitEvent(builder.build());
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
-        }
+        orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
-        emitEvent(savedNodeExecution, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
+        // Havnt added triggerPayload in the event as no one is consuming triggerPayload on NodeExecutionStart
+        Builder builder = OrchestrationEvent.newBuilder()
+                              .setAmbiance(nodeExecution.getAmbiance())
+                              .setStatus(nodeExecution.getStatus())
+                              .setEventType(OrchestrationEventType.NODE_EXECUTION_START)
+                              .setServiceName(nodeExecution.getModule());
+
+        if (nodeExecution.getResolvedStepParameters() != null) {
+          builder.setStepParameters(nodeExecution.getResolvedStepParametersBytes());
+        }
+        eventEmitter.emitEvent(builder.build());
       }
       nodeExecutionStartSubject.fireInform(
           NodeExecutionStartObserver::onNodeStart, NodeStartInfo.builder().nodeExecution(savedNodeExecution).build());
@@ -475,9 +480,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-        }
+        orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
       }
       return updated;
     });
@@ -612,6 +615,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.executableResponses)
         .include(NodeExecutionKeys.planNode)
         .include(NodeExecutionKeys.adviserResponse)
+        .include(NodeExecutionKeys.createdAt)
         .include(NodeExecutionKeys.oldRetry);
     return mongoTemplate.find(query, NodeExecution.class);
   }

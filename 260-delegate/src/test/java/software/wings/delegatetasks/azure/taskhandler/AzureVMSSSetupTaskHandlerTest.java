@@ -59,12 +59,17 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.compute.fluent.models.VirtualMachineScaleSetInner;
+import com.azure.resourcemanager.compute.models.GalleryImage;
+import com.azure.resourcemanager.compute.models.GalleryImageIdentifier;
+import com.azure.resourcemanager.compute.models.OperatingSystemStateTypes;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.network.models.LoadBalancer;
 import com.google.common.util.concurrent.TimeLimiter;
-import com.microsoft.azure.management.compute.GalleryImage;
-import com.microsoft.azure.management.compute.GalleryImageIdentifier;
-import com.microsoft.azure.management.compute.OperatingSystemStateTypes;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.network.LoadBalancer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -196,7 +201,19 @@ public class AzureVMSSSetupTaskHandlerTest extends WingsBaseTest {
         .when(mockAzureComputeClient)
         .getVirtualMachineScaleSetByName(
             any(AzureConfig.class), eq("subscriptionId"), eq("resourceGroupName"), eq("mostRecentActiveVMSSName"));
-    doNothing()
+
+    VirtualMachineScaleSetInner mockVirtualMachineScaleSetInner = mock(VirtualMachineScaleSetInner.class);
+    PollResult<VirtualMachineScaleSetInner> mockPollResult = mock(PollResult.class);
+    PollResponse<PollResult<VirtualMachineScaleSetInner>> mockPollResponse = mock(PollResponse.class);
+    SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> mockSyncPoller =
+        mock(SyncPoller.class);
+
+    doReturn(mockVirtualMachineScaleSetInner).when(mockPollResult).getValue();
+    doReturn(mockPollResult).when(mockPollResponse).getValue();
+    doReturn(mockPollResponse).when(mockSyncPoller).waitForCompletion(any());
+    doReturn(LongRunningOperationStatus.SUCCESSFULLY_COMPLETED).when(mockPollResponse).getStatus();
+
+    doReturn(mockSyncPoller)
         .when(mockAzureComputeClient)
         .createVirtualMachineScaleSet(any(AzureConfig.class), anyString(), any(VirtualMachineScaleSet.class),
             anyString(), any(AzureUserAuthVMInstanceData.class), any(AzureMachineImageArtifact.class),

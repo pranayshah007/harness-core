@@ -353,7 +353,7 @@ public class AwsLambdaState extends State {
     ArtifactStreamAttributes artifactStreamAttributes =
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     if (!ArtifactStreamType.CUSTOM.name().equalsIgnoreCase(artifactStreamAttributes.getArtifactStreamType())) {
-      artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()));
+      artifactStreamAttributes.setServerSetting(settingsService.get(artifactStream.getSettingId()).toDTO());
       artifactStreamAttributes.setArtifactServerEncryptedDataDetails(secretManager.getEncryptionDetails(
           (EncryptableSetting) artifactStreamAttributes.getServerSetting().getValue(), context.getAppId(),
           context.getWorkflowExecutionId()));

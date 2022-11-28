@@ -70,9 +70,9 @@ import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.WorkflowExecution;
@@ -437,7 +437,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.uuid)
         .in(ids)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));
@@ -448,7 +448,7 @@ public class ExecutionInterruptManager {
       return Collections.emptyList();
     }
 
-    return wingsPersistence.createQuery(ExecutionInterrupt.class, excludeAuthority)
+    return wingsPersistence.createAnalyticsQuery(ExecutionInterrupt.class, excludeAuthority)
         .field(ExecutionInterruptKeys.stateExecutionInstanceId)
         .in(stateExecutionIds)
         .asList(new FindOptions().readPreference(ReadPreference.secondaryPreferred()));

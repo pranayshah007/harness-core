@@ -48,29 +48,29 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
     String planExecutionId = ambiance.getPlanExecutionId();
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
 
     recentExecutionsInfoHelper.onExecutionUpdate(ambiance, planExecution);
-    updateExecutionInfoInPipelineEntity(ambiance, planExecution);
+    updateExecutionInfoInPipelineEntity(ambiance, planExecution.getStatus());
   }
 
-  void updateExecutionInfoInPipelineEntity(Ambiance ambiance, PlanExecution planExecution) {
+  void updateExecutionInfoInPipelineEntity(Ambiance ambiance, Status planExecutionStatus) {
     // this security context guard is needed because now pipeline get requires proper permissions to be set in the case
     // when the Pipeline is REMOTE
     try (PmsSecurityContextEventGuard ignore = new PmsSecurityContextEventGuard(ambiance)) {
-      Status status = planExecution.getStatus();
       String accountId = AmbianceUtils.getAccountId(ambiance);
       String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
       String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
       String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
-      if (!pipelineEntity.isPresent()) {
+      Optional<PipelineEntity> pipelineEntity =
+          pmsPipelineService.getPipeline(accountId, orgId, projectId, pipelineId, false, true);
+      if (pipelineEntity.isEmpty()) {
         return;
       }
       ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
       if (executionSummaryInfo != null) {
-        executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
-        if (StatusUtils.brokeStatuses().contains(status)) {
+        executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(planExecutionStatus));
+        if (StatusUtils.brokeStatuses().contains(planExecutionStatus)) {
           Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
           Date date = new Date();
           SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");

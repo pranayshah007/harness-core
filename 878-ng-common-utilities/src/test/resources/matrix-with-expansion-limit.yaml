@@ -1,0 +1,37 @@
+parallel:
+      - __uuid: parallel1
+        step:
+          __uuid: "test"
+          type: Run
+          name: <+strategy.iterations>
+          identifier: <+strategy.iteration>
+          strategy:
+            matrix:
+              command:
+                - jd
+                - ajk
+                - hjjh
+          spec:
+            connectorRef: account.CItestDockerConnectorg0pPMxwcsd
+            image: alpine
+            shell: Sh
+            command: echo command
+          timeout: 1m
+      - __uuid: parallel2
+        step:
+          _uuid: "test1"
+          type: Run
+          name: bing
+          identifier: bing
+          strategy:
+            matrix:
+              command:
+                - jd
+                - ajk
+                - ag
+          spec:
+            connectorRef: account.CItestK8sConnector7tBxAEDRLS
+            namespace: harness-qa-delegate
+            nodeSelector: {}
+            os: Linux
+          timeout: 10s

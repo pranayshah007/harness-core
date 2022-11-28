@@ -90,13 +90,13 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.eraro.ErrorCode;
 import io.harness.event.usagemetrics.UsageMetricsEventPublisher;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.FailureType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.reflection.ReflectionUtils;
@@ -1116,6 +1116,7 @@ public class StateMachineExecutor implements StateInspectionListener {
       StateExecutionInstance parentInstance = context.getStateExecutionInstance();
       List<StateExecutionInstance> childFailedEnvInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .filter(StateExecutionInstanceKeys.parentInstanceId, parentInstance.getUuid())
               .filter(StateExecutionInstanceKeys.status, FAILED)
               .filter(StateExecutionInstanceKeys.stateType, ENV_STATE.getType())
@@ -1133,6 +1134,7 @@ public class StateMachineExecutor implements StateInspectionListener {
 
       List<StateExecutionInstance> rollbackInstances =
           wingsPersistence.createQuery(StateExecutionInstance.class)
+              .filter(StateExecutionInstanceKeys.appId, context.getAppId())
               .field(StateExecutionInstanceKeys.executionUuid)
               .in(failedWorkflowExecutionIdsSet)
               .filter(StateExecutionInstanceKeys.rollback, true)
@@ -1562,6 +1564,9 @@ public class StateMachineExecutor implements StateInspectionListener {
 
   private boolean isPipelineRollback(StateExecutionInstance stateExecutionInstance, StateMachine sm) {
     State state = sm.getState(null, stateExecutionInstance.getStateName());
+    if (state == null) {
+      return false;
+    }
     return POSSIBLE_ROLLBACK_STATE_TYPES.contains(stateExecutionInstance.getStateType()) && state.isRollback()
         && state.getParentId() == null;
   }

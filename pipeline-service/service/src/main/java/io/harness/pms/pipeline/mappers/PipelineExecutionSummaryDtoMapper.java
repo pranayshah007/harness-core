@@ -77,6 +77,7 @@ public class PipelineExecutionSummaryDtoMapper {
         .isStagesExecution(isStagesExecution)
         .stagesExecuted(stageIdentifiers)
         .stagesExecutedNames(stagesExecutedNames)
+        .parentStageInfo(pipelineExecutionSummaryEntity.getParentStageInfo())
         .allowStageExecutions(pipelineExecutionSummaryEntity.isStagesExecutionAllowed())
         .storeType(pipelineExecutionSummaryEntity.getStoreType())
         .connectorRef(EmptyPredicate.isEmpty(pipelineExecutionSummaryEntity.getConnectorRef())

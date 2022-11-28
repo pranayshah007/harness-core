@@ -20,12 +20,13 @@ import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorService {
-  private static final String ACTIVE_EXECUTION_COUNT_METRIC_NAME = "active_execution_count";
+  private static final String PLAN_EXECUTION_ACTIVE_COUNT = "plan_execution_active_count";
 
   @Inject private PlanExecutionService planExecutionService;
   @Inject private MetricService metricService;
@@ -34,19 +35,25 @@ public class PlanExecutionMonitorServiceImpl implements PlanExecutionMonitorServ
   public void registerActiveExecutionMetrics() {
     List<PlanExecution> planExecutions = planExecutionService.findByStatusWithProjections(
         StatusUtils.activeStatuses(), ImmutableSet.of(PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.metadata));
+    Map<PipelineExecutionMetric, Integer> metricMap = new HashMap<>();
+
     for (PlanExecution planExecution : planExecutions) {
+      PipelineExecutionMetric planExecutionMetric =
+          PipelineExecutionMetric.builder()
+              .accountId(planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
+              .build();
+
+      metricMap.put(planExecutionMetric, metricMap.getOrDefault(planExecutionMetric, 0) + 1);
+    }
+
+    for (Map.Entry<PipelineExecutionMetric, Integer> entry : metricMap.entrySet()) {
       Map<String, String> metricContextMap =
           ImmutableMap.<String, String>builder()
-              .put(PmsEventMonitoringConstants.ACCOUNT_ID,
-                  planExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId))
-              .put(PmsEventMonitoringConstants.ORG_ID,
-                  planExecution.getSetupAbstractions().get(SetupAbstractionKeys.orgIdentifier))
-              .put(PmsEventMonitoringConstants.PROJECT_ID,
-                  planExecution.getSetupAbstractions().get(SetupAbstractionKeys.projectIdentifier))
-              .put(PmsEventMonitoringConstants.PIPELINE_IDENTIFIER, planExecution.getMetadata().getPipelineIdentifier())
+              .put(PmsEventMonitoringConstants.ACCOUNT_ID, entry.getKey().getAccountId())
               .build();
+
       try (PmsMetricContextGuard pmsMetricContextGuard = new PmsMetricContextGuard(metricContextMap)) {
-        metricService.incCounter(ACTIVE_EXECUTION_COUNT_METRIC_NAME);
+        metricService.recordMetric(PLAN_EXECUTION_ACTIVE_COUNT, entry.getValue());
       }
     }
   }

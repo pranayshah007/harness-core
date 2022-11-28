@@ -120,8 +120,8 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     String serviceYaml = readFile("service/serviceWith3ConnectorReferences.yaml");
     ServiceEntity entity = ServiceEntity.builder()
-                               .identifier("id")
-                               .name("my-service")
+                               .identifier("newservice")
+                               .name("newservice")
                                .accountId("accountId")
                                .orgIdentifier("orgId")
                                .projectIdentifier("projId")
@@ -204,7 +204,7 @@ public class ServiceEntitySetupUsageHelperTest extends CDNGEntitiesTestBase {
 
     String serviceYaml = readFile("service/serviceWith3ConnectorAndTemplateReferences.yaml");
     ServiceEntity entity = ServiceEntity.builder()
-                               .identifier("id")
+                               .identifier("v2serviceTEMP")
                                .name("my-service")
                                .accountId("accountId")
                                .orgIdentifier("orgId")

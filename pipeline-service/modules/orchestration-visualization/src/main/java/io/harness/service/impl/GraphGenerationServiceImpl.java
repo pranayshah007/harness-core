@@ -287,7 +287,7 @@ public class GraphGenerationServiceImpl implements GraphGenerationService {
   public OrchestrationGraph buildOrchestrationGraph(String planExecutionId) {
     log.warn(String.format(
         "[GRAPH_ERROR]: Trying to build orchestration graph from scratch for planExecutionId [%s]", planExecutionId));
-    PlanExecution planExecution = planExecutionService.get(planExecutionId);
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(planExecutionId);
     if (planExecution == null) {
       throw NestedExceptionUtils.hintWithExplanationException("Pipeline Execution with given plan execution id: ["
               + planExecutionId + "] not found or unable to generate a graph for it",

@@ -8,9 +8,11 @@
 package io.harness.ngmigration.connector;
 
 import static software.wings.settings.SettingVariableTypes.AMAZON_S3_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.APP_DYNAMICS;
 import static software.wings.settings.SettingVariableTypes.ARTIFACTORY;
 import static software.wings.settings.SettingVariableTypes.AWS;
 import static software.wings.settings.SettingVariableTypes.AZURE;
+import static software.wings.settings.SettingVariableTypes.DATA_DOG;
 import static software.wings.settings.SettingVariableTypes.DOCKER;
 import static software.wings.settings.SettingVariableTypes.GCP;
 import static software.wings.settings.SettingVariableTypes.GCS_HELM_REPO;
@@ -20,9 +22,12 @@ import static software.wings.settings.SettingVariableTypes.HTTP_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.JENKINS;
 import static software.wings.settings.SettingVariableTypes.JIRA;
 import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
+import static software.wings.settings.SettingVariableTypes.NEW_RELIC;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
 import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
+import static software.wings.settings.SettingVariableTypes.PROMETHEUS;
 import static software.wings.settings.SettingVariableTypes.SERVICENOW;
+import static software.wings.settings.SettingVariableTypes.SPLUNK;
 import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -56,6 +61,11 @@ public class ConnectorFactory {
   private static final BaseConnector winRmConnector = new WinrmConnectorImpl();
   private static final BaseConnector gcsHelmRepoConnector = new GcsHelmConnectorImpl();
   private static final BaseConnector awsS3HelmConnector = new AwsS3HelmConnectorImpl();
+  private static final BaseConnector datadogConnector = new DatadogConnectorImpl();
+  private static final BaseConnector newrelicConnector = new NewrelicConnectorImpl();
+  private static final BaseConnector prometheusConnector = new PrometheusConnectorImpl();
+  private static final BaseConnector appDynamicsConnector = new AppDynamicsConnectorImpl();
+  private static final BaseConnector splunkConnector = new SplunkConnectorImpl();
 
   public static final Map<SettingVariableTypes, BaseConnector> CONNECTOR_FACTORY_MAP =
       ImmutableMap.<SettingVariableTypes, BaseConnector>builder()
@@ -76,6 +86,11 @@ public class ConnectorFactory {
           .put(WINRM_CONNECTION_ATTRIBUTES, winRmConnector)
           .put(GCS_HELM_REPO, gcsHelmRepoConnector)
           .put(AMAZON_S3_HELM_REPO, awsS3HelmConnector)
+          .put(DATA_DOG, datadogConnector)
+          .put(NEW_RELIC, newrelicConnector)
+          .put(PROMETHEUS, prometheusConnector)
+          .put(APP_DYNAMICS, appDynamicsConnector)
+          .put(SPLUNK, splunkConnector)
           .build();
 
   public static BaseConnector getConnector(SettingAttribute settingAttribute) {

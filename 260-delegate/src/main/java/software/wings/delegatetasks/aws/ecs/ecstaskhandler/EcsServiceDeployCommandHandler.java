@@ -11,7 +11,6 @@ import static io.harness.exception.ExceptionUtils.getMessage;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.LogLevel.ERROR;
 
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.command.CommandExecutionContext.Builder.aCommandExecutionContext;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -21,11 +20,11 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.api.DeploymentType;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.command.ResizeCommandUnit;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.ecs.request.EcsCommandRequest;
 import software.wings.helpers.ext.ecs.request.EcsServiceDeployRequest;
 import software.wings.helpers.ext.ecs.response.EcsCommandExecutionResponse;
@@ -60,7 +59,7 @@ public class EcsServiceDeployCommandHandler extends EcsCommandTaskHandler {
       ResizeCommandUnit resizeCommandUnit = new ResizeCommandUnit();
       resizeCommandUnit.setName("ECS Service Deploy");
       injector.injectMembers(resizeCommandUnit);
-      SettingAttribute settingAttribute = aSettingAttribute().withValue(request.getAwsConfig()).build();
+      SettingAttribute settingAttribute = SettingAttribute.builder().value(request.getAwsConfig()).build();
       CommandExecutionContext commandExecutionContext = aCommandExecutionContext()
                                                             .accountId(request.getAccountId())
                                                             .appId(request.getAppId())

@@ -27,9 +27,9 @@ import io.harness.delegate.task.azure.appservice.webapp.response.DeploymentSlotD
 
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -58,7 +58,8 @@ public class AzureWebAppListWebAppDeploymentSlotNamesTaskHandler extends Abstrac
                                                       .appName(webAppName)
                                                       .build();
 
-    List<DeploymentSlot> deploymentSlots = azureWebClient.listDeploymentSlotsByWebAppName(azureWebClientContext);
+    List<WebDeploymentSlotBasic> deploymentSlots =
+        azureWebClient.listDeploymentSlotsByWebAppName(azureWebClientContext);
     List<DeploymentSlotData> deploymentSlotsData = toDeploymentSlotData(deploymentSlots, webAppName);
 
     return AzureWebAppListWebAppDeploymentSlotsResponse.builder()
@@ -67,9 +68,10 @@ public class AzureWebAppListWebAppDeploymentSlotNamesTaskHandler extends Abstrac
   }
 
   @NotNull
-  private List<DeploymentSlotData> toDeploymentSlotData(List<DeploymentSlot> deploymentSlots, String webAppName) {
+  private List<DeploymentSlotData> toDeploymentSlotData(
+      List<WebDeploymentSlotBasic> deploymentSlots, String webAppName) {
     return deploymentSlots.stream()
-        .map(DeploymentSlot::name)
+        .map(WebDeploymentSlotBasic::name)
         .map(slotName
             -> DeploymentSlotData.builder()
                    .name(format(DEPLOYMENT_SLOT_FULL_NAME_PATTERN, webAppName, slotName))
