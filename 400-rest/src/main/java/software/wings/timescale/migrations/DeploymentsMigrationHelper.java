@@ -120,6 +120,49 @@ public class DeploymentsMigrationHelper {
     }
   }
 
+  public void setInfraDetails(List<String> accountIds, String debugLine, int batchLimit, String updateStatement,
+      String migrationNumber, String migrationClassName) {
+    MigratedAccountTracker migratedAccounts = wingsPersistence.get(MigratedAccountTracker.class, migrationNumber);
+    List<String> migratedAccountIds = new ArrayList<>();
+    if (migratedAccounts != null) {
+      migratedAccountIds = migratedAccounts.getAccountIds();
+    } else {
+      migratedAccounts = MigratedAccountTracker.builder().build();
+    }
+    List<String> accountIdsToBeMigrated = new ArrayList<>();
+    for (String accountId : accountIds) {
+      if (!migratedAccountIds.contains(accountId)) {
+        accountIdsToBeMigrated.add(accountId);
+      } else {
+        log.info(debugLine + "Migration already completed for account {}", accountId);
+      }
+    }
+    migratedAccounts.setMigrationNumber(migrationNumber);
+    migratedAccounts.setMigrationClassName(migrationClassName);
+    migratedAccounts.setAccountIds(migratedAccountIds);
+    Map<String, Set<String>> accountIdToAppIdMap = prepareAppIdAccountIdMap(accountIdsToBeMigrated, debugLine);
+    for (Map.Entry<String, Set<String>> entry : accountIdToAppIdMap.entrySet()) {
+      boolean failed = false;
+      log.info(debugLine + "Migration began for account " + entry.getKey());
+      for (String appId : entry.getValue()) {
+        boolean success =
+            bulkSetInfraDetails(entry.getKey(), COLLECTION_NAME, appId, debugLine, batchLimit, updateStatement);
+        if (!success) {
+          failed = true;
+          log.info(debugLine + "Migration not completed for account " + entry.getKey() + " and app " + appId);
+        }
+      }
+      if (!failed) {
+        log.info(debugLine + "Migration Complete for account " + entry.getKey());
+        migratedAccountIds.add(entry.getKey());
+        migratedAccounts.setAccountIds(migratedAccountIds);
+        wingsPersistence.save(migratedAccounts);
+      } else {
+        log.info(debugLine + "Migration not completed for account " + entry.getKey());
+      }
+    }
+  }
+
   private Map<String, Set<String>> prepareAppIdAccountIdMap(List<String> accountIds, String debugLine) {
     Map<String, Set<String>> accountIdToAppIdMap = new HashMap<>();
     for (String accountId : accountIds) {
@@ -242,13 +285,10 @@ public class DeploymentsMigrationHelper {
     log.info(debugLine + MIGRATING_EXECUTIONS_LOG_LINE + accountId);
     final DBCollection collection = wingsPersistence.getCollection(DEFAULT_STORE, collectionName);
 
-    BasicDBObject objectsToBeUpdated =
-        new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId).append("onDemandRollback", true);
+    BasicDBObject objectsToBeUpdated = new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId);
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.onDemandRollback, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.originalExecution, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.status, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.duration, Boolean.TRUE);
+                                   .append(WorkflowExecutionKeys.infraDefinitionIds, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.infraMappingIds, Boolean.TRUE);
 
     DBCursor dataRecords = collection.find(objectsToBeUpdated, projection)
                                .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
@@ -318,6 +358,76 @@ public class DeploymentsMigrationHelper {
       }
       updateStatementRollback.executeBatch();
       updateStatementOriginal.executeBatch();
+    }
+  }
+
+  private boolean bulkSetInfraDetails(
+      String accountId, String collectionName, String appId, String debugLine, int batchLimit, String updateStatement) {
+    log.info(debugLine + MIGRATING_EXECUTIONS_LOG_LINE + accountId);
+    final DBCollection collection = wingsPersistence.getCollection(DEFAULT_STORE, collectionName);
+
+    BasicDBObject objectsToBeUpdated =
+        new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId).append("onDemandRollback", true);
+    BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.onDemandRollback, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.originalExecution, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.status, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.duration, Boolean.TRUE);
+
+    DBCursor dataRecords = collection.find(objectsToBeUpdated, projection)
+                               .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
+                               .limit(batchLimit);
+
+    int updated = 0;
+    List<DBObject> workflowExecutionObjects = new ArrayList<>();
+    try {
+      while (dataRecords.hasNext()) {
+        DBObject dbRecord = dataRecords.next();
+        workflowExecutionObjects.add(dbRecord);
+        updated++;
+
+        if (updated != 0 && updated % batchLimit == 0) {
+          executeTimeScaleInfraQuery(workflowExecutionObjects, updateStatement);
+          sleep(Duration.ofMillis(100));
+          dataRecords = collection.find(objectsToBeUpdated, projection)
+                            .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
+                            .skip(updated)
+                            .limit(batchLimit);
+          log.info(debugLine + UPDATED_RECORDS_LOG_LINE, collectionName, updated);
+        }
+      }
+
+      if (updated % batchLimit != 0) {
+        executeTimeScaleInfraQuery(workflowExecutionObjects, updateStatement);
+        log.info(debugLine + UPDATED_RECORDS_LOG_LINE, collectionName, updated);
+      }
+      return true;
+    } catch (Exception e) {
+      log.error(debugLine
+              + "Exception occurred migrating onDemandRollback details to timescale deployments for accountId {}, appId {}",
+          accountId, appId, e);
+      return false;
+    } finally {
+      dataRecords.close();
+    }
+  }
+
+  private void executeTimeScaleInfraQuery(List<DBObject> workflowExecutionObjects, String updatedStatement)
+      throws SQLException {
+    try (Connection connection = timeScaleDBService.getDBConnection();
+         PreparedStatement updateStatement = connection.prepareStatement(updatedStatement)) {
+      for (DBObject executionRecord : workflowExecutionObjects) {
+        String uuId = (String) executionRecord.get("_id");
+        List<String> infraDefinitionIds = (List<String>) executionRecord.get(WorkflowExecutionKeys.infraDefinitionIds);
+        List<String> infraMappingsIds = (List<String>) executionRecord.get(WorkflowExecutionKeys.infraMappingIds);
+        Array infraDefinitionArray = connection.createArrayOf("text", infraDefinitionIds.toArray());
+        Array infraMappingArray = connection.createArrayOf("text", infraMappingsIds.toArray());
+        updateStatement.setArray(1, infraDefinitionArray);
+        updateStatement.setArray(2, infraMappingArray);
+        updateStatement.setString(3, uuId);
+        updateStatement.addBatch();
+      }
+      updateStatement.executeBatch();
     }
   }
 

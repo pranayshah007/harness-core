@@ -19,6 +19,7 @@ import io.harness.migrations.timescaledb.data.AddWorkflowExecutionFailureDetails
 import io.harness.migrations.timescaledb.data.MigrateWorkflowsToTimeScaleDB;
 import io.harness.migrations.timescaledb.data.OptimizeNodeRecommendationQuery;
 import io.harness.migrations.timescaledb.data.PodInfoPartialIndexForSyncQuery;
+import io.harness.migrations.timescaledb.data.SetInfraDefinitionAndMappingIds;
 import io.harness.migrations.timescaledb.data.SetInstancesDeployedInDeployment;
 import io.harness.migrations.timescaledb.data.SetRollbackDurationInDeployment;
 import io.harness.migrations.timescaledb.data.UpdateEnvSvcCPInDeployment;
@@ -48,6 +49,7 @@ public class TimescaleDBDataMigrationList {
         .add(Pair.of(13, AddNotificationSentStatusToAnomalies.class))
         .add(Pair.of(14, AddOnDemandRollbackDetailsToDeployment.class))
         .add(Pair.of(15, AddNewAndRemoveUnusedIndexesFromDeployment.class))
+        .add(Pair.of(16, SetInfraDefinitionAndMappingIds.class))
         .build();
   }
 }
