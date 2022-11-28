@@ -649,7 +649,7 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
             .instanceInfo(KubernetesContainerInfo.builder()
                               .clusterName(KUBE_CLUSTER)
                               .serviceName("service_a_1")
-                              .controllerName("controllerName:1")
+                              .controllerName("controllerName:0")
                               .podName("pod:1")
                               .build())
             .build());
@@ -687,12 +687,13 @@ public class InstanceSyncV2ServiceK8sHandlerIntegrationTest extends CategoryTest
             .appId("appId")
             .releaseIdentifiers(Collections.singleton(CgK8sReleaseIdentifier.builder()
                                                           .releaseName(releaseName)
+                                                          .isHelmDeployment(true)
+                                                          .containerServiceName("controllerName:1")
                                                           .namespace(namespace)
                                                           .deploymentIdentifiers(Collections.singleton(
                                                               BasicDeploymentIdentifier.builder()
                                                                   .lastDeploymentSummaryUuid("lastDeploymentSummaryId")
                                                                   .build()))
-                                                          .isHelmDeployment(false)
                                                           .build()))
             .cloudProviderId("cpId")
             .build())

@@ -43,7 +43,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
-class CgInstanceSyncTaskDetailsServiceTest extends CategoryTest {
+public class CgInstanceSyncTaskDetailsServiceTest extends CategoryTest {
   @Mock private WingsMongoPersistence wingsMongoPersistence;
   @InjectMocks private CgInstanceSyncTaskDetailsService taskDetailsService;
 
@@ -60,7 +60,7 @@ class CgInstanceSyncTaskDetailsServiceTest extends CategoryTest {
 
     Set<CgReleaseIdentifiers> releaseIdentifiersToDelete =
         new HashSet<>(asList(createK8sReleaseIdentifier("release-3", deleteAfterAfter),
-            createK8sReleaseIdentifier("release4", deleteAfterAfter)));
+            createK8sReleaseIdentifier("release-4", deleteAfterAfter)));
 
     Set<CgReleaseIdentifiers> allReleaseIdentifiers = new HashSet<>();
     allReleaseIdentifiers.add(createK8sReleaseIdentifier("release-1", deleteAfterBefore));
@@ -90,8 +90,10 @@ class CgInstanceSyncTaskDetailsServiceTest extends CategoryTest {
     assertThat(updatedInstanceSyncTaskDetails.getLastSuccessfulRun()).isGreaterThan(lastSuccessfulRunBefore);
     for (CgReleaseIdentifiers releaseIdentifier : updatedInstanceSyncTaskDetails.getReleaseIdentifiers()) {
       CgK8sReleaseIdentifier k8sReleaseIdentifier = (CgK8sReleaseIdentifier) releaseIdentifier;
-      assertThat(k8sReleaseIdentifier.getDeleteAfter())
-          .isEqualTo(updateMap.get(k8sReleaseIdentifier.getReleaseName()).getDeleteAfter());
+      if (updateMap.containsKey(k8sReleaseIdentifier.getReleaseName())) {
+        assertThat(k8sReleaseIdentifier.getDeleteAfter())
+            .isEqualTo(updateMap.get(k8sReleaseIdentifier.getReleaseName()).getDeleteAfter());
+      }
     }
   }
 

@@ -60,7 +60,9 @@ import software.wings.settings.SettingVariableTypes;
 import com.google.protobuf.Any;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -415,6 +417,16 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .when(cloudProviderService)
         .get(anyString());
     doReturn(k8sHandler).when(handlerFactory).getHandler(any(SettingVariableTypes.class));
+
+    Map<CgReleaseIdentifiers, InstanceSyncData> t1 = new HashMap<>();
+    t1.put(createDummyReleaseIdentifier("release-1", "default"), instanceSyncData1);
+    t1.put(createDummyReleaseIdentifier("release-2", "namespace1"), instanceSyncData2);
+    Map<CgReleaseIdentifiers, InstanceSyncData> t2 = new HashMap<>();
+    t2.put(createDummyReleaseIdentifier("release-3", "default"), instanceSyncData3);
+
+    doReturn(t1).when(k8sHandler).getCgReleaseIdentifiersList(Arrays.asList(instanceSyncData1, instanceSyncData2));
+    doReturn(t2).when(k8sHandler).getCgReleaseIdentifiersList(Collections.singletonList(instanceSyncData3));
+
     doReturn(true).when(k8sHandler).isDeploymentInfoTypeSupported(any());
     doReturn(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(7))
         .when(k8sHandler)
@@ -424,7 +436,7 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
         .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-2", "namespace1"), instanceSyncData2);
     doReturn(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(7))
         .when(k8sHandler)
-        .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-3", "default"), instanceSyncData2);
+        .getDeleteReleaseAfter(createDummyReleaseIdentifier("release-3", "default"), instanceSyncData3);
 
     cgInstanceSyncServiceV2.processInstanceSyncResult("perpetualTaskId", instanceSyncResponse);
 
@@ -436,7 +448,8 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
 
     assertThat(taskIdCaptor.getAllValues()).containsExactlyInAnyOrder("taskId1", "taskId2");
     assertThat(updateReleasesCaptor.getAllValues())
-        .containsExactlyInAnyOrder(Collections.singleton(createDummyReleaseIdentifier("release-1", "default")));
+        .containsExactlyInAnyOrder(
+            Collections.singleton(createDummyReleaseIdentifier("release-1", "default")), Collections.emptySet());
     assertThat(deleteReleasesCaptor.getAllValues())
         .containsExactlyInAnyOrder(Collections.singleton(createDummyReleaseIdentifier("release-2", "namespace1")),
             Collections.singleton(createDummyReleaseIdentifier("release-3", "default")));
