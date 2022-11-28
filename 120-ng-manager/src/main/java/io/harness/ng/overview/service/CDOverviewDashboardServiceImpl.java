@@ -1947,7 +1947,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
       String serviceId = entry3.getKey();
       String serviceName = serviceIdToServiceNameMap.get(serviceId);
 
-      List<InstanceGroupedByServiceList.InstanceGroupedByArtifact> instanceGroupedByArtifactList = new ArrayList<>();
+      List<InstanceGroupedByServiceList.InstanceGroupedByArtifactV2> instanceGroupedByArtifactList = new ArrayList<>();
 
       for (Map.Entry<String,
                Map<String,
@@ -1957,7 +1957,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         String buildId = entry.getKey();
         String artifactPath = buildIdToArtifactPathMap.get(buildId);
 
-        List<InstanceGroupedByServiceList.InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList =
+        List<InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2> instanceGroupedByEnvironmentList =
             new ArrayList<>();
 
         for (Map.Entry<String,
@@ -1967,9 +1967,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String envId = entry1.getKey();
           String envName = envIdToEnvNameMap.get(envId);
 
-          List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructure> instanceGroupedByInfrastructureList =
+          List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2> instanceGroupedByInfrastructureList =
               new ArrayList<>();
-          List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructure> instanceGroupedByClusterList =
+          List<InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2> instanceGroupedByClusterList =
               new ArrayList<>();
 
           for (Map.Entry<String, List<InstanceGroupedByServiceList.InstanceGroupedByPipelineExecution>> entry2 :
@@ -2003,7 +2003,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
             }
 
             instanceGroupedByInfrastructureList.add(
-                InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
+                InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
                     .infraName(infraName)
                     .infraIdentifier(infraId)
                     .instanceGroupedByPipelineExecutionList(pipelineExecutions)
@@ -2039,20 +2039,20 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
               }
               pipelineExecutions = new ArrayList<>(instanceGroupedByPipelineExecutionMap.values());
             }
-            instanceGroupedByClusterList.add(InstanceGroupedByServiceList.InstanceGroupedByInfrastructure.builder()
+            instanceGroupedByClusterList.add(InstanceGroupedByServiceList.InstanceGroupedByInfrastructureV2.builder()
                                                  .agentIdentifier(agentId)
                                                  .clusterIdentifier(clusterId)
                                                  .instanceGroupedByPipelineExecutionList(pipelineExecutions)
                                                  .build());
           }
-          instanceGroupedByEnvironmentList.add(InstanceGroupedByServiceList.InstanceGroupedByEnvironment.builder()
+          instanceGroupedByEnvironmentList.add(InstanceGroupedByServiceList.InstanceGroupedByEnvironmentV2.builder()
                                                    .envId(envId)
                                                    .envName(envName)
                                                    .instanceGroupedByClusterList(instanceGroupedByClusterList)
                                                    .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
                                                    .build());
         }
-        instanceGroupedByArtifactList.add(InstanceGroupedByServiceList.InstanceGroupedByArtifact.builder()
+        instanceGroupedByArtifactList.add(InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
                                               .artifactVersion(buildId)
                                               .artifactPath(artifactPath)
                                               .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)

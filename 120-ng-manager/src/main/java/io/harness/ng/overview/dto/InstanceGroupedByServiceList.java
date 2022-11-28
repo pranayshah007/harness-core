@@ -17,29 +17,29 @@ public class InstanceGroupedByServiceList {
   public static class InstanceGroupedByService {
     String serviceId;
     String serviceName;
-    List<InstanceGroupedByArtifact> instanceGroupedByArtifactList;
+    List<InstanceGroupedByArtifactV2> instanceGroupedByArtifactList;
   }
 
   @Value
   @Builder
-  public static class InstanceGroupedByArtifact {
+  public static class InstanceGroupedByArtifactV2 {
     String artifactVersion;
     String artifactPath;
-    List<InstanceGroupedByEnvironment> instanceGroupedByEnvironmentList;
+    List<InstanceGroupedByEnvironmentV2> instanceGroupedByEnvironmentList;
   }
 
   @Value
   @Builder
-  public static class InstanceGroupedByEnvironment {
+  public static class InstanceGroupedByEnvironmentV2 {
     String envId;
     String envName;
-    List<InstanceGroupedByInfrastructure> instanceGroupedByInfraList;
-    List<InstanceGroupedByInfrastructure> instanceGroupedByClusterList;
+    List<InstanceGroupedByInfrastructureV2> instanceGroupedByInfraList;
+    List<InstanceGroupedByInfrastructureV2> instanceGroupedByClusterList;
   }
 
   @Value
   @Builder
-  public static class InstanceGroupedByInfrastructure {
+  public static class InstanceGroupedByInfrastructureV2 {
     String infraIdentifier;
     String infraName;
     String clusterIdentifier;
