@@ -103,6 +103,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -202,6 +203,10 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
       String startupScript, InfrastructureOutcome infrastructureOutcome) {
     LogCallback logCallback =
         getLogCallback(ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_JSON.toString(), ambiance, true);
+
+    if(unitProgressData == null) {
+      unitProgressData = UnitProgressData.builder().unitProgresses(Arrays.asList()).build();
+    }
 
     ElastigroupConfigurationOutput elastigroupConfigurationOutput = null;
     OptionalSweepingOutput optionalElastigroupConfigurationOutput =
