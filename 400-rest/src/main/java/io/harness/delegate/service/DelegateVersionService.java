@@ -20,6 +20,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
@@ -49,15 +50,23 @@ public class DelegateVersionService {
   private final MainConfiguration mainConfiguration;
   private final HPersistence persistence;
 
+  private static final String IMMUTABLE_DELEGATE_DOCKER_IMAGE = "IMMUTABLE_DELEGATE_DOCKER_IMAGE";
+  private static final String UPGRADER_DOCKER_IMAGE = "UPGRADER_DOCKER_IMAGE";
+
   public String getDelegateImageTag(final String accountId, final String delegateType) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
     }
 
-    final String ringImage = delegateRingService.getDelegateImageTag(accountId);
-    if (isImmutableDelegate(accountId, delegateType) && isNotBlank(ringImage)) {
-      return ringImage;
+    if (isImmutableDelegate(accountId, delegateType)) {
+      if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+        return fetchImmutableDelegateImageOnPrem();
+      }
+      final String ringImage = delegateRingService.getDelegateImageTag(accountId);
+      if (isNotBlank(ringImage)) {
+        return ringImage;
+      }
     }
 
     final String managerConfigImage = mainConfiguration.getPortal().getDelegateDockerImage();
@@ -65,6 +74,14 @@ public class DelegateVersionService {
       return managerConfigImage;
     }
     return DEFAULT_DELEGATE_IMAGE_TAG;
+  }
+
+  private String fetchImmutableDelegateImageOnPrem() {
+    final String immutableDelegateImage = System.getenv(IMMUTABLE_DELEGATE_DOCKER_IMAGE);
+    if (isNotBlank(immutableDelegateImage)) {
+      return immutableDelegateImage;
+    }
+    throw new IllegalStateException("No immutable delegate image is defined in manager configMap");
   }
 
   /**
@@ -77,6 +94,10 @@ public class DelegateVersionService {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
+    }
+
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return fetchImmutableDelegateImageOnPrem();
     }
 
     final String ringImage = delegateRingService.getDelegateImageTag(accountId);
@@ -92,14 +113,18 @@ public class DelegateVersionService {
       return versionOverride.getVersion();
     }
 
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      final String upgraderImage = System.getenv(UPGRADER_DOCKER_IMAGE);
+      if (isNotBlank(upgraderImage)) {
+        return upgraderImage;
+      }
+    }
+
     final String ringImage = delegateRingService.getUpgraderImageTag(accountId);
     if (isImmutableDelegate(accountId, delegateType) && isNotBlank(ringImage)) {
       return ringImage;
     }
 
-    if (isNotBlank(mainConfiguration.getPortal().getUpgraderDockerImage())) {
-      return mainConfiguration.getPortal().getUpgraderDockerImage();
-    }
     return DEFAULT_UPGRADER_IMAGE_TAG;
   }
 

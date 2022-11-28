@@ -236,6 +236,14 @@ if [[ "" != "$CF_MIGRATION_ENVIRONMENT" ]]; then
   export CF_MIGRATION_ENVIRONMENT; yq -i '.cfMigrationConfig.environment=env(CF_MIGRATION_ENVIRONMENT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$CF_MIGRATION_CONNECT_TIMEOUT" ]]; then
+  export CF_MIGRATION_CONNECT_TIMEOUT; yq -i '.cfMigrationConfig.connectionTimeout=env(CF_MIGRATION_CONNECT_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$CF_MIGRATION_READ_TIMEOUT" ]]; then
+  export CF_MIGRATION_READ_TIMEOUT; yq -i '.cfMigrationConfig.readTimeout=env(CF_MIGRATION_READ_TIMEOUT)' $CONFIG_FILE
+fi
+
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 

@@ -331,7 +331,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: c644a110
+scmVersion: 973aebca
 
 ngAuthUIEnabled: false
 

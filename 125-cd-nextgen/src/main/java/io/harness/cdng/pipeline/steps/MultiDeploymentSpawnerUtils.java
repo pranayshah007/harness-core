@@ -79,8 +79,9 @@ public class MultiDeploymentSpawnerUtils {
     }
     if (!ParameterField.isBlank(environmentYamlV2.getGitOpsClusters())) {
       matrixMetadataMap.put(GIT_OPS_CLUSTERS, JsonUtils.asJson(environmentYamlV2.getGitOpsClusters().getValue()));
+    } else {
+      matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     }
-    matrixMetadataMap.put(INFRA_IDENTIFIER, infraStructureDefinitionYaml.getIdentifier().getValue());
     if (!ParameterField.isBlank(infraStructureDefinitionYaml.getInputs())) {
       matrixMetadataMap.put(INFRA_INPUTS, JsonUtils.asJson(infraStructureDefinitionYaml.getInputs().getValue()));
     }

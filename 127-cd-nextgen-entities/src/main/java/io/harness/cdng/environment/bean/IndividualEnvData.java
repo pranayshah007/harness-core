@@ -5,24 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.instancesyncmonitoring.model;
+package io.harness.cdng.environment.bean;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+
 import io.harness.annotations.dev.OwnedBy;
 
-import javax.validation.constraints.NotNull;
+import java.util.Set;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@OwnedBy(HarnessTeam.CDP)
-@Value
+@Data
 @Builder
-public class InstanceSyncMetricDetails {
-  @NotNull String accountId;
-  String appId;
-  String orgId;
-  String projectId;
-  @NotNull boolean isNg;
-  @NotNull String deploymentType;
-  @NotNull String status;
+@OwnedBy(CDC)
+public class IndividualEnvData {
+  String envName;
+  String envRef;
+  boolean deployToAll;
+  Set<String> gitOpsClusterRefs;
 }

@@ -100,6 +100,7 @@ public enum FeatureName {
   GRAPHQL_DEV,
   HARNESS_TAGS,
   HELM_CHART_AS_ARTIFACT,
+  HELM_STEADY_STATE_CHECK_1_16,
   HELM_CHART_NAME_SPLIT,
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
@@ -431,6 +432,7 @@ public enum FeatureName {
   LOOKER_ENTITY_RECONCILIATION,
   STAGE_AND_STEP_LEVEL_DEPLOYMENT_DETAILS,
   NG_DEPLOYMENT_FREEZE("Enables Deployment freeze for NG", HarnessTeam.CDC),
+  NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
   NEW_EXECUTION_LIST_VIEW(
@@ -484,7 +486,9 @@ public enum FeatureName {
   USE_GET_FILE_V2_GIT_CALL(
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
       HarnessTeam.PIPELINE),
-  ;
+  PL_HIDE_LAUNCH_NEXTGEN("FF to hide Launch NextGen button", HarnessTeam.PL),
+  CIE_HOSTED_VMS_MAC("FF for enabling hosted builds for mac os", HarnessTeam.CI),
+  GITOPS_API_PARAMS_MERGE_PR("Show API parameters in Merge PR step", HarnessTeam.GITOPS);
 
   @Deprecated
   FeatureName() {

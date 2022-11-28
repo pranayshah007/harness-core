@@ -216,7 +216,7 @@ deletedEntities {"name": "nextIteration_1", "background": true} {"nextIteration"
 deploymentEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 deploymentEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 deploymentReconciliation {"name": "accountId_durationEndTs", "background": true} {"accountId": 1, "durationEndTs": 1}
-deploymentReconciliation {"name": "accountId_durationEndTs_entityClass", "background": true} {"accountId": 1, "durationEndTs": 1, "entityClass": 1}
+deploymentReconciliation {"name": "accountId_entityClass_durationEndTs_sorted", "background": true} {"accountId": 1, "entityClass": 1, "durationEndTs": -1}
 deploymentReconciliation {"name": "accountId_reconciliationStatus", "background": true} {"accountId": 1, "reconciliationStatus": 1}
 deploymentReconciliation {"name": "accountId_reconciliationStatus_entityClass", "background": true} {"accountId": 1, "reconciliationStatus": 1, "entityClass": 1}
 deploymentReconciliation {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
@@ -258,6 +258,7 @@ encryptedRecords {"name": "ngSecretManagerIdx", "background": true} {"ngMetadata
 encryptedRecords {"name": "ngSecretManagerTypeIdx", "background": true} {"accountId": 1, "type": 1, "createdAt": 1}
 encryptedRecords {"name": "parents_1", "background": true} {"parents": 1}
 encryptedRecords {"name": "path_1", "background": true} {"path": 1}
+entityAuditRecords {"name": "createdAt_1", "background": true} {"createdAt": 1}
 entityAuditRecords {"name": "entityRecordIndex_1", "background": true} {"auditHeaderId": 1, "createdAt": -1}
 entityAuditRecords {"name": "nextIteration_1", "background": true} {"nextIteration": 1}
 entityVersions {"name": "accountId_1", "background": true} {"accountId": 1}
