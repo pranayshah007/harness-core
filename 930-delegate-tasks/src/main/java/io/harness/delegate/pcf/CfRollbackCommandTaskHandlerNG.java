@@ -65,6 +65,7 @@ import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+// Rollback handler for only Canary and Basic Deployment
 @NoArgsConstructor
 @Singleton
 @Slf4j
@@ -160,17 +161,14 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
             cfDeployCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
             cfDeployCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
 
-            if (cfRollbackCommandRequestNG.isStandardBlueGreenWorkflow()) {
-                deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
+            if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {
+              deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
+              updateValues = renameApps(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
+              cfDeployCommandResult.setUpdatedValues(updateValues);
+              executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback completed successfully", INFO, SUCCESS);
             } else {
-                // for basic & canary
-                if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {
-                    deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
-                    updateValues = renameApps(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
-                }
+              executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback is not completed", INFO, FAILURE);
             }
-            cfDeployCommandResult.setUpdatedValues(updateValues);
-            executionLogCallback.saveExecutionLog("\n\n--------- PCF Rollback completed successfully", INFO, SUCCESS);
 
         } catch (Exception e) {
             exception = e;
@@ -198,21 +196,19 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
 
     private CfRequestConfig buildCfRequestConfig(CfRollbackCommandRequestNG cfRollbackCommandRequestNG,
                                                  File workingDirectory, CloudFoundryConfig cfConfig) {
-        return CfRequestConfig.builder()
-                .userName(String.valueOf(cfConfig.getUserName()))
-                .password(String.valueOf(cfConfig.getPassword()))
-                .endpointUrl(cfConfig.getEndpointUrl())
-                .orgName(cfRollbackCommandRequestNG.getTasInfraConfig().getOrganization())
-                .spaceName(cfRollbackCommandRequestNG.getTasInfraConfig().getSpace())
-                .timeOutIntervalInMins(cfRollbackCommandRequestNG.getTimeoutIntervalInMin() == null
-                        ? 10
-                        : cfRollbackCommandRequestNG.getTimeoutIntervalInMin())
-                .cfHomeDirPath(workingDirectory.getAbsolutePath())
-                .useCFCLI(cfRollbackCommandRequestNG.isUseCfCLI())
-                .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                        cfRollbackCommandRequestNG.isUseCfCLI(), cfRollbackCommandRequestNG.getCfCliVersion()))
-                .cfCliVersion(cfRollbackCommandRequestNG.getCfCliVersion())
-                .build();
+      return CfRequestConfig.builder()
+          .userName(String.valueOf(cfConfig.getUserName()))
+          .password(String.valueOf(cfConfig.getPassword()))
+          .endpointUrl(cfConfig.getEndpointUrl())
+          .orgName(cfRollbackCommandRequestNG.getTasInfraConfig().getOrganization())
+          .spaceName(cfRollbackCommandRequestNG.getTasInfraConfig().getSpace())
+          .timeOutIntervalInMins(cfRollbackCommandRequestNG.getTimeoutIntervalInMin() == null
+                  ? 10
+                  : cfRollbackCommandRequestNG.getTimeoutIntervalInMin())
+          .cfHomeDirPath(workingDirectory.getAbsolutePath())
+          .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(true, cfRollbackCommandRequestNG.getCfCliVersion()))
+          .cfCliVersion(cfRollbackCommandRequestNG.getCfCliVersion())
+          .build();
     }
 
     private void deleteNewApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG commandRollbackRequest,
@@ -261,12 +257,11 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
         boolean rollbackCompleted =
                 instanceCountMatches(newApp.getApplicationName(), newApp.getInitialInstanceCount(), cfRequestConfig);
         // app upsized - to be renamed
-        List<CfAppSetupTimeDetails> prevActiveApps = commandRollbackRequest.getAppsToBeDownSized();
-        if (!EmptyPredicate.isEmpty(prevActiveApps)) {
-            CfAppSetupTimeDetails prevActiveApp = prevActiveApps.get(0);
-            rollbackCompleted = rollbackCompleted
-                    && instanceCountMatches(
-                    prevActiveApp.getApplicationName(), prevActiveApp.getInitialInstanceCount(), cfRequestConfig);
+        CfAppSetupTimeDetails prevActiveApp = commandRollbackRequest.getOldApplicationDetails();
+        if (!isNull(prevActiveApp)) {
+          rollbackCompleted = rollbackCompleted
+              && instanceCountMatches(
+                  prevActiveApp.getApplicationName(), prevActiveApp.getInitialInstanceCount(), cfRequestConfig);
         }
 
         return rollbackCompleted;
@@ -283,11 +278,9 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
                                                       CfRollbackCommandRequestNG commandRollbackRequest, LogCallback logCallback) throws PivotalClientApiException {
         CfInBuiltVariablesUpdateValues updateValues = CfInBuiltVariablesUpdateValues.builder().build();
 
-        if (commandRollbackRequest.isNonVersioning()) {
             logCallback.saveExecutionLog("\n# Reverting app names");
             // app upsized - to be renamed
-            List<CfAppSetupTimeDetails> prevActiveApps = commandRollbackRequest.getAppsToBeDownSized();
-            // previous inactive app - to be marked inactive again
+            CfAppSetupTimeDetails prevActiveApp = commandRollbackRequest.getOldApplicationDetails();
             CfAppSetupTimeDetails prevInactive = commandRollbackRequest.getExistingInActiveApplicationDetails();
 
             if (!EmptyPredicate.isEmpty(prevActiveApps)) {
@@ -311,23 +304,7 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
             }
 
             logCallback.saveExecutionLog("# App names reverted successfully");
-        }
 
-        if (commandRollbackRequest.isVersioningChanged()) {
-            logCallback.saveExecutionLog(getVersionChangeMessage(!commandRollbackRequest.isNonVersioning()));
-
-            List<ApplicationSummary> releases =
-                    cfDeploymentManager.getPreviousReleases(cfRequestConfig, commandRollbackRequest.getCfAppNamePrefix());
-            ApplicationSummary activeApplication = cfCommandTaskHelperNG.findActiveApplication(
-                    logCallback, commandRollbackRequest.isStandardBlueGreenWorkflow(), cfRequestConfig, releases);
-            ApplicationSummary inactiveApplication = cfCommandTaskHelperNG.getMostRecentInactiveApplication(logCallback,
-                    commandRollbackRequest.isStandardBlueGreenWorkflow(), activeApplication, releases, cfRequestConfig);
-            cfCommandTaskHelperNG.resetState(releases, activeApplication, inactiveApplication,
-                    commandRollbackRequest.getCfAppNamePrefix(), cfRequestConfig, !commandRollbackRequest.isNonVersioning(), null,
-                    commandRollbackRequest.getActiveAppRevision(), logCallback, updateValues);
-
-            logCallback.saveExecutionLog(getVersionChangeMessage(!commandRollbackRequest.isNonVersioning()) + " completed");
-        }
         return updateValues;
     }
 
@@ -363,38 +340,33 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
     @VisibleForTesting
     void restoreRoutesForOldApplication(CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig,
                                         LogCallback executionLogCallback) throws PivotalClientApiException {
-        if (commandRollbackRequest.isStandardBlueGreenWorkflow()
-                || EmptyPredicate.isEmpty(commandRollbackRequest.getAppsToBeDownSized())) {
-            return;
-        }
+      if (isNull(commandRollbackRequest.getOldApplicationDetails())) {
+        return;
+      }
 
-        CfAppSetupTimeDetails cfAppSetupTimeDetails = commandRollbackRequest.getAppsToBeDownSized().get(0);
+      CfAppSetupTimeDetails cfAppSetupTimeDetails = commandRollbackRequest.getOldApplicationDetails();
+      cfRequestConfig.setApplicationName(cfAppSetupTimeDetails.getApplicationName());
+      ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
 
-        if (cfAppSetupTimeDetails != null) {
-            cfRequestConfig.setApplicationName(cfAppSetupTimeDetails.getApplicationName());
-            ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+      if (EmptyPredicate.isEmpty(cfAppSetupTimeDetails.getUrls())) {
+        return;
+      }
 
-            if (EmptyPredicate.isEmpty(cfAppSetupTimeDetails.getUrls())) {
-                return;
-            }
-
-            if (EmptyPredicate.isEmpty(applicationDetail.getUrls())
-                    || !cfAppSetupTimeDetails.getUrls().containsAll(applicationDetail.getUrls())) {
-                cfCommandTaskHelperNG.mapRouteMaps(cfAppSetupTimeDetails.getApplicationName(),
-                        cfAppSetupTimeDetails.getUrls(), cfRequestConfig, executionLogCallback);
-            }
-        }
+      if (EmptyPredicate.isEmpty(applicationDetail.getUrls())
+          || !cfAppSetupTimeDetails.getUrls().containsAll(applicationDetail.getUrls())) {
+        cfCommandTaskHelperNG.mapRouteMaps(cfAppSetupTimeDetails.getApplicationName(), cfAppSetupTimeDetails.getUrls(),
+            cfRequestConfig, executionLogCallback);
+      }
     }
 
     @VisibleForTesting
     void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
                                             CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig)
             throws PivotalClientApiException {
-        if (commandRollbackRequest.isStandardBlueGreenWorkflow()
-                || commandRollbackRequest.getNewApplicationDetails() == null
-                || isBlank(commandRollbackRequest.getNewApplicationDetails().getApplicationName())) {
-            return;
-        }
+      if (commandRollbackRequest.getNewApplicationDetails() == null
+          || isBlank(commandRollbackRequest.getNewApplicationDetails().getApplicationName())) {
+        return;
+      }
 
         cfRequestConfig.setApplicationName(commandRollbackRequest.getNewApplicationDetails().getApplicationName());
         ApplicationDetail appDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);

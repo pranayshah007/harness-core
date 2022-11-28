@@ -5,12 +5,10 @@ import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
-import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
-import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.utils.CFLogCallbackFormatter;
@@ -60,7 +58,7 @@ public class CfCommandTaskHelperNG {
                                                         CfDeployCommandRequestNG cfDeployCommandRequestNG,
                                                         CfDeploymentManager cfDeploymentManager) throws PivotalClientApiException {
         cfRequestConfig.setApplicationName(cfDeployCommandRequestNG.getNewReleaseName());
-        cfRequestConfig.setDesiredCount(cfDeployCommandRequestNG.getUpdateCount());
+        cfRequestConfig.setDesiredCount(cfDeployCommandRequestNG.getUpsizeCount());
         return cfDeploymentManager.getApplicationByName(cfRequestConfig);
     }
 
@@ -162,11 +160,11 @@ public class CfCommandTaskHelperNG {
         executionLogCallback.saveExecutionLog(color("# Upsizing new application:", White, Bold));
 
         executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
-                details.getName(), details.getInstances(), cfCommandDeployRequest.getUpdateCount()));
+            details.getName(), details.getInstances(), cfCommandDeployRequest.getUpsizeCount()));
 
         // Upscale new app
         cfRequestConfig.setApplicationName(cfCommandDeployRequest.getNewReleaseName());
-        cfRequestConfig.setDesiredCount(cfCommandDeployRequest.getUpdateCount());
+        cfRequestConfig.setDesiredCount(cfCommandDeployRequest.getUpsizeCount());
 
         // perform upsize
         pcfCommandTaskBaseHelper.upsizeInstance(
@@ -180,22 +178,21 @@ public class CfCommandTaskHelperNG {
     private void configureAutoscalarIfNeeded(CfDeployCommandRequestNG cfCommandDeployRequest, ApplicationDetail applicationDetail,
                                              CfAppAutoscalarRequestData appAutoscalarRequestData, LogCallback executionLogCallback)
             throws PivotalClientApiException, IOException {
-        if (cfCommandDeployRequest.isUseAppAutoscalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
-                && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())
-                && cfCommandDeployRequest.getMaxCount() <= cfCommandDeployRequest.getUpdateCount()) {
-            // This is autoscalar file inside workingDirectory
-            String filePath =
-                    appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
-            createYamlFileLocally(
-                    filePath, cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml());
+      if (cfCommandDeployRequest.isUseAppAutoscalar() && cfCommandDeployRequest.getPcfManifestsPackage() != null
+          && isNotEmpty(cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml())
+          && cfCommandDeployRequest.getMaxCount() <= cfCommandDeployRequest.getUpsizeCount()) {
+        // This is autoscalar file inside workingDirectory
+        String filePath =
+            appAutoscalarRequestData.getConfigPathVar() + "/autoscalar_" + System.currentTimeMillis() + ".yml";
+        createYamlFileLocally(filePath, cfCommandDeployRequest.getPcfManifestsPackage().getAutoscalarManifestYml());
 
-            // upload autoscalar config
-            appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
-            appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
-            appAutoscalarRequestData.setTimeoutInMins(cfCommandDeployRequest.getTimeoutIntervalInMin());
-            appAutoscalarRequestData.setAutoscalarFilePath(filePath);
-            cfDeploymentManager.performConfigureAutoscalar(appAutoscalarRequestData, executionLogCallback);
-        }
+        // upload autoscalar config
+        appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
+        appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+        appAutoscalarRequestData.setTimeoutInMins(cfCommandDeployRequest.getTimeoutIntervalInMin());
+        appAutoscalarRequestData.setAutoscalarFilePath(filePath);
+        cfDeploymentManager.performConfigureAutoscalar(appAutoscalarRequestData, executionLogCallback);
+      }
     }
 
     public String getCfCliPathOnDelegate(boolean useCfCLI, CfCliVersion cfCliVersion) {

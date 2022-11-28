@@ -7,12 +7,13 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
+import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.pcf.model.CfCliVersion;
-import lombok.Builder;
-import lombok.Value;
 
 import java.util.List;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder
@@ -27,16 +28,11 @@ public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
     List<CfServiceData> instanceData;
     List<String> routeMaps;
     List<String> tempRouteMaps;
-    ResizeStrategy resizeStrategy;
-    List<CfAppSetupTimeDetails> appsToBeDownSized;
+    CfAppSetupTimeDetails oldApplicationDetails;
     CfAppSetupTimeDetails newApplicationDetails;
-    boolean isStandardBlueGreenWorkflow;
-    boolean versioningChanged;
-    boolean nonVersioning;
     String cfAppNamePrefix;
-    CfAppSetupTimeDetails existingInActiveApplicationDetails;
     Integer activeAppRevision;
-    boolean useCfCLI;
     CfCliVersion cfCliVersion;
+    boolean enforceSslValidation;
     boolean useAppAutoscalar;
 }
