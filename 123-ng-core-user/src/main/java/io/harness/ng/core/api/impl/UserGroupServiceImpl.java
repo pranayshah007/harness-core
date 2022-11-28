@@ -29,10 +29,14 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.accesscontrol.AccountIdentifier;
+import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
+import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -58,6 +62,7 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.EntityScopeInfo;
 import io.harness.ng.core.dto.ScopeSelector;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
@@ -96,6 +101,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -284,9 +290,49 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public Page<UserGroup> list(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String searchTerm, UserGroupFilterType filterType, Pageable pageable) {
-    return userGroupRepository.findAll(
-        createUserGroupFilterCriteria(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType),
-        pageable);
+    Criteria criteria =
+        createUserGroupFilterCriteria(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType);
+    if (!accessControlClient.hasAccess(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+      List<UserGroup> userGroups = userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
+      userGroups = getPermittedUserGroups(userGroups);
+      if (isEmpty(userGroups)) {
+        return Page.empty();
+      }
+      criteria.and(UserGroupKeys.identifier)
+          .in(userGroups.stream().map(UserGroup::getIdentifier).collect(Collectors.toList()));
+    }
+    return userGroupRepository.findAll(criteria, pageable);
+  }
+
+  private List<UserGroup> getPermittedUserGroups(List<UserGroup> userGroups) {
+    if (isEmpty(userGroups)) {
+      return Collections.emptyList();
+    }
+
+    Map<EntityScopeInfo, List<UserGroup>> allUserScopesMap =
+        userGroups.stream().collect(Collectors.groupingBy(UserGroupServiceImpl::getEntityScopeInfoFromUserGroup));
+
+    List<PermissionCheckDTO> permissionChecks =
+        userGroups.stream()
+            .map(usergroup
+                -> PermissionCheckDTO.builder()
+                       .permission(VIEW_USERGROUP_PERMISSION)
+                       .resourceIdentifier(usergroup.getIdentifier())
+                       .resourceScope(ResourceScope.of(usergroup.getAccountIdentifier(), usergroup.getOrgIdentifier(),
+                           usergroup.getProjectIdentifier()))
+                       .resourceType(USERGROUP)
+                       .build())
+            .collect(Collectors.toList());
+    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccessOrThrow(permissionChecks);
+
+    List<UserGroup> permittedConnectors = new ArrayList<>();
+    for (AccessControlDTO accessControlDTO : accessCheckResponse.getAccessControlList()) {
+      if (accessControlDTO.isPermitted()) {
+        permittedConnectors.add(allUserScopesMap.get(getEntityScopeInfoFromAccessControlDTO(accessControlDTO)).get(0));
+      }
+    }
+    return permittedConnectors;
   }
 
   @Override
@@ -348,7 +394,15 @@ public class UserGroupServiceImpl implements UserGroupService {
     if (isNotEmpty(userGroupFilterDTO.getUserIdentifierFilter())) {
       criteria.and(UserGroupKeys.users).in(userGroupFilterDTO.getUserIdentifierFilter());
     }
-    return userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
+    List<UserGroup> userGroups = userGroupRepository.findAll(criteria, Pageable.unpaged()).getContent();
+    if ((accessControlClient.hasAccess(
+            ResourceScope.of(userGroupFilterDTO.getAccountIdentifier(), userGroupFilterDTO.getOrgIdentifier(),
+                userGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION))) {
+      return userGroups;
+    } else {
+      return getPermittedUserGroups(userGroups);
+    }
   }
 
   public PageResponse<UserMetadataDTO> listUsersInUserGroup(
@@ -867,5 +921,27 @@ public class UserGroupServiceImpl implements UserGroupService {
             || defaultUserGroups.contains(userGroupOptional.get().getIdentifier()))) {
       throw new InvalidRequestException("Cannot delete a harness managed user group.");
     }
+  }
+
+  static EntityScopeInfo getEntityScopeInfoFromUserGroup(UserGroup userGroup) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(userGroup.getAccountIdentifier())
+        .orgIdentifier(isBlank(userGroup.getOrgIdentifier()) ? null : userGroup.getOrgIdentifier())
+        .projectIdentifier(isBlank(userGroup.getProjectIdentifier()) ? null : userGroup.getProjectIdentifier())
+        .identifier(userGroup.getIdentifier())
+        .build();
+  }
+
+  static EntityScopeInfo getEntityScopeInfoFromAccessControlDTO(AccessControlDTO accessControlDTO) {
+    return EntityScopeInfo.builder()
+        .accountIdentifier(accessControlDTO.getResourceScope().getAccountIdentifier())
+        .orgIdentifier(isBlank(accessControlDTO.getResourceScope().getOrgIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getOrgIdentifier())
+        .projectIdentifier(isBlank(accessControlDTO.getResourceScope().getProjectIdentifier())
+                ? null
+                : accessControlDTO.getResourceScope().getProjectIdentifier())
+        .identifier(accessControlDTO.getResourceIdentifier())
+        .build();
   }
 }

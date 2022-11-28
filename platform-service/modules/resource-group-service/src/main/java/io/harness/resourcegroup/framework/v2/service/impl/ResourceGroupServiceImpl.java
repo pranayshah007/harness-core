@@ -11,12 +11,17 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static io.harness.utils.PageUtils.getPageRequest;
 
 import static java.lang.Boolean.TRUE;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -68,15 +73,18 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   ResourceGroupValidatorImpl resourceGroupValidatorImpl;
   OutboxService outboxService;
   TransactionTemplate transactionTemplate;
+  AccessControlClient accessControlClient;
 
   @Inject
   public ResourceGroupServiceImpl(ResourceGroupV2Repository resourceGroupV2Repository,
       ResourceGroupValidatorImpl resourceGroupValidatorImpl, OutboxService outboxService,
-      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate) {
+      @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate,
+      AccessControlClient accessControlClient) {
     this.resourceGroupV2Repository = resourceGroupV2Repository;
     this.resourceGroupValidatorImpl = resourceGroupValidatorImpl;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.accessControlClient = accessControlClient;
   }
 
   private ResourceGroup createInternal(ResourceGroup resourceGroup, boolean pushEvent) {
@@ -208,6 +216,13 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
                                                         .searchTerm(searchTerm)
                                                         .build();
     Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
+            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
+      resourceGroups = getPermittedUserGroups
+    }
     return resourceGroupV2Repository.findAll(criteria, page).map(ResourceGroupMapper::toResponseWrapper);
   }
 
