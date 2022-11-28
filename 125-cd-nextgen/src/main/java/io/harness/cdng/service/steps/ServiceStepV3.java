@@ -463,7 +463,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
-      throw new InvalidRequestException(format("service with identifier %s not found", stepParameters.getServiceRef()));
+      throw new InvalidRequestException(
+          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();
