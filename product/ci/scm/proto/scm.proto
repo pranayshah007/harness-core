@@ -265,6 +265,8 @@ message Provider {
   // If skipVerify is false, we can pass in a path of additional certs to allow
   // This might be useful in self hosted repositories which use self signed certs.
   string additional_certs_path = 10;
+  string connectionType = 12;
+  string url = 13;
 }
 
 /*
@@ -346,6 +348,7 @@ message FileModifyRequest {
   string blob_id = 7;
   Signature signature = 8;
   Provider provider = 9;
+  bool useGitClient = 10;
 }
 
 message FileContent {
