@@ -16,9 +16,11 @@ import static io.harness.rule.OwnerRule.SHALINI;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.joor.Reflect.on;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -86,7 +88,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private PmsGraphStepDetailsService pmsGraphStepDetailsService;
   @Mock private AdviseHandlerFactory adviseHandlerFactory;
   @Mock private NextStepHandler nextStepHandler;
-
+  @Mock IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
   @Inject @InjectMocks @Spy IdentityNodeExecutionStrategy executionStrategy;
 
   private static final StepType TEST_STEP_TYPE =
@@ -371,6 +373,11 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().uuid(generateUuid()).build());
     when(nodeExecutionService.save(any(NodeExecution.class))).thenReturn(nodeExecution);
     doNothing().when(pmsGraphStepDetailsService).copyStepDetailsForRetry(anyString(), anyString(), anyString());
+    on(identityNodeExecutionStrategyHelper).set("nodeExecutionService", nodeExecutionService);
+    on(identityNodeExecutionStrategyHelper).set("pmsGraphStepDetailsService", pmsGraphStepDetailsService);
+    doCallRealMethod()
+        .when(identityNodeExecutionStrategyHelper)
+        .createNodeExecution(any(), any(), any(), any(), any(), any());
     NodeExecution nodeExecution1 = executionStrategy.createNodeExecution(ambiance, node, null, "NID", "PaID", "PrID");
     assertEquals(nodeExecution1, nodeExecution);
     verify(pmsGraphStepDetailsService, times(1)).copyStepDetailsForRetry(anyString(), anyString(), anyString());
@@ -413,7 +420,9 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void testHandleLeafNodes() {
     doNothing().when(executionStrategy).processAdviserResponse(any(), any());
-    executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().build(), Status.ABORTED);
+    executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().build(),
+        NodeExecution.builder().status(Status.ABORTED).build());
     verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
+    verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
   }
 }

@@ -37,6 +37,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -165,13 +166,28 @@ public class StrategyStepTest extends NGCommonUtilitiesTestBase {
   @Category(UnitTests.class)
   public void testHandleChildrenResponse() throws IOException {
     Ambiance ambiance = Ambiance.newBuilder().build();
+    String childId2 = generateUuid();
 
     Map<String, ResponseData> responseDataMap =
         ImmutableMap.<String, ResponseData>builder()
             .put(CHILD_ID, StepResponseNotifyData.builder().nodeUuid(CHILD_ID).status(Status.FAILED).build())
+            .put(childId2, StepResponseNotifyData.builder().nodeUuid(childId2).status(Status.SKIPPED).build())
             .build();
     StepResponse stepResponse = strategyStep.handleChildrenResponseInternal(
         ambiance, StrategyStepParameters.builder().build(), responseDataMap);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+
+    responseDataMap = Collections.emptyMap();
+    stepResponse = strategyStep.handleChildrenResponseInternal(
+        ambiance, StrategyStepParameters.builder().build(), responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
+
+    responseDataMap =
+        ImmutableMap.<String, ResponseData>builder()
+            .put(CHILD_ID, StepResponseNotifyData.builder().nodeUuid(CHILD_ID).status(Status.SKIPPED).build())
+            .build();
+    stepResponse = strategyStep.handleChildrenResponseInternal(
+        ambiance, StrategyStepParameters.builder().build(), responseDataMap);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SKIPPED);
   }
 }
