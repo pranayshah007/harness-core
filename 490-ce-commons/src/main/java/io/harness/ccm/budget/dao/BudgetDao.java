@@ -7,6 +7,7 @@
 
 package io.harness.ccm.budget.dao;
 
+import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown.BudgetMonthlyBreakdownKeys;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.billing.Budget.BudgetKeys;
@@ -109,6 +110,14 @@ public class BudgetDao {
       updateOperations.set(
           BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT, budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
     }
+    persistence.update(query, updateOperations);
+  }
+
+  public void updateBudgetMonthlyBreakdown(String budgetId, BudgetMonthlyBreakdown budgetMonthlyBreakdown) {
+    Query query = persistence.createQuery(Budget.class).field(BudgetKeys.uuid).equal(budgetId);
+    UpdateOperations<Budget> updateOperations = persistence.createUpdateOperations(Budget.class);
+
+    updateOperations.set(BudgetKeys.budgetMonthlyBreakdown, budgetMonthlyBreakdown);
     persistence.update(query, updateOperations);
   }
 
