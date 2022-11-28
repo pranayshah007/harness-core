@@ -7,11 +7,7 @@ RUN apt-get update && \
     export LANG=en_US.UTF-8 && \
     apt-get clean
 
-RUN curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-
-COPY apt-source-list /etc/apt/sources.list.d/kubernetes.list
-
-RUN apt-get update && apt-get install -y kubectl
+ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
 
 RUN useradd --no-log-init -r -u 1000560000 harness
 
