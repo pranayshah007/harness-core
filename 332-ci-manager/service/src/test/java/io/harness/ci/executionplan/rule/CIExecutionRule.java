@@ -260,7 +260,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
     });
 
     modules.add(new ProviderModule() {
-      @Provides
+      @Providesø
       @Singleton
       CIYAMLSanitizationService yamlSanitizationService() {
         return mock(CIYAMLSanitizationService.class);
