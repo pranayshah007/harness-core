@@ -18,6 +18,7 @@ import io.harness.cache.CacheConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.execution.QueueServiceClient;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
@@ -103,6 +104,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("redisLockConfig") private RedisConfig redisLockConfig;
   @JsonProperty("distributedLockImplementation") private DistributedLockImplementation distributedLockImplementation;
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
+  @JsonProperty("queueServiceClient") private QueueServiceClient queueServiceClient;
   private String ngManagerServiceSecret;
   private LogServiceConfig logServiceConfig;
   private TIServiceConfig tiServiceConfig;

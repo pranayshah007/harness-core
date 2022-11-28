@@ -7,25 +7,10 @@
 
 package io.harness.ci.states.V1;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
-import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
-import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
-import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
-import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
-import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
-import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
-import static io.harness.steps.StepUtils.buildAbstractions;
-import static io.harness.steps.StepUtils.generateLogAbstractions;
-
-import static java.lang.String.format;
-import static java.util.Collections.singletonList;
-
+import com.google.inject.Inject;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.app.CIManagerConfiguration;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
 import io.harness.beans.environment.ServiceDefinitionInfo;
@@ -39,9 +24,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.buildstate.BuildSetupUtils;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.execution.BackgroundTaskUtility;
+import io.harness.ci.execution.CIExecutionArgs;
 import io.harness.ci.ff.CIFeatureFlagService;
 import io.harness.ci.integrationstage.DockerInitializeTaskParamsBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
@@ -72,6 +59,8 @@ import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.helper.SerializedResponseDataHelper;
+import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.BaseNGAccess;
@@ -94,6 +83,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
@@ -101,11 +91,10 @@ import io.harness.steps.executable.AsyncExecutableWithRbac;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.yaml.core.timeout.Timeout;
-
+import lombok.extern.slf4j.Slf4j;
 import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -114,8 +103,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.FeatureName.CIE_HOSTED_VMS;
+import static io.harness.beans.FeatureName.QUEUE_CI_EXECUTIONS;
+import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
+import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
+import static io.harness.ci.states.InitializeTaskStep.TASK_BUFFER_TIMEOUT_MILLIS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
+import static io.harness.delegate.beans.ci.CIInitializeTaskParams.Type.DLITE_VM;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.steps.StepUtils.buildAbstractions;
+import static io.harness.steps.StepUtils.generateLogAbstractions;
+import static java.lang.String.format;
+import static java.util.Collections.singletonList;
 
 @Slf4j
 @OwnedBy(CI)
@@ -138,7 +144,11 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   @Inject private CIYAMLSanitizationService sanitizationService;
   @Inject private BackgroundTaskUtility backgroundTaskUtility;
   @Inject private CILicenseService ciLicenseService;
-  @Inject CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private CIAccountExecutionMetadataRepository accountExecutionMetadataRepository;
+  @Inject private  Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
+
+  @Inject private CIManagerConfiguration ciManagerConfiguration;
+  @Inject private HsqsServiceClient hsqsServiceClient;
 
   private static final String DEPENDENCY_OUTCOME = "dependencies";
 
@@ -154,7 +164,31 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
   @Override
   public AsyncExecutableResponse executeAsyncAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    log.info("start executeAsyncAfterRbac for initialize step");
+    String logKey = getLogKey(ambiance);
+
+    if(ciFeatureFlagService.isEnabled(QUEUE_CI_EXECUTIONS, AmbianceUtils.getAccountId(ambiance))) {
+      // if queueing is enabled for the account. put the task in the queue and return the delegate callback id.
+      log.info("start executeAsyncAfterRbac for initialize step with queue");
+      String topic = "ci";
+      String callbackToken = delegateCallbackTokenSupplier.get().getToken();
+      byte[] payload = RecastOrchestrationUtils.toBytes(CIExecutionArgs.builder().ambiance(ambiance).callbackId(callbackToken).stepElementParameters(stepParameters).build());
+      EnqueueRequest enqueueRequest = EnqueueRequest.builder().topic(topic).subTopic(AmbianceUtils.getAccountId(ambiance)).producerName(topic).payload(payload).build();
+      hsqsServiceClient.enqueue(enqueueRequest, ciManagerConfiguration.getQueueServiceClient().getAuthToken());
+      return AsyncExecutableResponse.newBuilder()
+              .addCallbackIds(callbackToken)
+              .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
+              .build();
+    } else {
+      String callbackToken = executeBuild(ambiance, stepParameters, delegateCallbackTokenSupplier.get().getToken(););
+      return AsyncExecutableResponse.newBuilder()
+              .addCallbackIds(callbackToken)
+              .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
+              .build();
+    }
+  }
+
+  public String executeBuild(Ambiance ambiance, StepElementParameters stepParameters, String delegateCallbackToken) {
+    log.info("start executeAsyncAfterRbac for initialize step directly");
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepParameters.getSpec();
 
     String logPrefix = getLogPrefix(ambiance);
@@ -201,13 +235,8 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
 
     String taskId = ciDelegateTaskExecutor.queueTask(abstractions, task,
         taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>(),
-        executeOnHarnessHostedDelegates, emitEvent, generateLogAbstractions(ambiance));
-    String logKey = getLogKey(ambiance);
-
-    return AsyncExecutableResponse.newBuilder()
-        .addCallbackIds(taskId)
-        .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
-        .build();
+        executeOnHarnessHostedDelegates, emitEvent, DelegateCallbackToken.newBuilder().setToken(delegateCallbackToken).build(), generateLogAbstractions(ambiance));
+    return taskId;
   }
 
   @Override
