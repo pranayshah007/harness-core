@@ -117,7 +117,7 @@ import org.apache.groovy.util.Maps;
 @Slf4j
 public class K8sInstanceSyncV2HandlerCg implements CgInstanceSyncV2Handler {
   private static final String DEPLOYMENT_NO_COLOR = "NO_COLOR";
-  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.DAYS.toMillis(7);
+  @VisibleForTesting static final long RELEASE_PRESERVE_TIME = TimeUnit.MINUTES.toMillis(10);
 
   @NonNull private ContainerDeploymentManagerHelper containerDeploymentManagerHelper;
   @NonNull private InfrastructureMappingService infrastructureMappingService;
