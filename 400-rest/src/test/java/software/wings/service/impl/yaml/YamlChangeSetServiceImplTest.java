@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.ROHIT_KUMAR;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -328,6 +329,49 @@ public class YamlChangeSetServiceImplTest extends WingsBaseTest {
     persistence.save(yamlChangeSet4);
     long count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
     assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountId() {
+    String accountId = "accountId";
+    String appId = "appId";
+    String gitConnectorId = "gitConnectorId";
+    String repositoryName = "repoName";
+    final YamlGitConfig yamlGitConfig = YamlGitConfig.builder()
+                                            .accountId(accountId)
+                                            .branchName("master")
+                                            .enabled(true)
+                                            .appId(appId)
+                                            .repositoryName(repositoryName)
+                                            .gitConnectorId(gitConnectorId)
+                                            .build();
+    persistence.save(yamlGitConfig);
+    String queueKey = Arrays
+                          .asList(yamlGitConfig.getAccountId(), yamlGitConfig.getGitConnectorId(),
+                              yamlGitConfig.getRepositoryName(), yamlGitConfig.getBranchName())
+                          .stream()
+                          .filter(StringUtils::isNotBlank)
+                          .collect(Collectors.joining(":"));
+
+    final YamlChangeSet yamlChangeSet1 = yamlChangeSetService.save(
+        YamlChangeSet.builder()
+            .fullSync(false)
+            .status(QUEUED)
+            .accountId(accountId)
+            .appId(appId)
+            .queueKey(queueKey)
+            .gitWebhookRequestAttributes(
+                GitWebhookRequestAttributes.builder().branchName("master").gitConnectorId(gitConnectorId).build())
+            .gitFileChanges(Collections.emptyList())
+            .build());
+    persistence.save(yamlChangeSet1);
+    long count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
+    assertThat(count).isEqualTo(1);
+    yamlChangeSetService.deleteByAccountId(accountId);
+    count = yamlChangeSetService.getItemsInQueueKey(appId, accountId);
+    assertThat(count).isEqualTo(0);
   }
 
   @Test
