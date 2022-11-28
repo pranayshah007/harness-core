@@ -33,6 +33,8 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.ci.enforcement.CIBuildEnforcer;
+import io.harness.ci.enforcement.CIBuildEnforcerImpl;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -161,6 +163,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
         bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
         bind(AwsClient.class).to(AwsClientImpl.class);
+        bind(CIBuildEnforcer.class).to(CIBuildEnforcerImpl.class);
       }
     });
 
