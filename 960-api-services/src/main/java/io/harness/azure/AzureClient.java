@@ -23,6 +23,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureAuthenticationException;
+import io.harness.network.Http;
 
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
@@ -38,11 +39,9 @@ import com.azure.resourcemanager.resources.fluentcore.utils.HttpPipelineProvider
 import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.inject.Singleton;
 import com.jakewharton.retrofit2.adapter.reactor.ReactorCallAdapterFactory;
-import java.net.Proxy;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.Authenticator;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -117,17 +116,8 @@ public class AzureClient extends AzureClientBase {
         getOkHttpClientBuilder()
             .connectTimeout(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT, TimeUnit.SECONDS)
             .readTimeout(AzureConstants.REST_CLIENT_READ_TIMEOUT, TimeUnit.SECONDS)
+            .proxy(Http.checkAndGetNonProxyIfApplicable(url))
             .retryOnConnectionFailure(true);
-
-    Proxy proxy = AzureUtils.getProxyForRestClient(url);
-    if (proxy != null) {
-      okHttpClientBuilder.proxy(proxy);
-    }
-
-    Authenticator authenticator = AzureUtils.getProxyAuthenticatorForRestClient();
-    if (authenticator != null) {
-      okHttpClientBuilder.proxyAuthenticator(authenticator);
-    }
 
     OkHttpClient okHttpClient = okHttpClientBuilder.build();
 
@@ -204,8 +194,7 @@ public class AzureClient extends AzureClientBase {
   protected HttpClient getAzureHttpClient() {
     HttpClientOptions httpClientOptions = new HttpClientOptions();
     httpClientOptions.setConnectTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_CONNECT_TIMEOUT))
-        .setReadTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_READ_TIMEOUT))
-        .setProxyOptions(AzureUtils.getProxyOptions());
+        .setReadTimeout(Duration.ofSeconds(AzureConstants.REST_CLIENT_READ_TIMEOUT));
     return HttpClient.createDefault(httpClientOptions);
   }
 
