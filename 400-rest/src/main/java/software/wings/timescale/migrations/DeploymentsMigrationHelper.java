@@ -287,8 +287,10 @@ public class DeploymentsMigrationHelper {
 
     BasicDBObject objectsToBeUpdated = new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId);
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.infraDefinitionIds, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.infraMappingIds, Boolean.TRUE);
+                                   .append(WorkflowExecutionKeys.onDemandRollback, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.originalExecution, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.status, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.duration, Boolean.TRUE);
 
     DBCursor dataRecords = collection.find(objectsToBeUpdated, projection)
                                .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
@@ -369,10 +371,8 @@ public class DeploymentsMigrationHelper {
     BasicDBObject objectsToBeUpdated =
         new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId).append("onDemandRollback", true);
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.onDemandRollback, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.originalExecution, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.status, Boolean.TRUE)
-                                   .append(WorkflowExecutionKeys.duration, Boolean.TRUE);
+                                   .append(WorkflowExecutionKeys.infraDefinitionIds, Boolean.TRUE)
+                                   .append(WorkflowExecutionKeys.infraMappingIds, Boolean.TRUE);
 
     DBCursor dataRecords = collection.find(objectsToBeUpdated, projection)
                                .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
@@ -403,8 +403,8 @@ public class DeploymentsMigrationHelper {
       }
       return true;
     } catch (Exception e) {
-      log.error(debugLine
-              + "Exception occurred migrating onDemandRollback details to timescale deployments for accountId {}, appId {}",
+      log.error(
+          debugLine + "Exception occurred migrating infra details to timescale deployments for accountId {}, appId {}",
           accountId, appId, e);
       return false;
     } finally {
