@@ -35,8 +35,10 @@ import software.wings.service.intfc.AuditService;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PL)
+@Slf4j
 public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements Handler<AuditRecord> {
   @Inject private AccountService accountService;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
@@ -71,28 +73,40 @@ public class EntityAuditRecordHandler extends IteratorPumpModeHandler implements
   @Override
   public void handle(AuditRecord entity) {
     // if not last with match auditHeaderId, EXIT
+    log.warn("[AUDIT_DEBUG] entity {}", entity);
     AuditRecord mostRecentAuditRecord = auditService.fetchMostRecentAuditRecord(entity.getAuditHeaderId());
+    log.warn("[AUDIT_DEBUG] mostRecentAuditRecord {}, accountId {}", mostRecentAuditRecord, entity.getAccountId());
     if (mostRecentAuditRecord != null && mostRecentAuditRecord.getUuid() != null
         && !mostRecentAuditRecord.getUuid().equals(entity.getUuid())) {
+      log.warn("[AUDIT_DEBUG] returning without processing entity {},  accountId {}", entity.getUuid(),
+          entity.getAccountId());
       // Seems there are more recent records added in "AuditRecord" collection for this AuditHeaderId.
       // existing now, when newest record will be processed, these entityAuditRecords will be copied to actual
       // "AuditHeader" record.
       return;
     }
 
+    log.warn("[AUDIT_DEBUG] processing entity {}, accountId {}", entity.getUuid(), entity.getAccountId());
+
     List<AuditRecord> auditRecords =
         auditService.fetchEntityAuditRecordsOlderThanGivenTime(entity.getAuditHeaderId(), entity.getCreatedAt());
 
+    log.warn("[AUDIT_DEBUG] AuditRecords {}, accountId {}", auditRecords, entity.getAccountId());
     if (isEmpty(auditRecords)) {
       return;
     }
 
+    log.warn("[AUDIT_DEBUG] processing entity after fetching audit record {}, accountId {}", entity.getUuid(),
+        entity.getAccountId());
+
     List<EntityAuditRecord> recordsToBeAdded =
         auditRecords.stream().map(AuditRecord::getEntityAuditRecord).collect(toList());
-
+    log.warn("[AUDIT_DEBUG] recordsToBeAdded {}, entity {}, accountId {}", recordsToBeAdded, entity.getUuid(),
+        entity.getAccountId());
     if (isNotEmpty(recordsToBeAdded)) {
       auditService.addEntityAuditRecordsToSet(recordsToBeAdded, entity.getAccountId(), entity.getAuditHeaderId());
       auditService.deleteTempAuditRecords(auditRecords.stream().map(AuditRecord::getUuid).collect(toList()));
+      log.warn("[AUDIT_DEBUG] deleted Records entity {}, accountId {}", entity.getUuid(), entity.getAccountId());
     }
   }
 }
