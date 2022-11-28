@@ -27,12 +27,10 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOverrideHelper;
 import io.harness.cdng.utilities.ArtifactsUtility;
 import io.harness.cdng.utilities.AzureConfigsUtility;
-import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
-import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -119,16 +117,6 @@ public class ServiceDefinitionPlanCreatorHelper {
           || isNotEmpty(actualServiceConfig.getStageOverrides().getArtifacts().getSidecars());
     }
 
-    return false;
-  }
-
-  boolean validateCreatePlanNodeForArtifactsV2(NGServiceV2InfoConfig serviceConfig) {
-    ArtifactListConfig artifactListConfig = serviceConfig.getServiceDefinition().getServiceSpec().getArtifacts();
-
-    // Contains either primary artifacts or side-car artifacts
-    if (artifactListConfig != null) {
-      return artifactListConfig.getPrimary() != null || isNotEmpty(artifactListConfig.getSidecars());
-    }
     return false;
   }
 
@@ -297,96 +285,6 @@ public class ServiceDefinitionPlanCreatorHelper {
         new YamlNode(YamlTypes.MANIFEST_LIST_CONFIG, manifestsYamlField.getNode().getCurrJsonNode(),
             serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));
     return manifestsYamlField;
-  }
-
-  String addDependenciesForSvcConfigFilesV2(YamlNode serviceV2Node,
-      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      KryoSerializer kryoSerializer) {
-    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
-    YamlField configFilesYamlField =
-        ConfigFileUtility.fetchConfigFilesYamlFieldAndSetYamlUpdates(serviceV2Node, false, yamlUpdates);
-    String configFilesPlanNodeId = "configFiles-" + UUIDGenerator.generateUuid();
-
-    Map<String, ByteString> metadataDependency =
-        prepareMetadataV2(configFilesPlanNodeId, serviceV2Config, kryoSerializer);
-
-    Map<String, YamlField> dependenciesMap = new HashMap<>();
-    dependenciesMap.put(configFilesPlanNodeId, configFilesYamlField);
-
-    PlanCreationResponseBuilder configFilesPlanCreationResponse = PlanCreationResponse.builder().dependencies(
-        getDependencies(configFilesPlanNodeId, metadataDependency, dependenciesMap));
-    if (yamlUpdates.getFqnToYamlCount() > 0) {
-      configFilesPlanCreationResponse.yamlUpdates(yamlUpdates.build());
-    }
-    planCreationResponseMap.put(configFilesPlanNodeId, configFilesPlanCreationResponse.build());
-
-    return configFilesPlanNodeId;
-  }
-
-  @VisibleForTesting
-  String addDependenciesForConfigFilesV2(YamlNode serviceV2Node,
-      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride envGlobalOverride,
-      KryoSerializer kryoSerializer) throws IOException {
-    if (isSvcOverridesConfigFilesPresent(serviceOverrideConfig)
-        || isEnvGlobalConfigFileOverridesPresent(envGlobalOverride)) {
-      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcAndSvcOverrideConfigFilesV2(serviceV2Node,
-          planCreationResponseMap, serviceV2Config, serviceOverrideConfig, envGlobalOverride, kryoSerializer);
-    } else if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(serviceV2Config)) {
-      return ServiceDefinitionPlanCreatorHelper.addDependenciesForSvcConfigFilesV2(
-          serviceV2Node, planCreationResponseMap, serviceV2Config, kryoSerializer);
-    } else {
-      return StringUtils.EMPTY;
-    }
-  }
-
-  String addDependenciesForSvcAndSvcOverrideConfigFilesV2(YamlNode serviceV2Node,
-      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
-      NGServiceOverrideConfig serviceOverrideConfig, NGEnvironmentGlobalOverride ngEnvironmentConfig,
-      KryoSerializer kryoSerializer) throws IOException {
-    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
-    List<ConfigFileWrapper> finalConfigFiles =
-        ServiceStepOverrideHelper.prepareFinalConfigFiles(serviceV2Config, serviceOverrideConfig, ngEnvironmentConfig);
-
-    // in case no config file is present no node should be created
-    if (isEmpty(finalConfigFiles)) {
-      return StringUtils.EMPTY;
-    }
-
-    YamlField configFilesYamlField = prepareFinalUuidInjectedConfigFileYamlField(serviceV2Node, finalConfigFiles);
-    PlanCreatorUtils.setYamlUpdate(configFilesYamlField, yamlUpdates);
-
-    String configFilesPlanNodeId = "configFiles-" + UUIDGenerator.generateUuid();
-    Map<String, ByteString> metadataDependency =
-        prepareMetadataConfigFilesV2(configFilesPlanNodeId, finalConfigFiles, kryoSerializer);
-    Map<String, YamlField> dependenciesMap = new HashMap<>();
-    dependenciesMap.put(configFilesPlanNodeId, configFilesYamlField);
-
-    PlanCreationResponseBuilder configFilesPlanCreationResponse = PlanCreationResponse.builder().dependencies(
-        getDependencies(configFilesPlanNodeId, metadataDependency, dependenciesMap));
-    if (yamlUpdates.getFqnToYamlCount() > 0) {
-      configFilesPlanCreationResponse.yamlUpdates(yamlUpdates.build());
-    }
-    planCreationResponseMap.put(configFilesPlanNodeId, configFilesPlanCreationResponse.build());
-
-    return configFilesPlanNodeId;
-  }
-
-  private static YamlField prepareFinalUuidInjectedConfigFileYamlField(
-      YamlNode serviceV2Node, List<ConfigFileWrapper> finalConfigFiles) throws IOException {
-    YamlField configFilesYamlField = YamlUtils.injectUuidInYamlField(YamlUtils.write(finalConfigFiles));
-    configFilesYamlField = new YamlField(YamlTypes.CONFIG_FILES,
-        new YamlNode(YamlTypes.CONFIG_FILES, configFilesYamlField.getNode().getCurrJsonNode(),
-            serviceV2Node.getField(YamlTypes.SERVICE_DEFINITION).getNode().getField(YamlTypes.SPEC).getNode()));
-    return configFilesYamlField;
-  }
-
-  private Dependencies getDependencies(
-      String planNodeId, Map<String, ByteString> metadataDependency, Map<String, YamlField> dependenciesMap) {
-    return DependenciesUtils.toDependenciesProto(dependenciesMap)
-        .toBuilder()
-        .putDependencyMetadata(planNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
-        .build();
   }
 
   String addDependenciesForStartupCommand(YamlNode serviceConfigNode,
@@ -720,33 +618,8 @@ public class ServiceDefinitionPlanCreatorHelper {
     return isNotEmpty(manifests);
   }
 
-  boolean shouldCreatePlanNodeForConfigFilesV2(NGServiceV2InfoConfig serviceV2InfoConfig) {
-    List<ConfigFileWrapper> configFiles = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getConfigFiles();
-
-    return isNotEmpty(configFiles);
-  }
-
   private boolean isServiceOverridePresent(NGServiceOverrideConfig serviceOverrideConfig) {
     return serviceOverrideConfig != null && serviceOverrideConfig.getServiceOverrideInfoConfig() != null;
-  }
-
-  private boolean isEnvGlobalOverridesPresent(NGEnvironmentConfig ngEnvironmentConfig) {
-    return ngEnvironmentConfig != null && ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
-        && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null;
-  }
-
-  private boolean isEnvGlobalConfigFileOverridesPresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {
-    if (environmentGlobalOverride == null) {
-      return false;
-    }
-    return isNotEmpty(environmentGlobalOverride.getConfigFiles());
-  }
-
-  private boolean isSvcOverridesConfigFilesPresent(NGServiceOverrideConfig serviceOverrideConfig) {
-    if (!isServiceOverridePresent(serviceOverrideConfig)) {
-      return false;
-    }
-    return isNotEmpty(serviceOverrideConfig.getServiceOverrideInfoConfig().getConfigFiles());
   }
 
   private boolean isEnvGlobalManifestOverridesPresent(NGEnvironmentGlobalOverride environmentGlobalOverride) {

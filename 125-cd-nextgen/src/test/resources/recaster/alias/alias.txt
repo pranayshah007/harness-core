@@ -57,7 +57,6 @@ io.harness.cdng.manifest.steps.ManifestsOutcome
 io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper
 io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.service.steps.ServiceStepParameters
-io.harness.cdng.service.steps.ServiceStepParametersV2
 io.harness.beans.common.VariablesSweepingOutput
 io.harness.cdng.pipeline.beans.RollbackOptionalChildrenParameters
 io.harness.pms.sdk.core.data.StringOutcome

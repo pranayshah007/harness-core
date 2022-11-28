@@ -11,11 +11,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.ng.core.envGroup.EnvironmentGroupOutcome;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
@@ -62,16 +60,6 @@ public class EnvironmentMapper {
         != null;
   }
 
-  public EnvironmentStepParameters toEnvironmentStepParameters(EnvGroupPlanCreatorConfig envGroupPlanCreatorConfig) {
-    return EnvironmentStepParameters.builder()
-        .name(envGroupPlanCreatorConfig.getName())
-        .identifier(envGroupPlanCreatorConfig.getIdentifier())
-        .description(envGroupPlanCreatorConfig.getDescription())
-        .tags(envGroupPlanCreatorConfig.getTags())
-        .envGroupRef(envGroupPlanCreatorConfig.getEnvironmentGroupRef())
-        .build();
-  }
-
   public EnvironmentOutcome toEnvironmentOutcome(EnvironmentStepParameters stepParameters) {
     overrideServiceVariables(stepParameters.getVariables(), stepParameters.getServiceOverrides());
     return EnvironmentOutcome.builder()
@@ -99,15 +87,6 @@ public class EnvironmentMapper {
     final Map<String, Object> v1 = NGVariablesUtils.getMapOfVariables(base);
     v1.putAll(NGVariablesUtils.getMapOfVariables(override));
     return v1;
-  }
-
-  public EnvironmentGroupOutcome toEnvironmentGroupOutcome(EnvironmentStepParameters stepParameters) {
-    return EnvironmentGroupOutcome.builder()
-        .identifier(stepParameters.getIdentifier())
-        .name(stepParameters.getName() != null ? stepParameters.getName() : "")
-        .description(stepParameters.getDescription() != null ? stepParameters.getDescription() : "")
-        .tags(CollectionUtils.emptyIfNull(stepParameters.getTags()))
-        .build();
   }
 
   public EnvironmentOutcome toEnvironmentOutcome(Environment environment,
