@@ -18,6 +18,7 @@ import io.harness.timescaledb.tables.KubernetesUtilizationData;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
+import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
@@ -72,6 +73,12 @@ public class Tables {
    * The table <code>public.node_pool_aggregated</code>.
    */
   public static final NodePoolAggregated NODE_POOL_AGGREGATED = NodePoolAggregated.NODE_POOL_AGGREGATED;
+
+  /**
+   * The table <code>public.pipeline_execution_summary</code>.
+   */
+  public static final PipelineExecutionSummary PIPELINE_EXECUTION_SUMMARY =
+      PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY;
 
   /**
    * The table <code>public.pipeline_execution_summary_cd</code>.
