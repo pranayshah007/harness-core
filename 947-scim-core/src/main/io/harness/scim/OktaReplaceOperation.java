@@ -7,6 +7,8 @@
 
 package io.harness.scim;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -58,7 +60,7 @@ public class OktaReplaceOperation extends ScimPatchOperation {
     log.info("Value logging {}", value);
     if (value.isArray()) {
       log.info("GetValues Logging " + getValues(cls).toString());
-      if (getValues(cls).get(0) != null) {
+      if (isNotEmpty(getValues(cls)) && getValues(cls).get(0) != null) {
         log.info("GetValues Inside " + getValues(cls).get(0).toString());
       }
 
