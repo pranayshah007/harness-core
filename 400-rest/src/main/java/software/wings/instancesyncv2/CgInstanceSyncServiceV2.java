@@ -381,9 +381,9 @@ public class CgInstanceSyncServiceV2 {
             cgReleaseIdentifiers, cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
         cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
         if (deleteReleaseAfter > System.currentTimeMillis()) {
-          releasesToDelete.add(cgReleaseIdentifiers);
-        } else {
           releasesToUpdate.add(cgReleaseIdentifiers);
+        } else {
+          releasesToDelete.add(cgReleaseIdentifiers);
         }
       }
 
