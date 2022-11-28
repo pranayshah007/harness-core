@@ -2026,13 +2026,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                                                    .instanceGroupedByInfraList(instanceGroupedByInfrastructureList)
                                                    .build());
         }
-        instanceGroupedByArtifactList.add(
-            InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
-                .artifactVersion(buildId)
-                .artifactPath(artifactPath)
-                .isLatest(serviceIdToLatestBuildMap.get(serviceId).equals(buildId) ? true : false)
-                .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
-                .build());
+        instanceGroupedByArtifactList.add(InstanceGroupedByServiceList.InstanceGroupedByArtifactV2.builder()
+                                              .artifactVersion(buildId)
+                                              .artifactPath(artifactPath)
+                                              .latest(serviceIdToLatestBuildMap.get(serviceId).equals(buildId))
+                                              .instanceGroupedByEnvironmentList(instanceGroupedByEnvironmentList)
+                                              .build());
       }
       instanceGroupedByServiceList.add(InstanceGroupedByServiceList.InstanceGroupedByService.builder()
                                            .serviceId(serviceId)

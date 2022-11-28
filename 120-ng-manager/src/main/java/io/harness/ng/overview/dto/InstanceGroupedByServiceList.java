@@ -8,7 +8,12 @@
 package io.harness.ng.overview.dto;
 
 import java.util.List;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.Value;
 
 @Value
 @Builder
@@ -28,7 +33,7 @@ public class InstanceGroupedByServiceList {
   public static class InstanceGroupedByArtifactV2 {
     String artifactVersion;
     String artifactPath;
-    boolean isLatest;
+    boolean latest;
     List<InstanceGroupedByEnvironmentV2> instanceGroupedByEnvironmentList;
   }
 

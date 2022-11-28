@@ -382,6 +382,7 @@ public class EnvironmentResourceV2 {
   @Path("/getActiveServiceInstancesForEnvironment")
   @ApiOperation(value = "Get list of instances grouped by service for particular environment",
       nickname = "getActiveServiceInstancesForEnvironment")
+  @Hidden
   public ResponseDTO<InstanceGroupedByServiceList>
   getActiveServiceInstancesForEnvironment(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
