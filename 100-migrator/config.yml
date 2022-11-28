@@ -309,6 +309,7 @@ cg:
     #locksUri: mongodb://localhost:27017/impermanent
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: MANUAL
@@ -323,6 +324,7 @@ cg:
     uri: mongodb://localhost:27017/events
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: MANUAL

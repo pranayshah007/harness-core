@@ -94,6 +94,8 @@ public class MongoConfig {
 
   @JsonProperty(defaultValue = "90000") @Default @NotEmpty private int serverSelectionTimeout = 90000;
 
+  @JsonProperty(defaultValue = "360000") @Default @NotEmpty private int socketTimeout = 360000;
+
   @JsonProperty(defaultValue = "600000") @Default @NotEmpty private int maxConnectionIdleTime = 600000;
 
   @JsonProperty(defaultValue = "300") @Default @NotEmpty private int connectionsPerHost = 300;
