@@ -97,8 +97,8 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                             .build();
     int value =
-        elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().value(1).build(), 2, ambiance);
-    assertThat(value).isEqualTo(1);
+        elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
+    assertThat(value).isEqualTo(2);
   }
 
   @Test
