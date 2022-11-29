@@ -53,6 +53,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -286,6 +287,7 @@ public class CDDashboardOverviewResource {
   @ApiOperation(
       value = "Get list of instances grouped by serviceId, buildId, environment, infrastructure and pipeline execution",
       nickname = "getInstancesDetails")
+  @Hidden
   public ResponseDTO<InstanceDetailsByBuildId>
   getActiveInstancesDetails(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
