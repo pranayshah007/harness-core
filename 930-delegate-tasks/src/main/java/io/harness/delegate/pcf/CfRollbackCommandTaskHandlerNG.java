@@ -280,19 +280,20 @@ public class CfRollbackCommandTaskHandlerNG extends  CfCommandTaskNGHandler{
 
             logCallback.saveExecutionLog("\n# Reverting app names");
             // app upsized - to be renamed
-            CfAppSetupTimeDetails prevActiveApp = commandRollbackRequest.getOldApplicationDetails();
+            CfAppSetupTimeDetails prevActiveApps = commandRollbackRequest.getOldApplicationDetails();
             CfAppSetupTimeDetails prevInactive = commandRollbackRequest.getExistingInActiveApplicationDetails();
 
-            if (!EmptyPredicate.isEmpty(prevActiveApps)) {
-                CfAppSetupTimeDetails prevActiveApp = prevActiveApps.get(0);
-                // todo: changing new name
-                String newName = constructActiveAppName(commandRollbackRequest.getCfAppNamePrefix(), -1, true);
-                cfDeploymentManager.renameApplication(new CfRenameRequest(cfRequestConfig, prevActiveApp.getApplicationGuid(),
-                                prevActiveApp.getApplicationName(), newName),
-                        logCallback);
-                updateValues.setOldAppGuid(prevActiveApp.getApplicationGuid());
-                updateValues.setOldAppName(newName);
-                updateValues.setActiveAppName(newName);
+            if (!EmptyPredicate.isEmpty(String.valueOf(prevActiveApps))) {
+              CfAppSetupTimeDetails prevActiveApp = prevActiveApps;
+              // todo: changing new name
+              String newName = constructActiveAppName(commandRollbackRequest.getCfAppNamePrefix(), -1, true);
+              cfDeploymentManager.renameApplication(
+                  new CfRenameRequest(
+                      cfRequestConfig, prevActiveApp.getApplicationGuid(), prevActiveApp.getApplicationName(), newName),
+                  logCallback);
+              updateValues.setOldAppGuid(prevActiveApp.getApplicationGuid());
+              updateValues.setOldAppName(newName);
+              updateValues.setActiveAppName(newName);
             }
 
             if (null != prevInactive && isNotEmpty(prevInactive.getApplicationName())) {
