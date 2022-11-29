@@ -350,7 +350,10 @@ import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
@@ -583,6 +586,8 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitops.FetchAppTaskParams;
+import io.harness.delegate.task.gitops.FetchAppTaskResponse;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
@@ -1963,6 +1968,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ElastigroupSetupCommandRequest.class, 573547);
     kryo.register(ElastigroupSetupResponse.class, 573548);
     kryo.register(ElastigroupSetupResult.class, 573549);
+    kryo.register(ElastigroupNGException.class, 573600);
+    kryo.register(io.harness.delegate.task.elastigroup.response.SpotInstConfig.class, 573601);
+    kryo.register(ElastigroupParametersFetchResponse.class, 573602);
+    kryo.register(ElastigroupParametersFetchRequest.class, 573603);
+    kryo.register(ElastigroupSwapRouteCommandRequest.class, 573604);
+    kryo.register(ElastigroupSwapRouteResponse.class, 573605);
+    kryo.register(ElastigroupSwapRouteResult.class, 573606);
 
     kryo.register(InlineFileConfig.class, 573550);
     kryo.register(InlineStoreDelegateConfig.class, 573551);
@@ -1980,5 +1992,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ElastigroupSwapRouteCommandRequest.class, 10000120);
     kryo.register(ElastigroupSwapRouteResponse.class, 10000121);
     kryo.register(ElastigroupSwapRouteResult.class, 10000122);
+    kryo.register(TerragruntApplyTaskResponse.class, 573558);
+    kryo.register(TerragruntDestroyTaskResponse.class, 573559);
+    kryo.register(TerragruntRollbackTaskResponse.class, 573560);
+    kryo.register(FetchAppTaskParams.class, 573561);
+    kryo.register(FetchAppTaskResponse.class, 573562);
   }
 }

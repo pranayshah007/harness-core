@@ -57,11 +57,7 @@ public class JenkinsStepMapperImpl implements StepMapper {
                       .collect(Collectors.toList());
     }
 
-    String jobName = state.getJobName();
-    if (state.isJobNameAsExpression()) {
-      jobName = "<+input>";
-    }
-
+    String jobName = "<+input>";
     JenkinsBuildStepInfo stepInfo =
         JenkinsBuildStepInfo.builder()
             .unstableStatusAsSuccess(state.isUnstableSuccess())

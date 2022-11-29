@@ -71,20 +71,12 @@ public class DebeziumConfig {
   @JsonProperty("connector.class") String connectorClass;
   @JsonProperty("producingCountPerBatch") long producingCountPerBatch;
   /**
-   * The comma-separated list of hostname and port pairs (in the form 'host' or 'host:port') of the MongoDB servers in
-   * the replica set. The list can contain a single hostname and port pair. If mongodb.members.auto.discover is set to
-   * false, then the host and port pair should be prefixed with the replica set name (e.g., rs0/localhost:27017)
-   */
-  @JsonProperty("mongodb.hosts") String mongodbHosts;
-  /**
    * A unique name that identifies the connector and/or MongoDB replica set or sharded cluster that this connector
    * monitors. Each server should be monitored by at most one Debezium connector, since this server name prefixes
    * all persisted Kafka topics emanating from the MongoDB replica set or cluster. Only alphanumeric characters
    * and underscores should be used.
    */
   @JsonProperty("mongodb.name") String mongodbName;
-  @JsonProperty("mongodb.user") String mongodbUser;
-  @JsonProperty("mongodb.password") String mongodbPassword;
   /** Connector will use SSL to connect to MongoDB instances. */
   @JsonProperty("mongodb.ssl.enabled") String sslEnabled;
   /**
@@ -161,6 +153,7 @@ public class DebeziumConfig {
    * values.
    */
   @JsonProperty("field.exclude.list") private String fieldExcludeList;
+  @JsonProperty("mongodb.connection.string") private String mongodbConnectionString;
   public List<String> getMonitoredCollections() {
     if (EmptyPredicate.isEmpty(collectionIncludeList)) {
       return new ArrayList<>();

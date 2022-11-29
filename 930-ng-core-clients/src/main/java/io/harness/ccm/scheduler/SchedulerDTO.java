@@ -7,7 +7,6 @@
 
 package io.harness.ccm.scheduler;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -20,11 +19,11 @@ public class SchedulerDTO {
   String displayname;
   String timezone;
   String owner;
-  @JsonProperty("owner_email") String ownerEmail;
+  String owner_email;
   Boolean disabled;
   int retries;
   String executor;
-  @JsonProperty("executor_config") SchedulerDTO.ExecutorConfig executorConfig;
+  SchedulerDTO.ExecutorConfig executor_config;
   Map<String, String> tags;
   Map<String, String> metadata;
 

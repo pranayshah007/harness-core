@@ -96,8 +96,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                             .build();
-    int value =
-        elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
+    int value = elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
     assertThat(value).isEqualTo(2);
   }
 
@@ -360,7 +359,6 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                                                                       .image(amiId)
                                                                       .elastigroupParameters(value)
                                                                       .build();
-
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
     elastigroupStepCommonHelper.startChainLink(elastigroupStepExecutor, ambiance, stepElementParameters);

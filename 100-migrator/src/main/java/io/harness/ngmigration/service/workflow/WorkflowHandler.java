@@ -31,6 +31,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
 import io.harness.steps.customstage.CustomStageConfig;
 import io.harness.steps.customstage.CustomStageNode;
+import io.harness.steps.wait.WaitStepInfo;
+import io.harness.steps.wait.WaitStepNode;
 import io.harness.when.beans.StepWhenCondition;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.NGVariableType;
@@ -60,6 +62,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class WorkflowHandler {
+  public static final String INPUT_EXPRESSION = "<+input>";
+
   public TemplateEntityType getTemplateType() {
     return TemplateEntityType.STAGE_TEMPLATE;
   }
@@ -135,7 +139,12 @@ public abstract class WorkflowHandler {
       validator = new InputSetValidator(InputSetValidatorType.ALLOWED_VALUES, variable.getAllowedValues());
     }
 
-    return ParameterField.createFieldWithDefaultValue(true, true, "<+input>", variable.getValue(), validator, true);
+    if (StringUtils.isBlank(variable.getValue())) {
+      return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
+    }
+
+    return ParameterField.createFieldWithDefaultValue(
+        true, true, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
   public abstract JsonNode getTemplateSpec(Workflow workflow);
@@ -259,11 +268,28 @@ public abstract class WorkflowHandler {
                  .stageStatus(SUCCESS)
                  .build();
     }
+
+    List<ExecutionWrapperConfig> allSteps = new ArrayList<>();
+
+    // Handle Wait Interval
+    Integer waitInterval = phaseStep.getWaitInterval();
+    if (waitInterval != null && waitInterval > 0) {
+      WaitStepNode waitStepNode = new WaitStepNode();
+      waitStepNode.setName("Wait");
+      waitStepNode.setIdentifier("wait");
+      waitStepNode.setWaitStepInfo(
+          WaitStepInfo.infoBuilder().duration(MigratorUtility.getTimeout(waitInterval * 1000)).build());
+      ExecutionWrapperConfig waitStep =
+          ExecutionWrapperConfig.builder().step(JsonPipelineUtils.asTree(waitStepNode)).build();
+      allSteps.add(waitStep);
+    }
+    allSteps.addAll(steps);
+
     return ExecutionWrapperConfig.builder()
         .stepGroup(JsonPipelineUtils.asTree(StepGroupElementConfig.builder()
                                                 .identifier(MigratorUtility.generateIdentifier(phaseStep.getName()))
                                                 .name(phaseStep.getName())
-                                                .steps(steps)
+                                                .steps(allSteps)
                                                 .skipCondition(null)
                                                 .when(when)
                                                 .failureStrategies(null)
@@ -433,8 +459,12 @@ public abstract class WorkflowHandler {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 
-  JsonNode buildMultiStagePipelineTemplate(StepMapperFactory stepMapperFactory, PhaseStep.Yaml prePhase,
-      List<WorkflowPhase.Yaml> phases, PhaseStep.Yaml postPhase, List<WorkflowPhase.Yaml> rollbackPhases) {
+  JsonNode buildMultiStagePipelineTemplate(StepMapperFactory stepMapperFactory, Workflow workflow) {
+    PhaseStep.Yaml prePhase = getPreDeploymentPhase(workflow);
+    List<WorkflowPhase.Yaml> phases = getPhases(workflow);
+    PhaseStep.Yaml postPhase = getPostDeploymentPhase(workflow);
+    List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);
+
     List<StageElementWrapperConfig> stages = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(prePhase.getSteps())) {
       prePhase.setName("Pre Deployment");
@@ -461,7 +491,8 @@ public abstract class WorkflowHandler {
       stages.add(buildCustomStage(stepMapperFactory, postPhase));
     }
 
-    PipelineInfoConfig pipelineInfoConfig = PipelineInfoConfig.builder().stages(stages).build();
+    PipelineInfoConfig pipelineInfoConfig =
+        PipelineInfoConfig.builder().stages(stages).variables(getVariables(workflow)).build();
     return JsonPipelineUtils.asTree(pipelineInfoConfig);
   }
 }

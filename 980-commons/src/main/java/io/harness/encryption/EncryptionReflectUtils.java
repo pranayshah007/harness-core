@@ -13,7 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Encryptable;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.reflection.ReflectionUtils;
 

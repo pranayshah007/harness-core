@@ -81,6 +81,22 @@ public class ElastigroupStepUtils extends CDStepHelper {
     return localStoreFileMapContents.get(elastigroupJsonName).getLocalStoreFileContents();
   }
 
+  public List<String> fetchElastigroupJsonFilesContentFromLocalStore(
+      Ambiance ambiance, ElastigroupConfigurationOutput elastigroupConfigurationOutput, LogCallback logCallback) {
+    Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
+    LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
+
+    logCallback.saveExecutionLog(
+        color(format("%nFetching %s from Harness File Store", "elastigroupJson"), LogColor.White, LogWeight.Bold));
+    if (elastigroupConfigurationOutput.getStoreConfig() instanceof HarnessStore) {
+      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+      localStoreFetchFilesResult =
+          getFileContentsForElastigroupJson(elastigroupConfigurationOutput, ngAccess, logCallback);
+      localStoreFileMapContents.put("elastigroupJson", localStoreFetchFilesResult);
+    }
+    return localStoreFileMapContents.get("elastigroupJson").getLocalStoreFileContents();
+  }
+
   private LocalStoreFetchFilesResult getFileContentsFromStartupScriptOutcome(
       StartupScriptOutcome startupScriptOutcome, NGAccess ngAccess, LogCallback logCallback) {
     HarnessStore localStoreConfig = (HarnessStore) startupScriptOutcome.getStore();
@@ -93,6 +109,13 @@ public class ElastigroupStepUtils extends CDStepHelper {
     HarnessStore localStoreConfig = (HarnessStore) elastigroupConfigurationOutput.getStoreConfig();
     List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
     return getFileContents(ngAccess, scopedFilePathList, elastigroupJsonName, logCallback);
+  }
+
+  private LocalStoreFetchFilesResult getFileContentsForElastigroupJson(
+      ElastigroupConfigurationOutput elastigroupConfigurationOutput, NGAccess ngAccess, LogCallback logCallback) {
+    HarnessStore localStoreConfig = (HarnessStore) elastigroupConfigurationOutput.getStoreConfig();
+    List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
+    return getFileContents(ngAccess, scopedFilePathList, "elastigroupJson", logCallback);
   }
 
   private LocalStoreFetchFilesResult getFileContents(

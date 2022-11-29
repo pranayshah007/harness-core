@@ -13,6 +13,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -63,17 +64,30 @@ public final class RuleSet implements PersistentEntity, UuidAware, CreatedAtAwar
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("RuleSet")
-                 .field(RuleSetId.name)
+                 .name("ruleSet")
                  .field(RuleSetId.accountId)
+                 .field(RuleSetId.name)
                  .field(RuleSetId.cloudProvider)
-                 .field(RuleSetId.orgIdentifier)
                  .field(RuleSetId.projectIdentifier)
+                 .field(RuleSetId.orgIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(RuleSetId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(RuleSetId.createdAt).build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort1")
+                 .field(RuleSetId.accountId)
+                 .field(RuleSetId.name)
+                 .field(RuleSetId.cloudProvider)
+                 .sortField(RuleSetId.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort2")
+                 .field(RuleSetId.accountId)
+                 .field(RuleSetId.name)
+                 .field(RuleSetId.cloudProvider)
+                 .sortField(RuleSetId.createdAt)
+                 .build())
         .build();
   }
+
   public RuleSet toDTO() {
     return RuleSet.builder()
         .uuid(getUuid())

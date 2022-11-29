@@ -11,7 +11,7 @@ spec:
   environments:
     filters:
       - type: tags
-        on:
+        entities:
           - gitOpsClusters
         spec:
           matchType: all
@@ -21,7 +21,7 @@ spec:
             - key: top
               value: down
       - type: all
-        on:
+        entities:
           - infrastructures
         spec: { }
     metadata:

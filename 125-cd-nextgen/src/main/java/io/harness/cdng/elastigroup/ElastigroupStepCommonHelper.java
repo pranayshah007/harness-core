@@ -49,8 +49,6 @@ import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
-import io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest;
-import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupStartupScriptFetchResponse;
@@ -58,7 +56,6 @@ import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.GeneralException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -67,13 +64,11 @@ import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
-import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
@@ -98,12 +93,10 @@ import software.wings.beans.TaskType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
-import com.google.common.io.BaseEncoding;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -160,6 +153,10 @@ public class ElastigroupStepCommonHelper extends ElastigroupStepUtils {
 
     LogCallback logCallback =
         getLogCallback(ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(), ambiance, true);
+
+    // Get InfrastructureOutcome
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
     // Get InfrastructureOutcome
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(

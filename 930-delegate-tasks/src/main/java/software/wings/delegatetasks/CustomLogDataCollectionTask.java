@@ -273,7 +273,7 @@ public class CustomLogDataCollectionTask extends AbstractDelegateDataCollectionT
     }
 
     private String fetchLogs(long startTime, long endTime, String url, Map<String, String> headers,
-        Map<String, String> options, Map<String, Object> body, String query, String host, String hostNameSeparator) {
+        Map<String, String> options, String jsonBody, String query, String host, String hostNameSeparator) {
       try {
         BiMap<String, Object> headersBiMap = resolveDollarReferences(headers);
         BiMap<String, Object> optionsBiMap = resolveDollarReferences(options);
@@ -284,10 +284,10 @@ public class CustomLogDataCollectionTask extends AbstractDelegateDataCollectionT
         // So we're taking care of both.
         String[] urlAndBody = url.split(URL_BODY_APPENDER);
         url = urlAndBody[0];
-        if (isEmpty(body)) {
+        if (isEmpty(jsonBody)) {
           bodyStr = urlAndBody.length > 1 ? urlAndBody[1] : "";
         } else {
-          bodyStr = JsonUtils.asJson(body);
+          bodyStr = jsonBody;
         }
         String resolvedUrl =
             CustomDataCollectionUtils.resolvedUrl(url, host, startTime, endTime, dataCollectionInfo.getQuery());
@@ -376,7 +376,7 @@ public class CustomLogDataCollectionTask extends AbstractDelegateDataCollectionT
             if (!dataCollectionInfo.isShouldDoHostBasedFiltering()) {
               // this query is not host based. So we should not make one call per host
               String searchResponse = fetchLogs(startTime, endTime, logDataInfo.getKey(),
-                  dataCollectionInfo.getHeaders(), dataCollectionInfo.getOptions(), dataCollectionInfo.getBody(),
+                  dataCollectionInfo.getHeaders(), dataCollectionInfo.getOptions(), dataCollectionInfo.getJsonBody(),
                   dataCollectionInfo.getQuery(), tempHost, dataCollectionInfo.getHostnameSeparator());
 
               LogResponseParser.LogResponseData data = new LogResponseParser.LogResponseData(searchResponse,
@@ -388,7 +388,7 @@ public class CustomLogDataCollectionTask extends AbstractDelegateDataCollectionT
             } else {
               dataCollectionInfo.getHosts().forEach(host -> {
                 String searchResponse = fetchLogs(startTime, endTime, logDataInfo.getKey(),
-                    dataCollectionInfo.getHeaders(), dataCollectionInfo.getOptions(), dataCollectionInfo.getBody(),
+                    dataCollectionInfo.getHeaders(), dataCollectionInfo.getOptions(), dataCollectionInfo.getJsonBody(),
                     dataCollectionInfo.getQuery(), host, dataCollectionInfo.getHostnameSeparator());
 
                 LogResponseParser.LogResponseData data = new LogResponseParser.LogResponseData(searchResponse,

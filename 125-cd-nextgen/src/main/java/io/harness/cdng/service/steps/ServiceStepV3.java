@@ -142,6 +142,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
 
       final ServicePartResponse servicePartResponse = executeServicePart(ambiance, stepParameters, entityMap);
 
+      saveExecutionLog(logCallback,
+          "Service Name: " + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getName()
+              + " , Identifier: "
+              + servicePartResponse.getNgServiceConfig().getNgServiceV2InfoConfig().getIdentifier());
+
       // Support GitOps Flow
       // If environment group is only set for GitOps or if GitOps flow and deploying to multi-environments
       if (ParameterField.isNotNull(stepParameters.getGitOpsMultiSvcEnvEnabled())
@@ -463,7 +468,8 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         serviceEntityService.get(AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
             AmbianceUtils.getProjectIdentifier(ambiance), stepParameters.getServiceRef().getValue(), false);
     if (serviceOpt.isEmpty()) {
-      throw new InvalidRequestException(format("service with identifier %s not found", stepParameters.getServiceRef()));
+      throw new InvalidRequestException(
+          format("service with identifier %s not found", stepParameters.getServiceRef().fetchFinalValue()));
     }
 
     final ServiceEntity serviceEntity = serviceOpt.get();

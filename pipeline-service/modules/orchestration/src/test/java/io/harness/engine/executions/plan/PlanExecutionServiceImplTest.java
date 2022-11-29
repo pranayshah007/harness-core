@@ -83,23 +83,6 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
   @RealMongo
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  public void shouldTestUpdate() {
-    String planExecutionId = generateUuid();
-    long millis = System.currentTimeMillis();
-    PlanExecution savedExecution = planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());
-    assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
-
-    planExecutionService.update(planExecutionId, ops -> ops.set(PlanExecutionKeys.endTs, millis));
-
-    PlanExecution updated = planExecutionService.get(planExecutionId);
-    assertThat(updated.getUuid()).isEqualTo(planExecutionId);
-    assertThat(updated.getEndTs()).isEqualTo(millis);
-  }
-
-  @Test
-  @RealMongo
-  @Owner(developers = ALEXEI)
-  @Category(UnitTests.class)
   public void shouldTestFindAllByPlanExecutionIdIn() {
     String planExecutionId = generateUuid();
     PlanExecution savedExecution = planExecutionService.save(PlanExecution.builder().uuid(planExecutionId).build());

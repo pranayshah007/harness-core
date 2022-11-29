@@ -34,6 +34,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
@@ -44,6 +45,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.io.Resources;
@@ -286,6 +288,20 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineListResponseBody responseBody = content.get(0);
     assertThat(responseBody.getSlug()).isEqualTo(slug);
     assertThat(responseBody.getName()).isEqualTo(name);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartPipelineValidationEvent() {
+    doReturn(Optional.of(entity)).when(pmsPipelineService).getPipeline(account, org, project, "pipeline", false, false);
+    doReturn(PipelineValidationEvent.builder().uuid("abc1").build())
+        .when(pipelineAsyncValidationService)
+        .startEvent(entity, null, Action.CRUD);
+    Response response =
+        pipelinesApiImpl.startPipelineValidationEvent(org, project, "pipeline", account, null, null, null, null, null);
+    PipelineValidationUUIDResponseBody responseBody = (PipelineValidationUUIDResponseBody) response.getEntity();
+    assertThat(responseBody.getUuid()).isEqualTo("abc1");
   }
 
   @Test

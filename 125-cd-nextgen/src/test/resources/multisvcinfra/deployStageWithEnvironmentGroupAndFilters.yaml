@@ -12,7 +12,7 @@ spec:
     envGroupRef: wave_1
     filters:
       - type: tags
-        on:
+        entities:
           - environments
           - infrastructures
           - gitOpsClusters
@@ -24,7 +24,7 @@ spec:
             - key: top
               value: down
       - type: all
-        on:
+        entities:
           - environments
           - infrastructures
         spec: {}

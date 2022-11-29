@@ -92,6 +92,7 @@ mongo:
   #uri: mongodb://mongo1:30001,mongo2:30002,mongo3:30003/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO

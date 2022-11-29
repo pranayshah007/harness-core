@@ -35,6 +35,11 @@ public interface StepSpecTypeConstants {
   String TERRAFORM_DESTROY = "TerraformDestroy";
   String TERRAFORM_ROLLBACK = "TerraformRollback";
 
+  String TERRAGRUNT_PLAN = "TerragruntPlan";
+  String TERRAGRUNT_APPLY = "TerragruntApply";
+  String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+
   String AZURE_CREATE_ARM_RESOURCE = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE = "AzureARMRollback";
@@ -68,13 +73,10 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_CREATE_SERVICE = "EcsBlueGreenCreateService";
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
-
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
-
   String CHAOS_STEP = "Chaos";
-
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
-  String GITOPS_FETCH_LINKED_APPS = "GitopsFetchLinkedApps";
+  String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

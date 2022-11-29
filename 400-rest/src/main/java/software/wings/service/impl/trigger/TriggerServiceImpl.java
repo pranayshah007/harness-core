@@ -68,6 +68,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.WorkflowType;
+import io.harness.data.parser.CsvParser;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.distribution.idempotence.IdempotentId;
 import io.harness.distribution.idempotence.IdempotentLock;
@@ -1451,7 +1452,7 @@ public class TriggerServiceImpl implements TriggerService {
       List<String> allowedValues = variable.getAllowedList();
       if (isNotEmpty(allowedValues)) {
         String variableValue = nameToVariableValueMap.get(variable.getName());
-        if (isNotEmpty(variableValue) && !allowedValues.contains(variableValue)) {
+        if (isNotEmpty(variableValue) && !allowedValues.containsAll(CsvParser.parse(variableValue))) {
           throw new InvalidRequestException(String.format(
               "Trigger rejected because passed workflow variable value %s was not present in allowed values list [%s]",
               variableValue, String.join(",", allowedValues)));

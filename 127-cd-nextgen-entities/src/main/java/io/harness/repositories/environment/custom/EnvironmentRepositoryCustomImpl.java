@@ -51,7 +51,7 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   public Environment upsert(Criteria criteria, Environment environment) {
     Query query = new Query(criteria);
     Update updateOperations = EnvironmentFilterHelper.getUpdateOperations(environment);
-    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+    RetryPolicy<Object> retryPolicy = getRetryPolicyWithDuplicateKeyException(
         "[Retrying]: Failed upserting Environment; attempt: {}", "[Failed]: Failed upserting Environment; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(()
@@ -115,6 +115,11 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {
     return PersistenceUtils.getRetryPolicy(failedAttemptMessage, failureMessage);
+  }
+
+  private RetryPolicy<Object> getRetryPolicyWithDuplicateKeyException(
+      String failedAttemptMessage, String failureMessage) {
+    return PersistenceUtils.getRetryPolicyWithDuplicateKeyException(failedAttemptMessage, failureMessage);
   }
 
   @Override

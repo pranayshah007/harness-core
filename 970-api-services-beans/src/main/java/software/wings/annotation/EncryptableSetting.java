@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.Encryptable;
+import io.harness.encryption.Encryptable;
 
 import software.wings.settings.SettingVariableTypes;
 

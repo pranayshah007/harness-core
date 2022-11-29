@@ -17,7 +17,6 @@ import io.harness.OrchestrationVisualizationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationGraph;
-import io.harness.cache.SpringMongoStore;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.PlanExecution;
@@ -25,7 +24,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.rule.Owner;
-import io.harness.service.GraphGenerationService;
 import io.harness.testlib.RealMongo;
 
 import com.google.common.collect.Lists;
@@ -35,10 +33,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PlanExecutionStatusUpdateEventHandlerTest extends OrchestrationVisualizationTestBase {
-  @Inject private SpringMongoStore mongoStore;
-
   @Inject PlanExecutionService planExecutionService;
-  @Inject GraphGenerationService graphGenerationService;
   @Inject PlanExecutionStatusUpdateEventHandler planExecutionStatusUpdateEventHandler;
 
   @Test

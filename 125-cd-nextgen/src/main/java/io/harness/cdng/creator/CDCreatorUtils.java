@@ -45,6 +45,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS,
         StepSpecTypeConstants.ECS_RUN_TASK, StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
+        StepSpecTypeConstants.TERRAGRUNT_PLAN, StepSpecTypeConstants.TERRAGRUNT_APPLY,
+        StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
         StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
   }
 }

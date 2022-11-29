@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDC)
 public class AsyncDiscoveryHandler extends AsyncTaskHandler {
-  @Inject DiscoveryService discoveryService;
   @Inject private HPersistence hPersistence;
+  @Inject AccountSummaryService accountSummaryService;
 
   private static final String TASK_TYPE = "DISCOVERY";
 
@@ -35,8 +35,7 @@ public class AsyncDiscoveryHandler extends AsyncTaskHandler {
 
   @Override
   MigrationTrackRespPayload processTask(String accountId, String requestId) {
-    Map<NGMigrationEntityType, BaseSummary> summary =
-        discoveryService.getSummary(accountId, null, accountId, NGMigrationEntityType.ACCOUNT);
+    Map<NGMigrationEntityType, BaseSummary> summary = accountSummaryService.getSummary(accountId);
     return DiscoverySummaryResult.builder().summary(summary).build();
   }
 

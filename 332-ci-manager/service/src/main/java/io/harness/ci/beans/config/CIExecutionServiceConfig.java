@@ -30,5 +30,6 @@ public class CIExecutionServiceConfig {
   String ciImageTag;
   CIStepConfig stepConfig;
   CICacheIntelligenceConfig cacheIntelligenceConfig;
+  ExecutionLimits executionLimits;
   boolean isLocal;
 }

@@ -408,7 +408,8 @@ public enum TaskType {
   ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task"),
   ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),
   ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task"),
-  ELASTIGROUP_ROLLBACK(TaskGroup.ELASTIGROUP, "Elastigroup Rollback Task");
+  ELASTIGROUP_ROLLBACK(TaskGroup.ELASTIGROUP, "Elastigroup Rollback Task"),
+  GITOPS_FETCH_APP_TASK(TaskGroup.GITOPS, "Gitops Fetch App Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

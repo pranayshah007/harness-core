@@ -14,6 +14,7 @@ import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleStoreType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -71,14 +72,24 @@ public final class Rule implements PersistentEntity, UuidAware, CreatedAtAware, 
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
                  .name("rules")
-                 .field(RuleId.name)
                  .field(RuleId.accountId)
-                 // .field(PolicyId.cloudProvider)
+                 .field(RuleId.cloudProvider)
                  .field(RuleId.orgIdentifier)
                  .field(RuleId.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(RuleId.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(RuleId.createdAt).build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort1")
+                 .field(RuleId.name)
+                 .field(RuleId.accountId)
+                 .field(RuleId.cloudProvider)
+                 .sortField(RuleId.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort2")
+                 .field(RuleId.name)
+                 .field(RuleId.accountId)
+                 .sortField(RuleId.createdAt)
+                 .build())
         .build();
   }
   public Rule toDTO() {

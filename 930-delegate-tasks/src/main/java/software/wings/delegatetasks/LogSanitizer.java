@@ -7,7 +7,6 @@
 
 package software.wings.delegatetasks;
 
-import static io.harness.NGConstants.JWT_REGEX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 
@@ -18,6 +17,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.logging.LogSanitizerHelper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,10 +67,6 @@ public abstract class LogSanitizer {
     }
 
     // JWT sanitization
-    return sanitizeRegex(sanitizedLogMessage, JWT_REGEX);
-  }
-
-  private String sanitizeRegex(String message, String regex) {
-    return message.replaceAll(regex, SECRET_MASK);
+    return LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
   }
 }
