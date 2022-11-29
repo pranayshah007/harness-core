@@ -55,18 +55,17 @@ public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements Decryp
   @URL @NotNull @NotBlank String serviceNowUrl;
   /** @deprecated */
   @Hidden
-  @ApiModelProperty(hidden = true)
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   String username;
   /** @deprecated */
   @Hidden
-  @ApiModelProperty(dataType = "string", hidden = true)
+  @ApiModelProperty(dataType = "string")
   @SecretReference
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData usernameRef;
   /** @deprecated */
   @Hidden
-  @ApiModelProperty(dataType = "string", hidden = true)
+  @ApiModelProperty(dataType = "string")
   @SecretReference
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData passwordRef;
