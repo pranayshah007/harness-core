@@ -130,7 +130,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
     // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
     // remove after finding the root cause of invalid schema generation and fixing it.
-    if (pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
+    if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
       Future<Boolean> future =
           yamlSchemaExecutor.submit(() -> validateYamlSchemaInternal(accountId, orgId, projectId, yaml));
       try (AutoLogContext accountLogContext =

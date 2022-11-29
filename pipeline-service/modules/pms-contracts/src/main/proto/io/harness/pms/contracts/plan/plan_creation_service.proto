@@ -14,6 +14,8 @@ import "io/harness/pms/contracts/plan/graph_layout.proto";
 import "io/harness/pms/contracts/plan/variables.proto";
 import "io/harness/pms/contracts/plan/execution_metadata.proto";
 import "io/harness/pms/contracts/triggers/trigger_payload.proto";
+import "io/harness/pms/contracts/plan/principal_info.proto";
+import "io/harness/pms/contracts/plan/trigger_info.proto";
 import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/entity_detail.proto";
 
 service PlanCreationService {
@@ -137,6 +139,8 @@ message SetupMetadata {
   string projectId = 2;
   string orgId = 3;
   bytes gitSyncBranchContext = 4;
+  ExecutionPrincipalInfo principalInfo = 5;
+  TriggeredBy triggeredInfo = 6;
 }
 
 message VariablesCreationMetadata {

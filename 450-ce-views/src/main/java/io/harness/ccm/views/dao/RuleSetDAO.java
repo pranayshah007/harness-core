@@ -10,6 +10,7 @@ package io.harness.ccm.views.dao;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.entities.RuleSet.RuleSetId;
 import io.harness.ccm.views.helper.RuleSetFilter;
+import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
@@ -42,6 +43,7 @@ public class RuleSetDAO {
     log.info("deleted rules: {}", uuid);
     return hPersistence.delete(query);
   }
+
   public boolean delete(String accountId, String uuid) {
     Query<RuleSet> query = hPersistence.createQuery(RuleSet.class)
                                .field(RuleSetId.accountId)
@@ -141,7 +143,8 @@ public class RuleSetDAO {
     return ruleSets;
   }
 
-  public List<RuleSet> list(String accountId, RuleSetFilter ruleSet) {
+  public RuleSetList list(String accountId, RuleSetFilter ruleSet) {
+    RuleSetList ruleSetList = RuleSetList.builder().build();
     Query<RuleSet> ruleSets = hPersistence.createQuery(RuleSet.class)
                                   .field(RuleSetId.accountId)
                                   .in(Arrays.asList(accountId, GLOBAL_ACCOUNT_ID))
@@ -159,12 +162,16 @@ public class RuleSetDAO {
     if (ruleSet.getIsOOTB() != null) {
       if (ruleSet.getIsOOTB()) {
         log.info("Adding all OOTB rules");
-        return ruleSets.field(RuleSetId.accountId).equal(GLOBAL_ACCOUNT_ID).asList();
+        ruleSets.field(RuleSetId.accountId).equal(GLOBAL_ACCOUNT_ID);
       }
-      return ruleSets.field(RuleSetId.accountId).equal(accountId).asList();
+      ruleSets.field(RuleSetId.accountId).equal(accountId);
     }
-    log.info("Adding all the rules");
-
-    return ruleSets.asList();
+    if (ruleSet.getSearch() != null) {
+      ruleSets.field(RuleSetId.name).containsIgnoreCase(ruleSet.getSearch());
+    }
+    ruleSetList.setTotalItems(ruleSets.asList().size());
+    ruleSetList.setRuleSet(
+        ruleSets.limit(ruleSet.getLimit()).offset(ruleSet.getOffset()).order(Sort.descending(RuleSetId.name)).asList());
+    return ruleSetList;
   }
 }

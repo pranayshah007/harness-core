@@ -157,7 +157,10 @@ public class MergeHelper {
       if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
         if (NGExpressionUtils.matchesExecutionInputPattern(inputSetValueText)
             && NGExpressionUtils.matchesInputSetPattern(pipelineValText)) {
-          return pipelineValText + ".executionInput()";
+          if (!NGExpressionUtils.matchesExecutionInputPattern(pipelineValText)) {
+            return pipelineValText + ".executionInput()";
+          }
+          return pipelineValText;
         } else {
           return inputSetValue;
         }

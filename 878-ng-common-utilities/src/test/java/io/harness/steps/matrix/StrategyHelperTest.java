@@ -7,6 +7,7 @@
 
 package io.harness.steps.matrix;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -23,6 +24,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
@@ -780,5 +782,17 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
         assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isFalse();
       }
     }
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void nullStepTest() throws IOException {
+    JsonNode step = NullNode.getInstance();
+    ExecutionWrapperConfig executionWrapperConfig = ExecutionWrapperConfig.builder().step(step).build();
+    ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(10));
+    assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData()).isEmpty();
+    assertThat(expandedExecutionWrapperInfo.getExpandedExecutionConfigs().get(0).getUuid()).isNull();
   }
 }

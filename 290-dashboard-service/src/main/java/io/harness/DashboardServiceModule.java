@@ -9,6 +9,7 @@ package io.harness;
 
 import static io.harness.AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE;
 
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderModule;
@@ -23,6 +24,7 @@ import io.harness.serializer.DashboardServiceRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.threading.ExecutorModule;
 import io.harness.token.TokenClientModule;
+import io.harness.user.UserClientModule;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
@@ -59,6 +61,9 @@ public class DashboardServiceModule extends AbstractModule {
     install(ProjectClientModule.getInstance(config.getNgManagerClientConfig(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(),
         AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
+    install(UserClientModule.getInstance(config.getNgManagerClientConfig(),
+        config.getDashboardSecretsConfig().getNgManagerServiceSecret(),
+        AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
     install(CDLandingDashboardResourceClientModule.getInstance(config.getNgManagerClientConfig(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(),
         AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
@@ -67,6 +72,8 @@ public class DashboardServiceModule extends AbstractModule {
         AuthorizationServiceHeader.DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
     install(new TokenClientModule(config.getNgManagerClientConfig(),
         config.getDashboardSecretsConfig().getNgManagerServiceSecret(), DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
+    install(new AccountClientModule(config.getManagerClientConfig(),
+        config.getDashboardSecretsConfig().getManagerServiceSecret(), DASHBOAD_AGGREGATION_SERVICE.getServiceId()));
     bind(OverviewDashboardService.class).to(OverviewDashboardServiceImpl.class);
     bind(DashboardRBACService.class).to(DashboardRBACServiceImpl.class);
   }

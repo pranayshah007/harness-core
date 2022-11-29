@@ -28,6 +28,7 @@ import io.harness.security.dto.ServicePrincipal;
 import io.harness.security.dto.UserPrincipal;
 
 import lombok.experimental.UtilityClass;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
@@ -36,6 +37,12 @@ public class PmsSecurityContextGuardUtils {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     ExecutionTriggerInfo executionTriggerInfo = ambiance.getMetadata().getTriggerInfo();
 
+    return getPrincipal(AmbianceUtils.getAccountId(ambiance), executionPrincipalInfo, executionTriggerInfo);
+  }
+
+  @NotNull
+  private Principal getPrincipal(
+      String accountId, ExecutionPrincipalInfo executionPrincipalInfo, ExecutionTriggerInfo executionTriggerInfo) {
     // NOTE: rbac should not be validated for triggers so all the resources should be validated with service principals
     if (!executionPrincipalInfo.getShouldValidateRbac()) {
       return new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
@@ -51,7 +58,7 @@ public class PmsSecurityContextGuardUtils {
     switch (principalType) {
       case USER:
         return new UserPrincipal(principal, executionTriggerInfo.getTriggeredBy().getExtraInfoMap().get("email"),
-            executionTriggerInfo.getTriggeredBy().getIdentifier(), AmbianceUtils.getAccountId(ambiance));
+            executionTriggerInfo.getTriggeredBy().getIdentifier(), accountId);
       case SERVICE:
         return new ServicePrincipal(principal);
       case API_KEY:
@@ -59,7 +66,7 @@ public class PmsSecurityContextGuardUtils {
       case SERVICE_ACCOUNT:
         return new ServiceAccountPrincipal(principal,
             executionTriggerInfo.getTriggeredBy().getExtraInfoMap().get("email"),
-            executionTriggerInfo.getTriggeredBy().getIdentifier(), AmbianceUtils.getAccountId(ambiance));
+            executionTriggerInfo.getTriggeredBy().getIdentifier(), accountId);
       default:
         throw new AccessDeniedException("Unknown Principal Type", WingsException.USER);
     }

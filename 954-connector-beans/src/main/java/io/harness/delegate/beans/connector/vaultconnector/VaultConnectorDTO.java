@@ -33,8 +33,8 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
 import io.harness.exception.InvalidRequestException;
+import io.harness.secret.SecretReference;
 import io.harness.security.encryption.AccessType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
