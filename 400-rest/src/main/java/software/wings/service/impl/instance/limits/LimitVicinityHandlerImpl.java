@@ -16,11 +16,11 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.limits.checker.StaticLimitVicinityChecker;
 import io.harness.limits.checker.StaticLimitVicinityCheckerMongoImpl;
+import io.harness.limits.checkers.LimitChecker;
+import io.harness.limits.checkers.StaticLimitChecker;
 import io.harness.limits.configuration.NoLimitConfiguredException;
-import io.harness.limits.lib.LimitChecker;
 import io.harness.limits.lib.LimitType;
 import io.harness.limits.lib.StaticLimit;
-import io.harness.limits.lib.StaticLimitChecker;
 
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.ResourceUsageApproachingLimitAlert;

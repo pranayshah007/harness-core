@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.limits.checkers.LimitChecker;
 import io.harness.limits.configuration.NoLimitConfiguredException;
-import io.harness.limits.lib.LimitChecker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;

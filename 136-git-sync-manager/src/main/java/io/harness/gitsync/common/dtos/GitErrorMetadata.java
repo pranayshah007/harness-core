@@ -9,7 +9,7 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 
 import lombok.AccessLevel;
 import lombok.Builder;

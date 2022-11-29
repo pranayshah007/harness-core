@@ -1,4 +1,4 @@
-package io.harness.exception.runtime;
+package io.harness.exception.runtime.hashicorp;
 
 public class HashiCorpVaultRuntimeException extends RuntimeException {
   private String message;

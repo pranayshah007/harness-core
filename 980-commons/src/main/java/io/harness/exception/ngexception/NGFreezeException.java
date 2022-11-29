@@ -11,6 +11,7 @@ import static io.harness.eraro.ErrorCode.FREEZE_EXCEPTION;
 
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 
 import java.util.EnumSet;
 
