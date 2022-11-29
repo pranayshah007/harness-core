@@ -1040,9 +1040,6 @@ public abstract class TerraformProvisionState extends State {
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
     GitConfig gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
 
-    //        ToDo: Remove this
-    terraformProvisioner.setSourceType(TerraformSourceType.S3_URI);
-
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
@@ -1215,9 +1212,6 @@ public abstract class TerraformProvisionState extends State {
 
     TfVarSource tfVarSource = null;
 
-    //        ToDo: Remove tfVar source type
-    tfVarSourceType = TerraformSourceType.S3_URI;
-
     // Currently we allow only one tfVar source
     if (tfVarSourceType == TerraformSourceType.GIT) {
       if (isNotEmpty(tfVarFiles)) {
@@ -1238,9 +1232,7 @@ public abstract class TerraformProvisionState extends State {
     }
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
-        TerraformProvisionParameters
-            .builder()
-            //                        ToDo: Change it to provisioners
+        TerraformProvisionParameters.builder()
             .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
@@ -1358,7 +1350,6 @@ public abstract class TerraformProvisionState extends State {
 
   @VisibleForTesting
   TfVarS3Source fetchTfVarS3Source(ExecutionContext context) {
-    //        ToDo : Revert to orignal ones
     AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(tfVarS3FileConfig.getAwsConfigId()).getValue();
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
