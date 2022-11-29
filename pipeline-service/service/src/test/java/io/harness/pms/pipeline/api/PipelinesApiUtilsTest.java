@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.api;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -158,7 +159,15 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MANKRIT)
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildPipelineValidationUUIDResponseBody() {
+    PipelineValidationEvent event = PipelineValidationEvent.builder().uuid("abc1").build();
+    assertThat(PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(event).getUuid()).isEqualTo("abc1");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildPipelineValidationResponseBody() {
     PipelineValidationEvent event = PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build();

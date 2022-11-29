@@ -38,11 +38,13 @@ public abstract class CvNextGenTestBase extends CategoryTest {
   }
 
   public static String getResourceFilePath(String filePath) {
-    return isBazelTest() ? "300-cv-nextgen/src/test/resources/" + filePath : ResourceHelpers.resourceFilePath(filePath);
+    return isBazelTest() ? "srm-service/modules/cv-nextgen-service/service/src/test/resources/" + filePath
+                         : ResourceHelpers.resourceFilePath(filePath);
   }
 
   public static String getSourceResourceFile(Class clazz, String filePath) {
-    return isBazelTest() ? "300-cv-nextgen/src/main/resources" + filePath : clazz.getResource(filePath).getFile();
+    return isBazelTest() ? "srm-service/modules/cv-nextgen-service/service/src/main/resources" + filePath
+                         : clazz.getResource(filePath).getFile();
   }
 
   protected String getResource(String filePath) throws IOException {

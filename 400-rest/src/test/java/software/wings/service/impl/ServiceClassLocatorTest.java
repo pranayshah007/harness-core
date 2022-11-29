@@ -26,10 +26,13 @@ import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.ApiKeyService;
 import software.wings.service.intfc.AppContainerService;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.CommandService;
 import software.wings.service.intfc.DelegateProfileService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.EntityVersionService;
 import software.wings.service.intfc.LogService;
 import software.wings.service.intfc.NotificationSetupService;
+import software.wings.service.intfc.PermitService;
 import software.wings.service.intfc.ResourceConstraintService;
 import software.wings.service.intfc.RoleService;
 import software.wings.service.intfc.SettingsService;
@@ -38,13 +41,19 @@ import software.wings.service.intfc.UserService;
 import software.wings.service.intfc.WhitelistService;
 import software.wings.service.intfc.compliance.GovernanceConfigService;
 import software.wings.service.intfc.instance.InstanceService;
+import software.wings.service.intfc.marketplace.gcp.GCPMarketPlaceService;
 import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.service.intfc.ownership.OwnedByActivity;
 import software.wings.service.intfc.security.EncryptedSettingAttributes;
 import software.wings.service.intfc.security.SecretManager;
+import software.wings.service.intfc.template.TemplateFolderService;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.template.TemplateService;
+import software.wings.service.intfc.trigger.TriggerExecutionService;
 import software.wings.service.intfc.verification.CVConfigurationService;
+import software.wings.service.intfc.yaml.YamlChangeSetService;
+import software.wings.service.intfc.yaml.YamlHistoryService;
+import software.wings.service.intfc.yaml.sync.GitSyncErrorService;
 import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 
 import com.google.inject.Inject;
@@ -60,11 +69,21 @@ public class ServiceClassLocatorTest extends WingsBaseTest {
   @Inject private ActivityService activityService;
   @Inject private AlertNotificationRuleService notificationRuleService;
   @Inject private AlertService alertService;
+
+  @Inject private TriggerExecutionService triggerExecutionService;
+  @Inject private GitSyncErrorService gitSyncErrorService;
+  @Inject private YamlChangeSetService yamlChangeSetService;
+  @Inject private PermitService permitService;
+  @Inject private CommandService commandService;
+  @Inject private TemplateFolderService templateFolderService;
+  @Inject private YamlHistoryService yamlHistoryService;
   @Inject private AppContainerService appContainerService;
   @Inject private AppService appService;
   @Inject private CVConfigurationService cvConfigurationService;
   @Inject private DelegateProfileService profileService;
   @Inject private DelegateService delegateService;
+  @Inject private EntityVersionService entityVersionService;
+  @Inject private GCPMarketPlaceService gcpMarketPlaceService;
   @Inject private GovernanceConfigService governanceConfigService;
   @Inject private InstanceService instanceService;
   @Inject private LimitConfigurationServiceMongo limitConfigurationServiceMongo;
@@ -103,11 +122,14 @@ public class ServiceClassLocatorTest extends WingsBaseTest {
       List<OwnedByAccount> ownedByAccounts = serviceClassLocator.descendingServicesForInterface(OwnedByAccount.class);
       assertThat(ownedByAccounts)
           .containsExactlyInAnyOrder(alertService, apiKeyService, appContainerService, appService,
-              cvConfigurationService, delegateNgTokenService, delegateService, governanceConfigService, instanceService,
-              limitConfigurationServiceMongo, loginSettingsService, notificationRuleService, notificationSetupService,
-              profileService, resourceConstraintService, roleService, secretManager, encryptedSettingAttributes,
-              settingsService, ssoSettingService, templateGalleryService, templateService, userGroupService,
-              userService, whitelistService, delegateTaskServiceClassic, yamlGitConfigService);
+              cvConfigurationService, delegateNgTokenService, delegateService, entityVersionService,
+              gcpMarketPlaceService, governanceConfigService, instanceService, limitConfigurationServiceMongo,
+              loginSettingsService, notificationRuleService, notificationSetupService, profileService,
+              resourceConstraintService, roleService, secretManager, encryptedSettingAttributes, settingsService,
+              ssoSettingService, templateGalleryService, templateService, userGroupService, userService,
+              whitelistService, delegateTaskServiceClassic, yamlGitConfigService, triggerExecutionService,
+              gitSyncErrorService, yamlChangeSetService, permitService, commandService, templateFolderService,
+              yamlHistoryService);
     }
   }
 }

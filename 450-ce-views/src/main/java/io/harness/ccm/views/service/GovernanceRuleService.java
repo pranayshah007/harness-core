@@ -8,6 +8,7 @@
 package io.harness.ccm.views.service;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleList;
 
 import java.util.List;
 
@@ -15,7 +16,7 @@ public interface GovernanceRuleService {
   boolean save(Rule policy);
   boolean delete(String accountId, String uuid);
   Rule update(Rule policy, String accountId);
-  List<Rule> list(GovernanceRuleFilter governancePolicyFilter);
+  RuleList list(GovernanceRuleFilter governancePolicyFilter);
   List<Rule> list(String accountId, List<String> uuid);
   Rule fetchByName(String accountId, String name, boolean create);
   Rule fetchById(String accountId, String name, boolean create);

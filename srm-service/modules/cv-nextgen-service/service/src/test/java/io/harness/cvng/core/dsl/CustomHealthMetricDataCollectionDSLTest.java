@@ -83,7 +83,8 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     populateResponseMapping();
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
-    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    code = readDSL(
+        "srm-service/modules/cv-nextgen-service/service/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-06-21T10:21:00.000Z");
     RuntimeParameters runtimeParameters = getAppdRuntimeParams(instant);
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
@@ -110,7 +111,8 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     populateResponseMapping();
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
-    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    code = readDSL(
+        "srm-service/modules/cv-nextgen-service/service/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
     String index = "arpit3";
     String requestBody = "{\n"
@@ -154,7 +156,8 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     populateResponseMapping();
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
-    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    code = readDSL(
+        "srm-service/modules/cv-nextgen-service/service/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-10-12T03:55:00.000Z");
     String index = "arpit3";
     String requestBody = "{\n"
@@ -194,7 +197,8 @@ public class CustomHealthMetricDataCollectionDSLTest extends HoverflyCVNextGenTe
     populateResponseMapping();
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
-    code = readDSL("300-cv-nextgen/src/main/resources/customhealth/dsl/metric-collection.datacollection");
+    code = readDSL(
+        "srm-service/modules/cv-nextgen-service/service/src/main/resources/customhealth/dsl/metric-collection.datacollection");
     Instant instant = Instant.parse("2022-10-31T09:27:00.000Z");
     String index = "integration-test-1";
     String requestBody = "{\n"

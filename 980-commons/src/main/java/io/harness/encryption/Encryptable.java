@@ -5,9 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.beans;
+package io.harness.encryption;
 
-import io.harness.encryption.EncryptionReflectUtils;
+import io.harness.beans.DecryptableEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.github.reinert.jjschema.SchemaIgnore;

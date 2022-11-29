@@ -21,7 +21,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Schema(description = "This object will contain the complete definition of a Cloud Cost Enforcement Count")
+@Schema(description = "This object will contain the complete definition of a Cloud Cost Enforcement List")
 
 public final class RuleExecutionList {
   @Schema(description = "Total items") int totalItems;
