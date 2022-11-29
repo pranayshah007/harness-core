@@ -217,7 +217,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       throws IOException, ParseException {
     try {
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback);
+          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, true);
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
