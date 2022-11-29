@@ -113,3 +113,13 @@ sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
 git add ${VERSION_FILE}
 git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
 git push origin release/${PURPOSE}/${VERSION}xx
+
+# Update jira issues
+echo "STEP4: INFO: Update jira issues"
+git fetch origin refs/heads/master; git checkout master && git branch
+check_branch_name "master"
+if [[ "$EXECUTE_NEW_VERSION_CODE" == "true" ]]; then
+  scripts/jenkins/release-branch-create-versions.sh
+fi
+scripts/jenkins/release-branch-update-jiras.sh
+scripts/jenkins/release-branch-update-jira_status.sh
