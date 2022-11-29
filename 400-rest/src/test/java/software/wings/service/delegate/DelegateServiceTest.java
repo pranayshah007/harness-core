@@ -28,7 +28,6 @@ import static io.harness.rule.OwnerRule.ANKIT;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DESCRIPTION;
@@ -130,7 +129,6 @@ import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -2800,39 +2798,6 @@ public class DelegateServiceTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testProcessDelegateTaskResponseHavingKryoWithoutReferenceWithDelegateMetaInfo() {
-    DelegateTask delegateTask = saveDelegateTaskWithTaskDataV2(true, emptySet(), QUEUED, false);
-    DelegateMetaInfo delegateMetaInfo = DelegateMetaInfo.builder().id(DELEGATE_ID).hostName(HOST_NAME).build();
-    JenkinsExecutionResponse jenkinsExecutionResponse =
-        JenkinsExecutionResponse.builder().delegateMetaInfo(delegateMetaInfo).build();
-
-    delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
-        DelegateTaskResponse.builder()
-            .accountId(ACCOUNT_ID)
-            .usingKryoWithoutReference(true)
-            .responseCode(DelegateTaskResponse.ResponseCode.OK)
-            .response(jenkinsExecutionResponse)
-            .build());
-    DelegateTaskNotifyResponseData delegateTaskNotifyResponseData = jenkinsExecutionResponse;
-    assertThat(delegateTaskNotifyResponseData.getDelegateMetaInfo().getHostName()).isEqualTo(HOST_NAME);
-    assertThat(delegateTaskNotifyResponseData.getDelegateMetaInfo().getId()).isEqualTo(DELEGATE_ID);
-
-    jenkinsExecutionResponse = JenkinsExecutionResponse.builder().delegateMetaInfo(delegateMetaInfo).build();
-    delegateTaskNotifyResponseData = jenkinsExecutionResponse;
-    persistence.save(delegateTask);
-    delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
-        DelegateTaskResponse.builder()
-            .accountId(ACCOUNT_ID)
-            .usingKryoWithoutReference(true)
-            .responseCode(DelegateTaskResponse.ResponseCode.OK)
-            .response(jenkinsExecutionResponse)
-            .build());
-    assertThat(delegateTaskNotifyResponseData.getDelegateMetaInfo().getId()).isEqualTo(DELEGATE_ID);
-  }
-
-  @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldNotCheckForProfileIfManagerNotPrimary() {
@@ -4355,39 +4320,6 @@ public class DelegateServiceTest extends WingsBaseTest {
                       .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
                       .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
                       .build())
-            .validatingDelegateIds(validatingTaskIds)
-            .validationCompleteDelegateIds(ImmutableSet.of(DELEGATE_ID));
-
-    if (setDelegateId) {
-      delegateTaskBuilder.delegateId(DELEGATE_ID);
-    }
-
-    final DelegateTask delegateTask = delegateTaskBuilder.build();
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, status);
-    return delegateTask;
-  }
-
-  private DelegateTask saveDelegateTaskWithTaskDataV2(
-      boolean async, Set<String> validatingTaskIds, DelegateTask.Status status, boolean setDelegateId) {
-    final DelegateTaskBuilder delegateTaskBuilder =
-        DelegateTask.builder()
-            .accountId(ACCOUNT_ID)
-            .waitId(generateUuid())
-            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
-            .version(VERSION)
-            .data(TaskData.builder()
-                      .async(async)
-                      .taskType(TaskType.HTTP.name())
-                      .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                      .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                      .build())
-            .taskDataV2(
-                TaskDataV2.builder()
-                    .async(async)
-                    .taskType(TaskType.HTTP.name())
-                    .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-                    .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-                    .build())
             .validatingDelegateIds(validatingTaskIds)
             .validationCompleteDelegateIds(ImmutableSet.of(DELEGATE_ID));
 

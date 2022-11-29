@@ -17,7 +17,6 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_CREATION;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_NO_ELIGIBLE_DELEGATES;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_RESPONSE;
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -85,7 +84,6 @@ import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.delegate.beans.NoAvailableDelegatesException;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.TaskGroup;
 import io.harness.delegate.beans.TaskSelectorMap;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
@@ -413,27 +411,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
   }
 
   @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void shouldProcessDelegateTaskResponseHavingKryoWithoutReference() {
-    when(assignDelegateService.getEligibleDelegatesToExecuteTaskV2(any(DelegateTask.class)))
-        .thenReturn(new ArrayList<>(singletonList(DELEGATE_ID)));
-    DelegateTask delegateTask = saveDelegateTaskWithTaskV2Data(true, emptySet(), QUEUED);
-    delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
-        DelegateTaskResponse.builder()
-            .accountId(ACCOUNT_ID)
-            .usingKryoWithoutReference(true)
-            .response(ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
-            .responseCode(ResponseCode.OK)
-            .build());
-    assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
-        .isEqualTo(null);
-    verify(waitNotifyEngine)
-        .doneWithV2(
-            delegateTask.getWaitId(), ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build());
-  }
-
-  @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
   public void shouldProcessDelegateTaskResponseWithoutWaitId() {
@@ -441,22 +418,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
         DelegateTaskResponse.builder()
             .accountId(ACCOUNT_ID)
-            .responseCode(ResponseCode.OK)
-            .response(ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
-            .build());
-    assertThat(persistence.createQuery(DelegateTask.class).filter(DelegateTaskKeys.uuid, delegateTask.getUuid()).get())
-        .isEqualTo(null);
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void shouldProcessDelegateTaskResponseWithoutWaitIdAndKryoWithoutReference() {
-    DelegateTask delegateTask = saveDelegateTaskWithTaskV2Data(true, emptySet(), QUEUED);
-    delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
-        DelegateTaskResponse.builder()
-            .accountId(ACCOUNT_ID)
-            .usingKryoWithoutReference(true)
             .responseCode(ResponseCode.OK)
             .response(ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
             .build());
@@ -473,23 +434,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
     delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
         DelegateTaskResponse.builder()
             .accountId(ACCOUNT_ID)
-            .responseCode(ResponseCode.OK)
-            .response(ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
-            .build());
-    delegateTask = persistence.get(DelegateTask.class, delegateTask.getUuid());
-    assertThat(delegateTask).isNull();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void shouldProcessSyncDelegateTaskResponseHavingKryoWithoutReference() {
-    thrown.expect(NoAvailableDelegatesException.class);
-    DelegateTask delegateTask = saveDelegateTaskWithTaskV2Data(false, emptySet(), QUEUED);
-    delegateTaskService.processDelegateResponse(ACCOUNT_ID, DELEGATE_ID, delegateTask.getUuid(),
-        DelegateTaskResponse.builder()
-            .accountId(ACCOUNT_ID)
-            .usingKryoWithoutReference(true)
             .responseCode(ResponseCode.OK)
             .response(ExecutionStatusData.builder().executionStatus(ExecutionStatus.SUCCESS).build())
             .build());
@@ -1236,23 +1180,6 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
 
   private DelegateTask saveDelegateTask(boolean async, Set<String> validatingTaskIds, DelegateTask.Status status) {
     final DelegateTask delegateTask = createTask(async, validatingTaskIds);
-
-    when(assignDelegateService.getEligibleDelegatesToExecuteTask(delegateTask))
-        .thenReturn(new LinkedList<>(singletonList(DELEGATE_ID)));
-    delegateTaskServiceClassic.processDelegateTask(delegateTask, status);
-    return delegateTask;
-  }
-
-  private DelegateTask saveDelegateTaskWithTaskV2Data(
-      boolean async, Set<String> validatingTaskIds, DelegateTask.Status status) {
-    final DelegateTask delegateTask = createTask(async, validatingTaskIds);
-    delegateTask.setTaskDataV2(
-        TaskDataV2.builder()
-            .async(async)
-            .taskType(TaskType.HTTP.name())
-            .parameters(new Object[] {HttpTaskParameters.builder().url("https://www.google.com").build()})
-            .timeout(DEFAULT_ASYNC_CALL_TIMEOUT)
-            .build());
 
     when(assignDelegateService.getEligibleDelegatesToExecuteTask(delegateTask))
         .thenReturn(new LinkedList<>(singletonList(DELEGATE_ID)));
