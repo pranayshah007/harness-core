@@ -32,12 +32,20 @@ if [[ "" != "$CI_CLIENT_BASEURL" ]]; then
   export CI_CLIENT_BASEURL; yq -i '.ciServiceClientConfig.baseUrl=env(CI_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MANAGER_CLIENT_BASEURL" ]]; then
+  export MANAGER_CLIENT_BASEURL; yq -i '.managerClientConfig.baseUrl=env(MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
   export NG_MANAGER_CLIENT_BASEURL; yq -i '.ngManagerClientConfig.baseUrl=env(NG_MANAGER_CLIENT_BASEURL)' $CONFIG_FILE
 fi
 
 
 # Secrets
+if [[ "" != "$MANAGER_SECRET" ]]; then
+  export MANAGER_SECRET; yq -i '.secrets.managerServiceSecret=env(MANAGER_SECRET)' $CONFIG_FILE
+fi
+
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   export NEXT_GEN_MANAGER_SECRET; yq -i '.secrets.ngManagerServiceSecret=env(NEXT_GEN_MANAGER_SECRET)' $CONFIG_FILE
 fi

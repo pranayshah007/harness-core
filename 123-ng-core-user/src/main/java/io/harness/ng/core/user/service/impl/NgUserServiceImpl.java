@@ -55,6 +55,7 @@ import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.dto.GatewayAccountRequestDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.events.AddCollaboratorEvent;
 import io.harness.ng.core.events.RemoveCollaboratorEvent;
 import io.harness.ng.core.invites.InviteType;
@@ -911,5 +912,20 @@ public class NgUserServiceImpl implements NgUserService {
     } catch (InvalidRequestException e) {
       throw new UnexpectedException("Unexpected error, could not fetch the harness support group users");
     }
+  }
+
+  @Override
+  public UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval) {
+    Criteria criteria = Criteria.where(UserMembershipKeys.scope + "." + ScopeKeys.accountIdentifier)
+                            .is(scope.getAccountIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.orgIdentifier)
+                            .is(scope.getOrgIdentifier())
+                            .and(UserMembershipKeys.scope + "." + ScopeKeys.projectIdentifier)
+                            .is(scope.getProjectIdentifier())
+                            .and(UserMembershipKeys.createdAt)
+                            .gte(startInterval)
+                            .lt(endInterval);
+    long newUsersCount = userMembershipRepository.findAllUserIds(criteria, Pageable.unpaged()).stream().count();
+    return UsersCountDTO.builder().totalCount(listUserIds(scope).stream().count()).newCount(newUsersCount).build();
   }
 }
