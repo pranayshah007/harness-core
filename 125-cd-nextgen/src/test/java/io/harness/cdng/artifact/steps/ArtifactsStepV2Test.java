@@ -724,7 +724,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, false, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
@@ -745,7 +745,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", null, null, null, null, null, null, null,
-            null, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
+            null, false, TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).checkForAccess(true).build());
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
@@ -831,6 +831,7 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2("ACCOUNT_ID", "orgId", "projectId", null, null, null, null, null, null, null, null,
+            false,
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(processedServiceYamlWithTemplateRefs)
                 .checkForAccess(true)

@@ -278,10 +278,10 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
   private TemplateResourceClient getMockedTemplateResourceClient() {
     TemplateResourceClient templateResourceClient = Mockito.mock(TemplateResourceClient.class);
     Mockito
-        .when(templateResourceClient.applyTemplatesOnGivenYaml(
-            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any()))
+        .when(templateResourceClient.applyTemplatesOnGivenYaml(Mockito.any(), Mockito.any(), Mockito.any(),
+            Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any()))
         .thenAnswer((Answer<Call<ResponseDTO<TemplateMergeResponseDTO>>>) invocation -> {
-          TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[6];
+          TemplateApplyRequestDTO templateApplyRequestDTO = (TemplateApplyRequestDTO) invocation.getArguments()[7];
           String yaml = templateApplyRequestDTO.getOriginalEntityYaml();
           Yaml yamlObject = new Yaml();
           Map<String, Object> data = yamlObject.load(yaml);
