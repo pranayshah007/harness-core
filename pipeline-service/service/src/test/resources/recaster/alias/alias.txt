@@ -149,3 +149,8 @@ io.harness.yaml.core.failurestrategy.ProceedWithDefaultValuesFailureActionConfig
 io.harness.yaml.core.failurestrategy.rollback.PipelineRollbackFailureActionConfig
 io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
+io.harness.steps.plugin.ContainerStepNode
+io.harness.steps.plugin.ContainerStepInfo
+io.harness.steps.plugin.ContainerStepOutcome
+io.harness.beans.yaml.extended.ImagePullPolicy
+io.harness.steps.plugin.ContainerStepParameters

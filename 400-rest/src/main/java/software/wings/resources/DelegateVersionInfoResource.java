@@ -58,12 +58,31 @@ public class DelegateVersionInfoResource {
   }
 
   @GET
+  @Path("/delegate/immutable/{ring}")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public RestResponse<String> getImmutableDelegateVersionFromRing(@PathParam("ring") String ringName) {
+    final String ringVersion = delegateRingService.getImmutableDelegateVersionsForRing(ringName, false);
+    return new RestResponse<>(ringVersion);
+  }
+
+  @GET
   @Path("/delegate/rings")
   @Timed
   @ExceptionMetered
   @PublicApi
   public RestResponse<Map<String, List<String>>> getDelegateVersionFromRing() {
     return new RestResponse<>(delegateRingService.getDelegateVersionsForAllRings(false));
+  }
+
+  @GET
+  @Path("/delegate/immutable/rings")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public RestResponse<Map<String, String>> getImmutableDelegateVersionFromRings() {
+    return new RestResponse<>(delegateRingService.getImmutableDelegateVersionsForAllRings(false));
   }
 
   @GET

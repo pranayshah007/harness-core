@@ -27,6 +27,7 @@ import static io.harness.ci.commonconstants.CIExecutionConstants.CLIENT_SECRET;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DRONE_WORKSPACE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ACCESS_KEY;
@@ -801,7 +802,7 @@ public class PluginSettingUtils {
       }
       cloneDir = STEP_MOUNT_PATH + PATH_SEPARATOR + repoName;
     }
-    if (STEP_MOUNT_PATH.equals(cloneDir)) {
+    if (!identifier.equals(GIT_CLONE_STEP_ID) && STEP_MOUNT_PATH.equals(cloneDir)) {
       throw new CIStageExecutionUserException(
           format("%s is an invalid value for the cloneDirectory field in the GitClone step with identifier %s",
               STEP_MOUNT_PATH, identifier));

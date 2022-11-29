@@ -9,6 +9,7 @@ package software.wings.delegatetasks.buildsource;
 
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.VGLIJIN;
 
@@ -88,6 +89,7 @@ public class BuildSourceCallbackTest extends WingsBaseTest {
                                                      .build();
   private final ArtifactStream ARTIFACT_STREAM_UNSTABLE = DockerArtifactStream.builder()
                                                               .uuid(ARTIFACT_STREAM_ID_2)
+                                                              .accountId(ACCOUNT_ID)
                                                               .sourceName(ARTIFACT_STREAM_NAME)
                                                               .appId(APP_ID)
                                                               .settingId(SETTING_ID)
@@ -307,6 +309,22 @@ public class BuildSourceCallbackTest extends WingsBaseTest {
     verify(artifactStreamService, times(1)).get(any());
     verify(artifactStreamService, times(1)).updateFailedCronAttemptsAndLastIteration(any(), any(), anyInt(), eq(false));
     verify(artifactStreamService, times(1)).updateCollectionStatus(ACCOUNT_ID, ARTIFACT_STREAM_ID_1, STOPPED.name());
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldTriggerExecutionIfFirstCollectionFailed() {
+    buildSourceCallback.setArtifactStreamId(ARTIFACT_STREAM_ID_2);
+    ARTIFACT_STREAM_UNSTABLE.setFailedCronAttempts(1);
+    buildSourceCallback.handleResponseForSuccessInternal(
+        prepareBuildSourceExecutionResponse(true), ARTIFACT_STREAM_UNSTABLE);
+
+    verify(artifactStreamService).updateCollectionStatus(ACCOUNT_ID, ARTIFACT_STREAM_ID_2, STABLE.name());
+    verify(triggerService)
+        .triggerExecutionPostArtifactCollectionAsync(
+            ACCOUNT_ID, APP_ID, ARTIFACT_STREAM_ID_2, asList(ARTIFACT_1, ARTIFACT_2));
+    verify(artifactStreamService).updateFailedCronAttemptsAndLastIteration(ACCOUNT_ID, ARTIFACT_STREAM_ID_2, 0, false);
   }
 
   private BuildSourceExecutionResponse prepareBuildSourceExecutionResponse(boolean stable) {

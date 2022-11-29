@@ -13,12 +13,13 @@ import io.harness.annotations.dev.OwnedBy;
 
 import software.wings.beans.command.Command;
 import software.wings.beans.command.ServiceCommand;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 /**
  * Created by peeyushaggarwal on 11/16/16.
  */
 @OwnedBy(CDC)
-public interface CommandService {
+public interface CommandService extends OwnedByAccount {
   Command getCommand(String appId, String originEntityId, int version);
   ServiceCommand getServiceCommand(String appId, String serviceCommandId);
   ServiceCommand getServiceCommandByName(String appId, String serviceId, String serviceCommandName);

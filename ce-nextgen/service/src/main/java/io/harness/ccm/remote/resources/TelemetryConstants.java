@@ -22,4 +22,16 @@ public class TelemetryConstants {
   public static final String PERSPECTIVE_ID = "Perspective ID";
   public static final String REPORT_CREATED = "Report Created";
   public static final String REPORT_TYPE = "report_type";
+  public static final String GOVERNANCE_RULE_CREATED = "governance_rule_created";
+  public static final String GOVERNANCE_RULE_UPDATED = "governance_rule_updated";
+  public static final String GOVERNANCE_RULE_DELETE = "governance_rule_delete";
+  public static final String GOVERNANCE_RULE_SET_CREATED = "governance_rule_set_created";
+  public static final String GOVERNANCE_RULE_SET_UPDATED = "governance_rule_set_updated";
+  public static final String GOVERNANCE_RULE_SET_DELETE = "governance_rule_set_delete";
+  public static final String GOVERNANCE_RULE_ENFORCEMENT_CREATED = "governance_rule_enforcement_created";
+  public static final String GOVERNANCE_RULE_ENFORCEMENT_UPDATED = "governance_rule_enforcement_updated";
+  public static final String GOVERNANCE_RULE_ENFORCEMENT_DELETE = "governance_rule_enforcement_delete";
+  public static final String RULE_NAME = "governance_rule_name";
+  public static final String RULE_SET_NAME = "governance_rule_set_name";
+  public static final String RULE_ENFORCEMENT_NAME = "governance_enforcement_name";
 }

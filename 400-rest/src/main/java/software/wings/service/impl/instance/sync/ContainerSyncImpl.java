@@ -112,7 +112,7 @@ public class ContainerSyncImpl implements ContainerSync {
                 .build();
         ContainerServiceParams containerServiceParams =
             ContainerServiceParams.builder()
-                .settingAttribute(settingAttribute)
+                .settingAttribute(settingAttribute.toDTO())
                 .containerServiceName(containerDeploymentInfo.getContainerSvcName())
                 .encryptionDetails(encryptionDetails)
                 .clusterName(clusterName)
@@ -242,7 +242,7 @@ public class ContainerSyncImpl implements ContainerSync {
         (EncryptableSetting) settingAttribute.getValue(), containerInfraMapping.getAppId(), null);
 
     return ContainerServiceParams.builder()
-        .settingAttribute(settingAttribute)
+        .settingAttribute(settingAttribute.toDTO())
         .containerServiceName(containerSvcName)
         .encryptionDetails(encryptionDetails)
         .clusterName(clusterName)

@@ -89,6 +89,7 @@ export NEW_VERSION=$(( ${VERSION}+1 ))
 
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 
+git pull origin develop
 git add ${VERSION_FILE}
 git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
 git push origin develop

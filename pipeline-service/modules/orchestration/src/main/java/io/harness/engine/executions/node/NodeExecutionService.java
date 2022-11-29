@@ -18,6 +18,7 @@ import io.harness.pms.contracts.execution.Status;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -79,6 +80,9 @@ public interface NodeExecutionService {
   Page<NodeExecution> fetchNodeExecutionsByStatus(
       String planExecutionId, Status status, Set<String> fieldsToBeIncluded, Pageable pageable);
 
+  Page<NodeExecution> fetchAllNodeExecutionsByStatus(
+      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable);
+
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops);
 
   NodeExecution update(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops, Set<String> fieldsToBeIncluded);
@@ -95,6 +99,8 @@ public interface NodeExecutionService {
 
   NodeExecution updateStatusWithUpdate(
       @NonNull String nodeExecutionId, @NonNull Status targetStatus, Update ops, EnumSet<Status> overrideStatusSet);
+
+  List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions);
 
   NodeExecution save(NodeExecution nodeExecution);
 

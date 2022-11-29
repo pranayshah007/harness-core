@@ -151,6 +151,7 @@ import io.harness.distribution.constraint.Consumer;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
@@ -160,7 +161,6 @@ import io.harness.limits.checker.LimitApproachingException;
 import io.harness.limits.checker.UsageLimitExceededException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.queue.QueuePublisher;
@@ -1205,10 +1205,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     PageRequest pageRequest = aPageRequest()
-                                  .addFilter("appId", EQ, workflowExecution.getAppId())
-                                  .addFilter("workflowId", EQ, workflowExecution.getWorkflowId())
-                                  .addFilter("status", EQ, SUCCESS)
-                                  .addOrder("endTs", OrderType.DESC)
+                                  .addFilter(WorkflowExecutionKeys.appId, EQ, workflowExecution.getAppId())
+                                  .addFilter(WorkflowExecutionKeys.workflowId, EQ, workflowExecution.getWorkflowId())
+                                  .addFilter(WorkflowExecutionKeys.status, EQ, SUCCESS)
+                                  .addOrder(WorkflowExecutionKeys.endTs, OrderType.DESC)
                                   .withLimit("5")
                                   .build();
     List<WorkflowExecution> workflowExecutions = wingsPersistence.query(WorkflowExecution.class, pageRequest);

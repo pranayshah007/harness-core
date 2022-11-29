@@ -19,9 +19,9 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.eraro.ResponseMessage;
 import io.harness.exception.AccessDeniedException;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import software.wings.graphql.directive.DataFetcherDirective.DataFetcherDirectiveAttributes;
 import software.wings.graphql.schema.query.QLPageQueryParameters;

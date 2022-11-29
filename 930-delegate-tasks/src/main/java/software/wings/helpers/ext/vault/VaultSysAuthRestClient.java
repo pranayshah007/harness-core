@@ -36,6 +36,7 @@ public interface VaultSysAuthRestClient {
   String TOKEN_RENEW_URL = "v1/auth/token/renew-self";
   String AWS_IAM_LOGIN_URL = "v1/auth/aws/login";
   String K8s_LOGIN_URL = "v1/auth/{kubernetes-auth-path}/login";
+  String TOKEN_LOOKUP = "v1/auth/token/lookup-self";
 
   /**
    * The JSON response will be returned as a String. The caller of this API need to '/secret/options/version' field in
@@ -68,4 +69,8 @@ public interface VaultSysAuthRestClient {
 
   @POST(TOKEN_RENEW_URL)
   Call<Object> renewToken(@Header("X-Vault-Token") String header, @Header("X-Vault-Namespace") String namespace);
+
+  @GET(TOKEN_LOOKUP)
+  Call<VaultTokenLookupResponse> tokenLookup(
+      @Header("X-Vault-Token") String header, @Header("X-Vault-Namespace") String namespace);
 }

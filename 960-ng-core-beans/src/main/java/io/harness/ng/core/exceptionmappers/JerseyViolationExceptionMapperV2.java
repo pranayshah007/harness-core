@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.ng.core.Status;
 import io.harness.ng.core.ValidationError;
 import io.harness.ng.core.dto.FailureDTO;
@@ -37,7 +36,6 @@ public class JerseyViolationExceptionMapperV2 implements ExceptionMapper<JerseyV
 
   @Override
   public Response toResponse(JerseyViolationException exception) {
-    log.error("Exception occurred: " + ExceptionUtils.getMessage(exception), exception);
     Set<ConstraintViolation<?>> constraintViolations = exception.getConstraintViolations();
 
     List<ValidationError> validationErrors = new ArrayList<>();

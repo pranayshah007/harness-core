@@ -17,7 +17,8 @@ import io.swagger.annotations.ApiModel;
 @ApiModel(subTypes = {NexusArtifactSummary.class, ArtifactoryArtifactSummary.class, DockerArtifactSummary.class,
               CustomArtifactSummary.class, AcrArtifactSummary.class, ArtifactoryGenericArtifactSummary.class,
               EcrArtifactSummary.class, GcrArtifactSummary.class, S3ArtifactSummary.class, JenkinsArtifactSummary.class,
-              GithubPackagesArtifactSummary.class, AzureArtifactsSummary.class, AMIArtifactSummary.class})
+              GithubPackagesArtifactSummary.class, AzureArtifactsSummary.class, AMIArtifactSummary.class,
+              GarArtifactSummary.class})
 public interface ArtifactSummary {
   String getType();
   String getDisplayName();

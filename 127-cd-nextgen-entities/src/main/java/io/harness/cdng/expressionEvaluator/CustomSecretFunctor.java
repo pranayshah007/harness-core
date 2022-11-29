@@ -10,7 +10,7 @@ package io.harness.cdng.expressionEvaluator;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 
 import lombok.Value;
 

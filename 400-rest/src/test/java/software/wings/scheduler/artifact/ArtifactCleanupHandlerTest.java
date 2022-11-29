@@ -11,8 +11,7 @@ import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,8 +32,7 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -69,9 +67,14 @@ public class ArtifactCleanupHandlerTest extends WingsBaseTest {
                                        ArtifactStreamType.GCR.name())))
                         .build());
 
-    ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
-    artifactCleanupHandler.registerIterators(executor);
+    artifactCleanupHandler.createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                                      .name("ArtifactCleanup")
+                                                      .poolSize(5)
+                                                      .interval(Duration.ofMinutes(5))
+                                                      .build(),
+        Duration.ofHours(2));
 
-    verify(executor).scheduleAtFixedRate(any(), anyLong(), anyLong(), any(TimeUnit.class));
+    verify(persistenceIteratorFactory)
+        .createPumpIteratorWithDedicatedThreadPool(any(), eq(ArtifactCleanupHandler.class), any());
   }
 }

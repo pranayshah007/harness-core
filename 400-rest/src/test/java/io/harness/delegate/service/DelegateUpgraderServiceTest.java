@@ -15,7 +15,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.persistence.HPersistence;
@@ -74,8 +73,7 @@ public class DelegateUpgraderServiceTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void shouldUpgradeUpgraderImageTag() {
-    when(delegateVersionService.getUpgraderImageTag(TEST_ACCOUNT_ID1, DelegateType.KUBERNETES))
-        .thenReturn(LATEST_UPGRADER_IMAGE_TAG);
+    when(delegateVersionService.getUpgraderImageTag(TEST_ACCOUNT_ID1, true)).thenReturn(LATEST_UPGRADER_IMAGE_TAG);
     UpgradeCheckResult upgradeCheckResult1 = underTest.getUpgraderImageTag(TEST_ACCOUNT_ID1, UPGRADER_IMAGE_TAG_1);
 
     assertThat(upgradeCheckResult1.isShouldUpgrade()).isTrue();
@@ -86,8 +84,7 @@ public class DelegateUpgraderServiceTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void shouldNotUpgradeUpgraderImageTag() {
-    when(delegateVersionService.getUpgraderImageTag(TEST_ACCOUNT_ID1, DelegateType.KUBERNETES))
-        .thenReturn(UPGRADER_IMAGE_TAG_1);
+    when(delegateVersionService.getUpgraderImageTag(TEST_ACCOUNT_ID1, true)).thenReturn(UPGRADER_IMAGE_TAG_1);
     UpgradeCheckResult upgradeCheckResult1 = underTest.getUpgraderImageTag(TEST_ACCOUNT_ID1, UPGRADER_IMAGE_TAG_1);
 
     assertThat(upgradeCheckResult1.isShouldUpgrade()).isFalse();

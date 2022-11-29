@@ -22,7 +22,6 @@ import static java.util.stream.Collectors.joining;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest.PageRequestBuilder;
 import io.harness.beans.SearchFilter.Operator;
 import io.harness.delegate.beans.Delegate;
@@ -381,7 +380,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public boolean deleteSamlSettings(SamlSettings samlSettings) {
-    if (userGroupService.existsLinkedUserGroup(samlSettings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting Saml provider with linked user groups is not allowed. Unlink the user groups first.");
     }
@@ -420,13 +419,11 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   @RestrictedApi(LdapFeature.class)
   public LdapSettings createLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
-    validateLdapSetting(settings);
     if (getLdapSettingsByAccountId(settings.getAccountId()) != null) {
       throw new InvalidRequestException("Ldap settings already exist for this account.");
     }
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(settings.getConnectionSettings(), secretManager, settings.getAccountId());
+
     settings.encryptLdapInlineSecret(secretManager, false);
     if (isEmpty(settings.getCronExpression())) {
       settings.setCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
@@ -446,7 +443,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
   public LdapSettings updateLdapSettings(
       @GetAccountId(LdapSettingsAccountIdExtractor.class) @NotNull LdapSettings settings) {
     LdapSettings oldSettings = getLdapSettingsByAccountId(settings.getAccountId());
-    validateLdapSetting(settings);
     if (oldSettings == null) {
       throw new InvalidRequestException("No existing Ldap settings found for this account.");
     }
@@ -462,9 +458,8 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     oldSettings.setUserSettingsList(settings.getUserSettingsList());
     oldSettings.setGroupSettingsList(settings.getGroupSettingsList());
     oldSettings.setDisabled(settings.isDisabled());
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(oldSettings.getConnectionSettings(), secretManager, settings.getAccountId());
+
     oldSettings.encryptLdapInlineSecret(secretManager, false);
     oldSettings.setDefaultCronExpression(ldapSyncJobConfig.getDefaultCronExpression());
     oldSettings.setCronExpression(settings.getCronExpression());
@@ -479,14 +474,6 @@ public class SSOSettingServiceImpl implements SSOSettingService {
     return savedSettings;
   }
 
-  private void validateLdapSetting(LdapSettings settings) {
-    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, settings.getAccountId())
-        && settings.getConnectionSettings().getBindSecret() != null
-        && isNotEmpty(settings.getConnectionSettings().getBindSecret())) {
-      throw new InvalidRequestException("Please turn on FF (LDAP_SECRET_AUTH) to use secrets ");
-    }
-  }
-
   @Override
   public LdapSettings deleteLdapSettings(@NotBlank String accountId) {
     LdapSettings settings = getLdapSettingsByAccountId(accountId);
@@ -498,7 +485,7 @@ public class SSOSettingServiceImpl implements SSOSettingService {
 
   @Override
   public LdapSettings deleteLdapSettings(@NotNull LdapSettings settings) {
-    if (userGroupService.existsLinkedUserGroup(settings.getUuid())) {
+    if (userGroupService.existsLinkedUserGroup(settings.getAccountId(), settings.getUuid())) {
       throw new InvalidRequestException(
           "Deleting SSO provider with linked user groups is not allowed. Unlink the user groups first.");
     }

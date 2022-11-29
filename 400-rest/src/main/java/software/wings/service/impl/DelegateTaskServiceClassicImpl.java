@@ -105,7 +105,6 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.lock.PersistentLocker;
 import io.harness.logging.AccountLogContext;
@@ -118,6 +117,7 @@ import io.harness.network.SafeHttpCall;
 import io.harness.observer.RemoteObserverInformer;
 import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -227,11 +227,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final String STREAM_DELEGATE = "/stream/delegate/";
   public static final String TASK_SELECTORS = "Task Selectors";
   public static final String TASK_CATEGORY_MAP = "Task Category Map";
-  private static final int SECRET_CACHE_TTL_MINUTES = 3;
-  private static final int SECRET_CACHE_MAXIMUM_SIZE = 1000;
-  private static final long CAPABILITIES_CHECK_TASK_TIMEOUT_IN_MINUTES = 1L;
-
-  private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
   @Inject private HPersistence persistence;
   @Inject ObjectMapper objectMapper;
@@ -631,7 +626,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.error("Task id {} failed with error {}", task.getUuid(), exception);
+        log.warn("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponse(task, exception);
         if (!task.getData().isAsync()) {
@@ -747,7 +742,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
             task.getBroadcastToDelegateIds());
         addToTaskActivityLog(task, "Task processing completed");
       } catch (Exception exception) {
-        log.info("Task id {} failed with error {}", task.getUuid(), exception);
+        log.warn("Task id {} failed with error {}", task.getUuid(), exception);
         printErrorMessageOnTaskFailure(task);
         handleTaskFailureResponseV2(task, exception);
         if (!task.getTaskDataV2().isAsync()) {
@@ -956,9 +951,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1006,9 +1002,10 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (params.length == 1 && params[0] instanceof HostValidationTaskParameters) {
           hostValidationTaskParameters = (HostValidationTaskParameters) params[0];
         } else {
+          SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting((SettingAttribute) params[3])
+                                             .connectionSetting(settingAttribute.toDTO())
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1126,7 +1123,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   void setValidationStarted(String delegateId, DelegateTask delegateTask) {
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_VALIDATION);
-    log.info("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    log.debug("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
                                                           .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
     Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
@@ -1528,7 +1525,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       String delegateId, String taskId, DelegateTask delegateTask, String delegateInstanceId) {
     // Clear pending validations. No longer need to track since we're assigning.
     clearFromValidationCache(delegateTask);
-    log.info("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    // QUESTION? Do we need a metric for this
+    log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)

@@ -7,6 +7,8 @@
 
 package io.harness.cdng.artifact.resources.custom;
 
+import io.harness.plancreator.steps.TaskSelectorYaml;
+
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
 import java.util.List;
@@ -14,5 +16,6 @@ import java.util.Map;
 
 public interface CustomResourceService {
   List<BuildDetails> getBuilds(String script, String versionPath, String arrayPath, Map<String, String> inputs,
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, int secretFunctor);
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, int secretFunctor,
+      List<TaskSelectorYaml> delegateSelector);
 }

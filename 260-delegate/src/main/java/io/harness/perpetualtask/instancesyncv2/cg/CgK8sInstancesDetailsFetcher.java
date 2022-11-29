@@ -194,6 +194,7 @@ public class CgK8sInstancesDetailsFetcher implements InstanceDetailsFetcher {
                   .clusterName(config.getClusterName())
                   .podName(pod.getName())
                   .ip(pod.getPodIP())
+                  .blueGreenColor(pod.getColor())
                   .namespace(k8sInstanceSyncTaskDetails.getNamespace())
                   .releaseName(k8sInstanceSyncTaskDetails.getReleaseName())
                   .build();

@@ -32,10 +32,10 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.nexus.NexusRequest;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import software.wings.beans.AppContainer;
 import software.wings.beans.BambooConfig;

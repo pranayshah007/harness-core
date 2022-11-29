@@ -22,7 +22,6 @@ import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
 import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.exception.EntityNotFoundException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecution.ExecutionMetadataKeys;
@@ -38,6 +37,7 @@ import io.harness.repositories.PlanExecutionRepository;
 import io.harness.waiter.StringNotifyResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.EnumSet;
@@ -54,7 +54,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Field;
@@ -107,8 +106,7 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
     if (ops != null) {
       ops.accept(updateOps);
     }
-    PlanExecution updated = mongoTemplate.findAndModify(
-        query, updateOps, new FindAndModifyOptions().upsert(false).returnNew(true), PlanExecution.class);
+    PlanExecution updated = planExecutionRepository.updatePlanExecution(query, updateOps, false);
     if (updated == null) {
       log.warn("Cannot update execution status for the PlanExecution {} with {}", planExecutionId, status);
     } else {
@@ -127,21 +125,40 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
   }
 
   @Override
-  public PlanExecution update(@NonNull String planExecutionId, @NonNull Consumer<Update> ops) {
-    Query query = query(where(PlanExecutionKeys.uuid).is(planExecutionId));
-    Update updateOps = new Update().set(PlanExecutionKeys.lastUpdatedAt, System.currentTimeMillis());
-    ops.accept(updateOps);
-    PlanExecution updated = mongoTemplate.findAndModify(query, updateOps, PlanExecution.class);
-    if (updated == null) {
-      throw new InvalidRequestException("Node Execution Cannot be updated with provided operations" + planExecutionId);
-    }
-    return updated;
-  }
-
-  @Override
   public PlanExecution get(String planExecutionId) {
     return planExecutionRepository.findById(planExecutionId)
         .orElseThrow(() -> new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId));
+  }
+
+  @Override
+  public PlanExecution getPlanExecutionMetadata(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithProjections(planExecutionId,
+        Lists.newArrayList(PlanExecutionKeys.metadata, PlanExecutionKeys.governanceMetadata,
+            PlanExecutionKeys.setupAbstractions, PlanExecutionKeys.ambiance));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution;
+  }
+
+  @Override
+  public ExecutionMetadata getExecutionMetadataFromPlanExecution(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getPlanExecutionWithIncludedProjections(
+        planExecutionId, Lists.newArrayList(PlanExecutionKeys.metadata));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution.getMetadata();
+  }
+
+  @Override
+  public Status getStatus(String planExecutionId) {
+    PlanExecution planExecution = planExecutionRepository.getWithProjectionsWithoutUuid(
+        planExecutionId, Lists.newArrayList(PlanExecutionKeys.status));
+    if (planExecution == null) {
+      throw new EntityNotFoundException("Plan Execution not found for id: " + planExecutionId);
+    }
+    return planExecution.getStatus();
   }
 
   @Override

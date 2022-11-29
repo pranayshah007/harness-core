@@ -26,5 +26,6 @@ public enum HarnessTeam {
   CHAOS,
   SMP,
   PLG,
+  CODE,
   IACM
 }

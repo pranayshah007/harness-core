@@ -81,6 +81,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -122,7 +123,12 @@ public class HelmTaskHelper {
   @Inject private DelegateFileManagerBase delegateFileManagerBase;
 
   public static void copyManifestFilesToWorkingDir(File src, File dest) throws IOException {
-    FileUtils.copyDirectory(src, dest);
+    if (src.isDirectory()) {
+      FileUtils.copyDirectory(src, dest);
+    } else {
+      Path destFilePath = Paths.get(dest.getPath(), src.getName());
+      FileUtils.copyFile(src, destFilePath.toFile());
+    }
     deleteDirectoryAndItsContentIfExists(src.getAbsolutePath());
     waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
@@ -340,7 +346,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, false, cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (chartmuseumClient != null && chartMuseumServer != null) {
         chartmuseumClient.stop(chartMuseumServer);
@@ -468,8 +474,7 @@ public class HelmTaskHelper {
       String repoName = String.format(REGISTRY_URL_PREFIX, Paths.get(repoConfig.getChartRepoUrl()).normalize());
       helmTaskHelperBase.fetchChartFromRepo(repoName, helmChartConfigParams.getRepoDisplayName(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
-          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis,
-          helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (!helmChartConfigParams.isUseCache()) {
         try {
@@ -509,7 +514,7 @@ public class HelmTaskHelper {
       helmTaskHelperBase.fetchChartFromRepo(helmChartConfigParams.getRepoName(),
           helmChartConfigParams.getRepoDisplayName(), helmChartConfigParams.getChartName(),
           helmChartConfigParams.getChartVersion(), chartDirectory, helmChartConfigParams.getHelmVersion(),
-          helmCommandFlag, timeoutInMillis, helmChartConfigParams.isCheckIncorrectChartVersion(), cacheDir);
+          helmCommandFlag, timeoutInMillis, cacheDir);
     } finally {
       if (isNotEmpty(cacheDir) && !helmChartConfigParams.isUseCache()) {
         try {
@@ -580,7 +585,7 @@ public class HelmTaskHelper {
             helmChartConfigParams.getHelmVersion(), helmCommandFlag);
       }
       helmTaskHelperBase.executeFetchChartFromRepo(helmChartConfigParams.getChartName(), chartDirectory,
-          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "", false);
+          helmChartConfigParams.getRepoDisplayName(), helmFetchCommand, timeoutInMillis, "");
 
     } finally {
       if (isNotBlank(helmChartConfigParams.getChartUrl())) {

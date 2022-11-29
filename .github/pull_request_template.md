@@ -8,25 +8,25 @@
 ## Comment Triggers
 <details>
   <summary>Build triggers</summary>
-  
+
 - Feature build: `trigger feature-build`
 - Immutable delegate `trigger publish-delegate`
 </details>
 
 <details>
   <summary>PR Check triggers</summary>
-  
-  You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ti0, ti1`
-  
+
+You can run multiple PR check triggers by comma separating them in a single comment. e.g. `trigger ti0, ti1`
+
 - Compile: `trigger compile`
-- CodeFormat: `trigger codeformat`
+- CodeformatCheckstyle: `trigger checkstylecodeformat`
+    - CodeFormat: `trigger codeformat`
+    - Checkstyle: `trigger checkstyle`
 - MessageMetadata: `trigger messagecheck`
 - Recency: `trigger recency`
 - BuildNumberMetadata: `trigger buildnum`
-- runDockerizationCheck: `trigger dockerizationcheck`
-- runAuthorCheck: `trigger authorcheck`
-- Checkstyle: `trigger checkstyle`
 - PMD: `trigger pmd`
+- Copyright Check: `trigger copyrightcheck`
 - Feature Name Check: `trigger featurenamecheck`
 - TI-bootstrap: `trigger ti0`
 - TI-bootstrap1: `trigger ti1`
@@ -37,6 +37,7 @@
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`
 - CodeFormatCheckstyle: `trigger checkstylecodeformat`
+- SonarScan: `trigger ss`
 - Trigger all Checks: `trigger smartchecks`
 </details>
 

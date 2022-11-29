@@ -74,6 +74,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.delegate.beans.TaskData;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -83,7 +84,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.ProcessTimeLogContext;
 import io.harness.persistence.HIterator;
 import io.harness.rest.RestResponse;
@@ -274,14 +274,14 @@ public class YamlGitServiceImpl implements YamlGitService {
         gitConfig.setBranch(ygs.getBranchName());
         if (EmptyPredicate.isNotEmpty(gitConfig.getSshSettingId())) {
           SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(gitConfig.getSshSettingId());
-          gitConfig.setSshSettingAttribute(settingAttributeForSshKey);
+          gitConfig.setSshSettingAttribute(settingAttributeForSshKey.toDTO());
         }
       }
     } else {
       // This is to support backward compatibility. Should be removed once we move to using gitConnector completely
       if (EmptyPredicate.isNotEmpty(ygs.getSshSettingId())) {
         SettingAttribute settingAttributeForSshKey = getAndDecryptSettingAttribute(ygs.getSshSettingId());
-        gitConfig = ygs.getGitConfig(settingAttributeForSshKey);
+        gitConfig = ygs.getGitConfig(settingAttributeForSshKey.toDTO());
       } else {
         gitConfig = ygs.getGitConfig(null);
       }
@@ -931,6 +931,14 @@ public class YamlGitServiceImpl implements YamlGitService {
     }
 
     return list;
+  }
+
+  @Override
+  public List<YamlGitConfig> getYamlGitConfigByConnector(String accountId, String connectorId) {
+    return wingsPersistence.createQuery(YamlGitConfig.class)
+        .filter(YamlGitConfigKeys.accountId, accountId)
+        .filter(GIT_CONNECTOR_ID_KEY, connectorId)
+        .asList();
   }
 
   @Override

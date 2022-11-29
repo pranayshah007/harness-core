@@ -46,7 +46,6 @@ import io.harness.plancreator.strategy.StrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.contracts.steps.StepType;
@@ -63,6 +62,7 @@ import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -106,9 +106,8 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   @Override
   public LinkedHashMap<String, PlanCreationResponse> createPlanForChildrenNodes(
       PlanCreationContext ctx, IntegrationStageNode stageNode) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
     CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
-        accountExecutionMetadataRepository, ciLicenseService, planCreationContextValue.getAccountIdentifier());
+        accountExecutionMetadataRepository, ciLicenseService, ctx.getAccountIdentifier());
     log.info("Received plan creation request for integration stageV2 {}", stageNode.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -261,9 +260,7 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
 
   private PlanNode getSpecPlanNode(PlanCreationContext ctx, YamlField specField,
       IntegrationStageStepParametersPMS stepParameters, Infrastructure infrastructure) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-    Long timeout = IntegrationStageUtils.getStageTtl(
-        ciLicenseService, planCreationContextValue.getAccountIdentifier(), infrastructure);
+    Long timeout = IntegrationStageUtils.getStageTtl(ciLicenseService, ctx.getAccountIdentifier(), infrastructure);
     return PlanNode.builder()
         .uuid(specField.getNode().getUuid())
         .identifier(YAMLFieldNameConstants.SPEC)
@@ -285,19 +282,17 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
   }
 
   private ExecutionSource buildExecutionSource(PlanCreationContext ctx, IntegrationStageNode stageNode) {
-    PlanCreationContextValue planCreationContextValue = ctx.getGlobalContext().get("metadata");
-
     CodeBase codeBase = getCICodebase(ctx);
 
     if (codeBase == null) {
       //  code base is not mandatory in case git clone is false, Sending status won't be possible
       return null;
     }
-    ExecutionTriggerInfo triggerInfo = planCreationContextValue.getMetadata().getTriggerInfo();
-    TriggerPayload triggerPayload = planCreationContextValue.getTriggerPayload();
+    ExecutionTriggerInfo triggerInfo = ctx.getTriggerInfo();
+    TriggerPayload triggerPayload = ctx.getTriggerPayload();
 
     return IntegrationStageUtils.buildExecutionSource(triggerInfo, triggerPayload, stageNode.getIdentifier(),
-        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, planCreationContextValue, codeBase);
+        codeBase.getBuild(), codeBase.getConnectorRef().getValue(), connectorUtils, ctx, codeBase);
   }
 
   private BuildStatusUpdateParameter obtainBuildStatusUpdateParameter(
@@ -365,5 +360,10 @@ public class IntegrationStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<I
       log.warn("Failed to retrieve ciCodeBase from pipeline");
     }
     return ciCodeBaseYamlField;
+  }
+
+  @Override
+  public Set<String> getSupportedYamlVersions() {
+    return Set.of(PipelineVersion.V0);
   }
 }

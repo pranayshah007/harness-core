@@ -179,6 +179,10 @@ public class ServiceNowResourceServiceImpl implements ServiceNowResourceService 
 
   private List<EncryptedDataDetail> getEncryptionDetails(
       ServiceNowConnectorDTO serviceNowConnectorDTO, NGAccess ngAccess) {
+    if (!isNull(serviceNowConnectorDTO.getAuth()) && !isNull(serviceNowConnectorDTO.getAuth().getCredentials())) {
+      return secretManagerClientService.getEncryptionDetails(
+          ngAccess, serviceNowConnectorDTO.getAuth().getCredentials());
+    }
     return secretManagerClientService.getEncryptionDetails(ngAccess, serviceNowConnectorDTO);
   }
 

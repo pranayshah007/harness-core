@@ -45,6 +45,8 @@ import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSecretMetadata;
 import software.wings.helpers.ext.vault.VaultSecretMetadata.VersionMetadata;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
+import software.wings.helpers.ext.vault.VaultTokenLookupResponse;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 
 import com.google.inject.Singleton;
@@ -219,6 +221,29 @@ public class SecretManagementDelegateServiceImpl implements SecretManagementDele
         }
         sleep(ofMillis(1000));
       }
+    }
+  }
+
+  @Override
+  public VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig) {
+    try {
+      VaultSysAuthRestClient restClient =
+          VaultRestClientFactory.getVaultRetrofit(vaultConfig.getVaultUrl(), vaultConfig.isCertValidationRequired())
+              .create(VaultSysAuthRestClient.class);
+
+      Response<VaultTokenLookupResponse> response =
+          restClient.tokenLookup(vaultConfig.getAuthToken(), vaultConfig.getNamespace()).execute();
+      VaultTokenLookupResult result = null;
+      if (response.isSuccessful()) {
+        result = response.body().getData();
+      } else {
+        logAndThrowVaultError(vaultConfig, response, "Token lookup");
+      }
+      return result;
+    } catch (IOException e) {
+      String message = "Failed to perform Token Lookup for secret manager " + vaultConfig.getName() + " at "
+          + vaultConfig.getVaultUrl();
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
     }
   }
 

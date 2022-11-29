@@ -44,18 +44,24 @@ import io.harness.logging.LogCallback;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
+import com.azure.core.http.rest.PagedFlux;
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.LongRunningOperationStatus;
+import com.azure.core.util.polling.PollResponse;
+import com.azure.core.util.polling.SyncPoller;
+import com.azure.resourcemanager.resources.fluent.models.DeploymentOperationInner;
+import com.azure.resourcemanager.resources.models.DeploymentOperationProperties;
+import com.azure.resourcemanager.resources.models.StatusMessage;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.resources.DeploymentOperationProperties;
-import com.microsoft.azure.management.resources.implementation.DeploymentOperationInner;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.StringJoiner;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -66,30 +72,42 @@ import lombok.extern.slf4j.Slf4j;
 public class ARMDeploymentSteadyStateChecker {
   @Inject protected TimeLimiter timeLimiter;
 
-  public void waitUntilCompleteWithTimeout(
-      ARMDeploymentSteadyStateContext context, AzureManagementClient azureManagementClient, LogCallback logCallback) {
+  public <SyncPollerResult, ResponseObject> void waitUntilCompleteWithTimeout(ARMDeploymentSteadyStateContext context,
+      AzureManagementClient azureManagementClient, LogCallback logCallback,
+      SyncPoller<SyncPollerResult, ResponseObject> syncPoller) {
     try {
       Callable<Object> objectCallable = () -> {
         while (true) {
-          String provisioningState = azureManagementClient.getARMDeploymentStatus(context);
-          logCallback.saveExecutionLog(
-              String.format("Deployment Status for - [%s] is [%s]", context.getDeploymentName(), provisioningState));
+          PollResponse<SyncPollerResult> syncPollResponse = syncPoller.poll();
 
-          if (isDeploymentComplete(provisioningState)) {
+          logCallback.saveExecutionLog(String.format(
+              "Deployment Status for - [%s] is [%s]", context.getDeploymentName(), syncPollResponse.getStatus()));
+
+          if (syncPollResponse.getStatus().isComplete()) {
             String errorMessage = printProvisioningResults(context, azureManagementClient, logCallback);
-            if (ARMDeploymentStatus.isSuccess(provisioningState)) {
+
+            if (syncPollResponse.getStatus() == LongRunningOperationStatus.SUCCESSFULLY_COMPLETED) {
               logCallback.saveExecutionLog(
                   color(format("%nARM Deployment - [%s] completed successfully", context.getDeploymentName()),
                       LogColor.White, LogWeight.Bold),
                   INFO, SUCCESS);
               return Boolean.TRUE;
             } else {
+              SyncPollerResult result = syncPollResponse.getValue();
+              if (result instanceof PollResult) {
+                PollResult.Error error = ((PollResult) result).getError();
+                if (error != null) {
+                  errorMessage = format("%s%n%s", error, error.getMessage());
+                }
+              }
+
               String message = format(
                   "%nARM Deployment failed for deployment - [%s]%n[%s]", context.getDeploymentName(), errorMessage);
               logCallback.saveExecutionLog(color(message, LogColor.Red), ERROR, FAILURE);
               throw new AzureARMDeploymentException(message);
             }
           }
+
           sleep(ofSeconds(context.getStatusCheckIntervalInSeconds()));
         }
       };
@@ -115,7 +133,8 @@ public class ARMDeploymentSteadyStateChecker {
       ARMDeploymentSteadyStateContext context, AzureManagementClient azureManagementClient, LogCallback logCallback) {
     StringBuilder errorMessage = new StringBuilder("");
     logCallback.saveExecutionLog("");
-    PagedList<DeploymentOperationInner> deploymentOperations = azureManagementClient.getDeploymentOperations(context);
+    PagedIterable<DeploymentOperationInner> deploymentOperations =
+        azureManagementClient.getDeploymentOperations(context);
     for (DeploymentOperationInner operation : deploymentOperations) {
       if (operation.properties() != null && operation.properties().targetResource() != null) {
         DeploymentOperationProperties properties = operation.properties();
@@ -125,10 +144,10 @@ public class ARMDeploymentSteadyStateChecker {
         String status = isEmpty(properties.provisioningState()) ? "Not Available" : properties.provisioningState();
         logCallback.saveExecutionLog(String.format("%s :: [%s]", resourceId, status), hasFailed(status) ? ERROR : INFO);
 
-        Object statusMessage = properties.statusMessage();
-        if (hasFailed(status) && statusMessage != null) {
+        StatusMessage statusMessage = properties.statusMessage();
+        if (hasFailed(status) && statusMessage != null && statusMessage.error() != null) {
           errorMessage
-              .append(String.format("Resource - [%s], %nFailed due to - [%s]", resourceId, statusMessage.toString()))
+              .append(String.format("Resource - [%s], %nFailed due to - [%s]", resourceId, statusMessage.error()))
               .append('\n');
         }
       }
@@ -234,18 +253,20 @@ public class ARMDeploymentSteadyStateChecker {
 
   private void printAssignmentOperations(DeploymentBlueprintSteadyStateContext context,
       AzureBlueprintClient azureBlueprintClient, LogCallback logCallback) {
-    PagedList<AssignmentOperation> assignmentOperations = azureBlueprintClient.listAssignmentOperations(
+    PagedFlux<AssignmentOperation> assignmentOperations = azureBlueprintClient.listAssignmentOperations(
         context.getAzureConfig(), context.getAssignmentResourceScope(), context.getAssignmentName());
     logCallback.saveExecutionLog(format("%nDeployment Jobs:"));
     logAssignmentOperations(assignmentOperations, logCallback);
   }
 
-  private void logAssignmentOperations(PagedList<AssignmentOperation> assignmentOperations, LogCallback logCallback) {
-    assignmentOperations.stream()
-        .map(AssignmentOperation::getProperties)
+  private void logAssignmentOperations(PagedFlux<AssignmentOperation> assignmentOperations, LogCallback logCallback) {
+    assignmentOperations.map(AssignmentOperation::getProperties)
         .map(AssignmentOperation.Properties::getDeployments)
-        .flatMap(Stream::of)
-        .forEach(assignmentDeploymentJob -> logAssignmentDeploymentJob(assignmentDeploymentJob, logCallback));
+        .doOnEach(assignmentDeploymentJobArray
+            -> Arrays.stream(assignmentDeploymentJobArray.get())
+                   .forEach(
+                       assignmentDeploymentJob -> logAssignmentDeploymentJob(assignmentDeploymentJob, logCallback)))
+        .subscribe();
   }
 
   private void logAssignmentDeploymentJob(final AssignmentDeploymentJob deploymentJob, final LogCallback logCallback) {

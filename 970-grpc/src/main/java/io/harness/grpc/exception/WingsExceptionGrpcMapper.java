@@ -12,8 +12,8 @@ import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import static io.harness.exception.WingsException.ReportTarget.REST_API;
 
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import com.google.inject.Singleton;
 import io.grpc.Status;

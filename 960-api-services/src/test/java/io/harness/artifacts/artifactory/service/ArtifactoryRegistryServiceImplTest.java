@@ -10,6 +10,7 @@ package io.harness.artifacts.artifactory.service;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VED;
 import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -94,6 +95,17 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "latest"));
     bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "basic"));
     buildDetailsData.put("bdi3", bdiList);
+
+    bdiList = new ArrayList<>();
+    buildDetailsData.put("bdi4", bdiList);
+
+    bdiList = new ArrayList<>();
+    repo = "test1";
+    repoUrl = repo + ".artifactory.harness.io";
+    imageName = "superApp";
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "1.0"));
+    bdiList.add(createBuildDetails(repoUrl, null, repo, imageName, "1.0"));
+    buildDetailsData.put("bdi5", bdiList);
   }
 
   @Test
@@ -328,6 +340,84 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     assertThat(
         artifactoryRegistryService.getLabels(artifactoryInternalConfig, "imageName", "RepositoryName", "buildNos"))
         .isEqualTo(Collections.emptyList());
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetBuildsWithWrongRepositoryFormat() {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test1.artifactory.harness.io")
+                                                             .build();
+
+    assertThatThrownBy(()
+                           -> artifactoryRegistryService.getBuilds(artifactoryInternalConfig, "test1", "superApp",
+                               RepositoryFormat.maven.name(), MAX_NO_OF_TAGS_PER_IMAGE))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testGetLastSuccessfulBuildIncorrectRegex() {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    assertThatThrownBy(()
+                           -> artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryInternalConfig,
+                               "test2", "extra/megaapp", RepositoryFormat.docker.name(), "(r!egex"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testVerifyBuildNumberWithEmptyBuildsScenario() throws IOException {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    doReturn(buildDetailsData.get("bdi4"))
+        .when(artifactoryClient)
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
+            MAX_NO_OF_TAGS_PER_IMAGE);
+
+    assertThatThrownBy(()
+                           -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",
+                               "extra/megaapp", RepositoryFormat.docker.name(), "b23"))
+        .isInstanceOf(HintException.class);
+  }
+
+  @Test
+  @Owner(developers = VED)
+  @Category(UnitTests.class)
+  public void testVerifyBuildNumberWithRepetitiveTag() throws IOException {
+    ArtifactoryConfigRequest artifactoryInternalConfig = ArtifactoryConfigRequest.builder()
+                                                             .artifactoryUrl(ARTIFACTORY_URL)
+                                                             .username(ARTIFACTORY_USERNAME)
+                                                             .password(ARTIFACTORY_PASSWORD.toCharArray())
+                                                             .artifactRepositoryUrl("test2.artifactory.harness.io")
+                                                             .build();
+
+    doReturn(buildDetailsData.get("bdi5"))
+        .when(artifactoryClient)
+        .getArtifactsDetails(artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(),
+            MAX_NO_OF_TAGS_PER_IMAGE);
+
+    assertThatThrownBy(()
+                           -> artifactoryRegistryService.verifyBuildNumber(artifactoryInternalConfig, "test2",
+                               "extra/megaapp", RepositoryFormat.docker.name(), "b23"))
+        .isInstanceOf(HintException.class);
   }
 
   private BuildDetailsInternal createBuildDetails(

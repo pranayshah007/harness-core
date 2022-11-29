@@ -19,7 +19,6 @@ import io.harness.beans.GraphVertex;
 import io.harness.beans.GraphVertex.GraphVertexBuilder;
 import io.harness.beans.OrchestrationGraph;
 import io.harness.data.structure.CollectionUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.execution.NodeExecution;
@@ -96,10 +95,6 @@ public class GraphStatusUpdateHelper {
     graphVertexMap.computeIfPresent(nodeExecutionId, (key, prevValue) -> {
       GraphVertex newValue = convertFromNodeExecution(prevValue, nodeExecution);
       if (isOutcomeUpdateGraphStatus(newValue.getStatus())) {
-        if (EmptyPredicate.isEmpty(newValue.getStepParameters())) {
-          log.error(String.format("Step Parameters null for nodeExecutionId %s", nodeExecutionId));
-          newValue.setStepParameters(pmsGraphStepDetailsService.getStepInputs(planExecutionId, nodeExecutionId));
-        }
         newValue.setOutcomeDocuments(PmsOutcomeMapper.convertJsonToOrchestrationMap(
             pmsOutcomeService.findAllOutcomesMapByRuntimeId(planExecutionId, nodeExecutionId)));
         newValue.setGraphDelegateSelectionLogParams(
@@ -136,6 +131,9 @@ public class GraphStatusUpdateHelper {
             .skipType(nodeExecution.getSkipGraphType())
             .unitProgresses(nodeExecution.getUnitProgresses())
             .progressData(nodeExecution.getPmsProgressData());
+    if (prevValue.getStepParameters() != null) {
+      prevValueBuilder.stepParameters(nodeExecution.getResolvedParams());
+    }
     return prevValueBuilder.build();
   }
 

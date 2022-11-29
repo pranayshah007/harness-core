@@ -13,7 +13,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroup.DelegateGroupKeys;
-import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.UpgradeCheckResult;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -74,7 +73,7 @@ public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
 
   @Override
   public UpgradeCheckResult getUpgraderImageTag(String accountId, String currentUpgraderImageTag) {
-    String newUpgraderImageTag = delegateVersionService.getUpgraderImageTag(accountId, DelegateType.KUBERNETES);
+    String newUpgraderImageTag = delegateVersionService.getUpgraderImageTag(accountId, true);
     final boolean shouldUpgrade = !currentUpgraderImageTag.equals(newUpgraderImageTag);
     return new UpgradeCheckResult(shouldUpgrade ? newUpgraderImageTag : currentUpgraderImageTag, shouldUpgrade);
   }

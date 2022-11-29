@@ -66,6 +66,7 @@ mongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -158,6 +159,7 @@ notificationClient:
     uri: mongodb://localhost:27017/notification
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
@@ -326,17 +328,17 @@ pipelineEventConsumersConfig:
   facilitatorEvent:
     threads: 1
   nodeStart:
-    threads: 2
+    threads: 1
   progress:
     threads: 1
   advise:
-    threads: 2
+    threads: 1
   resume:
-    threads: 2
+    threads: 1
   sdkResponse:
-    threads: 3
+    threads: 1
   graphUpdate:
-    threads: 3
+    threads: 1
   partialPlanResponse:
     threads: 1
   createPlan:
@@ -348,9 +350,9 @@ pipelineEventConsumersConfig:
   webhookEvent:
     threads: 1
   initiateNode:
-    threads: 2
+    threads: 1
   pollingEvent:
-    threads: 5
+    threads: 1
 
 delegatePollingConfig:
   syncDelay: 2000
@@ -378,6 +380,12 @@ planCreatorMergeServicePoolConfig:
   maxPoolSize: ${PLAN_CREATOR_MERGE_SERVICE_EXECUTOR_POOL_MAX_SIZE:-10}
   idleTime: ${PLAN_CREATOR_MERGE_SERVICE_EXECUTOR_POOL_IDLE_TIME:-30}
   timeUnit: ${PLAN_CREATOR_MERGE_SERVICE_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+yamlSchemaExecutorServiceConfig:
+  corePoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_CORE_SIZE:-2}
+  maxPoolSize: ${YAML_SCHEMA_EXECUTOR_POOL_MAX_SIZE:-10}
+  idleTime: ${YAML_SCHEMA_EXECUTOR_POOL_IDLE_TIME:-30}
+  timeUnit: ${YAML_SCHEmA_EXECUTOR_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pipelineRedisEventsConfig:
   setupUsage:
@@ -416,8 +424,6 @@ orchestrationRedisEventsConfig:
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
-  reduceOrchestrationLog: ${REDUCE_ORCHESTRATION_EVENT_LOG:-false}
-  shouldUseBatching: ${ORCHESTRATION_LOG_SHOULD_USE_BATCHING:-false}
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}

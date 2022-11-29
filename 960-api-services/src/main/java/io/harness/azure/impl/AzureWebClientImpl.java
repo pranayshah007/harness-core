@@ -29,30 +29,35 @@ import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
+import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.WebAppHostingOS;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.runtime.azure.AzureAppServicesDeploymentSlotNotFoundException;
 import io.harness.exception.runtime.azure.AzureAppServicesWebAppNotFoundException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
+import com.azure.core.http.rest.Response;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.appservice.fluent.WebAppsClient;
+import com.azure.resourcemanager.appservice.fluent.WebSiteManagementClient;
+import com.azure.resourcemanager.appservice.fluent.models.SiteConfigResourceInner;
+import com.azure.resourcemanager.appservice.fluent.models.StringDictionaryInner;
+import com.azure.resourcemanager.appservice.fluent.models.WebSiteInstanceStatusInner;
+import com.azure.resourcemanager.appservice.implementation.WebSiteManagementClientBuilder;
+import com.azure.resourcemanager.appservice.models.AppSetting;
+import com.azure.resourcemanager.appservice.models.ConnectionString;
+import com.azure.resourcemanager.appservice.models.ConnectionStringType;
+import com.azure.resourcemanager.appservice.models.CsmSlotEntity;
+import com.azure.resourcemanager.appservice.models.DeploymentSlot;
+import com.azure.resourcemanager.appservice.models.Experiments;
+import com.azure.resourcemanager.appservice.models.RampUpRule;
+import com.azure.resourcemanager.appservice.models.WebApp;
+import com.azure.resourcemanager.appservice.models.WebAppBasic;
+import com.azure.resourcemanager.appservice.models.WebDeploymentSlotBasic;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.appservice.AppSetting;
-import com.microsoft.azure.management.appservice.ConnectionString;
-import com.microsoft.azure.management.appservice.ConnectionStringType;
-import com.microsoft.azure.management.appservice.CsmSlotEntity;
-import com.microsoft.azure.management.appservice.DeploymentSlot;
-import com.microsoft.azure.management.appservice.Experiments;
-import com.microsoft.azure.management.appservice.RampUpRule;
-import com.microsoft.azure.management.appservice.WebApp;
-import com.microsoft.azure.management.appservice.implementation.SiteConfigResourceInner;
-import com.microsoft.azure.management.appservice.implementation.SiteInstanceInner;
-import com.microsoft.azure.management.appservice.implementation.StringDictionaryInner;
-import com.microsoft.rest.ServiceCallback;
-import com.microsoft.rest.ServiceFuture;
 import java.io.File;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -63,27 +68,23 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import rx.Completable;
-import rx.Observable;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Singleton
 @Slf4j
 public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   @Override
-  public List<WebApp> listWebAppsByResourceGroupName(AzureClientContext context) {
+  public List<WebAppBasic> listWebAppsByResourceGroupName(AzureClientContext context) {
     String subscriptionId = context.getSubscriptionId();
     String resourceGroupName = context.getResourceGroupName();
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
 
     log.debug("Start getting Web Applications by subscriptionId: {}, resourceGroupName: {}", subscriptionId,
         resourceGroupName);
     Instant startListingWebApps = Instant.now();
-    PagedList<WebApp> webApps = azure.webApps().listByResourceGroup(resourceGroupName);
-
-    List<WebApp> webAppList = new ArrayList<>();
-    for (WebApp app : webApps) {
-      webAppList.add(app);
-    }
+    List<WebAppBasic> webAppList =
+        azure.webApps().listByResourceGroup(resourceGroupName).stream().collect(Collectors.toList());
 
     long elapsedTime = Duration.between(startListingWebApps, Instant.now()).toMillis();
     log.info("Obtained Web Applications items: {} for elapsed time: {}, resourceGroupName: {}, subscriptionId: {} ",
@@ -93,27 +94,21 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public List<DeploymentSlot> listDeploymentSlotsByWebAppName(AzureWebClientContext context) {
+  public List<WebDeploymentSlotBasic> listDeploymentSlotsByWebAppName(AzureWebClientContext context) {
     String subscriptionId = context.getSubscriptionId();
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
 
     log.debug("Start listing deployment slots by subscriptionId: {}, resourceGroupName: {}, webAppName: {}",
         subscriptionId, resourceGroupName, webAppName);
     WebApp webApp = getWebApp(azure, resourceGroupName, webAppName);
-    PagedList<DeploymentSlot> deploymentSlots = webApp.deploymentSlots().list();
 
-    List<DeploymentSlot> deploymentSlotList = new ArrayList<>();
-    for (DeploymentSlot slot : deploymentSlots) {
-      deploymentSlotList.add(slot);
-    }
-
-    return deploymentSlotList;
+    return webApp.deploymentSlots().list().stream().collect(Collectors.toList());
   }
 
   @NotNull
-  private WebApp getWebApp(Azure azure, String resourceGroupName, String webAppName) {
+  private WebApp getWebApp(AzureResourceManager azure, String resourceGroupName, String webAppName) {
     WebApp webApp = azure.webApps().getByResourceGroup(resourceGroupName, webAppName);
     if (webApp == null) {
       throw new AzureAppServicesWebAppNotFoundException(webAppName, resourceGroupName);
@@ -124,7 +119,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   @Override
   public Optional<WebApp> getWebAppByName(AzureWebClientContext context) {
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
     log.debug("Start getting web app by webAppName: {}, context: {}", webAppName, context);
     return Optional.ofNullable(azure.webApps().getByResourceGroup(context.getResourceGroupName(), webAppName));
   }
@@ -133,7 +128,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   public WebApp getWebApp(AzureWebClientContext context) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
     return getWebApp(azure, resourceGroupName, webAppName);
   }
 
@@ -162,34 +157,30 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable startDeploymentSlotAsync(AzureWebClientContext context, final String slotName) {
-    DeploymentSlot deploymentSlot = getDeploymentSlot(context, slotName);
-    log.debug("Starting async slot with name: {}, context: {}", slotName, context);
-    return deploymentSlot.startAsync();
+  public Mono<Response<Void>> startDeploymentSlotAsync(AzureWebClientContext context, String slotName) {
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+    return startDeploymentSlotAsync(context, slotName, webAppsClient);
   }
 
   @Override
-  public void startDeploymentSlotAsync(AzureWebClientContext context, String slotName, ServiceCallback<Void> callback) {
+  public Mono<Response<Void>> startDeploymentSlotAsync(
+      AzureWebClientContext context, String slotName, WebAppsClient webAppsClient) {
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
-      startWebAppAsync(context, callback);
-      return;
+      return startWebAppAsync(context, webAppsClient);
     }
 
     log.debug("Stopping async slot with name: {}, context: {}", slotName, context);
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
 
     log.debug("Start async swapping slot with production, slotName: {}, context: {}", slotName, context);
-    azure.webApps().inner().startSlotAsync(resourceGroupName, webAppName, slotName, callback);
+    return webAppsClient.startSlotWithResponseAsync(resourceGroupName, webAppName, slotName);
   }
-  @Override
-  public void startWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback) {
+  public Mono<Response<Void>> startWebAppAsync(AzureWebClientContext context, WebAppsClient webAppsClient) {
     log.debug("Starting async, context: {}", context);
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    azure.webApps().inner().startAsync(resourceGroupName, webAppName, callback);
+    return webAppsClient.startWithResponseAsync(resourceGroupName, webAppName);
   }
 
   @Override
@@ -199,7 +190,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable startDeploymentSlotAsync(DeploymentSlot slot) {
+  public Mono<Void> startDeploymentSlotAsync(DeploymentSlot slot) {
     log.debug("Starting async slot with name: {}", slot.name());
     return slot.startAsync();
   }
@@ -212,36 +203,32 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable stopDeploymentSlotAsync(AzureWebClientContext context, final String slotName) {
-    DeploymentSlot deploymentSlot = getDeploymentSlot(context, slotName);
-    log.debug("Stopping async slot with name: {}, context: {}", slotName, context);
-    return deploymentSlot.stopAsync();
+  public Mono<Response<Void>> stopDeploymentSlotAsync(AzureWebClientContext context, final String slotName) {
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+    return stopDeploymentSlotAsync(context, slotName, webAppsClient);
   }
 
   @Override
-  public void stopDeploymentSlotAsync(
-      AzureWebClientContext context, final String slotName, ServiceCallback<Void> callback) {
+  public Mono<Response<Void>> stopDeploymentSlotAsync(
+      AzureWebClientContext context, final String slotName, WebAppsClient webAppsClient) {
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
-      stopWebAppAsync(context, callback);
-      return;
+      return stopWebAppAsync(context, webAppsClient);
     }
 
     log.debug("Stopping async slot with name: {}, context: {}", slotName, context);
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
 
     log.debug("Start async swapping slot with production, slotName: {}, context: {}", slotName, context);
-    azure.webApps().inner().stopSlotAsync(resourceGroupName, webAppName, slotName, callback);
+    return webAppsClient.stopSlotWithResponseAsync(resourceGroupName, webAppName, slotName);
   }
 
   @Override
-  public void stopWebAppAsync(AzureWebClientContext context, ServiceCallback<Void> callback) {
+  public Mono<Response<Void>> stopWebAppAsync(AzureWebClientContext context, WebAppsClient webAppsClient) {
     log.debug("Stopping async, context: {}", context);
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    azure.webApps().inner().stopAsync(resourceGroupName, webAppName, callback);
+    return webAppsClient.stopWithResponseAsync(resourceGroupName, webAppName);
   }
 
   @Override
@@ -251,7 +238,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable stopDeploymentSlotAsync(DeploymentSlot slot) {
+  public Mono<Void> stopDeploymentSlotAsync(DeploymentSlot slot) {
     log.debug("Stopping async slot with name: {}", slot.name());
     return slot.stopAsync();
   }
@@ -267,7 +254,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   private String getProductionState(AzureWebClientContext context) {
-    Azure azure = getAzureClientByContext(context);
+    AzureResourceManager azure = getAzureClientByContext(context);
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
     WebApp webApp = getWebApp(azure, resourceGroupName, webAppName);
@@ -537,10 +524,10 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     StringDictionaryInner siteConfigResourceInner =
-        azure.webApps().inner().listApplicationSettingsSlot(resourceGroupName, webAppName, slotName);
+        webAppsClient.listApplicationSettingsSlot(resourceGroupName, webAppName, slotName);
     Map<String, String> existingSlotProperties = siteConfigResourceInner.properties();
     existingSlotProperties.remove(DOCKER_REGISTRY_SERVER_URL_PROPERTY_NAME);
     existingSlotProperties.remove(DOCKER_REGISTRY_SERVER_USERNAME_PROPERTY_NAME);
@@ -549,18 +536,17 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     siteConfigResourceInner.withProperties(existingSlotProperties);
 
     log.debug("Start deleting slot docker settings by slotName: {}, context: {}", slotName, context);
-    azure.webApps().inner().updateApplicationSettingsSlot(
-        resourceGroupName, webAppName, slotName, siteConfigResourceInner);
+    webAppsClient.updateApplicationSettingsSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
   }
 
   @Override
   public void deleteWebAppDockerSettings(AzureWebClientContext context) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     StringDictionaryInner siteConfigResourceInner =
-        azure.webApps().inner().listApplicationSettings(resourceGroupName, webAppName);
+        webAppsClient.listApplicationSettings(resourceGroupName, webAppName);
     Map<String, String> existingSlotProperties = siteConfigResourceInner.properties();
     existingSlotProperties.remove(DOCKER_REGISTRY_SERVER_URL_PROPERTY_NAME);
     existingSlotProperties.remove(DOCKER_REGISTRY_SERVER_USERNAME_PROPERTY_NAME);
@@ -569,7 +555,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     siteConfigResourceInner.withProperties(existingSlotProperties);
 
     log.debug("Start deleting slot docker settings, context: {}", context);
-    azure.webApps().inner().updateApplicationSettings(resourceGroupName, webAppName, siteConfigResourceInner);
+    webAppsClient.updateApplicationSettings(resourceGroupName, webAppName, siteConfigResourceInner);
   }
 
   @Override
@@ -577,7 +563,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       AzureWebClientContext context, final String slotName, final String imageNameAndTag, WebAppHostingOS hostingOS) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     String dockerImageAndTagPath = AzureResourceUtility.getDockerImageAndTagFullPath(imageNameAndTag);
 
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
@@ -585,7 +571,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       return;
     }
     final SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfigurationSlot(resourceGroupName, webAppName, slotName);
+        webAppsClient.getConfigurationSlot(resourceGroupName, webAppName, slotName);
 
     if (WebAppHostingOS.LINUX == hostingOS) {
       siteConfigResourceInner.withLinuxFxVersion(dockerImageAndTagPath);
@@ -598,7 +584,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     log.debug(
         "Start updating slot docker image name and tag settings, slotName: {}, context: {}, dockerImageAndTagPath: {}",
         slotName, context, dockerImageAndTagPath);
-    azure.webApps().inner().updateConfigurationSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
+    webAppsClient.updateConfigurationSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
   }
 
   @Override
@@ -606,10 +592,10 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       AzureWebClientContext context, final String dockerImageAndTagPath, WebAppHostingOS hostingOS) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     final SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+        webAppsClient.getConfiguration(resourceGroupName, webAppName);
 
     if (WebAppHostingOS.LINUX == hostingOS) {
       siteConfigResourceInner.withLinuxFxVersion(dockerImageAndTagPath);
@@ -621,7 +607,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
     log.debug("Start updating docker image name and tag settings, context: {}, dockerImageAndTagPath: {}", context,
         dockerImageAndTagPath);
-    azure.webApps().inner().updateConfiguration(resourceGroupName, webAppName, siteConfigResourceInner);
+    webAppsClient.updateConfiguration(resourceGroupName, webAppName, siteConfigResourceInner);
   }
 
   @Override
@@ -631,26 +617,26 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfigurationSlot(resourceGroupName, webAppName, slotName);
+        webAppsClient.getConfigurationSlot(resourceGroupName, webAppName, slotName);
     siteConfigResourceInner.withLinuxFxVersion(EMPTY);
     siteConfigResourceInner.withWindowsFxVersion(null);
 
     log.debug("Start deleting slot docker image name and tag by slotName: {}, context: {}", slotName, context);
-    azure.webApps().inner().updateConfigurationSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
+    webAppsClient.updateConfigurationSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
   }
 
   @Override
   public void swapDeploymentSlotWithProduction(AzureWebClientContext context, final String sourceSlotName) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     CsmSlotEntity slotSwapEntity = getTargetCsmSlotEntity(sourceSlotName);
 
     log.debug("Start swapping slot with production, slotName: {}, context: {}", sourceSlotName, context);
-    azure.webApps().inner().swapSlotWithProduction(resourceGroupName, webAppName, slotSwapEntity);
+    webAppsClient.swapSlotWithProduction(resourceGroupName, webAppName, slotSwapEntity);
   }
 
   @Override
@@ -658,49 +644,34 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       AzureWebClientContext context, final String sourceSlotName, final String targetSlotName) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     CsmSlotEntity targetSlotSwapEntity = getTargetCsmSlotEntity(targetSlotName);
 
     log.debug("Start swapping slot with production, slotName: {}, context: {}", sourceSlotName, context);
-    azure.webApps().inner().swapSlotSlot(resourceGroupName, webAppName, sourceSlotName, targetSlotSwapEntity);
+    webAppsClient.swapSlot(resourceGroupName, webAppName, sourceSlotName, targetSlotSwapEntity);
   }
 
   @Override
-  public Observable<Void> swapDeploymentSlotWithProductionAsync(
-      AzureWebClientContext context, final String sourceSlotName) {
+  public Mono<Void> swapDeploymentSlotWithProductionAsync(AzureWebClientContext context, final String sourceSlotName) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     CsmSlotEntity slotSwapEntity = getTargetCsmSlotEntity(sourceSlotName);
 
     log.debug("Start async swapping slot with production, slotName: {}, context: {}", sourceSlotName, context);
-    return azure.webApps().inner().swapSlotWithProductionAsync(resourceGroupName, webAppName, slotSwapEntity);
+    return webAppsClient.swapSlotWithProductionAsync(resourceGroupName, webAppName, slotSwapEntity);
   }
 
   @Override
-  public Observable<Void> swapDeploymentSlotsAsync(
-      AzureWebClientContext context, final String sourceSlotName, final String targetSlotName) {
+  public Mono<Response<Flux<ByteBuffer>>> swapDeploymentSlotsAsync(
+      AzureWebClientContext context, final String sourceSlotName, String targetSlotName) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     CsmSlotEntity targetSlotSwapEntity = getTargetCsmSlotEntity(targetSlotName);
 
     log.debug("Start async swapping slot with production, slotName: {}, context: {}", sourceSlotName, context);
-    return azure.webApps().inner().swapSlotSlotAsync(
-        resourceGroupName, webAppName, sourceSlotName, targetSlotSwapEntity);
-  }
-
-  @Override
-  public ServiceFuture<Void> swapDeploymentSlotsAsync(AzureWebClientContext context, final String sourceSlotName,
-      String targetSlotName, ServiceCallback<Void> callback) {
-    String resourceGroupName = context.getResourceGroupName();
-    String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    CsmSlotEntity targetSlotSwapEntity = getTargetCsmSlotEntity(targetSlotName);
-
-    log.debug("Start async swapping slot with production, slotName: {}, context: {}", sourceSlotName, context);
-    return azure.webApps().inner().swapSlotSlotAsync(
-        resourceGroupName, webAppName, sourceSlotName, targetSlotSwapEntity, callback);
+    return webAppsClient.swapSlotWithResponseAsync(resourceGroupName, webAppName, sourceSlotName, targetSlotSwapEntity);
   }
 
   @NotNull
@@ -725,8 +696,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   public WebAppHostingOS getWebAppHostingOS(AzureWebClientContext context) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    SiteConfigResourceInner config = azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+    SiteConfigResourceInner config = webAppsClient.getConfiguration(resourceGroupName, webAppName);
     if (isBlank(config.windowsFxVersion()) && isBlank(config.linuxFxVersion())) {
       throw new IllegalArgumentException(
           format("There is no hosting operating system for subscriptionId: %s, resourceGroupName: %s,"
@@ -744,9 +715,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    SiteConfigResourceInner slotConfig =
-        azure.webApps().inner().getConfigurationSlot(resourceGroupName, webAppName, slotName);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+    SiteConfigResourceInner slotConfig = webAppsClient.getConfigurationSlot(resourceGroupName, webAppName, slotName);
 
     String windowsFxVersion = slotConfig.windowsFxVersion();
     if (isNotBlank(windowsFxVersion)) {
@@ -762,8 +732,8 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   public Optional<String> getWebAppDockerImageNameAndTag(AzureWebClientContext context) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
-    SiteConfigResourceInner slotConfig = azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+    SiteConfigResourceInner slotConfig = webAppsClient.getConfiguration(resourceGroupName, webAppName);
 
     String windowsFxVersion = slotConfig.windowsFxVersion();
     if (isNotBlank(windowsFxVersion)) {
@@ -779,7 +749,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       AzureWebClientContext context, String targetRerouteSlotName, double trafficReroutePercentage) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     DeploymentSlot targetRouteSlot = getDeploymentSlot(context, targetRerouteSlotName);
 
     List<RampUpRule> rampUpRules = createRampUpRules(targetRouteSlot, trafficReroutePercentage);
@@ -787,20 +757,20 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
     log.debug("Start getting app configuration settings, targetRerouteSlotName: {}, context: {}", targetRerouteSlotName,
         context);
-    SiteConfigResourceInner siteConfig = azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+    SiteConfigResourceInner siteConfig = webAppsClient.getConfiguration(resourceGroupName, webAppName);
     siteConfig.withExperiments(experiments);
 
     log.debug("Start rerouting slot traffic, targetRerouteSlotName: {}, context: {}", targetRerouteSlotName, context);
-    azure.webApps().inner().updateConfiguration(resourceGroupName, webAppName, siteConfig);
+    webAppsClient.updateConfiguration(resourceGroupName, webAppName, siteConfig);
   }
 
   @NotNull
   private List<RampUpRule> createRampUpRules(DeploymentSlot targetRerouteSlot, double trafficReroutePercentage) {
-    String defaultHostName = targetRerouteSlot.defaultHostName();
+    String defaultHostName = targetRerouteSlot.defaultHostname();
     String targetRerouteSlotName = targetRerouteSlot.name();
 
     RampUpRule rampUpRule = new RampUpRule();
-    rampUpRule.withActionHostName(defaultHostName);
+    rampUpRule.withActionHostname(defaultHostName);
     rampUpRule.withName(targetRerouteSlotName);
     rampUpRule.withReroutePercentage(trafficReroutePercentage);
 
@@ -820,12 +790,12 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   public double getDeploymentSlotTrafficWeight(AzureWebClientContext context, String slotName) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     double defaultTrafficWeight = 0.0;
 
     String slotDefaultHostName = getDeploymentSlotDefaultHostName(context, slotName);
 
-    SiteConfigResourceInner configurationSlot = azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+    SiteConfigResourceInner configurationSlot = webAppsClient.getConfiguration(resourceGroupName, webAppName);
     Experiments experiments = configurationSlot.experiments();
     if (experiments == null) {
       return defaultTrafficWeight;
@@ -833,42 +803,42 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
 
     return experiments.rampUpRules()
         .stream()
-        .filter(rule -> slotDefaultHostName.equals(rule.actionHostName()))
+        .filter(rule -> slotDefaultHostName.equals(rule.actionHostname()))
         .map(RampUpRule::reroutePercentage)
         .findFirst()
         .orElse(defaultTrafficWeight);
   }
 
   private String getDeploymentSlotDefaultHostName(AzureWebClientContext context, String slotName) {
-    return getDeploymentSlot(context, slotName).defaultHostName();
+    return getDeploymentSlot(context, slotName).defaultHostname();
   }
 
-  public List<SiteInstanceInner> listInstanceIdentifiersSlot(AzureWebClientContext context, String slotName) {
+  public List<WebSiteInstanceStatusInner> listInstanceIdentifiersSlot(AzureWebClientContext context, String slotName) {
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
+
     if (DEPLOYMENT_SLOT_PRODUCTION_NAME.equals(slotName)) {
-      return listInstanceIdentifiers(context);
+      return listInstanceIdentifiers(context, webAppsClient);
     }
-    Azure azure = getAzureClientByContext(context);
+
     String appName = context.getAppName();
     String resourceGroupName = context.getResourceGroupName();
 
     log.debug("Start listing instance identifiers for slot, resourceGroupName: {}, slotName: {}, context: {}",
         resourceGroupName, slotName, context);
-    PagedList<SiteInstanceInner> siteInstanceInners =
-        azure.webApps().inner().listInstanceIdentifiersSlot(resourceGroupName, appName, slotName);
-    return new ArrayList<>(siteInstanceInners);
+    return webAppsClient.listInstanceIdentifiersSlot(resourceGroupName, appName, slotName)
+        .stream()
+        .collect(Collectors.toList());
   }
 
   @Override
-  public List<SiteInstanceInner> listInstanceIdentifiers(AzureWebClientContext context) {
-    Azure azure = getAzureClientByContext(context);
+  public List<WebSiteInstanceStatusInner> listInstanceIdentifiers(
+      AzureWebClientContext context, WebAppsClient webAppsClient) {
     String appName = context.getAppName();
     String resourceGroupName = context.getResourceGroupName();
 
     log.debug("Start listing instance identifiers for WebApp, resourceGroupName: {}, context: {}", resourceGroupName,
         context);
-    PagedList<SiteInstanceInner> siteInstanceInners =
-        azure.webApps().inner().listInstanceIdentifiers(resourceGroupName, appName);
-    return new ArrayList<>(siteInstanceInners);
+    return webAppsClient.listInstanceIdentifiers(resourceGroupName, appName).stream().collect(Collectors.toList());
   }
 
   public void deployZipToSlot(AzureWebClientContext context, final String slotName, final File file) {
@@ -885,7 +855,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     deploymentSlot.zipDeploy(file);
   }
 
-  public Completable deployZipToSlotAsync(AzureWebClientContext context, final String slotName, final File file) {
+  public Mono<Void> deployZipToSlotAsync(AzureWebClientContext context, final String slotName, final File file) {
     if (isBlank(slotName)) {
       throw new IllegalArgumentException(SLOT_NAME_BLANK_VALIDATION_MSG);
     }
@@ -904,7 +874,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable deployZipToWebAppAsync(AzureWebClientContext context, File file) {
+  public Mono<Void> deployZipToWebAppAsync(AzureWebClientContext context, File file) {
     if (file == null) {
       throw new IllegalArgumentException(FILE_BLANK_ERROR_MSG);
     }
@@ -928,7 +898,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     deploymentSlot.warDeploy(file);
   }
 
-  public Completable deployWarToSlotAsync(AzureWebClientContext context, final String slotName, final File file) {
+  public Mono<Void> deployWarToSlotAsync(AzureWebClientContext context, final String slotName, final File file) {
     if (isBlank(slotName)) {
       throw new IllegalArgumentException(SLOT_NAME_BLANK_VALIDATION_MSG);
     }
@@ -946,7 +916,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Completable deployWarToWebAppAsync(AzureWebClientContext context, File file) {
+  public Mono<Void> deployWarToWebAppAsync(AzureWebClientContext context, File file) {
     if (file == null) {
       throw new IllegalArgumentException(FILE_BLANK_ERROR_MSG);
     }
@@ -967,7 +937,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     return deploymentSlot.streamDeploymentLogs();
   }
 
-  public Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context, final String slotName) {
+  public Flux<String> streamDeploymentLogsAsync(AzureWebClientContext context, final String slotName) {
     if (isBlank(slotName)) {
       throw new IllegalArgumentException(SLOT_NAME_BLANK_VALIDATION_MSG);
     }
@@ -981,7 +951,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
   }
 
   @Override
-  public Observable<String> streamDeploymentLogsAsync(AzureWebClientContext context) {
+  public Flux<String> streamDeploymentLogsAsync(AzureWebClientContext context) {
     log.debug("Start streaming deployment log, context: {}", context);
     WebApp azureApp = getWebApp(context);
     return azureApp.streamDeploymentLogsAsync();
@@ -997,7 +967,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     if (isBlank(slotName)) {
       throw new IllegalArgumentException(SLOT_NAME_BLANK_VALIDATION_MSG);
     }
@@ -1009,12 +979,11 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
 
     final SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfigurationSlot(resourceGroupName, webAppName, slotName);
+        webAppsClient.getConfigurationSlot(resourceGroupName, webAppName, slotName);
     siteConfigResourceInner.withAppCommandLine(startupCommand);
 
     log.debug("Start updating slot with app command line, slotName: {}, context: {}", slotName, context);
-    return azure.webApps().inner().updateConfigurationSlot(
-        resourceGroupName, webAppName, slotName, siteConfigResourceInner);
+    return webAppsClient.updateConfigurationSlot(resourceGroupName, webAppName, slotName, siteConfigResourceInner);
   }
 
   @Override
@@ -1022,7 +991,7 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
       AzureWebClientContext context, String startupCommand) {
     String resourceGroupName = context.getResourceGroupName();
     String webAppName = context.getAppName();
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
     if (isBlank(webAppName)) {
       throw new IllegalArgumentException(WEB_APP_NAME_BLANK_ERROR_MSG);
     }
@@ -1031,11 +1000,11 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     }
 
     final SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+        webAppsClient.getConfiguration(resourceGroupName, webAppName);
     siteConfigResourceInner.withAppCommandLine(startupCommand);
 
     log.debug("Start updating web app with app command line, context: {}", context);
-    return azure.webApps().inner().updateConfiguration(resourceGroupName, webAppName, siteConfigResourceInner);
+    return webAppsClient.updateConfiguration(resourceGroupName, webAppName, siteConfigResourceInner);
   }
 
   public String getDeploymentSlotStartupCommand(AzureWebClientContext context, String slotName) {
@@ -1053,11 +1022,11 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     if (isBlank(resourceGroupName)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     log.debug("Start getting slot configs, slotName: {}, context: {}", slotName, context);
     SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfigurationSlot(resourceGroupName, webAppName, slotName);
+        webAppsClient.getConfigurationSlot(resourceGroupName, webAppName, slotName);
 
     return siteConfigResourceInner.appCommandLine();
   }
@@ -1072,12 +1041,26 @@ public class AzureWebClientImpl extends AzureClient implements AzureWebClient {
     if (isBlank(resourceGroupName)) {
       throw new IllegalArgumentException(RESOURCE_GROUP_NAME_NULL_VALIDATION_MSG);
     }
-    Azure azure = getAzureClientByContext(context);
+    WebAppsClient webAppsClient = getWebSiteManagementClient(context).getWebApps();
 
     log.debug("Start getting slot configs, context: {}", context);
-    SiteConfigResourceInner siteConfigResourceInner =
-        azure.webApps().inner().getConfiguration(resourceGroupName, webAppName);
+    SiteConfigResourceInner siteConfigResourceInner = webAppsClient.getConfiguration(resourceGroupName, webAppName);
 
     return siteConfigResourceInner.appCommandLine();
+  }
+
+  protected WebSiteManagementClient getWebSiteManagementClient(AzureClientContext context) {
+    return getWebSiteManagementClient(context.getAzureConfig(), context.getSubscriptionId());
+  }
+
+  protected WebSiteManagementClient getWebSiteManagementClient(AzureConfig azureConfig) {
+    return getWebSiteManagementClient(azureConfig, null);
+  }
+
+  protected WebSiteManagementClient getWebSiteManagementClient(AzureConfig azureConfig, String subscriptionId) {
+    return new WebSiteManagementClientBuilder()
+        .subscriptionId(subscriptionId)
+        .pipeline(getAzureHttpPipeline(azureConfig, subscriptionId))
+        .buildClient();
   }
 }

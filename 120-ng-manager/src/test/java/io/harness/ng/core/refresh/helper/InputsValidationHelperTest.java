@@ -27,6 +27,7 @@ import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.ng.core.infrastructure.dto.NoInputMergeInputAction;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
 import io.harness.ng.core.refresh.bean.EntityRefreshContext;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -123,8 +124,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     doReturn("infrastructureDefinitions:\n"
         + "  - identifier: \"infra2\"\n")
         .when(infrastructureEntityService)
-        .createInfrastructureInputsFromYamlV2(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("infra2"), false);
+        .createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv",
+            Collections.singletonList("infra2"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     InputsValidationResponse validationResponse =
         inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
@@ -299,8 +300,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     doReturn("infrastructureDefinitions:\n"
         + "- identifier: \"IDENTIFIER\"")
         .when(infrastructureEntityService)
-        .createInfrastructureInputsFromYamlV2(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("IDENTIFIER"), false);
+        .createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv",
+            Collections.singletonList("IDENTIFIER"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     InputsValidationResponse validationResponse =
         inputsValidationHelper.validateInputsForYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYmlWithService, null);
@@ -319,8 +320,8 @@ public class InputsValidationHelperTest extends NgManagerTestBase {
     doReturn("infrastructureDefinitions:\n"
         + "- identifier: \"infra1\"")
         .when(infrastructureEntityService)
-        .createInfrastructureInputsFromYamlV2(
-            ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv", Collections.singletonList("infra1"), false);
+        .createInfrastructureInputsFromYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, "testenv",
+            Collections.singletonList("infra1"), false, NoInputMergeInputAction.ADD_IDENTIFIER_NODE);
 
     InputsValidationResponse validationResponse = inputsValidationHelper.validateInputsForYaml(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, templateWithInfraFixed, resolvedTemplateWithInfraFixed);

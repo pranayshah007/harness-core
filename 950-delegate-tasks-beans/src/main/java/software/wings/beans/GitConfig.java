@@ -27,6 +27,7 @@ import io.harness.git.model.GitRepositoryType;
 import io.harness.shell.AuthenticationScheme;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.jersey.JsonViews;
 import software.wings.security.UsageRestrictions;
 import software.wings.settings.SettingValue;

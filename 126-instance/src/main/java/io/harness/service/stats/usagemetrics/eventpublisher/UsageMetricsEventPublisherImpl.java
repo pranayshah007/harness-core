@@ -66,9 +66,8 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
                              .setData(eventInfo.toByteString())
                              .build());
       Map<String, String> dataMap = dataPoints.get(0).getDataMap();
-      log.info("Event sent for service: {} (account: {}, org: {}, project: {})",
-          dataMap.get(TimescaleConstants.SERVICE_ID.getKey()), project, dataMap.get(TimescaleConstants.ORG_ID.getKey()),
-          dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));
+      log.info("Event sent for project: {} (account: {}, org: {})", dataMap.get(TimescaleConstants.PROJECT_ID.getKey()),
+          dataMap.get(TimescaleConstants.ACCOUNT_ID.getKey()), dataMap.get(TimescaleConstants.ORG_ID.getKey()));
     } catch (Exception ex) {
       log.error("Error publishing instance stats for services of account {}", project, ex);
     }
@@ -102,9 +101,11 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     data.put(TimescaleConstants.ENV_ID.getKey(), instance.getEnvIdentifier());
     data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instance.getInstanceType().name());
     data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(size));
-    if (instance.getConnectorRef() != null) {
-      data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), instance.getConnectorRef());
+    String connectorRef = instance.getConnectorRef();
+    if (connectorRef == null) {
+      connectorRef = "";
     }
+    data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), connectorRef);
     return data;
   }
 }

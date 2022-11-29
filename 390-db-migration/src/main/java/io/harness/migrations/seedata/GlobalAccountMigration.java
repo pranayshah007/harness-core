@@ -14,8 +14,8 @@ import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.TemplateConstants.HARNESS_GALLERY;
 import static software.wings.common.TemplateConstants.POWER_SHELL_IIS_V2_INSTALL_PATH;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 import io.harness.migrations.SeedDataMigration;
 
 import software.wings.beans.template.Template;

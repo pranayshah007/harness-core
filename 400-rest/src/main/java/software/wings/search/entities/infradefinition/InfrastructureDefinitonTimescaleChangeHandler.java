@@ -267,6 +267,10 @@ public class InfrastructureDefinitonTimescaleChangeHandler implements ChangeHand
       columnValueMapping.put("cluster_name", cluster_name);
     }
 
+    if (infrastructureDefinition.getEnvId() != null) {
+      columnValueMapping.put("env_id", infrastructureDefinition.getEnvId());
+    }
+
     return columnValueMapping;
   }
 }

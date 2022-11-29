@@ -208,7 +208,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
   public void shouldBuildManualCodebaseSweepingOutput() throws InvalidProtocolBufferException {
     ManualExecutionSource manualExecutionSource = ManualExecutionSource.builder().branch("main").build();
     CodebaseSweepingOutput codebaseSweepingOutput =
-        codeBaseTaskStep.buildManualCodebaseSweepingOutput(manualExecutionSource);
+        codeBaseTaskStep.buildManualCodebaseSweepingOutput(manualExecutionSource, "url");
     assertThat(codebaseSweepingOutput.getBranch()).isEqualTo("main");
   }
 

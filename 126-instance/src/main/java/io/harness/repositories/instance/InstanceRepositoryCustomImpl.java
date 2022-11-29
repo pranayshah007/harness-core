@@ -15,7 +15,6 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.newA
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.dtos.GitOpsInstanceDTO;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.models.ActiveServiceInstanceInfo;
@@ -48,6 +47,7 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
+  private final String INSTANCE_NG_COLLECTION = "instanceNG";
 
   @Inject
   public InstanceRepositoryCustomImpl(
@@ -255,7 +255,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .count()
             .as(InstanceSyncConstants.COUNT);
     return mongoTemplate.aggregate(
-        newAggregation(matchStage, groupClusterEnvId), GitOpsInstanceDTO.class, ActiveServiceInstanceInfo.class);
+        newAggregation(matchStage, groupClusterEnvId), INSTANCE_NG_COLLECTION, ActiveServiceInstanceInfo.class);
   }
 
   /*

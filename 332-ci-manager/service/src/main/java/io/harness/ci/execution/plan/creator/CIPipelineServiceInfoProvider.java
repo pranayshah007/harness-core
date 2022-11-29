@@ -37,9 +37,11 @@ import io.harness.ci.creator.variables.SaveCacheS3StepVariableCreator;
 import io.harness.ci.creator.variables.SecurityStepVariableCreator;
 import io.harness.ci.plan.creator.filter.CIStageFilterJsonCreatorV2;
 import io.harness.ci.plan.creator.stage.IntegrationStagePMSPlanCreatorV2;
+import io.harness.ci.plan.creator.stage.V3.IntegrationStagePMSPlanCreatorV3;
 import io.harness.ci.plan.creator.step.CIPMSStepFilterJsonCreator;
 import io.harness.ci.plan.creator.step.CIPMSStepPlanCreator;
 import io.harness.ci.plan.creator.step.CIStepFilterJsonCreatorV2;
+import io.harness.ci.plan.creator.steps.CIStepsPlanCreator;
 import io.harness.ci.plancreator.ActionStepPlanCreator;
 import io.harness.ci.plancreator.ArtifactoryUploadStepPlanCreator;
 import io.harness.ci.plancreator.BackgroundStepPlanCreator;
@@ -60,6 +62,8 @@ import io.harness.ci.plancreator.S3UploadStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheGCSStepPlanCreator;
 import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
+import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
+import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
@@ -124,6 +128,13 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new InitializeStepPlanCreator());
     planCreators.add(new ActionStepPlanCreator());
     planCreators.add(new BitriseStepPlanCreator());
+
+    // add V1 plan creators
+    planCreators.add(new IntegrationStagePMSPlanCreatorV3());
+    planCreators.add(new CIStepsPlanCreator());
+    planCreators.add(new RunStepPlanCreatorV1());
+    planCreators.add(new PluginStepPlanCreatorV1());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -310,7 +321,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(gitCloneStepInfo);
     stepInfos.add(saveCacheToS3);
-    stepInfos.add(actionStepInfo);
+    //    stepInfos.add(actionStepInfo);
 
     return stepInfos;
   }

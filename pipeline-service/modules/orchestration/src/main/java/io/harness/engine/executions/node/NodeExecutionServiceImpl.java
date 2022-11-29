@@ -61,6 +61,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -306,6 +307,17 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
   }
 
+  @Override
+  public Page<NodeExecution> fetchAllNodeExecutionsByStatus(
+      EnumSet<Status> statuses, Set<String> fieldNames, Pageable pageable) {
+    Query query = query(where(NodeExecutionKeys.status).in(statuses));
+
+    for (String fieldName : fieldNames) {
+      query.fields().include(fieldName);
+    }
+    return nodeExecutionReadHelper.fetchNodeExecutions(query, pageable);
+  }
+
   /**
    * This is deprecated, use below update to get only required fields
    */
@@ -361,9 +373,6 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @VisibleForTesting
   @Override
   public boolean shouldLog(Update updateOps) {
-    if (!orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-      return false;
-    }
     Set<String> fieldsUpdated = new HashSet<>();
     if (updateOps.getUpdateObject().containsKey("$set")) {
       fieldsUpdated.addAll(((Document) updateOps.getUpdateObject().get("$set")).keySet());
@@ -379,14 +388,20 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
     update(nodeExecutionId, ops, NodeProjectionUtils.fieldsForNodeUpdateObserver);
   }
 
+  // Save a collection nodeExecutions.
+  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
+  // then use the below save() method.
+  @Override
+  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
+    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
+  }
+
   @Override
   public NodeExecution save(NodeExecution nodeExecution) {
     if (nodeExecution.getVersion() == null) {
       NodeExecution savedNodeExecution = transactionHelper.performTransaction(() -> {
         NodeExecution nodeExecution1 = mongoTemplate.insert(nodeExecution);
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
-        }
+        orchestrationLogPublisher.onNodeStart(NodeStartInfo.builder().nodeExecution(nodeExecution).build());
         return nodeExecution1;
       });
       if (savedNodeExecution != null) {
@@ -474,9 +489,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         if (updated.getStepType().getStepCategory() == StepCategory.STAGE || StatusUtils.isFinalStatus(status)) {
           emitEvent(updated, OrchestrationEventType.NODE_EXECUTION_STATUS_UPDATE);
         }
-        if (orchestrationLogConfiguration.isReduceOrchestrationLog()) {
-          orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
-        }
+        orchestrationLogPublisher.onNodeStatusUpdate(NodeUpdateInfo.builder().nodeExecution(updated).build());
       }
       return updated;
     });
@@ -611,6 +624,7 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
         .include(NodeExecutionKeys.executableResponses)
         .include(NodeExecutionKeys.planNode)
         .include(NodeExecutionKeys.adviserResponse)
+        .include(NodeExecutionKeys.createdAt)
         .include(NodeExecutionKeys.oldRetry);
     return mongoTemplate.find(query, NodeExecution.class);
   }
@@ -914,11 +928,26 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
     List<NodeExecution> nodeExecutions = mongoTemplate.find(query, NodeExecution.class);
 
+    Map<String, NodeExecution> nodeExecutionMap = getUniqueNodeExecutionForNodes(nodeExecutions);
     // fetching stageFqn of stage Nodes
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
-    nodeExecutions.forEach(
-        nodeExecution -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
+    nodeExecutionMap.forEach(
+        (uuid, nodeExecution) -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
     return nodeExecutionIdToPlanNode;
+  }
+
+  // We can have multiple nodeExecution corresponding to same node. So this method make sure that only final/last
+  // nodeExecution is considered while transforming plan for retry failed pipeline.
+  private Map<String, NodeExecution> getUniqueNodeExecutionForNodes(List<NodeExecution> nodeExecutions) {
+    Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid())) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      } else if (nodeExecutionMap.get(nodeExecution.getNode().getUuid()).getStartTs() < nodeExecution.getStartTs()) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      }
+    }
+    return nodeExecutionMap;
   }
 
   private void validateQueryFieldsForNodeExecution(Set<String> fieldsToInclude) {

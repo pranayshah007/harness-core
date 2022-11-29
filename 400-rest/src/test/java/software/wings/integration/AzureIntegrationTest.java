@@ -29,9 +29,9 @@ import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.rules.Integration;
 import software.wings.service.intfc.security.EncryptionService;
 
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.containerservice.models.OSType;
 import com.google.inject.Inject;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.containerservice.OSType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -179,7 +179,7 @@ public class AzureIntegrationTest extends WingsBaseTest {
             config, Collections.EMPTY_LIST, subscriptionId, rg, Collections.EMPTY_MAP, OSType.WINDOWS);
         // assert that only windows instances are returned
         for (VirtualMachine vm : vms) {
-          assertThat(vm.inner().osProfile().windowsConfiguration()).isNotNull();
+          assertThat(vm.osProfile().windowsConfiguration()).isNotNull();
           log.info("Resource group :" + rg + " VM :" + vm.name());
         }
       }
@@ -190,7 +190,7 @@ public class AzureIntegrationTest extends WingsBaseTest {
             config, Collections.EMPTY_LIST, subscriptionId, rg, Collections.EMPTY_MAP, OSType.LINUX);
         // assert that only linux instances are returned
         for (VirtualMachine vm : vms) {
-          assertThat(vm.inner().osProfile().linuxConfiguration()).isNotNull();
+          assertThat(vm.osProfile().linuxConfiguration()).isNotNull();
           log.info("Resource group :" + rg + " VM :" + vm.name());
         }
       }

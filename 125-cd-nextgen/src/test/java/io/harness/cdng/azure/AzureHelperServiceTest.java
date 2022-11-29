@@ -10,9 +10,11 @@ package io.harness.cdng.azure;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.TMACARI;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -23,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.expressions.CDExpressionResolver;
@@ -33,13 +36,39 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
+import io.harness.delegate.beans.azure.response.AzureDelegateTaskResponse;
+import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
+import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
+import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
+import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.Scope;
+import io.harness.eraro.ErrorCode;
+import io.harness.exception.ArtifactServerException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.filestore.FileUsage;
@@ -47,10 +76,16 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.service.DelegateGrpcClientWrapper;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,6 +111,9 @@ public class AzureHelperServiceTest extends CDNGTestBase {
   @Mock private FileStoreService fileStoreService;
   @Mock private CDExpressionResolver cdExpressionResolver;
   @Mock private NGEncryptedDataService ngEncryptedDataService;
+  @Mock private SecretManagerClientService secretManagerClientService;
+  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Mock ExceptionManager exceptionManager;
 
   @InjectMocks private AzureHelperService azureHelperService;
 
@@ -232,6 +270,474 @@ public class AzureHelperServiceTest extends CDNGTestBase {
         () -> azureHelperService.validateSettingsStoreReferences(storeConfigWrapper, ambiance, "Test Entity"))
         .doesNotThrowAnyException();
     verify(ngEncryptedDataService).get(ACCOUNT_IDENTIFIER, null, null, "secretFile");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetConnectorErrorwithoutconnector() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountId")
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .scope(Scope.PROJECT)
+                                      .build();
+
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder()
+                                                    .connector(ConnectorInfoDTO.builder()
+                                                                   .connectorType(ConnectorType.AZURE)
+                                                                   .connectorConfig(AzureConnectorDTO.builder().build())
+                                                                   .build())
+                                                    .build();
+
+    when(connectorService.get("accountId", ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> azureHelperService.getConnector(identifierRef))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Connector not found for identifier : [identifier] with scope: [PROJECT]");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetConnectorWithDifferentType() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountId")
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .scope(Scope.PROJECT)
+                                      .build();
+
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder()
+                                                    .connector(ConnectorInfoDTO.builder()
+                                                                   .connectorType(ConnectorType.ARTIFACTORY)
+                                                                   .connectorConfig(AzureConnectorDTO.builder().build())
+                                                                   .build())
+                                                    .build();
+
+    when(connectorService.get("accountId", ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponseDTO));
+
+    assertThatThrownBy(() -> azureHelperService.getConnector(identifierRef))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining(
+            "Connector with identifier [identifier] with scope: [PROJECT] is not an Azure connector. Please check you configuration.");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetConnector() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier("accountId")
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .scope(Scope.PROJECT)
+                                      .build();
+
+    ConnectorResponseDTO connectorResponseDTO = ConnectorResponseDTO.builder()
+                                                    .connector(ConnectorInfoDTO.builder()
+                                                                   .connectorType(ConnectorType.AZURE)
+                                                                   .connectorConfig(AzureConnectorDTO.builder().build())
+                                                                   .build())
+                                                    .build();
+
+    when(connectorService.get("accountId", ORG_IDENTIFIER, PROJECT_IDENTIFIER, "identifier"))
+        .thenReturn(Optional.of(connectorResponseDTO));
+
+    AzureConnectorDTO azureConnectorDTO = azureHelperService.getConnector(identifierRef);
+
+    assertThat(azureConnectorDTO).isEqualTo(AzureConnectorDTO.builder().build());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetBaseNGAccess() {
+    BaseNGAccess expected = BaseNGAccess.builder()
+                                .accountIdentifier("accountId")
+                                .orgIdentifier(ORG_IDENTIFIER)
+                                .projectIdentifier(PROJECT_IDENTIFIER)
+                                .build();
+    BaseNGAccess result = azureHelperService.getBaseNGAccess("accountId", ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testEncryptionDetails() {
+    AzureConnectorDTO azureArtifactsConnectorDTO = AzureConnectorDTO.builder().build();
+    BaseNGAccess expected = BaseNGAccess.builder()
+                                .accountIdentifier("accountId")
+                                .orgIdentifier(ORG_IDENTIFIER)
+                                .projectIdentifier(PROJECT_IDENTIFIER)
+                                .build();
+    List<EncryptedDataDetail> encryptedDataDetails =
+        azureHelperService.getEncryptionDetails(azureArtifactsConnectorDTO, expected);
+    assertThat(encryptedDataDetails).isEqualTo(new ArrayList<>());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testEncryptionDetailsManual() {
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    BaseNGAccess expected = BaseNGAccess.builder()
+                                .accountIdentifier("accountId")
+                                .orgIdentifier(ORG_IDENTIFIER)
+                                .projectIdentifier(PROJECT_IDENTIFIER)
+                                .build();
+
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    when(secretManagerClientService.getEncryptionDetails(any(), any())).thenReturn(ls);
+
+    List<EncryptedDataDetail> encryptedDataDetails =
+        azureHelperService.getEncryptionDetails(azureArtifactsConnectorDTO, expected);
+
+    assertThat(encryptedDataDetails).isEqualTo(ls);
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncTask() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
+                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
+                                                    .build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
+        azureTaskParamsTaskParams, baseNGAccess, "Azure list registries task failure due to error");
+
+    assertThat(artifactTaskResponseresult.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(artifactTaskResponseresult.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncTaskOptional() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
+                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
+                                                    .build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
+        azureTaskParamsTaskParams, baseNGAccess, "Azure list registries task failure due to error", Optional.of(10));
+
+    assertThat(artifactTaskResponseresult.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(artifactTaskResponseresult.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncTaskAmbiance() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .delegateSelectors(delegateSelectors)
+            .build();
+
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    AcrArtifactDelegateRequest acrArtifactDelegateRequest = AcrArtifactDelegateRequest.builder()
+                                                                .azureConnectorDTO(azureArtifactsConnectorDTO)
+                                                                .encryptedDataDetails(ls)
+                                                                .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
+                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
+                                                    .build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+    ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
+        null, acrArtifactDelegateRequest, baseNGAccess, "Azure list registries task failure due to error");
+
+    assertThat(artifactTaskResponseresult.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+
+    assertThat(artifactTaskResponseresult.getArtifactTaskExecutionResponse()).isEqualTo(artifactTaskExecutionResponse);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncErrorResponse() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ErrorNotifyResponseData.builder().errorMessage("Testing").build());
+
+    assertThatThrownBy(()
+                           -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
+                               "Azure list registries task failure due to error"))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Azure list registries task failure due to error - Testing");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncFailure() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
+
+    ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
+                                                    .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                    .errorCode(ErrorCode.DEFAULT_ERROR_CODE)
+                                                    .errorMessage("Test failed")
+                                                    .artifactTaskExecutionResponse(artifactTaskExecutionResponse)
+                                                    .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+
+    assertThatThrownBy(()
+                           -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
+                               "Azure list registries task failure due to error"))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Azure list registries task failure due to error");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncFailureWithAcrResponse() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+
+    AzureDelegateTaskResponse artifactTaskResponse = AzureRegistriesResponse.builder()
+                                                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                         .errorSummary("Test failed")
+                                                         .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
+
+    assertThatThrownBy(()
+                           -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
+                               "Azure list registries task failure due to error"))
+        .isInstanceOf(ArtifactServerException.class)
+        .hasMessage("Azure list registries task failure due to error - Test failed");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testExecuteSyncFailureDelegateException() {
+    BaseNGAccess baseNGAccess = BaseNGAccess.builder()
+                                    .accountIdentifier("accountId")
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJECT_IDENTIFIER)
+                                    .build();
+    AzureConnectorDTO azureArtifactsConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
+                            .build())
+            .build();
+    List<EncryptedDataDetail> ls = new ArrayList<>();
+
+    ls.add(EncryptedDataDetail.builder().build());
+
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
+
+    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
+                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
+                                                    .azureConnector(azureArtifactsConnectorDTO)
+                                                    .delegateSelectors(delegateSelectors)
+                                                    .encryptionDetails(ls)
+                                                    .build();
+
+    AzureDelegateTaskResponse artifactTaskResponse = AzureRegistriesResponse.builder()
+                                                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
+                                                         .errorSummary("Test failed")
+                                                         .build();
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenThrow(new DelegateServiceDriverException("DelegateServiceDriverException"));
+
+    when(exceptionManager.processException(any(), any(), any()))
+        .thenThrow(new WingsException("wings exception message"));
+
+    assertThatThrownBy(()
+                           -> azureHelperService.executeSyncTask(null, azureTaskParamsTaskParams, baseNGAccess,
+                               "Azure list registries task failure due to error"))
+        .isInstanceOf(WingsException.class)
+        .hasMessage("wings exception message");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetAcrResponseDTO() {
+    ArtifactDelegateResponse artifactDelegateResponse =
+        new AcrArtifactDelegateResponse(ArtifactBuildDetailsNG.builder().number("tag").build(), ArtifactSourceType.ACR,
+            "subscription", "registry", "repository", "tag");
+
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        ArtifactTaskExecutionResponse.builder()
+            .artifactDelegateResponses(Collections.singletonList(artifactDelegateResponse))
+            .build();
+
+    AcrResponseDTO acrResponseDTO = azureHelperService.getAcrResponseDTO(artifactTaskExecutionResponse);
+
+    assertThat(acrResponseDTO.getBuildDetailsList().get(0).getTag()).isEqualTo("tag");
+
+    assertThat(acrResponseDTO.getBuildDetailsList().get(0).getRepository()).isEqualTo("repository");
   }
 
   private ParameterField<List<String>> getFiles() {

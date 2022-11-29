@@ -8,7 +8,6 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.cdng.pipeline.steps.MultiDeploymentSpawnerUtils.SERVICE_REF_EXPRESSION;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,14 +17,12 @@ import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
-import io.harness.cdng.creator.plan.stage.OverridesFromEnvironment.OverridesFromEnvironmentBuilder;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
-import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
@@ -59,7 +56,6 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -137,7 +133,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentService environmentService;
   @Inject private NGFeatureFlagHelperService featureFlagHelperService;
-
   @Inject private InfrastructureEntityService infrastructure;
   @Inject private ServiceOverrideService serviceOverrideService;
   @Inject private EnvGroupPlanCreatorHelper envGroupPlanCreatorHelper;
@@ -243,7 +238,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in deploy stage");
       }
 
-      if (useNewFlow(stageNode)) {
+      if (v2Flow(stageNode)) {
         if (isGitopsEnabled(stageNode.getDeploymentStageConfig())) {
           // GitOps flow doesn't fork on environments, so handling it in this function.
           return buildPlanCreationResponse(ctx, planCreationResponseMap, stageNode, specField, executionField);
@@ -255,17 +250,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           addSpecNode(planCreationResponseMap, specField, serviceNodeId);
         }
       } else {
-        final String postServiceStepUuid = "service-" + UUIDGenerator.generateUuid();
-        final String environmentUuid = "environment-" + UUIDGenerator.generateUuid();
-        final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField, stageNode, ctx);
-
+        final YamlField serviceField = servicePlanCreatorHelper.getResolvedServiceField(specField);
         PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
-
-        final OverridesFromEnvironment overridesFromEnvironment =
-            addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure,
-                postServiceStepUuid, environmentUuid, environmentUuid, serviceField);
-        addServiceDependency(planCreationResponseMap, specField, stageNode, environmentUuid, postServiceStepUuid,
-            serviceField, overridesFromEnvironment);
+        addEnvAndInfraDependency(planCreationResponseMap, specField, pipelineInfrastructure);
+        addServiceDependency(planCreationResponseMap, specField, stageNode, serviceField);
       }
 
       addCDExecutionDependencies(planCreationResponseMap, executionField);
@@ -351,7 +339,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         planCreationResponseMap, specField, kryoSerializer);
   }
 
-  private boolean useNewFlow(DeploymentStageNode stageNode) {
+  private boolean v2Flow(DeploymentStageNode stageNode) {
     final DeploymentStageConfig deploymentStageConfig = stageNode.getDeploymentStageConfig();
 
     boolean isServiceV2 = deploymentStageConfig.getService() != null
@@ -363,31 +351,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return isServices || isServiceV2 || serviceV2UseFromStage;
   }
 
-  private OverridesFromEnvironment addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
-      PipelineInfrastructure pipelineInfrastructure, String postServiceStepUuid, String environmentUuid,
-      String envGroupUuid, YamlField serviceField) throws IOException {
-    final OverridesFromEnvironmentBuilder overridesBuilder = OverridesFromEnvironment.builder();
-    YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
-    EnvironmentYamlV2 environmentV2 = stageNode.getDeploymentStageConfig().getEnvironment();
-    EnvironmentsYaml environments = stageNode.getDeploymentStageConfig().getEnvironments();
-
-    EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
-
-    if (infraField != null && environmentV2 != null) {
-      throw new InvalidRequestException("Infrastructure and Environment cannot be siblings of each other");
-    }
-
-    if (infraField == null && environmentV2 == null && envGroupYaml == null && environments == null) {
-      throw new InvalidRequestException("Infrastructure Or Environment or Environment Group section is missing");
-    }
-
-    if (environmentV2 != null && environmentV2.getDeployToAll().isExpression()) {
-      throw new InvalidRequestException("Value for deploy to all must be provided");
-    }
-
-    String serviceSpecNodeUuid = servicePlanCreatorHelper.fetchServiceSpecUuid(serviceField);
-
+  private void addEnvAndInfraDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      YamlField specField, PipelineInfrastructure pipelineInfrastructure) throws IOException {
+    final YamlField infraField = specField.getNode().getField(YamlTypes.PIPELINE_INFRASTRUCTURE);
     if (infraField != null) {
       // Adding infrastructure node
       PlanNode infraStepNode = InfrastructurePmsPlanCreator.getInfraStepPlanNode(
@@ -412,43 +378,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       YamlNode infraNode = infraField.getNode();
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV1(
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
-    } else if (envGroupYaml != null) {
-      final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
-      EnvGroupPlanCreatorConfig config =
-          envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx.getMetadata(), envGroupYaml);
-      envGroupPlanCreatorHelper.addEnvironmentGroupDependency(planCreationResponseMap, config,
-          specField.getNode().getField(YamlTypes.ENVIRONMENT_GROUP_YAML), gitOpsEnabled, envGroupUuid,
-          postServiceStepUuid, serviceSpecNodeUuid);
-    } else {
-      final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
-      final boolean skipInstances = isSkipInstances(stageNode);
-      String serviceRef;
-      if (stageNode.getDeploymentStageConfig().getServices() != null) {
-        serviceRef = SERVICE_REF_EXPRESSION;
-      } else {
-        serviceRef = servicePlanCreatorHelper.getServiceRef(serviceField);
-      }
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
-          EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,
-              serviceOverrideService, environmentService, infrastructure);
-
-      overridesBuilder.serviceOverrideConfig(environmentPlanCreatorConfig.getServiceOverrideConfig());
-      overridesBuilder.environmentGlobalOverride(environmentPlanCreatorConfig.getEnvironmentGlobalOverride());
-      overridesBuilder.envIdentifier(environmentPlanCreatorConfig.getIdentifier());
-
-      EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
-          specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, skipInstances, environmentUuid,
-          postServiceStepUuid, serviceSpecNodeUuid, kryoSerializer);
     }
-    return overridesBuilder.build();
-  }
-
-  private boolean isSkipInstances(DeploymentStageNode stageNode) {
-    boolean value = false;
-    if (null != stageNode.getSkipInstances()) {
-      value = stageNode.getSkipInstances().getValue();
-    }
-    return value;
   }
 
   private void addMultiDeploymentDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
@@ -537,8 +467,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   // This function adds the service dependency and returns the resolved service field
   private void addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      YamlField specField, DeploymentStageNode stageNode, String environmentUuid, String infraSectionUuid,
-      YamlField serviceField, OverridesFromEnvironment overridesFromEnvironment) throws IOException {
+      YamlField specField, DeploymentStageNode stageNode, YamlField serviceField) throws IOException {
     // Adding service child by resolving the serviceField
     String serviceNodeUuid = serviceField.getNode().getUuid();
 
@@ -550,8 +479,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     // Adding serviceField to yamlUpdates as its resolved value should be updated.
     planCreationResponseMap.put(serviceNodeUuid,
         PlanCreationResponse.builder()
-            .dependencies(servicePlanCreatorHelper.getDependenciesForService(
-                serviceField, stageNode, environmentUuid, infraSectionUuid, overridesFromEnvironment))
+            .dependencies(servicePlanCreatorHelper.getDependenciesForService(serviceField, stageNode))
             .yamlUpdates(YamlUpdates.newBuilder()
                              .putFqnToYaml(serviceField.getYamlPath(),
                                  YamlUtils.writeYamlString(serviceField).replace("---\n", ""))
@@ -635,15 +563,14 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
     EnvironmentGroupYaml envGroupYaml = stageNode.getDeploymentStageConfig().getEnvironmentGroup();
     if (envGroupYaml != null) {
-      EnvGroupPlanCreatorConfig config =
-          envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx.getMetadata(), envGroupYaml);
+      EnvGroupPlanCreatorConfig config = envGroupPlanCreatorHelper.createEnvGroupPlanCreatorConfig(ctx, envGroupYaml);
 
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, config, kryoSerializer);
     } else if (stageNode.getDeploymentStageConfig().getEnvironments() != null) {
       EnvironmentsPlanCreatorConfig environmentsPlanCreatorConfig =
           environmentsPlanCreatorHelper.createEnvironmentsPlanCreatorConfig(
-              ctx.getMetadata(), stageNode.getDeploymentStageConfig().getEnvironments());
+              ctx, stageNode.getDeploymentStageConfig().getEnvironments());
 
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, environmentsPlanCreatorConfig, kryoSerializer);
@@ -655,15 +582,19 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       } else {
         serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
       }
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
-          ctx.getMetadata(), stageNode.deploymentStageConfig.getEnvironment(), true, serviceRef, serviceOverrideService,
-          environmentService, infrastructure);
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
+          EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx, stageNode.deploymentStageConfig.getEnvironment(), true,
+              serviceRef, serviceOverrideService, environmentService, infrastructure);
       gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
           executionUuid, postServiceStepUuid, environmentPlanCreatorConfig, kryoSerializer);
     }
 
-    planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
+    if (gitopsNode == null) {
+      log.error("Gitops node was not created, hence not adding it to plan creation");
+      return null;
+    }
 
+    planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     return gitopsNode.getUuid();
   }
 
@@ -719,13 +650,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   protected void failIfProjectIsFrozen(PlanCreationContext ctx) {
     List<FreezeSummaryResponseDTO> projectFreezeConfigs = null;
     try {
-      if (ctx.getMetadata() != null
-          && featureFlagHelperService.isEnabled(
-              ctx.getMetadata().getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
-        PlanCreationContextValue planCreationContextValue = ctx.getMetadata();
-        String accountId = planCreationContextValue.getAccountIdentifier();
-        String orgId = planCreationContextValue.getOrgIdentifier();
-        String projectId = planCreationContextValue.getProjectIdentifier();
+      if (!EmptyPredicate.isEmpty(ctx.getAccountIdentifier())
+          && featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.NG_DEPLOYMENT_FREEZE)) {
+        String accountId = ctx.getAccountIdentifier();
+        String orgId = ctx.getOrgIdentifier();
+        String projectId = ctx.getProjectIdentifier();
         if (FreezeRBACHelper.checkIfUserHasFreezeOverrideAccess(
                 featureFlagHelperService, accountId, orgId, projectId, accessControlClient)) {
           return;

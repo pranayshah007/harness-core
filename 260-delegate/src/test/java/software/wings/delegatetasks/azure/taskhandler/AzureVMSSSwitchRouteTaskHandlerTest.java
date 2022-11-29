@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.azure.taskhandler;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.VM_PROVISIONING_SUCCEEDED_STATUS;
 import static io.harness.delegate.task.azure.request.AzureVMSSTaskParameters.AzureVMSSTaskType.AZURE_VMSS_SWITCH_ROUTE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.IVAN;
@@ -39,26 +40,28 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.command.ExecutionLogCallback;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.core.http.rest.Response;
+import com.azure.core.http.rest.SimpleResponse;
+import com.azure.resourcemanager.compute.models.InstanceViewStatus;
+import com.azure.resourcemanager.compute.models.VirtualMachineInstanceView;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSet;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVM;
+import com.azure.resourcemanager.compute.models.VirtualMachineScaleSetVMs;
+import com.azure.resourcemanager.network.models.LoadBalancer;
+import com.azure.resourcemanager.resources.fluentcore.utils.PagedConverter;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
-import com.microsoft.azure.Page;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithApply;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVM;
-import com.microsoft.azure.management.compute.VirtualMachineScaleSetVMs;
-import com.microsoft.azure.management.network.LoadBalancer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import org.assertj.core.util.Arrays;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import rx.Observable;
+import reactor.core.publisher.Mono;
 
 @OwnedBy(CDP)
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
@@ -118,23 +121,36 @@ public class AzureVMSSSwitchRouteTaskHandlerTest extends WingsBaseTest {
     VirtualMachineScaleSet newVirtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
     VirtualMachineScaleSetVM newVirtualMachineScaleSetVM = mock(VirtualMachineScaleSetVM.class);
     doReturn("1").when(newVirtualMachineScaleSetVM).instanceId();
+
     VirtualMachineScaleSetVMs newVirtualMachineScaleSetVMs = mock(VirtualMachineScaleSetVMs.class);
-    PagedList<VirtualMachineScaleSetVM> pageList = getPageList();
-    pageList.add(newVirtualMachineScaleSetVM);
+
+    List<VirtualMachineScaleSetVM> responseList = new ArrayList<>();
+    Response simpleResponse = new SimpleResponse(null, 200, null, responseList);
     doReturn(newVirtualMachineScaleSetVMs).when(newVirtualMachineScaleSet).virtualMachines();
     doReturn("VM-1").when(newVirtualMachineScaleSetVM).name();
-    doReturn(pageList).when(newVirtualMachineScaleSetVMs).list();
+    doReturn(getPagedIterable(simpleResponse)).when(newVirtualMachineScaleSetVMs).list();
     doReturn(newVMSSName).when(newVirtualMachineScaleSet).name();
 
     // oldVirtualMachineScaleSet virtualMachines()
     VirtualMachineScaleSet oldVirtualMachineScaleSet = mock(VirtualMachineScaleSet.class);
     VirtualMachineScaleSetVM oldVirtualMachineScaleSetVM = mock(VirtualMachineScaleSetVM.class);
+    doReturn("old1").when(oldVirtualMachineScaleSetVM).instanceId();
+
+    VirtualMachineInstanceView mockOldVirtualMachineInstanceView = mock(VirtualMachineInstanceView.class);
+    doReturn(mockOldVirtualMachineInstanceView).when(oldVirtualMachineScaleSetVM).instanceView();
+    List<InstanceViewStatus> mockOldStatuses = new ArrayList<>();
+    InstanceViewStatus mockOldInstanceViewStatus = mock(InstanceViewStatus.class);
+    doReturn(VM_PROVISIONING_SUCCEEDED_STATUS).when(mockOldInstanceViewStatus).displayStatus();
+    mockOldStatuses.add(mockOldInstanceViewStatus);
+    doReturn(mockOldStatuses).when(mockOldVirtualMachineInstanceView).statuses();
+
     doReturn("/subscription/old-vm-is/-1").when(oldVirtualMachineScaleSetVM).id();
     VirtualMachineScaleSetVMs oldVirtualMachineScaleSetVMs = mock(VirtualMachineScaleSetVMs.class);
-    PagedList<VirtualMachineScaleSetVM> oldPageList = getPageList();
+    List<VirtualMachineScaleSetVM> oldPageList = new ArrayList<>();
     oldPageList.add(oldVirtualMachineScaleSetVM);
+    Response simpleResponse2 = new SimpleResponse(null, 200, null, oldPageList);
     doReturn(oldVirtualMachineScaleSetVMs).when(oldVirtualMachineScaleSet).virtualMachines();
-    doReturn(pageList).when(oldVirtualMachineScaleSetVMs).list();
+    doReturn(getPagedIterable(simpleResponse2)).when(oldVirtualMachineScaleSetVMs).list();
     doReturn(oldVMSSName).when(oldVirtualMachineScaleSet).name();
 
     // ExecutionLogCallback and TimeLimiter
@@ -183,22 +199,44 @@ public class AzureVMSSSwitchRouteTaskHandlerTest extends WingsBaseTest {
     doNothing().when(azureComputeClient).deleteVirtualMachineScaleSetById(any(), anyString(), anyString());
 
     // newVirtualMachineScaleSet updateTags()
-    WithPrimaryLoadBalancer newVMSSUpdater = mock(WithPrimaryLoadBalancer.class);
-    WithApply newWithApply = mock(WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer newVMSSUpdater =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSet.UpdateStages.WithApply newWithApply =
+        mock(VirtualMachineScaleSet.UpdateStages.WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithCapacity newWithCapacity =
+        mock(VirtualMachineScaleSet.UpdateStages.WithCapacity.class);
     when(newVirtualMachineScaleSet.update()).thenReturn(newVMSSUpdater);
     when(newVMSSUpdater.withTag(anyString(), anyString())).thenReturn(newWithApply);
-    when(newVMSSUpdater.withCapacity(anyInt())).thenReturn(newWithApply);
-    when(newWithApply.apply()).thenReturn(newVirtualMachineScaleSet);
-    when(newWithApply.applyAsync()).thenReturn(Observable.from(Arrays.array(newVirtualMachineScaleSet)));
+    when(newVMSSUpdater.withCapacity(any(Long.class))).thenReturn(newWithApply);
+    when(newVMSSUpdater.withCapacity(any(Integer.class))).thenReturn(newWithApply);
+    when(newVMSSUpdater.withCapacity(any(Short.class))).thenReturn(newWithApply);
+    when(newVMSSUpdater.withCapacity(any(Byte.class))).thenReturn(newWithApply);
+
+    Mono<VirtualMachineScaleSet> newVMSSResponseMono = mock(Mono.class);
+    doReturn(newVMSSResponseMono).when(newVMSSResponseMono).doOnError(any());
+    doReturn(newVMSSResponseMono).when(newVMSSResponseMono).doOnSuccess(any());
+    doReturn(newVirtualMachineScaleSet).when(newVMSSResponseMono).block(any());
+    doReturn(newVMSSResponseMono).when(newWithApply).applyAsync();
+    doReturn(newVirtualMachineScaleSet).when(newWithApply).apply();
 
     // oldVirtualMachineScaleSet updateTags()
-    WithPrimaryLoadBalancer oldVMSSUpdater = mock(WithPrimaryLoadBalancer.class);
-    WithApply oldWithApply = mock(WithApply.class);
+    VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer oldVMSSUpdater =
+        mock(VirtualMachineScaleSet.UpdateStages.WithPrimaryLoadBalancer.class);
+    VirtualMachineScaleSet.UpdateStages.WithApply oldWithApply =
+        mock(VirtualMachineScaleSet.UpdateStages.WithApply.class);
     when(oldVirtualMachineScaleSet.update()).thenReturn(oldVMSSUpdater);
     when(oldVMSSUpdater.withTag(anyString(), anyString())).thenReturn(oldWithApply);
-    when(oldVMSSUpdater.withCapacity(anyInt())).thenReturn(oldWithApply);
-    when(oldWithApply.apply()).thenReturn(oldVirtualMachineScaleSet);
-    when(oldWithApply.applyAsync()).thenReturn(Observable.from(Arrays.array(oldVirtualMachineScaleSet)));
+    when(oldVMSSUpdater.withCapacity(any(Long.class))).thenReturn(oldWithApply);
+    when(oldVMSSUpdater.withCapacity(any(Integer.class))).thenReturn(oldWithApply);
+    when(oldVMSSUpdater.withCapacity(any(Short.class))).thenReturn(oldWithApply);
+    when(oldVMSSUpdater.withCapacity(any(Byte.class))).thenReturn(oldWithApply);
+
+    Mono<VirtualMachineScaleSet> oldVMSSResponseMono = mock(Mono.class);
+    doReturn(oldVMSSResponseMono).when(oldVMSSResponseMono).doOnError(any());
+    doReturn(oldVMSSResponseMono).when(oldVMSSResponseMono).doOnSuccess(any());
+    doReturn(oldVirtualMachineScaleSet).when(oldVMSSResponseMono).block(any());
+    doReturn(oldVMSSResponseMono).when(oldWithApply).applyAsync();
+    doReturn(oldVirtualMachineScaleSet).when(oldWithApply).apply();
 
     AzureLoadBalancerDetailForBGDeployment azureLoadBalancerDetail = AzureLoadBalancerDetailForBGDeployment.builder()
                                                                          .loadBalancerName(loadBalancerName)
@@ -232,21 +270,7 @@ public class AzureVMSSSwitchRouteTaskHandlerTest extends WingsBaseTest {
   }
 
   @NotNull
-  public PagedList<VirtualMachineScaleSetVM> getPageList() {
-    return new PagedList<VirtualMachineScaleSetVM>() {
-      @Override
-      public Page<VirtualMachineScaleSetVM> nextPage(String s) {
-        return new Page<VirtualMachineScaleSetVM>() {
-          @Override
-          public String nextPageLink() {
-            return null;
-          }
-          @Override
-          public List<VirtualMachineScaleSetVM> items() {
-            return null;
-          }
-        };
-      }
-    };
+  public <T> PagedIterable<T> getPagedIterable(Response<List<T>> response) {
+    return new PagedIterable<T>(PagedConverter.convertListToPagedFlux(Mono.just(response)));
   }
 }

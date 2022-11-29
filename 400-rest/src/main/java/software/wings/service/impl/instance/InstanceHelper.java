@@ -778,8 +778,6 @@ public class InstanceHelper {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
     } catch (Exception ex) {
       checkAndDeletePerpetualTask(infrastructureMapping, ex);
-      log.error(
-          "Error handling Instance sync response. Infrastructure Mapping : [{}]", infrastructureMapping.getUuid());
       throw ex;
     } finally {
       Status status = handler.getStatus(infrastructureMapping, response);
