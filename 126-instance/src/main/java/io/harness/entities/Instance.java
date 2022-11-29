@@ -11,6 +11,7 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.entities.instanceinfo.InstanceInfo;
+import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
@@ -134,6 +135,62 @@ public class Instance {
                  .field(InstanceKeys.accountIdentifier)
                  .sortField(InstanceKeys.deletedAt)
                  .sortField(InstanceKeys.createdAt)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_isDeleted_envId_clusterIdentifier_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeys.orgIdentifier)
+                 .field(InstanceKeys.projectIdentifier)
+                 .field(InstanceKeys.isDeleted)
+                 .field(InstanceKeys.envIdentifier)
+                 .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                 .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_organizationId_projectId_isDeleted_serviceId_primaryArtifact_envId_clusterIdentifier_lastPipelineExecutionId_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                .field(InstanceKeys.envIdentifier)
+                .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                .field(InstanceKeys.lastPipelineExecutionId)
+                .build())
+        .add(
+            CompoundMongoIndex.builder()
+                .name(
+                    "accountId_organizationId_projectId_isDeleted_serviceId_primaryArtifact_envId_infraIdentifier_lastPipelineExecutionId_idx")
+                .field(InstanceKeys.accountIdentifier)
+                .field(InstanceKeys.orgIdentifier)
+                .field(InstanceKeys.projectIdentifier)
+                .field(InstanceKeys.isDeleted)
+                .field(InstanceKeys.serviceIdentifier)
+                .field(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
+                .field(InstanceKeys.envIdentifier)
+                .field(InstanceKeys.infraIdentifier)
+                .field(InstanceKeys.lastPipelineExecutionId)
+                .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_isDeleted_serviceId_clusterIdentifier_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeys.orgIdentifier)
+                 .field(InstanceKeys.projectIdentifier)
+                 .field(InstanceKeys.isDeleted)
+                 .field(InstanceKeys.serviceIdentifier)
+                 .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
+                 .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_isDeleted_serviceId_envId_clusterIdentifier_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeys.orgIdentifier)
+                 .field(InstanceKeys.projectIdentifier)
+                 .field(InstanceKeys.isDeleted)
+                 .field(InstanceKeys.serviceIdentifier)
+                 .field(InstanceKeys.envIdentifier)
+                 .field(InstanceKeysAdditional.instanceInfoClusterIdentifier)
                  .build())
         .build();
   }
