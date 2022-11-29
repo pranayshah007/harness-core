@@ -13,11 +13,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @ToString(callSuper = true, includeFieldNames = true)
 public final class PatchRequest extends ScimBaseResource {
   @JsonProperty(value = "Operations", required = true) private List<PatchOperation> operations;
