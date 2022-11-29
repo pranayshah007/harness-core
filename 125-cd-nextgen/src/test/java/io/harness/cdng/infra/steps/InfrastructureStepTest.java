@@ -249,7 +249,8 @@ public class InfrastructureStepTest extends CategoryTest {
     when(cdStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
     doNothing()
         .when(stageExecutionHelper)
-        .saveStageExecutionInfo(eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
+        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+            eq(ambiance), any(ExecutionInfoKey.class), eq(InfrastructureKind.PDC));
     when(infrastructureMapper.toOutcome(any(), any(), any(), any(), any(), any()))
         .thenReturn(
             PdcInfrastructureOutcome.builder()
