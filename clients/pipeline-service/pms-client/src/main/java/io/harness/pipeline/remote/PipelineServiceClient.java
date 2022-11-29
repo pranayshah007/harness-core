@@ -8,12 +8,12 @@
 package io.harness.pipeline.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -26,14 +26,8 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 
 import java.util.List;
-import javax.ws.rs.BeanParam;
 import javax.ws.rs.DefaultValue;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
-
 import okhttp3.RequestBody;
-import org.springframework.context.annotation.Bean;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -109,13 +103,11 @@ public interface PipelineServiceClient {
 
   @PUT(PIPELINE_ENDPOINT + "{pipelineIdentifier}")
   Call<ResponseDTO<Object>> updatePipeline(@Header(IF_MATCH) String ifMatch,
-                                           @Path(NGCommonEntityConstants.PIPELINE_KEY) String pipelineId,
-                                                         @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-                                                         @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
-                                                         @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId,
-                                                         @Query(NGCommonEntityConstants.NAME_KEY) String pipelineName,
-                                                         @Query(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
-                                                         @Query(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft,
-                                                         @Body RequestBody yaml);
-
+      @Path(NGCommonEntityConstants.PIPELINE_KEY) String pipelineId,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @Query(NGCommonEntityConstants.NAME_KEY) String pipelineName,
+      @Query(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
+      @Query(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @Body RequestBody yaml);
 }

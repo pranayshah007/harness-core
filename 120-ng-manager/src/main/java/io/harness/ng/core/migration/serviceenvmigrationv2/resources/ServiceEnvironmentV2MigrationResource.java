@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ng.core.migration.serviceenvmigrationv2.resources;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -7,9 +14,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentResponseDto;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageResponseDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -45,15 +51,14 @@ public class ServiceEnvironmentV2MigrationResource {
 
   @POST
   @Path("/pipeline")
-  @ApiOperation(value = "Create/Update Service, Infra v2 and pipeline")
+  @ApiOperation(value = "Migrate a pipeline to new service and environment framework")
   public ResponseDTO<ServiceEnvironmentResponseDto> migratePipelineWithServiceInfraV2(
-          @NotNull @QueryParam("accountIdentifier") String accountId, @Valid ServiceEnvironmentRequestDto
-          requestDto) {
+      @NotNull @QueryParam("accountIdentifier") String accountId, @Valid SvcEnvMigrationRequestDto requestDto) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-            requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
+        requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
 
-    ServiceEnvironmentResponseDto response = serviceEnvironmentV2MigrationService.migratePipelineWithServiceEnvV2(requestDto, accountId);
+    ServiceEnvironmentResponseDto response =
+        serviceEnvironmentV2MigrationService.migratePipelineWithServiceEnvV2(requestDto, accountId);
     return ResponseDTO.newResponse(response);
   }
-
 }

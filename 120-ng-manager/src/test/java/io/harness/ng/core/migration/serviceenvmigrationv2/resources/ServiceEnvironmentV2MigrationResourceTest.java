@@ -60,8 +60,7 @@ public class ServiceEnvironmentV2MigrationResourceTest extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEnvironmentV2MigrationService.migrateStage(stageRequestDto, ACCOUNT_ID))
-        .thenReturn(STAGE_V2_YAML);
+    when(serviceEnvironmentV2MigrationService.migrateStage(stageRequestDto, ACCOUNT_ID)).thenReturn(STAGE_V2_YAML);
     StageResponseDto responseDto =
         serviceEnvironmentV2MigrationResource.migrateOldServiceInfraFromStage(ACCOUNT_ID, stageRequestDto).getData();
     verify(orgAndProjectValidationHelper, times(1))
