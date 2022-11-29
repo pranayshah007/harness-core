@@ -6,7 +6,6 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pcf.TasAppResizeStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
@@ -25,14 +24,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.TAS_APP_RESIZE)
-@TypeAlias("TasAppResizeStepNode")
-@RecasterAlias("io.harness.cdng.pcf.TasAppResizeStepNode")
-public class TasAppResizeStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasAppResizeStepNode.StepType type = StepType.TasAppResize;
+@JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
+@TypeAlias("TasSwapRoutesStepNode")
+@RecasterAlias("io.harness.cdng.pcf.TasSwapRoutesStepNode")
+public class TasSwapRoutesStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull TasSwapRoutesStepNode.StepType type = StepType.TasSwapRoutes;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  TasAppResizeStepInfo tasAppResizeStepInfo;
+  TasRollbackStepInfo tasAppResizeStepInfo;
 
   @Override
   public String getType() {
@@ -45,7 +44,7 @@ public class TasAppResizeStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TasAppResize(StepSpecTypeConstants.TAS_APP_RESIZE);
+    TasSwapRoutes(StepSpecTypeConstants.TAS_ROLLBACK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

@@ -1,4 +1,4 @@
-package io.harness.cdng.temp;
+package io.harness.cdng.tas;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,10 +31,10 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @SimpleVisitorHelper(helperClass = TasAppResizeStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
-@TypeAlias("TasRollbackStepInfo")
-@RecasterAlias("io.harness.cdng.pcf.TasRollbackStepInfo")
-public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDStepInfo, Visitable {
+@JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+@TypeAlias("TasSwapRoutesStepInfo")
+@RecasterAlias("io.harness.cdng.pcf.TasSwapRoutesStepInfo")
+public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -43,9 +43,9 @@ public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDS
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollbackStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn, String tasSetupFqn) {
-    super(delegateSelectors, tasRollbackFqn, tasSetupFqn);
+  public TasSwapRoutesStepInfo(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, boolean downSizeOldApplication, String tasSetupFqn) {
+    super(delegateSelectors, downSizeOldApplication, tasSetupFqn);
   }
 
   @Override
@@ -60,7 +60,10 @@ public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDS
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasRollbackStepParameters.infoBuilder().delegateSelectors(this.delegateSelectors).build();
+    return TasSwapRoutesStepParameters.infoBuilder()
+        .downSizeOldApplication(this.downSizeOldApplication)
+        .delegateSelectors(this.delegateSelectors)
+        .build();
   }
 
   @Override

@@ -8,7 +8,6 @@
 package io.harness.connector.task.tas;
 
 import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
-import static jdk.internal.joptsimple.util.RegexMatcher.regex;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;

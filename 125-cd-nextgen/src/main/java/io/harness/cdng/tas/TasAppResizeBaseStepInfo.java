@@ -1,4 +1,4 @@
-package io.harness.cdng.pcf;
+package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
@@ -32,8 +32,8 @@ public class TasAppResizeBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @JsonIgnore String tasSetupFqn;
-  ParameterField<Integer> totalInstanceCount;
-  ParameterField<InstanceUnitType> instanceUnitType;
+  ParameterField<Integer> upsizeInstanceCount;
+  ParameterField<InstanceUnitType> upsizeInstanceUnitType;
   ParameterField<Integer> downsizeInstanceCount;
   ParameterField<InstanceUnitType> downsizeInstanceUnitType;
 }

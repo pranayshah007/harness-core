@@ -1,4 +1,4 @@
-package io.harness.cdng.pcf.beans;
+package io.harness.cdng.tas.beans;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;

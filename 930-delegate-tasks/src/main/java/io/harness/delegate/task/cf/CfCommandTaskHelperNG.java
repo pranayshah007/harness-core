@@ -1,9 +1,17 @@
 package io.harness.delegate.task.cf;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
@@ -18,20 +26,16 @@ import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.CfRequestConfig;
+
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.util.Deque;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 @OwnedBy(CDP)
 @Singleton
@@ -256,9 +260,11 @@ public class CfCommandTaskHelperNG {
         return pcfCommandTaskBaseHelper.getMostRecentInactiveApplication(logCallback,standardBlueGreenWorkflow, activeApplication, releases, cfRequestConfig);
     }
 
-    public void resetState(List<ApplicationSummary> releases, ApplicationSummary activeApplication, ApplicationSummary inactiveApplication, String cfAppNamePrefix, CfRequestConfig cfRequestConfig, boolean b, Object o,
-                           Integer activeAppRevision, LogCallback logCallback, CfInBuiltVariablesUpdateValues updateValues) {
-        pcfCommandTaskBaseHelper.resetState(releases, activeApplication, inactiveApplication,
-                cfAppNamePrefix, cfRequestConfig, b, o, activeAppRevision, logCallback, updateValues);
+    public void resetState(List<ApplicationSummary> releases, ApplicationSummary activeApplication,
+        ApplicationSummary inactiveApplication, String cfAppNamePrefix, CfRequestConfig cfRequestConfig, boolean b,
+        Object o, Integer activeAppRevision, LogCallback logCallback, CfInBuiltVariablesUpdateValues updateValues)
+        throws PivotalClientApiException {
+      pcfCommandTaskBaseHelper.resetState(releases, activeApplication, inactiveApplication, cfAppNamePrefix,
+          cfRequestConfig, b, (Deque<CfAppRenameInfo>) o, activeAppRevision, logCallback, updateValues);
     }
 }

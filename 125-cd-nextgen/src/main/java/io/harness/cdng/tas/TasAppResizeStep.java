@@ -1,4 +1,4 @@
-package io.harness.cdng.pcf;
+package io.harness.cdng.tas;
 
 import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
@@ -9,9 +9,9 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
-import io.harness.cdng.pcf.beans.TasSetupDataOutcome;
+import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.temp.TasAppResizeDataOutcome;
+import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;

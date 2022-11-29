@@ -1,4 +1,4 @@
-package io.harness.cdng.temp;
+package io.harness.cdng.tas;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;

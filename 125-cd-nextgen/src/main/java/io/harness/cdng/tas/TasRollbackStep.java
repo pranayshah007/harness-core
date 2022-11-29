@@ -1,4 +1,4 @@
-package io.harness.cdng.pcf;
+package io.harness.cdng.tas;
 
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
@@ -8,17 +8,15 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
+import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.temp.TasAppResizeDataOutcome;
-import io.harness.cdng.temp.TasRollbackStepParameters;
+import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
@@ -103,8 +101,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
               SkipTaskRequest.newBuilder().setMessage("Tas Setup Step was not executed. Skipping .").build())
           .build();
     }
-    io.harness.cdng.pcf.beans.TasSetupDataOutcome tasSetupDataOutcome =
-        (io.harness.cdng.pcf.beans.TasSetupDataOutcome) tasSetupDataOptional.getOutput();
+    TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 

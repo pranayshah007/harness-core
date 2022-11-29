@@ -1,7 +1,6 @@
 package io.harness.cdng.creator.plan.steps.tas;
 
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreatorV2;
-import io.harness.cdng.pcf.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasAppResizeStepNode;
 import io.harness.cdng.tas.TasAppResizeStepParameters;
 import io.harness.executions.steps.StepSpecTypeConstants;

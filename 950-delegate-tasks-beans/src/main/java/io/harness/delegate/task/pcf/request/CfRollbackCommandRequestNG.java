@@ -32,6 +32,7 @@ public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
     CfAppSetupTimeDetails newApplicationDetails;
     String cfAppNamePrefix;
     Integer activeAppRevision;
+    CfAppSetupTimeDetails existingInActiveApplicationDetails;
     CfCliVersion cfCliVersion;
     boolean enforceSslValidation;
     boolean useAppAutoscalar;

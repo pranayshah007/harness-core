@@ -1,4 +1,4 @@
-package io.harness.cdng.temp;
+package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
@@ -22,14 +22,12 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldNameConstants(innerTypeName = "TasSwapRoutesBaseStepInfo")
-@TypeAlias("TasSwapRoutesBaseStepInfo")
-public class TasSwapRoutesBaseStepInfo {
+@TypeAlias("TasRollabackBaseStepInfo")
+public class TasRollabackBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) boolean downSizeOldApplication;
-
+  @JsonIgnore String tasRollbackFqn;
   @JsonIgnore String tasSetupFqn;
 }

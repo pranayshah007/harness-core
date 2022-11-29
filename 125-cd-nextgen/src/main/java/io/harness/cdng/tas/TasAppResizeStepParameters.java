@@ -3,7 +3,6 @@ package io.harness.cdng.tas;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.pcf.TasAppResizeBaseStepInfo;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -19,7 +18,6 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.tas.TasAppResizeStepParameters")
@@ -31,8 +29,4 @@ public class TasAppResizeStepParameters extends TasAppResizeBaseStepInfo impleme
     super(delegateSelectors, tasAppResizeFqn, totalInstanceCount, instanceUnitType, downsizeInstanceCount,
         downsizeInstanceUnitType);
   }
-  ParameterField<Integer> upsizeInstanceCount;
-  ParameterField<InstanceUnitType> upsizeInstanceUnitType;
-  ParameterField<Integer> downsizeInstanceCount;
-  ParameterField<InstanceUnitType> downsizeInstanceUnitType;
 }
