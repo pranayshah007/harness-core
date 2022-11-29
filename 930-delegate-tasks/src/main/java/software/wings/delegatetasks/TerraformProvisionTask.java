@@ -52,7 +52,6 @@ import static java.time.Duration.ofSeconds;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.batch.processing.service.impl.AwsS3SyncServiceImpl;
 import io.harness.beans.ExecutionStatus;
 import io.harness.cli.LogCallbackOutputStream;
 import io.harness.data.structure.UUIDGenerator;
@@ -66,6 +65,7 @@ import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
+import io.harness.exception.CommandExecutionException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TerraformCommandExecutionException;
@@ -93,6 +93,7 @@ import io.harness.terraform.request.TerraformExecuteStepRequest;
 import software.wings.api.TerraformExecutionData;
 import software.wings.api.TerraformExecutionData.TerraformExecutionDataBuilder;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
@@ -115,6 +116,8 @@ import software.wings.service.intfc.yaml.GitClient;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSSessionCredentials;
+import com.amazonaws.services.s3.AmazonS3URI;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleRequest;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
@@ -132,6 +135,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -230,11 +234,15 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     String tfVarDirectory = Paths.get(baseDir, TF_VAR_FILES_DIR).toString();
     String workingDir = Paths.get(baseDir, TF_SCRIPT_DIR).toString();
     String backendConfigsDir = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
+    String sourceRepoReference = null;
 
     if (parameters.getSourceType() == TerraformSourceType.GIT) {
       /**
        * Handle GIT Logic
        */
+      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
+                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
+
       sourceRepoSettingId = parameters.getSourceRepoSettingId();
       gitOperationContext =
           GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
@@ -262,6 +270,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
           copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
         }
+
       } catch (Exception ex) {
         Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
         log.error("Exception in cloning and copying files to provisioner specific directory", sanitizedException);
@@ -284,9 +293,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       }
     }
 
-    if (null != parameters.getTfVarSource()
-        && parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.GIT) {
-      fetchTfVarGitSource(parameters, tfVarDirectory, logCallback);
+    if (null != parameters.getTfVarSource()) {
+      if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.GIT) {
+        fetchTfVarGitSource(parameters, tfVarDirectory, logCallback);
+      } else if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
+        fetchTfVarS3Source(parameters, tfVarDirectory, logCallback);
+      }
     }
 
     if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType()) && parameters.getRemoteBackendConfig() != null
@@ -312,9 +324,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
          PlanHumanReadableOutputStream planHumanReadableOutputStream = new PlanHumanReadableOutputStream();
          PlanLogOutputStream planLogOutputStream = new PlanLogOutputStream()) {
       ensureLocalCleanup(scriptDirectory);
-      String sourceRepoReference = parameters.getCommitId() != null
-          ? parameters.getCommitId()
-          : getLatestCommitSHAFromLocalRepo(gitOperationContext);
 
       Map<String, String> awsAuthEnvVariables = null;
       if (parameters.getAwsConfig() != null && parameters.getAwsConfigEncryptionDetails() != null) {
@@ -929,6 +938,33 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
       saveExecutionLog(
           format("TfVar Git directory: [%s]", tfVarDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);
+    }
+  }
+
+  private void fetchTfVarS3Source(
+      TerraformProvisionParameters parameters, String tfVarDirectory, LogCallback logCallback) {
+    if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
+      TfVarS3Source tfVarS3Source = (TfVarS3Source) parameters.getTfVarS3Source();
+      AmazonS3URI amazonS3URI = new AmazonS3URI(tfVarS3Source.getS3FileConfig().getS3URI());
+      saveExecutionLog(format("Fetching TfVar files from S3 bucket: [%s]", amazonS3URI.getBucket()),
+          CommandExecutionStatus.RUNNING, INFO, logCallback);
+
+      saveExecutionLog(
+          format("TfVar S3 directory: [%s]", tfVarDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);
+      for (String key : tfVarS3Source.getS3FileConfig().getS3URIList()) {
+        S3Object s3Object = awsS3HelperServiceDelegate.getObjectFromS3(
+            tfVarS3Source.getAwsConfig(), tfVarS3Source.getEncryptedDataDetails(), amazonS3URI.getBucket(), key);
+
+        try (InputStream is = s3Object.getObjectContent()) {
+          Files.write(Path.of(tfVarDirectory), is.readAllBytes());
+        } catch (IOException e) {
+          String errorMsg =
+              String.format("Failed to fetch %s from s3 bucket: %s", amazonS3URI.getKey(), amazonS3URI.getBucket());
+          saveExecutionLog(
+              color(errorMsg, LogColor.White, LogWeight.Bold), CommandExecutionStatus.FAILURE, INFO, logCallback);
+          throw new CommandExecutionException(errorMsg);
+        }
+      }
     }
   }
 

@@ -8,24 +8,29 @@
 package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
 
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
+import io.harness.data.validator.Trimmed;
+import io.harness.expression.Expression;
+import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldNameConstants(innerTypeName = "S3FileConfigsKey")
 @OwnedBy(CDP)
-@TargetModule(HarnessModule._957_CG_BEANS)
-public class TerraformBackendConfig {
-  private GitFileConfig remoteBackendConfig;
-  private S3FileConfig s3FileConfig;
-  private List<NameValuePair> inlineBackendConfig;
-  private String storeType;
+public class S3FileConfig implements NestedAnnotationResolver {
+  @Trimmed String awsConfigId;
+  @Trimmed @Nullable private String s3URI;
+  @Expression(ALLOW_SECRETS) @Nullable private List<String> s3URIList;
 }

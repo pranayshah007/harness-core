@@ -10,14 +10,11 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import static software.wings.beans.InfrastructureProvisionerType.TERRAFORM;
-import static software.wings.beans.TerraformSourceType.GIT;
-import static software.wings.beans.TerraformSourceType.S3_URI;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.cdng.provision.terraform.steps.rolllback.TerraformConfigSweepingOutput;
 import io.harness.data.validator.Trimmed;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -43,6 +40,9 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
   public static final String VARIABLE_KEY = "terraform";
   @NotEmpty private String sourceRepoSettingId;
   private TerraformSourceType sourceType;
+  private String awsConfigId;
+  private String s3URI;
+
   /**
    * This could be either a branch or a commit id or any other reference which
    * can be checked out.
@@ -112,17 +112,17 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
     private String repoName;
     private String secretMangerName;
     private boolean skipRefreshBeforeApplyingPlan;
+    private TerraformSourceType sourceType;
 
-    private String sourceType;
-
-    private String s3Uri;
+    private String awsConfigId;
+    private String s3URI;
 
     @Builder
     public Yaml(String type, String harnessApiVersion, String description, String infrastructureProvisionerType,
         List<NameValuePair.Yaml> variables, List<InfrastructureMappingBlueprint.Yaml> mappingBlueprints,
         String sourceRepoSettingName, String sourceRepoBranch, String path, List<NameValuePair.Yaml> backendConfigs,
         String repoName, List<NameValuePair.Yaml> environmentVariables, String commitId,
-        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3Uri, String sourceType) {
+        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3URI, TerraformSourceType sourceType) {
       super(type, harnessApiVersion, description, infrastructureProvisionerType, variables, mappingBlueprints);
       this.sourceRepoSettingName = sourceRepoSettingName;
       this.sourceRepoBranch = sourceRepoBranch;
@@ -134,7 +134,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       this.environmentVariables = environmentVariables;
       this.secretMangerName = secretMangerName;
       this.skipRefreshBeforeApplyingPlan = skipRefreshBeforeApplyingPlan;
-      this.s3Uri = s3Uri;
+      this.s3URI = s3URI;
       this.sourceType = sourceType;
     }
   }

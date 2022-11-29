@@ -856,6 +856,7 @@ import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
 import software.wings.beans.TaskType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.apm.Method;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -2002,8 +2003,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
+    kryo.register(TerraformSourceType.class, 573558);
 
-    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
 
@@ -2015,5 +2016,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
+    kryo.register(TerragruntApplyTaskResponse.class, 573568);
   }
 }
