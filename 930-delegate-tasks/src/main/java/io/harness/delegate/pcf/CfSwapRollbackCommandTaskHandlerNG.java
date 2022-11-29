@@ -32,6 +32,7 @@ import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
+import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
@@ -75,7 +76,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   @Override
   public CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
-    if (!(cfCommandRequestNG instanceof CfRollbackCommandRequestNG)) {
+    if (!(cfCommandRequestNG instanceof CfSwapRollbackCommandRequestNG)) {
       throw new InvalidArgumentsException(
           Pair.of("cfCommandRequest", "Must be instance of CfCommandRouteUpdateRequest"));
     }
@@ -85,7 +86,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     CfRollbackCommandResult cfRollbackCommandResult = CfRollbackCommandResult.builder().build();
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
-    CfRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfRollbackCommandRequestNG) cfCommandRequestNG;
+    CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfSwapRollbackCommandRequestNG) cfCommandRequestNG;
     executionLogCallback.saveExecutionLog(color("--------- Starting Rollback deployment", White, Bold));
     File workingDirectory = null;
     try {
@@ -108,34 +109,32 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .spaceName(tasInfraConfig.getSpace())
               .timeOutIntervalInMins(cfRollbackCommandRequestNG.getTimeoutIntervalInMin())
               .cfHomeDirPath(workingDirectory.getAbsolutePath())
-              .useCFCLI(cfRollbackCommandRequestNG.isUseCfCLI())
               .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                  cfRollbackCommandRequestNG.isUseCfCLI(), cfRollbackCommandRequestNG.getCfCliVersion()))
+                  true, cfRollbackCommandRequestNG.getCfCliVersion()))
               .cfCliVersion(cfRollbackCommandRequestNG.getCfCliVersion())
               .limitPcfThreads(cfRollbackCommandRequestNG.isLimitPcfThreads()) // Not sure if this should be kept
               .build();
+
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
               .isRollback(true)
               .existingApplicationDetails(
-                  Collections.singletonList(cfRollbackCommandRequestNG.getExistingInActiveApplicationDetails()))
+                  cfRollbackCommandRequestNG.getExistingApplicationDetails())
               .cfAppNamePrefix(cfRollbackCommandRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfRollbackCommandRequestNG.isDownsizeOldApps())
-              .existingApplicationNames(cfRollbackCommandRequestNG.getAppsToBeDownSized()
+              .existingApplicationNames(cfRollbackCommandRequestNG.getAppDetailsToBeDownsized()
                                             .stream()
                                             .map(CfAppSetupTimeDetails::getApplicationName)
                                             .collect(toList()))
-              .existingAppNamingStrategy(cfRollbackCommandRequestNG.getExistingAppNamingStrategy())
               .tempRoutes(cfRollbackCommandRequestNG.getTempRouteMaps())
               .skipRollback(false)
-              .isStandardBlueGreen(cfRollbackCommandRequestNG.isStandardBlueGreenWorkflow())
+              .isStandardBlueGreen(true)
               .newApplicationDetails(cfRollbackCommandRequestNG.getNewApplicationDetails())
               .upSizeInActiveApp(cfRollbackCommandRequestNG.isUpsizeInActiveApp())
-              .versioningChanged(cfRollbackCommandRequestNG.isVersioningChanged())
-              .nonVersioning(cfRollbackCommandRequestNG.isNonVersioning())
+              .versioningChanged(false)
+              .nonVersioning(true)
               .newApplicationName(cfRollbackCommandRequestNG.getNewApplicationDetails().getApplicationName())
-              .existingInActiveApplicationDetails(cfRollbackCommandRequestNG.getExistingInActiveApplicationDetails())
               .finalRoutes(cfRollbackCommandRequestNG.getRouteMaps())
               .isMapRoutesOperation(false)
               .build();

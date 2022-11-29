@@ -35,5 +35,4 @@ public class CfRouteUpdateRequestConfigData {
   private CfAppSetupTimeDetails existingInActiveApplicationDetails;
   private CfAppSetupTimeDetails newApplicationDetails;
   private String cfAppNamePrefix;
-  private String existingAppNamingStrategy;
 }

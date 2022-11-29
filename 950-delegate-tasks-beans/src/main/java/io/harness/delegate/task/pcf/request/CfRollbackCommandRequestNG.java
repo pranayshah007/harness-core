@@ -11,9 +11,10 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Value;
 
-@Value
+@Data
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
