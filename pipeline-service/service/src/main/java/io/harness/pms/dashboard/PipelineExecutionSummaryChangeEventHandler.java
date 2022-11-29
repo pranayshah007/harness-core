@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.redisConsumer;
+package io.harness.pms.Dashboard;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,10 +44,6 @@ public class PipelineExecutionSummaryChangeEventHandler extends RedisAbstractHan
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER,
           node.get(PipelineExecutionSummaryKeys.orgIdentifier).asText());
     }
-    if (node.get(PipelineExecutionSummaryKeys.pipelineIdentifier) != null) {
-      record.set(Tables.PIPELINE_EXECUTION_SUMMARY.PIPELINEIDENTIFIER,
-          node.get(PipelineExecutionSummaryKeys.pipelineIdentifier).asText());
-    }
     if (node.get(PipelineExecutionSummaryKeys.projectIdentifier) != null) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER,
           node.get(PipelineExecutionSummaryKeys.projectIdentifier).asText());
@@ -56,8 +52,15 @@ public class PipelineExecutionSummaryChangeEventHandler extends RedisAbstractHan
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.PLANEXECUTIONID,
           node.get(PipelineExecutionSummaryKeys.planExecutionId).asText());
     }
+    if (node.get(PipelineExecutionSummaryKeys.pipelineIdentifier) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY.PIPELINEIDENTIFIER,
+          node.get(PipelineExecutionSummaryKeys.pipelineIdentifier).asText());
+    }
     if (node.get(PipelineExecutionSummaryKeys.name) != null) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.NAME, node.get(PipelineExecutionSummaryKeys.name).asText());
+    }
+    if (node.get(PipelineExecutionSummaryKeys.status) != null) {
+      record.set(Tables.PIPELINE_EXECUTION_SUMMARY.STATUS, node.get(PipelineExecutionSummaryKeys.status).asText());
     }
     if (node.get(PipelineExecutionSummaryKeys.startTs) != null) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.STARTTS, node.get(PipelineExecutionSummaryKeys.startTs).asLong());
@@ -65,6 +68,44 @@ public class PipelineExecutionSummaryChangeEventHandler extends RedisAbstractHan
     if (node.get(PipelineExecutionSummaryKeys.endTs) != null) {
       record.set(Tables.PIPELINE_EXECUTION_SUMMARY.ENDTS, node.get(PipelineExecutionSummaryKeys.endTs).asLong());
     }
+
+    if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo) != null) {
+      if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggerType)
+          != null) {
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY.TRIGGER_TYPE,
+            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                .get(PipelineExecutionSummaryKeys.triggerType)
+                .asText());
+      }
+      if (node.get(PipelineExecutionSummaryKeys.executionTriggerInfo).get(PipelineExecutionSummaryKeys.triggeredBy)
+              != null
+          && node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                  .get(PipelineExecutionSummaryKeys.triggeredBy)
+                  .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
+              != null) {
+        record.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_ID,
+            node.get(PipelineExecutionSummaryKeys.executionTriggerInfo)
+                .get(PipelineExecutionSummaryKeys.triggeredBy)
+                .get(PipelineExecutionSummaryKeys.executionTriggerInfoIdentifier)
+                .asText());
+      }
+    }
+    if (node.get(PipelineExecutionSummaryKeys.moduleInfo).get("ci") != null) {
+      JsonNode ciObject = node.get(PipelineExecutionSummaryKeys.moduleInfo).get("ci");
+      JsonNode ciExecutionInfo = ciObject.get(PipelineExecutionSummaryKeys.ciExecutionInfoDTO);
+      if (ciExecutionInfo != null) {
+        JsonNode author = ciExecutionInfo.get(PipelineExecutionSummaryKeys.author);
+        if (author != null) {
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_ID,
+              author.get(PipelineExecutionSummaryKeys.commitId).toString());
+          record.set(
+              Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_NAME, author.get(PipelineExecutionSummaryKeys.name).toString());
+          record.set(Tables.PIPELINE_EXECUTION_SUMMARY.AUTHOR_AVATAR,
+              author.get(PipelineExecutionSummaryKeys.avatar).toString());
+        }
+      }
+    }
+
     return record;
   }
 

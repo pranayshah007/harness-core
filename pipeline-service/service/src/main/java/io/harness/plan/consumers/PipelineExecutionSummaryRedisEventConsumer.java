@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.redisConsumer;
+package io.harness.plan.consumers;
 
 import static io.harness.annotations.dev.HarnessTeam.SPG;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -23,6 +23,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
+import io.harness.pms.Dashboard.PipelineExecutionSummaryChangeEventHandler;
 import io.harness.pms.events.base.PmsRedisConsumer;
 import io.harness.queue.QueueController;
 
