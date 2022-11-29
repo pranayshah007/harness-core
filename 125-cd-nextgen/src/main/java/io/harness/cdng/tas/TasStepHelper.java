@@ -35,6 +35,7 @@ import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.google.common.base.Splitter;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -142,6 +143,8 @@ public class TasStepHelper {
   @Inject private StepHelper stepHelper;
   private static int DEFAULT_INSTANCE_COUNT = 2;
 
+  private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
+
   public TaskChainResponse startChainLink(
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
@@ -166,6 +169,91 @@ public class TasStepHelper {
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
+  }
+
+  public String removeCommentedLineFromScript(String scriptString) {
+    return lineSplitter.splitToList(scriptString)
+            .stream()
+            .filter(line -> !line.isEmpty())
+            .filter(line -> line.charAt(0) != '#')
+            .collect(Collectors.joining("\n"));
+  }
+
+  public TaskChainResponse startChainLinkForCommandStep(
+          TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
+
+    //TODO: Complete parameters for task to fetch store for script
+    HarnessStore storeConfig = HarnessStore.builder().build();
+    logCallback = cdStepHelper.getLogCallback(
+            CfCommandUnitConstants.FetchCommandScript, ambiance, true);
+    //TODO: make sure list we get is not empty and size is 1 always
+    String scriptString = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript" , "TasCommandScript", logCallback).getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(0);
+
+    //TODO: Resolve expressions
+    String rawScript = removeCommentedLineFromScript(scriptString);
+
+    ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
+    ExpressionEvaluatorUtils.updateExpressions(
+            manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
+
+    List<AutoScalerManifestOutcome> autoScalerManifestOutcomeList = new ArrayList<>();
+    List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
+    TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
+            manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
+
+
+    //TODO: findRepoRoot
+    String repoRoot= "";
+
+    TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
+            .tasManifestOutcome(tasManifestOutcome)
+            .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
+            .varsManifestOutcomeList(varsManifestOutcomeList)
+            .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
+            .rawScript(rawScript)
+            .repoRoot(repoRoot)
+            .build();
+    shouldExecuteStoreFetch(tasStepPassThroughData);
+    tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
+    tasStepPassThroughData.setShouldOpenFetchFilesStream(
+            shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+
+//    return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
+    return executeTasTaskForCommandStep(ambiance, stepElementParameters, tasStepExecutor, tasStepPassThroughData, tasManifestOutcome, null);
+  }
+
+  public TaskChainResponse executeTasTaskForCommandStep(Ambiance ambiance, StepElementParameters stepElementParameters,
+                                          TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
+                                          ManifestOutcome tasManifestOutcome, UnitProgressData unitProgressData) {
+    return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
+            TasExecutionPassThroughData.builder()
+                    .cfCliVersion(((TasManifestOutcome) tasManifestOutcome).getCfCliVersion())
+                    .rawScriptString(tasStepPassThroughData.getRawScript())
+                    .repoRoot(tasStepPassThroughData.getRepoRoot())
+                    .build(),
+            tasStepPassThroughData.getShouldOpenFetchFilesStream(),
+            UnitProgressData.builder()
+                    .unitProgresses(Arrays.asList(UnitProgress.newBuilder()
+                                    .setUnitName(CfCommandUnitConstants.FetchCommandScript)
+                                    .setStatus(UnitStatus.SUCCESS)
+                                    .setStartTime(System.currentTimeMillis() - 100)
+                                    .setEndTime(System.currentTimeMillis() - 50)
+                                    .build()
+//                            ,UnitProgress.newBuilder()
+//                                    .setUnitName(CfCommandUnitConstants.FetchGitFiles)
+//                                    .setStatus(UnitStatus.SUCCESS)
+//                                    .setStartTime(System.currentTimeMillis() - 50)
+//                                    .setEndTime(System.currentTimeMillis() - 25)
+//                                    .build(),
+//                            UnitProgress.newBuilder()
+//                                    .setUnitName(CfCommandUnitConstants.FetchCustomFiles)
+//                                    .setStatus(UnitStatus.SUCCESS)
+//                                    .setStartTime(System.currentTimeMillis() - 25)
+//                                    .setEndTime(System.currentTimeMillis())
+//                                    .build()
+                    ))
+                    .build());
   }
 
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,

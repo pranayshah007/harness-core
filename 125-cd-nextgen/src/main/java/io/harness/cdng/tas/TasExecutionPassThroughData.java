@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
@@ -36,4 +37,5 @@ public class TasExecutionPassThroughData implements PassThroughData {
   Map<String,String> allFilesFetched;
   String rawScriptString;
   String repoRoot;
+  CfCliVersionNG cfCliVersion;
 }
