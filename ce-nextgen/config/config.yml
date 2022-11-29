@@ -149,7 +149,7 @@ awsConfig:
   accessKey: accessKey_placeholder
   secretKey: secretKey_placeholder
   destinationBucket: destinationBucket_placeholder
-  destinationBucketsCount : 1
+  destinationBucketsCount : 2
   harnessAwsAccountId: 108817434118
   awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
 
