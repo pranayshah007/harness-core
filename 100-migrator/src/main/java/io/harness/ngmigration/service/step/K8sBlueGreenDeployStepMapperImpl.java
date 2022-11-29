@@ -14,6 +14,7 @@ import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sBlueGreenDeploy;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -26,10 +27,16 @@ public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sBlueGreenDeploy state = new K8sBlueGreenDeploy(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    K8sBlueGreenDeploy state = (K8sBlueGreenDeploy) getState(stepYaml);
     K8sBlueGreenStepNode stepNode = new K8sBlueGreenStepNode();
     baseSetup(stepYaml, stepNode);
     K8sBlueGreenStepInfo stepInfo =
@@ -40,5 +47,10 @@ public class K8sBlueGreenDeployStepMapperImpl implements StepMapper {
             .build();
     stepNode.setK8sBlueGreenStepInfo(stepInfo);
     return stepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    return true;
   }
 }

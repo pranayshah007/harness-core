@@ -38,6 +38,10 @@ public class ArtifactBuildDetailsMapper {
   }
 
   public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetails buildDetails) {
+    if (buildDetails == null) {
+      return ArtifactBuildDetailsNG.builder().build();
+    }
+
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetails.getBuildUrl())
         .metadata(buildDetails.getMetadata())

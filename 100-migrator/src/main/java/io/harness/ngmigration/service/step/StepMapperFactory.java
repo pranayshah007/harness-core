@@ -7,10 +7,12 @@
 
 package io.harness.ngmigration.service.step;
 
-import io.harness.exception.InvalidRequestException;
+import software.wings.yaml.workflow.StepYaml;
 
 import com.google.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class StepMapperFactory {
   @Inject ShellScriptStepMapperImpl shellScriptStepMapper;
   @Inject K8sRollingStepMapperImpl k8sRollingStepMapper;
@@ -28,6 +30,7 @@ public class StepMapperFactory {
   @Inject K8sSwapServiceSelectorsStepMapperImpl k8sSwapServiceSelectorsStepMapper;
   @Inject K8sBlueGreenDeployStepMapperImpl k8sBlueGreenDeployStepMapper;
   @Inject JiraCreateUpdateStepMapperImpl jiraCreateUpdateStepMapper;
+  @Inject UnsupportedStepMapperImpl unsupportedStepMapper;
 
   public StepMapper getStepMapper(String stepType) {
     switch (stepType) {
@@ -65,7 +68,19 @@ public class StepMapperFactory {
       case "ARTIFACT_CHECK":
         return emptyStepMapper;
       default:
-        throw new InvalidRequestException("Unsupported step");
+        return unsupportedStepMapper;
+    }
+  }
+
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    if (!stepYaml1.getType().equals(stepYaml2.getType())) {
+      return false;
+    }
+    try {
+      return getStepMapper(stepYaml1.getType()).areSimilar(stepYaml1, stepYaml2);
+    } catch (Exception e) {
+      log.error("There was an error with finding similar steps", e);
+      return false;
     }
   }
 }

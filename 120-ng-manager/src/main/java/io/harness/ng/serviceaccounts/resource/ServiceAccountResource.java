@@ -272,14 +272,14 @@ public class ServiceAccountResource {
   }
 
   @GET
-  @Path("{identifier}")
+  @Path("internal/{identifier}")
   @Hidden
   @InternalApi
-  @ApiOperation(value = "Get Service Account by Id", nickname = "getServiceAccountByIdAndAccountId")
-  public ResponseDTO<ServiceAccountDTO> getServiceAccountByIdAndAccountId(
-      @NotNull @PathParam(IDENTIFIER) @ResourceIdentifier String identifier,
-      @NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
-    return ResponseDTO.newResponse(
-        serviceAccountService.getServiceAccountDTO(accountIdentifier, null, null, identifier));
+  @ApiOperation(value = "Get service account", nickname = "getServiceAccountInternal")
+  public ResponseDTO<ServiceAccountDTO> getServiceAccountInternal(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @PathParam(IDENTIFIER) @NotNull String identifier) {
+    ServiceAccountDTO requestDTOS = serviceAccountService.getServiceAccountDTO(accountIdentifier, identifier);
+    return ResponseDTO.newResponse(requestDTOS);
   }
 }

@@ -21,4 +21,5 @@ public class CountOverview {
   CountChangeDetails servicesCountDetail;
   CountChangeDetails envCountDetail;
   CountChangeDetails pipelinesCountDetail;
+  CountChangeDetails usersCountDetail;
 }

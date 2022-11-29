@@ -41,17 +41,29 @@ import io.harness.beans.yaml.extended.CustomVariable;
 import io.harness.beans.yaml.extended.clone.Clone;
 import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
+import io.harness.beans.yaml.extended.platform.V1.Arch;
+import io.harness.beans.yaml.extended.platform.V1.OS;
+import io.harness.beans.yaml.extended.platform.V1.PlatformV1;
 import io.harness.beans.yaml.extended.repository.Repository;
 import io.harness.beans.yaml.extended.runtime.CloudRuntime;
 import io.harness.beans.yaml.extended.runtime.DockerRuntime;
 import io.harness.beans.yaml.extended.runtime.Runtime;
+import io.harness.beans.yaml.extended.runtime.V1.CloudRuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.CloudRuntimeV1.CloudRuntimeSpec;
+import io.harness.beans.yaml.extended.runtime.V1.DockerRuntimeV1;
+import io.harness.beans.yaml.extended.runtime.V1.DockerRuntimeV1.DockerRuntimeSpec;
+import io.harness.beans.yaml.extended.runtime.V1.RuntimeV1;
 import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
@@ -63,6 +75,7 @@ import io.harness.when.beans.StageWhenCondition;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -131,5 +144,20 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(IntNode.class, 110126);
     kryo.register(Clone.class, 110127);
     kryo.register(Repository.class, 110128);
+
+    kryo.register(PlatformV1.class, 110129);
+    kryo.register(OS.class, 110130);
+    kryo.register(Arch.class, 110131);
+    kryo.register(RuntimeV1.class, 110132);
+    kryo.register(CloudRuntimeV1.class, 110133);
+    kryo.register(CloudRuntimeSpec.class, 110134);
+    kryo.register(DockerRuntimeV1.class, 110135);
+    kryo.register(DockerRuntimeSpec.class, 110136);
+    kryo.register(RuntimeV1.Type.class, 110137);
+    kryo.register(HostedVmInfraSpec.class, 110138);
+    kryo.register(Platform.class, 110139);
+    kryo.register(ArchType.class, 110140);
+    kryo.register(OSType.class, 110141);
+    kryo.register(BooleanNode.class, 110142);
   }
 }

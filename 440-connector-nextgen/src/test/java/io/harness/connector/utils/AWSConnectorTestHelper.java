@@ -49,7 +49,7 @@ public class AWSConnectorTestHelper {
   private final String RESOURCES = "RESOURCES";
 
   public final List<CEFeatures> CE_AWS_FEATURES_ENABLED =
-      ImmutableList.of(CEFeatures.BILLING, CEFeatures.VISIBILITY, CEFeatures.OPTIMIZATION);
+      ImmutableList.of(CEFeatures.BILLING, CEFeatures.VISIBILITY, CEFeatures.OPTIMIZATION, CEFeatures.GOVERNANCE);
 
   public Connector createAWSConnector(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, Scope scope) {

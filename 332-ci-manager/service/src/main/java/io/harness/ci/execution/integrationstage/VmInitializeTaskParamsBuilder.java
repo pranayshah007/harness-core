@@ -491,10 +491,10 @@ public class VmInitializeTaskParamsBuilder {
       os = resolveOSType(platform.getValue().getOs());
       arch = resolveArchType(platform.getValue().getArch());
     }
-    boolean isLinuxAmd = os == OSType.Linux && arch == ArchType.Amd64;
+    boolean isLinux = os == OSType.Linux && (arch == ArchType.Amd64 || arch == ArchType.Arm64);
     boolean isMacArm = os == OSType.MacOS && arch == ArchType.Arm64;
 
-    if (isLinuxAmd || isMacArm) {
+    if (isLinux || isMacArm) {
       if (isMacArm && !featureFlagService.isEnabled(FeatureName.CIE_HOSTED_VMS_MAC, accountId)) {
         throw new CIStageExecutionException(format("Mac Arm64 platform is not enabled for accountId %s", accountId));
       }

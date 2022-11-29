@@ -17,13 +17,13 @@ import org.jetbrains.annotations.NotNull;
 
 @Singleton
 public class MigratorExpressionUtils {
-  public Object render(Object object, Map<String, String> customExpressions) {
+  public static Object render(Object object, Map<String, String> customExpressions) {
     Map<String, Object> context = prepareContextMap(customExpressions);
     return ExpressionEvaluatorUtils.updateExpressions(object, new MigratorResolveFunctor(context));
   }
 
   @NotNull
-  Map<String, Object> prepareContextMap(Map<String, String> customExpressions) {
+  static Map<String, Object> prepareContextMap(Map<String, String> customExpressions) {
     Map<String, Object> context = new HashMap<>();
     // Infra Expressions
     context.put("infra.kubernetes.namespace", "<+infra.namespace>");
@@ -40,6 +40,7 @@ public class MigratorExpressionUtils {
 
     // Artifact Expressions
     context.put("artifact.metadata.image", "<+artifact.image>");
+    context.put("artifact.metadata.tag", "<+artifact.tag>");
     context.put("artifact.source.dockerconfig", "<+artifact.imagePullSecret>");
 
     // Application Expressions

@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -56,12 +57,12 @@ import io.harness.beans.SortOrder.OrderType;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ReportTarget;
 import io.harness.ff.FeatureFlagService;
-import io.harness.logging.ExceptionLogger;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.time.EpochUtils;
@@ -1079,7 +1080,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .greaterThanOrEq(fromTimestamp)
                                         .field(Instance.CREATED_AT_KEY)
                                         .lessThanOrEq(rhsCreatedAt)
-                                        .project("appId", true);
+                                        .project(InstanceKeys.appId, true);
+
+    if (featureFlagService.isEnabled(SPG_INSTANCE_OPTIMIZE_DELETED_APPS, accountId)) {
+      instanceQuery.project(InstanceKeys.uuid, false);
+    }
 
     Set<String> appIdsFromInstances = new HashSet<>();
     try (HIterator<Instance> iterator =

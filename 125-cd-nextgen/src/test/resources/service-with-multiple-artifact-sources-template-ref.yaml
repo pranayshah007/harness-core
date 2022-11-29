@@ -6,7 +6,7 @@ service:
     spec:
       artifacts:
         primary:
-          primaryArtifactRef: fromtemp1
+          primaryArtifactRef: $PRIMARY_ARTIFACT_REF
           sources:
             - name: fromtemp1
               identifier: fromtemp1

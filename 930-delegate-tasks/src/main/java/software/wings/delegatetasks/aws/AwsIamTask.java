@@ -19,10 +19,10 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-import io.harness.logging.ExceptionLogger;
 
 import software.wings.service.impl.aws.model.AwsIamListInstanceRolesResponse;
 import software.wings.service.impl.aws.model.AwsIamListRolesResponse;

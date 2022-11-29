@@ -7,8 +7,6 @@
 
 package io.harness.event;
 
-import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.OrchestrationEventLog;
@@ -76,27 +74,17 @@ public class OrchestrationLogPublisher
             .planExecutionId(planExecutionId)
             .validUntil(Date.from(OffsetDateTime.now().plus(Duration.ofDays(14)).toInstant()))
             .build());
-
-    if (orchestrationLogConfiguration.isShouldUseBatching()) {
-      batchAndSendLogEventIfRequired(planExecutionId);
-    } else {
-      OrchestrationLogEvent orchestrationLogEvent =
-          OrchestrationLogEvent.newBuilder().setPlanExecutionId(planExecutionId).build();
-      producer.send(Message.newBuilder()
-                        .putAllMetadata(ImmutableMap.of("nodeExecutionId", emptyIfNull(nodeExecutionId),
-                            "planExecutionId", planExecutionId, "eventType", eventType.name()))
-                        .setData(orchestrationLogEvent.toByteString())
-                        .build());
-    }
+    batchAndSendLogEventIfRequired(planExecutionId);
   }
 
   private void batchAndSendLogEventIfRequired(String planExecutionId) {
-    if (orchestrationLogCache.containsKey(planExecutionId)) {
-      if (orchestrationLogCache.get(planExecutionId) >= orchestrationLogConfiguration.getOrchestrationLogBatchSize()) {
+    Long currentValue = orchestrationLogCache.get(planExecutionId);
+    if (currentValue != null) {
+      if (currentValue >= orchestrationLogConfiguration.getOrchestrationLogBatchSize()) {
         sendLogEvent(planExecutionId);
         orchestrationLogCache.put(planExecutionId, 1L);
       } else {
-        orchestrationLogCache.put(planExecutionId, orchestrationLogCache.get(planExecutionId) + 1);
+        orchestrationLogCache.put(planExecutionId, currentValue + 1);
       }
     } else {
       orchestrationLogCache.put(planExecutionId, 1L);

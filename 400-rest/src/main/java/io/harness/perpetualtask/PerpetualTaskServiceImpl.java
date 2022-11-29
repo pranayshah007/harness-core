@@ -72,7 +72,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   private final BroadcasterFactory broadcasterFactory;
   private final PerpetualTaskScheduleService perpetualTaskScheduleService;
   private static final int TASK_FAILED_EXECUTION_LIMIT = 5;
-  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 10;
+  private static final int MAX_FIBONACCI_INDEX_FOR_TASK_ASSIGNMENT = 5;
 
   @Inject private MainConfiguration mainConfiguration;
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -332,9 +332,9 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
       taskFailedExecutionCount++;
       boolean saveHeartbeat = perpetualTaskRecordDao.saveHeartbeat(taskId, heartbeatMillis, taskFailedExecutionCount);
       if (taskFailedExecutionCount >= TASK_FAILED_EXECUTION_LIMIT) {
-        setTaskUnassigned(taskId);
-        updateTaskUnassignedReason(
-            taskId, PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount());
+        perpetualTaskRecordDao.updateTaskStateNonAssignableReason(taskRecord.getUuid(),
+            PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount(),
+            TASK_NON_ASSIGNABLE);
       }
       return saveHeartbeat;
     }
@@ -346,9 +346,9 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
     long taskFailedExecutionCount = taskRecord.getFailedExecutionCount();
     taskFailedExecutionCount++;
     if (taskFailedExecutionCount >= TASK_FAILED_EXECUTION_LIMIT) {
-      setTaskUnassigned(taskId);
-      updateTaskUnassignedReason(
-          taskId, PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount());
+      perpetualTaskRecordDao.updateTaskStateNonAssignableReason(taskRecord.getUuid(),
+          PerpetualTaskUnassignedReason.MULTIPLE_FAILED_PERPETUAL_TASK, taskRecord.getAssignTryCount(),
+          TASK_NON_ASSIGNABLE);
       taskFailedExecutionCount = 0;
     }
     perpetualTaskRecordDao.saveTaskFailureExceptionAndCount(taskId, exceptionMessage, taskFailedExecutionCount);

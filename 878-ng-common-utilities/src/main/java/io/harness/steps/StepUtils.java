@@ -100,6 +100,10 @@ public class StepUtils {
     return createHDelegateTask(accountId, taskData, setupAbstractions, new LinkedHashMap<>());
   }
 
+  public static Task prepareDelegateTaskInput(String accountId, TaskData taskData,
+      Map<String, String> setupAbstractions, LinkedHashMap<String, String> logAbstractions) {
+    return createHDelegateTask(accountId, taskData, setupAbstractions, logAbstractions);
+  }
   private static Task createHDelegateTask(String accountId, TaskData taskData, Map<String, String> setupAbstractions,
       LinkedHashMap<String, String> logAbstractions) {
     return SimpleHDelegateTask.builder()

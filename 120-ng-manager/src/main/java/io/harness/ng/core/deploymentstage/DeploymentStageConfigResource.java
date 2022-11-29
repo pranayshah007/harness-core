@@ -22,6 +22,7 @@ import io.harness.ng.core.dto.CDStageMetaDataDTO;
 import io.harness.ng.core.dto.CDStageMetaDataDTO.CDStageMetaDataDTOBuilder;
 import io.harness.ng.core.dto.CdDeployStageMetadataRequestDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -35,6 +36,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -148,7 +150,7 @@ public class DeploymentStageConfigResource {
     final PipelineInfrastructure infrastructure = deploymentStageConfig.getInfrastructure();
     if (infrastructure != null) {
       if (infrastructure.getEnvironmentRef() != null) {
-        return infrastructure.getEnvironmentRef().getValue();
+        return getReferenceValue(infrastructure.getEnvironmentRef());
       } else {
         if (infrastructure.getEnvironment() != null) {
           return infrastructure.getEnvironment().getIdentifier();
@@ -157,7 +159,7 @@ public class DeploymentStageConfigResource {
     } else {
       if (deploymentStageConfig.getEnvironment() != null
           && deploymentStageConfig.getEnvironment().getEnvironmentRef() != null) {
-        return deploymentStageConfig.getEnvironment().getEnvironmentRef().getValue();
+        return getReferenceValue(deploymentStageConfig.getEnvironment().getEnvironmentRef());
       }
     }
     return EMPTY;
@@ -166,7 +168,7 @@ public class DeploymentStageConfigResource {
   private String getServiceRef(DeploymentStageConfig deploymentStageConfig) {
     if (deploymentStageConfig.getServiceConfig() != null) {
       if (deploymentStageConfig.getServiceConfig().getServiceRef() != null) {
-        return deploymentStageConfig.getServiceConfig().getServiceRef().getValue();
+        return getReferenceValue(deploymentStageConfig.getServiceConfig().getServiceRef());
       } else {
         if (deploymentStageConfig.getServiceConfig().getService() != null) {
           return deploymentStageConfig.getServiceConfig().getService().getIdentifier();
@@ -174,9 +176,13 @@ public class DeploymentStageConfigResource {
       }
     } else {
       if (deploymentStageConfig.getService() != null && deploymentStageConfig.getService().getServiceRef() != null) {
-        return deploymentStageConfig.getService().getServiceRef().getValue();
+        return getReferenceValue(deploymentStageConfig.getService().getServiceRef());
       }
     }
     return EMPTY;
+  }
+
+  private String getReferenceValue(ParameterField<String> parameterField) {
+    return Objects.nonNull(parameterField.getValue()) ? parameterField.getValue() : parameterField.getExpressionValue();
   }
 }

@@ -9,7 +9,6 @@ package io.harness.steps.matrix;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.StaticLimitRestrictionMetadataDTO;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -26,8 +25,10 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.executable.ChildrenExecutableWithRollbackAndRbac;
 import io.harness.tasks.ResponseData;
@@ -36,6 +37,7 @@ import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -145,7 +147,10 @@ public class StrategyStep extends ChildrenExecutableWithRollbackAndRbac<Strategy
       Ambiance ambiance, StrategyStepParameters stepParameters, Map<String, ResponseData> responseDataMap) {
     log.info("Completed  execution for Strategy Step [{}]", stepParameters);
 
-    if (EmptyPredicate.isEmpty(responseDataMap)) {
+    if (StatusUtils.checkIfAllChildrenSkipped(responseDataMap.values()
+                                                  .stream()
+                                                  .map(o -> ((StepResponseNotifyData) o).getStatus())
+                                                  .collect(Collectors.toList()))) {
       return StepResponse.builder().status(Status.SKIPPED).build();
     }
 

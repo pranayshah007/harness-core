@@ -635,14 +635,12 @@ public class EnvironmentResourceV2 {
   }
 
   @GET
-  @Path("/dummy-serviceoverride-api")
-  @ApiOperation(
-      value = "This is dummy api to expose NGServiceOverrideConfig", nickname = "dummyNGServiceOverrideConfig")
+  @Path("/dummy-api-for-exposing-objects")
+  @ApiOperation(value = "This is dummy api to expose objects to swagger", nickname = "dummyNGServiceOverrideConfig")
   @Hidden
   // do not delete this.
-  public ResponseDTO<NGServiceOverrideConfig>
-  getServiceOverrideConfig() {
-    return ResponseDTO.newResponse(NGServiceOverrideConfig.builder().build());
+  public ResponseDTO<EnvSwaggerObjectWrapper> exposeSwaggerObjects() {
+    return ResponseDTO.newResponse(EnvSwaggerObjectWrapper.builder().build());
   }
 
   @GET

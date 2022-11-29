@@ -32,10 +32,12 @@ public interface PMSPipelineService {
   /**
    * Create pipeline (inline/remote) and do validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param pipelineEntity
+   * @param throwExceptionIfGovernanceFails
    * @return
    */
-  PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity);
+  PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails);
 
   /**
    * Clone pipeline (inline/remote) and do validation - template resolution,
@@ -61,7 +63,7 @@ public interface PMSPipelineService {
 
   //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
   Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
-      String identifier, boolean deleted, boolean loadFromFallbackBranch);
+      String identifier, boolean deleted, boolean loadFromFallbackBranch, boolean loadFromCache);
 
   /**
    * Get pipeline whether inline or remote (old/new git exp)
@@ -78,16 +80,20 @@ public interface PMSPipelineService {
       String identifier, boolean deleted, boolean getMetadataOnly);
 
   Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
-      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch);
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache);
 
   /**
    * Update pipeline (inline/remote) after doing validation - template resolution,
    * schema validation and governance (opa) checks
+   *
    * @param pipelineEntity
    * @param changeType
+   * @param throwExceptionIfGovernanceFails
    * @return
    */
-  PipelineCRUDResult validateAndUpdatePipeline(PipelineEntity pipelineEntity, ChangeType changeType);
+  PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

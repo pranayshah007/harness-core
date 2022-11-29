@@ -80,6 +80,8 @@ public class DeploymentTableSchema {
   DbColumn tags;
   DbColumn parentPipelineId;
   DbColumn cause;
+  DbColumn infraDefinitions;
+  DbColumn infraMappings;
   public DeploymentTableSchema() {
     dbSpec = new DbSpec();
     dbSchema = dbSpec.addDefaultSchema();
@@ -113,5 +115,7 @@ public class DeploymentTableSchema {
     tags = deploymentTable.addColumn("TAGS", "hstore", null);
     parentPipelineId = deploymentTable.addColumn("PARENT_PIPELINE_ID", "text", null);
     cause = deploymentTable.addColumn("CREATED_BY_TYPE", "text", null);
+    infraDefinitions = deploymentTable.addColumn("INFRA_DEFINITIONS", "text[]", null);
+    infraMappings = deploymentTable.addColumn("INFRA_MAPPINGS", "text[]", null);
   }
 }

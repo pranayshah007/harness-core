@@ -7,12 +7,14 @@
 
 package io.harness.delegate;
 
-import static io.harness.eraro.ErrorCode.NO_AVAILABLE_DELEGATES;
+import static io.harness.eraro.ErrorCode.NO_ELIGIBLE_DELEGATES;
 
 import io.harness.delegate.beans.NoDelegatesException;
 
 public class NoEligibleDelegatesInAccountException extends NoDelegatesException {
+  private static final String MESSAGE_ARG = "message";
   public NoEligibleDelegatesInAccountException(String message) {
-    super(message, NO_AVAILABLE_DELEGATES);
+    super(message, NO_ELIGIBLE_DELEGATES);
+    super.param(MESSAGE_ARG, message);
   }
 }

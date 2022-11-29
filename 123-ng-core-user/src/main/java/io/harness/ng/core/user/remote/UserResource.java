@@ -43,6 +43,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.AddUsersDTO;
 import io.harness.ng.core.user.AddUsersResponse;
@@ -658,5 +659,29 @@ public class UserResource {
         && ngUserService.isUserAtScope(
             optionalUser.get().getUuid(), Scope.builder().accountIdentifier(accountIdentifier).build());
     return ResponseDTO.newResponse(found);
+  }
+
+  @GET
+  @Hidden
+  @Path("users-count")
+  @ApiOperation(
+      value = "Get total count of users present on Harness platform", nickname = "getUsersCount", hidden = true)
+  @Operation(operationId = "getUsersCount", summary = "Get total count of users present on Harness platform",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns count of users present on Harness platform")
+      },
+      hidden = true)
+  @InternalApi
+  public ResponseDTO<UsersCountDTO>
+  getUsersCount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ResponseDTO.newResponse(ngUserService.getUsersCount(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), startInterval, endInterval));
   }
 }

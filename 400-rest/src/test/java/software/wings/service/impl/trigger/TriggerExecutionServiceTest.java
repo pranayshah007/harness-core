@@ -9,6 +9,7 @@ package software.wings.service.impl.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -44,6 +45,7 @@ import org.mockito.Mock;
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
 public class TriggerExecutionServiceTest extends WingsBaseTest {
   @Inject @InjectMocks private TriggerExecutionService triggerExecutionService;
+  @Inject @InjectMocks private TriggerExecutionServiceImpl triggerExecutionServiceImpl;
   @Mock private AppService appService;
 
   @Test
@@ -78,5 +80,35 @@ public class TriggerExecutionServiceTest extends WingsBaseTest {
     assertThat(successExecution).isNotNull();
     assertThat(successExecution.getTriggerId()).isEqualTo(TRIGGER_ID);
     assertThat(successExecution.getStatus()).isEqualTo(Status.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void shouldDeleteByAccountId() {
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+    String webhookToken = generateUuid();
+    TriggerExecution triggerExecution =
+        TriggerExecution.builder()
+            .appId(APP_ID)
+            .triggerId(TRIGGER_ID)
+            .triggerName(TRIGGER_NAME)
+            .workflowExecutionId(WORKFLOW_EXECUTION_ID)
+            .status(Status.SUCCESS)
+            .webhookToken(webhookToken)
+            .webhookEventDetails(WebhookEventDetails.builder().branchNames(Collections.singletonList("master")).build())
+            .build();
+
+    TriggerExecution savedTriggerExecution = triggerExecutionService.save(triggerExecution);
+
+    assertThat(savedTriggerExecution).isNotNull();
+    assertThat(savedTriggerExecution.getTriggerId()).isEqualTo(TRIGGER_ID);
+
+    savedTriggerExecution = triggerExecutionService.get(APP_ID, savedTriggerExecution.getUuid());
+    assertThat(savedTriggerExecution).isNotNull();
+    assertThat(savedTriggerExecution.getTriggerId()).isEqualTo(TRIGGER_ID);
+    triggerExecutionServiceImpl.deleteByAccountId(ACCOUNT_ID);
+    TriggerExecution execution = triggerExecutionService.get(APP_ID, savedTriggerExecution.getUuid());
+    assertThat(execution).isNull();
   }
 }

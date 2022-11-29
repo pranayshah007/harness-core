@@ -88,7 +88,6 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ServiceResourceService serviceResourceService;
   @Inject private ArtifactStreamService artifactStreamService;
   @Inject private ManifestMigrationService manifestMigrationService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private ServiceResourceClient serviceResourceClient;
 
@@ -240,7 +239,7 @@ public class ServiceMigrationService extends NgMigrationService {
     String projectIdentifier = MigratorUtility.getProjectIdentifier(PROJECT, inputDTO);
     String orgIdentifier = MigratorUtility.getOrgIdentifier(PROJECT, inputDTO);
 
-    migratorExpressionUtils.render(service, inputDTO.getCustomExpressions());
+    MigratorExpressionUtils.render(service, inputDTO.getCustomExpressions());
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
     List<ManifestConfigWrapper> manifestConfigWrapperList =

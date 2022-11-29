@@ -28,7 +28,6 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.repositories.BarrierNodeRepository;
 import io.harness.rule.Owner;
@@ -429,7 +428,6 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     barrierService.save(barrierExecutionInstance);
 
     when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().status(Status.SUCCEEDED).build());
-    when(planExecutionService.get(anyString())).thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());
@@ -447,7 +445,7 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
     barrierService.save(barrierExecutionInstance);
 
     when(waitNotifyEngine.doneWith(anyString(), any())).thenReturn("");
-    when(planExecutionService.get(anyString())).thenReturn(PlanExecution.builder().status(Status.FAILED).build());
+    when(planExecutionService.getStatus(anyString())).thenReturn(Status.FAILED);
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());
@@ -466,7 +464,6 @@ public class BarrierServiceImplTest extends OrchestrationStepsTestBase {
 
     when(waitNotifyEngine.doneWith(anyString(), any())).thenReturn("");
     when(nodeExecutionService.get(anyString())).thenReturn(NodeExecution.builder().status(Status.EXPIRED).build());
-    when(planExecutionService.get(anyString())).thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
 
     barrierService.update(barrierExecutionInstance);
     BarrierExecutionInstance updated = barrierService.get(barrierExecutionInstance.getUuid());

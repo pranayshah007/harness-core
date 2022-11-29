@@ -101,6 +101,7 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
@@ -716,18 +717,20 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       return null;
     }
 
+    String colName = isClusterTableQuery ? BILLING_AMOUNT : COST;
     Double[] monthlyCosts = new Double[MONTHS];
     Arrays.fill(monthlyCosts, 0.0D);
     if (lastPeriod) {
       int startPosition = ((Long) result.getTotalRows()).intValue();
       for (FieldValueList row : result.iterateAll()) {
-        monthlyCosts[MONTHS - startPosition] = row.get("cost").getNumericValue().doubleValue();
+        monthlyCosts[MONTHS - startPosition] =
+            BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
         startPosition--;
       }
     } else {
       int startPosition = 0;
       for (FieldValueList row : result.iterateAll()) {
-        monthlyCosts[startPosition] = row.get("cost").getNumericValue().doubleValue();
+        monthlyCosts[startPosition] = BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
         startPosition++;
       }
     }

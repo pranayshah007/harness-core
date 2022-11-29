@@ -195,7 +195,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
              planExecutionId, nodeExecution3.getUuid(), NodeProjectionUtils.fieldsForExpressionEngine))
         .thenReturn(asList(nodeExecution4, nodeExecution5));
 
-    when(planExecutionService.get(planExecutionId)).thenReturn(PlanExecution.builder().build());
+    when(planExecutionService.getPlanExecutionMetadata(planExecutionId)).thenReturn(PlanExecution.builder().build());
   }
 
   @Test
@@ -223,14 +223,14 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     PmsSdkInstance pmsSdkInstance =
         PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
     doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
-    Object pipelineSuccess =
-        engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.PIPELINE_SUCCESS + ">");
-    assertThat(pipelineSuccess).isInstanceOf(Boolean.class);
-    assertThat((Boolean) pipelineSuccess).isEqualTo(true);
     Object pipelineCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.currentStatus>");
     assertThat((String) pipelineCurrentStatus).isEqualTo("IGNORE_FAILED");
     Object stageCurrentStatus = engineExpressionEvaluator.evaluateExpression("<+pipeline.currentStatus>");
     assertThat((String) stageCurrentStatus).isEqualTo("IGNORE_FAILED");
+    Object pipelineSuccess =
+        engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.PIPELINE_SUCCESS + ">");
+    assertThat(pipelineSuccess).isInstanceOf(Boolean.class);
+    assertThat((Boolean) pipelineSuccess).isEqualTo(true);
 
     Object stageSuccess =
         engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.STAGE_SUCCESS + ">");

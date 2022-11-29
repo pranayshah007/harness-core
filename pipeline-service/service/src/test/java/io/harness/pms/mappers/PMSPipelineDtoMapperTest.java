@@ -8,6 +8,7 @@
 package io.harness.pms.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
@@ -25,6 +26,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
@@ -617,5 +620,23 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
     assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
     assertThat(pipelineSummaryResponse.getIsDraft()).isEqualTo(false);
     assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testWritePipelineDtoWithCache() {
+    CacheResponse cacheResponse = CacheResponse.builder().cacheState(CacheState.VALID_CACHE).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+
+    PipelineEntity remote = PipelineEntity.builder()
+                                .yaml(yaml)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.REMOTE)
+                                .build();
+    PMSPipelineResponseDTO pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(remote);
+    assertThat(pipelineResponseDTO.getCacheResponse().getCacheState()).isEqualTo(CacheState.VALID_CACHE);
   }
 }

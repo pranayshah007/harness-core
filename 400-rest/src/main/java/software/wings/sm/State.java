@@ -19,7 +19,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.context.ContextElementType;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.serializer.MapperUtils;
 import io.harness.tasks.ResponseData;
 

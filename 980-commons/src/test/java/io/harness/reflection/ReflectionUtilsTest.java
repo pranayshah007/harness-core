@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;

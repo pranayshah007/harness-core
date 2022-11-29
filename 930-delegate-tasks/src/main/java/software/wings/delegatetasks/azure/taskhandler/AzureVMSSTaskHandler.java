@@ -9,6 +9,7 @@ package software.wings.delegatetasks.azure.taskhandler;
 
 import static io.harness.annotations.dev.HarnessModule._930_DELEGATE_TASKS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL;
 import static io.harness.azure.model.AzureConstants.CLEAR_SCALING_POLICY;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_ERROR;
 import static io.harness.azure.model.AzureConstants.VM_PROVISIONING_SPECIALIZED_STATUS;
@@ -17,8 +18,10 @@ import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
+import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -26,6 +29,7 @@ import io.harness.azure.client.AzureAutoScaleSettingsClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureNetworkClient;
 import io.harness.azure.model.AzureConfig;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
@@ -156,20 +160,28 @@ public abstract class AzureVMSSTaskHandler {
                     virtualMachineScaleSetName, subscriptionId, resourceGroupName)));
   }
 
-  protected VirtualMachineScaleSet waitForVMSSToBeDownSized(VirtualMachineScaleSet virtualMachineScaleSet, int capacity,
+  protected void waitForVMSSToBeDownSized(VirtualMachineScaleSet virtualMachineScaleSet, int capacity,
       int autoScalingSteadyStateTimeout, ExecutionLogCallback logCallBack,
       Mono<VirtualMachineScaleSet> virtualMachineScaleSetMono) {
     try {
-      logCallBack.saveExecutionLog(
-          format("Checking the status of VMSS: [%s] VM instances", virtualMachineScaleSet.name()), INFO);
-      return virtualMachineScaleSetMono
-          .doOnError(error -> {
-            checkAllVMSSInstancesProvisioned(virtualMachineScaleSet, capacity, logCallBack);
-            logCallBack.saveExecutionLog(error.getMessage(), ERROR, FAILURE);
-            throw new InvalidRequestException(error.getMessage(), error);
-          })
-          .doOnSuccess(response -> checkAllVMSSInstancesProvisioned(virtualMachineScaleSet, capacity, logCallBack))
-          .block(Duration.ofMinutes(autoScalingSteadyStateTimeout));
+      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(autoScalingSteadyStateTimeout), () -> {
+        logCallBack.saveExecutionLog(
+            format("Checking the status of VMSS: [%s] VM instances", virtualMachineScaleSet.name()), INFO);
+        VirtualMachineScaleSet virtualMachineScaleSetFromResponse =
+            virtualMachineScaleSetMono
+                .doOnError(error -> {
+                  logCallBack.saveExecutionLog(error.getMessage(), ERROR, FAILURE);
+                  throw new InvalidRequestException(error.getMessage(), error);
+                })
+                .block(Duration.ofMinutes(autoScalingSteadyStateTimeout));
+
+        while (true) {
+          if (checkAllVMSSInstancesProvisioned(virtualMachineScaleSetFromResponse, capacity, logCallBack)) {
+            return virtualMachineScaleSetFromResponse;
+          }
+          sleep(ofSeconds(AUTOSCALING_REQUEST_STATUS_CHECK_INTERVAL));
+        }
+      });
     } catch (UncheckedTimeoutException e) {
       String message = "Timed out waiting for provisioning VMSS VM instances to desired capacity. \n" + e.getMessage();
       logCallBack.saveExecutionLog(message, ERROR, FAILURE);

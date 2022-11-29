@@ -14,11 +14,11 @@ import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 
 import static java.time.Duration.ofMinutes;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.iterator.IteratorExecutionHandler;
 import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;

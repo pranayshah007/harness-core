@@ -20,10 +20,12 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.yaml.ParameterField;
 
 import software.wings.beans.InstanceUnitType;
+import software.wings.sm.State;
 import software.wings.sm.states.k8s.K8sScale;
 import software.wings.yaml.workflow.StepYaml;
 
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 public class K8sScaleStepMapperImpl implements StepMapper {
   @Override
@@ -32,10 +34,16 @@ public class K8sScaleStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     K8sScale state = new K8sScale(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    K8sScale state = (K8sScale) getState(stepYaml);
     K8sScaleStepNode k8sScaleStepNode = new K8sScaleStepNode();
     baseSetup(stepYaml, k8sScaleStepNode);
 
@@ -63,5 +71,21 @@ public class K8sScaleStepMapperImpl implements StepMapper {
             .build();
     k8sScaleStepNode.setK8sScaleStepInfo(k8sScaleStepInfo);
     return k8sScaleStepNode;
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    K8sScale state1 = (K8sScale) getState(stepYaml1);
+    K8sScale state2 = (K8sScale) getState(stepYaml2);
+    if (!state2.getInstanceUnitType().equals(state1.getInstanceUnitType())) {
+      return false;
+    }
+    if (!state1.getInstances().equals(state2.getInstances())) {
+      return false;
+    }
+    if (!StringUtils.equals(state1.getWorkload(), state2.getWorkload())) {
+      return false;
+    }
+    return true;
   }
 }

@@ -44,6 +44,7 @@ import io.harness.rule.Owner;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.PrincipalType;
 import io.harness.serviceaccountclient.remote.ServiceAccountClient;
+import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.token.remote.TokenClient;
 
 import java.lang.reflect.Method;
@@ -199,6 +200,7 @@ public class NextGenAuthenticationFilterTest extends ApiKeyFilterTestBase {
     assertThat(context).isNotNull();
     assertThat(context.getType()).isEqualByComparingTo(PrincipalType.SERVICE_ACCOUNT);
     assertThat(context.getName()).isEqualTo(tokenDTO.getParentIdentifier());
+    assertThat(((ServiceAccountPrincipal) context).getAccountId()).isEqualTo(tokenDTO.getAccountIdentifier());
 
     newApiKey = "sat" + delimiter + accountIdentifier + delimiter + uuid + delimiter + rawPassword;
     when(containerRequestContext.getHeaderString(X_API_KEY)).thenReturn(newApiKey);

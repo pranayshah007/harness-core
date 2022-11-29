@@ -24,7 +24,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
 import io.harness.data.algorithm.HashGenerator;
 import io.harness.exception.ExceptionUtils;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 
 import software.wings.api.EmailStateExecutionData;
 import software.wings.beans.User;

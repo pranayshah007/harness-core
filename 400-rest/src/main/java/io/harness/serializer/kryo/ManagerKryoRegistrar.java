@@ -148,6 +148,7 @@ import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.ServiceInstance;
+import software.wings.beans.ServiceVariable;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;
@@ -289,6 +290,8 @@ import software.wings.verification.VerificationDataAnalysisResponse;
 import software.wings.verification.VerificationStateAnalysisExecutionData;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
 
 @OwnedBy(PL)
 @TargetModule(_360_CG_MANAGER)
@@ -296,6 +299,8 @@ import com.esotericsoftware.kryo.Kryo;
 public class ManagerKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(BasicDBList.class, 2015);
+    kryo.register(BasicDBObject.class, 2016);
     kryo.register(AmiStepExecutionSummary.class, 5219);
     kryo.register(ApprovalStateExecutionData.class, 5087);
     kryo.register(ArtifactCollectionExecutionData.class, 5252);
@@ -606,5 +611,8 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
+
+    kryo.register(ServiceVariable.class, 5359);
+    kryo.register(ServiceVariable.OverrideType.class, 5361);
   }
 }

@@ -37,6 +37,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
+import io.harness.delegate.beans.azure.AcrResponseDTO;
 import io.harness.delegate.beans.azure.response.AzureDelegateTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -47,6 +48,11 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureTaskType;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.azure.AcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
+import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse;
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.encryption.Scope;
@@ -499,27 +505,26 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                     .orgIdentifier(ORG_IDENTIFIER)
                                     .projectIdentifier(PROJECT_IDENTIFIER)
                                     .build();
+    Set<String> delegateSelectors = new HashSet<>();
+
+    delegateSelectors.add("first");
     AzureConnectorDTO azureArtifactsConnectorDTO =
         AzureConnectorDTO.builder()
             .credential(AzureCredentialDTO.builder()
                             .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
                             .config(AzureManualDetailsDTO.builder().authDTO(AzureAuthDTO.builder().build()).build())
                             .build())
+            .delegateSelectors(delegateSelectors)
             .build();
+
     List<EncryptedDataDetail> ls = new ArrayList<>();
 
     ls.add(EncryptedDataDetail.builder().build());
 
-    Set<String> delegateSelectors = new HashSet<>();
-
-    delegateSelectors.add("first");
-
-    AzureTaskParams azureTaskParamsTaskParams = AzureTaskParams.builder()
-                                                    .azureTaskType(AzureTaskType.LIST_CONTAINER_REGISTRIES)
-                                                    .azureConnector(azureArtifactsConnectorDTO)
-                                                    .delegateSelectors(delegateSelectors)
-                                                    .encryptionDetails(ls)
-                                                    .build();
+    AcrArtifactDelegateRequest acrArtifactDelegateRequest = AcrArtifactDelegateRequest.builder()
+                                                                .azureConnectorDTO(azureArtifactsConnectorDTO)
+                                                                .encryptedDataDetails(ls)
+                                                                .build();
     ArtifactTaskExecutionResponse artifactTaskExecutionResponse = ArtifactTaskExecutionResponse.builder().build();
     ArtifactTaskResponse artifactTaskResponse = ArtifactTaskResponse.builder()
                                                     .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -527,7 +532,7 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                                     .build();
     when(delegateGrpcClientWrapper.executeSyncTask(any())).thenReturn(artifactTaskResponse);
     ArtifactTaskResponse artifactTaskResponseresult = (ArtifactTaskResponse) azureHelperService.executeSyncTask(
-        null, azureTaskParamsTaskParams, baseNGAccess, "Azure list registries task failure due to error");
+        null, acrArtifactDelegateRequest, baseNGAccess, "Azure list registries task failure due to error");
 
     assertThat(artifactTaskResponseresult.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
 
@@ -714,6 +719,25 @@ public class AzureHelperServiceTest extends CDNGTestBase {
                                "Azure list registries task failure due to error"))
         .isInstanceOf(WingsException.class)
         .hasMessage("wings exception message");
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testGetAcrResponseDTO() {
+    ArtifactDelegateResponse artifactDelegateResponse =
+        new AcrArtifactDelegateResponse(ArtifactBuildDetailsNG.builder().number("tag").build(), ArtifactSourceType.ACR,
+            "subscription", "registry", "repository", "tag");
+
+    ArtifactTaskExecutionResponse artifactTaskExecutionResponse =
+        ArtifactTaskExecutionResponse.builder()
+            .artifactDelegateResponses(Collections.singletonList(artifactDelegateResponse))
+            .build();
+
+    AcrResponseDTO acrResponseDTO = azureHelperService.getAcrResponseDTO(artifactTaskExecutionResponse);
+
+    assertThat(acrResponseDTO.getBuildDetailsList().get(0).getTag()).isEqualTo("tag");
+
+    assertThat(acrResponseDTO.getBuildDetailsList().get(0).getRepository()).isEqualTo("repository");
   }
 
   private ParameterField<List<String>> getFiles() {

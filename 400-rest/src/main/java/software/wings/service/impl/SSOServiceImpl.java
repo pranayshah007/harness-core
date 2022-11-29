@@ -26,7 +26,6 @@ import static java.util.Arrays.asList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataAndPasswordDetail;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
@@ -425,7 +424,7 @@ public class SSOServiceImpl implements SSOService {
       encryptedDataDetail = inputLdapSettings.getEncryptedDataDetails(secretManager);
     } finally {
       if (null != encryptedDataDetail) {
-        deleteTempSecret(temporaryEncryption, encryptedDataDetail, inputLdapSettings, accountId);
+        deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
       }
     }
     return buildLdapSettingsWithEncryptedDataDetail(inputLdapSettings, encryptedDataDetail);
@@ -460,7 +459,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapConnectionSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -480,7 +479,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapUserSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -500,7 +499,7 @@ public class SSOServiceImpl implements SSOService {
       return delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
           .validateLdapGroupSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings), encryptedDataDetail);
     } finally {
-      deleteTempSecret(temporaryEncryption, encryptedDataDetail, ldapSettings, accountId);
+      deleteTempSecret(temporaryEncryption, encryptedDataDetail, accountId);
     }
   }
 
@@ -679,23 +678,14 @@ public class SSOServiceImpl implements SSOService {
   }
 
   private void encryptSecretIfFFisEnabled(@NotNull LdapSettings ldapSettings) {
-    if (featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
-      ssoServiceHelper.encryptLdapSecret(
-          ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
-    }
+    ssoServiceHelper.encryptLdapSecret(
+        ldapSettings.getConnectionSettings(), secretManager, ldapSettings.getAccountId());
   }
 
-  private void deleteTempSecret(boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail,
-      LdapSettings ldapSettings, String accountId) {
-    if (!featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())) {
-      if (temporaryEncryption) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
-    } else {
-      if (temporaryEncryption
-          && LdapConnectionSettings.INLINE_SECRET.equals(ldapSettings.getConnectionSettings().getPasswordType())) {
-        secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
-      }
+  private void deleteTempSecret(
+      boolean temporaryEncryption, EncryptedDataDetail encryptedDataDetail, String accountId) {
+    if (temporaryEncryption) {
+      secretManager.deleteSecret(accountId, encryptedDataDetail.getEncryptedData().getUuid(), new HashMap<>(), false);
     }
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsServiceDefinition;
@@ -25,6 +26,7 @@ import static io.harness.cdng.manifest.ManifestType.VALUES;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalingPolicyDefinitionManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsServiceDefinitionManifestOutcome;
@@ -44,6 +46,7 @@ import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsServiceDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsTaskDefinitionManifest;
+import io.harness.cdng.manifest.yaml.kinds.GitOpsDeploymentRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
 import io.harness.cdng.manifest.yaml.kinds.K8sManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
@@ -93,6 +96,8 @@ public class ManifestOutcomeMapper {
         return getServerlessAwsOutcome(manifestAttributes, order);
       case ReleaseRepo:
         return getReleaseRepoOutcome(manifestAttributes);
+      case DeploymentRepo:
+        return getDeploymentRepoOutcome(manifestAttributes);
       case EcsTaskDefinition:
         return getEcsTaskDefinitionOutcome(manifestAttributes, order);
       case EcsServiceDefinition:
@@ -110,6 +115,14 @@ public class ManifestOutcomeMapper {
   private static ManifestOutcome getReleaseRepoOutcome(ManifestAttributes manifestAttributes) {
     ReleaseRepoManifest attributes = (ReleaseRepoManifest) manifestAttributes;
     return ReleaseRepoManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
+  }
+
+  private static ManifestOutcome getDeploymentRepoOutcome(ManifestAttributes manifestAttributes) {
+    GitOpsDeploymentRepoManifest attributes = (GitOpsDeploymentRepoManifest) manifestAttributes;
+    return DeploymentRepoManifestOutcome.builder()
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .build();
