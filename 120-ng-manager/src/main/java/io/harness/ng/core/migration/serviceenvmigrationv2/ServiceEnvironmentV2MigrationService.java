@@ -410,10 +410,7 @@ public class ServiceEnvironmentV2MigrationService {
 
   private boolean isStageContainStageTemplate(YamlNode stageNode) {
     YamlField templateField = stageNode.getField("stage").getNode().getField("template");
-    if (templateField == null) {
-      return false;
-    }
-    return true;
+    return templateField != null;
   }
 
   private InfrastructureEntity createInfraEntity(PipelineInfrastructure infrastructure, String orgIdentifier,
@@ -426,7 +423,6 @@ public class ServiceEnvironmentV2MigrationService {
     YamlField infrastructureSpecField =
         infrastructureField.getNode().getField("infrastructureDefinition").getNode().getField("spec");
 
-    ObjectMapper objectMapper = new ObjectMapper();
     ObjectNode parentInfraNode =
         objectMapper.createObjectNode().set("infrastructureDefinition", objectMapper.createObjectNode());
     ObjectNode infraNode = (ObjectNode) parentInfraNode.get("infrastructureDefinition");
@@ -468,7 +464,6 @@ public class ServiceEnvironmentV2MigrationService {
     YamlField serviceConfigField = stageField.getNode().getField("spec").getNode().getField("serviceConfig");
     YamlField serviceDefinitionField = serviceConfigField.getNode().getField("serviceDefinition");
 
-    ObjectMapper objectMapper = new ObjectMapper();
     ObjectNode parentServiceNode = objectMapper.createObjectNode().set("service", objectMapper.createObjectNode());
     ObjectNode serviceNode = (ObjectNode) parentServiceNode.get("service");
     serviceNode.put("name", existedServiceEntity.getName());
@@ -543,11 +538,8 @@ public class ServiceEnvironmentV2MigrationService {
   }
 
   private boolean isGitOpsEnabled(NGServiceV2InfoConfig ngServiceV2InfoConfig) {
-    if (ngServiceV2InfoConfig != null && ngServiceV2InfoConfig.getGitOpsEnabled() != null
-        && ngServiceV2InfoConfig.getGitOpsEnabled()) {
-      return true;
-    }
-    return false;
+    return ngServiceV2InfoConfig != null && ngServiceV2InfoConfig.getGitOpsEnabled() != null
+        && ngServiceV2InfoConfig.getGitOpsEnabled();
   }
 
   private void validateParameterRef(ParameterField<String> parameterRef, String parameter) {
