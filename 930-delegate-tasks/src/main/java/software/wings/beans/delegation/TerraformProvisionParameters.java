@@ -32,6 +32,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.NameValuePair;
@@ -99,6 +100,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final String planName;
 
   private final TfVarSource tfVarSource;
+  private final TfVarS3Source tfVarS3Source;
 
   private final boolean useTfClient; // FF: USE_TF_CLIENT
   private final boolean useActivityIdBasedTfBaseDir;

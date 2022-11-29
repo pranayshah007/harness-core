@@ -121,6 +121,7 @@ import software.wings.api.TerraformOutputInfoElement;
 import software.wings.api.terraform.TerraformOutputVariables;
 import software.wings.api.terraform.TerraformProvisionInheritPlanElement;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityBuilder;
@@ -133,6 +134,7 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
+import software.wings.beans.S3FileConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.TerraformBackendConfig;
@@ -249,6 +251,12 @@ public abstract class TerraformProvisionState extends State {
   @Getter @Setter private List<String> targets;
 
   @Getter @Setter private List<String> tfVarFiles;
+
+  @Getter @Setter private TerraformSourceType tfVarSourceType;
+
+  @Attributes(title = "tfVarAWSConfigId") @Getter @Setter private String tfVarAWSConfigId;
+
+  @Getter @Setter private S3FileConfig tfVarS3FileConfig;
   @Getter @Setter private GitFileConfig tfVarGitFileConfig;
 
   @Getter @Setter private boolean runPlanOnly;
@@ -1032,6 +1040,9 @@ public abstract class TerraformProvisionState extends State {
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
     GitConfig gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
 
+    //        ToDo: Remove this
+    terraformProvisioner.setSourceType(TerraformSourceType.S3_URI);
+
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
@@ -1204,11 +1215,18 @@ public abstract class TerraformProvisionState extends State {
 
     TfVarSource tfVarSource = null;
 
+    //        ToDo: Remove tfVar source type
+    tfVarSourceType = TerraformSourceType.S3_URI;
+
     // Currently we allow only one tfVar source
-    if (isNotEmpty(tfVarFiles)) {
-      tfVarSource = fetchTfVarScriptRepositorySource(context);
-    } else if (null != tfVarGitFileConfig) {
-      tfVarSource = fetchTfVarGitSource(context);
+    if (tfVarSourceType == TerraformSourceType.GIT) {
+      if (isNotEmpty(tfVarFiles)) {
+        tfVarSource = fetchTfVarScriptRepositorySource(context);
+      } else if (null != tfVarGitFileConfig) {
+        tfVarSource = fetchTfVarGitSource(context);
+      }
+    } else if (tfVarSourceType == TerraformSourceType.S3_URI) {
+      tfVarSource = fetchTfVarS3Source(context);
     }
 
     targets = resolveTargets(targets, context);
@@ -1220,7 +1238,9 @@ public abstract class TerraformProvisionState extends State {
     }
 
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
-        TerraformProvisionParameters.builder()
+        TerraformProvisionParameters
+            .builder()
+            //                        ToDo: Change it to provisioners
             .sourceType(terraformProvisioner.getSourceType())
             .accountId(executionContext.getApp().getAccountId())
             .activityId(activityId)
@@ -1334,6 +1354,27 @@ public abstract class TerraformProvisionState extends State {
   TfVarGitSource fetchRemoteConfigGitSource(ExecutionContext context) {
     GitFileConfig config = backendConfig.getRemoteBackendConfig();
     return fetchRemoteConfigGitSource(context, config);
+  }
+
+  @VisibleForTesting
+  TfVarS3Source fetchTfVarS3Source(ExecutionContext context) {
+    //        ToDo : Revert to orignal ones
+    AwsConfig awsConfig = (AwsConfig) getAwsConfigSettingAttribute(tfVarS3FileConfig.getAwsConfigId()).getValue();
+    List<EncryptedDataDetail> encryptionDetails =
+        secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
+
+    String s3URI = tfVarS3FileConfig.getS3URI();
+
+    if (isNotEmpty(s3URI)) {
+      List<String> multipleFiles = splitCommaSeparatedFilePath(s3URI);
+      tfVarS3FileConfig.setS3URIList(multipleFiles);
+    }
+
+    return TfVarS3Source.builder()
+        .awsConfig(AwsConfig.builder().build())
+        .encryptedDataDetails(encryptionDetails)
+        .s3FileConfig(tfVarS3FileConfig)
+        .build();
   }
 
   @VisibleForTesting

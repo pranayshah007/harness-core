@@ -829,6 +829,7 @@ import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
 import software.wings.beans.TaskType;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.apm.Method;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -1957,5 +1958,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
+    kryo.register(TerraformSourceType.class, 573558);
   }
 }

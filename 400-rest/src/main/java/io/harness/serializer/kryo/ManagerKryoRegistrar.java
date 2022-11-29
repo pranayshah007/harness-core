@@ -151,6 +151,7 @@ import software.wings.beans.ServiceInstance;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TrialSignupOptions;
 import software.wings.beans.User;
 import software.wings.beans.UserGroupEntityReference;
@@ -606,5 +607,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
+    kryo.register(TerraformSourceType.class, 50024);
   }
 }

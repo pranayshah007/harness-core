@@ -14,6 +14,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.provision.TfVarSource;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.S3FileConfig;
@@ -26,15 +27,15 @@ import lombok.EqualsAndHashCode;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-@EqualsAndHashCode(of = "gitFileConfig")
+@EqualsAndHashCode(of = "s3FileConfig")
 @TargetModule(HarnessModule._950_DELEGATE_TASKS_BEANS)
-public class TfVarGitSource implements TfVarSource {
-  private GitConfig gitConfig;
-  private GitFileConfig gitFileConfig;
+public class TfVarS3Source implements TfVarSource {
+  private AwsConfig awsConfig;
+  private S3FileConfig s3FileConfig;
   private List<EncryptedDataDetail> encryptedDataDetails;
 
   @Override
   public TfVarSourceType getTfVarSourceType() {
-    return TfVarSourceType.GIT;
+    return TfVarSourceType.S3;
   }
 }
