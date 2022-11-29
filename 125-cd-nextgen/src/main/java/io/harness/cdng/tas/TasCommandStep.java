@@ -16,12 +16,18 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.pcf.CfCommandRequest;
+import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.eraro.ErrorCode;
@@ -32,7 +38,10 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.pcf.CfCommandUnitConstants;
+import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -42,6 +51,8 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -61,6 +72,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
@@ -78,6 +90,8 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private OutcomeService outcomeService;
+  @Inject private TasEntityHelper tasEntityHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -139,16 +153,27 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
                                                  StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
                                                  boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
+
     TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
-    ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
-        () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
+
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
+    List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
 
+    CfCliVersionNG cfCliVersion = executionPassThroughData.getCfCliVersion();
 
-    List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
-
-
+    CfCommandRequest commandRequest =
+            CfRunPluginCommandRequest.builder()
+                    .accountId(app.getAccountId())
+                    .commandName(PCF_PLUGIN_COMMAND)
+                    .pcfConfig(tasInfraConfig)
+                    .timeoutIntervalInMin(timeoutIntervalInMin)
+                    .renderedScriptString(resolveRenderedScript(rawScriptString, pcfPluginStateExecutionData))
+                    .filePathsInScript(resolveFilePathsInScript(pathsFromScript, pcfPluginStateExecutionData))
+                    .fileDataList(fileDataList)
+                    .repoRoot(executionPassThroughData.getRepoRoot())
+                    .cfCliVersion(cfCliVersion)
+                    .build();
 
     TaskParameters taskParameters = ShellScriptTaskParametersNG.builder()
                                         .accountId(AmbianceUtils.getAccountId(ambiance))
