@@ -427,8 +427,12 @@ public class ArtifactServiceImpl implements ArtifactService {
                                 .filter(ID_KEY, artifactId)
                                 .filter(ArtifactKeys.accountId, accountId);
     UpdateOperations<Artifact> ops = wingsPersistence.createUpdateOperations(Artifact.class);
-    ops.set(ArtifactKeys.metadata, newMetadata);
-    ops.set(ArtifactKeys.revision, revision);
+    if (newMetadata != null) {
+      ops.set(ArtifactKeys.metadata, newMetadata);
+    }
+    if (revision != null) {
+      ops.set(ArtifactKeys.revision, revision);
+    }
     wingsPersistence.update(query, ops);
   }
 

@@ -9,7 +9,6 @@ package software.wings.service.impl;
 
 import static io.harness.maintenance.MaintenanceController.getMaintenanceFlag;
 import static io.harness.mongo.MongoUtils.setUnset;
-import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
@@ -23,7 +22,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.eraro.ErrorCode;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
@@ -38,14 +36,12 @@ import io.harness.migrations.TimeScaleDBDataMigration;
 import io.harness.migrations.TimeScaleDBMigration;
 import io.harness.migrations.TimescaleDBDataMigrationList;
 import io.harness.migrations.TimescaleDBMigrationList;
-import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.beans.Schema;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.MigrationService;
-import software.wings.service.intfc.yaml.YamlGitService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.TimeLimiter;
@@ -70,8 +66,6 @@ public class MigrationServiceImpl implements MigrationService {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private PersistentLocker persistentLocker;
   @Inject private Injector injector;
-  @Inject private YamlGitService yamlGitService;
-
   @Inject private ExecutorService executorService;
   @Inject private TimeLimiter timeLimiter;
   @Inject private ConfigurationController configurationController;
@@ -191,23 +185,6 @@ public class MigrationServiceImpl implements MigrationService {
 
         log.info("[Migration] - Migration complete");
 
-        executorService.submit(() -> {
-          log.info("Running Git full sync on all the accounts");
-
-          try (
-              HIterator<Account> accounts = new HIterator<>(
-                  wingsPersistence.createQuery(Account.class, excludeAuthority).project("accountName", true).fetch())) {
-            for (Account account : accounts) {
-              try {
-                yamlGitService.fullSyncForEntireAccount(account.getUuid());
-              } catch (Exception ex) {
-                log.error("Git full sync failed for account: {}. Reason is: {}", account.getAccountName(),
-                    ExceptionUtils.getMessage(ex));
-              }
-            }
-          }
-          log.info("Git full sync on all the accounts completed");
-        });
       } else if (schema.getVersion() > maxVersion) {
         // If the current version is bigger than the max version we are downgrading. Restore to the previous version
         log.info("[Migration] - Rolling back schema version from {} to {}", schema.getVersion(), maxVersion);

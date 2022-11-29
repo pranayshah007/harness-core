@@ -237,28 +237,30 @@ public class ExecutionHelperTest extends CategoryTest {
     assertThat(firstExecutionTriggerInfo.getTriggerType()).isEqualTo(MANUAL);
     assertThat(firstExecutionTriggerInfo.getTriggeredBy()).isEqualTo(triggeredBy);
     verify(triggeredByHelper, times(1)).getFromSecurityContext();
-    verify(planExecutionService, times(0)).get(anyString());
+    verify(planExecutionService, times(0)).getExecutionMetadataFromPlanExecution(anyString());
 
     ExecutionMetadata firstExecutionMetadata =
         ExecutionMetadata.newBuilder().setTriggerInfo(firstExecutionTriggerInfo).build();
-    PlanExecution firstPlanExecution = PlanExecution.builder().metadata(firstExecutionMetadata).build();
-    doReturn(firstPlanExecution).when(planExecutionService).get(originalExecutionId);
+    doReturn(firstExecutionMetadata)
+        .when(planExecutionService)
+        .getExecutionMetadataFromPlanExecution(originalExecutionId);
 
     ExecutionTriggerInfo rerunExecutionTriggerInfo = executionHelper.buildTriggerInfo(originalExecutionId);
     rerunExecutionAssertions(triggeredBy, rerunExecutionTriggerInfo);
     verify(triggeredByHelper, times(2)).getFromSecurityContext();
-    verify(planExecutionService, times(1)).get(originalExecutionId);
+    verify(planExecutionService, times(1)).getExecutionMetadataFromPlanExecution(originalExecutionId);
 
     ExecutionMetadata secondExecutionMetadata =
         ExecutionMetadata.newBuilder().setTriggerInfo(rerunExecutionTriggerInfo).build();
-    PlanExecution secondPlanExecution = PlanExecution.builder().metadata(secondExecutionMetadata).build();
-    doReturn(secondPlanExecution).when(planExecutionService).get("originalExecutionId2");
+    doReturn(secondExecutionMetadata)
+        .when(planExecutionService)
+        .getExecutionMetadataFromPlanExecution("originalExecutionId2");
 
     ExecutionTriggerInfo reRerunExecutionTriggerInfo = executionHelper.buildTriggerInfo("originalExecutionId2");
     rerunExecutionAssertions(triggeredBy, reRerunExecutionTriggerInfo);
     verify(triggeredByHelper, times(3)).getFromSecurityContext();
-    verify(planExecutionService, times(1)).get(originalExecutionId);
-    verify(planExecutionService, times(1)).get("originalExecutionId2");
+    verify(planExecutionService, times(1)).getExecutionMetadataFromPlanExecution(originalExecutionId);
+    verify(planExecutionService, times(1)).getExecutionMetadataFromPlanExecution("originalExecutionId2");
   }
 
   private void rerunExecutionAssertions(TriggeredBy triggeredBy, ExecutionTriggerInfo reRerunExecutionTriggerInfo) {

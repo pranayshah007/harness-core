@@ -69,6 +69,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
   @Override
   public ScimListResponse<ScimGroup> searchGroup(String filter, String accountId, Integer count, Integer startIndex) {
     startIndex = startIndex == null ? 0 : startIndex;
+    Integer tempStartIndex = startIndex == 0 ? 0 : startIndex - 1;
     count = count == null ? MAX_RESULT_COUNT : count;
     ScimListResponse<ScimGroup> searchGroupResponse = new ScimListResponse<>();
     log.info("SCIM: Searching groups in account {} with filter: {}", accountId, filter);
@@ -89,7 +90,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
     List<ScimGroup> groupList = new ArrayList<>();
 
     try {
-      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, startIndex);
+      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, tempStartIndex);
       groupList.forEach(searchGroupResponse::resource);
     } catch (WingsException ex) {
       log.info("SCIM: Search in account {} for group , query: {}", accountId, searchQuery, ex);

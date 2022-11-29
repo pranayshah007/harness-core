@@ -1500,8 +1500,9 @@ public class TemplateServiceImpl implements TemplateService {
   }
 
   private void deleteTemplate(Template template) {
-    wingsPersistence.delete(
-        wingsPersistence.createQuery(VersionedTemplate.class).filter(TEMPLATE_ID_KEY, template.getUuid()));
+    wingsPersistence.delete(wingsPersistence.createQuery(VersionedTemplate.class)
+                                .filter(VersionedTemplate.ACCOUNT_ID_KEY2, template.getAccountId())
+                                .filter(TEMPLATE_ID_KEY, template.getUuid()));
     wingsPersistence.delete(
         wingsPersistence.createQuery(TemplateVersion.class).filter(TEMPLATE_UUID_KEY, template.getUuid()));
     wingsPersistence.delete(template);

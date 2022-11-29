@@ -23,6 +23,7 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -77,6 +78,7 @@ public class CustomArtifactResource {
       @QueryParam("fqnPath") String fqnPath, @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
     String script = customScriptInfo.getScript();
     List<NGVariable> inputs = customScriptInfo.getInputs();
+    List<TaskSelectorYaml> delegateSelector = customScriptInfo.getDelegateSelector();
     int secretFunctor = HashGenerator.generateIntegerHash();
     if (isNotEmpty(serviceRef)) {
       final ArtifactConfig artifactSpecFromService = artifactResourceUtils.locateArtifactInService(
@@ -92,6 +94,9 @@ public class CustomArtifactResource {
       }
       if (isEmpty(customScriptInfo.getInputs())) {
         inputs = customArtifactConfig.getInputs();
+      }
+      if (isEmpty(customScriptInfo.getDelegateSelector())) {
+        delegateSelector = (List<TaskSelectorYaml>) customArtifactConfig.getDelegateSelectors().fetchFinalValue();
       }
       if (isEmpty(arrayPath)) {
         arrayPath = customArtifactConfig.getScripts()
@@ -117,7 +122,8 @@ public class CustomArtifactResource {
               customScriptInfo.getRuntimeInputYaml(), versionPath, fqnPath, gitEntityBasicInfo, serviceRef);
     }
     List<BuildDetails> buildDetails = customResourceService.getBuilds(script, versionPath, arrayPath,
-        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor);
+        NGVariablesUtils.getStringMapVariables(inputs, 0L), accountId, orgIdentifier, projectIdentifier, secretFunctor,
+        delegateSelector);
     return ResponseDTO.newResponse(buildDetails);
   }
 }

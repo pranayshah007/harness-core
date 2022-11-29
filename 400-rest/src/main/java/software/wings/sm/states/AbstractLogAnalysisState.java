@@ -575,8 +575,8 @@ public abstract class AbstractLogAnalysisState extends AbstractAnalysisState {
                 .dataUrl(DatadogConfig.LOG_API_PATH_SUFFIX)
                 .headers(new HashMap<>())
                 .options(datadogConfig.fetchLogOptionsMap())
-                .body(DatadogLogState.resolveHostnameField(
-                    datadogConfig.fetchLogBodyMap(false), analysisContext.getHostNameField()))
+                .jsonBody(JsonUtils.asJson(DatadogLogState.resolveHostnameField(
+                    datadogConfig.fetchLogBodyMap(false), analysisContext.getHostNameField())))
                 .query(getRenderedQuery())
                 .hosts(Sets.newHashSet(DUMMY_HOST_NAME))
                 .stateType(DelegateStateType.DATA_DOG_LOG)

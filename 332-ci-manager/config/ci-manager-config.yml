@@ -69,6 +69,7 @@ harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
   aliasDBName: harness
@@ -76,6 +77,7 @@ cimanager-mongo:
   uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -84,6 +86,7 @@ pmsMongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -152,7 +155,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.4-rootless
+      image: harness/drone-git:1.2.5-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -212,7 +215,7 @@ ciExecutionServiceConfig:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.4
+      gitClone: harness/drone-git:1.2.5
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0

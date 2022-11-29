@@ -1351,10 +1351,16 @@ public class WingsModule extends AbstractModule implements ServersModule {
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
 
-    bind(ExecutorService.class)
-        .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
-        .toInstance(ThreadPool.create(1, 5, 10, TimeUnit.SECONDS,
-            new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+    if (configuration.getExecutorsConfig() != null) {
+      bind(ExecutorService.class)
+          .annotatedWith(Names.named("DeploymentReconTaskExecutor"))
+          .toInstance(ThreadPool.create(
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getCorePoolSize(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getMaxPoolSize(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getIdleTime(),
+              configuration.getExecutorsConfig().getDataReconciliationExecutorConfig().getTimeUnit(),
+              new ThreadFactoryBuilder().setNameFormat("DeploymentReconTaskExecutor-%d").build()));
+    }
 
     bind(ExecutorService.class)
         .annotatedWith(Names.named("CustomDashboardAPIExecutor"))

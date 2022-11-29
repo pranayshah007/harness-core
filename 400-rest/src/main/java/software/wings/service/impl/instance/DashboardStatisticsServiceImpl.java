@@ -10,6 +10,7 @@ package software.wings.service.impl.instance;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SKIPPED;
+import static io.harness.beans.FeatureName.SPG_INSTANCE_OPTIMIZE_DELETED_APPS;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -1079,7 +1080,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                         .greaterThanOrEq(fromTimestamp)
                                         .field(Instance.CREATED_AT_KEY)
                                         .lessThanOrEq(rhsCreatedAt)
-                                        .project("appId", true);
+                                        .project(InstanceKeys.appId, true);
+
+    if (featureFlagService.isEnabled(SPG_INSTANCE_OPTIMIZE_DELETED_APPS, accountId)) {
+      instanceQuery.project(InstanceKeys.uuid, false);
+    }
 
     Set<String> appIdsFromInstances = new HashSet<>();
     try (HIterator<Instance> iterator =

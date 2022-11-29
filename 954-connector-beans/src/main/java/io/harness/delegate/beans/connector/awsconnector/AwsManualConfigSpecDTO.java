@@ -9,7 +9,7 @@ package io.harness.delegate.beans.connector.awsconnector;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

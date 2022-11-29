@@ -44,9 +44,9 @@ public class ServiceEntitySetupUsageHelper {
     final Set<EntityDetailProtoDTO> referredEntities = getAllReferredEntities(ROOT_LEVEL_NAME, entity);
     final SetupUsageOwnerEntity ownerEntity = getOwnerEntity(entity);
     if (isEmpty(referredEntities)) {
-      setupUsageHelper.deleteSetupUsages(ownerEntity);
+      setupUsageHelper.deleteServiceSetupUsages(ownerEntity);
     } else {
-      setupUsageHelper.publishEntitySetupUsage(ownerEntity, referredEntities);
+      setupUsageHelper.publishServiceEntitySetupUsage(ownerEntity, referredEntities);
     }
   }
 
@@ -54,7 +54,7 @@ public class ServiceEntitySetupUsageHelper {
    * Delete all setup usages where the 'referred by' is the current service entity
    */
   protected void deleteSetupUsages(ServiceEntity entity) {
-    setupUsageHelper.deleteSetupUsages(getOwnerEntity(entity));
+    setupUsageHelper.deleteServiceSetupUsages(getOwnerEntity(entity));
   }
 
   private Set<EntityDetailProtoDTO> getAllReferredEntities(String rootName, ServiceEntity entity) {

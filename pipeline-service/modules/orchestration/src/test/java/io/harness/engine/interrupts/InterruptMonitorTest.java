@@ -157,7 +157,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, step));
 
@@ -334,7 +334,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
 
@@ -531,7 +531,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
 
@@ -712,7 +712,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
 
@@ -885,7 +885,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
 
@@ -1057,7 +1057,7 @@ public class InterruptMonitorTest extends OrchestrationTestBase {
             .nodeId(generateUuid())
             .build();
 
-    when(planExecutionService.get(eq(planExecutionId))).thenReturn(planExecution);
+    when(planExecutionService.getPlanExecutionMetadata(eq(planExecutionId))).thenReturn(planExecution);
     when(nodeExecutionService.findAllNodeExecutionsTrimmed(eq(planExecutionId)))
         .thenReturn(Arrays.asList(pipeline, stages, stage, execution, fork, sg1, sg2, stepSg1, stepSg2));
 

@@ -239,7 +239,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<InterruptDTO> handleManualInterventionInterrupt(@NotNull String accountId, @NotNull String orgId,
       @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
-    String pipelineIdentifier = planExecutionService.get(planExecutionId).getMetadata().getPipelineIdentifier();
+    String pipelineIdentifier =
+        planExecutionService.getExecutionMetadataFromPlanExecution(planExecutionId).getPipelineIdentifier();
     accessControlClient.checkForAccessOrThrow(
         ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     return ResponseDTO.newResponse(

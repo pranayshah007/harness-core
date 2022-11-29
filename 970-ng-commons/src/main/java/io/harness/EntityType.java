@@ -428,7 +428,19 @@ public enum EntityType {
   ELASTIGROUP_SETUP_STEP(
       ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
   @JsonProperty(EntityTypeConstants.BITRISE_STEP)
-  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP);
+  BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_PLAN)
+  TERRAGRUNT_PLAN_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_PLAN, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_PLAN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_APPLY)
+  TERRAGRUNT_APPLY_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_APPLY, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_APPLY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_DESTROY)
+  TERRAGRUNT_DESTROY_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_DESTROY, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_DESTROY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
+  TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_ROLLBACK);
 
   private final ModuleType moduleType;
   String yamlName;

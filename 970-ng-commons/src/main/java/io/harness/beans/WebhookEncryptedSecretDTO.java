@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.SPG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import lombok.Builder;
 import lombok.Data;

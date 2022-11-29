@@ -14,6 +14,7 @@ import io.harness.ccm.views.helper.RuleExecutionStatusType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
@@ -43,7 +44,7 @@ import org.mongodb.morphia.annotations.Id;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity(value = "governanceRuleExecution", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Policy Execution")
-public class RuleExecution implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
+public final class RuleExecution implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess {
   @Id @Schema(description = "unique id") String uuid;
   @Schema(description = "account id") String accountId;
   @Schema(description = "faktory job id") String jobId;
@@ -71,7 +72,7 @@ public class RuleExecution implements PersistentEntity, UuidAware, CreatedAtAwar
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("RuleExecution")
+                 .name("ruleExecution")
                  .field(RuleExecutionKeys.accountId)
                  .field(RuleExecutionKeys.cloudProvider)
                  .field(RuleExecutionKeys.ruleEnforcementIdentifier)
@@ -80,8 +81,18 @@ public class RuleExecution implements PersistentEntity, UuidAware, CreatedAtAwar
                  .field(RuleExecutionKeys.orgIdentifier)
                  .field(RuleExecutionKeys.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("sort1").field(RuleExecutionKeys.lastUpdatedAt).build())
-        .add(CompoundMongoIndex.builder().name("sort2").field(RuleExecutionKeys.createdAt).build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort1")
+                 .field(RuleExecutionKeys.accountId)
+                 .field(RuleExecutionKeys.cloudProvider)
+                 .sortField(RuleExecutionKeys.lastUpdatedAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("sort2")
+                 .field(RuleExecutionKeys.accountId)
+                 .field(RuleExecutionKeys.cloudProvider)
+                 .sortField(RuleExecutionKeys.createdAt)
+                 .build())
         .build();
   }
 

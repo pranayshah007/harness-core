@@ -157,7 +157,7 @@ public class GARApiServiceTest extends CategoryTest {
     modiifedInternalConfig.setPkg("wrongpackage");
     assertThatThrownBy(() -> garApiServiceImpl.getBuilds(modiifedInternalConfig, "", 100))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-        .isEqualTo("Please check region, repository name, package fields"); // 404
+        .isEqualTo("Please provide valid values for region, project, repository, package and version fields."); // 404
     GarInternalConfig modiifedInternalConfig1 = GarInternalConfig.builder()
                                                     .region("us")
                                                     .project("cd-play1")

@@ -46,6 +46,7 @@ import static software.wings.delegatetasks.validation.terraform.TerraformTaskUti
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
 
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -374,8 +375,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       } else {
         switch (parameters.getCommand()) {
           case APPLY: {
-            String command = format("terraform init %s",
-                tfBackendConfigFilePath != null ? format("-backend-config=%s", tfBackendConfigFilePath) : "");
+            String command = "terraform init";
+            if (tfBackendConfigFilePath != null) {
+              command += format(" -backend-config=%s", tfBackendConfigFilePath);
+              saveExecutionLog(getTfBackendConfigContentLog(tfBackendConfigFilePath, parameters),
+                  CommandExecutionStatus.RUNNING, INFO, logCallback);
+            }
             String commandToLog = command;
             /**
              * echo "no" is to prevent copying of state from local to remote by suppressing the
@@ -456,8 +461,12 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             break;
           }
           case DESTROY: {
-            String command = format("terraform init -input=false %s",
-                tfBackendConfigFilePath != null ? format("-backend-config=%s", tfBackendConfigFilePath) : "");
+            String command = "terraform init -input=false";
+            if (tfBackendConfigsFile != null) {
+              command += format(" -backend-config=%s", tfBackendConfigFilePath);
+              saveExecutionLog(getTfBackendConfigContentLog(tfBackendConfigFilePath, parameters),
+                  CommandExecutionStatus.RUNNING, INFO, logCallback);
+            }
             String commandToLog = command;
             saveExecutionLog(commandToLog, CommandExecutionStatus.RUNNING, INFO, logCallback);
             code = executeShellCommand(command, scriptDirectory, parameters, envVars, activityLogOutputStream);
@@ -1192,5 +1201,26 @@ and provisioner
     public List<String> getActivityLogs() {
       return logs;
     }
+  }
+
+  private String getTfBackendConfigContentLog(String tfBackendConfigFilePath, TerraformProvisionParameters parameters) {
+    StringBuilder backendLogBuilder = new StringBuilder("Initialize backend configuration with:\n");
+    if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType())) {
+      try {
+        backendLogBuilder.append(FileUtils.readFileToString(FileUtils.getFile(tfBackendConfigFilePath), UTF_8));
+      } catch (IOException e) {
+        return format("ERROR reading Backend Config from %s", tfBackendConfigFilePath);
+      }
+    } else {
+      if (parameters.getBackendConfigs() != null) {
+        parameters.getBackendConfigs().forEach(
+            (key, value) -> backendLogBuilder.append(format("%s = %s%n", key, value)));
+      }
+      if (parameters.getEncryptedBackendConfigs() != null) {
+        parameters.getEncryptedBackendConfigs().forEach(
+            (key, value) -> backendLogBuilder.append(format("%s = %s%n", key, "**************")));
+      }
+    }
+    return backendLogBuilder.toString();
   }
 }

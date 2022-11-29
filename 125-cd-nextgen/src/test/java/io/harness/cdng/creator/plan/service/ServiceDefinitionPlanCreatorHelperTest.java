@@ -977,52 +977,6 @@ public class ServiceDefinitionPlanCreatorHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = TATHAGAT)
-  @Category(UnitTests.class)
-  public void testAddDependenciesForConfigFilesForOverride() throws IOException {
-    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-
-    ClassLoader classLoader = this.getClass().getClassLoader();
-    InputStream yamlFile = classLoader.getResourceAsStream("cdng/plan/configfiles/service-def.yml");
-    assertThat(yamlFile).isNotNull();
-
-    String yaml = new Scanner(yamlFile, "UTF-8").useDelimiter("\\A").next();
-    yaml = YamlUtils.injectUuid(yaml);
-    YamlField serviceField = YamlUtils.readTree(yaml);
-
-    NGServiceV2InfoConfig config = YamlUtils.read(serviceField.getNode().toString(), NGServiceV2InfoConfig.class);
-    NGServiceOverrideConfig serviceOverrideConfig =
-        NGServiceOverrideConfig.builder()
-            .serviceOverrideInfoConfig(
-                NGServiceOverrideInfoConfig.builder().configFiles(Collections.singletonList(configFile1a)).build())
-            .build();
-
-    NGEnvironmentConfig ngEnvironmentConfig =
-        NGEnvironmentConfig.builder()
-            .ngEnvironmentInfoConfig(
-                NGEnvironmentInfoConfig.builder()
-                    .ngEnvironmentGlobalOverride(NGEnvironmentGlobalOverride.builder()
-                                                     .configFiles(Collections.singletonList(configFile2a))
-                                                     .build())
-                    .build())
-            .build();
-
-    doReturn(new byte[] {}).when(kryoSerializer).asDeflatedBytes(any());
-
-    final String nodeUuid = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(serviceField.getNode(),
-        planCreationResponseMap, config, serviceOverrideConfig,
-        ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride(), kryoSerializer);
-
-    assertThat(planCreationResponseMap.size()).isEqualTo(1);
-    assertThat(planCreationResponseMap.containsKey(nodeUuid)).isEqualTo(true);
-    PlanCreationResponse planCreationResponse = planCreationResponseMap.get(nodeUuid);
-    final HashSet<String> dependencyMetadataMapKeys = new HashSet<>();
-    dependencyMetadataMapKeys.add(YamlTypes.UUID);
-    dependencyMetadataMapKeys.add(YamlTypes.CONFIG_FILES);
-    checksForDependencies(planCreationResponse, nodeUuid, dependencyMetadataMapKeys);
-  }
-
-  @Test
   @Owner(developers = VLICA)
   @Category(UnitTests.class)
   public void testAddDependenciesForApplicationSettingsForOverride() throws IOException {

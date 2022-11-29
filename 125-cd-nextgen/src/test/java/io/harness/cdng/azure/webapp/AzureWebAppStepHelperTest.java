@@ -148,6 +148,7 @@ import software.wings.utils.RepositoryFormat;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -805,6 +806,19 @@ public class AzureWebAppStepHelperTest extends CDNGTestBase {
     assertThat(azureArtifactRequestDetails.getVersion()).isEqualTo("testVersion");
     assertThat(packageArtifactConfig.getSourceType()).isEqualTo(AZURE_ARTIFACTS);
     assertThat(packageArtifactConfig.getEncryptedDataDetails()).isEqualTo(encryptedDataDetails);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testAMap() {
+    Map<String, String> map = new HashMap<>();
+    addtomap(map);
+    assertThat(map.size()).isEqualTo(1);
+  }
+
+  public void addtomap(Map<String, String> mymap) {
+    mymap.put("aaa", "aaa");
   }
 
   private void testFindLastSuccessfulStageExecutionDetails(

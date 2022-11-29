@@ -116,7 +116,7 @@ public class AmbianceExpressionEvaluator extends EngineExpressionEvaluator {
               .build());
     }
 
-    PlanExecution planExecution = planExecutionService.get(ambiance.getPlanExecutionId());
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(ambiance.getPlanExecutionId());
     if (planExecution == null) {
       return;
     }

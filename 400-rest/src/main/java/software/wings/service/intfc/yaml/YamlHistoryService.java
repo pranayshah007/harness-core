@@ -7,6 +7,7 @@
 
 package software.wings.service.intfc.yaml;
 
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.yaml.YamlVersion;
 import software.wings.yaml.YamlVersion.Type;
 
@@ -18,7 +19,7 @@ import org.hibernate.validator.constraints.NotEmpty;
  *
  * @author bsollish
  */
-public interface YamlHistoryService {
+public interface YamlHistoryService extends OwnedByAccount {
   /**
    * Save.
    *
