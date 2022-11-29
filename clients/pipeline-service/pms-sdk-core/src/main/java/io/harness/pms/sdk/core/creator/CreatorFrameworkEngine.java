@@ -2,6 +2,7 @@ package io.harness.pms.sdk.core.creator;
 
 import static io.harness.pms.sdk.PmsSdkModuleUtils.PLAN_CREATOR_SERVICE_EXECUTOR;
 
+import com.google.inject.Singleton;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.CreationRequest;
 import io.harness.pms.contracts.plan.CreationResponse;
@@ -23,6 +24,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+@Singleton
 public class CreatorFrameworkEngine {
   @Inject @Named(PLAN_CREATOR_SERVICE_EXECUTOR) private Executor executor;
 
@@ -33,7 +35,7 @@ public class CreatorFrameworkEngine {
     MergeCreationResponse finalResponse = MergeCreationResponse.parentBuilder().build();
     CreatorServiceV1 creatorService = factory.getCreatorService(creationRequest);
 
-    PlanCreationContext ctx = PlanCreationContext.builder().build();
+    CreatorContext ctx = creatorService.getContext(creationRequest);
 
     while (!dependencies.isEmpty()) {
       dependencies = createInternal(creatorService, finalResponse, ctx, dependencies);
@@ -42,7 +44,7 @@ public class CreatorFrameworkEngine {
   }
 
   Map<String, DependencyV1> createInternal(CreatorServiceV1 service, MergeCreationResponse finalResponse,
-      PlanCreationContext ctx, Map<String, DependencyV1> dependencies) {
+      CreatorContext ctx, Map<String, DependencyV1> dependencies) {
     String currentYaml = ctx.getYaml();
     YamlField fullField;
     try {

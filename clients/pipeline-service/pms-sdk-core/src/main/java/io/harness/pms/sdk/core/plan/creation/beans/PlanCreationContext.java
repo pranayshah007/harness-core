@@ -15,6 +15,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.triggers.TriggerPayload;
+import io.harness.pms.sdk.core.creator.CreatorContext;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -37,9 +38,9 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 @Data
 @Builder
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PlanCreationContext implements AsyncCreatorContext {
+public class PlanCreationContext extends CreatorContext implements AsyncCreatorContext {
   YamlField currentField;
   @Singular("globalContext") private Map<String, PlanCreationContextValue> globalContext;
   String yaml;
