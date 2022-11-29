@@ -11,5 +11,5 @@ import lombok.Builder;
 
 @Builder(builderMethodName = "parentBuilder")
 public abstract class CreatorContext {
-    abstract public String getYaml();
+  abstract public String getYaml();
 }
