@@ -28,15 +28,20 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
+import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 import io.harness.ngtriggers.beans.entity.metadata.catalog.TriggerCatalogItem;
 import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
+import io.harness.ngtriggers.mapper.NGTriggerEventHistoryMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
+import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -48,6 +53,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +61,7 @@ import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -68,6 +75,8 @@ import org.springframework.util.CollectionUtils;
 @OwnedBy(PIPELINE)
 public class NGTriggerResourceImpl implements NGTriggerResource {
   private final NGTriggerService ngTriggerService;
+
+  private final NGTriggerEventsService ngTriggerEventsService;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final AccessControlClient accessControlClient;
 
@@ -252,5 +261,32 @@ public class NGTriggerResourceImpl implements NGTriggerResource {
       throw new InvalidRequestException("Failed while validating trigger yaml: ", exception);
     }
     return ResponseDTO.newResponse(ValidatePipelineInputsResponseDTO.builder().validYaml(true).build());
+  }
+
+  @Override
+  public ResponseDTO<Page<NGTriggerEventHistoryDTO>> getTriggerEventHistory(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String targetIdentifier, String triggerIdentifier,
+      String searchTerm, int page, int size, List<String> sort) {
+    Optional<NGTriggerEntity> ngTriggerEntity = ngTriggerService.get(
+        accountIdentifier, orgIdentifier, projectIdentifier, targetIdentifier, triggerIdentifier, false);
+    if (!ngTriggerEntity.isPresent()) {
+      throw new InvalidRequestException(String.format("Trigger %s doesn't not exists", triggerIdentifier));
+    }
+
+    Criteria criteria = ngTriggerEventsService.formCriteria(accountIdentifier, orgIdentifier, projectIdentifier,
+        targetIdentifier, triggerIdentifier, searchTerm, new ArrayList<>());
+    Pageable pageRequest;
+    if (EmptyPredicate.isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, TriggerEventHistoryKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+
+    Page<TriggerEventHistory> eventHistoryList = ngTriggerEventsService.getEventHistory(criteria, pageRequest);
+
+    Page<NGTriggerEventHistoryDTO> ngTriggerEventHistoryDTOS = eventHistoryList.map(
+        eventHistory -> NGTriggerEventHistoryMapper.toTriggerEventHistoryDto(eventHistory, ngTriggerEntity.get()));
+
+    return ResponseDTO.newResponse(ngTriggerEventHistoryDTOS);
   }
 }
