@@ -1,4 +1,4 @@
-FROM redhat/ubi8-minimal:latest
+FROM redhat/ubi8-minimal:8.7
 
 LABEL name="harness/delegate-immutable" \
       vendor="Harness" \
@@ -36,10 +36,9 @@ ENV HOME=/opt/harness-delegate
 ENV CLIENT_TOOLS_DOWNLOAD_DISABLED=$disable_client_tools
 ENV INSTALL_CLIENT_TOOLS_IN_BACKGROUND=$disable_client_tools
 ENV JAVA_HOME=/opt/java/openjdk/
-ENV PATH="$JAVA_HOME/bin:${PATH}"
+ENV PATH="$JAVA_HOME/bin:/opt/harness-delegate/client-tools/kubectl/v1.19.2/:${PATH}"
 
 COPY ./delegate.jar ./delegate.jar
-
 USER 1001
 
 CMD [ "./start.sh" ]
