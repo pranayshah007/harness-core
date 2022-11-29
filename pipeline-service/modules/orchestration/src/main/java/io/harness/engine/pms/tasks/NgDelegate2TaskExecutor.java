@@ -16,14 +16,13 @@ import io.harness.delegate.AccountId;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceBlockingStub;
-import io.harness.delegate.DelegateTaskProcessServiceGrpc;
+import io.harness.delegate.ProcessDelegateTaskRequest;
+import io.harness.delegate.ProcessDelegateTaskResponse;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.SubmitTaskResponse;
 import io.harness.delegate.TaskId;
 import io.harness.delegate.TaskMode;
-import io.harness.delegate.TaskResponse;
 import io.harness.exception.InvalidRequestException;
-import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.DelegateTaskProcessGrpcClient;
 import io.harness.grpc.utils.HTimestamps;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
@@ -56,11 +55,11 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
 
   @Override
   public String queueTask(Map<String, String> setupAbstractions, TaskRequest taskRequest, Duration holdFor) {
-    TaskRequestValidityCheck check = validateTaskRequest(taskRequest, TaskMode.ASYNC);
+    TaskRequestValidityCheck check = validateTaskRequestProto(taskRequest, TaskMode.ASYNC);
     if (!check.isValid()) {
       throw new InvalidRequestException(check.getMessage());
     }
-    TaskResponse submitTaskResponse = queueTask(taskRequest,holdFor);
+    ProcessDelegateTaskResponse submitTaskResponse = queueTask(taskRequest,holdFor);
     //taskRequest.getDelegateTaskRequest().getRequest().getDetails().getKryoParameters()
     /*SubmitTaskResponse submitTaskResponse =
         PmsGrpcClientUtils.retryAndProcessException(delegateServiceBlockingStub::submitTask,
@@ -70,11 +69,12 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
     return submitTaskResponse.getTaskId().getId();
   }
 
-  public TaskResponse queueTask(io.harness.pms.contracts.execution.tasks.TaskRequest taskRequest,Duration holdFor){
+  public ProcessDelegateTaskResponse queueTask(
+      io.harness.pms.contracts.execution.tasks.TaskRequest taskRequest, Duration holdFor) {
     DelegateTaskRequest delegateTaskRequest = taskRequest.getDelegateTaskRequest();
-    SubmitTaskRequest request = delegateTaskRequest.getRequest();
-    TaskResponse response = delegateTaskProcessGrpcClient.submitTask(request.getCallbackToken(), request.getAccountId(), request.getSetupAbstractions(), request.getLogAbstractions(),
-            request.getDetails(), request.getCapabilitiesList(), request.getSelectorsList(), holdFor, request.getForceExecute());
+    ProcessDelegateTaskRequest.Builder requestBuilder = delegateTaskRequest.getProcessDelegateTaskRequest().toBuilder();
+    requestBuilder.setCallbackToken(tokenSupplier.get());
+    ProcessDelegateTaskResponse response = delegateTaskProcessGrpcClient.queueTask(requestBuilder.build(), holdFor);
     return response;
   }
 
@@ -102,6 +102,23 @@ public class NgDelegate2TaskExecutor implements TaskExecutor {
     String message = null;
     SubmitTaskRequest submitTaskRequest = taskRequest.getDelegateTaskRequest().getRequest();
     TaskMode mode = submitTaskRequest.getDetails().getMode();
+    boolean valid = mode == validMode;
+    if (!valid) {
+      message = String.format("DelegateTaskRequest Mode %s Not Supported", mode);
+    }
+    return TaskRequestValidityCheck.builder().valid(valid).message(message).build();
+  }
+
+  private TaskRequestValidityCheck validateTaskRequestProto(TaskRequest taskRequest, TaskMode validMode) {
+    if (taskRequest.getRequestCase() != RequestCase.DELEGATETASKREQUEST) {
+      return TaskRequestValidityCheck.builder()
+              .valid(false)
+              .message("Task Request doesnt contain delegate Task Request")
+              .build();
+    }
+    String message = null;
+    ProcessDelegateTaskRequest processDelegateTaskRequest = taskRequest.getDelegateTaskRequest().getProcessDelegateTaskRequest();
+    TaskMode mode = processDelegateTaskRequest.getTaskMetaData().getDelegateTaskDetails().getMode();
     boolean valid = mode == validMode;
     if (!valid) {
       message = String.format("DelegateTaskRequest Mode %s Not Supported", mode);

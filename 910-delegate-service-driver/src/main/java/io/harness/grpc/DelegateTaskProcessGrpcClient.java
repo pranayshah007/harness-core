@@ -3,21 +3,22 @@ package io.harness.grpc;
 import static java.lang.System.currentTimeMillis;
 import static java.util.stream.Collectors.toList;
 
+import io.grpc.StatusRuntimeException;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.Capabilities;
 import io.harness.delegate.Capability;
 import io.harness.delegate.DelegateTaskData;
+import io.harness.delegate.DelegateTaskDetails;
 import io.harness.delegate.DelegateTaskMetaData;
 import io.harness.delegate.DelegateTaskProcessServiceGrpc;
 import io.harness.delegate.DelegateTaskRank;
 import io.harness.delegate.Secrets;
-import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskLogAbstractions;
 import io.harness.delegate.TaskOwner;
-import io.harness.delegate.TaskRequest;
-import io.harness.delegate.TaskResponse;
+import io.harness.delegate.ProcessDelegateTaskResponse;
+import io.harness.delegate.ProcessDelegateTaskRequest;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -50,11 +51,17 @@ public class DelegateTaskProcessGrpcClient {
     this.delegateSyncService = delegateSyncService;
   }
 
+  public ProcessDelegateTaskResponse queueTask(ProcessDelegateTaskRequest processDelegateTaskRequest,Duration holdFor) {
+    ProcessDelegateTaskResponse response = submitTask(processDelegateTaskRequest);
+    delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
+            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
+    return response;
+  }
 
   public String queueTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
       List<Capability> capabilities, List<TaskSelector> selectors, Duration holdFor, boolean forceExecute) {
-    TaskResponse response = submitTask(delegateCallbackToken, accountId, taskSetupAbstractions, taskLogAbstractions,
+    ProcessDelegateTaskResponse response = submitTask(delegateCallbackToken, accountId, taskSetupAbstractions, taskLogAbstractions,
         taskDetails, capabilities, selectors, holdFor, forceExecute);
 
     delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
@@ -66,7 +73,7 @@ public class DelegateTaskProcessGrpcClient {
       AccountId accountId, TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions,
       TaskDetails taskDetails, List<Capability> capabilities, List<TaskSelector> selectors, Duration holdFor,
       boolean forceExecute) {
-    TaskResponse submitTaskResponse = submitTask(delegateCallbackToken, accountId, taskSetupAbstractions,
+    ProcessDelegateTaskResponse submitTaskResponse = submitTask(delegateCallbackToken, accountId, taskSetupAbstractions,
         taskLogAbstractions, taskDetails, capabilities, selectors, holdFor, forceExecute);
 
     final String taskId = submitTaskResponse.getTaskId().getId();
@@ -74,31 +81,38 @@ public class DelegateTaskProcessGrpcClient {
         Duration.ofMillis(HTimestamps.toMillis(submitTaskResponse.getTotalExpiry()) - currentTimeMillis()), null);
   }
 
-  public TaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
+  public ProcessDelegateTaskResponse submitTask(ProcessDelegateTaskRequest processDelegateTaskRequest) throws StatusRuntimeException {
+    return delegateTaskProcessServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+        .processDelegateTask(processDelegateTaskRequest);
+  }
+
+  public ProcessDelegateTaskResponse submitTask(DelegateCallbackToken delegateCallbackToken, AccountId accountId,
       TaskSetupAbstractions taskSetupAbstractions, TaskLogAbstractions taskLogAbstractions, TaskDetails taskDetails,
-      List<Capability> capabilities,  List<TaskSelector> selectors, Duration holdFor, boolean forceExecute) {
+      List<Capability> capabilities, List<TaskSelector> selectors, Duration holdFor, boolean forceExecute) {
     try {
-      DelegateTaskMetaData.Builder delegateTaskBuilder = DelegateTaskMetaData.newBuilder()
-                                                             .setAccountId(accountId)
-                                                             .setNg(true)
-                                                             .setTaskOwner(TaskOwner.newBuilder().build())
-                                                             .setType(taskDetails.getType())
-                                                             .setDescription("task des")
-                                                             .setForceExecute(forceExecute)
-                                                             .setRank(DelegateTaskRank.CRITICAL)
-                                                             .setLogAbstractions(taskLogAbstractions);
-      DelegateTaskData.Builder delegateTaskData =
-          DelegateTaskData.newBuilder().setTaskParameters(taskDetails.getNewParameters());
+      DelegateTaskMetaData.Builder delegateTaskBuilder =
+          DelegateTaskMetaData.newBuilder()
+              .setAccountId(accountId)
+              .setDelegateTaskDetails(
+                  DelegateTaskDetails.newBuilder().setType(taskDetails.getType()).setDescription("task de").build())
+              //.setNg(true)
+              .setTaskOwner(TaskOwner.newBuilder().build())
+              //.setType(taskDetails.getType())
+              //.setDescription("task des")
+              .setForceExecute(forceExecute)
+              .setRank(DelegateTaskRank.CRITICAL)
+              .setLogAbstractions(taskLogAbstractions);
+      DelegateTaskData.Builder delegateTaskData = DelegateTaskData.newBuilder();
       Capabilities.Builder taskCapabilities = Capabilities.newBuilder().addAllCapabilities(
           capabilities.stream().map(capability -> Capability.newBuilder().build()).collect(toList()));
       Secrets.Builder secrets = Secrets.newBuilder();
-      TaskRequest.Builder taskRequestBuilder = TaskRequest.newBuilder()
+      ProcessDelegateTaskRequest.Builder taskRequestBuilder = ProcessDelegateTaskRequest.newBuilder()
                                                    .setCallbackToken(delegateCallbackToken)
                                                    .setDelegateTaskData(delegateTaskData)
                                                    .setTaskMetaData(delegateTaskBuilder.build())
                                                    .setCapabilities(taskCapabilities)
                                                    .setSecrets(secrets.build());
-      TaskResponse response = delegateTaskProcessServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+      ProcessDelegateTaskResponse response = delegateTaskProcessServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
                                   .processDelegateTask(taskRequestBuilder.build());
 
       return response;

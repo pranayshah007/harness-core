@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.artifactory;
 
+import com.google.protobuf.Any;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -19,6 +20,8 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 
 import com.google.inject.Inject;
+
+import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -49,5 +52,10 @@ public class ArtifactoryArtifactTaskNG extends AbstractDelegateRunnableTask {
   public ArtifactTaskResponse run(TaskParameters parameters) {
     ArtifactTaskParameters taskParameters = (ArtifactTaskParameters) parameters;
     return artifactoryArtifactTaskHelper.getArtifactCollectResponse(taskParameters);
+  }
+
+  @Override
+  public DelegateResponseData runProtoTask(Any parameters) throws IOException {
+    throw new NotImplementedException("not implemented");
   }
 }

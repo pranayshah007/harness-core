@@ -14,6 +14,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
+import io.harness.delegatetask.HttpTaskParametersNg1;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.http.HttpHeaderConfig;
@@ -33,6 +34,7 @@ public class HttpTaskParametersNg implements TaskParameters, ExecutionCapability
   int socketTimeoutMillis;
   boolean useProxy;
   boolean isCertValidationRequired;
+  HttpTaskParametersNg1 httpTaskParametersNg1;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

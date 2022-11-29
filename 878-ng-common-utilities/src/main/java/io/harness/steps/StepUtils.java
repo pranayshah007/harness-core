@@ -26,10 +26,16 @@ import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.AccountId;
 import io.harness.delegate.Capability;
+import io.harness.delegate.DelegateTaskData;
+import io.harness.delegate.DelegateTaskDetails;
+import io.harness.delegate.DelegateTaskMetaData;
+import io.harness.delegate.ProcessDelegateTaskRequest;
 import io.harness.delegate.SubmitTaskRequest;
 import io.harness.delegate.TaskDetails;
 import io.harness.delegate.TaskLogAbstractions;
 import io.harness.delegate.TaskMode;
+import io.harness.delegate.TaskOwner;
+import io.harness.delegate.TaskOwnerOrBuilder;
 import io.harness.delegate.TaskSelector;
 import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.TaskType;
@@ -319,6 +325,62 @@ public class StepUtils {
     return TaskRequest.newBuilder().setDelegateTaskRequest(delegateTaskRequest).setTaskCategory(taskCategory).build();
   }
 
+
+  public static TaskRequest prepareTaskRequestWithProtoParams(Ambiance ambiance, DelegateTaskData taskData,
+                                                              List<String> keys, List<String> units, boolean withLogs,
+                                                              List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType) {
+    String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
+
+
+    LinkedHashMap<String, String> logAbstractionMap =
+            withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    units = withLogs ? units : new ArrayList<>();
+    logCommandUnits(units);
+
+ /*   TaskDetails.Builder taskDetailsBuilder =
+            TaskDetails.newBuilder()
+                    .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
+                    .setExpressionFunctorToken(ambiance.getExpressionFunctorToken())
+                    .setMode(taskData.getAsync() ? TaskMode.ASYNC : TaskMode.SYNC)
+                    .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());*/
+
+
+    Map<String, String> setupAbstractionsMap = buildAbstractions(ambiance, taskScope);
+    if (environmentType != null && environmentType != EnvironmentType.ALL) {
+      setupAbstractionsMap.put("envType", environmentType.name());
+    }
+
+    DelegateTaskDetails.Builder delegateTaskDetailsBuilder =
+        DelegateTaskDetails.newBuilder()
+            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build())
+            .setMode(TaskMode.ASYNC)
+            .setDescription("task");
+
+    DelegateTaskMetaData.Builder delegateTaskMetaData =
+        DelegateTaskMetaData.newBuilder()
+            .setAccountId(AccountId.newBuilder().setId(accountId).build())
+            .setDelegateTaskDetails(delegateTaskDetailsBuilder.build())
+            .setTaskOwner(buildTaskOwner(ambiance, taskScope))
+            .setLogAbstractions(TaskLogAbstractions.newBuilder().putAllValues(logAbstractionMap).build())
+            .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
+            .setTimeout(taskData.getTimeout())
+            .setSelectionTrackingLogEnabled(true);
+
+    ProcessDelegateTaskRequest.Builder requestBuilder =
+        ProcessDelegateTaskRequest.newBuilder().setDelegateTaskData(taskData).setTaskMetaData(
+            delegateTaskMetaData.build());
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.newBuilder()
+            .addAllUnits(CollectionUtils.emptyIfNull(units))
+            .addAllLogKeys(keys).setProcessDelegateTaskRequest(requestBuilder.build())
+            .setTaskName(taskData.getTaskType())
+            .build();
+
+    return TaskRequest.newBuilder().setDelegateTaskRequest(delegateTaskRequest).setTaskCategory(TaskCategory.DELEGATE_TASK_V2).build();
+  }
+
+
+
+
   private static void logCommandUnits(List<String> units) {
     if (!isEmpty(units)) {
       String commandUnits =
@@ -382,6 +444,28 @@ public class StepUtils {
     }
     return setupMap;
   }
+
+  public static TaskOwner buildTaskOwner(Ambiance ambiance, Scope taskScope) {
+    TaskOwner.Builder taskOwnerBuilder = TaskOwner.newBuilder();
+    if (!isEmpty(ambiance.getSetupAbstractionsMap())) {
+      return taskOwnerBuilder.build();
+    }
+    switch (taskScope) {
+      case ORG:
+        taskOwnerBuilder.setOrgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance));
+        break;
+      case PROJECT:
+        taskOwnerBuilder.setOrgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance) + "/" + AmbianceUtils.getProjectIdentifier(ambiance));
+        break;
+      case UNKNOWN:
+      case ACCOUNT:
+      default:
+        // Doing Nothing here no owner key verify this behaviour
+        break;
+    }
+    return taskOwnerBuilder.build();
+  }
+
 
   public static List<String> generateLogKeys(Ambiance ambiance, List<String> units) {
     LinkedHashMap<String, String> logAbstractionMap = generateLogAbstractions(ambiance);

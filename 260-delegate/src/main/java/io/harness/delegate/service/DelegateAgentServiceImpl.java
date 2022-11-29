@@ -90,6 +90,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
+import com.google.protobuf.Any;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateHeartbeatResponse;
@@ -101,7 +102,9 @@ import io.harness.data.structure.NullSafeImmutableMap;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.DelegateServiceAgentClient;
-import io.harness.delegate.TaskAcquireResponse;
+import io.harness.delegate.DelegateTaskAcquireResponse;
+import io.harness.delegate.DelegateTaskData;
+import io.harness.delegate.DelegateTaskMetaData;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateParams;
@@ -1963,13 +1966,21 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
         log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
 
-        TaskAcquireResponse taskAcquireResponse = executeRestCall(
+        DelegateTaskAcquireResponse taskAcquireResponse = executeRestCall(
             delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
         io.harness.delegate.DelegateTaskPackage dp = taskAcquireResponse.getDelegateTaskPackage();
+        DelegateTaskData delegateTaskData =
+            DelegateTaskData.parseFrom(dp.getDelegateTaskData().getTaskParameters().toByteString());
+        TaskData taskData = TaskData.builder()
+                                .taskType(delegateTaskData.getTaskType())
+                                .data(delegateTaskData.toByteArray())
+                                .taskParamsProto(Any.parseFrom(delegateTaskData.getTaskParameters().toByteArray()))
+                                .build();
         DelegateTaskPackage delegateTaskPackage = DelegateTaskPackage.builder()
                                                       .delegateTaskId(dp.getDelegateTaskId())
                                                       .delegateId(dp.getDelegateId())
                                                       .delegateInstanceId(dp.getDelegateInstanceId())
+                                                      .data(taskData)
                                                       .build();
         if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
           if (delegateTaskPackage == null) {
@@ -2079,15 +2090,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     // At the moment used to download and render terraform json plan file and keep track of the download tf plans
     // so we can clean up at the end of the task. Expected mainly to be used in Shell Script Task
     // but not limited to usage in other tasks
-    DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
+  /*  DelegateExpressionEvaluator delegateExpressionEvaluator = new DelegateExpressionEvaluator(
         injector, delegateTaskPackage.getAccountId(), delegateTaskPackage.getData().getExpressionFunctorToken());
-    applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);
+    applyDelegateExpressionEvaluator(delegateTaskPackage, delegateExpressionEvaluator);*/
 
     DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
-        TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
-        getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId(), sanitizer.orElse(null),
-            logStreamingTaskClient, delegateExpressionEvaluator),
-        getPreExecutionFunction(delegateTaskPackage, sanitizer.orElse(null), logStreamingTaskClient));
+        TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient, null,
+        null);
     if (delegateRunnableTask instanceof AbstractDelegateRunnableTask) {
       ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
     }
@@ -2179,6 +2188,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private Pair<String, Set<String>> obtainActivitySecrets(@NotNull DelegateTaskPackage delegateTaskPackage) {
+
     TaskData taskData = delegateTaskPackage.getData();
 
     String activityId = null;
@@ -2189,6 +2199,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
     // TODO: This gets secrets for Shell Script, Shell Script Provision, and Command only
     // When secret decryption is moved to delegate for each task then those secrets can be used instead.
+    if (taskData.getParameters()==null){
+       return Pair.of( "ac", Sets.newHashSet());
+    }
     Object[] parameters = taskData.getParameters();
     if (parameters.length == 1 && parameters[0] instanceof TaskParameters) {
       if (parameters[0] instanceof ActivityAccess) {
@@ -2227,7 +2240,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       }
     }
 
-    return Pair.of(activityId, secrets);
+    return Pair.of( activityId, Sets.newHashSet());
   }
 
   private void addSystemSecrets(Set<String> secrets) {

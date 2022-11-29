@@ -9,9 +9,11 @@ package software.wings.delegatetasks.collect.artifacts;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import com.google.protobuf.Any;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -26,6 +28,8 @@ import software.wings.beans.aws.AmazonS3CollectionTaskParameters;
 import software.wings.helpers.ext.amazons3.AmazonS3Service;
 
 import com.google.inject.Inject;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -57,6 +61,11 @@ public class AmazonS3CollectionTask extends AbstractDelegateRunnableTask {
       log.error("Exception occurred while collecting S3 artifacts", e);
       return new ListNotifyResponseData();
     }
+  }
+
+  @Override
+  public DelegateResponseData runProtoTask(Any parameters) throws IOException {
+    throw new NotImplementedException("not implemented");
   }
 
   @Override

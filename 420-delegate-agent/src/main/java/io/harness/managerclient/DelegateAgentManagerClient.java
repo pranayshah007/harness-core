@@ -11,11 +11,11 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
+import io.harness.delegate.DelegateTaskAcquireResponse;
 import io.harness.delegate.SendTaskProgressRequest;
 import io.harness.delegate.SendTaskProgressResponse;
 import io.harness.delegate.SendTaskStatusRequest;
 import io.harness.delegate.SendTaskStatusResponse;
-import io.harness.delegate.TaskAcquireResponse;
 import io.harness.delegate.TaskProgressRequest;
 import io.harness.delegate.TaskProgressResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
@@ -237,7 +237,7 @@ public interface DelegateAgentManagerClient {
 
   @Consumes({"application/x-protobuf"})
   @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
-  Call<TaskAcquireResponse> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
-                                        @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
+  Call<DelegateTaskAcquireResponse> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
+                                                @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 
 }

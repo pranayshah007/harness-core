@@ -1,0 +1,25 @@
+// Copyright 2020 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+
+package io.harness.delegatetask;
+
+option java_multiple_files = true;
+
+message HttpTaskParametersNg1 {
+  string method = 1;
+  string url = 2;
+  repeated HttpHeaderConfig httpHeaderConfig = 3;
+  string body = 4;
+  bool useProxy = 5;
+  bool isCertValidationRequired = 6;
+  int32 socketTimeoutMillis = 7;
+}
+
+message HttpHeaderConfig{
+  string key = 1;
+  string value = 2;
+}

@@ -16,31 +16,35 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
 import "920-delegate-service-beans/src/main/proto/io/harness/callback/callback.proto";
 
 import "google/protobuf/duration.proto";
+import "google/protobuf/any.proto";
 
 // Task metadata
 message DelegateTaskMetaData {
    TaskId task_id = 1;
    AccountId account_id = 2;
-   string description = 3;
-   bool ng = 4;
-   TaskMode mode = 5;
-   TaskType type = 6;
-   bool force_execute = 7;
-   repeated string eligibleToExecuteDelegateIds = 8;
-   callback.DelegateCallbackToken callback_token = 9;
-   DelegateTaskRank rank = 10;
+   DelegateTaskDetails delegateTaskDetails = 3;
+   callback.DelegateCallbackToken callback_token = 4;
+   DelegateTaskRank rank = 5;
+   TaskOwner taskOwner = 6;
+   repeated TaskSelector selectors = 7;
+   google.protobuf.Duration timeout = 8;
+   bool selectionTrackingLogEnabled = 9;
+   repeated string eligibleToExecuteDelegateIds = 10;
    string workflowExecutionId = 11;
-   TaskOwner taskOwner = 12;
-   google.protobuf.Duration timeout = 13;
-   repeated TaskSelector selectors = 14;
-   bool selectionTrackingLogEnabled = 15;
-   TaskLogAbstractions log_abstractions = 16;
-   bool execute_on_harness_hosted_delegates = 17;
-   bool parked = 18;
-   bool emitEvent = 19;
-   string stageId = 20;
-   bool isAsync = 21;
+   bool force_execute = 12;
+   TaskLogAbstractions log_abstractions = 13;
+   bool execute_on_harness_hosted_delegates = 14;
+   bool emitEvent = 15;
+   string stageId = 16;
 }
+
+// Task details
+message DelegateTaskDetails {
+  TaskMode mode = 1;
+  string description = 2;
+  TaskType type = 3;
+}
+
 
 
 // Task data
@@ -48,7 +52,8 @@ message DelegateTaskData {
   bytes task_data = 1;
   bool async = 2;
   string taskType =3;
-  bytes task_parameters = 4;
+  google.protobuf.Any task_parameters = 4;
+  google.protobuf.Duration timeout = 5;
 }
 
 // Task Capabilities
@@ -71,8 +76,11 @@ message DelegateTaskPackage {
   string logStreamingToken = 5;
   string delegateCallbackToken = 6;
   bytes task_parameters = 7;
-
+  DelegateTaskData delegateTaskData = 8;
 }
+
+
+
 enum DelegateTaskRank {
    OPTIONAL = 0;
    IMPORTANT  = 1;
@@ -90,6 +98,7 @@ enum DelegateTaskStatus {
    STARTED = 1;
    ERROR = 2;
 }
+
 
 
 

@@ -6,19 +6,18 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import static java.lang.System.currentTimeMillis;
 
-import com.google.protobuf.ByteString;
+import com.google.protobuf.Any;
+import com.google.protobuf.InvalidProtocolBufferException;
 import io.harness.beans.DelegateTask;
 import io.harness.delegate.AccountId;
+import io.harness.delegate.DelegateTaskAcquireResponse;
 import io.harness.delegate.DelegateTaskData;
 import io.harness.delegate.DelegateTaskMetaData;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
-import io.harness.delegate.TaskAcquireResponse;
+import io.harness.delegate.ProcessDelegateTaskRequest;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.NgSetupFields;
-import io.harness.delegate.beans.NoAvailableDelegatesException;
-import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.TaskDataV2;
 import io.harness.persistence.HPersistence;
 ;
 import io.harness.version.VersionInfoManager;
@@ -30,6 +29,7 @@ import software.wings.service.intfc.DelegateTaskServiceClassic;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.protobuf.ByteString;
 import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
@@ -52,14 +52,18 @@ public class DelegateTaskProcessServiceImpl implements DelegateTaskProcessServic
   private static final SecureRandom random = new SecureRandom();
 
   @Override
-  public DelegateTask processDelegateTask(DelegateTaskMetaData delegateTaskMetaData) {
+  public DelegateTask processDelegateTask(ProcessDelegateTaskRequest processDelegateTaskRequest) {
+    DelegateTaskMetaData delegateTaskMetaData = processDelegateTaskRequest.getTaskMetaData();
     DelegateTask.DelegateTaskBuilder taskBuilder =
         DelegateTask.builder()
             .uuid(generateUuid())
             .status(QUEUED)
-            .taskType(delegateTaskMetaData.getType().toString())
-            .isNG(delegateTaskMetaData.getNg())
-            .data(TaskData.builder().async(true).taskType(delegateTaskMetaData.getType().toString()).build())
+            .taskType(delegateTaskMetaData.getDelegateTaskDetails().getType().toString())
+            .isNG(true)
+            .data(TaskData.builder()
+                      .async(true)
+                      .taskType(delegateTaskMetaData.getDelegateTaskDetails().toString()).data(processDelegateTaskRequest.getDelegateTaskData().toByteArray())
+                      .build())
             .accountId(delegateTaskMetaData.getAccountId().getId())
             .lastBroadcastAt(clock.millis())
             .version(versionInfoManager.getVersionInfo().getVersion());
@@ -90,17 +94,43 @@ public class DelegateTaskProcessServiceImpl implements DelegateTaskProcessServic
   }
 
   @Override
-  public TaskAcquireResponse acquireDelegateTask(
+  public DelegateTaskAcquireResponse acquireDelegateTask(
       String accountId, String delegateId, String taskId, String delegateInstanceId) {
+    /* DelegateTaskPackage.DelegateTaskPackageBuilder delegateTaskPackageBuilder =
+             DelegateTaskPackage.builder()
+                     .accountId(delegateTask.getAccountId())
+                     .delegateId(delegateTask.getDelegateId())
+                     .delegateInstanceId(delegateTask.getDelegateInstanceId())
+                     .delegateTaskId(delegateTask.getUuid())
+                     .data(delegateTask.getData())
+                     .executionCapabilities(executionCapabilityList)
+                     .delegateCallbackToken(delegateTask.getDriverId());
+        String logStreamingAccountToken = logStreamingAccountTokenCache.get(delegateTask.getAccountId());
+
+           if (isNotBlank(logStreamingAccountToken)) {
+             delegateTaskPackageBuilder.logStreamingToken(logStreamingAccountToken);
+           }
+
+                     */
+
+
     DelegateTaskPackage delegateTaskPackage =
         delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
-    io.harness.delegate.DelegateTaskPackage dp = io.harness.delegate.DelegateTaskPackage.newBuilder()
-                                                     .setDelegateTaskId(delegateTaskPackage.getDelegateTaskId())
-                                                     .setDelegateId(delegateTaskPackage.getDelegateId())
-                                                     .setDelegateInstanceId(delegateTaskPackage.getDelegateInstanceId())
-                                                     .setAccountId(AccountId.newBuilder().setId(accountId).build())
-                                                     .build();
-    return TaskAcquireResponse.newBuilder().setDelegateTaskPackage(dp).build();
+    try {
+     Any data = Any.parseFrom(ByteString.copyFrom(delegateTaskPackage.getData().getData()));
+      io.harness.delegate.DelegateTaskPackage dp = io.harness.delegate.DelegateTaskPackage.newBuilder()
+              .setDelegateTaskId(delegateTaskPackage.getDelegateTaskId())
+              .setDelegateId(delegateTaskPackage.getDelegateId())
+              .setDelegateInstanceId(delegateTaskPackage.getDelegateInstanceId())
+              .setAccountId(AccountId.newBuilder().setId(accountId).build())
+              .setDelegateTaskData(DelegateTaskData.newBuilder().setTaskParameters(data).build())
+              .build();
+      return DelegateTaskAcquireResponse.newBuilder().setDelegateTaskPackage(dp).build();
+    } catch (InvalidProtocolBufferException e) {
+      e.printStackTrace();
+    }
+
+   return null;
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {

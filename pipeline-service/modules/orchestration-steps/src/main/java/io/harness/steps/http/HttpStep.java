@@ -10,15 +10,21 @@ package io.harness.steps.http;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EnvironmentType;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.DelegateTaskData;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
 import io.harness.delegate.task.http.HttpTaskParametersNg.HttpTaskParametersNgBuilder;
+import io.harness.delegatetask.HttpHeaderConfig;
+import io.harness.delegatetask.HttpTaskParametersNg1;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.http.HttpHeaderConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
@@ -45,11 +51,15 @@ import io.harness.supplier.ThrowingSupplier;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import com.google.protobuf.Any;
+import com.google.protobuf.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -84,14 +94,27 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
                                                                   .socketTimeoutMillis(socketTimeoutMillis);
 
     if (EmptyPredicate.isNotEmpty(httpStepParameters.getHeaders())) {
-      List<HttpHeaderConfig> headers = new ArrayList<>();
+      List<io.harness.http.HttpHeaderConfig> headers = new ArrayList<>();
       httpStepParameters.getHeaders().keySet().forEach(key
-          -> headers.add(HttpHeaderConfig.builder().key(key).value(httpStepParameters.getHeaders().get(key)).build()));
+          -> headers.add(io.harness.http.HttpHeaderConfig.builder()
+                             .key(key)
+                             .value(httpStepParameters.getHeaders().get(key))
+                             .build()));
       httpTaskParametersNgBuilder.requestHeader(headers);
     }
 
     if (httpStepParameters.getRequestBody() != null) {
       httpTaskParametersNgBuilder.body(httpStepParameters.getRequestBody().getValue());
+    }
+
+    HttpTaskParametersNg1.Builder httpTaskParametersNg1Builder =
+        HttpTaskParametersNg1.newBuilder()
+            .setUrl(httpStepParameters.getUrl().getValue())
+            .setMethod(httpStepParameters.getMethod().getValue());
+    if (EmptyPredicate.isNotEmpty(httpStepParameters.getHeaders())) {
+      httpStepParameters.getHeaders().keySet().forEach(key
+          -> httpTaskParametersNg1Builder.addHttpHeaderConfig(
+              HttpHeaderConfig.newBuilder().setKey(key).setValue(httpStepParameters.getHeaders().get(key)).build()));
     }
 
     final TaskData taskData =
@@ -102,8 +125,19 @@ public class HttpStep extends TaskExecutableWithRollback<HttpStepResponse> {
             .parameters(new Object[] {httpTaskParametersNgBuilder.build()})
             .build();
 
-    return StepUtils.prepareTaskRequestWithTaskSelector(
-        ambiance, taskData, kryoSerializer, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors));
+    final DelegateTaskData delegateTaskData =
+        DelegateTaskData.newBuilder()
+            .setTaskType(TaskType.HTTP_TASK_NG.name())
+            .setAsync(true)
+            .setTimeout(Duration.newBuilder()
+                            .setSeconds(NGTimeConversionHelper.convertTimeStringToMilliseconds(
+                                stepParameters.getTimeout().getValue()))
+                            .build())
+            .setTaskParameters(Any.pack(httpTaskParametersNg1Builder.build()))
+            .build();
+    return StepUtils.prepareTaskRequestWithProtoParams(ambiance, delegateTaskData, Collections.emptyList(),
+        Collections.emptyList(), true, TaskSelectorYaml.toTaskSelector(httpStepParameters.delegateSelectors),
+        Scope.ACCOUNT, EnvironmentType.ALL);
   }
 
   @Override

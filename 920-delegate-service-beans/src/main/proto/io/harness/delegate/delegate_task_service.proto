@@ -18,12 +18,12 @@ import "955-delegate-beans/src/main/proto/io/harness/delegate/account.proto";
 import "google/protobuf/timestamp.proto";
 
 service DelegateTaskProcessService {
-  rpc processDelegateTask(TaskRequest) returns (TaskResponse);
-  rpc acquireDelegateTask(TaskAcquireRequest) returns (TaskAcquireResponse);
+  rpc processDelegateTask(ProcessDelegateTaskRequest) returns (ProcessDelegateTaskResponse);
+  rpc acquireDelegateTask(DelegateTaskAcquireRequest) returns (DelegateTaskAcquireResponse);
 }
 
 
- message TaskRequest {
+ message ProcessDelegateTaskRequest {
    callback.DelegateCallbackToken callback_token = 1;
    DelegateTaskMetaData task_meta_data = 2;
    DelegateTaskData delegate_task_data = 3;
@@ -32,18 +32,18 @@ service DelegateTaskProcessService {
  }
 
 
- message TaskResponse {
+ message ProcessDelegateTaskResponse {
    TaskId task_id = 1;
    google.protobuf.Timestamp total_expiry = 2;
   }
 
-  message TaskAcquireRequest {
+  message DelegateTaskAcquireRequest {
      TaskId task_id = 1;
      string delegate_id = 2;
      string delegate_instance_id = 3;
      AccountId account_id = 4;
  }
 
- message TaskAcquireResponse {
+ message DelegateTaskAcquireResponse {
       DelegateTaskPackage delegate_task_package = 1;
   }

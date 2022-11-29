@@ -102,6 +102,7 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
 
   private TaskDataV2 taskDataV2;
 
+
   private List<ExecutionCapability> executionCapabilities;
 
   @Id private String uuid;

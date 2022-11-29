@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans;
 
+import com.google.protobuf.Any;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,4 +40,6 @@ public class TaskData {
 
   SerializationFormat serializationFormat;
   private byte[] data;
+
+  Any taskParamsProto;
 }

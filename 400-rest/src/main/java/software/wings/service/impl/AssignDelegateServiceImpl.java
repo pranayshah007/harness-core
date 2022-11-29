@@ -876,7 +876,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     task.setNonAssignableDelegates(new HashMap<>());
     try {
       List<Delegate> accountDelegates = fetchActiveDelegates(task.getAccountId());
-      boolean isTaskNg = task.isNGTask(task.getSetupAbstractions());
+      boolean isTaskNg = task.isNG() || task.isNGTask(task.getSetupAbstractions());
       accountDelegates = accountDelegates.stream().filter(delegate -> delegate.isNg() == isTaskNg).collect(toList());
       if (isEmpty(accountDelegates)) {
         task.getNonAssignableDelegates().putIfAbsent(NO_ACTIVE_DELEGATES, Collections.emptyList());

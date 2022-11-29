@@ -8,7 +8,7 @@ proto_library(
         "delegate_service.proto",
         "delegate_task.proto",
         "progress.proto",
-        "delegate_task_process_service.proto",
+        "delegate_task_service.proto",
         "task.proto",
     ],
     visibility = ["//visibility:public"],
@@ -19,6 +19,7 @@ proto_library(
         "//955-delegate-beans/src/main/proto/io/harness/perpetualtask:955_delegate_beans_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:any_proto",
     ],
 )
 

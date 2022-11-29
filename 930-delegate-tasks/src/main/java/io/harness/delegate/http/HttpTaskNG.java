@@ -7,6 +7,7 @@
 
 package io.harness.delegate.http;
 
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -14,12 +15,14 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.http.HttpStepResponse;
 import io.harness.delegate.task.http.HttpTaskParametersNg;
+import io.harness.delegatetask.HttpTaskParametersNg1;
 import io.harness.http.HttpHeaderConfig;
 import io.harness.http.HttpService;
 import io.harness.http.beans.HttpInternalConfig;
 import io.harness.http.beans.HttpInternalResponse;
 
 import com.google.inject.Inject;
+import com.google.protobuf.Any;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -56,6 +59,38 @@ public class HttpTaskNG extends AbstractDelegateRunnableTask {
                                                Collectors.toMap(HttpHeaderConfig::getKey, HttpHeaderConfig::getValue)))
                                    .socketTimeoutMillis(httpTaskParametersNg.getSocketTimeoutMillis())
                                    .url(httpTaskParametersNg.getUrl())
+                                   .useProxy(true)
+                                   .isCertValidationRequired(false)
+                                   .throwErrorIfNoProxySetWithDelegateProxy(false)
+                                   .build());
+    return HttpStepResponse.builder()
+        .commandExecutionStatus(httpInternalResponse.getCommandExecutionStatus())
+        .errorMessage(httpInternalResponse.getErrorMessage())
+        .header(httpInternalResponse.getHeader())
+        .httpMethod(httpInternalResponse.getHttpMethod())
+        .httpUrl(httpInternalResponse.getHttpUrl())
+        .httpResponseCode(httpInternalResponse.getHttpResponseCode())
+        .httpResponseBody(httpInternalResponse.getHttpResponseBody())
+        .build();
+  }
+
+  @Override
+  public DelegateResponseData runProtoTask(Any parameters) throws IOException {
+    HttpTaskParametersNg1 httpTaskParametersNg = HttpTaskParametersNg1.parseFrom(parameters.toByteString());
+    // HttpTaskParametersNg httpTaskParametersNg = HttpTaskParametersNg parameters;
+    // Todo: Need to look into useProxy and isCertValidationRequired Field.
+    HttpInternalResponse httpInternalResponse =
+        httpService.executeUrl(HttpInternalConfig.builder()
+                                   .method(httpTaskParametersNg.getMethod())
+                                   .body(httpTaskParametersNg.getBody())
+                                   .header(null)
+                                   .requestHeaders(httpTaskParametersNg.getHttpHeaderConfigList() == null
+                                           ? null
+                                           : httpTaskParametersNg.getHttpHeaderConfigList().stream().collect(
+                                               Collectors.toMap(io.harness.delegatetask.HttpHeaderConfig::getKey,
+                                                   io.harness.delegatetask.HttpHeaderConfig::getValue)))
+                                   .socketTimeoutMillis(httpTaskParametersNg.getSocketTimeoutMillis())
+                                   .url(httpTaskParametersNg.getUrl().stripTrailing())
                                    .useProxy(true)
                                    .isCertValidationRequired(false)
                                    .throwErrorIfNoProxySetWithDelegateProxy(false)

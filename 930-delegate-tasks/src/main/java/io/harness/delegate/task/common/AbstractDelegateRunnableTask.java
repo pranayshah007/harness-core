@@ -12,6 +12,7 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static java.lang.String.format;
 
+import com.google.protobuf.Any;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
@@ -58,7 +59,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
   @Getter private String taskId;
   @Getter private String taskType;
   @Getter private boolean isAsync;
-  @Getter private Object[] parameters;
+  @Getter private Any parameters;
   @Getter private ILogStreamingTaskClient logStreamingTaskClient;
   private Consumer<DelegateTaskResponse> consumer;
   private BooleanSupplier preExecute;
@@ -71,7 +72,7 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       BooleanSupplier preExecute) {
     this.delegateId = delegateTaskPackage.getDelegateId();
     this.taskId = delegateTaskPackage.getDelegateTaskId();
-    this.parameters = delegateTaskPackage.getData().getParameters();
+    this.parameters = delegateTaskPackage.getData().getTaskParamsProto();
     this.accountId = delegateTaskPackage.getAccountId();
     this.consumer = consumer;
     this.preExecute = preExecute;
@@ -94,10 +95,10 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
 
   @SuppressWarnings("PMD")
   private void runDelegateTask() {
-    if (!preExecute.getAsBoolean()) {
+    /*if (!preExecute.getAsBoolean()) {
       log.info("Pre-execute returned false for task {}", taskId);
       return;
-    }
+    }*/
 
     DelegateMetaInfo delegateMetaInfo = DelegateMetaInfo.builder().hostName(delegateHostname).id(delegateId).build();
 
@@ -116,10 +117,11 @@ public abstract class AbstractDelegateRunnableTask implements DelegateRunnableTa
       GlobalContextManager.upsertGlobalContextRecord(
           ErrorHandlingGlobalContextData.builder().isSupportedErrorFramework(isSupportingErrorFramework()).build());
 
-      DelegateResponseData result = parameters.length == 1 && parameters[0] instanceof TaskParameters
+   /*   DelegateResponseData result = parameters.length == 1 && parameters[0] instanceof TaskParameters
           ? run((TaskParameters) parameters[0])
-          : run(parameters);
+          : run(parameters);*/
 
+      DelegateResponseData result = runProtoTask(parameters);
       if (result != null) {
         if (result instanceof DelegateTaskNotifyResponseData) {
           ((DelegateTaskNotifyResponseData) result).setDelegateMetaInfo(delegateMetaInfo);

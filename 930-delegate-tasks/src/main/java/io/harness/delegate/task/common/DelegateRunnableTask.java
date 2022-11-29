@@ -7,13 +7,20 @@
 
 package io.harness.delegate.task.common;
 
+import com.google.protobuf.Any;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.task.TaskParameters;
 
 import java.io.IOException;
+
+import lombok.Builder;
+import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
 public interface DelegateRunnableTask extends Runnable {
   @Deprecated DelegateResponseData run(Object[] parameters);
   DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException;
+  default DelegateResponseData runProtoTask(Any parameters) throws IOException{
+    throw new NotImplementedException("not implemented");
+  }
 }

@@ -25,7 +25,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.artifact.ArtifactCollectionResponseHandler;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
-import io.harness.delegate.TaskAcquireResponse;
+import io.harness.delegate.DelegateTaskAcquireResponse;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
@@ -332,13 +332,13 @@ public class DelegateAgentResource {
   @DelegateAuth
   @PUT
   @Produces("application/x-protobuf")
-  @Path("{delegateId}/tasks/{taskId}/acquire")
+  @Path("{delegateId}/tasks/{taskId}/acquire/v2")
   @Timed
   @ExceptionMetered
   public Response acquireDelegateTask(@PathParam("delegateId") String delegateId,
                                              @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
                                              @QueryParam("delegateInstanceId") String delegateInstanceId) {
-    TaskAcquireResponse response =  delegateTaskProcessService.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+    DelegateTaskAcquireResponse response =  delegateTaskProcessService.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     return Response.ok(response).build();
   }
 
@@ -346,7 +346,7 @@ public class DelegateAgentResource {
   @DelegateAuth
   @PUT
   @Produces("application/x-kryo-v2")
-  @Path("{delegateId}/tasks/{taskId}/acquire/v2")
+  @Path("{delegateId}/tasks/{taskId}/acquire/v3")
   @Timed
   @ExceptionMetered
   public DelegateTaskPackage acquireDelegateTaskV2(@PathParam("delegateId") String delegateId,

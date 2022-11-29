@@ -4,12 +4,11 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.stub.StreamObserver;
 import io.harness.beans.DelegateTask;
+import io.harness.delegate.DelegateTaskAcquireRequest;
+import io.harness.delegate.DelegateTaskAcquireResponse;
 import io.harness.delegate.DelegateTaskMetaData;
-import io.harness.delegate.DelegateTaskProcessServiceGrpc;
-import io.harness.delegate.TaskAcquireRequest;
-import io.harness.delegate.TaskAcquireResponse;
-import io.harness.delegate.TaskRequest;
-import io.harness.delegate.TaskResponse;
+import io.harness.delegate.ProcessDelegateTaskRequest;
+import io.harness.delegate.ProcessDelegateTaskResponse;
 import lombok.extern.slf4j.Slf4j;
 import software.wings.service.impl.DelegateTaskBroadcastHelper;
 import software.wings.service.intfc.DelegateTaskProcessService;
@@ -32,11 +31,11 @@ public class DelegateTaskProcessGrpcImpl extends DelegateTaskProcessServiceImplB
     }
 
     @Override
-    public void processDelegateTask(TaskRequest request, StreamObserver<TaskResponse> responseObserver) {
+    public void processDelegateTask(ProcessDelegateTaskRequest request, StreamObserver<ProcessDelegateTaskResponse> responseObserver) {
         //async
       try {
           DelegateTaskMetaData delegateTaskMetaData = request.getTaskMetaData();
-          DelegateTask delegateTask = delegateTaskProcessService.processDelegateTask(delegateTaskMetaData);
+          DelegateTask delegateTask = delegateTaskProcessService.processDelegateTask(request);
           delegateTask.getData().setData(request.getDelegateTaskData().toByteArray());
           delegateTask.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
           delegateTaskProcessService.saveDelegateTask(delegateTask);
@@ -48,7 +47,7 @@ public class DelegateTaskProcessGrpcImpl extends DelegateTaskProcessServiceImplB
     }
 
     @Override
-    public void acquireDelegateTask(TaskAcquireRequest request, StreamObserver<TaskAcquireResponse> responseObserver) {
+    public void acquireDelegateTask(DelegateTaskAcquireRequest request, StreamObserver<DelegateTaskAcquireResponse> responseObserver) {
         String delegateId = request.getDelegateId();
         String taskId = request.getTaskId().getId();
         String delegateTaskInstanceId = request.getDelegateInstanceId();
