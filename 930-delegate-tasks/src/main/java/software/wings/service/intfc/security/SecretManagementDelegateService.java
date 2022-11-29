@@ -24,6 +24,7 @@ import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.TaskType;
 import software.wings.beans.VaultConfig;
 import software.wings.delegatetasks.DelegateTaskType;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import java.util.List;
 
@@ -46,6 +47,11 @@ public interface SecretManagementDelegateService {
    * Renew the Hashicorp Vault authentication token.
    */
   @DelegateTaskType(TaskType.VAULT_RENEW_TOKEN) boolean renewVaultToken(BaseVaultConfig vaultConfig);
+
+  /**
+   * Lookup the Hashicorp vault token.
+   */
+  @DelegateTaskType(TaskType.VAULT_TOKEN_LOOKUP) VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig);
 
   /**
    * List vault secret engines
