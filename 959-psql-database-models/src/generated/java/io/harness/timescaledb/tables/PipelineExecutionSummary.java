@@ -13,6 +13,7 @@ package io.harness.timescaledb.tables;
 
 import io.harness.timescaledb.Keys;
 import io.harness.timescaledb.Public;
+import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCdRecord;
 import io.harness.timescaledb.tables.records.PipelinesRecord;
 
 import java.util.Arrays;
@@ -86,6 +87,12 @@ public class PipelineExecutionSummary extends TableImpl<PipelinesRecord> {
   public final TableField<PipelinesRecord, String> NAME = createField(DSL.name("name"), SQLDataType.CLOB, this, "");
 
   /**
+   * The column <code>public.pipeline_execution_summary.status</code>.
+   */
+  public final TableField<PipelinesRecord, String> STATUS =
+          createField(DSL.name("status"), SQLDataType.CLOB, this, "");
+
+  /**
    * The column <code>public.pipeline_execution_summary.startts</code>.
    */
   public final TableField<PipelinesRecord, Long> STARTTS =
@@ -95,6 +102,30 @@ public class PipelineExecutionSummary extends TableImpl<PipelinesRecord> {
    * The column <code>public.pipeline_execution_summary.endts</code>.
    */
   public final TableField<PipelinesRecord, Long> ENDTS = createField(DSL.name("endts"), SQLDataType.BIGINT, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary.trigger_type</code>.
+   */
+  public final TableField<PipelinesRecord, String> TRIGGER_TYPE =
+          createField(DSL.name("trigger_type"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary.author_name</code>.
+   */
+  public final TableField<PipelinesRecord, String> AUTHOR_NAME =
+          createField(DSL.name("author_name"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary.author_avatar</code>.
+   */
+  public final TableField<PipelinesRecord, String> AUTHOR_AVATAR =
+          createField(DSL.name("author_avatar"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.pipeline_execution_summary.author_id</code>.
+   */
+  public final TableField<PipelinesRecord, String> AUTHOR_ID =
+          createField(DSL.name("author_id"), SQLDataType.CLOB, this, "");
 
   /**
    * The column <code>public.pipeline_execution_summary.planexecutionid</code>.
