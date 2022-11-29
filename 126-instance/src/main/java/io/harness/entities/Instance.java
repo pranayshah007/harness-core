@@ -153,16 +153,16 @@ public class Instance {
         .add(
             CompoundMongoIndex.builder()
                 .name(
-                    "accountId_organizationId_projectId_isDeleted_envId_infraIdentifier_serviceId_primaryArtifact_lastPipelineExecutionId_idx")
+                    "accountId_organizationId_projectId_isDeleted_envId_serviceId_primaryArtifact_lastPipelineExecutionId_infraIdentifier_idx")
                 .field(InstanceKeys.accountIdentifier)
                 .field(InstanceKeys.orgIdentifier)
                 .field(InstanceKeys.projectIdentifier)
                 .field(InstanceKeys.isDeleted)
                 .field(InstanceKeys.envIdentifier)
-                .field(InstanceKeys.infraIdentifier)
                 .field(InstanceKeys.serviceIdentifier)
                 .field(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
                 .field(InstanceKeys.lastPipelineExecutionId)
+                .field(InstanceKeys.infraIdentifier)
                 .build())
         .build();
   }
