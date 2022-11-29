@@ -140,6 +140,7 @@ import software.wings.service.intfc.SettingsService;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -211,6 +212,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
 
   @InjectMocks @Spy private DelegateTaskServiceClassicImpl spydelegateTaskServiceClassic;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private VersionInfoManager versionInfoManager;
   @Mock private Subject<DelegateTaskRetryObserver> retryObserverSubject;
   @Inject private HPersistence persistence;
@@ -586,7 +588,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
     when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
         .thenReturn(delegateCallbackService);
-    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+    byte[] responseData = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
 
     delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
 
@@ -610,7 +612,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
     when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
         .thenReturn(delegateCallbackService);
-    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+    byte[] responseData = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
 
     delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
 
@@ -1844,7 +1846,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
     when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
         .thenReturn(delegateCallbackService);
-    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+    byte[] responseData = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
 
     delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
 
@@ -1868,7 +1870,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     DelegateCallbackService delegateCallbackService = mock(DelegateCallbackService.class);
     when(delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId()))
         .thenReturn(delegateCallbackService);
-    byte[] responseData = kryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
+    byte[] responseData = referenceFalseKryoSerializer.asDeflatedBytes(delegateTaskResponse.getResponse());
 
     delegateTaskServiceClassic.handleDriverResponse(delegateTask, delegateTaskResponse);
 

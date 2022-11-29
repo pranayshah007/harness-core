@@ -117,7 +117,7 @@ public class WaitNotifyEngine {
   }
 
   public void progressOn(String correlationId, ProgressData progressData) {
-    progressOn(correlationId, progressData, false);
+    progressOn(correlationId, progressData, true);
   }
 
   public void progressOn(String correlationId, ProgressData progressData, boolean usingKryoWithoutReference) {
@@ -159,8 +159,8 @@ public class WaitNotifyEngine {
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .usingKryoWithoutReference(false)
-                                  .responseData(kryoSerializer.asDeflatedBytes(response))
+                                  .usingKryoWithoutReference(true)
+                                  .responseData(referenceFalseKryoSerializer.asDeflatedBytes(response))
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());
       long queryEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);

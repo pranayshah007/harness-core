@@ -26,6 +26,7 @@ import io.harness.service.intfc.DelegateCallbackService;
 import io.harness.waiter.StringNotifyResponseData;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ServerAddress;
@@ -41,7 +42,7 @@ import org.junit.experimental.categories.Category;
 
 public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
   @Inject DelegateCallbackRegistryImpl delegateCallbackRegistry;
-  @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   public static MongoServer MONGO_SERVER;
 
@@ -86,8 +87,8 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
     DelegateCallbackService delegateCallbackService = delegateCallbackRegistry.obtainDelegateCallbackService(driverId);
 
     try {
-      delegateCallbackService.publishSyncTaskResponse(
-          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
+      delegateCallbackService.publishSyncTaskResponse("taskId",
+          referenceFalseKryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
     } catch (Exception e) {
       fail(e.getMessage());
     }
@@ -116,8 +117,8 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
     DelegateCallbackService delegateCallbackService = delegateCallbackRegistry.obtainDelegateCallbackService(driverId);
 
     try {
-      delegateCallbackService.publishAsyncTaskResponse(
-          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
+      delegateCallbackService.publishAsyncTaskResponse("taskId",
+          referenceFalseKryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
     } catch (Exception e) {
       fail(e.getMessage());
     }
