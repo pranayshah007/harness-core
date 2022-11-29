@@ -82,7 +82,7 @@ public class PMSPipelineTemplateHelper {
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId,
+              accountId, orgId, projectId, false,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -90,7 +90,7 @@ public class PMSPipelineTemplateHelper {
                   .build()));
         }
         return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null,
+            null, null, null, null, null, null, null, null, false,
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(yaml)
                 .checkForAccess(checkForTemplateAccess)

@@ -20,6 +20,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PL)
 public class DashboardSecretsConfig {
+  String managerServiceSecret;
   String ngManagerServiceSecret;
   String pipelineServiceSecret;
   String jwtAuthSecret;

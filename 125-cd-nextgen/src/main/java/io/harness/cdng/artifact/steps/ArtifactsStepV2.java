@@ -228,7 +228,7 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
       try {
         TemplateMergeResponseDTO templateMergeResponseDTO =
             NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-                null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, false,
                 TemplateApplyRequestDTO.builder()
                     .originalEntityYaml(yaml)
                     .checkForAccess(true)
