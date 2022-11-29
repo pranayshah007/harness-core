@@ -348,11 +348,11 @@ public class UsageMetricsEventPublisher {
 
     List<String> infraDefinitionIds = workflowExecution.getInfraDefinitionIds();
     if (!Lists.isNullOrEmpty(infraDefinitionIds)) {
-      listData.put(EventProcessor.INFRA_DEFINITIONS, serviceIds);
+      listData.put(EventProcessor.INFRA_DEFINITIONS, infraDefinitionIds);
     }
     List<String> infraMappingIds = workflowExecution.getInfraMappingIds();
     if (!Lists.isNullOrEmpty(infraMappingIds)) {
-      listData.put(EventProcessor.INFRA_MAPPINGS, serviceIds);
+      listData.put(EventProcessor.INFRA_MAPPINGS, infraMappingIds);
     }
 
     TimeSeriesEventInfo eventInfo = TimeSeriesEventInfo.builder()

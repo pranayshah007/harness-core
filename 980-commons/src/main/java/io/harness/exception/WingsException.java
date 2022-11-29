@@ -19,7 +19,7 @@ import static io.harness.exception.WingsException.ReportTarget.REST_API;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 
 import java.util.Collections;
 import java.util.EnumSet;

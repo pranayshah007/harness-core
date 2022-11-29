@@ -46,11 +46,11 @@ public class GitOpsTaskHelper {
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
 
-  public FetchFilesResult getFetchFilesResult(
-      GitFetchFilesConfig gitFetchFilesConfig, String accountId, LogCallback logCallback) throws IOException {
+  public FetchFilesResult getFetchFilesResult(GitFetchFilesConfig gitFetchFilesConfig, String accountId,
+      LogCallback logCallback, boolean closeLogStream) throws IOException {
     logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
 
-    FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
+    FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId, closeLogStream);
 
     if (fetchFilesResult.getFiles().isEmpty()) {
       return fetchFilesResult;
@@ -61,8 +61,8 @@ public class GitOpsTaskHelper {
     return fetchFilesResult;
   }
 
-  private FetchFilesResult fetchFilesFromRepo(
-      GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback, String accountId) throws IOException {
+  private FetchFilesResult fetchFilesFromRepo(GitFetchFilesConfig gitFetchFilesConfig, LogCallback executionLogCallback,
+      String accountId, boolean closeLogStream) throws IOException {
     GitStoreDelegateConfig gitStoreDelegateConfig = gitFetchFilesConfig.getGitStoreDelegateConfig();
     executionLogCallback.saveExecutionLog("Git connector Url: " + gitStoreDelegateConfig.getGitConfigDTO().getUrl());
     String fetchTypeInfo = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH
@@ -75,7 +75,7 @@ public class GitOpsTaskHelper {
     if (EmptyPredicate.isNotEmpty(gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths())) {
       filePathsToFetch = gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths();
       executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, closeLogStream);
     }
 
     FetchFilesResult gitFetchFilesResult;
@@ -97,7 +97,8 @@ public class GitOpsTaskHelper {
           ngGitService.fetchFilesByPath(gitStoreDelegateConfig, accountId, sshSessionConfig, gitConfigDTO);
     }
 
-    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, gitFetchFilesResult.getFiles());
+    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(
+        executionLogCallback, gitFetchFilesResult.getFiles(), closeLogStream);
 
     return gitFetchFilesResult;
   }

@@ -1076,6 +1076,7 @@
 7346:software.wings.api.HelmDeployContextElement
 7347:software.wings.service.impl.newrelic.NewRelicMetricDataRecord
 7348:software.wings.service.intfc.analysis.ClusterLevel
+7349:software.wings.helpers.ext.vault.VaultTokenLookupResult
 7360:software.wings.service.impl.stackdriver.StackdriverLogGcpConfigTaskParams
 7361:software.wings.service.impl.stackdriver.StackdriverGcpConfigTaskParams
 7373:software.wings.beans.template.dto.HarnessImportedTemplateDetails
@@ -2311,6 +2312,7 @@
 150025:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters
 150026:io.harness.delegatetasks.FetchCustomSecretTaskResponse
 150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
+150028:io.harness.delegatetasks.NGVaultTokenLookupTaskResponse
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig

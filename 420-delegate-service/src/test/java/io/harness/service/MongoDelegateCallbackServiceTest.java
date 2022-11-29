@@ -7,7 +7,6 @@
 
 package io.harness.service;
 
-import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.MARKO;
 
 import static com.mongodb.DBCollection.ID_FIELD_NAME;
@@ -27,7 +26,6 @@ import io.harness.service.intfc.DelegateCallbackService;
 import io.harness.waiter.StringNotifyResponseData;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ServerAddress;
@@ -44,7 +42,6 @@ import org.junit.experimental.categories.Category;
 public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
   @Inject DelegateCallbackRegistryImpl delegateCallbackRegistry;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   public static MongoServer MONGO_SERVER;
 
@@ -90,37 +87,7 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
 
     try {
       delegateCallbackService.publishSyncTaskResponse(
-          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()), false);
-    } catch (Exception e) {
-      fail(e.getMessage());
-    }
-
-    MongoClient mongoClient = new MongoClient(new MongoClientURI(getMongoUri()));
-    MongoCollection<Document> mongoCollection =
-        mongoClient.getDatabase("harness").getCollection("cx_delegateSyncTaskResponses");
-
-    assertThat(mongoCollection.countDocuments()).isEqualTo(1);
-    assertThat(mongoCollection.find().first().keySet())
-        .containsExactlyInAnyOrder(ID_FIELD_NAME, DelegateSyncTaskResponseKeys.responseData,
-            DelegateAsyncTaskResponseKeys.usingKryoWithoutReference);
-    mongoCollection.drop();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testPublishSyncTaskResponseUsingKryoWithoutReference() {
-    DelegateCallback delegateCallback =
-        DelegateCallback.newBuilder()
-            .setMongoDatabase(
-                MongoDatabase.newBuilder().setConnection(getMongoUri()).setCollectionNamePrefix("cx").build())
-            .build();
-    String driverId = delegateCallbackRegistry.ensureCallback(delegateCallback);
-    DelegateCallbackService delegateCallbackService = delegateCallbackRegistry.obtainDelegateCallbackService(driverId);
-
-    try {
-      delegateCallbackService.publishSyncTaskResponse("taskId1",
-          referenceFalseKryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()), true);
+          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
     } catch (Exception e) {
       fail(e.getMessage());
     }
@@ -150,37 +117,7 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
 
     try {
       delegateCallbackService.publishAsyncTaskResponse(
-          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()), false);
-    } catch (Exception e) {
-      fail(e.getMessage());
-    }
-
-    MongoClient mongoClient = new MongoClient(new MongoClientURI(getMongoUri()));
-    MongoCollection<Document> mongoCollection =
-        mongoClient.getDatabase("harness").getCollection("cx_delegateAsyncTaskResponses");
-
-    assertThat(mongoCollection.countDocuments()).isEqualTo(1);
-    assertThat(mongoCollection.find().first().keySet())
-        .containsExactlyInAnyOrder(ID_FIELD_NAME, DelegateAsyncTaskResponseKeys.responseData,
-            DelegateAsyncTaskResponseKeys.processAfter, DelegateAsyncTaskResponseKeys.usingKryoWithoutReference);
-    mongoCollection.drop();
-  }
-
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void testPublishAsyncTaskResponseUsingKryoWithoutReference() {
-    DelegateCallback delegateCallback =
-        DelegateCallback.newBuilder()
-            .setMongoDatabase(
-                MongoDatabase.newBuilder().setConnection(getMongoUri()).setCollectionNamePrefix("cx").build())
-            .build();
-    String driverId = delegateCallbackRegistry.ensureCallback(delegateCallback);
-    DelegateCallbackService delegateCallbackService = delegateCallbackRegistry.obtainDelegateCallbackService(driverId);
-
-    try {
-      delegateCallbackService.publishAsyncTaskResponse("taskId",
-          referenceFalseKryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()), true);
+          "taskId", kryoSerializer.asDeflatedBytes(StringNotifyResponseData.builder().data("OK").build()));
     } catch (Exception e) {
       fail(e.getMessage());
     }

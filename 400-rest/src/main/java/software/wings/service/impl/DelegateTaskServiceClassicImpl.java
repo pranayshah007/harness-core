@@ -1518,7 +1518,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return;
     }
     delegateCallbackService.publishTaskProgressResponse(
-        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData), false);
+        delegateTaskId, generateUuid(), kryoSerializer.asDeflatedBytes(responseData));
   }
 
   @VisibleForTesting
@@ -1782,22 +1782,12 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
          TaskLogContext taskLogContext = new TaskLogContext(delegateTask.getUuid(), OVERRIDE_ERROR)) {
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
-        if (response.isUsingKryoWithoutReference()) {
-          delegateCallbackService.publishAsyncTaskResponse(
-              delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
-        } else {
-          delegateCallbackService.publishAsyncTaskResponse(
-              delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
-        }
+        delegateCallbackService.publishAsyncTaskResponse(
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
         log.debug("Publishing sync task response...");
-        if (response.isUsingKryoWithoutReference()) {
-          delegateCallbackService.publishSyncTaskResponse(
-              delegateTask.getUuid(), referenceFalseKryoSerializer.asDeflatedBytes(response.getResponse()), true);
-        } else {
-          delegateCallbackService.publishSyncTaskResponse(
-              delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()), false);
-        }
+        delegateCallbackService.publishSyncTaskResponse(
+            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response for task", ex);

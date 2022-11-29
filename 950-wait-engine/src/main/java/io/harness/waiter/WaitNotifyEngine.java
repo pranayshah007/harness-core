@@ -116,6 +116,10 @@ public class WaitNotifyEngine {
     return waitInstanceId;
   }
 
+  public void progressOn(String correlationId, ProgressData progressData) {
+    progressOn(correlationId, progressData, false);
+  }
+
   public void progressOn(String correlationId, ProgressData progressData, boolean usingKryoWithoutReference) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
@@ -139,15 +143,10 @@ public class WaitNotifyEngine {
   }
 
   public String doneWith(String correlationId, ResponseData response) {
-    return doneWith(correlationId, response, response instanceof ErrorResponseData, kryoSerializer, false);
+    return doneWith(correlationId, response, response instanceof ErrorResponseData);
   }
 
-  public String doneWithV2(String correlationId, ResponseData response) {
-    return doneWith(correlationId, response, response instanceof ErrorResponseData, referenceFalseKryoSerializer, true);
-  }
-
-  private String doneWith(String correlationId, ResponseData response, boolean error, KryoSerializer serializer,
-      boolean usingKryoWithoutReference) {
+  private String doneWith(String correlationId, ResponseData response, boolean error) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
     if (log.isDebugEnabled()) {
@@ -160,8 +159,8 @@ public class WaitNotifyEngine {
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .usingKryoWithoutReference(usingKryoWithoutReference)
-                                  .responseData(serializer.asDeflatedBytes(response))
+                                  .usingKryoWithoutReference(false)
+                                  .responseData(kryoSerializer.asDeflatedBytes(response))
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());
       long queryEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);

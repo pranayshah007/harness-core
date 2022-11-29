@@ -55,7 +55,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     // Setting hold until to current time + 2hr
     long holdUntil = currentTimeStamp + Duration.ofMinutes(120).toMillis();
 
-    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil, false);
+    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil);
     DelegateAsyncTaskResponse insertedTaskResponse = hPersistence.get(DelegateAsyncTaskResponse.class, taskId);
 
     assertThat(insertedTaskResponse).isNotNull();
@@ -67,44 +67,6 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     assertThat(insertedTaskResponse.getValidUntil()).isAfterOrEqualTo(minValidUntil);
 
     ResponseData responseData = (ResponseData) kryoSerializer.asInflatedObject(insertedTaskResponse.getResponseData());
-    assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
-
-    ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
-    assertThat(errorNotifyResponseData.getErrorMessage())
-        .isEqualTo("Delegate service did not provide response and the task time-outed");
-  }
-
-  /**
-   * This test is for when the record is inserted from the timeout method and when the task completes it will override
-   * the details
-   */
-  @Test
-  @Owner(developers = ASHISHSANODIA)
-  @Category(UnitTests.class)
-  public void shouldInsertTaskResponseUsingKryoWithoutReference() {
-    String taskId = generateUuid();
-    long currentTimeStamp = System.currentTimeMillis();
-
-    // Setting expiry to current time + 1hr
-    long expiryEpoch = currentTimeStamp + Duration.ofMinutes(60).toMillis();
-
-    // Setting hold until to current time + 2hr
-    long holdUntil = currentTimeStamp + Duration.ofMinutes(120).toMillis();
-
-    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil, true);
-    DelegateAsyncTaskResponse insertedTaskResponse = hPersistence.get(DelegateAsyncTaskResponse.class, taskId);
-
-    assertThat(insertedTaskResponse).isNotNull();
-
-    Date minValidUntil = Date.from(Instant.ofEpochMilli(expiryEpoch).plusSeconds(Duration.ofHours(1).getSeconds()));
-
-    assertThat(insertedTaskResponse).isNotNull();
-    assertThat(insertedTaskResponse.getProcessAfter()).isEqualTo(expiryEpoch);
-    assertThat(insertedTaskResponse.getValidUntil()).isAfterOrEqualTo(minValidUntil);
-    assertThat(insertedTaskResponse.isUsingKryoWithoutReference()).isTrue();
-
-    ResponseData responseData =
-        (ResponseData) referenceFalseKryoSerializer.asInflatedObject(insertedTaskResponse.getResponseData());
     assertThat(responseData).isInstanceOf(ErrorNotifyResponseData.class);
 
     ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
@@ -140,7 +102,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     // Setting hold until to current time + 2hr
     long holdUntil = currentTimeStamp + Duration.ofMinutes(120).toMillis();
 
-    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil, false);
+    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil);
 
     // Fetch the record from the database and assert
     DelegateAsyncTaskResponse upsertedTaskResponse = hPersistence.get(DelegateAsyncTaskResponse.class, taskId);
@@ -188,7 +150,7 @@ public class DelegateAsyncServiceImplTest extends DelegateServiceDriverTestBase 
     // Setting hold until to current time + 2hr
     long holdUntil = currentTimeStamp + Duration.ofMinutes(120).toMillis();
 
-    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil, true);
+    delegateAsyncService.setupTimeoutForTask(taskId, expiryEpoch, holdUntil);
 
     // Fetch the record from the database and assert
     DelegateAsyncTaskResponse upsertedTaskResponse = hPersistence.get(DelegateAsyncTaskResponse.class, taskId);

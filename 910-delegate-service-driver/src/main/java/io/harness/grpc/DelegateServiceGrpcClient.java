@@ -232,7 +232,7 @@ public class DelegateServiceGrpcClient {
 
       if (taskDetails.getMode() == TaskMode.ASYNC) {
         delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
-            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis(), false);
+            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
       }
 
       return response;
@@ -307,7 +307,7 @@ public class DelegateServiceGrpcClient {
 
       if (taskDetails.getMode() == TaskMode.ASYNC) {
         delegateAsyncService.setupTimeoutForTask(response.getTaskId().getId(),
-            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis(), true);
+            Timestamps.toMillis(response.getTotalExpiry()), currentTimeMillis() + holdFor.toMillis());
       }
 
       return response;

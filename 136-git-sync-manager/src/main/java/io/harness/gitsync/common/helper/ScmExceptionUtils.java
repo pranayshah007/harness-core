@@ -18,7 +18,7 @@ import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
-import io.harness.exception.ngexception.ErrorMetadataDTO;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 import io.harness.gitsync.common.dtos.GitErrorMetadata;
 
 import java.util.List;
