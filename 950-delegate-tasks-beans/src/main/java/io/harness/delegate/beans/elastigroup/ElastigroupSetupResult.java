@@ -10,6 +10,7 @@ package io.harness.delegate.beans.elastigroup;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.spotinst.model.ElastiGroup;
 
 import java.util.List;
@@ -27,4 +28,8 @@ public class ElastigroupSetupResult {
   private ResizeStrategy resizeStrategy;
   private boolean isBlueGreen;
   private String elastiGroupNamePrefix;
+  private boolean useCurrentRunningInstanceCount;
+  private Integer currentRunningInstanceCount;
+  private ElastiGroup elastigroupOriginalConfig;
+  private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
 }

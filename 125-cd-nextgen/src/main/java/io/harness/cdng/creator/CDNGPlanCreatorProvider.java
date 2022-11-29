@@ -126,7 +126,9 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsCanaryDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupBGStageSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
@@ -143,9 +145,11 @@ import io.harness.cdng.creator.variables.EcsCanaryDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRollingRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.EcsRunTaskStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupBGStageSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.ElastigroupSwapRouteStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
@@ -358,6 +362,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ElastigroupDeployStepPlanCreator());
     planCreators.add(new ElastigroupRollbackStepPlanCreator());
     planCreators.add(new ElastigroupSetupStepPlanCreator());
+    planCreators.add(new ElastigroupBGStageSetupStepPlanCreator());
+    planCreators.add(new ElastigroupSwapRouteStepPlanCreator());
 
     // Terragrunt
     planCreators.add(new TerragruntPlanStepPlanCreator());
@@ -459,6 +465,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new ElastigroupDeployStepVariableCreator());
     variableCreators.add(new ElastigroupRollbackStepVariableCreator());
     variableCreators.add(new ElastigroupSetupStepVariableCreator());
+    variableCreators.add(new ElastigroupBGStageSetupStepVariableCreator());
+    variableCreators.add(new ElastigroupSwapRouteStepVariableCreator());
 
     // Terragrunt
     variableCreators.add(new TerragruntPlanStepVariableCreator());
@@ -926,6 +934,21 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                            .build())
                                       .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
+    StepInfo elastigroupBGStageSetup =
+            StepInfo.newBuilder()
+                    .setName("Elastigroup BG Stage Setup")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+                    .build();
+
+    StepInfo elastigroupSwapRoute =
+            StepInfo.newBuilder()
+                    .setName("Elastigroup Swap Route")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+                    .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
@@ -980,7 +1003,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terragruntApply);
     stepInfos.add(terragruntDestroy);
     stepInfos.add(terragruntRollback);
-
+    stepInfos.add(elastigroupBGStageSetup);
+    stepInfos.add(elastigroupSwapRoute);
     return stepInfos;
   }
 }

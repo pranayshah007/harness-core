@@ -185,4 +185,6 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
+  public static final String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
 }

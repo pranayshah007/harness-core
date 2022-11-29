@@ -167,4 +167,6 @@ public interface YamlTypes {
   String PARALLEL_STAGE = "parallel";
   String STAGES = "stages";
   String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
+  String ELASTIGROUP_BG_STAGE_SETUP = StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP;
+  String ELASTIGROUP_SWAP_ROUTE = StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE;
 }

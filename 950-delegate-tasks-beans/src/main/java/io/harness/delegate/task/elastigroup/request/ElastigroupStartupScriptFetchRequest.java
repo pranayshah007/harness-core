@@ -11,10 +11,15 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
+import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.ActivityAccess;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.ecs.EcsGitFetchFileConfig;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.reflection.ExpressionReflectionUtils;
@@ -24,6 +29,7 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
+import org.apache.commons.collections.CollectionUtils;
 
 @Value
 @Builder

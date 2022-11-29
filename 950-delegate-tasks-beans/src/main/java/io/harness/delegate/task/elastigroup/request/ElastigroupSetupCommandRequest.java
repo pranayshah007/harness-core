@@ -11,11 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.ResizeStrategy;
+import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.spotinst.model.ElastiGroup;
 
 import java.util.List;
 import lombok.Builder;
@@ -32,9 +36,18 @@ public class ElastigroupSetupCommandRequest
   CommandUnitsProgress commandUnitsProgress;
   String elastigroupJson;
   String elastigroupNamePrefix;
+  ElastiGroup elastigroupOriginalConfig;
+  private Integer maxInstanceCount;
+  private boolean useCurrentRunningInstanceCount;
+  private Integer currentRunningInstanceCount;
   String startupScript;
+  String image;
   boolean blueGreen;
+  ResizeStrategy resizeStrategy;
+  List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs;
+  String awsRegion;
+  ConnectorInfoDTO connectorInfoDTO;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
-  @NonFinal @Expression(ALLOW_SECRETS) List<EncryptedDataDetail> spotinstEncryptionDetails;
+  List<EncryptedDataDetail> awsEncryptedDetails;
 }

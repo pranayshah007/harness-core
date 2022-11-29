@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.config.StartupScriptOutcome;
+import io.harness.cdng.elastigroup.output.ElastigroupConfigurationOutput;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
@@ -24,7 +25,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -60,11 +63,34 @@ public class ElastigroupStepUtils extends CDStepHelper {
     return localStoreFileMapContents.get("startupScript").getLocalStoreFileContents();
   }
 
+  public List<String> fetchElastigroupJsonFilesContentFromLocalStore(
+      Ambiance ambiance, ElastigroupConfigurationOutput elastigroupConfigurationOutput, LogCallback logCallback) {
+    Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
+    LocalStoreFetchFilesResult localStoreFetchFilesResult = null;
+
+    logCallback.saveExecutionLog(
+        color(format("%nFetching %s from Harness File Store", "elastigroupJson"), LogColor.White, LogWeight.Bold));
+    if (elastigroupConfigurationOutput.getStoreConfig() instanceof HarnessStore) {
+      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+      localStoreFetchFilesResult =
+          getFileContentsForElastigroupJson(elastigroupConfigurationOutput, ngAccess, logCallback);
+      localStoreFileMapContents.put("elastigroupJson", localStoreFetchFilesResult);
+    }
+    return localStoreFileMapContents.get("elastigroupJson").getLocalStoreFileContents();
+  }
+
   private LocalStoreFetchFilesResult getFileContentsFromStartupScriptOutcome(
       StartupScriptOutcome startupScriptOutcome, NGAccess ngAccess, LogCallback logCallback) {
     HarnessStore localStoreConfig = (HarnessStore) startupScriptOutcome.getStore();
     List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
     return getFileContents(ngAccess, scopedFilePathList, "startupScript", logCallback);
+  }
+
+  private LocalStoreFetchFilesResult getFileContentsForElastigroupJson(
+      ElastigroupConfigurationOutput elastigroupConfigurationOutput, NGAccess ngAccess, LogCallback logCallback) {
+    HarnessStore localStoreConfig = (HarnessStore) elastigroupConfigurationOutput.getStoreConfig();
+    List<String> scopedFilePathList = localStoreConfig.getFiles().getValue();
+    return getFileContents(ngAccess, scopedFilePathList, "elastigroupJson", logCallback);
   }
 
   private LocalStoreFetchFilesResult getFileContents(
@@ -88,6 +114,9 @@ public class ElastigroupStepUtils extends CDStepHelper {
                 format("The following file %s in Harness File Store has empty content", scopedFilePath));
           }
           logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
+          logCallback.saveExecutionLog(
+              color(format("Successfully completed fetching all files"), LogColor.White, LogWeight.Bold), LogLevel.INFO,
+              CommandExecutionStatus.SUCCESS);
         } else {
           throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
         }
