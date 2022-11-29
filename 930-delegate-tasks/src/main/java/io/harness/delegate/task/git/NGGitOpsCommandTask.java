@@ -82,6 +82,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -217,7 +218,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       throws IOException, ParseException {
     try {
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback);
+          gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId(), logCallback, true);
       this.logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
       return fetchFilesResult;
@@ -300,7 +301,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
-      logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
+      log.error("Failed to execute NGGitOpsCommandTask", e);
+      logCallback.saveExecutionLog(Objects.toString(e.getMessage(), ""), ERROR, CommandExecutionStatus.FAILURE);
       return NGGitOpsResponse.builder()
           .taskStatus(TaskStatus.FAILURE)
           .errorMessage(e.getMessage())

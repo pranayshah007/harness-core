@@ -330,11 +330,12 @@ func MapXMessageToResponse(queueKey string, msgs []redis.XMessage) []*store.Dequ
 
 	messages := make([]*store.DequeueResponse, 0)
 	for _, m := range msgs {
+
 		cm := store.DequeueResponse{
 			ItemID:    m.ID,
 			Timestamp: time.Now().Unix(),
 			QueueKey:  queueKey,
-			Payload:   []byte(m.Values["payload"].(string)),
+			Payload:   m.Values["payload"].(string),
 			ItemMetadata: store.DequeueItemMetadata{
 				CurrentRetryCount: 0,
 				MaxProcessingTime: 0,
@@ -465,8 +466,8 @@ func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
 		return fmt.Errorf("EnqueueRequest ProducerName cannot be empty")
 	}
 
-	if request.Payload == nil {
-		return fmt.Errorf("DequeueRequest BatchSize should be greater than 0")
+	if len(request.Payload) == 0 {
+		return fmt.Errorf("EnqueueRequest Payload cannot be empty")
 	}
 	return nil
 

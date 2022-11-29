@@ -38,6 +38,7 @@ import org.yaml.snakeyaml.Yaml;
 @OwnedBy(GITOPS)
 public class GitOpsFetchAppTask extends AbstractDelegateRunnableTask {
   @Inject public GitOpsTaskHelper gitOpsTaskHelper;
+  public static final String LOG_KEY_SUFFIX = "EXECUTE";
 
   public GitOpsFetchAppTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -54,9 +55,9 @@ public class GitOpsFetchAppTask extends AbstractDelegateRunnableTask {
     try {
       FetchAppTaskParams taskParams = (FetchAppTaskParams) parameters;
       NGDelegateLogCallback ngDelegateLogCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), "", false, null);
+          new NGDelegateLogCallback(getLogStreamingTaskClient(), LOG_KEY_SUFFIX, false, null);
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
-          taskParams.getGitFetchFilesConfig(), taskParams.getAccountId(), ngDelegateLogCallback);
+          taskParams.getGitFetchFilesConfig(), taskParams.getAccountId(), ngDelegateLogCallback, false);
       if (fetchFilesResult == null || CollectionUtils.isEmpty(fetchFilesResult.getFiles())) {
         log.error("No files found");
         return FetchAppTaskResponse.builder().taskStatus(TaskStatus.FAILURE).errorMessage("No files found").build();
@@ -69,6 +70,7 @@ public class GitOpsFetchAppTask extends AbstractDelegateRunnableTask {
             .errorMessage("Found empty app name")
             .build();
       }
+      ngDelegateLogCallback.saveExecutionLog(String.format("App set Name: %s", appName));
       return FetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).appName(appName).build();
     } catch (WingsException ex) {
       log.error("Failed to Fetch App Task", ex);

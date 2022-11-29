@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.steps;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,18 +23,22 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.gitops.FetchAppTaskParams;
 import io.harness.delegate.task.gitops.FetchAppTaskResponse;
+import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogLine;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -43,6 +48,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -54,6 +60,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -61,6 +68,7 @@ import software.wings.beans.TaskType;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,6 +86,7 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
+  public static final String LOG_KEY_SUFFIX = "EXECUTE";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
@@ -100,18 +109,20 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<FetchAppTaskResponse> responseDataSupplier) throws Exception {
     try {
-      ILogStreamingStepClient logStreamingStepClient =
-          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.openStream("");
       FetchAppTaskResponse fetchAppTaskResponse = responseDataSupplier.get();
 
       if (fetchAppTaskResponse.getTaskStatus() == TaskStatus.FAILURE) {
         return StepResponse.builder()
             .status(Status.FAILED)
-            .failureInfo(
-                FailureInfo.newBuilder()
-                    .addFailureData(FailureData.newBuilder().setMessage(fetchAppTaskResponse.getErrorMessage()).build())
-                    .build())
+            .failureInfo(FailureInfo.newBuilder()
+                             .addFailureData(
+                                 FailureData.newBuilder()
+                                     .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                     .setLevel(Level.ERROR.name())
+                                     .setCode(GENERAL_ERROR.name())
+                                     .setMessage(HarnessStringUtils.emptyIfNull(fetchAppTaskResponse.getErrorMessage()))
+                                     .build())
+                             .build())
             .build();
       }
 
@@ -136,6 +147,16 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
 
       List<Application> applications = fetchLinkedApps(fetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
 
+      for (Application application : applications) {
+        logStreamingStepClientFactory.getLogStreamingStepClient(ambiance).writeLogLine(
+            LogLine.builder()
+                .message(String.format("Found linked app: %s", application.getName()))
+                .level(LogLevel.INFO)
+                .timestamp(Instant.now())
+                .build(),
+            LOG_KEY_SUFFIX);
+      }
+
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(StepResponse.StepOutcome.builder()
@@ -148,7 +169,7 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
     } finally {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeStream("");
+      logStreamingStepClient.closeStream(LOG_KEY_SUFFIX);
     }
   }
 
@@ -158,7 +179,7 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
     try {
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.openStream("");
+      logStreamingStepClient.openStream(LOG_KEY_SUFFIX);
 
       FetchLinkedAppsStepParams gitOpsSpecParams = (FetchLinkedAppsStepParams) stepParameters.getSpec();
       DeploymentRepoManifestOutcome deploymentRepo =
@@ -179,7 +200,8 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
                                     .parameters(new Object[] {fetchAppTaskParams})
                                     .build();
 
-      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.emptyList(),
+      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+          StepUtils.generateLogKeys(ambiance, Collections.singletonList(LOG_KEY_SUFFIX)), Collections.emptyList(),
           TaskType.GITOPS_FETCH_APP_TASK.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));

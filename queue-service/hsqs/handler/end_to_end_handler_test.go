@@ -8,16 +8,17 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/golang-jwt/jwt"
-	jwt4 "github.com/golang-jwt/jwt/v4"
-	"github.com/harness/harness-core/queue-service/hsqs/config"
-	"github.com/harness/harness-core/queue-service/hsqs/store"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	jwt4 "github.com/golang-jwt/jwt/v4"
+	"github.com/harness/harness-core/queue-service/hsqs/config"
+	"github.com/harness/harness-core/queue-service/hsqs/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type harnessClaims struct {
@@ -358,7 +359,6 @@ func GenerateJWTToken(jwtSecret string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return signedJwt, nil
 }
 

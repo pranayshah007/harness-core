@@ -48,6 +48,7 @@ import software.wings.beans.BaseVaultConfig.BaseVaultConfigKeys;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.AlertType;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.service.intfc.security.VaultService;
@@ -386,6 +387,30 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     }
   }
 
+  private void validateRenewalIntervalBasedOnTokenLookup(VaultConfig vaultConfig) {
+    if (!isTaskSupportedByDelegate(vaultConfig.getAccountId(), "VAULT_TOKEN_LOOKUP")) {
+      log.info("Delegates do not support VAULT_TOKEN_LOOKUP task for this account {}", vaultConfig.getAccountId());
+      return;
+    }
+    // we have to call the token self-lookup api and then figure out this is renewable or not
+    VaultTokenLookupResult tokenLookupResult = tokenLookup(vaultConfig);
+    if (tokenLookupResult.getExpiryTime() == null) {
+      // this means this is root token
+      throw new SecretManagementException(
+          "The token used is a root token. Please set renewal interval as zero if you are using root token.");
+    }
+    if (!tokenLookupResult.isRenewable()) {
+      // this means the token is not renewable
+      throw new SecretManagementException(
+          "The token used is a non-renewable token. Please set renewal interval as zero or use a renewable token.");
+    }
+  }
+
+  private boolean isTokenBased(VaultConfig vaultConfig) {
+    return !vaultConfig.isUseK8sAuth() && !vaultConfig.isUseVaultAgent() && !vaultConfig.isUseAwsIam()
+        && vaultConfig.getAccessType() != APP_ROLE;
+  }
+
   public void validateVaultConfig(String accountId, VaultConfig vaultConfig) {
     validateVaultConfig(accountId, vaultConfig, true);
   }
@@ -396,6 +421,11 @@ public class VaultServiceImpl extends BaseVaultServiceImpl implements VaultServi
     if (!vaultConfig.isReadOnly() && validateBySavingDummySecret) {
       vaultEncryptorsRegistry.getVaultEncryptor(EncryptionType.VAULT)
           .createSecret(accountId, VaultConfig.VAULT_VAILDATION_URL, Boolean.TRUE.toString(), vaultConfig);
+    }
+    // if config is token based and the renewalInterval is not set to zero, lets check if that is root token and modify
+    // the interval based on that
+    if (isTokenBased(vaultConfig) && (vaultConfig.getRenewalInterval() != 0)) {
+      validateRenewalIntervalBasedOnTokenLookup(vaultConfig);
     }
   }
 

@@ -50,7 +50,7 @@ public class GitFetchTaskHelper {
 
   public void printFileNames(LogCallback executionLogCallback, List<String> filePaths) {
     executionLogCallback.saveExecutionLog("\nFetching following Files :");
-    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePaths, executionLogCallback);
+    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePaths, executionLogCallback, true);
   }
 
   public FetchFilesResult fetchFileFromRepo(GitStoreDelegateConfig gitStoreDelegateConfig, List<String> filePaths,

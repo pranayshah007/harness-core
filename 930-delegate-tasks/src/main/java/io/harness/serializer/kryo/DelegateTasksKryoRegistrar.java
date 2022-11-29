@@ -284,6 +284,7 @@ import software.wings.helpers.ext.trigger.request.TriggerDeploymentNeededRequest
 import software.wings.helpers.ext.trigger.request.TriggerRequest;
 import software.wings.helpers.ext.trigger.response.TriggerDeploymentNeededResponse;
 import software.wings.helpers.ext.trigger.response.TriggerResponse;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript.ScriptType;
@@ -920,6 +921,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(WinRmCommandParameter.class, 5256);
     kryo.register(SecretEngineSummary.class, 7239);
     kryo.register(VaultAppRoleLoginResult.class, 7240);
+    kryo.register(VaultTokenLookupResult.class, 7349);
     kryo.register(SSHVaultAuthResult.class, 15013);
     kryo.register(DeploymentType.class, 5096);
     kryo.register(HostReachabilityResponse.class, 5187);

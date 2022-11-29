@@ -185,13 +185,6 @@ public class DelegateVersionServiceTest {
 
   @Test
   @Category(UnitTests.class)
-  public void whenUpgraderImageTagConfigOverrideThenUseIt() {
-    mockUpgraderOverrides(null, false, true, false);
-    assertOverrides(DEFAULT_DELEGATE_IMAGE, HARNESS_UPGRADER_PORTAL_IMAGE, emptyList(), null, false);
-  }
-
-  @Test
-  @Category(UnitTests.class)
   public void whenNoUpgraderOverrideUseDefault() {
     mockUpgraderOverrides(null, false, false, false);
     assertOverrides(DEFAULT_DELEGATE_IMAGE, DEFAULT_UPGRADER_IMAGE, emptyList(), null, false);
@@ -278,7 +271,6 @@ public class DelegateVersionServiceTest {
 
     when(managerConfig.getPortal().getDelegateDockerImage())
         .thenReturn(isPortalDelegateOverride ? HARNESS_DELEGATE_PORTAL_IMAGE : null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
@@ -291,8 +283,6 @@ public class DelegateVersionServiceTest {
     }
 
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage())
-        .thenReturn(isPortalUpgraderOverride ? HARNESS_UPGRADER_PORTAL_IMAGE : null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
@@ -303,7 +293,6 @@ public class DelegateVersionServiceTest {
       when(delegateRingService.getDelegateVersions(ACCOUNT_ID)).thenReturn(DELEGATE_JAR_RING);
     }
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
     doReturn(null).when(underTest).getWatcherJarVersions(ACCOUNT_ID);
   }
 
@@ -314,7 +303,6 @@ public class DelegateVersionServiceTest {
       when(delegateRingService.getWatcherVersions(ACCOUNT_ID)).thenReturn(WATCHER_JAR_RING);
     }
     when(managerConfig.getPortal().getDelegateDockerImage()).thenReturn(null);
-    when(managerConfig.getPortal().getUpgraderDockerImage()).thenReturn(null);
   }
 
   private void mockVersionOverride(final VersionOverride delegateImageOverride, final VersionOverride upgraderOverride,

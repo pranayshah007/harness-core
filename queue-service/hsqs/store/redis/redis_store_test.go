@@ -9,15 +9,16 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
+	"reflect"
+	"testing"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/go-redis/redismock/v8"
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/harness/harness-core/queue-service/hsqs/utils"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"reflect"
-	"testing"
 )
 
 func TestNewRedisStore(t *testing.T) {
@@ -208,14 +209,14 @@ func TestEnqueue(t *testing.T) {
 			name: "Enqueue Task - No error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 		},
 		{
 			name: "Enqueue Task - SAdd error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 			mockErr:     errors.New("SAdd error"),
 			wantSAddErr: true,
@@ -224,7 +225,7 @@ func TestEnqueue(t *testing.T) {
 			name: "Enqueue Task - XAdd error",
 			args: args{
 				ctx: context.Background(),
-				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: []byte{0}},
+				req: store.EnqueueRequest{Topic: "t1", SubTopic: "s1", ProducerName: "test", Payload: "0"},
 			},
 			wantErr: true,
 			mockErr: errors.New("XAdd error"),

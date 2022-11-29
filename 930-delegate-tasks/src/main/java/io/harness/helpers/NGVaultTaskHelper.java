@@ -29,6 +29,8 @@ import software.wings.helpers.ext.vault.VaultK8sLoginResponse;
 import software.wings.helpers.ext.vault.VaultK8sLoginResult;
 import software.wings.helpers.ext.vault.VaultRestClientFactory;
 import software.wings.helpers.ext.vault.VaultSysAuthRestClient;
+import software.wings.helpers.ext.vault.VaultTokenLookupResponse;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import com.amazonaws.DefaultRequest;
 import com.amazonaws.auth.AWS4Signer;
@@ -87,6 +89,28 @@ public class NGVaultTaskHelper {
       return result;
     } catch (IOException e) {
       String message = "NG: Failed to perform AppRole based login for secret manager " + vaultConfig.getName() + " at "
+          + vaultConfig.getVaultUrl();
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    }
+  }
+
+  public static VaultTokenLookupResult getVaultTokenLookupResult(BaseVaultConfig vaultConfig) {
+    try {
+      VaultSysAuthRestClient restClient =
+          VaultRestClientFactory.getVaultRetrofit(vaultConfig.getVaultUrl(), vaultConfig.isCertValidationRequired())
+              .create(VaultSysAuthRestClient.class);
+
+      Response<VaultTokenLookupResponse> response =
+          restClient.tokenLookup(vaultConfig.getAuthToken(), vaultConfig.getNamespace()).execute();
+      VaultTokenLookupResult result = null;
+      if (response.isSuccessful()) {
+        result = response.body().getData();
+      } else {
+        logAndThrowVaultError(vaultConfig, response, "Token lookup");
+      }
+      return result;
+    } catch (IOException e) {
+      String message = "Failed to perform Token Lookup for secret manager " + vaultConfig.getName() + " at "
           + vaultConfig.getVaultUrl();
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
     }
