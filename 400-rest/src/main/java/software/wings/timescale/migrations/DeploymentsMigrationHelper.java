@@ -285,7 +285,8 @@ public class DeploymentsMigrationHelper {
     log.info(debugLine + MIGRATING_EXECUTIONS_LOG_LINE + accountId);
     final DBCollection collection = wingsPersistence.getCollection(DEFAULT_STORE, collectionName);
 
-    BasicDBObject objectsToBeUpdated = new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId);
+    BasicDBObject objectsToBeUpdated =
+        new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId).append("onDemandRollback", true);
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
                                    .append(WorkflowExecutionKeys.onDemandRollback, Boolean.TRUE)
                                    .append(WorkflowExecutionKeys.originalExecution, Boolean.TRUE)
@@ -368,8 +369,7 @@ public class DeploymentsMigrationHelper {
     log.info(debugLine + MIGRATING_EXECUTIONS_LOG_LINE + accountId);
     final DBCollection collection = wingsPersistence.getCollection(DEFAULT_STORE, collectionName);
 
-    BasicDBObject objectsToBeUpdated =
-        new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId).append("onDemandRollback", true);
+    BasicDBObject objectsToBeUpdated = new BasicDBObject(ACCOUNT_ID, accountId).append(APP_ID, appId);
     BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE)
                                    .append(WorkflowExecutionKeys.infraDefinitionIds, Boolean.TRUE)
                                    .append(WorkflowExecutionKeys.infraMappingIds, Boolean.TRUE);
@@ -420,8 +420,14 @@ public class DeploymentsMigrationHelper {
         String uuId = (String) executionRecord.get("_id");
         List<String> infraDefinitionIds = (List<String>) executionRecord.get(WorkflowExecutionKeys.infraDefinitionIds);
         List<String> infraMappingsIds = (List<String>) executionRecord.get(WorkflowExecutionKeys.infraMappingIds);
-        Array infraDefinitionArray = connection.createArrayOf("text", infraDefinitionIds.toArray());
-        Array infraMappingArray = connection.createArrayOf("text", infraMappingsIds.toArray());
+        Array infraDefinitionArray = null;
+        Array infraMappingArray = null;
+        if (infraDefinitionIds != null) {
+          infraDefinitionArray = connection.createArrayOf("text", infraDefinitionIds.toArray());
+        }
+        if (infraMappingsIds != null) {
+          infraMappingArray = connection.createArrayOf("text", infraMappingsIds.toArray());
+        }
         updateStatement.setArray(1, infraDefinitionArray);
         updateStatement.setArray(2, infraMappingArray);
         updateStatement.setString(3, uuId);
