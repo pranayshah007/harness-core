@@ -243,16 +243,12 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .build()));
 
     String infrastructureKind = infrastructureOutcome.getKind();
-    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-          ambiance, executionInfoKey, infrastructureKind);
-      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
-        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
-            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
-      }
-    }
+    ExecutionInfoKey executionInfoKey =
+        ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
     saveExecutionLog(
         logCallback, color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);

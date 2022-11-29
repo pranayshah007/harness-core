@@ -28,7 +28,7 @@ public class TemplateFacade {
   public String resolveYaml(ProjectParams projectParams, String yaml) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), null, null, null,
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), null, null, null, false,
             TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(false).build()));
     String resolvedYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     return getResolvedYamlWithInputTemplateMerged(resolvedYaml, yaml);

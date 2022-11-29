@@ -32,12 +32,14 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
+import io.harness.service.intfc.DelegateTaskService;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.VaultConfig;
 import software.wings.beans.alert.KmsSetupAlert;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.security.SecretManagementDelegateService;
 import software.wings.settings.SettingVariableTypes;
@@ -57,6 +59,7 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
 
   @Inject private AccountService accountService;
   @Inject private ManagerEncryptorHelper managerEncryptorHelper;
+  @Inject private DelegateTaskService delegateTaskService;
 
   protected boolean deleteVaultConfigInternal(String accountId, String vaultConfigId, long count) {
     if (count > 0) {
@@ -149,9 +152,41 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
     }
   }
 
+  public VaultTokenLookupResult tokenLookup(BaseVaultConfig baseVaultConfig) {
+    int failedAttempts = 0;
+    boolean isCertValidationRequired = accountService.isCertValidationRequired(baseVaultConfig.getAccountId());
+    baseVaultConfig.setCertValidationRequired(isCertValidationRequired);
+    while (true) {
+      try {
+        SyncTaskContext syncTaskContext =
+            SyncTaskContext.builder()
+                .accountId(baseVaultConfig.getAccountId())
+                .timeout(Duration.ofSeconds(5).toMillis())
+                .appId(baseVaultConfig.getAccountId())
+                .correlationId(baseVaultConfig.getUuid())
+                .orgIdentifier(baseVaultConfig.getOrgIdentifier())
+                .ngTask(isNgTask(baseVaultConfig.getOrgIdentifier(), baseVaultConfig.getProjectIdentifier()))
+                .projectIdentifier(baseVaultConfig.getProjectIdentifier())
+                .build();
+
+        return delegateProxyFactory.get(SecretManagementDelegateService.class, syncTaskContext)
+            .tokenLookup(baseVaultConfig);
+      } catch (WingsException e) {
+        failedAttempts++;
+        log.warn("Vault Token lookup failed for Vault server {}. trial num: {}", baseVaultConfig.getName(),
+            failedAttempts, e);
+        if (failedAttempts == NUM_OF_RETRIES) {
+          throw e;
+        }
+        sleep(ofMillis(1000));
+      }
+    }
+  }
+
   public void renewToken(BaseVaultConfig baseVaultConfig) {
     String accountId = baseVaultConfig.getAccountId();
     BaseVaultConfig decryptedVaultConfig = getBaseVaultConfig(accountId, baseVaultConfig.getUuid());
+
     SyncTaskContext syncTaskContext =
         SyncTaskContext.builder()
             .accountId(accountId)
@@ -375,5 +410,9 @@ public class BaseVaultServiceImpl extends AbstractSecretServiceImpl {
 
   protected boolean isNgTask(String orgIdentifier, String projectIdentifier) {
     return isNotBlank(orgIdentifier) || isNotBlank(projectIdentifier);
+  }
+
+  protected boolean isTaskSupportedByDelegate(String accountId, String taskType) {
+    return delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, taskType);
   }
 }

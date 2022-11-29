@@ -212,7 +212,7 @@ public class NGTemplateResourceTest extends CategoryTest {
         .when(templateService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
     ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, false);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
@@ -231,7 +231,7 @@ public class NGTemplateResourceTest extends CategoryTest {
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false);
     assertThatThrownBy(()
                            -> templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null))
+                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, false))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -386,8 +386,9 @@ public class NGTemplateResourceTest extends CategoryTest {
         .when(templateMergeService)
         .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false);
 
-    ResponseDTO<TemplateMergeResponseDTO> responseDTO = templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER,
-        PROJ_IDENTIFIER, null, TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build());
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), false);
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);
