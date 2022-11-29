@@ -8,6 +8,7 @@ import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageResponseDto;
 
 import com.google.inject.Inject;
@@ -45,14 +46,14 @@ public class ServiceEnvironmentV2MigrationResource {
   @POST
   @Path("/pipeline")
   @ApiOperation(value = "Create/Update Service, Infra v2 and pipeline")
-  public ResponseDTO<StageResponseDto> migratePipelineWithServiceInfraV2(
+  public ResponseDTO<ServiceEnvironmentResponseDto> migratePipelineWithServiceInfraV2(
           @NotNull @QueryParam("accountIdentifier") String accountId, @Valid ServiceEnvironmentRequestDto
           requestDto) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
             requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
 
-    String updatedStageYaml = serviceEnvironmentV2MigrationService.migratePipelineWithServiceEnvV2(requestDto, accountId);
-    return ResponseDTO.newResponse(StageResponseDto.builder().yaml(updatedStageYaml).build());
+    ServiceEnvironmentResponseDto response = serviceEnvironmentV2MigrationService.migratePipelineWithServiceEnvV2(requestDto, accountId);
+    return ResponseDTO.newResponse(response);
   }
 
 }
