@@ -10,6 +10,7 @@ package io.harness.yaml.utils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.serializer.AnnotationAwareJsonSubtypeResolver;
 import io.harness.serializer.JsonSubtypeResolver;
+import io.harness.serializer.jackson.PipelineJacksonModule;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -48,6 +49,7 @@ public class JsonPipelineUtils {
     mapper.registerModule(new GuavaModule());
     mapper.registerModule(new JavaTimeModule());
     mapper.registerModule(new NGHarnessJacksonModule());
+    mapper.registerModule(new PipelineJacksonModule());
   }
 
   /**

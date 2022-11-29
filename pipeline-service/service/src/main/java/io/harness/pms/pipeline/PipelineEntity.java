@@ -161,7 +161,12 @@ public class PipelineEntity
   @Wither @Version Long version;
 
   @Wither @Default Map<String, org.bson.Document> filters = new HashMap<>();
-  ExecutionSummaryInfo executionSummaryInfo;
+
+  /**
+   * @deprecated Use {@link RecentExecutionInfo} from {@link PipelineMetadataV2}
+   * lastExecutionTs move out from this dto to first class in pipelineEntity for sort filter
+   */
+  @Deprecated ExecutionSummaryInfo executionSummaryInfo;
   int runSequence;
 
   @Wither int stageCount;

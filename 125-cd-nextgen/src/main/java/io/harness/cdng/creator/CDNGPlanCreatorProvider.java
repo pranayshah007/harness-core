@@ -74,15 +74,12 @@ import io.harness.cdng.creator.plan.azure.webapps.ConnectionStringsPlanCreator;
 import io.harness.cdng.creator.plan.azure.webapps.StartupCommandPlanCreator;
 import io.harness.cdng.creator.plan.configfile.ConfigFilesPlanCreator;
 import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
-import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreator;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorV2;
 import io.harness.cdng.creator.plan.execution.CDExecutionPMSPlanCreator;
 import io.harness.cdng.creator.plan.manifest.IndividualManifestPlanCreator;
 import io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator;
 import io.harness.cdng.creator.plan.rollback.ExecutionStepsRollbackPMSPlanCreator;
 import io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
-import io.harness.cdng.creator.plan.service.ServicePlanCreatorV2;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.AzureARMRollbackResourceStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.AzureCreateARMResourceStepPlanCreator;
@@ -98,6 +95,7 @@ import io.harness.cdng.creator.plan.steps.ElastigroupDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ElastigroupRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.FetchInstanceScriptStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.GitOpsFetchLinkedAppsStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.GitOpsUpdateReleaseRepoStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
@@ -133,6 +131,10 @@ import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCr
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSwapRouteStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.CommandStepVariableCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.EcsBlueGreenCreateServiceStepVariableCreator;
@@ -149,6 +151,7 @@ import io.harness.cdng.creator.variables.ElastigroupRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.ElastigroupSwapRouteStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
+import io.harness.cdng.creator.variables.GitOpsFetchLinkedAppsStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsUpdateReleaseRepoStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
@@ -181,6 +184,10 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformApplyStepVar
 import io.harness.cdng.provision.terraform.variablecreator.TerraformDestroyStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformPlanStepVariableCreator;
 import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntApplyStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntDestroyStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntPlanStepVariableCreator;
+import io.harness.cdng.provision.terragrunt.variablecreator.TerragruntRollbackStepVariableCreator;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -221,6 +228,8 @@ import java.util.Set;
 @Singleton
 public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final String TERRAFORM_STEP_METADATA = "Terraform";
+  private static final String TERRAGRUNT_STEP_METADATA = "Terragrunt";
+
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
   private static final String AZURE = "Azure";
   private static final String HELM = "Helm";
@@ -235,6 +244,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CLOUDFORMATION_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, CLOUDFORMATION_STEP_METADATA, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final List<String> TERRAFORM_CATEGORY =
+      Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
+  private static final List<String> TERRAGRUNT_CATEGORY =
       Arrays.asList(KUBERNETES, PROVISIONER, HELM, ECS, COMMANDS, SERVERLESS_AWS_LAMBDA);
   private static final String BUILD_STEP = "Builds";
 
@@ -258,7 +269,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final Set<String> EMPTY_MANIFEST_TYPES = Sets.newHashSet(EcsTaskDefinition, ServerlessAwsLambda,
       EcsScalingPolicyDefinition, K8S_MANIFEST, ManifestType.VALUES, ManifestType.KustomizePatches,
       ManifestType.EcsScalableTargetDefinition, ManifestType.Kustomize, ManifestType.EcsServiceDefinition, CONFIG_FILES,
-      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.OpenshiftTemplate, ManifestType.OpenshiftParam);
+      ManifestType.HelmChart, ManifestType.ReleaseRepo, ManifestType.DeploymentRepo, ManifestType.OpenshiftTemplate,
+      ManifestType.OpenshiftParam);
   private static final Set<String> EMPTY_ENVIRONMENT_TYPES =
       Sets.newHashSet(YamlTypes.ENV_PRODUCTION, YamlTypes.ENV_PRE_PRODUCTION);
   private static final Set<String> EMPTY_PRIMARY_TYPES =
@@ -278,8 +290,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new GitOpsCreatePRStepPlanCreatorV2());
     planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new GitOpsUpdateReleaseRepoStepPlanCreator());
+    planCreators.add(new GitOpsFetchLinkedAppsStepPlanCreatorV2());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
-    planCreators.add(new ServicePlanCreatorV2());
     planCreators.add(new K8sCanaryStepPlanCreator());
     planCreators.add(new K8sApplyStepPlanCreator());
     planCreators.add(new K8sBlueGreenStepPlanCreator());
@@ -300,8 +312,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ExecutionStepsRollbackPMSPlanCreator());
     planCreators.add(new ServicePlanCreator());
     planCreators.add(new ServiceDefinitionPlanCreator());
-    planCreators.add(new EnvironmentPlanCreatorV2());
-    planCreators.add(new EnvGroupPlanCreator());
     planCreators.add(new ArtifactsPlanCreator());
     planCreators.add(new PrimaryArtifactPlanCreator());
     planCreators.add(new SideCarListPlanCreator());
@@ -355,6 +365,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ElastigroupBGStageSetupStepPlanCreator());
     planCreators.add(new ElastigroupSwapRouteStepPlanCreator());
 
+    // Terragrunt
+    planCreators.add(new TerragruntPlanStepPlanCreator());
+    planCreators.add(new TerragruntApplyStepPlanCreator());
+    planCreators.add(new TerragruntDestroyStepPlanCreator());
+    planCreators.add(new TerragruntRollbackStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -397,6 +413,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
     variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new GitOpsUpdateReleaseRepoStepVariableCreator());
+    variableCreators.add(new GitOpsFetchLinkedAppsStepVariableCreator());
     variableCreators.add(deploymentStageVariableCreator);
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new StepGroupVariableCreator());
@@ -451,6 +468,12 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new ElastigroupBGStageSetupStepVariableCreator());
     variableCreators.add(new ElastigroupSwapRouteStepVariableCreator());
 
+    // Terragrunt
+    variableCreators.add(new TerragruntPlanStepVariableCreator());
+    variableCreators.add(new TerragruntApplyStepVariableCreator());
+    variableCreators.add(new TerragruntDestroyStepVariableCreator());
+    variableCreators.add(new TerragruntRollbackStepVariableCreator());
+
     return variableCreators;
   }
 
@@ -477,6 +500,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("GitOps Update Release Repo")
             .setType(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
             .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo fetchLinkedApps =
+        StepInfo.newBuilder()
+            .setName("GitOps Fetch Linked Apps")
+            .setType(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+            .setFeatureFlag(FeatureName.GITOPS_FETCH_LINKED_APPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
 
@@ -860,27 +891,71 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
+    StepInfo terragruntPlan = StepInfo.newBuilder()
+                                  .setName("Terragrunt Plan")
+                                  .setType(StepSpecTypeConstants.TERRAGRUNT_PLAN)
+                                  .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_PLAN.name())
+                                  .setStepMetaData(StepMetaData.newBuilder()
+                                                       .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                       .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                       .build())
+                                  .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                  .build();
+
+    StepInfo terragruntApply = StepInfo.newBuilder()
+                                   .setName("Terragrunt Apply")
+                                   .setType(StepSpecTypeConstants.TERRAGRUNT_APPLY)
+                                   .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_APPLY.name())
+                                   .setStepMetaData(StepMetaData.newBuilder()
+                                                        .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                        .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                        .build())
+                                   .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                   .build();
+
+    StepInfo terragruntDestroy = StepInfo.newBuilder()
+                                     .setName("Terragrunt Destroy")
+                                     .setType(StepSpecTypeConstants.TERRAGRUNT_DESTROY)
+                                     .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_DESTROY.name())
+                                     .setStepMetaData(StepMetaData.newBuilder()
+                                                          .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                          .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                          .build())
+                                     .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                     .build();
+
+    StepInfo terragruntRollback = StepInfo.newBuilder()
+                                      .setName("Terragrunt Rollback")
+                                      .setType(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
+                                      .setFeatureRestrictionName(FeatureRestrictionName.TERRAGRUNT_ROLLBACK.name())
+                                      .setStepMetaData(StepMetaData.newBuilder()
+                                                           .addAllCategory(TERRAGRUNT_CATEGORY)
+                                                           .addFolderPaths(TERRAGRUNT_STEP_METADATA)
+                                                           .build())
+                                      .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
+                                      .build();
     StepInfo elastigroupBGStageSetup =
-        StepInfo.newBuilder()
-            .setName("Elastigroup BG Stage Setup")
-            .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
-            .build();
+            StepInfo.newBuilder()
+                    .setName("Elastigroup BG Stage Setup")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+                    .build();
 
     StepInfo elastigroupSwapRoute =
-        StepInfo.newBuilder()
-            .setName("Elastigroup Swap Route")
-            .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
-            .build();
+            StepInfo.newBuilder()
+                    .setName("Elastigroup Swap Route")
+                    .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+                    .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
     stepInfos.add(gitOpsMergePR);
     stepInfos.add(updateReleaseRepo);
+    stepInfos.add(fetchLinkedApps);
     stepInfos.add(k8sRolling);
     stepInfos.add(delete);
     stepInfos.add(canaryDeploy);
@@ -924,6 +999,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(elastigroupDeployStep);
     stepInfos.add(elastigroupRollbackStep);
     stepInfos.add(elastigroupSetup);
+    stepInfos.add(terragruntPlan);
+    stepInfos.add(terragruntApply);
+    stepInfos.add(terragruntDestroy);
+    stepInfos.add(terragruntRollback);
     stepInfos.add(elastigroupBGStageSetup);
     stepInfos.add(elastigroupSwapRoute);
     return stepInfos;

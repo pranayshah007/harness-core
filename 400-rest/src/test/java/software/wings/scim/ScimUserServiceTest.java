@@ -9,6 +9,7 @@ package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,8 +65,8 @@ public class ScimUserServiceTest extends WingsBaseTest {
   private static final String USER_ID = generateUuid();
   private static final String MEMBERS = "members";
   private static final String USERNAME = "userName";
-
   private static final String ACCOUNT_ID = "accountId";
+  private static final Integer MAX_RESULT_COUNT = 20;
 
   @Inject WingsPersistence realWingsPersistence;
   @Mock WingsPersistence wingsPersistence;
@@ -497,10 +498,10 @@ public class ScimUserServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
-  public void testSearchUserWithNoUser() {
+  public void testSearchUser_WithNoUser() {
     String filter = "value eq 'user_name@harness.io'";
     int count = 1;
-    int startIndex = 0;
+    int startIndex = 1;
 
     Account account = new Account();
     account.setUuid(generateUuid());
@@ -521,11 +522,10 @@ public class ScimUserServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
-  public void testSearchUserWithUser() {
+  public void testSearchUser_WithUser() {
     String filter = "value eq 'user_name@harness.io'";
-    String searchString = "user_name@harness.io";
     int count = 1;
-    int startIndex = 0;
+    int startIndex = 1;
 
     Account account = new Account();
     account.setUuid(generateUuid());
@@ -548,6 +548,39 @@ public class ScimUserServiceTest extends WingsBaseTest {
     assertThat(response.getResources()).isNotNull();
     assertThat(response.getItemsPerPage()).isEqualTo(count);
     assertThat(response.getStartIndex()).isEqualTo(startIndex);
+
+    realWingsPersistence.delete(user);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSearchUser_WithUser_WithStartIndexAndCountAsNULL() {
+    String filter = "value eq 'user_name@harness.io'";
+    Integer count = null;
+    Integer startIndex = null;
+
+    Account account = new Account();
+    account.setUuid(generateUuid());
+    account.setAccountName("ACCOUNT_NAME");
+    account.setCompanyName("COMPANY_NAME");
+
+    User user = User.Builder.anUser()
+                    .uuid(generateUuid())
+                    .name("scim_user")
+                    .familyName("family_name")
+                    .givenName("given_name")
+                    .accounts(Arrays.asList(account))
+                    .build();
+
+    realWingsPersistence.save(user);
+    when(wingsPersistence.createQuery(User.class)).thenReturn(userQuery);
+    ScimListResponse<ScimUser> response = scimUserService.searchUser(account.getUuid(), filter, count, startIndex);
+
+    assertThat(response).isNotNull();
+    assertThat(response.getResources()).isNotNull();
+    assertThat(response.getItemsPerPage()).isEqualTo(MAX_RESULT_COUNT);
+    assertThat(response.getStartIndex()).isEqualTo(0);
 
     realWingsPersistence.delete(user);
   }

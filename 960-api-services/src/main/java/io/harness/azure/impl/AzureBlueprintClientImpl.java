@@ -36,6 +36,7 @@ import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation
 import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperationList;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.runtime.azure.AzureBPDeploymentException;
+import io.harness.exception.runtime.azure.AzureClientRuntimeException;
 import io.harness.serializer.JsonUtils;
 
 import com.azure.core.http.rest.PagedFlux;
@@ -80,8 +81,13 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
 
   @Override
   public Blueprint getBlueprint(final AzureConfig azureConfig, final String resourceScope, final String blueprintName) {
-    return getBlueprintWithServiceResponseAsync(azureConfig, resourceScope, blueprintName)
-        .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    try {
+      return getBlueprintWithServiceResponseAsync(azureConfig, resourceScope, blueprintName)
+          .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Blueprint", e);
+      return null;
+    }
   }
 
   private Mono<Blueprint> getBlueprintWithServiceResponseAsync(
@@ -167,8 +173,13 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   @Override
   public PublishedBlueprint getPublishedBlueprintVersion(
       final AzureConfig azureConfig, final String resourceScope, final String blueprintName, final String versionId) {
-    return getPublishedBlueprintVersionWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, versionId)
-        .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    try {
+      return getPublishedBlueprintVersionWithServiceResponseAsync(azureConfig, resourceScope, blueprintName, versionId)
+          .block(REST_CLIENT_RESPONSE_TIMEOUT);
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Published Blueprint", e);
+      return null;
+    }
   }
 
   private Mono<PublishedBlueprint> getPublishedBlueprintVersionWithServiceResponseAsync(
@@ -265,7 +276,12 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
   @Override
   public Assignment getAssignment(
       final AzureConfig azureConfig, final String resourceScope, final String assignmentName) {
-    return getAssignmentWithServiceResponseAsync(azureConfig, resourceScope, assignmentName).block();
+    try {
+      return getAssignmentWithServiceResponseAsync(azureConfig, resourceScope, assignmentName).block();
+    } catch (AzureClientRuntimeException e) {
+      log.warn("Failed to fetch Blueprint Assignment", e);
+      return null;
+    }
   }
 
   private Mono<Assignment> getAssignmentWithServiceResponseAsync(

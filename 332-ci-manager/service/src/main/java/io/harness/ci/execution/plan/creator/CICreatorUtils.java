@@ -24,6 +24,6 @@ public class CICreatorUtils {
     return Sets.newHashSet("Run", "SaveCacheS3", "RunTests", "liteEngineTask", "BuildAndPushACR", "BuildAndPushGCR",
         "BuildAndPushECR", "BuildAndPushDockerRegistry", "Plugin", "RestoreCacheGCS", "RestoreCacheS3", "SaveCacheGCS",
         "S3Upload", "GCSUpload", "ArtifactoryUpload", "Security", "GitClone", "Background", "Action", "Bitrise",
-        "script", "run_tests");
+        "script", "plugin");
   }
 }

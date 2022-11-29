@@ -18,6 +18,7 @@ import io.harness.validation.Create;
 
 import software.wings.beans.trigger.TriggerExecution;
 import software.wings.beans.trigger.TriggerExecution.Status;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -26,7 +27,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._815_CG_TRIGGERS)
-public interface TriggerExecutionService {
+public interface TriggerExecutionService extends OwnedByAccount {
   @ValidationGroups(Create.class) TriggerExecution save(@Valid TriggerExecution triggerExecution);
 
   TriggerExecution get(@NotEmpty String appId, @NotEmpty String triggerId);

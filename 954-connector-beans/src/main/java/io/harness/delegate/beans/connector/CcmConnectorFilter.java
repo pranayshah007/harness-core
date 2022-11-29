@@ -21,7 +21,8 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CE)
 public class CcmConnectorFilter {
   List<CEFeatures> featuresEnabled;
-  String awsAccountId;
+  String awsAccountId; // For backword compatibility with UI
+  List<String> awsAccountIds;
   String azureSubscriptionId;
   String azureTenantId;
   String gcpProjectId;

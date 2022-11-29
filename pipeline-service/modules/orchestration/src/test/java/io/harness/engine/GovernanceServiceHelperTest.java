@@ -171,7 +171,7 @@ public class GovernanceServiceHelperTest extends CategoryTest {
   public void testGetUserIdentifier() {
     assertThat(GovernanceServiceHelper.getUserIdentifier()).isEqualTo("");
 
-    Principal serviceAccountPrincipal = new ServiceAccountPrincipal("", "", "");
+    Principal serviceAccountPrincipal = new ServiceAccountPrincipal("", "", "", "");
     SourcePrincipalContextBuilder.setSourcePrincipal(serviceAccountPrincipal);
     assertThat(GovernanceServiceHelper.getUserIdentifier()).isEqualTo("");
 

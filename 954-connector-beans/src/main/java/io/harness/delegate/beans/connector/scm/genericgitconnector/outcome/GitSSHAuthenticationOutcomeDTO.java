@@ -9,7 +9,7 @@ package io.harness.delegate.beans.connector.scm.genericgitconnector.outcome;
 
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;

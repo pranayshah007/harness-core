@@ -116,6 +116,25 @@ public class DashboardResource {
   }
 
   @GET
+  @Path("/active-deployments-overview")
+  @ApiOperation(value = "Get active deployments overview", nickname = "getActiveDeploymentsOverview")
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  public ResponseDTO<ExecutionResponse<DeploymentsStatsOverview>> getActiveDeploymentsOverview(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) throws Exception {
+    Optional<String> userId = getUserIdentifierFromSecurityContext();
+    if (!userId.isPresent()) {
+      return ResponseDTO.newResponse(ExecutionResponse.<DeploymentsStatsOverview>builder()
+                                         .executionStatus(ExecutionStatus.FAILURE)
+                                         .executionMessage(FAILURE_MESSAGE)
+                                         .build());
+    }
+    return ResponseDTO.newResponse(overviewDashboardService.getActiveDeploymentsOverview(
+        accountIdentifier, orgIdentifier, projectIdentifier, userId.get()));
+  }
+
+  @GET
   @Path("/resources-overview-count")
   @ApiOperation(value = "Get count of projects, services, envs, pipelines", nickname = "getCounts")
   @NGAccessControlCheck(resourceType = ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)

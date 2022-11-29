@@ -410,6 +410,7 @@ infrastructureProvisioner {"name": "accountId_1", "background": true} {"accountI
 infrastructureProvisioner {"name": "appId_1", "background": true} {"appId": 1}
 infrastructureProvisioner {"name": "createdAt_1", "background": true} {"createdAt": 1}
 instance {"name": "accountId_computeProviderId_instanceInfoNamespace_instanceInfoPodName_createdAt", "background": true} {"accountId": 1, "computeProviderId": 1, "instanceInfo.namespace": 1, "instanceInfo.podName": 1, "createdAt": -1}
+instance {"name": "accountId_createdAt_appId", "background": true} {"accountId": 1, "createdAt": -1, "appId": 1}
 instance {"name": "appId_1", "background": true} {"appId": 1}
 instance {"name": "appid_inframapping_isdeleted_createdatdesc", "background": true} {"appId": 1, "infraMappingId": 1, "isDeleted": 1, "createdAt": -1}
 instance {"name": "createdAt_1", "background": true} {"createdAt": 1}
@@ -833,8 +834,11 @@ users {"name": "accountsIdx", "background": true} {"accounts": 1}
 users {"name": "appId_1", "background": true} {"appId": 1}
 users {"name": "createdAt_1", "background": true} {"createdAt": 1}
 users {"name": "email_1", "unique": true} {"email": 1}
+users {"name": "email_accounts_disabled", "background": true} {"email": 1, "accounts": 1, "disabled": 1}
+users {"name": "email_pendingAccounts_disabled", "background": true} {"email": 1, "pendingAccounts": 1, "disabled": 1}
 users {"name": "externalUserId_1", "background": true} {"externalUserId": 1}
 users {"name": "name_1", "background": true} {"name": 1}
+users {"name": "name_accounts_disabled", "background": true} {"name": 1, "accounts": 1, "disabled": 1}
 users {"name": "pendingAccountsIdx", "background": true} {"pendingAccounts": 1}
 users {"name": "userIdAccountIdx", "background": true} {"accounts": 1, "externalUserId": 1}
 verificationServiceConfigurations {"name": "accountId_1", "background": true} {"accountId": 1}
@@ -883,7 +887,8 @@ workflowExecutions {"name": "accountId_1_deployedServices_1_createdAt_-1_appId_1
 workflowExecutions {"name": "accountId_appId_cdPageCandidate_pipelineSummary.pipelineId_envIds_createdAt", "background": true} {"accountId": 1, "appId": 1, "cdPageCandidate": 1, "pipelineSummary.pipelineId": 1, "envIds": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_appId_onDemandRollback_createdAt", "background": true} {"accountId": 1, "appId": 1, "onDemandRollback": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_appId_tags_createdAt", "background": true} {"accountId": 1, "appId": 1, "tags.name": 1, "createdAt": -1}
-workflowExecutions {"name": "accountId_cdPageCandidate_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1}
+workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_envIds_appId", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1, "envIds": 1, "appId": 1}
+workflowExecutions {"name": "accountId_cdPageCandidate_createdAt_serviceIds_appId", "background": true} {"accountId": 1, "cdPageCandidate": 1, "createdAt": -1, "serviceIds": 1, "appId": 1}
 workflowExecutions {"name": "accountId_cdPageCandidate_keywords_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "keywords": "text", "createdAt": -1}
 workflowExecutions {"name": "accountId_cdPageCandidate_workflowId_createdAt", "background": true} {"accountId": 1, "cdPageCandidate": 1, "workflowId": 1, "createdAt": -1}
 workflowExecutions {"name": "accountId_createdAt2", "background": true} {"accountId": 1, "createdAt": -1}

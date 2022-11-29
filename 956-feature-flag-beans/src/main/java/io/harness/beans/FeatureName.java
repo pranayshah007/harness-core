@@ -47,6 +47,7 @@ public enum FeatureName {
   CE_HARNESS_ENTITY_MAPPING("Internal FF to decide if harness entities mapping is needed", HarnessTeam.CE),
   CE_HARNESS_INSTANCE_QUERY("Internal FF to decide which table to use for querying mapping data", HarnessTeam.CE),
   CE_GCP_CUSTOM_PRICING("Use custom pricing data for k8s gcp from billing export", HarnessTeam.CE),
+  CCM_WORKLOAD_LABELS_OPTIMISATION("Use workload labels from instance data instead of k8sworkload", HarnessTeam.CE),
   CFNG_ENABLED,
   CF_CUSTOM_EXTRACTION,
   CF_ROLLBACK_CONFIG_FILTER,
@@ -279,7 +280,6 @@ public enum FeatureName {
   CUSTOM_ARTIFACT_NG,
   APPLICATION_DROPDOWN_MULTISELECT,
   NG_GIT_EXPERIENCE,
-  LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   TRIGGERS_PAGE_PAGINATION,
   STALE_FLAGS_FFM_1510,
@@ -321,7 +321,6 @@ public enum FeatureName {
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
-  JENKINS_BUILD,
   AZURE_ARTIFACTS_NG,
   CD_AMI_ARTIFACTS_NG("AMI Artifact Source NG", HarnessTeam.CDC),
   GITHUB_PACKAGES,
@@ -474,6 +473,7 @@ public enum FeatureName {
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
   IACM_MICRO_FE("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
   AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP),
+  CODE_ENABLED("Enable Harness Code", HarnessTeam.CODE),
   BOOKING_RECOMMENDATIONS("Feature flag for booking.com recommendations", HarnessTeam.CE),
   USE_GET_FILE_V2_GIT_CALL(
       "FF for customers on updated delegate to use GetFileV2 call which is more performance efficient",
@@ -494,10 +494,17 @@ public enum FeatureName {
   GITOPS_DR_ENABLED("Enable disaster recovery feature", HarnessTeam.GITOPS),
   GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
   CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
+  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
   SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
+  SPG_INSTANCE_OPTIMIZE_DELETED_APPS("Optimizes the instance deleted apps fetching.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
-      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG);
+      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
+  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
+  SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
+  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
+  LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

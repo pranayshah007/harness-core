@@ -7,6 +7,7 @@
 
 package io.harness.gitaware.helper;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -54,13 +55,15 @@ public class GitAwareEntityHelper {
     }
     validateFilePathHasCorrectExtension(filePath);
     String connectorRef = gitContextRequestParams.getConnectorRef();
+    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+    EntityType entityType = gitContextRequestParams.getEntityType();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
@@ -96,13 +99,15 @@ public class GitAwareEntityHelper {
     if (isNullOrDefault(connectorRef)) {
       throw new InvalidRequestException("No Connector reference provided.");
     }
+    boolean loadFromCache = gitContextRequestParams.isLoadFromCache();
+    EntityType entityType = gitContextRequestParams.getEntityType();
     ScmGetFileResponse scmGetFileResponse =
         scmGitSyncHelper.getFileByBranch(Scope.builder()
                                              .accountIdentifier(scope.getAccountIdentifier())
                                              .orgIdentifier(scope.getOrgIdentifier())
                                              .projectIdentifier(scope.getProjectIdentifier())
                                              .build(),
-            repoName, branch, filePath, connectorRef, contextMap);
+            repoName, branch, filePath, connectorRef, loadFromCache, entityType, contextMap);
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return scmGetFileResponse.getFileContent();
   }

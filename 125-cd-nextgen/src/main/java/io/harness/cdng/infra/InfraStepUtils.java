@@ -7,6 +7,8 @@
 
 package io.harness.cdng.infra;
 
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toNGEnvironmentConfig;
+import static io.harness.ng.core.environment.mappers.EnvironmentMapper.toYaml;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -27,6 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
@@ -108,32 +111,40 @@ public class InfraStepUtils {
     Environment environment = getEnvironmentObject(environmentYaml, ambiance);
 
     // To support EnvironmentV2 entities in older EnvironmentV1 supported pipeline
-    if (environmentInDb.isPresent() && isNotBlank(environmentInDb.get().getYaml())) {
-      String updatedYaml = getUpdatedYaml(environmentInDb.get().getYaml(), environmentYaml);
-      if (isNotBlank(updatedYaml)) {
-        environment.setYaml(updatedYaml);
-      }
+    String updatedYaml = getUpdatedEnvironmentYaml(
+        environmentInDb.isPresent() && isNotBlank(environmentInDb.get().getYaml()) ? environmentInDb.get()
+                                                                                   : environment,
+        environmentYaml);
+    if (isNotBlank(updatedYaml)) {
+      environment.setYaml(updatedYaml);
     }
 
     environmentService.upsert(environment, UpsertOptions.DEFAULT.withNoOutbox());
     return EnvironmentMapper.toOutcome(environmentYaml);
   }
 
-  private static String getUpdatedYaml(@NonNull String environmentYamlInDb, @NonNull EnvironmentYaml environmentYaml) {
+  private static String getUpdatedEnvironmentYaml(
+      @NonNull Environment environment, @NonNull EnvironmentYaml environmentYaml) {
     try {
-      YamlField yamlField = YamlUtils.readTree(environmentYamlInDb);
-      YamlNode yamlNode = yamlField.getNode();
-      if (yamlNode != null && yamlNode.isObject() && yamlNode.getCurrJsonNode().get("environment") != null
-          && yamlNode.getCurrJsonNode().get("environment").isObject()) {
-        ObjectNode objectNode = (ObjectNode) yamlNode.getCurrJsonNode().get("environment");
-        if (objectNode != null) {
-          objectNode.put(EnvironmentKeys.name, environmentYaml.getName());
-          objectNode.put(EnvironmentKeys.type, environmentYaml.getType().toString());
-          objectNode.replace(EnvironmentKeys.tags, JsonPipelineUtils.asTree(environmentYaml.getTags()));
-          objectNode.put(EnvironmentKeys.description, environmentYaml.getDescription().getValue());
+      if (isNotBlank(environment.getYaml())) {
+        YamlField yamlField = YamlUtils.readTree(environment.getYaml());
+        YamlNode yamlNode = yamlField.getNode();
+        if (yamlNode != null && yamlNode.isObject() && yamlNode.getCurrJsonNode().get("environment") != null
+            && yamlNode.getCurrJsonNode().get("environment").isObject()) {
+          ObjectNode objectNode = (ObjectNode) yamlNode.getCurrJsonNode().get("environment");
+          if (objectNode != null) {
+            objectNode.put(EnvironmentKeys.name, environmentYaml.getName());
+            objectNode.put(EnvironmentKeys.type, environmentYaml.getType().toString());
+            objectNode.replace(EnvironmentKeys.tags, JsonPipelineUtils.asTree(environmentYaml.getTags()));
+            objectNode.put(EnvironmentKeys.description, environmentYaml.getDescription().getValue());
+          }
         }
+        return YamlUtils.writeYamlString(yamlField).replaceFirst("---\n", "");
+      } else {
+        NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
+        return toYaml(ngEnvironmentConfig);
       }
-      return YamlUtils.writeYamlString(yamlField).replaceFirst("---\n", "");
+
     } catch (Exception e) {
       log.warn("updating environment yaml operation failed", e);
       return StringUtils.EMPTY;

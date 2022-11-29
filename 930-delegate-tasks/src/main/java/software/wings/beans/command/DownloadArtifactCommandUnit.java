@@ -19,11 +19,12 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.command.DownloadArtifactConstants.AUTHORIZATION;
+import static software.wings.beans.command.DownloadArtifactConstants.PWSH_ARTIFACTORY_USING_CREDENTIALS;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -179,7 +180,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         return context.executeCommandString(command, false);
       case ARTIFACTORY:
-        command = constructCommandStringForArtifactory(artifactStreamAttributes, encryptionDetails, metadata, context);
+        command = constructCommandStringForArtifactory(artifactStreamAttributes, encryptionDetails, metadata);
         log.info("Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
         saveExecutionLog(
             context, INFO, "Downloading artifact from " + artifactStreamType.name() + " to " + getCommandPath());
@@ -499,7 +500,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
   }
 
   private String constructCommandStringForArtifactory(ArtifactStreamAttributes artifactStreamAttributes,
-      List<EncryptedDataDetail> encryptionDetails, Map<String, String> metadata, ShellCommandExecutionContext context) {
+      List<EncryptedDataDetail> encryptionDetails, Map<String, String> metadata) {
     String artifactFileName = metadata.get(ArtifactMetadataKeys.artifactFileName);
     int lastIndexOfSlash = artifactFileName.lastIndexOf('/');
     if (lastIndexOfSlash > 0) {
@@ -527,36 +528,22 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         }
         break;
       case POWERSHELL:
-        String proxy = "";
-        if (isPowerShellUseEnvironmentProxy()) {
-          saveExecutionLog(context, INFO, "Using HTTP_PROXY environment variable");
-          proxy = " -Proxy \"$env:HTTP_PROXY\"";
-        }
         if (!artifactoryConfig.hasCredentials()) {
-          command = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
-              + "$ProgressPreference = 'SilentlyContinue'\n"
-              + "Invoke-WebRequest -Uri \""
-              + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)) + "\" -OutFile \""
-              + getCommandPath() + "\\" + artifactFileName + "\"" + proxy;
+          command = DownloadArtifactConstants.PWSH_ARTIFACTORY_NO_CREDENTIALS
+                        .replace(DownloadArtifactConstants.URI,
+                            getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)))
+                        .replace(DownloadArtifactConstants.OUT_FILE, getCommandPath() + "\\" + artifactFileName);
         } else {
-          command = "$Headers = @{\n"
-              + "    Authorization = \"" + authHeader + "\"\n"
-              + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
-              + "\n $ProgressPreference = 'SilentlyContinue'"
-              + "\n Invoke-WebRequest -Uri \""
-              + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath))
-              + "\" -Headers $Headers -OutFile \"" + getCommandPath() + "\\" + artifactFileName + "\"" + proxy;
+          command = PWSH_ARTIFACTORY_USING_CREDENTIALS.replace(AUTHORIZATION, authHeader)
+                        .replace(DownloadArtifactConstants.URI,
+                            getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)))
+                        .replace(DownloadArtifactConstants.OUT_FILE, getCommandPath() + "\\" + artifactFileName);
         }
         break;
       default:
         throw new InvalidRequestException("Invalid Script type", USER);
     }
     return command;
-  }
-
-  private boolean isPowerShellUseEnvironmentProxy() {
-    final String value = SystemWrapper.getenv(POWERSHELL_USE_ENV_PROXY);
-    return Boolean.parseBoolean(value);
   }
 
   private String constructCommandStringForNexus(ShellCommandExecutionContext context,

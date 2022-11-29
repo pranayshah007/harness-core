@@ -59,6 +59,8 @@ import software.wings.beans.AzureImageGallery;
 
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.management.exception.ManagementException;
+import com.azure.core.management.polling.PollResult;
+import com.azure.core.util.polling.SyncPoller;
 import com.azure.resourcemanager.AzureResourceManager;
 import com.azure.resourcemanager.appservice.models.DeploymentSlots;
 import com.azure.resourcemanager.appservice.models.WebApp;
@@ -365,10 +367,10 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   @Override
-  public void createVirtualMachineScaleSet(AzureConfig azureConfig, String subscriptionId,
-      VirtualMachineScaleSet baseVirtualMachineScaleSet, String newVirtualMachineScaleSetName,
-      AzureUserAuthVMInstanceData azureUserAuthVMInstanceData, AzureMachineImageArtifact imageArtifact,
-      AzureVMSSTagsData tags) {
+  public SyncPoller<PollResult<VirtualMachineScaleSetInner>, VirtualMachineScaleSetInner> createVirtualMachineScaleSet(
+      AzureConfig azureConfig, String subscriptionId, VirtualMachineScaleSet baseVirtualMachineScaleSet,
+      String newVirtualMachineScaleSetName, AzureUserAuthVMInstanceData azureUserAuthVMInstanceData,
+      AzureMachineImageArtifact imageArtifact, AzureVMSSTagsData tags) {
     if (isBlank(newVirtualMachineScaleSetName)) {
       throw new IllegalArgumentException(NEW_VIRTUAL_MACHINE_SCALE_SET_NAME_IS_NULL_VALIDATION_MSG);
     }
@@ -389,7 +391,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     updateCapacity(inner, 0);
 
     try {
-      virtualMachineScaleSetsClient.beginCreateOrUpdateAsync(
+      return virtualMachineScaleSetsClient.beginCreateOrUpdate(
           baseVirtualMachineScaleSet.resourceGroupName(), newVirtualMachineScaleSetName, inner);
     } catch (Exception e) {
       throw new InvalidRequestException(

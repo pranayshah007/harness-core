@@ -162,4 +162,10 @@ public class GCPMarketPlaceServiceImpl implements GCPMarketPlaceService {
     long instanceTime = (endTime.toEpochMilli() - startTime.toEpochMilli()) / 60000;
     return (long) (percentile * instanceTime);
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(GCPMarketplaceCustomer.class)
+                                .filter(GCPMarketplaceCustomerKeys.harnessAccountId, accountId));
+  }
 }

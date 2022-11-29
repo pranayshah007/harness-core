@@ -350,7 +350,10 @@ import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
 import io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse;
 import io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse;
+import io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskParams;
 import io.harness.delegate.beans.trigger.TriggerAuthenticationTaskResponse;
 import io.harness.delegate.command.CommandExecutionResult;
@@ -583,6 +586,8 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.gitops.FetchAppTaskParams;
+import io.harness.delegate.task.gitops.FetchAppTaskResponse;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
@@ -1976,5 +1981,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
+    kryo.register(TerragruntApplyTaskResponse.class, 573558);
+    kryo.register(TerragruntDestroyTaskResponse.class, 573559);
+    kryo.register(TerragruntRollbackTaskResponse.class, 573560);
+    kryo.register(FetchAppTaskParams.class, 573561);
+    kryo.register(FetchAppTaskResponse.class, 573562);
   }
 }

@@ -36,7 +36,6 @@ import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
 import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
-import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -88,7 +87,6 @@ public class WorkflowMigrationService extends NgMigrationService {
   @Inject private WorkflowService workflowService;
   @Inject private RollingWorkflowYamlHandler rollingWorkflowYamlHandler;
   @Inject private ApplicationManifestService applicationManifestService;
-  @Inject private MigratorExpressionUtils migratorExpressionUtils;
   @Inject private StepMapperFactory stepMapperFactory;
   @Inject private WorkflowHandlerFactory workflowHandlerFactory;
 
@@ -262,9 +260,8 @@ public class WorkflowMigrationService extends NgMigrationService {
             .filename("workflows/" + name + ".yaml")
             .yaml(NGTemplateConfig.builder()
                       .templateInfoConfig(NGTemplateInfoConfig.builder()
-                                              .type(workflowHandler.getTemplateType(workflow))
+                                              .type(workflowHandler.getTemplateType())
                                               .identifier(identifier)
-                                              .variables(workflowHandler.getVariables(workflow))
                                               .name(name)
                                               .description(ParameterField.createValueField(description))
                                               .projectIdentifier(projectIdentifier)
@@ -296,13 +293,16 @@ public class WorkflowMigrationService extends NgMigrationService {
                                                 .build()))
           .build();
     }
+    String yaml = YamlUtils.write(yamlFile.getYaml());
     Response<ResponseDTO<ConnectorResponseDTO>> resp =
         templateClient
             .createTemplate(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                inputDTO.getProjectIdentifier(),
-                RequestBody.create(MediaType.parse("application/yaml"), YamlUtils.write(yamlFile.getYaml())))
+                inputDTO.getProjectIdentifier(), RequestBody.create(MediaType.parse("application/yaml"), yaml))
             .execute();
     log.info("Workflow creation Response details {} {}", resp.code(), resp.message());
+    if (resp.code() >= 400) {
+      log.info("The WF template is \n - {}", yaml);
+    }
     return handleResp(yamlFile, resp);
   }
 

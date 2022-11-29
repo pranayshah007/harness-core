@@ -64,7 +64,6 @@ import io.harness.ci.plancreator.SaveCacheS3StepPlanCreator;
 import io.harness.ci.plancreator.SecurityStepPlanCreator;
 import io.harness.ci.plancreator.V1.PluginStepPlanCreatorV1;
 import io.harness.ci.plancreator.V1.RunStepPlanCreatorV1;
-import io.harness.ci.plancreator.V1.RunTestStepPlanCreatorV1;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.filters.EmptyAnyFilterJsonCreator;
 import io.harness.filters.ExecutionPMSFilterJsonCreator;
@@ -135,7 +134,6 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new CIStepsPlanCreator());
     planCreators.add(new RunStepPlanCreatorV1());
     planCreators.add(new PluginStepPlanCreatorV1());
-    planCreators.add(new RunTestStepPlanCreatorV1());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;

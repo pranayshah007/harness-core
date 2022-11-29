@@ -170,6 +170,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
       StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS)
+  GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
   ELASTIGROUP_DEPLOY("Elastigroup Deploy", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
       StepSpecTypeConstants.ELASTIGROUP_DEPLOY),
@@ -179,12 +182,27 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SETUP)
   ELASTIGROUP_SETUP("Elastigroup Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
       StepSpecTypeConstants.ELASTIGROUP_SETUP),
+<<<<<<< HEAD
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
       "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
           "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
+=======
+  @JsonProperty(StepSpecTypeConstants.TERRAFORM_PLAN)
+  TERRAGRUNT_PLAN("Terragrunt Plan", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_PLAN),
+  @JsonProperty(StepSpecTypeConstants.TERRAFORM_APPLY)
+  TERRAGRUNT_APPLY("Terragrunt Apply", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_APPLY),
+  @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_DESTROY)
+  TERRAGRUNT_DESTROY("Terragrunt Destroy", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_DESTROY),
+  @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
+  TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
+>>>>>>> 1bce63f8f3a30ab43a62003f59ec2e0380523fe6
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -216,6 +234,7 @@ public enum NGStepType {
   public static String getDisplayName(NGStepType ngStepType) {
     return ngStepType.displayName;
   }
+
   public static String getCategory(NGStepType ngStepType) {
     return ngStepType.category;
   }

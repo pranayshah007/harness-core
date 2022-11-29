@@ -122,6 +122,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
         case PIPELINE_TEMPLATE:
           return "PIPELINE";
         case STAGE_TEMPLATE:
+        case STEPGROUP_TEMPLATE:
           return "STAGE";
         case STEP_TEMPLATE:
           return "STEP";
@@ -136,6 +137,7 @@ public class NGTemplateSchemaServiceImpl implements NGTemplateSchemaService {
     switch (templateEntityType) {
       case PIPELINE_TEMPLATE:
       case STEP_TEMPLATE:
+      case STEPGROUP_TEMPLATE:
       case STAGE_TEMPLATE:
       case CUSTOM_DEPLOYMENT_TEMPLATE:
       case ARTIFACT_SOURCE_TEMPLATE:

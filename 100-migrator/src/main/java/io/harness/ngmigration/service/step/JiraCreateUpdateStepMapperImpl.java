@@ -20,6 +20,7 @@ import io.harness.steps.jira.update.JiraUpdateStepInfo;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.jira.update.beans.TransitionTo;
 
+import software.wings.sm.State;
 import software.wings.sm.states.collaboration.JiraCreateUpdate;
 import software.wings.yaml.workflow.StepYaml;
 
@@ -31,9 +32,7 @@ import java.util.stream.Collectors;
 public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   @Override
   public String getStepType(StepYaml stepYaml) {
-    Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
-    JiraCreateUpdate state = new JiraCreateUpdate(stepYaml.getName());
-    state.parseProperties(properties);
+    JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
         return StepSpecTypeConstants.JIRA_UPDATE;
@@ -45,10 +44,16 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
   }
 
   @Override
-  public AbstractStepNode getSpec(StepYaml stepYaml) {
+  public State getState(StepYaml stepYaml) {
     Map<String, Object> properties = StepMapper.super.getProperties(stepYaml);
     JiraCreateUpdate state = new JiraCreateUpdate(stepYaml.getName());
     state.parseProperties(properties);
+    return state;
+  }
+
+  @Override
+  public AbstractStepNode getSpec(StepYaml stepYaml) {
+    JiraCreateUpdate state = (JiraCreateUpdate) getState(stepYaml);
     switch (state.getJiraAction()) {
       case UPDATE_TICKET:
         return buildUpdate(state);
@@ -57,6 +62,16 @@ public class JiraCreateUpdateStepMapperImpl implements StepMapper {
       default:
         throw new IllegalStateException("Unsupported Approval Type");
     }
+  }
+
+  @Override
+  public boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2) {
+    JiraCreateUpdate state1 = (JiraCreateUpdate) getState(stepYaml1);
+    JiraCreateUpdate state2 = (JiraCreateUpdate) getState(stepYaml2);
+    if (!state2.getJiraAction().equals(state1.getJiraAction())) {
+      return false;
+    }
+    return true;
   }
 
   private JiraCreateStepNode buildCreate(JiraCreateUpdate state) {

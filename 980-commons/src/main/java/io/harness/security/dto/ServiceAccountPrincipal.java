@@ -8,6 +8,7 @@
 package io.harness.security.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.security.SecurityContextBuilder.ACCOUNT_ID;
 import static io.harness.security.SecurityContextBuilder.EMAIL;
 import static io.harness.security.SecurityContextBuilder.PRINCIPAL_NAME;
 import static io.harness.security.SecurityContextBuilder.PRINCIPAL_TYPE;
@@ -34,12 +35,14 @@ import org.springframework.data.annotation.TypeAlias;
 public class ServiceAccountPrincipal extends Principal {
   String email;
   String username;
+  String accountId;
 
-  public ServiceAccountPrincipal(String name, String email, String username) {
+  public ServiceAccountPrincipal(String name, String email, String username, String accountId) {
     this.type = SERVICE_ACCOUNT;
     this.name = name;
     this.email = email;
     this.username = username;
+    this.accountId = accountId;
   }
 
   @Override
@@ -49,6 +52,7 @@ public class ServiceAccountPrincipal extends Principal {
     claims.put(PRINCIPAL_NAME, getName());
     claims.put(EMAIL, getEmail());
     claims.put(USERNAME, getUsername());
+    claims.put(ACCOUNT_ID, getAccountId());
     return claims;
   }
 
@@ -56,6 +60,7 @@ public class ServiceAccountPrincipal extends Principal {
     return new ServiceAccountPrincipal(
         claims.get(PRINCIPAL_NAME) == null ? null : claims.get(PRINCIPAL_NAME).asString(),
         claims.get(EMAIL) == null ? null : claims.get(EMAIL).asString(),
-        claims.get(USERNAME) == null ? null : claims.get(USERNAME).asString());
+        claims.get(USERNAME) == null ? null : claims.get(USERNAME).asString(),
+        claims.get(ACCOUNT_ID) == null ? null : claims.get(ACCOUNT_ID).asString());
   }
 }

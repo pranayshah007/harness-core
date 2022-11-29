@@ -26,7 +26,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
@@ -67,11 +66,9 @@ public class WaitStepResourceImplTest extends CategoryTest {
         NodeExecution.builder().ambiance(Ambiance.newBuilder().setPlanExecutionId("planExecutionId").build()).build())
         .when(nodeExecutionService)
         .get(nodeExecutionId);
-    doReturn(PlanExecution.builder()
-                 .metadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
-                 .build())
+    doReturn(ExecutionMetadata.newBuilder().setPipelineIdentifier("pipelineId").build())
         .when(planExecutionService)
-        .get("planExecutionId");
+        .getExecutionMetadataFromPlanExecution("planExecutionId");
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
   }
 

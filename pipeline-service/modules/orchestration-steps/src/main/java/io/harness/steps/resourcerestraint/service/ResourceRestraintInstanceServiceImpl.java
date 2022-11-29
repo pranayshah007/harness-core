@@ -31,9 +31,9 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
 import io.harness.springdata.SpringDataMongoUtils;
@@ -111,8 +111,14 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       switch (scope) {
         case PLAN:
         case PIPELINE:
-          PlanExecution planExecution = planExecutionService.get(releaseEntityId);
-          finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());
+          Status status;
+          try {
+            status = planExecutionService.getStatus(releaseEntityId);
+            finished = StatusUtils.finalStatuses().contains(status);
+          } catch (Exception e) {
+            log.warn("Plan Execution doesn't for the releaseEntityId - " + releaseEntityId);
+            finished = false;
+          }
           break;
         case STAGE:
           NodeExecution nodeExecution =

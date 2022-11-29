@@ -56,6 +56,7 @@ import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitSyncDirection;
 import io.harness.gitsync.common.beans.InfoForGitPush;
+import io.harness.gitsync.common.dtos.GitErrorMetadata;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
@@ -398,15 +399,18 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO, scope);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
+      GitMetaData gitMetaData = getGitMetadata(ScmExceptionUtils.getGitErrorMetadata(ex));
       if (scmException == null) {
         return GetFileResponse.newBuilder()
             .setStatusCode(ex.getCode().getStatus().getCode())
             .setError(prepareDefaultErrorDetails(ex))
+            .setGitMetaData(gitMetaData)
             .build();
       }
       return GetFileResponse.newBuilder()
           .setStatusCode(ScmErrorCodeToHttpStatusCodeMapping.getHttpStatusCode(scmException.getCode()))
           .setError(prepareErrorDetails(ex))
+          .setGitMetaData(gitMetaData)
           .build();
     }
   }
@@ -735,5 +739,16 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private boolean isEnabled(String accountId, FeatureName featureName) {
     return CGRestUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+  }
+
+  private GitMetaData getGitMetadata(GitErrorMetadata gitErrorMetadata) {
+    GitMetaData.Builder gitMetaDataOrBuilder = GitMetaData.newBuilder();
+    if (gitErrorMetadata.getBranch() != null) {
+      gitMetaDataOrBuilder.setBranchName(gitErrorMetadata.getBranch());
+    }
+    if (gitErrorMetadata.getFilepath() != null) {
+      gitMetaDataOrBuilder.setFilePath(gitErrorMetadata.getFilepath());
+    }
+    return gitMetaDataOrBuilder.build();
   }
 }

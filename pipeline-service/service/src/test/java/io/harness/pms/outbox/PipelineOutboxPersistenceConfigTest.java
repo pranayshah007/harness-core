@@ -51,11 +51,13 @@ public class PipelineOutboxPersistenceConfigTest extends CategoryTest {
 
   int connectTimeout = 100;
   int serverSelectionTimeout = 50;
+  int socketTimeout = 360000;
   int maxConnectionIdleTime = 10;
   int connectionsPerHost = 5;
   MongoConfig mongoConfig = MongoConfig.builder()
                                 .connectTimeout(connectTimeout)
                                 .serverSelectionTimeout(serverSelectionTimeout)
+                                .socketTimeout(socketTimeout)
                                 .maxConnectionIdleTime(maxConnectionIdleTime)
                                 .connectionsPerHost(connectionsPerHost)
                                 .build();

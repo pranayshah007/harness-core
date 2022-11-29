@@ -19,6 +19,7 @@ import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetMonthlyBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.BudgetScope;
+import io.harness.ccm.budget.ValueDataPoint;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.exception.InvalidRequestException;
 
@@ -41,8 +42,6 @@ public class BudgetUtils {
   private static final String NO_BUDGET_AMOUNT_EXCEPTION = "Error in creating budget. No budget amount specified.";
   private static final String NO_MONTHLY_BUDGET_AMOUNT_EXCEPTION =
       "Error in creating/updating budget. Twelve budget cost entries required for monthly budget amount.";
-  private static final String BUDGET_AMOUNT_MONTHLY_BUDGET_AMOUNT_NE_EXCEPTION =
-      "Error in creating/updating budget. The budget amount not equal to total monthly budget amount.";
   private static final String BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION =
       "Error in creating budget. The budget amount should be positive and less than 100 million dollars.";
   private static final String BUDGET_NAME_EXISTS_EXCEPTION =
@@ -63,6 +62,7 @@ public class BudgetUtils {
   public static final String DEFAULT_TIME_SCOPE = "monthly";
   public static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
   public static final int MONTHS = 12;
+  public static final double HUNDRED = 100.0;
 
   public static void validateBudget(Budget budget, List<Budget> existingBudgets) {
     populateDefaultBudgetBreakdown(budget);
@@ -91,18 +91,21 @@ public class BudgetUtils {
     if (budget.getPeriod() == BudgetPeriod.YEARLY
         && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
       if (budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount() != null
-          && budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount().length != MONTHS) {
+          && budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount().size() != MONTHS) {
         throw new InvalidRequestException(NO_MONTHLY_BUDGET_AMOUNT_EXCEPTION);
       }
       Double totalAmount = 0.0;
-      for (Double amount : budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {
+      for (Double amount : getYearlyMonthWiseValues(budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount())) {
         if (amount < 0 || amount > BUDGET_AMOUNT_UPPER_LIMIT) {
           throw new InvalidRequestException(BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION);
         }
         totalAmount += amount;
+        if (totalAmount < 0 || totalAmount > BUDGET_AMOUNT_UPPER_LIMIT) {
+          throw new InvalidRequestException(BUDGET_AMOUNT_NOT_WITHIN_BOUNDS_EXCEPTION);
+        }
       }
       if (Double.compare(totalAmount, budget.getBudgetAmount()) != 0) {
-        throw new InvalidRequestException(BUDGET_AMOUNT_MONTHLY_BUDGET_AMOUNT_NE_EXCEPTION);
+        budget.setBudgetAmount(totalAmount);
       }
     }
   }
@@ -373,17 +376,19 @@ public class BudgetUtils {
     }
   }
 
-  public static Double[] getUpdatedBudgetAmountMonthlyCost(Budget budget) {
+  public static List<ValueDataPoint> getUpdatedBudgetAmountMonthlyCost(Budget budget) {
     try {
       if (budget.getType() == SPECIFIED_AMOUNT) {
         double growthMultiplier = 1 + (budget.getGrowthRate() / 100);
-        Double[] budgetMonthlyCost = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+        Double[] budgetMonthlyCost =
+            getYearlyMonthWiseValues(budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
         for (int month = 0; month < budgetMonthlyCost.length; month++) {
           budgetMonthlyCost[month] *= growthMultiplier;
         }
-        return budgetMonthlyCost;
+        return getYearlyMonthWiseKeyValuePairs(budget.getStartTime(), budgetMonthlyCost);
       } else {
-        return budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost();
+        return getYearlyMonthWiseKeyValuePairs(
+            budget.getStartTime(), budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost());
       }
     } catch (Exception e) {
       log.error(
@@ -439,5 +444,34 @@ public class BudgetUtils {
       return lastAlertMonth == currentMonth;
     }
     return startOfBudgetPeriod <= crossedAt;
+  }
+
+  public static List<ValueDataPoint> getYearlyMonthWiseKeyValuePairs(long startTime, Double[] cost) {
+    List<ValueDataPoint> response = new ArrayList<>();
+    if (cost == null || cost.length != MONTHS) {
+      return response;
+    }
+    long startOfMonth = getStartOfMonthGivenTime(startTime);
+    Calendar c = Calendar.getInstance();
+    c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+    c.setTimeInMillis(startOfMonth);
+    int month = 0;
+    while (month < MONTHS) {
+      response.add(ValueDataPoint.builder().time(c.getTimeInMillis()).value(cost[month]).build());
+      c.add(Calendar.MONTH, 1);
+      month++;
+    }
+    return response;
+  }
+
+  public static Double[] getYearlyMonthWiseValues(List<ValueDataPoint> dataPoints) {
+    if (dataPoints == null) {
+      return null;
+    }
+    return dataPoints.stream().map(ValueDataPoint::getValue).toArray(Double[] ::new);
+  }
+
+  public static Double getRoundedValue(double value) {
+    return Math.round(value * HUNDRED) / HUNDRED;
   }
 }

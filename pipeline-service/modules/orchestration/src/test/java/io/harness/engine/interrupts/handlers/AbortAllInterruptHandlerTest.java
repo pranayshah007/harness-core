@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
-import io.harness.execution.PlanExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
 import io.harness.pms.contracts.execution.Status;
@@ -108,8 +107,7 @@ public class AbortAllInterruptHandlerTest extends OrchestrationTestBase {
     when(nodeExecutionService.markAllLeavesAndQueuedNodesDiscontinuing(
              planExecutionId, StatusUtils.finalizableStatuses()))
         .thenReturn(0L);
-    when(planExecutionService.getStatus(planExecutionId))
-        .thenReturn(PlanExecution.builder().status(Status.RUNNING).build());
+    when(planExecutionService.getStatus(planExecutionId)).thenReturn(Status.RUNNING);
     Interrupt handledInterrupt = abortAllInterruptHandler.registerInterrupt(interrupt);
     assertThat(handledInterrupt).isNotNull();
     assertThat(handledInterrupt.getUuid()).isEqualTo(interruptUuid);

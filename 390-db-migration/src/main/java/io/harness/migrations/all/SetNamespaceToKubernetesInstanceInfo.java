@@ -14,10 +14,10 @@ import static io.harness.exception.WingsException.ExecutionContext.MANAGER;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.lock.AcquiredLock;
 import io.harness.lock.PersistentLocker;
-import io.harness.logging.ExceptionLogger;
 import io.harness.migrations.Migration;
 
 import software.wings.beans.Account;
