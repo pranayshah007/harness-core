@@ -20,6 +20,8 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+import java.util.Map;
+
 @Value
 @Builder
 @OwnedBy(CDP)
@@ -31,4 +33,7 @@ public class TasExecutionPassThroughData implements PassThroughData {
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   PcfManifestsPackage pcfManifestsPackage;
+  Map<String,String> allFilesFetched;
+  String rawScriptString;
+  String repoRoot;
 }

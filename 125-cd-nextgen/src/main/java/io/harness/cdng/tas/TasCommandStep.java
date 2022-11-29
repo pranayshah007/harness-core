@@ -7,15 +7,11 @@
 
 package io.harness.cdng.tas;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-
-import static java.util.stream.Collectors.toList;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.FileData;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
@@ -23,11 +19,9 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.eraro.ErrorCode;
@@ -57,19 +51,22 @@ import io.harness.shell.ScriptType;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import software.wings.beans.TaskType;
 
-import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
+public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.TAS_BG_APP_SETUP.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -118,7 +115,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                                                         .setEndTime(System.currentTimeMillis())
                                                         .build()))
         .build();
-  }]
+  }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
@@ -131,25 +128,28 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
     return StepElementParameters.class;
   }
 
+  private List<FileData> prepareFilesForTransfer(Map<String, String> allFiles) {
+    return allFiles.entrySet()
+            .stream()
+            .map(entry -> FileData.builder().filePath(entry.getKey()).fileContent(entry.getValue()).build())
+            .collect(Collectors.toList());
+  }
+
   @Override
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
-      StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
-      boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
+                                                 StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
+                                                 boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
     TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
-    Integer maxCount;
-    boolean isWebProcessCountZero = false;
-    if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
-      maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
-      isWebProcessCountZero = maxCount == 0;
-    }
-    List<String> routeMaps = applyVarsYmlSubstitutionIfApplicable(
-        tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
-        executionPassThroughData.getPcfManifestsPackage());
+
+
+    List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
+
+
+
     TaskParameters taskParameters = ShellScriptTaskParametersNG.builder()
                                         .accountId(AmbianceUtils.getAccountId(ambiance))
                                         .environmentVariables(new HashMap<>())
@@ -175,17 +175,5 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
-  }
-
-  public List<String> applyVarsYmlSubstitutionIfApplicable(
-      List<String> routeMaps, PcfManifestsPackage pcfManifestsPackage) {
-    if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
-      return routeMaps;
-    }
-
-    return routeMaps.stream()
-        .filter(EmptyPredicate::isNotEmpty)
-        .map(route -> tasStepHelper.finalizeSubstitution(pcfManifestsPackage, route))
-        .collect(toList());
   }
 }
