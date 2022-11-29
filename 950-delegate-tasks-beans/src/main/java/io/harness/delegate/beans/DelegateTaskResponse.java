@@ -33,5 +33,4 @@ public class DelegateTaskResponse {
     FAILED,
     RETRY_ON_OTHER_DELEGATE,
   }
-  private boolean usingKryoWithoutReference;
 }

@@ -314,34 +314,6 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   @Test
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
-  public void testTaskProgressV2() {
-    String accountId = generateUuid();
-    String taskId = generateUuid();
-    when(delegateTaskServiceClassic.fetchDelegateTask(accountId, taskId))
-        .thenReturn(Optional.ofNullable(null))
-        .thenReturn(Optional.ofNullable(DelegateTask.builder().status(Status.ERROR).build()));
-
-    TaskExecutionStage taskExecutionStage = delegateServiceGrpcClient.taskProgressV2(
-        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
-    assertThat(taskExecutionStage).isNotNull();
-    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.TYPE_UNSPECIFIED);
-
-    taskExecutionStage = delegateServiceGrpcClient.taskProgressV2(
-        AccountId.newBuilder().setId(accountId).build(), TaskId.newBuilder().setId(taskId).build());
-    assertThat(taskExecutionStage).isNotNull();
-    assertThat(taskExecutionStage).isEqualTo(TaskExecutionStage.FAILED);
-
-    doThrow(InvalidRequestException.class).when(delegateTaskServiceClassic).fetchDelegateTask(accountId, taskId);
-    assertThatThrownBy(()
-                           -> delegateServiceGrpcClient.taskProgressV2(AccountId.newBuilder().setId(accountId).build(),
-                               TaskId.newBuilder().setId(taskId).build()))
-        .isInstanceOf(DelegateServiceDriverException.class)
-        .hasMessage("Unexpected error occurred while checking task progress.");
-  }
-
-  @Test
-  @Owner(developers = MARKO)
-  @Category(UnitTests.class)
   public void testTaskProgressUpdates() {
     String accountId = generateUuid();
     String taskId = generateUuid();

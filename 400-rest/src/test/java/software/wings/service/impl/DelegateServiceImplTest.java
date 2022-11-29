@@ -325,7 +325,6 @@ public class DelegateServiceImplTest extends WingsBaseTest {
       delegateTaskService.processDelegateResponse(task.getAccountId(), delegate.getUuid(), task.getUuid(),
           DelegateTaskResponse.builder()
               .accountId(task.getAccountId())
-              .usingKryoWithoutReference(true)
               .response(HttpStateExecutionResponse.builder().executionStatus(ExecutionStatus.SUCCESS).build())
               .responseCode(ResponseCode.OK)
               .build());
