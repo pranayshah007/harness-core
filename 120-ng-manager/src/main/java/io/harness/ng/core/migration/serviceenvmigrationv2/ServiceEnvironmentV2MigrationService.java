@@ -140,6 +140,8 @@ public class ServiceEnvironmentV2MigrationService {
     pipelineParentNode.set("pipeline", pipelineYamlField.getNode().getCurrJsonNode());
     String migratedPipelineYaml = YamlPipelineUtils.writeYamlString(pipelineParentNode);
     if (requestDto.isUpdatePipeline()) {
+      checkPipelineAccess(accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(),
+          requestDto.getPipelineIdentifier());
       NGRestUtils.getResponse(pipelineServiceClient.updatePipeline(null, requestDto.getPipelineIdentifier(), accountId,
           requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null,
           RequestBody.create(MediaType.parse("application/yaml"), migratedPipelineYaml)));
@@ -196,7 +198,7 @@ public class ServiceEnvironmentV2MigrationService {
     String resolvedStageYaml =
         NGRestUtils
             .getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, requestDto.getOrgIdentifier(),
-                requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null,
+                requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null, false,
                 TemplateApplyRequestDTO.builder().originalEntityYaml(stageYaml).checkForAccess(true).build()))
             .getMergedPipelineYaml();
     YamlField stageField = getYamlField(stageYaml, "stage");
@@ -352,6 +354,12 @@ public class ServiceEnvironmentV2MigrationService {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, serviceRef), SERVICE_UPDATE_PERMISSION,
         "unable to update service because of permission");
+  }
+
+  private void checkPipelineAccess(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.PIPELINE, pipelineIdentifier), "core_pipeline_edit");
   }
 
   private void checkEnvironmentAccess(
