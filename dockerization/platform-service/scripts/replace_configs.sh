@@ -78,6 +78,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.notificationServiceConfig.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.notificationServiceConfig.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
   export MAX_CONNECTION_IDLE_TIME; yq -i '.notificationServiceConfig.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
@@ -167,6 +171,10 @@ fi
 
 if [[ "" != "$AUDIT_MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export AUDIT_MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.auditServiceConfig.mongo.serverSelectionTimeout=env(AUDIT_MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
+fi
+
+if [[ "" != "$AUDIT_MONGO_SOCKET_TIMEOUT" ]]; then
+  export AUDIT_MONGO_SOCKET_TIMEOUT; yq -i '.auditServiceConfig.mongo.socketTimeout=env(AUDIT_MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$AUDIT_MAX_CONNECTION_IDLE_TIME" ]]; then

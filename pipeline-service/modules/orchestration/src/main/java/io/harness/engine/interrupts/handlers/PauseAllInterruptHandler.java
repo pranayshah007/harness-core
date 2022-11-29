@@ -86,7 +86,7 @@ public class PauseAllInterruptHandler implements InterruptHandler {
     }
 
     // Check if plan is running
-    PlanExecution planExecution = planExecutionService.get(interrupt.getPlanExecutionId());
+    PlanExecution planExecution = planExecutionService.getPlanExecutionMetadata(interrupt.getPlanExecutionId());
     if (StatusUtils.isFinalStatus(planExecution.getStatus())) {
       throw new InvalidRequestException("Plan Execution is already finished");
     }

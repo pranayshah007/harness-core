@@ -9,6 +9,8 @@ package software.wings.service.impl.trigger;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
@@ -72,5 +74,10 @@ public class TriggerExecutionServiceImpl implements TriggerExecutionService {
     UpdateOperations<TriggerExecution> updateOps =
         wingsPersistence.createUpdateOperations(TriggerExecution.class).set("status", status).set("message", message);
     wingsPersistence.update(query, updateOps);
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(TriggerExecution.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 }

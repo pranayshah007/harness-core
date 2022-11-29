@@ -35,12 +35,17 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.spec.server.pipeline.v1.PipelinesApi;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -69,6 +74,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   private final PMSPipelineServiceHelper pipelineServiceHelper;
   private final PMSPipelineTemplateHelper pipelineTemplateHelper;
   private final PipelineMetadataService pipelineMetadataService;
+  private final PipelineAsyncValidationService pipelineAsyncValidationService;
 
   @Override
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
@@ -158,6 +164,40 @@ public class PipelinesApiImpl implements PipelinesApi {
       }
     }
     return Response.ok().entity(pipelineGetResponseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public Response startPipelineValidationEvent(@OrgIdentifier String org, @ProjectIdentifier String project,
+      String pipeline, @AccountIdentifier String account, String branch, String connectorRef, String repoName,
+      Boolean loadFromCache, Boolean loadFromFallbackBranch) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(account, org, project, pipeline, false, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
+    }
+    PipelineValidationEvent pipelineValidationEvent =
+        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD);
+    PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
+        PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
+    return Response.ok().entity(pipelineValidationUUIDResponseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public Response getPipelineValidateResult(
+      @OrgIdentifier String org, @ProjectIdentifier String project, String uuid, @AccountIdentifier String account) {
+    Optional<PipelineValidationEvent> eventByUuid = pipelineAsyncValidationService.getEventByUuid(uuid);
+    if (eventByUuid.isEmpty()) {
+      throw new EntityNotFoundException("No Pipeline Validation Event found for uuid " + uuid);
+    }
+    PipelineValidationEvent pipelineValidationEvent = eventByUuid.get();
+    PipelineValidationResponseBody pipelineValidationResponseBody =
+        PipelinesApiUtils.buildPipelineValidationResponseBody(pipelineValidationEvent);
+    return Response.ok().entity(pipelineValidationResponseBody).build();
   }
 
   @Override

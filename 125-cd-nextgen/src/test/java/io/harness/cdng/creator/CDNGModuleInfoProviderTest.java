@@ -24,6 +24,7 @@ import io.harness.cdng.gitops.steps.Metadata;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.pipeline.executions.beans.CDPipelineModuleInfo;
 import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo;
+import io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -56,7 +57,6 @@ import org.mockito.MockitoAnnotations;
 public class CDNGModuleInfoProviderTest extends CategoryTest {
   private final String ACCOUNT_ID = "accountId";
   private final String APP_ID = "appId";
-
   @Mock OutcomeService outcomeService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private FreezeEvaluateService freezeEvaluateService;
@@ -285,13 +285,17 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     doReturn(OptionalOutcome.builder()
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())
-                              .appendCluster(new Metadata("env1", "env1"), new Metadata("c1", "c1")))
+                              .appendCluster(new Metadata("env1", "env1name"), new Metadata("c1", "c1")))
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
 
     OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
     CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
+
+    assertThat(stageLevelModuleInfo.getGitopsExecutionSummary().getEnvironments())
+        .hasSize(1)
+        .contains(GitOpsExecutionSummary.Environment.builder().identifier("env1").name("env1name").build());
 
     assertThat(stageLevelModuleInfo.getInfraExecutionSummary().getIdentifier()).isEqualTo("env1");
   }
@@ -332,8 +336,10 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     doReturn(OptionalOutcome.builder()
                  .found(true)
                  .outcome(new GitopsClustersOutcome(new ArrayList<>())
-                              .appendCluster(new Metadata("env1", "env1"), new Metadata("c1", "c1"))
-                              .appendCluster(new Metadata("env1", "env1"), new Metadata("c2", "c2")))
+                              .appendCluster(new Metadata("env1", "env1name"), new Metadata("c1", "c1"))
+                              .appendCluster(new Metadata("env2", "env2name"), new Metadata("c2", "c2"))
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env3", "env3name"),
+                                  new Metadata("c3", "c3")))
                  .build())
         .when(outcomeService)
         .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
@@ -341,7 +347,56 @@ public class CDNGModuleInfoProviderTest extends CategoryTest {
     OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
     CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
 
-    assertThat(stageLevelModuleInfo.getInfraExecutionSummary().getIdentifier()).isEqualTo("env1");
+    assertThat(stageLevelModuleInfo.getGitopsExecutionSummary().getEnvironments())
+        .hasSize(3)
+        .containsExactlyInAnyOrder(
+            GitOpsExecutionSummary.Environment.builder().identifier("env1").name("env1name").build(),
+            GitOpsExecutionSummary.Environment.builder().identifier("env2").name("env2name").build(),
+            GitOpsExecutionSummary.Environment.builder()
+                .identifier("env3")
+                .name("env3name")
+                .envGroupName("eg1name")
+                .envGroupIdentifier("eg1")
+                .build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testGetStageLevelModuleInfo_Gitops_3() {
+    Ambiance ambiance = buildAmbiance(StepType.newBuilder()
+                                          .setType(ExecutionNodeType.GITOPS_CLUSTERS.getName())
+                                          .setStepCategory(StepCategory.STEP)
+                                          .build());
+
+    doReturn(OptionalOutcome.builder()
+                 .found(true)
+                 .outcome(new GitopsClustersOutcome(new ArrayList<>())
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env1", "env1name"),
+                                  new Metadata("c1", "c1"))
+                              .appendCluster(new Metadata("eg1", "eg1name"), new Metadata("env2", "env2name"),
+                                  new Metadata("c2", "c2")))
+                 .build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject("gitops"));
+
+    OrchestrationEvent event = OrchestrationEvent.builder().ambiance(ambiance).status(Status.SUCCEEDED).build();
+    CDStageModuleInfo stageLevelModuleInfo = (CDStageModuleInfo) provider.getStageLevelModuleInfo(event);
+
+    assertThat(stageLevelModuleInfo.getGitopsExecutionSummary().getEnvironments())
+        .hasSize(2)
+        .containsExactlyInAnyOrder(GitOpsExecutionSummary.Environment.builder()
+                                       .identifier("env1")
+                                       .name("env1name")
+                                       .envGroupName("eg1name")
+                                       .envGroupIdentifier("eg1")
+                                       .build(),
+            GitOpsExecutionSummary.Environment.builder()
+                .identifier("env2")
+                .name("env2name")
+                .envGroupName("eg1name")
+                .envGroupIdentifier("eg1")
+                .build());
   }
 
   @Test

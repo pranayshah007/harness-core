@@ -29,7 +29,7 @@ public class PrincipalProtoMapper {
       final String name = getStringFromStringValue(serviceAccountPrincipal.getName());
       final String email = getStringFromStringValue(serviceAccountPrincipal.getEmail());
       final String username = getStringFromStringValue(serviceAccountPrincipal.getUserName());
-      return new io.harness.security.dto.ServiceAccountPrincipal(name, email, username);
+      return new io.harness.security.dto.ServiceAccountPrincipal(name, email, username, accountId);
     }
     log.error("The principal in the request is {}", principalFromProto);
     throw new InvalidRequestException("The request doesn't has the correct user principal set");

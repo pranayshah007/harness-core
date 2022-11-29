@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
+ * Copyright 2022 Harness Inc. All rights reserved.
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
@@ -23,6 +23,8 @@ import static io.harness.ng.core.template.TemplateEntityConstants.SECRET_MANAGER
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP;
+import static io.harness.ng.core.template.TemplateEntityConstants.STEP_GROUP_ROOT_FIELD;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP_ROOT_FIELD;
 
 import static java.util.Arrays.asList;
@@ -57,7 +59,10 @@ public enum TemplateEntityType {
       SECRET_MANAGER, SECRET_MANAGER_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PL, false),
 
   @JsonProperty(ARTIFACT_SOURCE)
-  ARTIFACT_SOURCE_TEMPLATE(ARTIFACT_SOURCE, ARTIFACT_SOURCE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), CDC, false);
+  ARTIFACT_SOURCE_TEMPLATE(ARTIFACT_SOURCE, ARTIFACT_SOURCE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), CDC, false),
+
+  @JsonProperty(STEP_GROUP)
+  STEPGROUP_TEMPLATE(STEP_GROUP, STEP_GROUP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE, false);
 
   private final String yamlType;
   private String rootYamlName;

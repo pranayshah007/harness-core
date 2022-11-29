@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.Collections;

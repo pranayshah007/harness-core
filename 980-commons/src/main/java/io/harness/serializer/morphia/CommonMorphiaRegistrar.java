@@ -11,13 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.Encryptable;
 import io.harness.context.MdcGlobalContextData;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.encryption.Encryptable;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.SimpleEncryption;
 import io.harness.tasks.Task;
 

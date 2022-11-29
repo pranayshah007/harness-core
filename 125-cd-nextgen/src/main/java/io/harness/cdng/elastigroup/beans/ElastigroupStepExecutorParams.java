@@ -10,6 +10,7 @@ package io.harness.cdng.elastigroup.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 
@@ -19,4 +20,6 @@ import lombok.Value;
 public class ElastigroupStepExecutorParams {
   boolean shouldOpenFetchFilesLogStream;
   String startupScript;
+  String elastigroupParameters;
+  String image;
 }

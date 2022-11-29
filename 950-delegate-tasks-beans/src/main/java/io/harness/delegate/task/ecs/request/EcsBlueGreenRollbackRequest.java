@@ -16,7 +16,7 @@ import io.harness.delegate.task.ecs.EcsCommandTypeNG;
 import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils;
+import io.harness.reflection.ExpressionReflectionUtils;
 
 import java.util.List;
 import lombok.Builder;

@@ -14,9 +14,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import io.grpc.ForwardingServerCallListener.SimpleForwardingServerCallListener;
 import io.grpc.Metadata;

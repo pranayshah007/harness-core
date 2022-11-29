@@ -14,13 +14,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.Permit;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public interface PermitService {
+public interface PermitService extends OwnedByAccount {
   String acquirePermit(@Valid Permit permit);
   boolean releasePermitByKey(@NotNull String key);
 }

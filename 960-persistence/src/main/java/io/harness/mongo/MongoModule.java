@@ -83,6 +83,7 @@ public class MongoModule extends AbstractModule {
                                       .retryWrites(true)
                                       .connectTimeout(30000)
                                       .serverSelectionTimeout(90000)
+                                      .socketTimeout(360000)
                                       .maxConnectionIdleTime(600000)
                                       .connectionsPerHost(300)
                                       .build();
@@ -104,6 +105,7 @@ public class MongoModule extends AbstractModule {
                                       .retryWrites(true)
                                       .connectTimeout(mongoConfig.getConnectTimeout())
                                       .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
+                                      .socketTimeout(mongoConfig.getSocketTimeout())
                                       .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
                                       .connectionsPerHost(mongoConfig.getConnectionsPerHost())
                                       .readPreference(mongoConfig.getReadPreference())
@@ -165,6 +167,7 @@ public class MongoModule extends AbstractModule {
                                     .retryWrites(true)
                                     .connectTimeout(mongoConfig.getConnectTimeout())
                                     .serverSelectionTimeout(mongoConfig.getServerSelectionTimeout())
+                                    .socketTimeout(mongoConfig.getSocketTimeout())
                                     .maxConnectionIdleTime(mongoConfig.getMaxConnectionIdleTime())
                                     .connectionsPerHost(mongoConfig.getConnectionsPerHost())
                                     .readPreference(mongoConfig.getReadPreference())

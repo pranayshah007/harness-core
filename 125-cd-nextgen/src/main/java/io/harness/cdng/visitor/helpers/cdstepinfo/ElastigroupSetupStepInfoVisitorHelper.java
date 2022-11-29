@@ -7,6 +7,7 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
+import io.harness.cdng.ecs.EcsBlueGreenCreateServiceStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;

@@ -118,7 +118,7 @@ public class ArtifactResourceUtils {
       String yaml, GitEntityFindInfoDTO gitEntityBasicInfo) {
     TemplateMergeResponseDTO response = NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
         accountId, orgIdentifier, projectIdentifier, gitEntityBasicInfo.getBranch(),
-        gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(),
+        gitEntityBasicInfo.getYamlGitConfigId(), gitEntityBasicInfo.getDefaultFromOtherRepo(), false,
         TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()));
     return response.getMergedPipelineYaml();
   }

@@ -19,8 +19,8 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.logging.ExceptionLogger;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

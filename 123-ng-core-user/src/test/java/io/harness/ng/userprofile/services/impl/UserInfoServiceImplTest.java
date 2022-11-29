@@ -89,7 +89,7 @@ public class UserInfoServiceImplTest extends CategoryTest {
         UserInfo.builder().uuid(randomAlphabetic(20)).name("abc").email("abc@harness.io").build();
     userInfoWithDiffNameAndEmailAndUuid =
         UserInfo.builder().uuid(randomAlphabetic(20)).name("abcx").email("abc@harness.io").build();
-    serviceAccountPrincipal = new ServiceAccountPrincipal("SA_ABC", "saabc@harness.io", "sa_abc");
+    serviceAccountPrincipal = new ServiceAccountPrincipal("SA_ABC", "saabc@harness.io", "sa_abc", "sa_accountId");
   }
 
   @Test

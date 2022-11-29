@@ -24,10 +24,10 @@ import static org.mongodb.morphia.aggregation.Accumulator.accumulator;
 import static org.mongodb.morphia.aggregation.Group.first;
 import static org.mongodb.morphia.aggregation.Group.grouping;
 
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.mongo.ProcessTimeLogContext;
 
 import software.wings.core.managerConfiguration.ConfigurationController;

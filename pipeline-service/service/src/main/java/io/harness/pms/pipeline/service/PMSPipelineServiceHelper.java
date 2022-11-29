@@ -191,13 +191,13 @@ public class PMSPipelineServiceHelper {
         System.currentTimeMillis() - start, pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getAccountIdentifier());
     if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
+      List<String> denyingRuleSetIds = governanceMetadata.getDetailsList()
+                                           .stream()
+                                           .filter(PolicySetMetadata::getDeny)
+                                           .map(PolicySetMetadata::getIdentifier)
+                                           .collect(Collectors.toList());
       throw new PolicyEvaluationFailureException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString(),
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingRuleSetIds.toString(),
           governanceMetadata, pipelineEntity.getYaml());
     }
   }

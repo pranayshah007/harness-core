@@ -21,9 +21,15 @@ import software.wings.yaml.workflow.StepYaml;
 import java.util.Map;
 
 public interface StepMapper {
+  int DEFAULT_TIMEOUT_MILLI = 600000;
+
   String getStepType(StepYaml stepYaml);
 
+  State getState(StepYaml stepYaml);
+
   AbstractStepNode getSpec(StepYaml stepYaml);
+
+  boolean areSimilar(StepYaml stepYaml1, StepYaml stepYaml2);
 
   default ParameterField<Timeout> getTimeout(StepYaml stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
@@ -34,6 +40,10 @@ public interface StepMapper {
       timeoutString = t + "s";
     }
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
+  }
+
+  default ParameterField<Timeout> getTimeout(State state) {
+    return MigratorUtility.getTimeout(state.getTimeoutMillis());
   }
 
   default String getDescription(StepYaml stepYaml) {
@@ -64,13 +74,11 @@ public interface StepMapper {
     stepNode.setName(state.getName());
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
-      pmsAbstractStepNode.setTimeout(
-          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
+      pmsAbstractStepNode.setTimeout(getTimeout(state));
     }
     if (stepNode instanceof CdAbstractStepNode) {
       CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
-      cdAbstractStepNode.setTimeout(
-          ParameterField.createValueField(Timeout.builder().timeoutInMillis(state.getTimeoutMillis()).build()));
+      cdAbstractStepNode.setTimeout(getTimeout(state));
     }
   }
 }

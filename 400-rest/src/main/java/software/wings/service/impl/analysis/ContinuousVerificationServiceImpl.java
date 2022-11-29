@@ -72,6 +72,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.logging.Misc;
 import io.harness.persistence.HIterator;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.JsonUtils;
 import io.harness.time.Timestamp;
 import io.harness.waiter.WaitNotifyEngine;
 
@@ -2225,7 +2226,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                 .headers(new HashMap<>())
                 .options(datadogConfig.fetchLogOptionsMap())
                 .query(config.getQuery())
-                .body(datadogConfig.fetchLogBodyMap(true))
+                .jsonBody(JsonUtils.asJson(datadogConfig.fetchLogBodyMap(true)))
                 .encryptedDataDetails(secretManager.getEncryptionDetails(datadogConfig, config.getAppId(), null))
                 .hosts(Sets.newHashSet(DUMMY_HOST_NAME))
                 .stateType(DelegateStateType.DATA_DOG_LOG)
@@ -2269,7 +2270,7 @@ public class ContinuousVerificationServiceImpl implements ContinuousVerification
                 .stateExecutionId(CV_24x7_STATE_EXECUTION + "-" + config.getUuid())
                 .serviceId(config.getServiceId())
                 .hosts(Sets.newHashSet(DUMMY_HOST_NAME))
-                .body(isEmpty(body) ? null : new JSONObject(body).toMap())
+                .jsonBody(isEmpty(body) ? null : body)
                 .cvConfidId(config.getUuid())
                 .shouldDoHostBasedFiltering(false)
                 .startTime(startTime)

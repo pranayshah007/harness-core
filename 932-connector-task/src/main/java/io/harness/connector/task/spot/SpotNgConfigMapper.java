@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.govern.Switch;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -39,6 +40,7 @@ public class SpotNgConfigMapper {
     if (spotCredentialType == SpotCredentialType.PERMANENT_TOKEN) {
       SpotPermanentTokenConfigSpecDTO config = (SpotPermanentTokenConfigSpecDTO) credential.getConfig();
       config = (SpotPermanentTokenConfigSpecDTO) decryptionHelper.decrypt(config, encryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(config, encryptionDetails);
       spotConfig = SpotConfig.builder()
                        .credential(SpotPermanentTokenCredential.builder()
                                        .spotAccountId(getSecretAsStringFromPlainTextOrSecretRef(

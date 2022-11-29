@@ -23,6 +23,7 @@ import io.harness.migrations.timescaledb.AddFieldsToWorkflowCVMetrics;
 import io.harness.migrations.timescaledb.AddIdleUnallocatedColumns;
 import io.harness.migrations.timescaledb.AddIndexToInstanceV2Migration;
 import io.harness.migrations.timescaledb.AddIndicesForCostEvents;
+import io.harness.migrations.timescaledb.AddInfraIdsToDeploymentsEnvIdsToInfraTable;
 import io.harness.migrations.timescaledb.AddInstancesDeployedToDeployment;
 import io.harness.migrations.timescaledb.AddMaxStorageColumns;
 import io.harness.migrations.timescaledb.AddMaxUtilColumns;
@@ -41,6 +42,7 @@ import io.harness.migrations.timescaledb.AddSystemCostBillingData;
 import io.harness.migrations.timescaledb.AddingToCVDeploymentMetrics;
 import io.harness.migrations.timescaledb.AlterCEUtilizationDataTables;
 import io.harness.migrations.timescaledb.BaseTimeScaleDBMigration;
+import io.harness.migrations.timescaledb.ChangeChunkSizeForDeploymentsTable;
 import io.harness.migrations.timescaledb.ChangeToTimeStampTZ;
 import io.harness.migrations.timescaledb.CreateAccountTables;
 import io.harness.migrations.timescaledb.CreateAggregatedBillingTable;
@@ -168,6 +170,9 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(72, CreateExecutionInterruptTable.class))
         .add(Pair.of(73, BaseTimeScaleDBMigration.class))
         .add(Pair.of(74, AddOnDemandRollbackDetailsToDeployment.class))
+        .add(Pair.of(75, ChangeChunkSizeForDeploymentsTable.class))
+        .add(Pair.of(76, BaseTimeScaleDBMigration.class))
+        .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
         .build();
   }
 }

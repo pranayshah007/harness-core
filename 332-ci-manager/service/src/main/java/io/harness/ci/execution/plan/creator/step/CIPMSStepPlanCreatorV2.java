@@ -440,6 +440,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
   }
 
   protected PlanCreationResponse createPlanForFieldV2(PlanCreationContext ctx, T stepElement) {
+    stepElement = (T) getStepNode(stepElement);
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
@@ -547,5 +548,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     } catch (IOException e) {
       throw new CIStageExecutionException("Failed to create gitclone step", e);
     }
+  }
+
+  protected CIAbstractStepNode getStepNode(T stepElement) {
+    return stepElement;
   }
 }
