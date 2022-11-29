@@ -7,12 +7,23 @@
 
 package software.wings.service.impl.marketplace.gcp;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.HITESH;
 
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.category.element.DeprecatedIntegrationTests;
+import io.harness.category.element.UnitTests;
 import io.harness.persistence.HPersistence;
+import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
 
 import software.wings.beans.EntityType;
@@ -108,6 +119,17 @@ public class GCPMarketPlaceServiceIntegrationTest extends IntegrationTestBase {
     assertThat( nextReportEndTime).isEqualTo(nextSavedGCPUsageReport.getEndTimestamp());*/
   }
 
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testGCPUsageReportDeleteByAccountId() {
+    when(persistence.delete((Query<PersistentEntity>) any())).thenReturn(true);
+    Query<PersistentEntity> mockedQueryEntity = mock(Query.class);
+    when(persistence.createQuery(any())).thenReturn(mockedQueryEntity);
+    when(mockedQueryEntity.filter(anyString(), any())).thenReturn(mockedQueryEntity);
+    gcpMarketPlaceService.deleteByAccountId(ACCOUNT_ID);
+    verify(persistence, times(1)).delete((Query<PersistentEntity>) any());
+  }
   private GCPUsageReport getSampleGCPUsageReport(Instant startTime, Instant endTime) {
     return new GCPUsageReport(
         SOME_ACCOUNT_ID, SOME_CONSUMER_ID, SOME_OPERATION_ID, SOME_ENTITLEMENT_NAME, startTime, endTime, 5);

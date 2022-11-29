@@ -7,7 +7,9 @@
 package io.harness.pms.pipeline.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -19,7 +21,11 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
@@ -28,6 +34,7 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
+import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
@@ -45,6 +52,8 @@ import org.junit.experimental.categories.Category;
 public class PipelinesApiUtilsTest extends CategoryTest {
   String slug = randomAlphabetic(10);
   String name = randomAlphabetic(10);
+
+  Long lastUpdatedAt = 987654L;
 
   @Test
   @Owner(developers = MANKRIT)
@@ -150,11 +159,59 @@ public class PipelinesApiUtilsTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = MANKRIT)
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildPipelineValidationUUIDResponseBody() {
+    PipelineValidationEvent event = PipelineValidationEvent.builder().uuid("abc1").build();
+    assertThat(PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(event).getUuid()).isEqualTo("abc1");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testBuildPipelineValidationResponseBody() {
     PipelineValidationEvent event = PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build();
     PipelineValidationResponseBody responseBody = PipelinesApiUtils.buildPipelineValidationResponseBody(event);
     assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetCacheResponseMetadataDTO() {
+    io.harness.pms.pipeline.CacheResponseMetadataDTO cacheResponseMetadataDTO =
+        io.harness.pms.pipeline.CacheResponseMetadataDTO.builder()
+            .cacheState(CacheState.VALID_CACHE)
+            .ttlLeft(234523)
+            .build();
+    CacheResponseMetadataDTO cacheMetadataResponse =
+        PipelinesApiUtils.getCacheResponseMetadataDTO(cacheResponseMetadataDTO);
+    assertEquals(CacheResponseMetadataDTO.CacheStateEnum.VALID_CACHE, cacheMetadataResponse.getCacheState());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetResponseBodyWithCacheResponseMetadata() {
+    CacheResponse cacheResponse =
+        CacheResponse.builder().cacheState(CacheState.VALID_CACHE).lastUpdatedAt(lastUpdatedAt).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .yaml("yaml")
+                                        .identifier(slug)
+                                        .orgIdentifier("org")
+
+                                        .storeType(StoreType.REMOTE)
+                                        .build();
+    PipelineGetResponseBody responseBody = PipelinesApiUtils.getGetResponseBody(pipelineEntity);
+    assertEquals("yaml", responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals("org", responseBody.getOrg());
+    assertEquals(
+        CacheResponseMetadataDTO.CacheStateEnum.VALID_CACHE, responseBody.getCacheResponseMetadata().getCacheState());
+    assertEquals(lastUpdatedAt, responseBody.getCacheResponseMetadata().getLastUpdatedAt());
   }
 }

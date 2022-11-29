@@ -9,17 +9,22 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"io"
-	"io/ioutil"
-
-	"time"
-
+	"fmt"
 	"github.com/drone/go-scm/scm"
+	gitCli "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/harness/harness-core/commons/go/lib/utils"
 	"github.com/harness/harness-core/product/ci/scm/git"
 	"github.com/harness/harness-core/product/ci/scm/gitclient"
 	pb "github.com/harness/harness-core/product/ci/scm/proto"
 	"go.uber.org/zap"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 // FindFile returns the contents of a file based on a ref or branch.
@@ -186,7 +191,23 @@ func DeleteFile(ctx context.Context, fileRequest *pb.DeleteFileRequest, log *zap
 func UpdateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.SugaredLogger) (out *pb.UpdateFileResponse, err error) {
 	start := time.Now()
 	log.Infow("UpdateFile starting", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath())
-
+	if fileRequest.UseGitClient {
+		status, commitId, err := clonePush(ctx, fileRequest, log, false)
+		if err != nil {
+			out = &pb.UpdateFileResponse{
+				Status: status,
+				Error:  err.Error(),
+			}
+			return out, nil
+		}
+		log.Infow("UpdateFile success", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "branch", fileRequest.GetBranch(), "branch", fileRequest.GetBranch(),
+			"elapsed_time_ms", utils.TimeSince(start))
+		out = &pb.UpdateFileResponse{
+			Status:   status,
+			CommitId: commitId,
+		}
+		return out, nil
+	}
 	client, err := gitclient.GetGitClient(*fileRequest.GetProvider(), log)
 	if err != nil {
 		log.Errorw("UpdateFile failure", "bad provider", gitclient.GetProvider(*fileRequest.GetProvider()), "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
@@ -305,6 +326,23 @@ func PushFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.S
 func CreateFile(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.SugaredLogger) (out *pb.CreateFileResponse, err error) {
 	start := time.Now()
 	log.Infow("CreateFile starting", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath())
+	if fileRequest.UseGitClient {
+		status, commitId, err := clonePush(ctx, fileRequest, log, true)
+		if err != nil {
+			out = &pb.CreateFileResponse{
+				Status: status,
+				Error:  err.Error(),
+			}
+			return out, nil
+		}
+		log.Infow("CreateFile success", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "branch", fileRequest.GetBranch(), "branch", fileRequest.GetBranch(),
+			"elapsed_time_ms", utils.TimeSince(start))
+		out = &pb.CreateFileResponse{
+			Status:   status,
+			CommitId: commitId,
+		}
+		return out, nil
+	}
 
 	client, err := gitclient.GetGitClient(*fileRequest.GetProvider(), log)
 	if err != nil {
@@ -565,4 +603,73 @@ func getCommitIdIfEmptyInRequest(ctx context.Context, commitIdInRequest, slug, b
 	default:
 		return commitIdInRequest, nil
 	}
+}
+
+// Clone a repo and push commits using Git client
+// Currently enabled only for BB on-prem use case
+func clonePush(ctx context.Context, fileRequest *pb.FileModifyRequest, log *zap.SugaredLogger, isCreateAPI bool) (int32, string, error) {
+	// create a temp directory for the repository
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return 500, "", err
+	}
+
+	// and ensure we cleanup after ourselves
+	defer os.RemoveAll(dir)
+
+	// clone the repository
+	repo, err := gitCli.PlainClone(dir, false, &gitCli.CloneOptions{
+		RemoteName:    "origin",
+		Auth:          &http.TokenAuth{Token: fileRequest.GetProvider().GetBitbucketServer().GetPersonalAccessToken()},
+		URL:           fileRequest.Provider.Url,
+		Depth:         1,
+		Progress:      os.Stdout,
+		ReferenceName: plumbing.ReferenceName("refs/heads/" + fileRequest.Branch),
+	})
+	if err != nil {
+		return 500, "", err
+	}
+
+	tree, err := repo.Worktree()
+	if err != nil {
+		return 500, "", err
+	}
+	// write the file to the temp directory
+	path := filepath.Join(dir, fileRequest.Path)
+	if isCreateAPI {
+		if _, err := os.Stat(path); err == nil {
+			return 409, "", fmt.Errorf("'%s' could not be created because it already exists. A previous commit ID must be provided when editing an existing file to prevent concurrent modifications.", fileRequest.Path)
+		}
+	}
+	// create the parent directory if necessary
+	os.MkdirAll(filepath.Dir(path), 0700)
+
+	if err = ioutil.WriteFile(path, []byte(fileRequest.Content), 0644); err != nil {
+		return 500, "", err
+	}
+
+	// stage the file
+	if _, err = tree.Add(fileRequest.Path); err != nil {
+		return 500, "", err
+	}
+	// commit the file
+	revision, err := tree.Commit(fileRequest.Message, &gitCli.CommitOptions{
+		Author: &object.Signature{
+			Name:  fileRequest.Signature.Name,
+			Email: fileRequest.Signature.Email,
+			When:  time.Now(),
+		},
+	})
+	if err != nil {
+		return 500, "", err
+	}
+	// push to the remote
+	if err := repo.Push(&gitCli.PushOptions{
+		RemoteName: "origin",
+		Auth:       &http.TokenAuth{Token: fileRequest.GetProvider().GetBitbucketServer().GetPersonalAccessToken()},
+		Progress:   os.Stdout,
+	}); err != nil {
+		return 500, "", err
+	}
+	return 200, revision.String(), nil
 }

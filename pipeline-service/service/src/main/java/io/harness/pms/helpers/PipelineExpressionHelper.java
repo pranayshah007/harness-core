@@ -48,7 +48,6 @@ public class PipelineExpressionHelper {
     if (!EmptyPredicate.isEmpty(ambiance.getMetadata().getModuleType())) {
       moduleName = ambiance.getMetadata().getModuleType();
     } else {
-      // Todo: Change to get only required fields
       Optional<PipelineExecutionSummaryEntity> optional = pmsExecutionSummaryService.getPipelineExecutionSummary(
           AmbianceUtils.getAccountId(ambiance), AmbianceUtils.getOrgIdentifier(ambiance),
           AmbianceUtils.getProjectIdentifier(ambiance), ambiance.getPlanExecutionId());

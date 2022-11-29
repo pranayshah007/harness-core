@@ -19,6 +19,7 @@ import io.harness.engine.pms.advise.AdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.IgnoreFailureAdviseHandler;
 import io.harness.engine.pms.advise.handlers.InterventionWaitAdviserResponseHandler;
 import io.harness.engine.pms.advise.handlers.MarkSuccessAdviseHandler;
+import io.harness.engine.pms.advise.handlers.RetryAdviserResponseHandler;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.engine.pms.data.PmsOutcomeService;
 import io.harness.engine.pms.data.PmsSweepingOutputService;
@@ -27,7 +28,6 @@ import io.harness.execution.ExecutionModeUtils;
 import io.harness.execution.IdentityNodeExecutionMetadata;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
-import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.pms.contracts.advisers.AdviseType;
@@ -47,7 +47,6 @@ import io.harness.waiter.WaitNotifyEngine;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
@@ -67,54 +66,14 @@ public class IdentityNodeExecutionStrategy
   @Inject private PmsSweepingOutputService pmsSweepingOutputService;
   @Inject private IdentityNodeResumeHelper identityNodeResumeHelper;
   @Inject private TransactionHelper transactionHelper;
-  @Inject private PmsGraphStepDetailsService pmsGraphStepDetailsService;
-
+  @Inject private IdentityNodeExecutionStrategyHelper identityNodeExecutionStrategyHelper;
   private final String SERVICE_NAME_IDENTITY = ModuleType.PMS.name().toLowerCase();
 
   @Override
   public NodeExecution createNodeExecution(@NotNull Ambiance ambiance, @NotNull IdentityPlanNode node,
       IdentityNodeExecutionMetadata metadata, String notifyId, String parentId, String previousId) {
-    String uuid = AmbianceUtils.obtainCurrentRuntimeId(ambiance);
-    NodeExecution originalExecution = nodeExecutionService.get(node.getOriginalNodeExecutionId());
-    NodeExecution execution = NodeExecution.builder()
-                                  .uuid(uuid)
-                                  .planNode(node)
-                                  .ambiance(ambiance)
-                                  .levelCount(ambiance.getLevelsCount())
-                                  .status(Status.QUEUED)
-                                  .unitProgresses(new ArrayList<>())
-                                  .startTs(AmbianceUtils.getCurrentLevelStartTs(ambiance))
-                                  .originalNodeExecutionId(node.getOriginalNodeExecutionId())
-                                  .module(node.getServiceName())
-                                  .name(node.getName())
-                                  .skipGraphType(node.getSkipGraphType())
-                                  .identifier(node.getIdentifier())
-                                  .stepType(node.getStepType())
-                                  .nodeId(node.getUuid())
-                                  .stageFqn(node.getStageFqn())
-                                  .group(node.getGroup())
-                                  .notifyId(notifyId)
-                                  .parentId(parentId)
-                                  .previousId(previousId)
-                                  .mode(originalExecution.getMode())
-                                  .nodeRunInfo(originalExecution.getNodeRunInfo())
-                                  .skipInfo(originalExecution.getSkipInfo())
-                                  .failureInfo(originalExecution.getFailureInfo())
-                                  .progressData(originalExecution.getProgressData())
-                                  .adviserResponse(originalExecution.getAdviserResponse())
-                                  .timeoutInstanceIds(originalExecution.getTimeoutInstanceIds())
-                                  .timeoutDetails(originalExecution.getTimeoutDetails())
-                                  .adviserResponse(originalExecution.getAdviserResponse())
-                                  .adviserTimeoutInstanceIds(originalExecution.getAdviserTimeoutInstanceIds())
-                                  .interruptHistories(originalExecution.getInterruptHistories())
-                                  .resolvedParams(originalExecution.getResolvedParams())
-                                  .resolvedInputs(originalExecution.getResolvedInputs())
-                                  .executionInputConfigured(originalExecution.getExecutionInputConfigured())
-                                  .build();
-    NodeExecution nodeExecution = nodeExecutionService.save(execution);
-    pmsGraphStepDetailsService.copyStepDetailsForRetry(
-        ambiance.getPlanExecutionId(), originalExecution.getUuid(), uuid);
-    return nodeExecution;
+    return identityNodeExecutionStrategyHelper.createNodeExecution(
+        ambiance, node, metadata, notifyId, parentId, previousId);
   }
 
   @Override
@@ -134,7 +93,7 @@ public class IdentityNodeExecutionStrategy
       // If this is one of the leaf modes then just clone and copy everything and we should be good
       // This is an optimization/hack to not do any actual work
       if (ExecutionModeUtils.isLeafMode(originalExecution.getMode())) {
-        handleLeafNodes(ambiance, newNodeExecution, originalExecution.getStatus());
+        handleLeafNodes(ambiance, newNodeExecution, originalExecution);
         return;
       }
 
@@ -159,15 +118,21 @@ public class IdentityNodeExecutionStrategy
   }
 
   @VisibleForTesting
-  void handleLeafNodes(Ambiance ambiance, NodeExecution nodeExecution, Status status) {
+  void handleLeafNodes(Ambiance ambiance, NodeExecution nodeExecution, NodeExecution originalNodeExecution) {
     transactionHelper.performTransaction(() -> {
       // Copy outcomes
       pmsOutcomeService.cloneForRetryExecution(ambiance, nodeExecution.getOriginalNodeExecutionId());
       // Copy outputs
       pmsSweepingOutputService.cloneForRetryExecution(ambiance, nodeExecution.getOriginalNodeExecutionId());
 
+      // Copying data for retried nodeExecutions when a node has more than one nodeExecutions corresponding to it.
+      // This will handle only retry. if there is any new way of running more than one NodeExecution for one planNode
+      // then handle that here.
+      identityNodeExecutionStrategyHelper.copyNodeExecutionsForRetriedNodes(
+          nodeExecution, originalNodeExecution.getRetryIds());
+
       return nodeExecutionService.updateStatusWithOps(
-          nodeExecution.getUuid(), status, null, EnumSet.noneOf(Status.class));
+          nodeExecution.getUuid(), originalNodeExecution.getStatus(), null, EnumSet.noneOf(Status.class));
     });
     processAdviserResponse(ambiance, nodeExecution.getAdviserResponse());
   }
@@ -194,6 +159,7 @@ public class IdentityNodeExecutionStrategy
   private boolean isFailureStrategyAdvisor(AdviserResponseHandler adviserResponseHandler) {
     return adviserResponseHandler instanceof InterventionWaitAdviserResponseHandler
         || adviserResponseHandler instanceof MarkSuccessAdviseHandler
+        || adviserResponseHandler instanceof RetryAdviserResponseHandler
         || adviserResponseHandler instanceof IgnoreFailureAdviseHandler;
   }
 

@@ -7,11 +7,13 @@
 
 package io.harness.pms.pipeline.validation.async.beans;
 
+import io.harness.pms.pipeline.PipelineEntity;
+
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
 public class ValidationParams {
-  // empty for now
+  PipelineEntity pipelineEntity;
 }

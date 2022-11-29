@@ -140,7 +140,7 @@ public class RuntimeInputValuesValidator {
         if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
           if (sourceField.getInputSetValidator() != null) {
             // if both are runtime inputs with input set validator, they should match exactly else return false
-            return sourceValue.equals(objectToValidateValue);
+            return sourceField.getInputSetValidator().equals(inputSetField.getInputSetValidator());
           }
           return true;
         } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {

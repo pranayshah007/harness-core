@@ -13,6 +13,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 
 import software.wings.beans.template.TemplateFolder;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ import javax.validation.Valid;
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.PL)
-public interface TemplateFolderService {
+public interface TemplateFolderService extends OwnedByAccount {
   //  @Deprecated should not be used in future code,
   PageResponse<TemplateFolder> list(PageRequest<TemplateFolder> pageRequest);
 

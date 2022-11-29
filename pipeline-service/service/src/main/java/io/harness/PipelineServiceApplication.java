@@ -140,6 +140,7 @@ import io.harness.pms.triggers.scheduled.ScheduledTriggerHandler;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
+import io.harness.queue.QueuePublisher;
 import io.harness.registrars.PipelineServiceFacilitatorRegistrar;
 import io.harness.registrars.PipelineServiceStepRegistrar;
 import io.harness.request.RequestContextFilter;
@@ -171,9 +172,11 @@ import io.harness.timeout.TimeoutEngine;
 import io.harness.token.remote.TokenClient;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
+import io.harness.waiter.NotifyEvent;
 import io.harness.waiter.NotifyQueuePublisherRegister;
 import io.harness.waiter.NotifyResponseCleaner;
 import io.harness.waiter.PmsNotifyEventConsumerRedis;
+import io.harness.waiter.PmsNotifyEventListener;
 import io.harness.waiter.PmsNotifyEventPublisher;
 import io.harness.waiter.ProgressUpdateService;
 import io.harness.yaml.YamlSdkConfiguration;
@@ -192,6 +195,7 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.dropwizard.Application;
@@ -483,6 +487,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         injector.getInstance(Key.get(ExecutionInfoUpdateEventHandler.class)));
     planExecutionService.getPlanStatusUpdateSubject().register(planStatusEventEmitterHandler);
     planExecutionService.getPlanStatusUpdateSubject().register(
+        injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
+    planExecutionService.getPlanStatusUpdateSubject().register(
         injector.getInstance(Key.get(OrchestrationLogPublisher.class)));
 
     PlanExecutionStrategy planExecutionStrategy = injector.getInstance(Key.get(PlanExecutionStrategy.class));
@@ -654,9 +660,12 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
   private void registerEventListeners(Injector injector) {
     QueueListenerController queueListenerController = injector.getInstance(QueueListenerController.class);
     queueListenerController.register(injector.getInstance(DelayEventListener.class), 1);
+    queueListenerController.register(injector.getInstance(PmsNotifyEventListener.class), 3);
   }
 
   private void registerWaitEnginePublishers(Injector injector) {
+    final QueuePublisher<NotifyEvent> publisher =
+        injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
     final NotifyQueuePublisherRegister notifyQueuePublisherRegister =
         injector.getInstance(NotifyQueuePublisherRegister.class);
     notifyQueuePublisherRegister.register(PMS_ORCHESTRATION, injector.getInstance(PmsNotifyEventPublisher.class));

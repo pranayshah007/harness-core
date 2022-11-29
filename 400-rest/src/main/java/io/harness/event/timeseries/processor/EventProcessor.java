@@ -70,6 +70,8 @@ public interface EventProcessor<T extends EventInfo> {
   String ON_DEMAND_ROLLBACK = "ON_DEMAND_ROLLBACK";
   String ORIGINAL_EXECUTION_ID = "ORIGINAL_EXECUTION_ID";
   String MANUALLY_ROLLED_BACK = "MANUALLY_ROLLED_BACK";
+  String INFRA_DEFINITIONS = "INFRA_DEFINITIONS";
+  String INFRA_MAPPINGS = "INFRA_MAPPINGS";
 
   void processEvent(T eventInfo) throws Exception;
 }

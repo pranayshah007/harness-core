@@ -92,6 +92,8 @@ import io.harness.waiter.OrchestrationNotifyEventListener;
 import software.wings.DataStorageMode;
 import software.wings.WingsTestModule;
 import software.wings.app.AuthModule;
+import software.wings.app.ExecutorConfig;
+import software.wings.app.ExecutorsConfig;
 import software.wings.app.GcpMarketplaceIntegrationModule;
 import software.wings.app.GeneralNotifyEventListener;
 import software.wings.app.IndexMigratorModule;
@@ -325,6 +327,9 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
         MongoConfig.builder().uri(getProperty("mongoUri", "mongodb://localhost:27017/" + dbName)).build());
     configuration.getBackgroundSchedulerConfig().setAutoStart(getProperty("setupScheduler", "false"));
     configuration.getServiceSchedulerConfig().setAutoStart(getProperty("setupScheduler", "false"));
+
+    configuration.setExecutorsConfig(
+        ExecutorsConfig.builder().dataReconciliationExecutorConfig(ExecutorConfig.builder().build()).build());
 
     configuration.setGrpcDelegateServiceClientConfig(
         GrpcClientConfig.builder().target("localhost:9880").authority("localhost").build());

@@ -9,8 +9,8 @@ package io.harness.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import io.harness.beans.Encryptable;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.encryption.Encryptable;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.reflection.ReflectionUtils;

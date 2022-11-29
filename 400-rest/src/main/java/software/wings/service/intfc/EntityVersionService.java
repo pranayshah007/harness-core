@@ -14,11 +14,12 @@ import software.wings.beans.EntityType;
 import software.wings.beans.EntityVersion;
 import software.wings.beans.EntityVersion.ChangeType;
 import software.wings.beans.EntityVersionCollection;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 /**
  * Created by rishi on 10/18/16.
  */
-public interface EntityVersionService {
+public interface EntityVersionService extends OwnedByAccount {
   PageResponse<EntityVersionCollection> listEntityVersions(PageRequest<EntityVersionCollection> pageRequest);
 
   EntityVersion lastEntityVersion(String appId, EntityType entityType, String entityUuid);

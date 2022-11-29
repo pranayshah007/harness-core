@@ -38,7 +38,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
@@ -383,7 +382,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     LdapSettings ldapSettings = new LdapSettings(
         displayName, testAccountId, connectionSettings, userSettingsList, Arrays.asList(groupSettings));
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(false);
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName(bindPassword).build();
     List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
@@ -422,7 +420,6 @@ public class SSOServiceImplTest extends WingsBaseTest {
 
     LdapSettings ldapSettings = new LdapSettings(
         displayName, testAccountId, connectionSettings, userSettingsList, Collections.singletonList(groupSettings));
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName(bindSecret).build();
     List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);

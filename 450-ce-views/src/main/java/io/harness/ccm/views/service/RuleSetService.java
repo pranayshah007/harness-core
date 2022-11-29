@@ -9,6 +9,7 @@ package io.harness.ccm.views.service;
 
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.helper.RuleSetFilter;
+import io.harness.ccm.views.helper.RuleSetList;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface RuleSetService {
   RuleSet update(String accountId, RuleSet ruleSet);
   RuleSet fetchByName(String accountId, String name, boolean create);
   RuleSet fetchById(String accountId, String uuid, boolean create);
-  List<RuleSet> list(String accountId, RuleSetFilter ruleSet);
+  RuleSetList list(String accountId, RuleSetFilter ruleSet);
   void check(String accountId, List<String> ruleSetIdentifier);
   boolean deleteOOTB(String accountId, String uuid);
   List<RuleSet> listPacks(String accountId, List<String> ruleSetIDs);

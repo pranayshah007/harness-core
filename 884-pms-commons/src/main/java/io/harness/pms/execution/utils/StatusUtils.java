@@ -34,6 +34,7 @@ import static io.harness.pms.contracts.execution.Status.WAIT_STEP_RUNNING;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.pms.contracts.execution.Status;
 
 import java.util.Collections;
@@ -227,6 +228,9 @@ public class StatusUtils {
     return status;
   }
 
+  public boolean checkIfAllChildrenSkipped(List<Status> statuses) {
+    return EmptyPredicate.isEmpty(statuses) || statuses.stream().allMatch(status -> status == SKIPPED);
+  }
   public Status calculateStatusForNode(List<Status> statuses, String nodeExecutionId) {
     Status status = calculateStatus(statuses);
     if (status == UNRECOGNIZED) {

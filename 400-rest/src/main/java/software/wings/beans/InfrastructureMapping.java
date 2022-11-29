@@ -478,5 +478,6 @@ public abstract class InfrastructureMapping
     public static final String appId = "appId";
     public static final String createdAt = "createdAt";
     public static final String uuid = "uuid";
+    public static final String lastUpdatedAt = "lastUpdatedAt";
   }
 }

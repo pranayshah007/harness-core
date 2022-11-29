@@ -61,6 +61,7 @@ import com.google.inject.Inject;
 import com.mongodb.client.result.UpdateResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -385,6 +386,14 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   @Override
   public void updateV2(@NonNull String nodeExecutionId, @NonNull Consumer<Update> ops) {
     update(nodeExecutionId, ops, NodeProjectionUtils.fieldsForNodeUpdateObserver);
+  }
+
+  // Save a collection nodeExecutions.
+  // This does not send any orchestration event. So if you want to do graph update operations on NodeExecution save,
+  // then use the below save() method.
+  @Override
+  public List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions) {
+    return new ArrayList<>(mongoTemplate.insertAll(nodeExecutions));
   }
 
   @Override
@@ -919,11 +928,26 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
 
     List<NodeExecution> nodeExecutions = mongoTemplate.find(query, NodeExecution.class);
 
+    Map<String, NodeExecution> nodeExecutionMap = getUniqueNodeExecutionForNodes(nodeExecutions);
     // fetching stageFqn of stage Nodes
     Map<String, Node> nodeExecutionIdToPlanNode = new HashMap<>();
-    nodeExecutions.forEach(
-        nodeExecution -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
+    nodeExecutionMap.forEach(
+        (uuid, nodeExecution) -> nodeExecutionIdToPlanNode.put(nodeExecution.getUuid(), nodeExecution.getNode()));
     return nodeExecutionIdToPlanNode;
+  }
+
+  // We can have multiple nodeExecution corresponding to same node. So this method make sure that only final/last
+  // nodeExecution is considered while transforming plan for retry failed pipeline.
+  private Map<String, NodeExecution> getUniqueNodeExecutionForNodes(List<NodeExecution> nodeExecutions) {
+    Map<String, NodeExecution> nodeExecutionMap = new HashMap<>();
+    for (NodeExecution nodeExecution : nodeExecutions) {
+      if (!nodeExecutionMap.containsKey(nodeExecution.getNode().getUuid())) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      } else if (nodeExecutionMap.get(nodeExecution.getNode().getUuid()).getStartTs() < nodeExecution.getStartTs()) {
+        nodeExecutionMap.put(nodeExecution.getNode().getUuid(), nodeExecution);
+      }
+    }
+    return nodeExecutionMap;
   }
 
   private void validateQueryFieldsForNodeExecution(Set<String> fieldsToInclude) {

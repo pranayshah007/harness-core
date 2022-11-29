@@ -72,7 +72,7 @@ public class ArtifactoryRequestResponseMapper {
     return ArtifactoryGenericArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .repositoryName(request.getRepositoryName())
-        .artifactPath(buildDetails.getArtifactPath())
+        .artifactPath(buildDetails != null ? buildDetails.getArtifactPath() : null)
         .repositoryFormat(request.getRepositoryFormat())
         .sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY)
         .build();

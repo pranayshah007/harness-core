@@ -96,41 +96,23 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData;
-        long doneWithStartTime;
-        long doneWithEndTime;
         if (disableDeserialization) {
           responseData = BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build();
-
-          doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-          waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
-          doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
         } else {
-          if (lockedAsyncTaskResponse.isUsingKryoWithoutReference()) {
-            ResponseData data =
-                (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
-            if (data instanceof SerializedResponseData) {
-              responseData = data;
-            } else {
-              responseData = (DelegateResponseData) data;
-            }
+          ResponseData data = lockedAsyncTaskResponse.isUsingKryoWithoutReference()
+              ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData())
+              : (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
 
-            doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-            waitNotifyEngine.doneWithV2(lockedAsyncTaskResponse.getUuid(), responseData);
-            doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-          } else {
-            ResponseData data =
-                (ResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
-            if (data instanceof SerializedResponseData) {
-              responseData = data;
-            } else {
-              responseData = (DelegateResponseData) data;
-            }
-
-            doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-            waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
-            doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-          }
+          responseData = data instanceof SerializedResponseData ? data : (DelegateResponseData) data;
         }
+
+        long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+        if (disableDeserialization || !lockedAsyncTaskResponse.isUsingKryoWithoutReference()) {
+          waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
+        } else {
+          waitNotifyEngine.doneWithV2(lockedAsyncTaskResponse.getUuid(), responseData);
+        }
+        long doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
         if (log.isDebugEnabled()) {
           log.debug("DB update processing time {} for doneWith operation, loop processing time {} ",

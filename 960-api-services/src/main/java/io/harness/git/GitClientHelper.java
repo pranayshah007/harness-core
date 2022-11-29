@@ -279,7 +279,7 @@ public class GitClientHelper {
 
   public static String getAzureRepoOrgAndProjectHTTP(String url) {
     String temp = StringUtils.substringBeforeLast(url, "/_git/");
-    return StringUtils.substringAfter(temp, "azure.com/");
+    return StringUtils.substringAfter(temp, ".com/");
   }
 
   public static String getAzureRepoOrg(String orgAndProject) {

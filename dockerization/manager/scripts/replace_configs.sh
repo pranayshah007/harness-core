@@ -136,6 +136,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
   export MAX_CONNECTION_IDLE_TIME; yq -i '.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
@@ -162,6 +166,22 @@ fi
 
 if [[ "" != "$EVEMTS_MONGO_INDEX_MANAGER_MODE" ]]; then
   export EVEMTS_MONGO_INDEX_MANAGER_MODE; yq -i '.events-mongo.indexManagerMode=env(EVEMTS_MONGO_INDEX_MANAGER_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_CORE_SIZE" ]]; then
+  export $DATA_RECONCILIATION_CORE_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.corePoolSize=env($DATA_RECONCILIATION_CORE_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_MAX_SIZE" ]]; then
+  export $DATA_RECONCILIATION_MAX_SIZE; yq -i '.executorsConfig.dataReconciliationExecutorConfig.maxPoolSize=env($DATA_RECONCILIATION_MAX_SIZE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME; yq -i '.executorsConfig.dataReconciliationExecutorConfig.idleTime=env($DATA_RECONCILIATION_IDLE_TIME)' $CONFIG_FILE
+fi
+
+if [[ "" != "$DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT" ]]; then
+  export $DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT; yq -i '.executorsConfig.dataReconciliationExecutorConfig.timeUnit=env($DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT)' $CONFIG_FILE
 fi
 
 if [[ "" != "$EVENTS_MONGO_URI" ]]; then

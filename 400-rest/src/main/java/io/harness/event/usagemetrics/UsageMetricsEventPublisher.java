@@ -346,6 +346,15 @@ public class UsageMetricsEventPublisher {
     objectData.put(
         EventProcessor.TAGS, workflowExecutionService.getDeploymentTags(accountId, workflowExecution.getTags()));
 
+    List<String> infraDefinitionIds = workflowExecution.getInfraDefinitionIds();
+    if (!Lists.isNullOrEmpty(infraDefinitionIds)) {
+      listData.put(EventProcessor.INFRA_DEFINITIONS, serviceIds);
+    }
+    List<String> infraMappingIds = workflowExecution.getInfraMappingIds();
+    if (!Lists.isNullOrEmpty(infraMappingIds)) {
+      listData.put(EventProcessor.INFRA_MAPPINGS, serviceIds);
+    }
+
     TimeSeriesEventInfo eventInfo = TimeSeriesEventInfo.builder()
                                         .accountId(accountId)
                                         .stringData(stringData)

@@ -347,6 +347,62 @@ go_repository(
 # )
 
 go_repository(
+    name = "com_github_go_git_go_git_v5",
+    importpath = "github.com/go-git/go-git/v5",
+    sum = "h1:BXyZu9t0VkbiHtqrsvdq39UDhGJTl1h55VW6CSC4aY4=",
+    version = "v5.4.2",
+)
+
+go_repository(
+    name = "com_github_emirpasic_gods",
+    importpath = "github.com/emirpasic/gods",
+    sum = "h1:QAUIPSaCu4G+POclxeqb3F+WPpdKqFGlw36+yOzGlrg=",
+    version = "v1.12.0",
+)
+
+go_repository(
+    name = "com_github_go_git_go_billy_v5",
+    importpath = "github.com/go-git/go-billy/v5",
+    sum = "h1:CPiOUAzKtMRvolEKw+bG1PLRpT7D3LIs3/3ey4Aiu34=",
+    version = "v5.3.1",
+)
+
+go_repository(
+    name = "com_github_protonmail_go_crypto",
+    importpath = "github.com/ProtonMail/go-crypto",
+    sum = "h1:YoJbenK9C67SkzkDfmQuVln04ygHj3vjZfd9FL+GmQQ=",
+    version = "v0.0.0-20210428141323-04723f9f07d7",
+)
+
+go_repository(
+    name = "com_github_jbenet_go_context",
+    importpath = "github.com/jbenet/go-context",
+    sum = "h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=",
+    version = "v0.0.0-20150711004518-d14ea06fba99",
+)
+
+go_repository(
+    name = "com_github_go_git_gcfg",
+    importpath = "github.com/go-git/gcfg",
+    sum = "h1:Q5ViNfGF8zFgyJWPqYwA7qGFoMTEiBmdlkcfRmpIMa4=",
+    version = "v1.5.0",
+)
+
+go_repository(
+    name = "com_github_kevinburke_ssh_config",
+    importpath = "github.com/kevinburke/ssh_config",
+    sum = "h1:DowS9hvgyYSX4TO5NpyC606/Z4SxnNYbT+WX27or6Ck=",
+    version = "v0.0.0-20201106050909-4977a11b4351",
+)
+
+go_repository(
+    name = "com_github_xanzy_ssh_agent",
+    importpath = "github.com/xanzy/ssh-agent",
+    sum = "h1:wUMzuKtKilRgBAD1sUb8gOwwRr2FGoBVumcjoOACClI=",
+    version = "v0.3.0",
+)
+
+go_repository(
     name = "com_github_bazelbuild_rules_go",
     importpath = "github.com/bazelbuild/rules_go",
     sum = "h1:wzbawlkLtl2ze9w/312NHZ84c7kpUCtlkD8HgFY27sw=",

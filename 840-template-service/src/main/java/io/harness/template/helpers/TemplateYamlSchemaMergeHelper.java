@@ -74,6 +74,7 @@ public class TemplateYamlSchemaMergeHelper {
     switch (templateEntityType) {
       case STAGE_TEMPLATE:
       case STEP_TEMPLATE:
+      case STEPGROUP_TEMPLATE:
         return new HashSet<>(Arrays.asList(NAME, IDENTIFIER, DESCRIPTION, ORG_IDENTIFIER, PROJECT_IDENTIFIER));
       case PIPELINE_TEMPLATE:
         return new HashSet<>(

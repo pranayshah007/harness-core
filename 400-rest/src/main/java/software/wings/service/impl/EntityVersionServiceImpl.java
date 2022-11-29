@@ -134,4 +134,10 @@ public class EntityVersionServiceImpl implements EntityVersionService {
       throw new WingsException(ErrorCode.DEFAULT_ERROR_CODE);
     }
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(EntityVersion.class).filter(EntityVersionKeys.accountId, accountId));
+  }
 }
