@@ -17,6 +17,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
@@ -39,6 +40,9 @@ import org.apache.commons.collections.CollectionUtils;
 public class DelegateVersionService {
   public static final String DEFAULT_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   public static final String DEFAULT_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
+
+  private static final String IMMUTABLE_DELEGATE_DOCKER_IMAGE = "IMMUTABLE_DELEGATE_DOCKER_IMAGE";
+  private static final String UPGRADER_DOCKER_IMAGE = "UPGRADER_DOCKER_IMAGE";
   private final DelegateRingService delegateRingService;
   private final InfraDownloadService infraDownloadService;
   private final MainConfiguration mainConfiguration;
@@ -50,9 +54,14 @@ public class DelegateVersionService {
       return versionOverride.getVersion();
     }
 
-    final String ringImage = delegateRingService.getDelegateImageTag(accountId);
-    if (immutable && isNotBlank(ringImage)) {
-      return ringImage;
+    if (immutable) {
+      if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+        return fetchImmutableDelegateImageOnPrem();
+      }
+      final String ringImage = delegateRingService.getDelegateImageTag(accountId);
+      if (isNotBlank(ringImage)) {
+        return ringImage;
+      }
     }
 
     final String managerConfigImage = mainConfiguration.getPortal().getDelegateDockerImage();
@@ -62,9 +71,18 @@ public class DelegateVersionService {
     return DEFAULT_DELEGATE_IMAGE_TAG;
   }
 
+  private String fetchImmutableDelegateImageOnPrem() {
+    final String immutableDelegateImage = System.getenv(IMMUTABLE_DELEGATE_DOCKER_IMAGE);
+    if (isNotBlank(immutableDelegateImage)) {
+      return immutableDelegateImage;
+    }
+    throw new IllegalStateException("No immutable delegate image is defined in manager configMap");
+  }
+
   /**
    * Separate function to generate delegate image tag for helm delegates in ng. Keeping a separate function for
    * helm delegates because we don't want to pass igNgDelegate parameter as part of above function.
+   *
    * @param accountId
    * @return
    */
@@ -72,6 +90,10 @@ public class DelegateVersionService {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
+    }
+
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      return fetchImmutableDelegateImageOnPrem();
     }
 
     final String ringImage = delegateRingService.getDelegateImageTag(accountId);
@@ -87,14 +109,18 @@ public class DelegateVersionService {
       return versionOverride.getVersion();
     }
 
+    if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+      final String upgraderImage = System.getenv(UPGRADER_DOCKER_IMAGE);
+      if (isNotBlank(upgraderImage)) {
+        return upgraderImage;
+      }
+    }
+
     final String ringImage = delegateRingService.getUpgraderImageTag(accountId);
     if (immutable && isNotBlank(ringImage)) {
       return ringImage;
     }
 
-    if (isNotBlank(mainConfiguration.getPortal().getUpgraderDockerImage())) {
-      return mainConfiguration.getPortal().getUpgraderDockerImage();
-    }
     return DEFAULT_UPGRADER_IMAGE_TAG;
   }
 
