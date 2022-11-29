@@ -17,5 +17,6 @@ import io.harness.delegate.TaskProgressResponse;
 public interface TaskProgressService {
   SendTaskStatusResponse sendTaskStatus(SendTaskStatusRequest request);
   SendTaskProgressResponse sendTaskProgress(SendTaskProgressRequest request);
+  SendTaskProgressResponse sendTaskProgressV2(SendTaskProgressRequest request);
   TaskProgressResponse taskProgress(TaskProgressRequest request);
 }

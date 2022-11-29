@@ -53,6 +53,18 @@ public class TaskProgressResource {
   }
 
   @PUT
+  @Path("/progress-update/v2")
+  @Timed
+  @ExceptionMetered
+  @DelegateAuth
+  @ApiOperation(value = "Send task progress", nickname = "sendTaskProgressUpdateV2")
+  public Response sendTaskProgressUpdateV2(
+      SendTaskProgressRequest sendTaskProgressRequest, @QueryParam("accountId") String accountId) {
+    SendTaskProgressResponse sendTaskProgressResponse = taskProgressService.sendTaskProgressV2(sendTaskProgressRequest);
+    return Response.ok(sendTaskProgressResponse).build();
+  }
+
+  @PUT
   @Path("/progress")
   @Timed
   @ExceptionMetered

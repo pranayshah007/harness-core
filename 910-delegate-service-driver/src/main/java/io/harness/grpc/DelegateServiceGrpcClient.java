@@ -420,6 +420,18 @@ public class DelegateServiceGrpcClient {
     }
   }
 
+  public TaskExecutionStage taskProgressV2(AccountId accountId, TaskId taskId) {
+    try {
+      TaskProgressResponse response =
+          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+              .taskProgress(TaskProgressRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
+
+      return response.getCurrentlyAtStage();
+    } catch (StatusRuntimeException ex) {
+      throw new DelegateServiceDriverException("Unexpected error occurred while checking task progress.", ex);
+    }
+  }
+
   public void taskProgressUpdate(
       AccountId accountId, TaskId taskId, Consumer<TaskExecutionStage> taskExecutionStageConsumer) {
     throw new NotImplementedException(
