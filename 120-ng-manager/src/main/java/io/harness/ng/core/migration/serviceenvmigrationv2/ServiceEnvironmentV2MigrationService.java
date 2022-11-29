@@ -162,7 +162,6 @@ public class ServiceEnvironmentV2MigrationService {
       } else {
         stageJsonNode = migrateStage(stageNode, accountId, requestDto);
       }
-      ObjectMapper objectMapper = new ObjectMapper();
       ObjectNode stageParentNode = objectMapper.createObjectNode();
       stageParentNode.set("stage", stageJsonNode);
       return Optional.of(refreshInputsInStageYaml(accountId, requestDto, stageParentNode));
