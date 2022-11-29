@@ -304,6 +304,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
+
+    saveExecutionLog(logCallback,
+        "Environment Name: " + environmentOutcome.getName() + " , Identifier: " + environmentOutcome.getIdentifier());
+
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
