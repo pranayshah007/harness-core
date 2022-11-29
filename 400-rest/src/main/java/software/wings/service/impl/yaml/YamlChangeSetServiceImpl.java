@@ -620,4 +620,10 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     return query.and(query.criteria(YamlChangeSetKeys.gitToHarness).equal(Boolean.FALSE),
         query.criteria(ApplicationKeys.appId).equal(appId));
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlChangeSet.class).filter(YamlChangeSetKeys.accountId, accountId));
+  }
 }

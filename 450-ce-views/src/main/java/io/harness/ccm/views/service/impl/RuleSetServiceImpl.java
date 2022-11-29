@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.RuleSetDAO;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.helper.RuleSetFilter;
+import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
 
@@ -54,7 +55,7 @@ public class RuleSetServiceImpl implements RuleSetService {
   }
 
   @Override
-  public List<RuleSet> list(String accountId, RuleSetFilter ruleSet) {
+  public RuleSetList list(String accountId, RuleSetFilter ruleSet) {
     return ruleSetDAO.list(accountId, ruleSet);
   }
 

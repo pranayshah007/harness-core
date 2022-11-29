@@ -14,7 +14,7 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;

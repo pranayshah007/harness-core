@@ -262,7 +262,6 @@ public class WorkflowMigrationService extends NgMigrationService {
                       .templateInfoConfig(NGTemplateInfoConfig.builder()
                                               .type(workflowHandler.getTemplateType())
                                               .identifier(identifier)
-                                              .variables(workflowHandler.getVariables(workflow))
                                               .name(name)
                                               .description(ParameterField.createValueField(description))
                                               .projectIdentifier(projectIdentifier)

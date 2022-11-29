@@ -45,6 +45,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody.StoreTypeEnum;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo;
 import io.harness.spec.server.pipeline.v1.model.RecentExecutionInfo.ExecutionStatusEnum;
 import io.harness.spec.server.pipeline.v1.model.YAMLSchemaErrorWrapper;
@@ -432,6 +433,11 @@ public class PipelinesApiUtils {
         .description(updateRequestBody.getDescription())
         .tags(updateRequestBody.getTags())
         .build();
+  }
+
+  public static PipelineValidationUUIDResponseBody buildPipelineValidationUUIDResponseBody(
+      PipelineValidationEvent event) {
+    return new PipelineValidationUUIDResponseBody().uuid(event.getUuid());
   }
 
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {

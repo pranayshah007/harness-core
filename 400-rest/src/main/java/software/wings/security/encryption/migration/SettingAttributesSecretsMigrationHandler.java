@@ -21,12 +21,12 @@ import static software.wings.settings.SettingVariableTypes.SECRET_TEXT;
 import static java.time.Duration.ofHours;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Encryptable;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.encryption.Encryptable;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.IteratorExecutionHandler;

@@ -65,7 +65,7 @@ public class StrategyHelper {
   public ExpandedExecutionWrapperInfo expandExecutionWrapperConfig(
       ExecutionWrapperConfig executionWrapperConfig, Optional<Integer> maxExpansionLimit) {
     try {
-      if (executionWrapperConfig.getStep() != null) {
+      if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
         StrategyInfo strategyInfo = expandJsonNodes(executionWrapperConfig.getStep(), maxExpansionLimit);
         List<JsonNode> expandedJsonNodes = strategyInfo.getExpandedJsonNodes();
         Map<String, StrategyExpansionData> uuidToStrategyExpansionData = new HashMap<>();
@@ -82,7 +82,7 @@ public class StrategyHelper {
             .uuidToStrategyExpansionData(uuidToStrategyExpansionData)
             .build();
       }
-      if (executionWrapperConfig.getParallel() != null) {
+      if (executionWrapperConfig.getParallel() != null && !executionWrapperConfig.getParallel().isNull()) {
         Map<String, StrategyExpansionData> uuidToStrategyMetadata = new HashMap<>();
         ParallelStepElementConfig parallelStepElementConfig =
             YamlUtils.read(executionWrapperConfig.getParallel().toString(), ParallelStepElementConfig.class);
@@ -103,7 +103,7 @@ public class StrategyHelper {
             .uuidToStrategyExpansionData(uuidToStrategyMetadata)
             .build();
       }
-      if (executionWrapperConfig.getStepGroup() != null) {
+      if (executionWrapperConfig.getStepGroup() != null && !executionWrapperConfig.getStepGroup().isNull()) {
         Map<String, StrategyExpansionData> uuidToMaxConcurrency = new HashMap<>();
         StepGroupElementConfig stepGroupElementConfig =
             YamlUtils.read(executionWrapperConfig.getStepGroup().toString(), StepGroupElementConfig.class);
