@@ -8,7 +8,10 @@
 package io.harness.cdng.tas;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+
+import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,9 +23,11 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.eraro.ErrorCode;
@@ -141,9 +146,10 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
       isWebProcessCountZero = maxCount == 0;
     }
-    List<String> routeMaps =
+    List<String> routeMaps = applyVarsYmlSubstitutionIfApplicable(
         tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes()));
+            getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
+        executionPassThroughData.getPcfManifestsPackage());
     TaskParameters taskParameters = ShellScriptTaskParametersNG.builder()
                                         .accountId(AmbianceUtils.getAccountId(ambiance))
                                         .environmentVariables(new HashMap<>())
@@ -169,5 +175,17 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
         .chainEnd(true)
         .passThroughData(executionPassThroughData)
         .build();
+  }
+
+  public List<String> applyVarsYmlSubstitutionIfApplicable(
+      List<String> routeMaps, PcfManifestsPackage pcfManifestsPackage) {
+    if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
+      return routeMaps;
+    }
+
+    return routeMaps.stream()
+        .filter(EmptyPredicate::isNotEmpty)
+        .map(route -> tasStepHelper.finalizeSubstitution(pcfManifestsPackage, route))
+        .collect(toList());
   }
 }

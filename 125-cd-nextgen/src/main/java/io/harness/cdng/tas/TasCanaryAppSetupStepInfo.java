@@ -71,7 +71,13 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasCanaryAppSetupStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return TasCanaryAppSetupStepParameters.infoBuilder()
+        .instanceCount(this.instanceCount)
+        .existingVersionToKeep(this.existingVersionToKeep)
+        .additionalRoutes(this.additionalRoutes)
+        .resizeStrategy(this.resizeStrategy)
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

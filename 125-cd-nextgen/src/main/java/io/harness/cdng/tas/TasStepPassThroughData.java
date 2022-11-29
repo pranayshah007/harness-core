@@ -51,9 +51,9 @@ public class TasStepPassThroughData implements PassThroughData {
   String zippedManifestFileId;
 
   @Setter @NonFinal Boolean shouldCloseFetchFilesStream;
-  @Setter @NonFinal Boolean shouldExecuteCustomFetch;
-  @Setter @NonFinal Boolean shouldExecuteHarnessStoreFetch;
-  @Setter @NonFinal Boolean shouldExecuteGitStoreFetch;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteCustomFetch = Boolean.FALSE;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteGitStoreFetch = Boolean.FALSE;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   Set<String> manifestStoreTypeVisited;
 }

@@ -56,6 +56,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -106,12 +107,24 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
     }
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
-                                                        .setUnitName(CfCommandUnitConstants.FetchFiles)
-                                                        .setStatus(UnitStatus.SUCCESS)
-                                                        .setStartTime(System.currentTimeMillis() - 5)
-                                                        .setEndTime(System.currentTimeMillis())
-                                                        .build()))
+        .unitProgressList(Arrays.asList(UnitProgress.newBuilder()
+                                            .setUnitName(CfCommandUnitConstants.FetchFiles)
+                                            .setStatus(UnitStatus.SUCCESS)
+                                            .setStartTime(System.currentTimeMillis() - 100)
+                                            .setEndTime(System.currentTimeMillis() - 50)
+                                            .build(),
+            UnitProgress.newBuilder()
+                .setUnitName(CfCommandUnitConstants.FetchGitFiles)
+                .setStatus(UnitStatus.SUCCESS)
+                .setStartTime(System.currentTimeMillis() - 50)
+                .setEndTime(System.currentTimeMillis() - 25)
+                .build(),
+            UnitProgress.newBuilder()
+                .setUnitName(CfCommandUnitConstants.FetchCustomFiles)
+                .setStatus(UnitStatus.SUCCESS)
+                .setStartTime(System.currentTimeMillis() - 25)
+                .setEndTime(System.currentTimeMillis())
+                .build()))
         .build();
   }
 
@@ -163,8 +176,8 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
                             .build();
 
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, List.of(CfCommandUnitConstants.FetchFiles),
-            CfCommandUnitConstants.FetchFiles, null, stepHelper.getEnvironmentType(ambiance));
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, tasStepHelper.getCommandUnits(),
+            TaskType.SHELL_SCRIPT_TASK_NG.name(), null, stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)

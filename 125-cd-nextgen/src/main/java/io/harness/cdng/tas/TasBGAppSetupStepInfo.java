@@ -78,7 +78,13 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasBGAppSetupStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return TasBGAppSetupStepParameters.infoBuilder()
+        .instanceCount(this.instanceCount)
+        .existingVersionToKeep(this.existingVersionToKeep)
+        .additionalRoutes(this.additionalRoutes)
+        .tempRoutes(this.tempRoutes)
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

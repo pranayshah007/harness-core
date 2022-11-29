@@ -141,6 +141,7 @@ public class TasStepHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   private static int DEFAULT_INSTANCE_COUNT = 2;
+  LogCallback logCallback;
 
   public TaskChainResponse startChainLink(
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -171,15 +172,16 @@ public class TasStepHelper {
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
+    logCallback.saveExecutionLog("Starting manifest Fetch from Harness Store ", INFO);
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
       fetchFilesFromLocalStore(localStoreFileMapContents, ambiance, tasStepPassThroughData, logCallback);
     }
+    logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
 
-    logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     return prepareManifestFilesFetchTask(
         tasStepExecutor, ambiance, stepElementParameters, updatedTasStepPassThroughData);
   }
@@ -217,10 +219,14 @@ public class TasStepHelper {
 
     localStoreFetchFilesResultMap.add(getFileContentsFromManifest(ngAccess,
         List.of(localStoreConfig.getFiles().getValue().get(0)), TAS_MANIFEST, manifestIdentifier, logCallback));
-    localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, varsScopedFilePathList, VARS, manifestIdentifier, logCallback));
-    localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, autoScalerScopedFilePath, AUTOSCALER, manifestIdentifier, logCallback));
+    if (isNotEmpty(varsScopedFilePathList)) {
+      localStoreFetchFilesResultMap.add(
+          getFileContentsFromManifest(ngAccess, varsScopedFilePathList, VARS, manifestIdentifier, logCallback));
+    }
+    if (isNotEmpty(autoScalerScopedFilePath)) {
+      localStoreFetchFilesResultMap.add(
+          getFileContentsFromManifest(ngAccess, autoScalerScopedFilePath, AUTOSCALER, manifestIdentifier, logCallback));
+    }
     return localStoreFetchFilesResultMap;
     // TODO: Check if default vars.yaml file need to be fetched
   }
@@ -360,12 +366,13 @@ public class TasStepHelper {
               .build();
       return TaskChainResponse.builder().chainEnd(true).passThroughData(gitFetchResponsePassThroughData).build();
     }
-    LogCallback logCallback = cdStepHelper.getLogCallback(
-        CfCommandUnitConstants.FetchGitFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
+    //    LogCallback logCallback = cdStepHelper.getLogCallback(
+    //        CfCommandUnitConstants.FetchGitFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog("Fetched all manifests from Git", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().gitFetchFilesResultMap(gitFetchResponse.getFilesFromMultipleRepo()).build();
-    return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifest);
+    return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifest,
+        gitFetchResponse.getUnitProgressData());
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
@@ -383,8 +390,9 @@ public class TasStepHelper {
       return TaskChainResponse.builder().chainEnd(true).passThroughData(customFetchResponsePassThroughData).build();
     }
 
-    LogCallback logCallback = cdStepHelper.getLogCallback(
-        CfCommandUnitConstants.FetchCustomFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
+    //    LogCallback logCallback = cdStepHelper.getLogCallback(
+    //        CfCommandUnitConstants.FetchCustomFiles, ambiance,
+    //        tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog("Fetched all manifests from Custom remote", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder()
@@ -399,8 +407,8 @@ public class TasStepHelper {
           ambiance, stepElementParameters, updatedTasStepPassThroughData, tasManifestOutcome.getStore());
     }
 
-    return executeTasTask(
-        ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifestOutcome);
+    return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData,
+        tasManifestOutcome, customManifestValuesFetchResponse.getUnitProgressData());
   }
 
   public static boolean shouldOpenFetchFilesStream(Boolean openFetchFilesStream) {
@@ -462,13 +470,21 @@ public class TasStepHelper {
       return prepareGitFetchTaskChainResponse(ambiance, stepElementParameters, tasStepPassThroughData, storeConfig);
     }
     return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, tasStepPassThroughData,
-        tasStepPassThroughData.getTasManifestOutcome());
+        tasStepPassThroughData.getTasManifestOutcome(),
+        UnitProgressData.builder()
+            .unitProgresses(Arrays.asList(UnitProgress.newBuilder()
+                                              .setUnitName(CfCommandUnitConstants.FetchFiles)
+                                              .setStatus(UnitStatus.SUCCESS)
+                                              .setStartTime(System.currentTimeMillis() - 100)
+                                              .setEndTime(System.currentTimeMillis())
+                                              .build()))
+            .build());
   }
 
   protected TaskChainResponse prepareCustomFetchManifestsTaskChainResponse(StoreConfig storeConfig, Ambiance ambiance,
       StepElementParameters stepElementParameters, List<ManifestOutcome> manifestOutcomeList,
       TasStepPassThroughData tasStepPassThroughData) {
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchCustomFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog(color(format("%nStarting Custom Fetch Files"), LogColor.White, LogWeight.Bold));
 
@@ -596,17 +612,15 @@ public class TasStepHelper {
         .build();
   }
 
-  private List<String> getCommandUnits() {
+  public List<String> getCommandUnits() {
     return new ArrayList<>(Arrays.asList(CfCommandUnitConstants.FetchFiles, CfCommandUnitConstants.FetchCustomFiles,
-        CfCommandUnitConstants.FetchGitFiles, CfCommandUnitConstants.VerifyManifests,
-        CfCommandUnitConstants.CheckExistingApps, CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup,
-        CfCommandUnitConstants.Pcfplugin, CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Upsize));
+        CfCommandUnitConstants.FetchGitFiles));
   }
 
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       StoreConfig storeConfig) {
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchGitFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
 
@@ -702,26 +716,36 @@ public class TasStepHelper {
 
   public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
-      ManifestOutcome tasManifestOutcome) {
-    PcfManifestsPackage pcfManifestsPackage =
-        getManifestFilesContents(ambiance, new HashMap<>(), tasStepPassThroughData.getCustomFetchContent(),
-            tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
+      ManifestOutcome tasManifestOutcome, UnitProgressData unitProgressData) {
+    PcfManifestsPackage pcfManifestsPackage = getManifestFilesContents(ambiance,
+        tasStepPassThroughData.getGitFetchFilesResultMap(), tasStepPassThroughData.getCustomFetchContent(),
+        tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
             .applicationName(fetchTasApplicationName(pcfManifestsPackage))
-            .infrastructure(tasStepPassThroughData.getInfrastructure())
-            .zippedManifestId(tasStepPassThroughData.getZippedManifestFileId())
             .pcfManifestsPackage(pcfManifestsPackage)
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder()
-            .unitProgresses(Collections.singletonList(UnitProgress.newBuilder()
-                                                          .setUnitName(CfCommandUnitConstants.FetchFiles)
-                                                          .setStatus(UnitStatus.SUCCESS)
-                                                          .setStartTime(System.currentTimeMillis() - 5)
-                                                          .setEndTime(System.currentTimeMillis())
-                                                          .build()))
+            .unitProgresses(Arrays.asList(UnitProgress.newBuilder()
+                                              .setUnitName(CfCommandUnitConstants.FetchFiles)
+                                              .setStatus(UnitStatus.SUCCESS)
+                                              .setStartTime(System.currentTimeMillis() - 100)
+                                              .setEndTime(System.currentTimeMillis() - 50)
+                                              .build(),
+                UnitProgress.newBuilder()
+                    .setUnitName(CfCommandUnitConstants.FetchGitFiles)
+                    .setStatus(UnitStatus.SUCCESS)
+                    .setStartTime(System.currentTimeMillis() - 50)
+                    .setEndTime(System.currentTimeMillis() - 25)
+                    .build(),
+                UnitProgress.newBuilder()
+                    .setUnitName(CfCommandUnitConstants.FetchCustomFiles)
+                    .setStatus(UnitStatus.SUCCESS)
+                    .setStartTime(System.currentTimeMillis() - 25)
+                    .setEndTime(System.currentTimeMillis())
+                    .build()))
             .build());
   }
 
@@ -866,36 +890,36 @@ public class TasStepHelper {
     if (isBlank(name)) {
       throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application name"));
     }
-
-    boolean hasVarFiles = isNotEmpty(pcfManifestsPackage.getVariableYmls());
-    if (!hasVarFiles) {
-      appName = name;
-    } else {
-      appName = finalizeSubstitution(pcfManifestsPackage, name);
-    }
-    return appName;
+    return finalizeSubstitution(pcfManifestsPackage, name);
   }
 
   String finalizeSubstitution(PcfManifestsPackage pcfManifestsPackage, String name) {
-    String varName;
-    String appName;
-    Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(name);
-    List<String> varFiles = pcfManifestsPackage.getVariableYmls();
-    while (m.find()) {
-      varName = m.group(1);
-      for (int i = varFiles.size() - 1; i >= 0; i--) {
-        Object value = getVariableValue(varFiles.get(i), varName);
-        if (value != null) {
-          String val = value.toString();
-          if (isNotBlank(val)) {
-            name = name.replace("((" + varName + "))", val);
-            break;
+    if (name.contains("((") && name.contains("))")) {
+      if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
+        throw new InvalidRequestException(
+            "No Valid Variable file Found, please verify var file is present and has valid structure");
+      }
+      String varName;
+      String appName;
+      Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(name);
+      List<String> varFiles = pcfManifestsPackage.getVariableYmls();
+      while (m.find()) {
+        varName = m.group(1);
+        for (int i = varFiles.size() - 1; i >= 0; i--) {
+          Object value = getVariableValue(varFiles.get(i), varName);
+          if (value != null) {
+            String val = value.toString();
+            if (isNotBlank(val)) {
+              name = name.replace("((" + varName + "))", val);
+              break;
+            }
           }
         }
       }
+      appName = name;
+      return appName;
     }
-    appName = name;
-    return appName;
+    return name;
   }
 
   @VisibleForTesting
@@ -946,14 +970,7 @@ public class TasStepHelper {
     if (isBlank(maxVal)) {
       return DEFAULT_INSTANCE_COUNT;
     }
-
-    if (maxVal.contains("((") && maxVal.contains("))")) {
-      if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
-        throw new InvalidRequestException(
-            "No Valid Variable file Found, please verify var file is present and has valid structure");
-      }
-      maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
-    }
+    maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
     return Integer.parseInt(maxVal);
   }
 

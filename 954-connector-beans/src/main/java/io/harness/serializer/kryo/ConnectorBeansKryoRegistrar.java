@@ -457,11 +457,5 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ServiceNowAuthType.class, 10000113);
     kryo.register(ServiceNowAuthCredentialsDTO.class, 10000114);
     kryo.register(ServiceNowUserNamePasswordDTO.class, 10000115);
-
-    kryo.register(TasConnectorDTO.class, 10000201);
-    kryo.register(TasCredentialDTO.class, 10000202);
-    kryo.register(TasCredentialSpecDTO.class, 10000203);
-    kryo.register(TasCredentialType.class, 10000204);
-    kryo.register(TasManualDetailsDTO.class, 10000205);
   }
 }
