@@ -343,6 +343,9 @@ import software.wings.infra.InfrastructureDefinition;
 import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
+import software.wings.instancesyncv2.model.BasicDeploymentIdentifier;
+import software.wings.instancesyncv2.model.BlueGreenDeploymentIdentifier;
+import software.wings.instancesyncv2.model.CgK8sReleaseIdentifier;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
 import software.wings.prune.PruneEvent;
@@ -864,6 +867,9 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(YamlGitConfig.class);
     set.add(SettingAttribute.class);
     set.add(ServiceVariable.class);
+    set.add(CgK8sReleaseIdentifier.class);
+    set.add(BasicDeploymentIdentifier.class);
+    set.add(BlueGreenDeploymentIdentifier.class);
   }
 
   @Override
