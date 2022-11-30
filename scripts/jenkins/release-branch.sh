@@ -123,7 +123,7 @@ check_branch_name "develop"
 
 export VERSION_FILE=build.properties
 
-export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
+#export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 DV=`cat ${VERSION_FILE} | grep 'delegate.version=' | sed -e 's: *delegate.version=::g'`
 
 YEAR=$(date +%y)
