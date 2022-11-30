@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USERGROUP_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.USERGROUP;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.resourcegroup.ResourceGroupPermissions.VIEW_RESOURCEGROUP_PERMISSION;
 import static io.harness.resourcegroup.ResourceGroupResourceTypes.RESOURCE_GROUP;
@@ -31,10 +29,8 @@ import io.harness.beans.SortOrder;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
-import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.EntityScopeInfo;
-import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.outbox.api.OutboxService;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupCreateEvent;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupDeleteEvent;
@@ -223,7 +219,7 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
 
     if (!accessControlClient.hasAccess(
             ResourceScope.of(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier()),
-            Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION)) {
+            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
       List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
       resourceGroups = getPermittedResourceGroups(resourceGroups);
       if (isEmpty(resourceGroups)) {
