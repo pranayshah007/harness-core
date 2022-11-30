@@ -44,6 +44,7 @@ import io.harness.AccessControlClientModule;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
+import io.harness.SchemaCacheKey;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -56,6 +57,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -246,6 +248,7 @@ import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
+import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;
@@ -290,6 +293,7 @@ import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionInfoManager;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
@@ -325,6 +329,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -486,6 +494,25 @@ public class NextGenModule extends AbstractModule {
   @Named("cdTsDbRetentionPeriodMonths")
   public String cdTsDbRetentionPeriodMonths() {
     return String.format(RETENTION_PERIOD_FORMAT, this.appConfig.getCdTsDbRetentionPeriodMonths());
+  }
+
+  @Provides
+  @Named("jwtTokenPublicKeysUrlCache")
+  @Singleton
+  public Cache<String, String> getLicenseCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("jwtTokenPublicKeysUrlCache", String.class, String.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)), versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named("schemaDetailsCache")
+  public Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("schemaDetailsCache", SchemaCacheKey.class, YamlSchemaDetailsWrapperValue.class,
+        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+        versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Override

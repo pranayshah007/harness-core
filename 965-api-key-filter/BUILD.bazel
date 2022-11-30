@@ -13,6 +13,7 @@ java_library(
         "//999-annotations:module",
         "//clients/ngsettings:module",
         "//clients/service-account:module",
+        "@maven//:javax_cache_cache_api",
         "@maven//:org_json_json",
         "@maven//:org_springframework_security_spring_security_crypto",
     ],

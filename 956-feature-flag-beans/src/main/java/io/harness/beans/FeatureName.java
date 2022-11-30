@@ -504,7 +504,8 @@ public enum FeatureName {
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
-  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC);
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
+  PL_ENABLE_JWT_TOKEN_ACCOUNT_SETTINGS("Add support for JWT token configuration in account default setting", HarnessTeam.PL);
 
   @Deprecated
   FeatureName() {

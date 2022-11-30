@@ -13,15 +13,17 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
 import static io.harness.eraro.ErrorCode.INVALID_INPUT_SET;
+import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.eraro.ErrorCode.UNEXPECTED;
 import static io.harness.exception.WingsException.USER;
 
 import static javax.ws.rs.Priorities.AUTHENTICATION;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
+import static software.wings.app.ManagerCacheRegistrar.TRIAL_EMAIL_CACHE;
 
+import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
-// import io.harness.account.client.remote.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eraro.ErrorCode;
@@ -53,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import javax.cache.Cache;
 import javax.annotation.Priority;
 import javax.net.ssl.SSLHandshakeException;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -94,8 +97,9 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private TokenClient tokenClient;
   private NGSettingsClient settingsClient;
   private ServiceAccountClient serviceAccountClient;
-  // private AccountClient accountClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
+  @Inject
+  @Named(TRIAL_EMAIL_CACHE) private Cache<String,
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
@@ -105,7 +109,6 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     this.tokenClient = tokenClient;
     this.settingsClient = settingsClient;
     this.serviceAccountClient = serviceAccountClient;
-    // this.accountClient = accountClient;
   }
 
   @Override
@@ -178,7 +181,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       checkIFRawPasswordMatches(splitToken, apiTokenId, tokenDTO);
       checkIfApiKeyHasExpired(apiTokenId, tokenDTO);
       Principal principal = getPrincipal(tokenDTO);
-      SecurityContextBuilder.setContext(principal);
+      io.harness.security.SecurityContextBuilder.setContext(principal);
       SourcePrincipalContextBuilder.setSourcePrincipal(principal);
     } else {
       logAndThrowTokenException(String.format("Invalid API token %s: Token not found", apiTokenId), INVALID_TOKEN);
@@ -313,7 +316,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private Principal getPrincipalFromServiceAccountDto(ServiceAccountDTO serviceAccountDto) {
     return new ServiceAccountPrincipal(
-        serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(), serviceAccountDto.getEmail());
+        serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(), serviceAccountDto.getEmail(), serviceAccountDto.getAccountIdentifier());
   }
 
   private void validateJwtToken(
@@ -399,11 +402,10 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
     if (isEmpty(settingsResponse)) {
       // No account settings configuration found so cannot process request coming with OAuth JWT token
-      // Add Feature flag rules here as well, need Account Client hence
       logAndThrowTokenException(
           String.format(
-              "NG_SCIM_JWT: SCIM JWT token NG account settings not configured at account [%s]", accountIdentifier),
-          UNEXPECTED);
+              "NG_SCIM_JWT: SCIM JWT token account settings not configured for account [%s]", accountIdentifier),
+          INVALID_REQUEST);
       return;
     }
 
@@ -432,7 +434,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         || isEmpty(serviceAccountSettingStr)) {
       logAndThrowTokenException(
           String.format(
-              "NG_SCIM_JWT: Some or all values for SCIM JWT token configuration at NG account settings are not populated in account [%s]",
+              "NG_SCIM_JWT: Some or all values for SCIM JWT token configuration at account settings are not populated in account [%s]",
               accountIdentifier),
           UNEXPECTED);
     } else {
@@ -442,12 +444,12 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         if (response.isSuccessful()) {
           ResponseBody responseBody = response.body();
           if (responseBody != null) {
-            String publicKeysString = responseBody.string();
-            validateJwtToken(jwtToken, keySettingStr, valueSettingStr, publicKeysString, accountIdentifier);
+            String publicCertsJsonString = responseBody.string();
+            validateJwtToken(jwtToken, keySettingStr, valueSettingStr, publicCertsJsonString, accountIdentifier);
             ServiceAccountDTO serviceAccountDTO = NGRestUtils.getResponse(
                 serviceAccountClient.getServiceAccount(serviceAccountSettingStr, accountIdentifier));
             Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
-            SecurityContextBuilder.setContext(servicePrincipal);
+            io.harness.security.SecurityContextBuilder.setContext(servicePrincipal);
             SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
           }
         } else {

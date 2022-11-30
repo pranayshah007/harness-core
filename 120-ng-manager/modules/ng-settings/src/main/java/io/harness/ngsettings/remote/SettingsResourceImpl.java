@@ -20,6 +20,7 @@ import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.dto.SettingRequestDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.ngsettings.dto.SettingUpdateResponseDTO;
@@ -68,11 +69,37 @@ public class SettingsResourceImpl implements SettingsResource {
     if (!isSettingsFeatureEnabled(accountIdentifier)) {
       throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
     }
+    checkFeatureFlagToUpdateJWTTokenSettingEnabled(accountIdentifier, settingRequestDTOList);
     return ResponseDTO.newResponse(
         settingsService.update(accountIdentifier, orgIdentifier, projectIdentifier, settingRequestDTOList));
   }
 
+  private void checkFeatureFlagToUpdateJWTTokenSettingEnabled(
+      String accountIdentifier, List<SettingRequestDTO> settingRequestDTOList) {
+    boolean jwtSettingVariable = false;
+    for (SettingRequestDTO requestDto : settingRequestDTOList) {
+      if (requestDto != null
+          && (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER.equals(requestDto.getIdentifier())
+              || SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER.equals(requestDto.getIdentifier())
+              || SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_IDENTIFIER.equals(
+                  requestDto.getIdentifier())
+              || SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER.equals(
+                  requestDto.getIdentifier()))) {
+        jwtSettingVariable = true;
+        break;
+      }
+    }
+    if (jwtSettingVariable && !isJwtTokenSettingsFeatureEnabled(accountIdentifier)) {
+      throw new InvalidRequestException(String.format("NG_SCIM_JWT: Feature [%s] is not enabled for your account - %s",
+          FeatureName.PL_ENABLE_JWT_TOKEN_ACCOUNT_SETTINGS.name(), accountIdentifier));
+    }
+  }
+
   private boolean isSettingsFeatureEnabled(String accountIdentifier) {
     return featureFlagHelper.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
+  }
+
+  private boolean isJwtTokenSettingsFeatureEnabled(String accountIdentifier) {
+    return featureFlagHelper.isEnabled(accountIdentifier, FeatureName.PL_ENABLE_JWT_TOKEN_ACCOUNT_SETTINGS);
   }
 }
