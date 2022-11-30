@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness;
 
 import static io.harness.rule.OwnerRule.JIMIT_GANDHI;
@@ -55,46 +62,43 @@ public class NonPrivilegedAccessControlClientImplTest {
     assertNull(accessCheckResponseDTO.getPrincipal());
   }
 
-    @Test
-    @Owner(developers =  JIMIT_GANDHI)
-    @Category(UnitTests.class)
-    public void checkForAccessOrThrow_ForSomeResourceHavingPermission_ShouldReturnAllAccessPermitted() throws IOException {
-        List<PermissionCheckDTO> permissionCheckDTOList = getPermissionsList();
-        ResponseDTO<AccessCheckResponseDTO> restResponse = ResponseDTO.newResponse(getAccessCheckResponse(true));
-        Response<ResponseDTO<AccessCheckResponseDTO>> response = Response.success(restResponse);
-        Call<ResponseDTO<AccessCheckResponseDTO>> responseDTOCall = mock(Call.class);
-        when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
-        when(responseDTOCall.execute()).thenReturn(response);
-        AccessCheckResponseDTO accessCheckResponseDTO = accessControlClient.checkForAccessOrThrow(permissionCheckDTOList);
-        verify(accessControlHttpClient, times(2)).checkForAccess(any());
-        assertEquals(permissionCheckDTOList.size(), accessCheckResponseDTO.getAccessControlList().size());
-    }
+  @Test
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void checkForAccessOrThrow_ForSomeResourceHavingPermission_ShouldReturnAllAccessPermitted()
+      throws IOException {
+    List<PermissionCheckDTO> permissionCheckDTOList = getPermissionsList();
+    ResponseDTO<AccessCheckResponseDTO> restResponse = ResponseDTO.newResponse(getAccessCheckResponse(true));
+    Response<ResponseDTO<AccessCheckResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<AccessCheckResponseDTO>> responseDTOCall = mock(Call.class);
+    when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(response);
+    AccessCheckResponseDTO accessCheckResponseDTO = accessControlClient.checkForAccessOrThrow(permissionCheckDTOList);
+    verify(accessControlHttpClient, times(2)).checkForAccess(any());
+    assertEquals(permissionCheckDTOList.size(), accessCheckResponseDTO.getAccessControlList().size());
+  }
 
-    private List<PermissionCheckDTO> getPermissionsList() {
-      List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
-      for (int i = 0; i < 2000; i++){
-        ResourceScope resourceScope = ResourceScope.builder().accountIdentifier(randomAlphabetic(10000)).build();
-        PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
-                .resourceScope(resourceScope)
-                .permission("some_entity_view")
-                .resourceIdentifier(randomAlphabetic(10000))
-                .build();
-        permissionCheckDTOList.add(permissionCheckDTO);
-      }
-      return permissionCheckDTOList;
+  private List<PermissionCheckDTO> getPermissionsList() {
+    List<PermissionCheckDTO> permissionCheckDTOList = new ArrayList<>();
+    for (int i = 0; i < 2000; i++) {
+      ResourceScope resourceScope = ResourceScope.builder().accountIdentifier(randomAlphabetic(10000)).build();
+      PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
+                                                  .resourceScope(resourceScope)
+                                                  .permission("some_entity_view")
+                                                  .resourceIdentifier(randomAlphabetic(10000))
+                                                  .build();
+      permissionCheckDTOList.add(permissionCheckDTO);
     }
+    return permissionCheckDTOList;
+  }
 
-    private AccessCheckResponseDTO getAccessCheckResponse(boolean permitted) {
-      List<AccessControlDTO> accessControlList = new ArrayList<>();
-      for (int i =0 ; i < 1000; i++) {
-        AccessControlDTO accessControlDTO = AccessControlDTO.builder()
-                .permission("some_entity_view")
-                .permitted(permitted)
-                .build();
-        accessControlList.add(accessControlDTO);
-      }
-      return AccessCheckResponseDTO.builder()
-              .accessControlList(accessControlList)
-              .build();
+  private AccessCheckResponseDTO getAccessCheckResponse(boolean permitted) {
+    List<AccessControlDTO> accessControlList = new ArrayList<>();
+    for (int i = 0; i < 1000; i++) {
+      AccessControlDTO accessControlDTO =
+          AccessControlDTO.builder().permission("some_entity_view").permitted(permitted).build();
+      accessControlList.add(accessControlDTO);
     }
+    return AccessCheckResponseDTO.builder().accessControlList(accessControlList).build();
+  }
 }
