@@ -374,6 +374,7 @@ import io.harness.delegatetasks.NGAzureKeyVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultFetchEngineTask;
 import io.harness.delegatetasks.NGVaultRenewalAppRoleTask;
 import io.harness.delegatetasks.NGVaultRenewalTask;
+import io.harness.delegatetasks.NGVaultTokenLookupTask;
 import io.harness.delegatetasks.ResolveCustomSecretManagerConfigTask;
 import io.harness.delegatetasks.UpsertSecretTask;
 import io.harness.delegatetasks.UpsertSecretTaskValidationHandler;
@@ -1727,6 +1728,7 @@ public class DelegateModule extends AbstractModule {
     // Secret Management (Old Tasks)
     mapBinder.addBinding(TaskType.VAULT_GET_CHANGELOG).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_RENEW_TOKEN).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.VAULT_TOKEN_LOOKUP).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_LIST_ENGINES).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.VAULT_APPROLE_LOGIN).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.SSH_SECRET_ENGINE_AUTH).toInstance(ServiceImplDelegateTask.class);
@@ -1742,6 +1744,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ENCRYPT_SECRET).toInstance(EncryptSecretTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_TOKEN).toInstance(NGVaultRenewalTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_RENEW_APP_ROLE_TOKEN).toInstance(NGVaultRenewalAppRoleTask.class);
+    mapBinder.addBinding(TaskType.NG_VAULT_TOKEN_LOOKUP).toInstance(NGVaultTokenLookupTask.class);
     mapBinder.addBinding(TaskType.NG_VAULT_FETCHING_TASK).toInstance(NGVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_VAULT_FETCH_ENGINES).toInstance(NGAzureKeyVaultFetchEngineTask.class);
     mapBinder.addBinding(TaskType.VALIDATE_SECRET_MANAGER_CONFIGURATION)

@@ -23,6 +23,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOGDAN;
 import static io.harness.rule.OwnerRule.BRETT;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -142,6 +143,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import okhttp3.Call;
+import okhttp3.internal.http2.ConnectionShutdownException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -1580,6 +1582,27 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     List<String> lines = Files.readAllLines(workingDir.resolve(K8sConstants.GCP_JSON_KEY_FILE_NAME));
     assertThat(lines.size()).isEqualTo(1);
     assertThat(lines.get(0)).isEqualTo(expectedGcpKeyJson);
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testReplaceConfigMap() throws Exception {
+    V1ConfigMap configMap =
+        new V1ConfigMapBuilder()
+            .withMetadata(
+                new V1ObjectMetaBuilder().withNamespace(KUBERNETES_CONFIG.getNamespace()).withName("release").build())
+            .withData(ImmutableMap.of(ReleaseHistoryKeyName, "version=2.0"))
+            .build();
+
+    when(k8sApiClient.execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType()))
+        .thenThrow(new ApiException(new ConnectionShutdownException()));
+
+    try {
+      kubernetesContainerService.replaceConfigMap(KUBERNETES_CONFIG, configMap);
+    } catch (InvalidRequestException e) {
+    }
+    verify(k8sApiClient, times(3)).execute(k8sApiCall, TypeToken.get(V1ConfigMap.class).getType());
   }
 
   private static final String EXPECTED_KUBECONFIG = "apiVersion: v1\n"

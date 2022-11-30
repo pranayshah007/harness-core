@@ -24,6 +24,8 @@
     - Project Template
 - name: Services
   tags:
+    - Account Services
+    - Org Services
     - Project Services
 - name: Roles
   tags:
@@ -41,3 +43,7 @@
     - Account Role Assignments
     - Org Role Assignments
     - Project Role Assignments
+- name: Error Models
+  tags:
+    - Error Response
+    - Governance Metadata

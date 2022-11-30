@@ -16,6 +16,7 @@ import io.harness.ci.states.RunStep;
 import io.harness.ci.states.STOSpecStep;
 import io.harness.ci.states.SecurityStageStepPMS;
 import io.harness.ci.states.SecurityStep;
+import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -38,7 +39,7 @@ public class STOExecutionRegistrar {
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
-    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.putAll(addSTOEngineSteps());

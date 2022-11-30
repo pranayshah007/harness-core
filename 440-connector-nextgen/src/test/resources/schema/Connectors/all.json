@@ -1840,7 +1840,8 @@
                   "BILLING",
                   "OPTIMIZATION",
                   "VISIBILITY",
-                  "GOVERNANCE"
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -1876,7 +1877,8 @@
                   "BILLING",
                   "OPTIMIZATION",
                   "VISIBILITY",
-                  "GOVERNANCE"
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -1914,7 +1916,8 @@
                   "BILLING",
                   "OPTIMIZATION",
                   "VISIBILITY",
-                  "GOVERNANCE"
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -3153,7 +3156,8 @@
                   "BILLING",
                   "OPTIMIZATION",
                   "VISIBILITY",
-                  "GOVERNANCE"
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1

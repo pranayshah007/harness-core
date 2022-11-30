@@ -28,4 +28,7 @@ public interface TemplateGitXService {
 
   void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier, String templateIdentifier,
       TemplateImportRequestDTO templateImportRequest, String importedTemplate);
+
+  void performBasicValidationForRemoteTemplates(String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, String name, String importedTemplate);
 }

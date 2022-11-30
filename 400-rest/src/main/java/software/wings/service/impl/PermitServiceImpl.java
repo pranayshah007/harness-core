@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static software.wings.beans.Permit.PERMIT_KEY_ID;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -33,6 +34,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class PermitServiceImpl implements PermitService {
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(Permit.class).filter(ACCOUNT_ID_KEY2, accountId));
+  }
+
   static class PermitLogContext extends AutoLogContext {
     public static final String PERMIT_KEY = "permitKey";
     public static final String PERMIT_GROUP = "permitGroup";

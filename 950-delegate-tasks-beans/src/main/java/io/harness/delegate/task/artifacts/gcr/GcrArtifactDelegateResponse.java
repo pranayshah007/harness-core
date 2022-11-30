@@ -7,6 +7,8 @@
 
 package io.harness.delegate.task.artifacts.gcr;
 
+import io.harness.artifact.ArtifactMetadataKeys;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.response.ArtifactBuildDetailsNG;
 import io.harness.delegate.task.artifacts.response.ArtifactDelegateResponse;
@@ -29,5 +31,15 @@ public class GcrArtifactDelegateResponse extends ArtifactDelegateResponse {
     super(buildDetails, sourceType);
     this.imagePath = imagePath;
     this.tag = tag;
+  }
+
+  @Override
+  public String describe() {
+    String dockerPullCommand = (getBuildDetails() != null && getBuildDetails().getMetadata() != null)
+        ? "\nImage pull command: docker pull " + getBuildDetails().getMetadata().get(ArtifactMetadataKeys.IMAGE)
+        : null;
+
+    return "type: " + (getSourceType() != null ? getSourceType().getDisplayName() : null) + "\nimagePath: " + imagePath
+        + "\ntag: " + getTag() + (EmptyPredicate.isNotEmpty(dockerPullCommand) ? dockerPullCommand : "");
   }
 }

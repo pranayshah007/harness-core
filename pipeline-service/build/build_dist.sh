@@ -42,6 +42,10 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+
+cp ../../pipeline-service/config/jfr/default.jfc .
+cp ../../pipeline-service/config/jfr/profile.jfc .
+
 java -jar pipeline-service-capsule.jar scan-classpath-metadata
 echo $PWD
 

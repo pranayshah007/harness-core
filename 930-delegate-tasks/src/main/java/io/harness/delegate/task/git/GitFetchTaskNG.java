@@ -165,7 +165,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
     if (EmptyPredicate.isNotEmpty(gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths())) {
       filePathsToFetch = gitFetchFilesConfig.getGitStoreDelegateConfig().getPaths();
       executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, true);
     }
 
     FetchFilesResult gitFetchFilesResult;
@@ -187,7 +187,7 @@ public class GitFetchTaskNG extends AbstractDelegateRunnableTask {
           ngGitService.fetchFilesByPath(gitStoreDelegateConfig, accountId, sshSessionConfig, gitConfigDTO);
     }
 
-    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, gitFetchFilesResult.getFiles());
+    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback, gitFetchFilesResult.getFiles(), true);
 
     return gitFetchFilesResult;
   }

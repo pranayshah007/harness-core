@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -278,6 +279,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
             .loadFromCache(loadFromCache)
+            .entityType(EntityType.PIPELINES)
             .build(),
         Collections.emptyMap());
   }

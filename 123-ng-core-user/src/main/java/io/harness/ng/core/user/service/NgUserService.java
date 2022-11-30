@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.invites.dto.RoleBinding;
 import io.harness.ng.core.user.AddUsersDTO;
 import io.harness.ng.core.user.AddUsersResponse;
@@ -108,4 +109,6 @@ public interface NgUserService {
   boolean updateUserDisabled(String accountId, String userId, boolean disabled);
 
   boolean verifyHarnessSupportGroupUser();
+
+  UsersCountDTO getUsersCount(Scope scope, long startInterval, long endInterval);
 }

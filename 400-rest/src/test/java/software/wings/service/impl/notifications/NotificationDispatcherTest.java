@@ -114,7 +114,7 @@ public class NotificationDispatcherTest extends WingsBaseTest {
   public void testUserGroupBasedDispatcher() throws IllegalAccessException {
     List<String> toAddresses = Lists.newArrayList("a@b.com, c@d.com");
 
-    SlackNotificationSetting slackConfig = SlackNotificationSetting.emptyConfig();
+    SlackNotificationSetting slackConfig = new SlackNotificationSetting("", "http://");
     NotificationSettings settings = new NotificationSettings(true, true, toAddresses, slackConfig, "", "");
     UserGroup userGroup = UserGroup.builder()
                               .uuid(NOTIFICATION_GROUP_ID)

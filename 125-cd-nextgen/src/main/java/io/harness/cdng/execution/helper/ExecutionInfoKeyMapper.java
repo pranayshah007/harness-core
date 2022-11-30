@@ -15,7 +15,6 @@ import io.harness.beans.Scope;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -43,8 +42,7 @@ public class ExecutionInfoKeyMapper {
           .infraIdentifier(infraIdentifier)
           .serviceIdentifier(serviceOutcome.getIdentifier())
           .build();
-    } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)
-        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)) {
+    } else {
       return ExecutionInfoKey.builder()
           .scope(getScope(ambiance))
           .envIdentifier(environmentOutcome.getIdentifier())
@@ -52,9 +50,6 @@ public class ExecutionInfoKeyMapper {
           .serviceIdentifier(serviceOutcome.getIdentifier())
           .build();
     }
-
-    throw new InvalidArgumentsException(
-        String.format("Not supported execution info key for infrastructure kind, %s", infrastructureKind));
   }
 
   private static Scope getScope(Ambiance ambiance) {

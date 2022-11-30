@@ -52,6 +52,7 @@ import io.harness.gitsync.common.dtos.ScmListFilesResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.UserRepoResponse;
+import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.helper.GitSyncUtils;
 import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
@@ -59,6 +60,7 @@ import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
@@ -93,15 +95,18 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Named("connectorDecoratorService") ConnectorService connectorService;
   ScmOrchestratorService scmOrchestratorService;
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  GitClientEnabledHelper gitClientEnabledHelper;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
-      ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      GitClientEnabledHelper gitClientEnabledHelper) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.gitClientEnabledHelper = gitClientEnabledHelper;
   }
 
   @Override
@@ -366,10 +371,11 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       createNewBranch(
           scope, scmConnector, scmCreateFileRequestDTO.getBranchName(), scmCreateFileRequestDTO.getBaseBranch());
     }
-
+    boolean useGitClient = gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier());
     CreateFileResponse createFileResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.createFile(CreateGitFileRequestDTO.builder()
+                                                          .useGitClient(useGitClient)
                                                           .scope(scope)
                                                           .branchName(scmCreateFileRequestDTO.getBranchName())
                                                           .filePath(scmCreateFileRequestDTO.getFilePath())
@@ -408,10 +414,11 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       createNewBranch(
           scope, scmConnector, scmUpdateFileRequestDTO.getBranchName(), scmUpdateFileRequestDTO.getBaseBranch());
     }
-
+    boolean isGitClientEnabled = gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier());
     UpdateFileResponse updateFileResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.updateFile(UpdateGitFileRequestDTO.builder()
+                                                          .useGitClient(isGitClientEnabled)
                                                           .scope(scope)
                                                           .branchName(scmUpdateFileRequestDTO.getBranchName())
                                                           .filePath(scmUpdateFileRequestDTO.getFilePath())

@@ -203,6 +203,8 @@ import java.util.zip.Deflater;
 import javax.validation.constraints.NotNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.internal.http2.ConnectionShutdownException;
+import okhttp3.internal.http2.StreamResetException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.joda.time.DateTime;
@@ -1273,7 +1275,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .createOrReplace(definition);
   }
 
-  private V1ConfigMap replaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
+  @VisibleForTesting
+  V1ConfigMap replaceConfigMap(KubernetesConfig kubernetesConfig, V1ConfigMap definition) {
     String name = definition.getMetadata().getName();
     log.info("Replacing config map [{}]", name);
     final Supplier<V1ConfigMap> v1ConfigMapSupplier = Retry.decorateSupplier(retry, () -> {
@@ -2284,8 +2287,9 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
   }
 
   private Retry buildRetryAndRegisterListeners() {
-    final Retry exponentialRetry = RetryHelper.getExponentialRetry(
-        this.getClass().getSimpleName(), new Class[] {ConnectException.class, TimeoutException.class});
+    final Retry exponentialRetry = RetryHelper.getExponentialRetry(this.getClass().getSimpleName(),
+        new Class[] {ConnectException.class, TimeoutException.class, ConnectionShutdownException.class,
+            StreamResetException.class});
     RetryHelper.registerEventListeners(exponentialRetry);
     return exponentialRetry;
   }

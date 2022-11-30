@@ -30,7 +30,8 @@ public class GitFetchFilesTaskHelper {
   private static final String ERROR_MESSAGE_FORMAT = "Reason: %s, %s";
   private static final String ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT = "Reason: %s, %s%nRoot Cause: %s";
   private static final String ROOT_CAUSE_MESSAGE_FORMAT = "%s: %s";
-  public void printFileNamesInExecutionLogs(LogCallback executionLogCallback, List<GitFile> files) {
+  public void printFileNamesInExecutionLogs(
+      LogCallback executionLogCallback, List<GitFile> files, boolean closeLogStream) {
     if (EmptyPredicate.isEmpty(files)) {
       return;
     }
@@ -39,10 +40,15 @@ public class GitFetchFilesTaskHelper {
     files.forEach(each -> sb.append(color(format("- %s", each.getFilePath()), Gray)).append(System.lineSeparator()));
 
     executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold), INFO);
-    executionLogCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
+    if (closeLogStream) {
+      executionLogCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
+    } else {
+      executionLogCallback.saveExecutionLog(sb.toString(), INFO);
+    }
   }
 
-  public void printFileNamesInExecutionLogs(List<String> filePathList, LogCallback logCallback) {
+  public void printFileNamesInExecutionLogs(
+      List<String> filePathList, LogCallback logCallback, boolean closeLogStream) {
     if (EmptyPredicate.isEmpty(filePathList)) {
       return;
     }
@@ -50,7 +56,11 @@ public class GitFetchFilesTaskHelper {
     StringBuilder sb = new StringBuilder(1024);
     filePathList.forEach(filePath -> sb.append(color(format("- %s", filePath), Gray)).append(System.lineSeparator()));
 
-    logCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
+    if (closeLogStream) {
+      logCallback.saveExecutionLog(sb.toString(), INFO, CommandExecutionStatus.SUCCESS);
+    } else {
+      logCallback.saveExecutionLog(sb.toString(), INFO);
+    }
   }
 
   public String extractErrorMessage(Exception exception) {

@@ -30,6 +30,8 @@ public class NGCommonEntityConstants {
   public static final String ENVIRONMENT_KEY = "envId";
   public static final String INFRA_DEFINITION_KEY = "infraDefinitionId";
 
+  public static final String SUBSCRIPTION_ID = "subscriptionId";
+
   public static final String BUILDS_KEY = "buildIds";
   public static final String TIMESTAMP = "timestamp";
   public static final String IDENTIFIER_KEY = "identifier";

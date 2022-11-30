@@ -55,6 +55,8 @@ public class PipelineStageConfig implements StageInfoConfig {
   @YamlSchemaTypes(runtime)
   private ParameterField<Map<String, Object>> pipelineInputs;
 
+  // Outputs
+  private List<PipelineStageOutputs> outputs;
   private List<String> inputSetReferences;
 
   // For StageInfoConfig Framework Execution

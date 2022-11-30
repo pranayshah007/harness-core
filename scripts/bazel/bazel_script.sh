@@ -59,7 +59,6 @@ BAZEL_MODULES="\
   //270-verification:module \
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
-  //300-cv-nextgen:module \
   //323-sto-utilities:module \
   //332-ci-manager/app:module \
   //332-ci-manager/contracts:module \
@@ -205,6 +204,7 @@ BAZEL_MODULES="\
   //access-control/contracts:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
+  //srm-service/modules/cv-nextgen-service/service:module \
 "
 
 bazel ${bazelrc} build $BAZEL_MODULES `bazel query "//...:*" | grep "module_deploy.jar"` ${BAZEL_ARGUMENTS} --remote_download_outputs=all

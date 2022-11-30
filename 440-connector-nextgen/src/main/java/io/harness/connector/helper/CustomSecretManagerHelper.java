@@ -60,7 +60,7 @@ public class CustomSecretManagerHelper {
                             .getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
                                 customNGSecretManagerConfigDTO.getAccountIdentifier(),
                                 customNGSecretManagerConfigDTO.getOrgIdentifier(),
-                                customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null,
+                                customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null, false,
                                 TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()))
                             .getMergedPipelineYaml();
 

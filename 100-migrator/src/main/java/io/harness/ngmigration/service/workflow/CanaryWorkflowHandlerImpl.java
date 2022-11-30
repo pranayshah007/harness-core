@@ -72,11 +72,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
-    CanaryWorkflowYaml canaryWorkflowYaml = canaryWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    PhaseStep.Yaml prePhase = getPreDeploymentPhase(workflow);
-    PhaseStep.Yaml postPhase = getPostDeploymentPhase(workflow);
-    return buildMultiStagePipelineTemplate(
-        stepMapperFactory, prePhase, canaryWorkflowYaml.getPhases(), postPhase, canaryWorkflowYaml.getRollbackPhases());
+    return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
   }
 
   @Override

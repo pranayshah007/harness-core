@@ -98,6 +98,9 @@ public class CCMActiveSpendServiceImpl implements CCMActiveSpendService {
   }
 
   private double getTrendForActiveSpend(double activeSpend, double previousPeriodActiveSpend) {
+    if (previousPeriodActiveSpend == 0.0D) {
+      return 0.0D;
+    }
     double trend = (activeSpend - previousPeriodActiveSpend) / previousPeriodActiveSpend;
     return getRoundedDoubleValue(100 * trend);
   }

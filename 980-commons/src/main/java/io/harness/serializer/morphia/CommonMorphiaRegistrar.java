@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.beans.Encryptable;
 import io.harness.context.MdcGlobalContextData;
+import io.harness.encryption.Encryptable;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.morphia.MorphiaRegistrar;

@@ -171,7 +171,8 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(73, BaseTimeScaleDBMigration.class))
         .add(Pair.of(74, AddOnDemandRollbackDetailsToDeployment.class))
         .add(Pair.of(75, ChangeChunkSizeForDeploymentsTable.class))
-        .add(Pair.of(76, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
+        .add(Pair.of(76, BaseTimeScaleDBMigration.class))
+        .add(Pair.of(77, AddInfraIdsToDeploymentsEnvIdsToInfraTable.class))
         .build();
   }
 }
