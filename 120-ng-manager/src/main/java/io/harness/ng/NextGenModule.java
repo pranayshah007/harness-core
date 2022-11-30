@@ -248,7 +248,6 @@ import io.harness.persistence.UserProvider;
 import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.expression.NoopEngineExpressionServiceImpl;
-import io.harness.pms.pipeline.service.yamlschema.cache.YamlSchemaDetailsWrapperValue;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.polling.service.impl.PollingPerpetualTaskServiceImpl;
 import io.harness.polling.service.impl.PollingServiceImpl;

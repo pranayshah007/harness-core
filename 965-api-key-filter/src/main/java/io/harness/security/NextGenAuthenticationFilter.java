@@ -20,7 +20,6 @@ import static io.harness.exception.WingsException.USER;
 
 import static javax.ws.rs.Priorities.AUTHENTICATION;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
-import static software.wings.app.ManagerCacheRegistrar.TRIAL_EMAIL_CACHE;
 
 import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
@@ -98,8 +97,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private NGSettingsClient settingsClient;
   private ServiceAccountClient serviceAccountClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
-  @Inject
-  @Named(TRIAL_EMAIL_CACHE) private Cache<String,
+  @Inject @Named("jwtTokenPublicKeysUrlCache") private Cache<String, String> jwtTokenPublicKeyUrlCache;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
