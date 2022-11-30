@@ -921,6 +921,8 @@ public abstract class TerraformProvisionState extends State {
       if (getTfVarGitFileConfig() != null) {
         tfVarSource = fetchTfVarGitSource(context);
       }
+    } else if (tfVarSourceType.equals(TfVarSourceType.S3)) {
+      tfVarSource = fetchTfVarS3Source(context);
     }
 
     EncryptedRecordData encryptedTfPlan =
@@ -976,8 +978,7 @@ public abstract class TerraformProvisionState extends State {
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
-    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())
-        || terraformProvisioner.getSourceType() == TerraformSourceType.S3_URI) {
+    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     return createAndRunTask(
@@ -1213,13 +1214,11 @@ public abstract class TerraformProvisionState extends State {
     TfVarSource tfVarSource = null;
 
     // Currently we allow only one tfVar source
-    if (tfVarSourceType == TerraformSourceType.GIT) {
-      if (isNotEmpty(tfVarFiles)) {
-        tfVarSource = fetchTfVarScriptRepositorySource(context);
-      } else if (null != tfVarGitFileConfig) {
-        tfVarSource = fetchTfVarGitSource(context);
-      }
-    } else if (tfVarSourceType == TerraformSourceType.S3_URI) {
+    if (isNotEmpty(tfVarFiles)) {
+      tfVarSource = fetchTfVarScriptRepositorySource(context);
+    } else if (null != tfVarGitFileConfig) {
+      tfVarSource = fetchTfVarGitSource(context);
+    } else if (null != tfVarS3FileConfig) {
       tfVarSource = fetchTfVarS3Source(context);
     }
 
@@ -1281,8 +1280,7 @@ public abstract class TerraformProvisionState extends State {
             .analyseTfPlanSummary(
                 featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
-    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())
-        || terraformProvisioner.getSourceType() == TerraformSourceType.S3_URI) {
+    if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     return createAndRunTask(activityId, executionContext, terraformProvisionParametersBuilder.build(), delegateTag);
@@ -1308,6 +1306,8 @@ public abstract class TerraformProvisionState extends State {
       tfVarSource = fetchTfVarScriptRepositorySource(context);
     } else if (null != tfVarGitFileConfig) {
       tfVarSource = fetchTfVarGitSource(context);
+    } else if (null != tfVarS3FileConfig) {
+      tfVarSource = fetchTfVarS3Source(context);
     }
     return tfVarSource;
   }

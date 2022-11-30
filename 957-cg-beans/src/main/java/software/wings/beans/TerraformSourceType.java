@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(CDP)
 public enum TerraformSourceType {
-  S3_URI("Amazon S3"),
+  S3("Amazon S3"),
   GIT("Git Repository"),
   UNKNOWN("Unknown");
 

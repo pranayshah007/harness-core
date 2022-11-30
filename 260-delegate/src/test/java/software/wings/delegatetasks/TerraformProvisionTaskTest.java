@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.rule.OwnerRule.ABOSII;
+import static io.harness.rule.OwnerRule.AKHIL_PANDEY;
 import static io.harness.rule.OwnerRule.BOJANA;
 import static io.harness.rule.OwnerRule.JELENA;
 import static io.harness.rule.OwnerRule.SATYAM;
@@ -55,6 +56,7 @@ import io.harness.delegate.task.terraform.TerraformBaseHelperImpl;
 import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.filesystem.FileIo;
+import io.harness.logging.DummyLogCallbackImpl;
 import io.harness.logging.LogCallback;
 import io.harness.provision.TerraformPlanSummary;
 import io.harness.rule.Owner;
@@ -67,20 +69,26 @@ import io.harness.terraform.beans.TerraformVersion;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.TerraformExecutionData;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.KmsConfig;
+import software.wings.beans.S3FileConfig;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.yaml.GitClientHelper;
+import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.utils.WingsTestConstants;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.s3.AmazonS3URI;
+import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
@@ -124,6 +132,8 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   @Mock private AwsHelperService awsHelperService;
   @Mock private TerraformClient terraformClient;
   @InjectMocks private TerraformBaseHelperImpl terraformBaseHelper;
+
+  @InjectMocks private AwsS3HelperServiceDelegate awsS3HelperServiceDelegate;
 
   private static final String GIT_BRANCH = "test/git_branch";
   private static final String GIT_REPO_DIRECTORY = "repository/terraformTest";
@@ -1090,5 +1100,34 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     TerraformExecutionData terraformExecutionData = terraformProvisionTaskSpy.run(parameters);
     assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     Mockito.verify(delegateFileManager, times(0)).upload(any(DelegateFile.class), any(InputStream.class));
+  }
+
+  @Owner(developers = AKHIL_PANDEY)
+  @Category(UnitTests.class)
+  public void testFetchTfVarS3Source() throws IOException {
+    AmazonS3URI amazonS3URI = new AmazonS3URI(
+        "s3://terraform-test-bucket-cdp-qe/terraform-manifest/aws/variableOutputScript/scriptForVariableOutputs.tf");
+    S3FileConfig s3FileConfig = new S3FileConfig("awsConfigId",
+        "s3://terraform-test-bucket-cdp-qe/terraform-manifest/aws/variableOutputScript/scriptForVariableOutputs.tf",
+        null);
+    AwsConfig awsConfig = new AwsConfig();
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<EncryptedDataDetail>();
+    TfVarS3Source.TfVarS3SourceBuilder tfVarS3SourceBuilder = TfVarS3Source.builder()
+                                                                  .awsConfig(awsConfig)
+                                                                  .s3FileConfig(s3FileConfig)
+                                                                  .encryptedDataDetails(encryptedDataDetails);
+    TfVarS3Source tfVarS3Source = tfVarS3SourceBuilder.build();
+    S3Object s3Object = new S3Object();
+    s3Object.setKey(amazonS3URI.getKey());
+    s3Object.setBucketName(amazonS3URI.getBucket());
+    TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
+        TerraformProvisionParameters.builder().sourceType(TerraformSourceType.S3).tfVarS3Source(tfVarS3Source);
+    TerraformProvisionParameters terraformProvisionParameters = terraformProvisionParametersBuilder.build();
+
+    LogCallback logCallback = new DummyLogCallbackImpl();
+    doReturn(s3Object,
+        when(awsS3HelperServiceDelegate.getObjectFromS3(
+            awsConfig, encryptedDataDetails, amazonS3URI.getBucket(), amazonS3URI.getKey())));
+    terraformProvisionTaskSpy.fetchTfVarS3Source(terraformProvisionParameters, "dummy-path-for-testing", logCallback);
   }
 }
