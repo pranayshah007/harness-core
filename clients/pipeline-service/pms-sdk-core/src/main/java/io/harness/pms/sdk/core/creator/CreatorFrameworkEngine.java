@@ -31,6 +31,7 @@ public class CreatorFrameworkEngine {
   public CreationResponse create(CreationRequest creationRequest) {
     Map<String, DependencyV1> initialDependency = creationRequest.getDepsMap();
     Map<String, DependencyV1> dependencies = new HashMap<>(initialDependency);
+    // Creating empty final response. All the creation responses will be merged in the final response.
     MergeCreationResponse finalResponse = MergeCreationResponse.parentBuilder().build();
     CreatorServiceV1 creatorService = factory.getCreatorService(creationRequest);
 
@@ -40,7 +41,7 @@ public class CreatorFrameworkEngine {
       dependencies = createAndGetChildrenDependencies(creatorService, finalResponse, ctx, dependencies);
       // Remove initial dependencies. Also breaking condition if loop does not exit.
     }
-    return creatorService.getMappedCreationResponseProto(finalResponse);
+    return finalResponse.toProto();
   }
 
   Map<String, DependencyV1> createAndGetChildrenDependencies(CreatorServiceV1 service,
