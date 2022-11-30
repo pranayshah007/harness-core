@@ -440,7 +440,13 @@ public enum EntityType {
       EntityYamlRootNames.TERRAGRUNT_DESTROY),
   @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
   TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
-      EntityYamlRootNames.TERRAGRUNT_ROLLBACK);
+      EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.IACM_STAGE)
+  IACM_STAGE(ModuleType.IACM, EntityTypeConstants.IACM_STAGE, IdentifierRef.class, EntityYamlRootNames.IACM_STAGE),
+  @JsonProperty(EntityTypeConstants.IACM_STEPS)
+  IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM);
 
   private final ModuleType moduleType;
   String yamlName;

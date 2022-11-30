@@ -33,7 +33,10 @@ public enum ModuleType {
   @JsonProperty("CORE") CORE("Core", true, false),
   @JsonProperty("PMS") PMS("Pipelines", true, false),
   @JsonProperty("TEMPLATESERVICE") TEMPLATESERVICE("TemplateService", true, false),
-  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true);
+  @JsonProperty("GOVERNANCE") GOVERNANCE("Governance", true, true),
+  @JsonProperty("IACM")
+  IACM("Infrastructure as Code Manager", false,
+      false); // TODO: This will be enabled once pipeline has consumed the code and can be safely enabled
 
   String displayName;
   boolean internal;
