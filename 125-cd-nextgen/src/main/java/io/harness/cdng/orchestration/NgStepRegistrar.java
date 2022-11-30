@@ -212,7 +212,7 @@ public class NgStepRegistrar {
     engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
 
-    engineSteps.put(ElastigroupSetupStep.STEP_TYPE, TasSwapRollbackStep.class);
+    engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
     return engineSteps;
   }
 }

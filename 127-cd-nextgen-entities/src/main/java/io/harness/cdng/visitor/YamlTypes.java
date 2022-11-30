@@ -175,5 +175,5 @@ public interface YamlTypes {
   String ORG = "organization";
   String SPACE = "space";
 
-  String TAS_SWAP_ROLLBACK = StepSpecTypeConstants.TAS_SWAP_ROLLBACK;
+  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
 }

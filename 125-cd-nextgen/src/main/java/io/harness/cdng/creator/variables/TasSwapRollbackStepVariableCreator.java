@@ -21,7 +21,7 @@ import java.util.Set;
 public class TasSwapRollbackStepVariableCreator extends GenericStepVariableCreator<TasSwapRollbackStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Collections.singleton(StepSpecTypeConstants.TAS_SWAP_ROLLBACK);
+    return Collections.singleton(StepSpecTypeConstants.SWAP_ROLLBACK);
   }
 
   @Override

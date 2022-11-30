@@ -24,7 +24,7 @@ import java.util.Set;
 public class TasSwapRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwapRollbackStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(StepSpecTypeConstants.TAS_SWAP_ROLLBACK);
+    return Sets.newHashSet(StepSpecTypeConstants.SWAP_ROLLBACK);
   }
 
   @Override

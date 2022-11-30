@@ -17,7 +17,7 @@ import java.util.List;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
-@RecasterAlias("io.harness.cdng.tas.TasRollbackStepParameters")
+@RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepParameters")
 public class TasSwapRollbackStepParameters extends TasSwapRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public TasSwapRollbackStepParameters(

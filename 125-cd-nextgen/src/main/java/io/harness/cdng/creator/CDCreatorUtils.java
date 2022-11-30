@@ -49,6 +49,6 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
         StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP,
         StepSpecTypeConstants.TAS_BASIC_APP_SETUP, StepSpecTypeConstants.TAS_APP_RESIZE,
-        StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK, StepSpecTypeConstants.TAS_SWAP_ROLLBACK);
+        StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK, StepSpecTypeConstants.SWAP_ROLLBACK);
   }
 }
