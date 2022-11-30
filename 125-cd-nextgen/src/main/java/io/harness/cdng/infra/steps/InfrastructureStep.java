@@ -12,13 +12,11 @@ import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogCallbackUtils.saveExecutionLogSafely;
-
+import static java.lang.String.format;
 import static software.wings.beans.LogColor.Green;
 import static software.wings.beans.LogColor.Red;
 import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
-
-import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -29,7 +27,6 @@ import io.harness.cdng.execution.helper.ExecutionInfoKeyMapper;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
-import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -131,10 +128,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Override
   public Class<Infrastructure> getStepParametersClass() {
     return Infrastructure.class;
-  }
-
-  InfraMapping createInfraMappingObject(Infrastructure infrastructureSpec) {
-    return infrastructureSpec.getInfraMapping();
   }
 
   @Override

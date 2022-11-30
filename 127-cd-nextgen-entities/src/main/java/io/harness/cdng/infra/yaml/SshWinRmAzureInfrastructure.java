@@ -13,9 +13,6 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping.SshWinRmAzureInfraMappingBuilder;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -92,22 +89,6 @@ public class SshWinRmAzureInfrastructure
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-
-  @Override
-  public InfraMapping getInfraMapping() {
-    SshWinRmAzureInfraMappingBuilder builder = SshWinRmAzureInfraMapping.builder()
-                                                   .connectorRef(connectorRef.getValue())
-                                                   .subscriptionId(subscriptionId.getValue())
-                                                   .resourceGroup(resourceGroup.getValue())
-                                                   .credentialsRef(credentialsRef.getValue())
-                                                   .hostConnectionType(hostConnectionType.getValue());
-
-    if (tags != null) {
-      builder.tags(tags.getValue());
-    }
-
-    return builder.build();
-  }
 
   @Override
   public String getKind() {

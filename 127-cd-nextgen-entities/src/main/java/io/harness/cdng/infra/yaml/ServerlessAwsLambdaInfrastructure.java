@@ -11,8 +11,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -65,16 +63,7 @@ public class ServerlessAwsLambdaInfrastructure
   @Wither
   ParameterField<String> stage;
 
-  @Override
-  public InfraMapping getInfraMapping() {
-    return ServerlessAwsLambdaInfraMapping.builder()
-        .awsConnector(connectorRef.getValue())
-        .region(region.getValue())
-        .stage(stage.getValue())
-        .build();
-  }
-
-  @Override
+    @Override
   public String getKind() {
     return InfrastructureKind.SERVERLESS_AWS_LAMBDA;
   }

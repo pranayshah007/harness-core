@@ -11,8 +11,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -72,16 +70,7 @@ public class K8sGcpInfrastructure
   @Wither
   ParameterField<String> cluster;
 
-  @Override
-  public InfraMapping getInfraMapping() {
-    return K8sGcpInfraMapping.builder()
-        .gcpConnector(connectorRef.getValue())
-        .namespace(namespace.getValue())
-        .cluster(cluster.getValue())
-        .build();
-  }
-
-  @Override
+    @Override
   public ParameterField<String> getConnectorReference() {
     return connectorRef;
   }

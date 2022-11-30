@@ -13,9 +13,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
-import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
-import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping.SshWinRmAwsInfraMappingBuilder;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -83,21 +80,7 @@ public class SshWinRmAwsInfrastructure
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @Override
-  public InfraMapping getInfraMapping() {
-    final SshWinRmAwsInfraMappingBuilder builder = SshWinRmAwsInfraMapping.builder();
-
-    if (connectorRef != null) {
-      builder.connectorRef(connectorRef.getValue());
-    }
-    if (region != null) {
-      builder.region(region.getValue());
-    }
-
-    return builder.build();
-  }
-
-  @Override
+    @Override
   public String getKind() {
     return InfrastructureKind.SSH_WINRM_AWS;
   }

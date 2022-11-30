@@ -11,8 +11,6 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.beans.EcsInfraMapping;
-import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -64,15 +62,6 @@ public class EcsInfrastructure
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> region;
-
-  @Override
-  public InfraMapping getInfraMapping() {
-    return EcsInfraMapping.builder()
-        .awsConnector(connectorRef.getValue())
-        .region(region.getValue())
-        .cluster(cluster.getValue())
-        .build();
-  }
 
   @Override
   public String getKind() {

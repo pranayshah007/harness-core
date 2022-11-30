@@ -12,8 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.infra.beans.InfraMapping;
-import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -71,15 +69,7 @@ public class K8SDirectInfrastructure
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @Override
-  public InfraMapping getInfraMapping() {
-    return K8sDirectInfraMapping.builder()
-        .k8sConnector(connectorRef.getValue())
-        .namespace(namespace.getValue())
-        .build();
-  }
-
-  @Override
+    @Override
   public String getKind() {
     return InfrastructureKind.KUBERNETES_DIRECT;
   }

@@ -16,8 +16,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
 import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
-import io.harness.cdng.infra.beans.CustomDeploymentInfraMapping;
-import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
@@ -49,18 +47,8 @@ public class CustomDeploymentInfrastructure
     extends InfrastructureDetailsAbstract implements Infrastructure, Visitable, WithConnectorRef {
   @Wither List<CustomDeploymentNGVariable> variables;
   @NotNull @NotEmpty @Wither StepTemplateRef customDeploymentRef;
-  @Override
-  public InfraMapping getInfraMapping() {
-    Map<String, String> infraVars = new HashMap<>();
-    if (!isNull(variables)) {
-      for (CustomDeploymentNGVariable variable : variables) {
-        infraVars.put(variable.getName(), variable.getCurrentValue().toString());
-      }
-    }
-    return CustomDeploymentInfraMapping.builder().variables(infraVars).build();
-  }
 
-  @Override
+    @Override
   public ParameterField<String> getConnectorReference() {
     return null;
   }
