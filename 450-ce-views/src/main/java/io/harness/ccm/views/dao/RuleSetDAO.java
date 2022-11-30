@@ -163,8 +163,9 @@ public class RuleSetDAO {
       if (ruleSet.getIsOOTB()) {
         log.info("Adding all OOTB rules");
         ruleSets.field(RuleSetId.accountId).equal(GLOBAL_ACCOUNT_ID);
+      } else {
+        ruleSets.field(RuleSetId.accountId).equal(accountId);
       }
-      ruleSets.field(RuleSetId.accountId).equal(accountId);
     }
     if (ruleSet.getSearch() != null) {
       ruleSets.field(RuleSetId.name).containsIgnoreCase(ruleSet.getSearch());
