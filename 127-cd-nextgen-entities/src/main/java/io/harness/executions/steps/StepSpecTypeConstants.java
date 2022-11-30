@@ -78,4 +78,5 @@ public interface StepSpecTypeConstants {
 
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String GITOPS_FETCH_LINKED_APPS = "GitopsFetchLinkedApps";
+  String TAS_COMMAND = "TanzuCommand";
 }

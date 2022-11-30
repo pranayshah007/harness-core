@@ -174,4 +174,5 @@ public interface EntityTypeConstants {
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
+  String TAS_COMMAND_STEP = "TanzuCommand";
 }

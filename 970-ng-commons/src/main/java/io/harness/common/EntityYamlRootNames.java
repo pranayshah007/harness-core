@@ -183,4 +183,5 @@ public class EntityYamlRootNames {
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
   public static final String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
   public static final String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
+  public static final String TAS_COMMAND_STEP = "TanzuCommand";
 }
