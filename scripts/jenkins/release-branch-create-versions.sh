@@ -18,7 +18,7 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 # Read contents of file into PROJECTS
 PROJECTS=$(<$PROJFILE)
-KEYPROJS=$(git log --pretty=oneline --abbrev-commit | awk "1;/Branching to release\//{exit}" | grep -o -iE '('${PROJECTS}')' | tr '[:lower:]' '[:upper:]' | sort | uniq)
+KEYPROJS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} | grep -o -iE '('${PROJECTS}')' | tr '[:lower:]' '[:upper:]' | sort | uniq)
 # Set the release date of the version to the date that the build is being done.
 RELDATE=$(date +'%Y-%m-%d')
 # Set the next version number - this will be something like 1.23.5-704219

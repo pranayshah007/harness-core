@@ -141,14 +141,14 @@ export NEW_VERSION=$(( ${VERSION}+1 ))
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 sed -i "s#${DV}#${YEAR}.${MONTH}.${NEWDELEGATEVERSION}#g" ${VERSION_FILE}
 
-git add ${VERSION_FILE}
-git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-git push origin develop
-print_err "$?" "Pushing build.properties to develop branch failed"
+#git add ${VERSION_FILE}
+#git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+#git push origin develop
+#print_err "$?" "Pushing build.properties to develop branch failed"
 
 # Update jira issues
 echo "STEP4: INFO: Update jira issues"
-git fetch origin refs/heads/master; git checkout master && git branch
+#git fetch origin refs/heads/master; git checkout master && git branch
 check_branch_name "master"
 if [[ "$EXECUTE_NEW_VERSION_CODE" == "true" ]]; then
   scripts/jenkins/release-branch-create-versions.sh

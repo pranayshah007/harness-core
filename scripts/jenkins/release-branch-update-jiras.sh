@@ -3,6 +3,7 @@
 # Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 
 function check_file_present(){
      local_file=$1
@@ -16,13 +17,18 @@ SHDIR=$(dirname "$0")
 PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
-KEYS=$(git log --pretty=oneline --abbrev-commit |\
-      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
+#KEYS=$(git log --pretty=oneline --abbrev-commit |\
+#      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
+#      grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
+##Getting the dummy commits that are made to the branch and creating a ticket out of it
+#git log --pretty=oneline --abbrev-commit |\
+#      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
+#      grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
+#dummyJiraList=$(sed 's/,/\\n/g' dummyJiraList.txt)
+
+KEYS=$(git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} |\ grep -o -iE '('$PROJECTS')-[0-9]+' | sort | uniq)
 #Getting the dummy commits that are made to the branch and creating a ticket out of it
-git log --pretty=oneline --abbrev-commit |\
-      awk "/${PREVIOUS_CUT_COMMIT_MESSAGE}/ {exit} {print}" |\
-      grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
+git log --pretty=oneline --format="%s" --abbrev-commit ${PREVIOUS_RELEASE_BRANCH}..${CURRENT_RELEASE_BRANCH} |\ grep -iE "\[(${PROJECTS})-0]:.*" -o | sort | uniq  | tr '\n' ',' > dummyJiraList.txt
 dummyJiraList=$(sed 's/,/\\n/g' dummyJiraList.txt)
 
 #Creating a ticket for such tickets
