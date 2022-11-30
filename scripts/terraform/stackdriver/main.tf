@@ -42,7 +42,19 @@ module "batch-processing" {
   deployment = var.deployment
   projectId = var.projectId
 }
-  
+
+module "ccm-worker" {
+  source = "./ccm-worker"
+  deployment = var.deployment
+  projectId = var.projectId
+}
+
+module "ccm-dkron" {
+  source = "./ccm-dkron"
+  deployment = var.deployment
+  projectId = var.projectId
+}
+
 module "mongo-dashboards" {
   source = "./mongo"
   deployment = var.deployment
