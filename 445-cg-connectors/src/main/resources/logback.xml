@@ -1,11 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <!-- Disable logback info messages at start -->
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <withJansi>true</withJansi>
         <encoder>
             <pattern>%date{ISO8601} [%thread] %-5level %logger - %msg %replace(%mdc){'(.+)', '[$1]'} %n</pattern>
         </encoder>
     </appender>
+
+
+    <logger name="dev.morphia" level="ERROR"/>
+    <logger name="wiremock.org" level="WARN"/>
+    <logger name="com.github.tomakehurst" level="WARN"/>
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="de.bwaldvogel" level="WARN"/>
+    <logger name="org.reflections" level="WARN"/>
+    <logger name="io.harness" level="WARN"/>
+    <logger name="software.wings" level="WARN"/>
+    <logger name="org.mongodb.driver" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+
+
 
     <root level="WARN">
         <appender-ref ref="stdout"/>
