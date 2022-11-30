@@ -652,11 +652,6 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .when(outcomeService)
         .resolve(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
 
-    doReturn(true).when(stageExecutionHelper).shouldSaveStageExecutionInfo(eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
-    doReturn(true)
-        .when(stageExecutionHelper)
-        .isRollbackArtifactRequiredPerInfrastructure(eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
-
     doNothing()
         .when(stageExecutionHelper)
         .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),

@@ -27,10 +27,10 @@ public class PlanNodeTest extends CategoryTest {
     for (ExpressionMode expressionMode : ExpressionMode.values()) {
       if (expressionMode == ExpressionMode.UNRECOGNIZED || expressionMode == ExpressionMode.UNKNOWN_MODE) {
         assertThat(ExpressionModeMapper.fromExpressionModeProto(expressionMode))
-            .isEqualTo(io.harness.expression.ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
+            .isEqualTo(io.harness.expression.common.ExpressionMode.RETURN_NULL_IF_UNRESOLVED);
         continue;
       }
-      io.harness.expression.ExpressionMode mappedExpressionMode =
+      io.harness.expression.common.ExpressionMode mappedExpressionMode =
           ExpressionModeMapper.fromExpressionModeProto(expressionMode);
       assertThat(mappedExpressionMode.name()).isEqualTo(expressionMode.name());
       assertThat(mappedExpressionMode.getIndex()).isEqualTo(expressionMode.getNumber());

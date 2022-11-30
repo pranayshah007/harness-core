@@ -12,12 +12,14 @@ import static io.harness.cdng.instance.InstanceDeploymentInfoStatus.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,11 +29,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
 import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
+import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.StageExecutionInfo;
@@ -113,7 +117,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.ofNullable(artifactOutcome));
     when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    stageExecutionHelper.saveStageExecutionInfo(ambiance,
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
         ExecutionInfoKey.builder()
             .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
@@ -142,10 +146,31 @@ public class StageExecutionHelperTest extends CategoryTest {
   @Test
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
-  public void testSaveStageExecutionInfoWithInvalidInfraKind() {
+  public void testSaveStageExecutionInfoWithKubernetesInfraNoArtifact() {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
-    stageExecutionHelper.saveStageExecutionInfo(ambiance,
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+        ExecutionInfoKey.builder()
+            .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+            .envIdentifier(ENV_IDENTIFIER)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .serviceIdentifier(SERVICE_IDENTIFIER)
+            .build(),
+        InfrastructureKind.KUBERNETES_GCP);
+
+    ArgumentCaptor<StageExecutionInfo> stageExecutionInfoArgumentCaptor =
+        ArgumentCaptor.forClass(StageExecutionInfo.class);
+    verify(stageExecutionInfoService, times(0)).save(stageExecutionInfoArgumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testSaveStageExecutionInfoWithKubernetesInfra() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(mock(ArtifactOutcome.class)));
+
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
         ExecutionInfoKey.builder()
             .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
             .envIdentifier(ENV_IDENTIFIER)
@@ -159,7 +184,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     verify(stageExecutionInfoService, times(1)).save(stageExecutionInfoArgumentCaptor.capture());
 
     StageExecutionInfo value = stageExecutionInfoArgumentCaptor.getValue();
-    assertThat(value.getExecutionDetails()).isNull();
+    assertThat(value.getExecutionDetails()).isInstanceOf(DefaultExecutionDetails.class);
   }
 
   @Test
@@ -169,7 +194,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     Ambiance ambiance = Ambiance.newBuilder().build();
 
     assertThatThrownBy(()
-                           -> stageExecutionHelper.saveStageExecutionInfo(ambiance,
+                           -> stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
                                ExecutionInfoKey.builder()
                                    .envIdentifier(ENV_IDENTIFIER)
                                    .infraIdentifier(INFRA_IDENTIFIER)
@@ -221,7 +246,7 @@ public class StageExecutionHelperTest extends CategoryTest {
     when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.ofNullable(artifactOutcome));
     when(cdStepHelper.getConfigFilesOutcome(ambiance)).thenReturn(Optional.of(configFilesOutcome));
 
-    stageExecutionHelper.saveStageExecutionInfo(ambiance,
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
         ExecutionInfoKey.builder()
             .scope(scope)
             .envIdentifier(ENV_IDENTIFIER)
@@ -415,8 +440,48 @@ public class StageExecutionHelperTest extends CategoryTest {
     assertThat(saveExecutionArtifact.getRepositoryName()).isEqualTo(repositoryName);
     assertThat(saveExecutionArtifact.getArtifactPath()).isEqualTo(artifactPath);
     assertThat(saveExecutionArtifact.isPrimaryArtifact()).isEqualTo(true);
+  }
 
-    assertThat(stageExecutionHelper.shouldSaveStageExecutionInfo(null)).isFalse();
-    assertThat(stageExecutionHelper.shouldSaveStageExecutionInfo("CustomDeployment")).isTrue();
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testSaveStageExecutionInfoForECSInfraKindNoArtifact() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+        ExecutionInfoKey.builder()
+            .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+            .envIdentifier(ENV_IDENTIFIER)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .serviceIdentifier(SERVICE_IDENTIFIER)
+            .build(),
+        InfrastructureKind.KUBERNETES_GCP);
+
+    ArgumentCaptor<StageExecutionInfo> stageExecutionInfoArgumentCaptor =
+        ArgumentCaptor.forClass(StageExecutionInfo.class);
+    verify(stageExecutionInfoService, times(0)).save(stageExecutionInfoArgumentCaptor.capture());
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testSaveStageExecutionInfoForECSInfraKind() {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    when(cdStepHelper.resolveArtifactsOutcome(ambiance)).thenReturn(Optional.of(mock(ArtifactOutcome.class)));
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance,
+        ExecutionInfoKey.builder()
+            .scope(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER))
+            .envIdentifier(ENV_IDENTIFIER)
+            .infraIdentifier(INFRA_IDENTIFIER)
+            .serviceIdentifier(SERVICE_IDENTIFIER)
+            .build(),
+        InfrastructureKind.KUBERNETES_GCP);
+
+    ArgumentCaptor<StageExecutionInfo> stageExecutionInfoArgumentCaptor =
+        ArgumentCaptor.forClass(StageExecutionInfo.class);
+    verify(stageExecutionInfoService, times(1)).save(stageExecutionInfoArgumentCaptor.capture());
+
+    StageExecutionInfo value = stageExecutionInfoArgumentCaptor.getValue();
+    assertThat(value.getExecutionDetails()).isInstanceOf(DefaultExecutionDetails.class);
   }
 }

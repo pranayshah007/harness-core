@@ -56,9 +56,6 @@ public class FetchLinkedAppsStepInfo implements CDStepInfo {
   }
 
   @Override
-  public void setDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {}
-
-  @Override
   public SpecParameters getSpecParameters() {
     return FetchLinkedAppsStepParams.infoBuilder().delegateSelectors(delegateSelectors).build();
   }

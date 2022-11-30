@@ -229,8 +229,9 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
     } catch (Exception ex) {
       log.error("NGSCIM: Failed to process the REPLACE_OKTA operation: {}, for accountId: {}, for GroupId {}",
           patchOperation.toString(), accountId, groupId, ex);
+      throw new InvalidRequestException("Failed to update group name");
     }
-    throw new InvalidRequestException("Failed to update group name");
+    return null;
   }
 
   @Override
@@ -329,14 +330,14 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
         userIds.add(operand.substring(1, operand.length() - 2));
         return userIds;
       } catch (Exception ex) {
-        log.error("SCIM: Not able to decode path. Received it in path: {}, for accountId: {}, for GroupId {}",
+        log.error("NGSCIM: Not able to decode path. Received it in path: {}, for accountId: {}, for GroupId {}",
             patchOperation.getPath(), accountId, groupId, ex);
       }
     }
 
     if (!"members".equals(patchOperation.getPath())) {
-      log.error(
-          "SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
+      log.warn(
+          "NGSCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
           patchOperation.getPath(), accountId, groupId);
       return Collections.emptySet();
     }

@@ -248,6 +248,13 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(), CEFeatures.BILLING,
           errorList, curPolicy, false);
     }
+
+    if (featuresEnabled.contains(CEFeatures.COMMITMENT_ORCHESTRATOR)) {
+      final Policy orchestratorPolicy = getRequiredCommitmentOrchestratorPolicy();
+      validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
+          CEFeatures.COMMITMENT_ORCHESTRATOR, errorList, orchestratorPolicy,
+          Boolean.TRUE.equals(ceAwsConnectorDTO.getIsAWSGovCloudAccount()));
+    }
   }
 
   private void validateIfPolicyIsCorrect(AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn,
@@ -483,6 +490,37 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     } else {
       policyDocumentFinal = policyDocument1 + policyDocument3;
     }
+    log.info(policyDocumentFinal);
+    return Policy.fromJson(policyDocumentFinal);
+  }
+
+  private Policy getRequiredCommitmentOrchestratorPolicy() {
+    final String policyDocumentFinal = "{"
+        + "  \"Version\": \"2012-10-17\","
+        + "  \"Statement\": ["
+        + "    {"
+        + "      \"Effect\": \"Allow\","
+        + "      \"Action\": ["
+        + "        \"ec2:ModifyReservedInstances\","
+        + "        \"ec2:GetReservedInstancesExchangeQuote\","
+        + "        \"ec2:AcceptReservedInstancesExchangeQuote\","
+        + "        \"ec2:DescribeReservedInstancesOfferings\","
+        + "        \"ec2:DescribeReservedInstances\","
+        + "        \"ec2:DescribeReservedInstancesModifications\","
+        + "        \"ec2:DescribeInstanceTypeOfferings\","
+        + "        \"ec2:PurchaseReservedInstancesOffering\","
+        + "        \"ce:GetSavingsPlansCoverage\","
+        + "        \"ce:GetReservationCoverage\","
+        + "        \"ce:GetSavingsPlansUtilization\","
+        + "        \"ce:GetDimensionValues\","
+        + "        \"ce:GetReservationUtilization\","
+        + "        \"ce:GetSavingsPlansUtilizationDetails\""
+        + "      ],"
+        + "      \"Resource\": \"*\""
+        + "    }"
+        + "  ]"
+        + "}";
+
     log.info(policyDocumentFinal);
     return Policy.fromJson(policyDocumentFinal);
   }

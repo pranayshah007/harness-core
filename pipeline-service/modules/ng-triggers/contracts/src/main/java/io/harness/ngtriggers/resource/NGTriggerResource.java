@@ -27,9 +27,11 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.NGTriggerCatalogDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerDetailsResponseDTO;
+import io.harness.ngtriggers.beans.dto.NGTriggerEventHistoryDTO;
 import io.harness.ngtriggers.beans.dto.NGTriggerResponseDTO;
 import io.harness.ngtriggers.beans.dto.ValidatePipelineInputsResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.rest.RestResponse;
 
@@ -62,6 +64,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.domain.Page;
 
 @Api("triggers")
 @Path("triggers")
@@ -280,4 +283,30 @@ public interface NGTriggerResource {
       @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
           "targetIdentifier") @ResourceIdentifier String targetIdentifier,
       @PathParam("triggerIdentifier") String triggerIdentifier);
+
+  @GET
+  @Path("{triggerIdentifier}/eventHistory")
+  @ApiOperation(value = "Get Trigger event history", nickname = "triggerEventHistory")
+  @Operation(operationId = "triggerEventHistory", summary = "Get event history for a trigger",
+      description = "Get event history for a trigger",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Trigger catalogue response")
+      })
+  ResponseDTO<Page<NGTriggerEventHistoryDTO>>
+  getTriggerEventHistory(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = "Identifier of the target pipeline under which trigger resides") @NotNull @QueryParam(
+          "targetIdentifier") @ResourceIdentifier String targetIdentifier,
+      @PathParam("triggerIdentifier") String triggerIdentifier,
+      @Parameter(description = PipelineResourceConstants.PIPELINE_SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
+      @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort);
 }

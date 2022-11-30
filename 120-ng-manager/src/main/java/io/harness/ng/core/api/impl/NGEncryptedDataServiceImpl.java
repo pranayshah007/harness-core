@@ -20,6 +20,7 @@ import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
 import static io.harness.eraro.ErrorCode.INVALID_FORMAT;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
+import static io.harness.eraro.ErrorCode.SECRET_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 import static io.harness.exception.WingsException.SRE;
 import static io.harness.exception.WingsException.USER;
@@ -767,6 +768,9 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
                                            .fieldName(field.getName())
                                            .build());
             }
+          } else {
+            throw new SecretManagementException(
+                SECRET_NOT_FOUND, String.format("Secret [%s] not found or has been deleted.", secretIdentifier), USER);
           }
         }
       } catch (IllegalAccessException exception) {

@@ -51,9 +51,9 @@ import java.util.Set;
 @OwnedBy(DX)
 public interface ScmClient {
   // It is assumed that ScmConnector is a decrypted connector.
-  CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
+  CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient);
 
-  UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
+  UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient);
 
   DeleteFileResponse deleteFile(ScmConnector scmConnector, GitFileDetails gitFileDetails);
 

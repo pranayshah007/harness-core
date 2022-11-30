@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 /**
@@ -160,7 +161,7 @@ public class ExecutionInterruptManager {
       }
     }
 
-    PageResponse<ExecutionInterrupt> res = listActiveExecutionInterrupts(executionInterrupt);
+    List<ExecutionInterrupt> res = listActiveExecutionInterrupts(executionInterrupt);
 
     if (executionInterruptType == ROLLBACK) {
       if (isPresent(res, ROLLBACK)) {
@@ -405,12 +406,11 @@ public class ExecutionInterruptManager {
     wingsPersistence.update(executionInterrupt, updateOps);
   }
 
-  private boolean isPresent(PageResponse<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
+  private boolean isPresent(List<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
     return getExecutionInterrupt(res, eventType) != null;
   }
 
-  private ExecutionInterrupt getExecutionInterrupt(
-      PageResponse<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
+  private ExecutionInterrupt getExecutionInterrupt(List<ExecutionInterrupt> res, ExecutionInterruptType eventType) {
     if (isEmpty(res)) {
       return null;
     }
@@ -422,14 +422,15 @@ public class ExecutionInterruptManager {
     return null;
   }
 
-  private PageResponse<ExecutionInterrupt> listActiveExecutionInterrupts(ExecutionInterrupt executionInterrupt) {
-    PageRequest<ExecutionInterrupt> req = aPageRequest()
-                                              .addFilter("appId", EQ, executionInterrupt.getAppId())
-                                              .addFilter("executionUuid", EQ, executionInterrupt.getExecutionUuid())
-                                              .addFilter("seized", EQ, false)
-                                              .addOrder(ExecutionInterrupt.CREATED_AT_KEY, OrderType.DESC)
-                                              .build();
-    return wingsPersistence.query(ExecutionInterrupt.class, req);
+  private List<ExecutionInterrupt> listActiveExecutionInterrupts(ExecutionInterrupt executionInterrupt) {
+    return wingsPersistence.createQuery(ExecutionInterrupt.class)
+        .filter(ExecutionInterruptKeys.appId, executionInterrupt.getAppId())
+        .filter(ExecutionInterruptKeys.executionUuid, executionInterrupt.getExecutionUuid())
+        .filter(ExecutionInterruptKeys.seized, false)
+        .order(Sort.descending(ExecutionInterruptKeys.createdAt))
+        .project(ExecutionInterruptKeys.uuid, true)
+        .project(ExecutionInterruptKeys.executionInterruptType, true)
+        .asList();
   }
 
   public List<ExecutionInterrupt> listByIdsUsingSecondary(Collection<String> ids) {

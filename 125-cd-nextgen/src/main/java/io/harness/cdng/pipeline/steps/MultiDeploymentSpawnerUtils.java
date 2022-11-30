@@ -14,6 +14,7 @@ import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.JsonUtils;
 
@@ -103,6 +104,49 @@ public class MultiDeploymentSpawnerUtils {
       }
     }
     return node.getUuid();
+  }
+
+  public boolean hasMultiDeploymentConfigured(DeploymentStageNode node) {
+    DeploymentStageConfig config = node.getDeploymentStageConfig();
+    if (config.getGitOpsEnabled()) {
+      return config.getServices() != null;
+    }
+    return config.getServices() != null || config.getEnvironments() != null || config.getEnvironmentGroup() != null;
+  }
+
+  public void validateMultiServiceInfra(DeploymentStageConfig stageConfig) {
+    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
+        && stageConfig.getEnvironmentGroup() == null) {
+      return;
+    }
+    if (stageConfig.getServices() != null
+        && (ParameterField.isNull(stageConfig.getServices().getValues())
+            || (!stageConfig.getServices().getValues().isExpression()
+                && EmptyPredicate.isEmpty(stageConfig.getServices().getValues().getValue())))) {
+      throw new InvalidRequestException("No value of services provided, please provide at least one value of service");
+    }
+    if (stageConfig.getEnvironments() != null && ParameterField.isNotNull(stageConfig.getEnvironments().getValues())
+        && !stageConfig.getEnvironments().getValues().isExpression()) {
+      if (EmptyPredicate.isEmpty(stageConfig.getEnvironments().getValues().getValue())) {
+        throw new InvalidRequestException(
+            "No value of environments provided, please provide at least one value of environment");
+      }
+      for (EnvironmentYamlV2 environmentYamlV2 : stageConfig.getEnvironments().getValues().getValue()) {
+        if (ParameterField.isNull(environmentYamlV2.getInfrastructureDefinitions())) {
+          throw new InvalidRequestException(
+              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                      + " at least one value of environment",
+                  environmentYamlV2.getEnvironmentRef()));
+        }
+        if (!environmentYamlV2.getInfrastructureDefinitions().isExpression()
+            && EmptyPredicate.isEmpty(environmentYamlV2.getInfrastructureDefinitions().getValue())) {
+          throw new InvalidRequestException(
+              String.format("No value of infrastructures provided for infrastructure [%s], please provide"
+                      + " at least one value of environment",
+                  environmentYamlV2.getEnvironmentRef()));
+        }
+      }
+    }
   }
 
   public ServiceYamlV2 getServiceYamlV2Node() {

@@ -579,8 +579,8 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.gitops.FetchAppTaskParams;
-import io.harness.delegate.task.gitops.FetchAppTaskResponse;
+import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
+import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
 import io.harness.delegate.task.gitpolling.GitPollingSourceType;
 import io.harness.delegate.task.gitpolling.GitPollingTaskType;
 import io.harness.delegate.task.gitpolling.github.GitHubPollingDelegateRequest;
@@ -1965,7 +1965,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
-    kryo.register(FetchAppTaskParams.class, 573561);
-    kryo.register(FetchAppTaskResponse.class, 573562);
+    kryo.register(GitOpsFetchAppTaskParams.class, 573561);
+    kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
   }
 }

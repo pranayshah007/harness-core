@@ -13,6 +13,7 @@ import static io.harness.ModuleType.CF;
 import static io.harness.ModuleType.CHAOS;
 import static io.harness.ModuleType.CI;
 import static io.harness.ModuleType.CV;
+import static io.harness.ModuleType.IACM;
 import static io.harness.ModuleType.STO;
 import static io.harness.licensing.LicenseConstant.UNLIMITED;
 import static io.harness.licensing.LicenseTestConstant.ACCOUNT_IDENTIFIER;
@@ -136,6 +137,7 @@ public class DefaultLicenseServiceImplTest extends CategoryTest {
                                    .put(CHAOS, Lists.newArrayList())
                                    .put(CV, Lists.newArrayList())
                                    .put(STO, Lists.newArrayList())
+                                   .put(IACM, Lists.newArrayList())
                                    .build())
             .build();
 

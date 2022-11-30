@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingUpdateType;
 import io.harness.ngsettings.SettingValueType;
@@ -48,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.ws.rs.NotFoundException;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -352,7 +352,7 @@ public class SettingsServiceImplTest extends CategoryTest {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
-    exceptionRule.expect(NotFoundException.class);
+    exceptionRule.expect(EntityNotFoundException.class);
     exceptionRule.expectMessage(String.format(
         "Setting [%s] is either invalid or is not applicable in scope [%s]", identifier, ScopeLevel.PROJECT));
     when(settingConfigurationRepository.findByIdentifierAndAllowedScopesIn(identifier, List.of(ScopeLevel.PROJECT)))

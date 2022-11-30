@@ -54,6 +54,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
 import io.harness.beans.SecretUsageLog;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
@@ -77,6 +78,7 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.serializer.KryoSerializer;
+import io.harness.service.intfc.DelegateTaskService;
 import io.harness.threading.Morpheus;
 
 import software.wings.EncryptTestUtils;
@@ -109,6 +111,7 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.api.PremiumFeature;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 import software.wings.resources.secretsmanagement.SecretManagementResource;
 import software.wings.security.UsageRestrictions;
 import software.wings.security.UserThreadLocal;
@@ -150,8 +153,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
@@ -190,6 +195,7 @@ public class VaultTest extends WingsBaseTest {
   @Inject private SecretManagementTestHelper secretManagementTestHelper;
   @Mock private DelegateProxyFactory delegateProxyFactory;
   @Mock private SecretManagementDelegateService secretManagementDelegateService;
+  @Mock private DelegateTaskService delegateTaskService;
   @Mock private PremiumFeature secretsManagementFeature;
   @Mock protected AuditServiceHelper auditServiceHelper;
   @Mock private GlobalEncryptDecryptClient globalEncryptDecryptClient;
@@ -212,6 +218,7 @@ public class VaultTest extends WingsBaseTest {
   private String envId;
 
   @Inject KryoSerializer kryoSerializer;
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
   @Parameters
   public static Collection<Object[]> data() {
@@ -2208,6 +2215,43 @@ public class VaultTest extends WingsBaseTest {
     } catch (InvalidRequestException ire) {
       assertThat(ire.getCode()).isEqualTo(ErrorCode.INVALID_REQUEST);
     }
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void save_tokenBasedAuth_withRootToken_withNonZeroRenewInterval_shouldFail() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setAccountId(accountId);
+    vaultConfig.setRenewalInterval(10L);
+    when(secretManagementDelegateService.tokenLookup(any()))
+        .thenReturn(VaultTokenLookupResult.builder().expiryTime(null).renewable(false).name("name").build());
+    when(delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, "VAULT_TOKEN_LOOKUP")).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a root token. Please set renewal interval as zero if you are using root token.");
+
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void save_tokenBasedAuth_withNonRootToken_withNonRenewableToken_shouldFail() {
+    VaultConfig vaultConfig = secretManagementTestHelper.getVaultConfigWithAuthToken(VAULT_TOKEN);
+    vaultConfig.setAccountId(accountId);
+    vaultConfig.setRenewalInterval(10L);
+    when(secretManagementDelegateService.tokenLookup(any()))
+        .thenReturn(VaultTokenLookupResult.builder()
+                        .expiryTime(UUIDGenerator.generateUuid())
+                        .renewable(false)
+                        .name("name")
+                        .build());
+    when(delegateTaskService.isTaskTypeSupportedByAllDelegates(accountId, "VAULT_TOKEN_LOOKUP")).thenReturn(true);
+    exceptionRule.expect(SecretManagementException.class);
+    exceptionRule.expectMessage(
+        "The token used is a non-renewable token. Please set renewal interval as zero or use a renewable token.");
+    vaultService.saveOrUpdateVaultConfig(accountId, vaultConfig, false);
   }
 
   private Thread startTransitionListener() throws IllegalAccessException {
