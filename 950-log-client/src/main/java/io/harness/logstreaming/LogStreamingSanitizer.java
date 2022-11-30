@@ -9,18 +9,26 @@ package io.harness.logstreaming;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-
 import static org.apache.commons.lang3.StringUtils.replaceEach;
 
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.logging.LogSanitizerHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Builder;
 
 @Builder
 public class LogStreamingSanitizer {
   private final Set<String> secrets;
+
+  public LogStreamingSanitizer(Set<String> secrets) {
+    this.secrets = calculateSecretLines(secrets);
+  }
+
   public void sanitizeLogMessage(LogLine logLine) {
     String sanitizedLogMessage = logLine.getMessage();
     if (!isEmpty(secrets)) {
@@ -54,5 +62,17 @@ public class LogStreamingSanitizer {
       secretMasks.add(SECRET_MASK);
       secretValues.add(secretWithSingleQuoteRemoved);
     }
+  }
+
+  private static Set<String> calculateSecretLines(Set<String> secrets) {
+    if (isEmpty(secrets)) {
+      return new HashSet<>();
+    }
+    return secrets.stream()
+        .flatMap(secret -> {
+          String[] split = secret.split("\\r?\\n");
+          return Arrays.stream(split).filter(EmptyPredicate::isNotEmpty);
+        })
+        .collect(Collectors.toSet());
   }
 }

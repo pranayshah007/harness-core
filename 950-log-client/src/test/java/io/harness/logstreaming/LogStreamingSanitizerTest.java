@@ -10,14 +10,17 @@ package io.harness.logstreaming;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.rule.OwnerRule.YOGESH;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.HashSet;
 import java.util.Set;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -32,7 +35,7 @@ public class LogStreamingSanitizerTest extends CategoryTest {
     LogStreamingSanitizer logStreamingSanitizer = LogStreamingSanitizer.builder().secrets(null).build();
 
     logStreamingSanitizer.sanitizeLogMessage(logLine);
-    Assertions.assertThat(logLine.getMessage()).isEqualTo(message);
+    assertThat(logLine.getMessage()).isEqualTo(message);
   }
 
   @Test
@@ -52,7 +55,7 @@ public class LogStreamingSanitizerTest extends CategoryTest {
         LogStreamingSanitizer.builder().secrets(secrets).build();
 
     logStreamingSanitizer.sanitizeLogMessage(logLine);
-    Assertions.assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
+    assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
   }
 
   @Test
@@ -72,6 +75,26 @@ public class LogStreamingSanitizerTest extends CategoryTest {
     LogStreamingSanitizer logStreamingSanitizer = LogStreamingSanitizer.builder().secrets(null).build();
 
     logStreamingSanitizer.sanitizeLogMessage(logLine);
-    Assertions.assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
+    assertThat(logLine.getMessage()).isEqualTo(sanitizedMessage);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testGenericSanitize_ShouldReplaceMultiLineSecret() {
+    Set<String> secrets = ImmutableSet.<String>builder().add("line1\nline2\nline3").build();
+    LogStreamingSanitizer logSanitizer = LogStreamingSanitizer.builder().secrets(secrets).build();
+
+    LogLine logLine = LogLine.builder()
+                          .message("sanitize this log: line1\n"
+                              + "      line2\n"
+                              + "       line3")
+                          .build();
+    logSanitizer.sanitizeLogMessage(logLine);
+
+    assertThat(logLine.getMessage())
+        .isEqualTo("sanitize this log: **************\n"
+            + "      **************\n"
+            + "       **************");
   }
 }
