@@ -40,7 +40,7 @@ public class InputSetErrorsHelper {
   public final String INVALID_INPUT_SET_MESSAGE = "Reference is an invalid Input Set";
   public final String OUTDATED_INPUT_SET_MESSAGE = "Reference is an outdated input set";
 
-  public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml) {
+  public InputSetErrorWrapperDTOPMS getErrorMap(String pipelineYaml, String inputSetYaml, String inputSetIdentifier) {
     String pipelineComp = getPipelineComponent(inputSetYaml);
     String templateYaml = createTemplateFromPipeline(pipelineYaml);
     Map<FQN, String> invalidFQNs = getInvalidFQNsInInputSet(templateYaml, pipelineComp);
@@ -49,8 +49,8 @@ public class InputSetErrorsHelper {
     }
 
     String errorPipelineYaml = getErrorPipelineYaml(invalidFQNs.keySet(), pipelineYaml);
-    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap = getUuidToErrorResponseMap(
-        invalidFQNs, InputSetYamlHelper.getStringField(inputSetYaml, "identifier", "inputSet"));
+    Map<String, InputSetErrorResponseDTOPMS> uuidToErrorResponseMap =
+        getUuidToErrorResponseMap(invalidFQNs, inputSetIdentifier);
     return InputSetErrorWrapperDTOPMS.builder()
         .errorPipelineYaml(errorPipelineYaml)
         .uuidToErrorResponseMap(uuidToErrorResponseMap)
@@ -109,7 +109,7 @@ public class InputSetErrorsHelper {
         res.put(identifier, OUTDATED_INPUT_SET_MESSAGE);
       } else {
         String inputSetYaml = inputSetEntity.getYaml();
-        InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml);
+        InputSetErrorWrapperDTOPMS errorMap = getErrorMap(pipelineYaml, inputSetYaml, inputSetEntity.getIdentifier());
         if (errorMap != null) {
           res.put(identifier, INVALID_INPUT_SET_MESSAGE);
         }

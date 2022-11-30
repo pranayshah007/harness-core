@@ -63,7 +63,6 @@ public class OverlayInputSetValidationHelper {
     }
 
     InputSetYamlHelper.confirmPipelineIdentifierInOverlayInputSet(yaml, pipelineIdentifier);
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "overlayInputSet", orgIdentifier, projectIdentifier);
 
     List<Optional<InputSetEntity>> inputSets = findAllReferredInputSets(
         inputSetService, inputSetReferences, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);

@@ -206,48 +206,6 @@ public class InputSetYamlHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testConfirmOrgAndProjectIdentifier() {
-    String yaml1 = getInputSetYaml(true);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml1, "inputSet", "o1", "p1"))
-        .hasMessage("Organization identifier is missing in the YAML. Please give a valid Organization identifier");
-
-    String yaml2 = addOrgIdentifier(yaml1);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml2, "inputSet", "o1", "p1"))
-        .hasMessage("Project identifier is missing in the YAML. Please give a valid Project identifier");
-
-    String yaml3 = addProjectIdentifier(yaml2);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "inputSet", "o2", "p1"))
-        .hasMessage("Org identifier in input set does not match");
-
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "inputSet", "o1", "p2"))
-        .hasMessage("Project identifier in input set does not match");
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "inputSet", "o1", "p1");
-  }
-
-  @Test
-  @Owner(developers = NAMAN)
-  @Category(UnitTests.class)
-  public void testConfirmOrgAndProjectIdentifierForOverlay() {
-    String yaml1 = getOverlayInputSetYaml(true, true);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml1, "overlayInputSet", "o1", "p1"))
-        .hasMessage("Organization identifier is missing in the YAML. Please give a valid Organization identifier");
-
-    String yaml2 = addOrgIdentifier(yaml1);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml2, "overlayInputSet", "o1", "p1"))
-        .hasMessage("Project identifier is missing in the YAML. Please give a valid Project identifier");
-
-    String yaml3 = addProjectIdentifier(yaml2);
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "overlayInputSet", "o2", "p1"))
-        .hasMessage("Org identifier in input set does not match");
-
-    assertThatThrownBy(() -> InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "overlayInputSet", "o1", "p2"))
-        .hasMessage("Project identifier in input set does not match");
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml3, "overlayInputSet", "o1", "p1");
-  }
-
-  @Test
   @Owner(developers = VED)
   @Category(UnitTests.class)
   public void testOverlayInputSetWithEmptyReferences() {

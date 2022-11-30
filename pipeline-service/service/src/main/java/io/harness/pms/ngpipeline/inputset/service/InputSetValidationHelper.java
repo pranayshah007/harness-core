@@ -21,7 +21,6 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
-import io.harness.pms.merger.helpers.InputSetYamlHelper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetYamlDiffDTO;
@@ -49,13 +48,14 @@ public class InputSetValidationHelper {
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
     String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
     String yaml = inputSetEntity.getYaml();
+    String inputSetIdentifier = inputSetEntity.getIdentifier();
     InputSetEntityType type = inputSetEntity.getInputSetEntityType();
 
     PipelineEntity pipelineEntity = getPipelineEntityAndCheckForStoreType(
         pipelineService, accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, checkForStoreType);
     if (type.equals(InputSetEntityType.INPUT_SET)) {
-      InputSetErrorWrapperDTOPMS errorWrapperDTO =
-          validateInputSet(pipelineEntity, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
+      InputSetErrorWrapperDTOPMS errorWrapperDTO = validateInputSet(
+          pipelineEntity, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, inputSetIdentifier);
       if (errorWrapperDTO != null) {
         throw new InvalidInputSetException(
             "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
@@ -67,10 +67,9 @@ public class InputSetValidationHelper {
   }
 
   InputSetErrorWrapperDTOPMS validateInputSet(PipelineEntity pipelineEntity, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String yaml) {
-    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
+                                              String projectIdentifier, String pipelineIdentifier, String yaml, String inputSetIdentifier) {
     String pipelineYAML = pipelineEntity.getYaml();
-    return InputSetErrorsHelper.getErrorMap(pipelineYAML, yaml);
+    return InputSetErrorsHelper.getErrorMap(pipelineYAML, yaml,inputSetIdentifier);
   }
 
   /*
@@ -128,12 +127,13 @@ public class InputSetValidationHelper {
     String projectIdentifier = inputSetEntity.getProjectIdentifier();
     String pipelineIdentifier = inputSetEntity.getPipelineIdentifier();
     String yaml = inputSetEntity.getYaml();
+    String inputSetIdentifier = inputSetEntity.getIdentifier();
     InputSetEntityType type = inputSetEntity.getInputSetEntityType();
     String pipelineYaml = getPipelineYamlForOldGitSyncFlow(pipelineService, accountId, orgIdentifier, projectIdentifier,
         pipelineIdentifier, pipelineBranch, pipelineRepoID);
     if (type.equals(InputSetEntityType.INPUT_SET)) {
       InputSetErrorWrapperDTOPMS errorWrapperDTO =
-          validateInputSetForOldGitSync(pipelineYaml, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
+          validateInputSetForOldGitSync(pipelineYaml, orgIdentifier, projectIdentifier, pipelineIdentifier, yaml, inputSetIdentifier);
       if (errorWrapperDTO != null) {
         throw new InvalidInputSetException(
             "Some fields in the Input Set are invalid.", errorWrapperDTO, inputSetEntity);
@@ -144,9 +144,8 @@ public class InputSetValidationHelper {
   }
 
   InputSetErrorWrapperDTOPMS validateInputSetForOldGitSync(
-      String pipelineYaml, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
-    validateIdentifyingFieldsInYAML(orgIdentifier, projectIdentifier, pipelineIdentifier, yaml);
-    return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml);
+          String pipelineYaml, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml, String inputSetIdentifier) {
+    return InputSetErrorsHelper.getErrorMap(pipelineYaml, yaml, inputSetIdentifier);
   }
 
   public String getPipelineYamlForOldGitSyncFlow(PMSPipelineService pmsPipelineService, String accountId,
@@ -177,19 +176,6 @@ public class InputSetValidationHelper {
       throw new InvalidRequestException(PipelineCRUDErrorResponse.errorMessageForPipelineNotFound(
           orgIdentifier, projectIdentifier, pipelineIdentifier));
     }
-  }
-
-  void validateIdentifyingFieldsInYAML(
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
-    String identifier = InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet");
-    if (EmptyPredicate.isEmpty(identifier)) {
-      throw new InvalidRequestException("Identifier cannot be empty");
-    }
-    if (identifier.length() > 63) {
-      throw new InvalidRequestException("Input Set identifier length cannot be more that 63 characters.");
-    }
-    InputSetYamlHelper.confirmPipelineIdentifierInInputSet(yaml, pipelineIdentifier);
-    InputSetYamlHelper.confirmOrgAndProjectIdentifier(yaml, "inputSet", orgIdentifier, projectIdentifier);
   }
 
   public InputSetYamlDiffDTO getYAMLDiff(GitSyncSdkService gitSyncSdkService, PMSInputSetService inputSetService,
