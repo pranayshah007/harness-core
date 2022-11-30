@@ -27,8 +27,7 @@ import org.mockito.junit.MockitoRule;
 public class MigratorExpressionUtilsTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   ExpressionEvaluator expressionEvaluator = new ExpressionEvaluator();
-  MigratorExpressionUtils migratorExpressionUtils = new MigratorExpressionUtils();
-  MigratorResolveFunctor migratorResolveFunctor = new MigratorResolveFunctor(migratorExpressionUtils.prepareContextMap(
+  MigratorResolveFunctor migratorResolveFunctor = new MigratorResolveFunctor(MigratorExpressionUtils.prepareContextMap(
       ImmutableMap.of("workflow.variables.var2", "<+pqr>", "app.name", "<+org.name>")));
 
   @Test

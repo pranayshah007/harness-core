@@ -33,10 +33,7 @@ debeziumConfigs:
     key.converter.schemas.enable: ${KEY_CONVERTER_SCHEMAS_ENABLE:-false}
     value.converter.schemas.enable: ${VALUE_CONVERTER_SCHEMAS_ENABLE:-false}
     offset.flush.interval.ms: ${OFFSET_FLUSH_INTERVAL_MS:-5000}
-    mongodb.hosts: ${MONGO_DB_HOSTS:-localhost:27017}
     mongodb.name: ${MONGODB_NAME:-pmsMongo} # unique for each debezium config
-    mongodb.user: ${MONGO_DB_USER:-}
-    mongodb.password: ${MONGO_DB_PASSWORD:-}
     mongodb.ssl.enabled: ${MONGO_DB_SSL_ENABLED:-false}
     connector.class: ${CONNECTOR_CLASS:-io.debezium.connector.mongodb.MongoDbConnector}
     database.include.list: ${DATABASE_INCLUDE_LIST:-pms-harness}
@@ -56,6 +53,7 @@ debeziumConfigs:
     poll.interval.ms: ${POLL_INTERVAL_MS:-3000}
     field.exclude.list: ${FIELD_EXCLUDE_LIST:-pms-harness.planExecutionsSummary.layoutNodeMap}
     heartbeat.interval.ms: ${HEARTBEAT_INTERVAL_MS:-10000}
+    mongodb.connection.string: ${MONGODB_CONNECTION_STRING:-mongodb://localhost:27017}
 
 eventsFramework:
   redis:

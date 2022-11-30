@@ -92,6 +92,47 @@ public class S3BucketResource {
     return ResponseDTO.newResponse(s3Buckets);
   }
 
+  @POST
+  @Path("v2/getBucketsInManifests")
+  @ApiOperation(value = "Gets s3 buckets", nickname = "getBucketsInManifests")
+  public ResponseDTO<Map<String, String>> getBucketsInManifests(@QueryParam("region") String region,
+      @QueryParam("connectorRef") String awsConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @QueryParam("fqnPath") String fqnPath, @NotNull String runtimeInputYaml,
+      @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceRef) {
+    if (isNotEmpty(serviceRef)) {
+      S3StoreConfig storeConfig = (S3StoreConfig) bucketsResourceUtils.locateStoreConfigInService(
+          accountId, orgIdentifier, projectIdentifier, serviceRef, fqnPath);
+
+      if (StringUtils.isBlank(region)) {
+        region = storeConfig.getRegion().getValue();
+      }
+
+      if (StringUtils.isBlank(awsConnectorIdentifier)) {
+        awsConnectorIdentifier = storeConfig.getConnectorRef().getValue();
+      }
+    }
+
+    // Getting the resolved region in case of expressions
+    String resolvedRegion = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, region, fqnPath, null, serviceRef);
+
+    // Getting the resolved region in case of expressions
+    String resolvedConnectorIdentifier = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier,
+        projectIdentifier, pipelineIdentifier, runtimeInputYaml, awsConnectorIdentifier, fqnPath, null, serviceRef);
+
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(resolvedConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    Map<String, String> s3Buckets =
+        s3ResourceService.getBuckets(connectorRef, resolvedRegion, orgIdentifier, projectIdentifier);
+
+    return ResponseDTO.newResponse(s3Buckets);
+  }
+
   @GET
   @Path("getBucketsV2")
   @ApiOperation(value = "Gets s3 buckets", nickname = "getV2BucketListForS3")

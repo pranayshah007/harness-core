@@ -8,6 +8,7 @@
 package io.harness.cdng.service.beans;
 
 import io.harness.beans.ExecutionStrategyType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -91,6 +92,9 @@ public enum ServiceDefinitionType {
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ServiceDefinitionType getServiceDefinitionType(@JsonProperty("type") String yamlName) {
+    if (EmptyPredicate.isEmpty(yamlName)) {
+      return null;
+    }
     for (ServiceDefinitionType serviceDefinitionType : ServiceDefinitionType.values()) {
       if (serviceDefinitionType.yamlName.equalsIgnoreCase(yamlName)) {
         return serviceDefinitionType;

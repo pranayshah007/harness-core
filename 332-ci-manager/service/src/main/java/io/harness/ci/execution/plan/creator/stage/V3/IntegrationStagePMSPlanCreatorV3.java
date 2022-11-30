@@ -7,27 +7,22 @@
 
 package io.harness.ci.plan.creator.stage.V3;
 
-import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.yaml.extended.ci.codebase.Build.builder;
-
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.beans.execution.ExecutionSource;
-import io.harness.beans.serializer.RunTimeInputHandler;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.StepSpecTypeConstants;
 import io.harness.beans.yaml.extended.clone.Clone;
-import io.harness.beans.yaml.extended.repository.Repository;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.ci.buildstate.ConnectorUtils;
-import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.V1.CIPlanCreatorUtils;
 import io.harness.ci.plan.creator.codebase.V1.CodebasePlanCreatorV1;
-import io.harness.ci.states.V1.IntegrationStageStepPMSV1;
+import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
-import io.harness.cimanager.stages.V1.IntegrationStageSpecParamsV1;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.exception.InvalidRequestException;
-import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.strategy.StrategyUtilsV1;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -36,7 +31,6 @@ import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -48,19 +42,12 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.yaml.DependenciesUtils;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.when.utils.RunInfoUtils;
-import io.harness.yaml.extended.ci.codebase.Build;
-import io.harness.yaml.extended.ci.codebase.Build.BuildBuilder;
-import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
-import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
-import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
-import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -89,17 +76,31 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
   public PlanNode createPlanForParentNode(
       PlanCreationContext ctx, IntegrationStageNodeV1 stageNode, List<String> childrenNodeIds) {
     YamlField field = ctx.getCurrentField();
-    IntegrationStageSpecParamsV1 params =
-        IntegrationStageSpecParamsV1.builder().childNodeID(childrenNodeIds.get(0)).build();
+    IntegrationStageConfigImplV1 stageConfig = stageNode.getStageConfig();
+    Infrastructure infrastructure =
+        CIPlanCreatorUtils.getInfrastructure(stageConfig.getRuntime(), stageConfig.getPlatform());
+    CodeBase codeBase = CIPlanCreatorUtils.getCodebase(ctx, stageConfig.getClone(), kryoSerializer).orElse(null);
+    ExecutionSource executionSource =
+        CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, stageNode.getIdentifier());
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        CIPlanCreatorUtils.getBuildStatusUpdateParameter(stageNode, codeBase, executionSource);
+    IntegrationStageStepParametersPMS params = IntegrationStageStepParametersPMS.builder()
+                                                   .infrastructure(infrastructure)
+                                                   .childNodeID(childrenNodeIds.get(0))
+                                                   .buildStatusUpdateParameter(buildStatusUpdateParameter)
+                                                   .build();
     PlanNodeBuilder builder =
         PlanNode.builder()
             .uuid(StrategyUtilsV1.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
             .name(StrategyUtilsV1.getIdentifierWithExpression(ctx, stageNode.getName()))
             .identifier(StrategyUtilsV1.getIdentifierWithExpression(ctx, stageNode.getIdentifier()))
             .group(StepOutcomeGroup.STAGE.name())
-            .stepParameters(
-                StageElementParameters.builder().identifier(stageNode.getIdentifier()).specConfig(params).build())
-            .stepType(IntegrationStageStepPMSV1.STEP_TYPE)
+            .stepParameters(StageElementParameters.builder()
+                                .identifier(stageNode.getIdentifier())
+                                .name(stageNode.getName())
+                                .specConfig(params)
+                                .build())
+            .stepType(IntegrationStageStepPMS.STEP_TYPE)
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(
@@ -164,12 +165,15 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
     YamlField field = ctx.getCurrentField();
     YamlField specField = Preconditions.checkNotNull(field.getNode().getField(YAMLFieldNameConstants.SPEC));
     YamlField stepsField = Preconditions.checkNotNull(specField.getNode().getField(YAMLFieldNameConstants.STEPS));
-    createPlanForCodebase(
-        ctx, stageNode.getStageConfig().getClone(), planCreationResponseMap, metadataMap, stepsField.getUuid());
+    IntegrationStageConfigImplV1 stageConfigImpl = stageNode.getStageConfig();
+    Infrastructure infrastructure =
+        CIPlanCreatorUtils.getInfrastructure(stageConfigImpl.getRuntime(), stageConfigImpl.getPlatform());
+    createPlanForCodebase(ctx, stageConfigImpl.getClone(), planCreationResponseMap, metadataMap, stepsField.getUuid());
     dependenciesNodeMap.put(stepsField.getUuid(), stepsField);
     StrategyUtilsV1.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, stageNode.getUuid(), dependenciesNodeMap,
         strategyMetadataMap, getAdvisorObtainments(ctx.getDependency()));
     metadataMap.put("stageNode", ByteString.copyFrom(kryoSerializer.asBytes(stageNode)));
+    metadataMap.put("infrastructure", ByteString.copyFrom(kryoSerializer.asBytes(infrastructure)));
     planCreationResponseMap.put(stepsField.getUuid(),
         PlanCreationResponse.builder()
             .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
@@ -187,86 +191,17 @@ public class IntegrationStagePMSPlanCreatorV3 extends ChildrenPlanCreator<Integr
   private void createPlanForCodebase(PlanCreationContext ctx, Clone clone,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap,
       String childNodeID) {
-    if (!clone.getDisabled().getValue()) {
-      CodeBase codeBase = getCodebase(ctx, clone);
+    Optional<CodeBase> optionalCodeBase = CIPlanCreatorUtils.getCodebase(ctx, clone, kryoSerializer);
+    if (optionalCodeBase.isPresent()) {
+      CodeBase codeBase = optionalCodeBase.get();
       ExecutionSource executionSource =
-          IntegrationStageUtils.buildExecutionSourceV2(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
+          CIPlanCreatorUtils.buildExecutionSource(ctx, codeBase, connectorUtils, ctx.getCurrentField().getId());
       PlanNode codebasePlanNode = CodebasePlanCreatorV1.createPlanForCodeBase(
           ctx, kryoSerializer, codeBase, connectorUtils, executionSource, childNodeID);
       planCreationResponseMap.put(
           codebasePlanNode.getUuid(), PlanCreationResponse.builder().planNode(codebasePlanNode).build());
       metadataMap.put("codebase", ByteString.copyFrom(kryoSerializer.asBytes(codeBase)));
     }
-  }
-
-  private CodeBase getCodebase(PlanCreationContext ctx, Clone clone) {
-    PipelineStoreType pipelineStoreType = ctx.getPipelineStoreType();
-    Optional<Repository> optionalRepository = RunTimeInputHandler.resolveRepository(clone.getRepository());
-    switch (pipelineStoreType) {
-      case REMOTE:
-        GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
-        return CodeBase.builder()
-            .uuid(clone.getUuid())
-            .connectorRef(ParameterField.createValueField(ctx.getPipelineConnectorRef()))
-            .repoName(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getRepoName()))
-            .build(ParameterField.createValueField(getBuild(ctx, optionalRepository)))
-            .depth(ParameterField.createValueField(GIT_CLONE_MANUAL_DEPTH))
-            .prCloneStrategy(ParameterField.createValueField(null))
-            .sslVerify(ParameterField.createValueField(null))
-            .build();
-      case INLINE:
-        if (optionalRepository.isEmpty()) {
-          throw new InvalidRequestException("repository cannot be null for inline pipeline if clone is enabled");
-        }
-        Repository repository = optionalRepository.get();
-        return CodeBase.builder()
-            .uuid(clone.getUuid())
-            .connectorRef(ParameterField.createValueField(RunTimeInputHandler.resolveStringParameter(
-                "connector", "clone", "clone", repository.getConnector(), true)))
-            .repoName(ParameterField.createValueField(
-                RunTimeInputHandler.resolveStringParameter("name", "clone", "clone", repository.getName(), true)))
-            .build(ParameterField.createValueField(getBuild(ctx, optionalRepository)))
-            .depth(ParameterField.createValueField(
-                RunTimeInputHandler.resolveIntegerParameter(clone.getDepth(), GIT_CLONE_MANUAL_DEPTH)))
-            .prCloneStrategy(ParameterField.createValueField(null))
-            .sslVerify(ParameterField.createValueField(
-                RunTimeInputHandler.resolveBooleanParameter(clone.getInsecure(), false)))
-            .build();
-      default:
-        throw new InvalidRequestException("Invalid Pipeline Store Type : " + pipelineStoreType);
-    }
-  }
-
-  private GitSyncBranchContext deserializeGitSyncBranchContext(ByteString byteString) {
-    if (isEmpty(byteString)) {
-      return null;
-    }
-    byte[] bytes = byteString.toByteArray();
-    return isEmpty(bytes) ? null : (GitSyncBranchContext) kryoSerializer.asInflatedObject(bytes);
-  }
-
-  private Build getBuild(PlanCreationContext ctx, Optional<Repository> optionalRepository) {
-    GitSyncBranchContext gitSyncBranchContext = deserializeGitSyncBranchContext(ctx.getGitSyncBranchContext());
-    BuildBuilder builder = builder();
-    if (optionalRepository.isEmpty()) {
-      return builder.type(BuildType.BRANCH)
-          .spec(BranchBuildSpec.builder()
-                    .branch(ParameterField.createValueField(gitSyncBranchContext.getGitBranchInfo().getBranch()))
-                    .build())
-          .build();
-    }
-    Repository repository = optionalRepository.get();
-    switch (repository.getBuildType()) {
-      case BRANCH:
-        builder = builder.type(BuildType.BRANCH).spec(BranchBuildSpec.builder().branch(repository.getBranch()).build());
-        break;
-      case TAG:
-        builder = builder.type(BuildType.TAG).spec(TagBuildSpec.builder().tag(repository.getTag()).build());
-        break;
-      default:
-        builder = builder.type(BuildType.PR).spec(PRBuildSpec.builder().number(repository.getPr()).build());
-    }
-    return builder.build();
   }
 
   @Override

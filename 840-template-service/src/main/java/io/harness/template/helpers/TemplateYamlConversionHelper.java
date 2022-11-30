@@ -55,7 +55,9 @@ public class TemplateYamlConversionHelper {
     YamlNode rootFieldYamlNode = new YamlNode(rootJsonNode);
     YamlField rootFieldYamlField = new YamlField(rootFieldYamlNode);
     addAdditionalFieldsToYaml(templateEntityType, yamlConversionHandler, rootFieldYamlField);
-
+    if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.STEPGROUP_TEMPLATE)) {
+      rootFieldYamlField.getNode().removePath("stepGroup/type");
+    }
     return YamlUtils.write(rootFieldYamlField.getNode().getCurrJsonNode()).replace("---\n", "");
   }
 

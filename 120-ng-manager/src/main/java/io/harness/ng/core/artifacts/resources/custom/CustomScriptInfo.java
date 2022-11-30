@@ -9,6 +9,7 @@ package io.harness.ng.core.artifacts.resources.custom;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.yaml.core.variables.NGVariable;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -25,4 +26,5 @@ public class CustomScriptInfo {
   @NotNull @Schema(description = "Script") String script;
   @Schema(description = "Inputs to the script") List<NGVariable> inputs;
   @Schema(description = "runtimeInputYaml") String runtimeInputYaml;
+  @Schema(description = "Delegate Selectors") List<TaskSelectorYaml> delegateSelector;
 }

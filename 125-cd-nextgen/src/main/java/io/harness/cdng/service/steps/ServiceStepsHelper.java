@@ -75,12 +75,6 @@ public class ServiceStepsHelper {
         CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
   }
 
-  void validateResourcesV2(Ambiance ambiance, ServiceStepParametersV2 stepParameters) {
-    final ServiceDefinition serviceDefinition = stepParameters.getServiceDefinition().getValue();
-    final String identifier = stepParameters.getIdentifier();
-    validateResources(ambiance, serviceDefinition, identifier);
-  }
-
   void validateResources(Ambiance ambiance, ServiceDefinition serviceDefinition, String identifier) {
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();

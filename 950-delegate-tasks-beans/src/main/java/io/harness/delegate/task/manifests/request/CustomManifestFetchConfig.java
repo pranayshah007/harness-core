@@ -10,8 +10,8 @@ package io.harness.delegate.task.manifests.request;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.manifest.CustomManifestSource;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
 import lombok.Builder;
 import lombok.Value;

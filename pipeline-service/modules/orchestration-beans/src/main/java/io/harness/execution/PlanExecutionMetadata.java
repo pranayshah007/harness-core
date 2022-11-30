@@ -49,9 +49,16 @@ public class PlanExecutionMetadata implements PersistentEntity, UuidAware, PmsNo
 
   private String planExecutionId;
 
+  // Merged input set given by the customer
   private String inputSetYaml;
+
+  // Final yaml after merging input sets to given yaml, given to plan creation
   private String yaml;
+
+  // Yaml having injectedUUid which is processed by PlanCreation
   private String processedYaml;
+
+  // Expanded pipeline (after connectors, etc) in json format.
   private String expandedPipelineJson;
 
   private StagesExecutionMetadata stagesExecutionMetadata;

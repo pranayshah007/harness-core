@@ -7,6 +7,7 @@
 
 package io.harness.perpetualtask;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.MEET;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +48,19 @@ public class PerpetualTaskScheduleServiceImplTest extends WingsBaseTest {
     assertThat(perpetualTaskScheduleConfig2.getTimeIntervalInMillis()).isEqualTo(TIME_INTERVAL_IN_MILLIS_2);
   }
 
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountId() {
+    PerpetualTaskScheduleConfig perpetualTaskScheduleConfig1 =
+        perpetualTaskScheduleService.save(ACCOUNT_ID, PERPETUAL_TASK_TYPE, TIME_INTERVAL_IN_MILLIS_1);
+    assertThat(perpetualTaskScheduleConfig1.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(perpetualTaskScheduleConfig1.getPerpetualTaskType()).isEqualTo(PERPETUAL_TASK_TYPE);
+    perpetualTaskScheduleService.deleteByAccountId(ACCOUNT_ID);
+    PerpetualTaskScheduleConfig perpetualTaskScheduleConfig2 =
+        perpetualTaskScheduleService.getByAccountIdAndPerpetualTaskType(ACCOUNT_ID, PERPETUAL_TASK_TYPE);
+    assertThat(perpetualTaskScheduleConfig2).isNull();
+  }
   @Test
   @Owner(developers = MEET)
   @Category(UnitTests.class)

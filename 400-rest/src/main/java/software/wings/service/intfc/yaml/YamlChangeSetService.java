@@ -11,6 +11,7 @@ import io.harness.validation.Create;
 import io.harness.validation.Update;
 
 import software.wings.beans.yaml.GitFileChange;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.yaml.gitSync.YamlChangeSet;
 import software.wings.yaml.gitSync.YamlChangeSet.Status;
 import software.wings.yaml.gitSync.beans.YamlGitConfig;
@@ -24,7 +25,7 @@ import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 /**
  * Created by anubhaw on 10/31/17.
  */
-public interface YamlChangeSetService {
+public interface YamlChangeSetService extends OwnedByAccount {
   /**
    * Save yaml change set.
    *

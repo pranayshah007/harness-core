@@ -1,0 +1,28 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          type: GitOpsUpdateReleaseRepo
+          name: "Update Release Repo"
+          identifier: updateReleaseRepo
+          timeout: 10m
+          spec: {}
+      - step:
+          type: MergePR
+          name: Merge PR
+          identifier: mergePR
+          spec:
+            deleteSourceBranch: false
+          timeout: 10m
+      - step:
+          type: GitOpsFetchLinkedApps
+          name: "Fetch Linked Apps"
+          identifier: fetchLinkedApps
+          timeout: 10m
+          spec: {}

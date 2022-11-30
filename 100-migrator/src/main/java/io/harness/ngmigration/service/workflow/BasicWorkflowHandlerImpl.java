@@ -39,6 +39,11 @@ public class BasicWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
+  public boolean areSimilar(Workflow workflow1, Workflow workflow2) {
+    return areSimilar(stepMapperFactory, workflow1, workflow2);
+  }
+
+  @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
     return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
   }

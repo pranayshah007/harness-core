@@ -34,6 +34,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.Headers;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
@@ -70,7 +71,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
-      @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Header(value = "Load-From-Cache") boolean loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
 
   @POST(TEMPLATE_ENDPOINT + "v2/applyTemplates")
   Call<ResponseDTO<TemplateMergeResponseDTO>> applyTemplatesOnGivenYamlV2(
@@ -85,7 +86,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ACCOUNT_IDENTIFIER) String parentEntityAccountIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_ORG_IDENTIFIER) String parentEntityOrgIdentifier,
       @Query(value = GitSyncApiConstants.PARENT_ENTITY_PROJECT_IDENTIFIER) String parentEntityProjectIdentifier,
-      @Body TemplateApplyRequestDTO templateApplyRequestDTO);
+      @Header(value = "Load-From-Cache") boolean loadFromCache, @Body TemplateApplyRequestDTO templateApplyRequestDTO);
 
   @POST(TEMPLATE_ENDPOINT + "templateReferences")
   Call<ResponseDTO<List<EntityDetailProtoDTO>>> getTemplateReferenceForGivenYaml(

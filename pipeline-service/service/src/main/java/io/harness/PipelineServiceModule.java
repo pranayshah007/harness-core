@@ -126,6 +126,8 @@ import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlSer
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlServiceImpl;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.pipelinestage.PipelineStageYamlSchemaServiceImpl;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationServiceImpl;
 import io.harness.pms.pipeline.validation.service.PipelineValidationService;
 import io.harness.pms.pipeline.validation.service.PipelineValidationServiceImpl;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
@@ -365,6 +367,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(PipelineMetadataService.class).to(PipelineMetadataServiceImpl.class);
 
     bind(PMSPipelineService.class).to(PMSPipelineServiceImpl.class);
+    bind(PipelineAsyncValidationService.class).to(PipelineAsyncValidationServiceImpl.class);
     bind(PmsExecutionSummaryService.class).to(PmsExecutionSummaryServiceImpl.class);
     bind(PipelineGovernanceService.class).to(PipelineGovernanceServiceImpl.class);
     bind(PipelineValidationService.class).to(PipelineValidationServiceImpl.class);

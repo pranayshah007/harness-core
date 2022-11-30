@@ -166,6 +166,8 @@ public class ChronicleEventTailer extends AbstractScheduledService {
         PublishRequest publishRequest = PublishRequest.newBuilder().addAllMessages(batchToSend.getMessages()).build();
         try {
           publishMessagesOverRest(publishRequest);
+          fileDeletionManager.setSentIndex(readTailer.index());
+          scheduler.recordSuccess();
           log.info("Published {} messages successfully over rest", batchToSend.size());
         } catch (IOException e) {
           log.error("Something wrong with publishing over rest", e);
@@ -182,6 +184,7 @@ public class ChronicleEventTailer extends AbstractScheduledService {
           }
         }
       } else {
+        fileDeletionManager.setSentIndex(readTailer.index());
         sampler.sampled(() -> log.info("Skipping message publish as batch is empty"));
       }
     } catch (Exception e) {

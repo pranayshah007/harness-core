@@ -28,12 +28,14 @@ import io.harness.pms.sdk.core.plan.PlanNode.PlanNodeBuilder;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.steps.pipelinestage.PipelineStageConfig;
 import io.harness.steps.pipelinestage.PipelineStageNode;
+import io.harness.steps.pipelinestage.PipelineStageOutputs;
 import io.harness.when.utils.RunInfoUtils;
 
 import com.google.inject.Inject;
@@ -64,6 +66,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         .org(config.getOrg())
         .project(config.getProject())
         .inputSetReferences(config.getInputSetReferences())
+        .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
         .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs))
         .build();
   }

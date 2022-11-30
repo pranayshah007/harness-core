@@ -483,9 +483,7 @@
 5353:software.wings.security.PermissionAttribute.PermissionType
 5354:software.wings.security.PermissionAttribute.Action
 5357:software.wings.security.AppFilter
-5359:software.wings.beans.ServiceVariable
 5360:software.wings.beans.EntityType
-5361:software.wings.beans.ServiceVariable.OverrideType
 5362:software.wings.beans.ServiceVariableType
 5363:software.wings.beans.container.KubernetesServiceSpecification
 5364:software.wings.beans.container.KubernetesBlueGreenConfig
@@ -898,6 +896,7 @@
 7346:software.wings.api.HelmDeployContextElement
 7347:software.wings.service.impl.newrelic.NewRelicMetricDataRecord
 7348:software.wings.service.intfc.analysis.ClusterLevel
+7349:software.wings.helpers.ext.vault.VaultTokenLookupResult
 7360:software.wings.service.impl.stackdriver.StackdriverLogGcpConfigTaskParams
 7361:software.wings.service.impl.stackdriver.StackdriverGcpConfigTaskParams
 7378:software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig
@@ -1953,6 +1952,7 @@
 150025:io.harness.delegatetasks.ValidateCustomSecretManagerSecretReferenceTaskParameters
 150026:io.harness.delegatetasks.FetchCustomSecretTaskResponse
 150027:io.harness.delegatetasks.FetchCustomSecretTaskParameters
+150028:io.harness.delegatetasks.NGVaultTokenLookupTaskResponse
 193418:io.harness.delegate.beans.ci.pod.ConnectorDetails
 400101:software.wings.beans.ce.CEAwsConfig
 400102:software.wings.beans.ce.CEGcpConfig
@@ -2329,6 +2329,11 @@
 573555:io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters
 573556:io.harness.delegate.beans.terragrunt.response.AbstractTerragruntTaskResponse
 573557:io.harness.delegate.beans.terragrunt.response.TerragruntPlanTaskResponse
+573558:io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse
+573559:io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse
+573560:io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse
+573561:io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams
+573562:io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

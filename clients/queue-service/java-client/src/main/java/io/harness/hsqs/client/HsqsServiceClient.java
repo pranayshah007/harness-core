@@ -20,6 +20,7 @@ import io.harness.hsqs.client.model.UnAckRequest;
 import io.harness.hsqs.client.model.UnAckResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 
+import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Header;
@@ -33,7 +34,7 @@ public interface HsqsServiceClient {
   Call<ResponseDTO<EnqueueResponse>> enqueue(@Body EnqueueRequest enqueueRequest, @Header("Authorization") String auth);
 
   @POST(V1_ENDPOINT + "dequeue")
-  Call<ResponseDTO<DequeueResponse[]>> dequeue(
+  Call<ResponseDTO<List<DequeueResponse>>> dequeue(
       @Body DequeueRequest dequeueRequest, @Header("Authorization") String auth);
 
   @POST(V1_ENDPOINT + "ack")

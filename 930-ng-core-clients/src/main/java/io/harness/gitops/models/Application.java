@@ -16,4 +16,6 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Application {
   String identifier;
+  String name;
+  String agentIdentifier;
 }

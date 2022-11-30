@@ -27,7 +27,11 @@ public class StepYamlBuilderFactory {
   public StepYamlBuilder getStepYamlBuilderForStepType(StepType stepType) {
     StepYamlBuilder validator = null;
     try {
-      validator = injector.getInstance(stepType.getYamlValidatorClass());
+      if (stepType.getYamlValidatorClass() != null) {
+        validator = injector.getInstance(stepType.getYamlValidatorClass());
+      } else {
+        log.debug("Can not get step yaml builder for step type {} as the YAML validator class is null", stepType);
+      }
     } catch (Exception e) {
       log.warn("Can not get step yaml builder for step type" + stepType.getType(), e);
     }

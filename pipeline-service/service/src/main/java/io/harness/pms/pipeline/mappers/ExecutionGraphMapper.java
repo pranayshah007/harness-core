@@ -19,8 +19,11 @@ import io.harness.dto.GraphDelegateSelectionLogParams;
 import io.harness.dto.GraphVertexDTO;
 import io.harness.dto.OrchestrationGraphDTO;
 import io.harness.pms.execution.ExecutionStatus;
+import io.harness.pms.plan.execution.PipelineExecutionSummaryKeys;
 import io.harness.pms.plan.execution.PlanExecutionUtils;
+import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -81,22 +84,35 @@ public class ExecutionGraphMapper {
   public final Function<EdgeList, ExecutionNodeAdjacencyList> toExecutionNodeAdjacencyList = edgeList
       -> ExecutionNodeAdjacencyList.builder().children(edgeList.getEdges()).nextIds(edgeList.getNextIds()).build();
 
-  public final Function<OrchestrationGraphDTO, ExecutionGraph> toExecutionGraph = orchestrationGraph
-      -> ExecutionGraph.builder()
-             .rootNodeId(orchestrationGraph.getRootNodeIds().get(0))
-             .nodeMap(orchestrationGraph.getAdjacencyList().getGraphVertexMap().entrySet().stream().collect(
-                 Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNode(entry.getValue()))))
-             .nodeAdjacencyListMap(orchestrationGraph.getAdjacencyList().getAdjacencyMap().entrySet().stream().collect(
-                 Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNodeAdjacencyList.apply(entry.getValue()))))
-             .build();
-
-  public ExecutionGraph toExecutionGraph(OrchestrationGraphDTO orchestrationGraph) {
+  public ExecutionGraph toExecutionGraph(
+      OrchestrationGraphDTO orchestrationGraph, PipelineExecutionSummaryEntity summaryEntity) {
     return ExecutionGraph.builder()
         .rootNodeId(orchestrationGraph.getRootNodeIds().isEmpty() ? null : orchestrationGraph.getRootNodeIds().get(0))
         .nodeMap(orchestrationGraph.getAdjacencyList().getGraphVertexMap().entrySet().stream().collect(
             Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNode(entry.getValue()))))
         .nodeAdjacencyListMap(orchestrationGraph.getAdjacencyList().getAdjacencyMap().entrySet().stream().collect(
             Collectors.toMap(Map.Entry::getKey, entry -> toExecutionNodeAdjacencyList.apply(entry.getValue()))))
+        .executionMetadata(getMetadataMap(summaryEntity))
         .build();
+  }
+
+  public Map<String, String> getMetadataMap(PipelineExecutionSummaryEntity summaryEntity) {
+    Map<String, String> executionMetadata = new HashMap<>();
+    if (summaryEntity.getAccountId() != null) {
+      executionMetadata.put(PipelineExecutionSummaryKeys.accountId, summaryEntity.getAccountId());
+    }
+    if (summaryEntity.getOrgIdentifier() != null) {
+      executionMetadata.put(PipelineExecutionSummaryKeys.orgIdentifier, summaryEntity.getOrgIdentifier());
+    }
+    if (summaryEntity.getProjectIdentifier() != null) {
+      executionMetadata.put(PipelineExecutionSummaryKeys.projectIdentifier, summaryEntity.getProjectIdentifier());
+    }
+    if (summaryEntity.getPipelineIdentifier() != null) {
+      executionMetadata.put(PipelineExecutionSummaryKeys.pipelineIdentifier, summaryEntity.getPipelineIdentifier());
+    }
+    if (summaryEntity.getPlanExecutionId() != null) {
+      executionMetadata.put(PipelineExecutionSummaryKeys.planExecutionId, summaryEntity.getPlanExecutionId());
+    }
+    return executionMetadata;
   }
 }

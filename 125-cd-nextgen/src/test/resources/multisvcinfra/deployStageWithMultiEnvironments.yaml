@@ -1,0 +1,49 @@
+name: deployStage
+identifier: deployStage
+description: ""
+type: Deployment
+spec:
+  deploymentType: Kubernetes
+  services:
+    values:
+      - serviceRef: variableTestSvc
+      - serviceRef: variableTestSvc
+  environments:
+    values:
+      - environmentRef: env1
+        infrastructureDefinition:
+          identifier: infra_1
+      - environmentRef: env2
+        infrastructureDefinition:
+          identifier: infra_2
+  execution:
+    steps:
+      - step:
+          type: ShellScript
+          name: testnames
+          identifier: testnames
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: echo 1
+            environmentVariables: []
+            outputVariables: []
+            executionTarget: {}
+          timeout: 10m
+    rollbackSteps:
+      - step:
+          name: Rollback Rollout Deployment
+          identifier: rollbackRolloutDeployment
+          type: K8sRollingRollback
+          timeout: 10m
+          spec: {}
+tags: {}
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback

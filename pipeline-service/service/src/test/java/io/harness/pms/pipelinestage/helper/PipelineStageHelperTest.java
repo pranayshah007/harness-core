@@ -9,6 +9,7 @@ package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
@@ -17,12 +18,20 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
+import io.harness.execution.NodeExecution;
+import io.harness.expression.ExpressionMode;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +44,7 @@ public class PipelineStageHelperTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
   @Mock private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
+  @Mock private PmsEngineExpressionService pmsEngineExpressionService;
   @InjectMocks private PipelineStageHelper pipelineStageHelper;
   @Test
   @Owner(developers = PRASHANTSHARMA)
@@ -134,5 +144,35 @@ public class PipelineStageHelperTest extends CategoryTest {
         .resolveTemplateRefsInPipeline(pipelineEntity);
 
     assertThatCode(() -> pipelineStageHelper.validateNestedChainedPipeline(pipelineEntity)).doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testResolveExpression() {
+    Map<String, ParameterField<String>> expressionMap = new HashMap<>();
+
+    String var1 = "var1";
+    String var2 = "var2";
+    Ambiance ambiance = Ambiance.newBuilder().setPlanId("planId").build();
+    expressionMap.put(var1, ParameterField.createExpressionField(true, "<+pipeline.name>", null, false));
+    expressionMap.put(var2, ParameterField.createValueField("constant"));
+
+    Map<String, String> resolvedMap = new HashMap<>();
+    resolvedMap.put(var1, expressionMap.get(var1).getExpressionValue());
+    resolvedMap.put(var2, expressionMap.get(var2).getValue());
+
+    Map<String, String> resolvedExpressionMap = new HashMap<>();
+    resolvedExpressionMap.put(var1, "pipelineName");
+    resolvedExpressionMap.put(var2, expressionMap.get(var2).getValue());
+
+    doReturn(resolvedExpressionMap)
+        .when(pmsEngineExpressionService)
+        .resolve(ambiance, resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+    PipelineStageOutcome outcome =
+        pipelineStageHelper.resolveOutputVariables(expressionMap, NodeExecution.builder().ambiance(ambiance).build());
+    assertThat(outcome.size()).isEqualTo(2);
+    assertThat(outcome.get(var1)).isEqualTo("pipelineName");
+    assertThat(outcome.get(var2)).isEqualTo("constant");
   }
 }
