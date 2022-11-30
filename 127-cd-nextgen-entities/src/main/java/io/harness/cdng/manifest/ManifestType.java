@@ -45,6 +45,10 @@ public interface ManifestType {
   String TAS_MANIFEST = "TasManifest";
   String TAS_VARS = "TasVars";
   String TAS_AUTOSCALER = "TasAutoScaler";
+  String AsgLaunchTemplate = "AsgLaunchTemplate";
+  String AsgConfiguration = "AsgConfiguration";
+  String AsgScalingPolicy = "AsgScalingPolicy";
+  String AsgScheduledUpdateGroupAction = "AsgScheduledUpdateGroupAction";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
@@ -52,6 +56,7 @@ public interface ManifestType {
         ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo,
         ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
         ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
-        ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER));
+        ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER, AsgLaunchTemplate, AsgConfiguration, AsgScalingPolicy,
+        AsgScheduledUpdateGroupAction));
   }
 }

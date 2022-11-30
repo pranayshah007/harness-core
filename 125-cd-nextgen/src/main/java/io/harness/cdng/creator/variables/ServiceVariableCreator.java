@@ -87,6 +87,7 @@ public class ServiceVariableCreator {
         case ServiceSpecType.NATIVE_HELM:
         case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
         case ServiceSpecType.ELASTIGROUP:
+        case ServiceSpecType.ASG:
         case ServiceSpecType.ECS:
           YamlField specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
           if (specNode != null) {
@@ -226,6 +227,12 @@ public class ServiceVariableCreator {
       case ManifestType.EcsScalingPolicyDefinition:
         addVariablesForEcsStoreConfigYaml(specNode, yamlPropertiesMap);
         break;
+      case ManifestType.AsgLaunchTemplate:
+      case ManifestType.AsgConfiguration:
+      case ManifestType.AsgScalingPolicy:
+      case ManifestType.AsgScheduledUpdateGroupAction:
+        addVariablesForAsgManifest(specNode, yamlPropertiesMap);
+        break;
       default:
         throw new InvalidRequestException("Invalid manifest type");
     }
@@ -270,6 +277,17 @@ public class ServiceVariableCreator {
   private void addVariablesForValuesManifest(
       YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
     addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForAsgManifest(YamlField manifestSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    addVariablesForStoreConfigYaml(manifestSpecNode, yamlPropertiesMap);
+
+    List<YamlField> fields = manifestSpecNode.getNode().fields();
+    fields.forEach(field -> {
+      if (!field.getName().equals(YamlTypes.UUID) && !field.getName().equals(YamlTypes.STORE_CONFIG_WRAPPER)) {
+        VariableCreatorHelper.addFieldToPropertiesMap(field, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
+      }
+    });
   }
 
   private void addVariablesForStoreConfigYaml(

@@ -52,7 +52,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getExecutionStrategyList().getData();
 
     assertThat(executionStrategyResponse).isNotNull();
-    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(10);
+    assertThat(executionStrategyResponse.keySet().size()).isEqualTo(11);
 
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.KUBERNETES))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN,
@@ -83,6 +83,18 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
 
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.ASG))
+        .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
+            ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
+    /*
+    Assertions commented as these service definitions are currently not supported
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.PCF))
+        .isEqualTo(Lists.newArrayList(
+            ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
+    assertThat(executionStrategyResponse.get(ServiceDefinitionType.ECS))
+        .isEqualTo(Lists.newArrayList(
+            ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
+     */
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.TAS))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
@@ -97,7 +109,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
         cdngPipelineConfigurationResource.getServiceDefinitionTypes(null).getData();
 
     assertThat(serviceDefinitionTypes).isNotNull();
-    assertThat(serviceDefinitionTypes.size()).isEqualTo(10);
+    assertThat(serviceDefinitionTypes.size()).isEqualTo(11);
   }
 
   @Test
