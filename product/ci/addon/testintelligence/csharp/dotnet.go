@@ -16,12 +16,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
+	"strings"
+
 	"github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"go.uber.org/zap"
-	"path"
-	"strings"
 )
 
 var (
@@ -48,8 +49,8 @@ func (b *dotnetRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
-func (b *dotnetRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return []types.RunnableTest{}, nil
+func (b *dotnetRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	return GetCsharpTests(testGlobs)
 }
 
 func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {

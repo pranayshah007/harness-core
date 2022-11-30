@@ -95,6 +95,7 @@ type runTestsTask struct {
 	cmdContextFactory    exec.CmdContextFactory
 	testSplitStrategy    string
 	parallelizeTests     bool
+	testGlobs            string
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -143,6 +144,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		addonLogger:          addonLogger,
 		testSplitStrategy:    testSplitStrategy,
 		parallelizeTests:     r.GetParallelizeTests(),
+		testGlobs:            r.GetTestGlobs(),
 	}
 }
 
@@ -437,7 +439,8 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 		// For full runs, detect all the tests in the repo and split them
 		// If autodetect fails or detects no tests, we run all tests in step 0
 		var err error
-		tests, err = runner.AutoDetectTests(ctx)
+		testGlobs := strings.Split(r.testGlobs, ",")
+		tests, err = runner.AutoDetectTests(ctx, testGlobs)
 		if err != nil || len(tests) == 0 {
 			// AutoDetectTests output should be same across all the parallel steps. If one of the step
 			// receives error / no tests to run, all the other steps should have the same output
