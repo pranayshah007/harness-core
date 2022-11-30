@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.models.InstanceStats;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -44,7 +45,7 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLatestRecordTest() throws Exception {
+  public void getLatestRecordTest() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
@@ -60,14 +61,17 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
         .thenReturn(SERVICE_ID);
     when(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName())).thenReturn(timestamp);
-    Timestamp lastSnapshotTime = instanceStatsRepository.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    assertThat(lastSnapshotTime).isEqualTo(timestamp);
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(instanceStats.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(instanceStats.getEnvId()).isEqualTo(ENVIRONMENT_ID);
+    assertThat(instanceStats.getServiceId()).isEqualTo(SERVICE_ID);
+    assertThat(instanceStats.getReportedAt()).isEqualTo(timestamp);
   }
 
   @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void getLatestRecordTestShouldPassOnRetry() throws Exception {
+  public void getLatestRecordTestShouldPassOnRetry() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
@@ -83,14 +87,17 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     when(resultSet.getString(io.harness.repositories.instancestats.InstanceStatsFields.SERVICEID.fieldName()))
         .thenReturn(SERVICE_ID);
     when(resultSet.getTimestamp(InstanceStatsFields.REPORTEDAT.fieldName())).thenReturn(timestamp);
-    Timestamp lastSnapshotTime = instanceStatsRepository.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID);
-    assertThat(lastSnapshotTime).isEqualTo(timestamp);
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(instanceStats.getAccountId()).isEqualTo(ACCOUNT_ID);
+    assertThat(instanceStats.getEnvId()).isEqualTo(ENVIRONMENT_ID);
+    assertThat(instanceStats.getServiceId()).isEqualTo(SERVICE_ID);
+    assertThat(instanceStats.getReportedAt()).isEqualTo(timestamp);
   }
 
-  @Test(expected = SQLException.class)
+  @Test
   @Owner(developers = VIKYATH_HAREKAL)
   @Category(UnitTests.class)
-  public void getLatestRecordTestShouldFailAfterAllRetries() throws Exception {
+  public void getLatestRecordTestShouldFailAfterAllRetries() throws SQLException {
     when(timeScaleDBService.getDBConnection()).thenReturn(dbConnection);
     when(dbConnection.prepareStatement(InstanceStatsQuery.FETCH_LATEST_RECORD.query())).thenReturn(statement);
     statement.setString(1, ACCOUNT_ID);
@@ -98,6 +105,7 @@ public class InstanceStatsRepositoryImplTest extends InstancesTestBase {
     statement.setString(3, PROJECT_ID);
     statement.setString(4, SERVICE_ID);
     when(statement.executeQuery()).thenThrow(new SQLException());
-    instanceStatsRepository.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID);
+    InstanceStats instanceStats = instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID);
+    assertThat(instanceStats).isNull();
   }
 }
