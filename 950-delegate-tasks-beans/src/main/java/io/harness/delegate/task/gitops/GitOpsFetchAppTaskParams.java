@@ -28,7 +28,7 @@ import lombok.Value;
 @OwnedBy(GITOPS)
 @Value
 @Builder
-public class FetchAppTaskParams implements TaskParameters, ExecutionCapabilityDemander {
+public class GitOpsFetchAppTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   GitFetchFilesConfig gitFetchFilesConfig;
   String accountId;
 

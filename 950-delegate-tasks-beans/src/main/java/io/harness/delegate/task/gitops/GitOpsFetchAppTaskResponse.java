@@ -19,7 +19,7 @@ import lombok.experimental.NonFinal;
 
 @Value
 @Builder
-public class FetchAppTaskResponse implements DelegateTaskNotifyResponseData {
+public class GitOpsFetchAppTaskResponse implements DelegateTaskNotifyResponseData {
   String appName;
   TaskStatus taskStatus;
   String errorMessage;

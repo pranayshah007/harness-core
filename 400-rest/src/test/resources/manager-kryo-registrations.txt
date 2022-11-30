@@ -2718,8 +2718,8 @@
 573558:io.harness.delegate.beans.terragrunt.response.TerragruntApplyTaskResponse
 573559:io.harness.delegate.beans.terragrunt.response.TerragruntDestroyTaskResponse
 573560:io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse
-573561:io.harness.delegate.task.gitops.FetchAppTaskParams
-573562:io.harness.delegate.task.gitops.FetchAppTaskResponse
+573561:io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams
+573562:io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

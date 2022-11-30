@@ -53,31 +53,35 @@ public class GitOpsFetchAppTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException {
     try {
-      FetchAppTaskParams taskParams = (FetchAppTaskParams) parameters;
+      log.info("Started executing GitOps Fetch App task");
+      GitOpsFetchAppTaskParams taskParams = (GitOpsFetchAppTaskParams) parameters;
       NGDelegateLogCallback ngDelegateLogCallback =
           new NGDelegateLogCallback(getLogStreamingTaskClient(), LOG_KEY_SUFFIX, false, null);
       FetchFilesResult fetchFilesResult = gitOpsTaskHelper.getFetchFilesResult(
           taskParams.getGitFetchFilesConfig(), taskParams.getAccountId(), ngDelegateLogCallback, false);
       if (fetchFilesResult == null || CollectionUtils.isEmpty(fetchFilesResult.getFiles())) {
         log.error("No files found");
-        return FetchAppTaskResponse.builder().taskStatus(TaskStatus.FAILURE).errorMessage("No files found").build();
+        return GitOpsFetchAppTaskResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage("No files found")
+            .build();
       }
       GitFile gitFile = fetchFilesResult.getFiles().get(0);
       String appName = getAppName(gitFile);
       if (appName == null || StringUtils.isEmpty(appName)) {
-        return FetchAppTaskResponse.builder()
+        return GitOpsFetchAppTaskResponse.builder()
             .taskStatus(TaskStatus.FAILURE)
             .errorMessage("Found empty app name")
             .build();
       }
       ngDelegateLogCallback.saveExecutionLog(String.format("App set Name: %s", appName));
-      return FetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).appName(appName).build();
+      return GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).appName(appName).build();
     } catch (WingsException ex) {
       log.error("Failed to Fetch App Task", ex);
-      return FetchAppTaskResponse.builder().taskStatus(TaskStatus.FAILURE).errorMessage(ex.getMessage()).build();
+      return GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.FAILURE).errorMessage(ex.getMessage()).build();
     } catch (Exception ex) {
       log.error("Failed to Fetch App Task", ex);
-      return FetchAppTaskResponse.builder()
+      return GitOpsFetchAppTaskResponse.builder()
           .taskStatus(TaskStatus.FAILURE)
           .errorMessage("Failed to fetch App Task")
           .build();
