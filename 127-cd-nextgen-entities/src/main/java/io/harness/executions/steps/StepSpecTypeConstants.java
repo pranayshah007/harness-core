@@ -88,5 +88,5 @@ public interface StepSpecTypeConstants {
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
 
-  String TAS_SWAP_ROLLBACK = "SwapRollback";
+  String SWAP_ROLLBACK = "SwapRollback";
 }

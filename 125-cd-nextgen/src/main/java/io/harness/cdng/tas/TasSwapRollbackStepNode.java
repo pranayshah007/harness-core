@@ -24,18 +24,18 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.SWAP_ROLLBACK)
 @TypeAlias("TasSwapRollbackStepNode")
 @RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepNode")
 public class TasSwapRollbackStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasSwapRollbackStepNode.StepType type = StepType.TasSwapRollback;
+  @JsonProperty("type") @NotNull TasSwapRollbackStepNode.StepType type = StepType.SwapRollback;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TasSwapRollbackStepInfo tasSwapRollbackStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.TAS_SWAP_ROLLBACK;
+    return StepSpecTypeConstants.SWAP_ROLLBACK;
   }
 
   @Override
@@ -44,7 +44,7 @@ public class TasSwapRollbackStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TasSwapRollback(StepSpecTypeConstants.TAS_SWAP_ROLLBACK);
+    SwapRollback(StepSpecTypeConstants.SWAP_ROLLBACK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

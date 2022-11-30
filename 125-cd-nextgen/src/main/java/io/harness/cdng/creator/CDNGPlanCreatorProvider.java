@@ -957,7 +957,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     StepInfo tasSwapRollback =
             StepInfo.newBuilder()
                     .setName("Tas Swap Rollback")
-                    .setType(StepSpecTypeConstants.TAS_SWAP_ROLLBACK)
+                    .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
                     .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
                     .setFeatureFlag(FeatureName.TAS_NG.name())
                     .build();

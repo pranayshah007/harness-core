@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.elastigroup.ElastigroupSetupStep;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasSwapRollbackStepInfoVisitorHelper;
@@ -32,7 +33,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @SimpleVisitorHelper(helperClass = TasSwapRollbackStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.SWAP_ROLLBACK)
 @TypeAlias("TasSwapRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepInfo")
 public class TasSwapRollbackStepInfo extends TasSwapRollbackBaseStepInfo implements CDStepInfo, Visitable {
@@ -51,7 +52,7 @@ public class TasSwapRollbackStepInfo extends TasSwapRollbackBaseStepInfo impleme
 
   @Override
   public StepType getStepType() {
-    return null;
+    return TasSwapRollbackStep.STEP_TYPE;
   }
 
   @Override
