@@ -73,9 +73,9 @@ public class ManagerEventsFrameworkModule extends AbstractModule {
           .annotatedWith(Names.named(CG_GENERAL_EVENT))
           .toInstance(RedisConsumer.of(CG_GENERAL_EVENT, MANAGER.getServiceId(), redissonClient,
               CG_GENERAL_EVENT_MAX_PROCESSING_TIME, CG_GENERAL_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
-
-      bind(MessageListener.class).annotatedWith(Names.named(CG_NOTIFY_EVENT)).to(NotifyEventMessageListenerCg.class);
-      bind(MessageListener.class).annotatedWith(Names.named(CG_GENERAL_EVENT)).to(GeneralEventMessageListenerCg.class);
     }
+
+    bind(MessageListener.class).annotatedWith(Names.named(CG_NOTIFY_EVENT)).to(NotifyEventMessageListenerCg.class);
+    bind(MessageListener.class).annotatedWith(Names.named(CG_GENERAL_EVENT)).to(GeneralEventMessageListenerCg.class);
   }
 }
