@@ -136,6 +136,12 @@ if [ "$MONTH" -gt "$mm" ] || [ "$YEAR" -gt "$yy" ]; then NEWDELEGATEVERSION="10"
 
 export NEWDELEGATEVERSION
 export VERSION=${VERSION%??}
+
+##changes for future use case
+#PREVIOUS_RELEASE_VERSION=$(( ${VERSION}-1 ))
+#export PREVIOUS_RELEASE_BRANCH="release/saas/${PREVIOUS_RELEASE_VERSION}xx"
+#export CURRENT_RELEASE_BRANCH="release/saas/${VERSION}xx"
+
 export NEW_VERSION=$(( ${VERSION}+1 ))
 
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
