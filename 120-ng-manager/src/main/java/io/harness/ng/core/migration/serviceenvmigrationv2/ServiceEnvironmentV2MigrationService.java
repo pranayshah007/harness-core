@@ -35,9 +35,9 @@ import io.harness.ng.core.infrastructure.dto.InfrastructureRequestDTO;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageMigrationFailureResponse;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.TemplateObject;
 import io.harness.ng.core.refresh.service.EntityRefreshService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -71,6 +71,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -82,7 +83,7 @@ public class ServiceEnvironmentV2MigrationService {
   @OwnedBy(CDP)
   @Data
   @Builder
-  public static class StageSchema {
+  private static class StageSchema {
     @JsonProperty("stage") private DeploymentStageNode stageNode;
   }
 
@@ -107,8 +108,8 @@ public class ServiceEnvironmentV2MigrationService {
     }
   }
 
-  public ServiceEnvironmentResponseDto migratePipelineWithServiceEnvV2(
-      SvcEnvMigrationRequestDto requestDto, String accountId) {
+  public SvcEnvMigrationResponseDto migratePipeline(
+      @NonNull SvcEnvMigrationRequestDto requestDto, @NonNull String accountId) {
     final PMSPipelineResponseDTO existingPipeline =
         NGRestUtils.getResponse(pipelineServiceClient.getPipelineByIdentifier(requestDto.getPipelineIdentifier(),
             accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null));
@@ -122,7 +123,7 @@ public class ServiceEnvironmentV2MigrationService {
     if (stageArrayNode.size() < 1) {
       log.error(String.format(
           "No stages found in pipeline %s. Aborting migration request", requestDto.getPipelineIdentifier()));
-      return ServiceEnvironmentResponseDto.builder().build();
+      return SvcEnvMigrationResponseDto.builder().build();
     }
     List<StageMigrationFailureResponse> failures = new ArrayList<>();
 
@@ -130,6 +131,9 @@ public class ServiceEnvironmentV2MigrationService {
     for (int currentIndex = 0; currentIndex < stageArrayNode.size(); currentIndex++) {
       JsonNode stageNode = stageArrayNode.get(currentIndex);
       YamlNode stageYamlNode = new YamlNode(stageNode);
+      if (!"Deployment".equals(getStageType(stageYamlNode))) {
+        continue;
+      }
       Optional<JsonNode> migratedStageNode = createMigratedYaml(accountId, stageYamlNode, requestDto, failures);
       if (migratedStageNode.isPresent()) {
         stageArrayNode.set(currentIndex, migratedStageNode.get());
@@ -146,10 +150,7 @@ public class ServiceEnvironmentV2MigrationService {
           requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), null, null, null,
           RequestBody.create(MediaType.parse("application/yaml"), migratedPipelineYaml)));
     }
-    return ServiceEnvironmentResponseDto.builder()
-        .migratedPipelineYaml(migratedPipelineYaml)
-        .failures(failures)
-        .build();
+    return SvcEnvMigrationResponseDto.builder().pipelineYaml(migratedPipelineYaml).failures(failures).build();
   }
 
   private Optional<JsonNode> createMigratedYaml(String accountId, YamlNode stageNode,
@@ -185,7 +186,6 @@ public class ServiceEnvironmentV2MigrationService {
     migratedStageYaml = entityRefreshService.refreshLinkedInputs(
         accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), migratedStageYaml, null);
     YamlField migratedStageYamlField = getYamlField(migratedStageYaml, "stage");
-    ObjectMapper objectMapper = new ObjectMapper();
     ObjectNode stageParentNode = objectMapper.createObjectNode();
     stageParentNode.set("stage", migratedStageYamlField.getNode().getCurrJsonNode());
     return stageParentNode;
@@ -224,14 +224,7 @@ public class ServiceEnvironmentV2MigrationService {
           format("doesn't found target template mapping for following source template: %s", templateKey));
     }
     TemplateObject targetTemplateObject = requestDto.getTemplateMap().get(templateKey);
-    TemplateResponseDTO targetTemplateResponse = NGRestUtils.getResponse(
-        templateResourceClient.get(targetTemplateObject.getTemplateRef(), accountId, requestDto.getOrgIdentifier(),
-            requestDto.getProjectIdentifier(), targetTemplateObject.getVersionLabel(), false));
-    if (targetTemplateResponse == null) {
-      throw new InvalidRequestException(format("target template: %s corresponding to source template doesn't"
-              + "exist: %s",
-          targetTemplateObject.getTemplateRef(), templateKey));
-    }
+    checkStageTemplateExistence(accountId, requestDto, templateKey, targetTemplateObject);
     ObjectNode stageTemplateNode = (ObjectNode) templateStageYamlNode.getCurrJsonNode();
     stageTemplateNode.put("templateRef", targetTemplateObject.getTemplateRef());
     stageTemplateNode.put("versionLabel", targetTemplateObject.getVersionLabel());
@@ -295,6 +288,7 @@ public class ServiceEnvironmentV2MigrationService {
     InfrastructureEntity migratedInfrastructureEntity;
     String environmentRef = getEnvironmentRefInStage(deploymentStageConfig);
     checkEnvironmentAccess(accountId, orgIdentifier, projectIdentifier, environmentRef);
+    environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, environmentRef);
     infraIdentifier = infraIdentifier.replace("<+org.identifier>", orgIdentifier);
     infraIdentifier = infraIdentifier.replace("<+project.identifier>", projectIdentifier);
     infraIdentifier = infraIdentifier.replace(
@@ -331,7 +325,6 @@ public class ServiceEnvironmentV2MigrationService {
       }
       throw new InvalidRequestException(format("an infra doesn't exist with identifier: %s", infraIdentifier));
     }
-    environmentValidationHelper.checkThatEnvExists(accountId, orgIdentifier, projectIdentifier, environmentRef);
     InfrastructureEntity infrastructureEntity =
         createInfraEntity(deploymentStageConfig.getInfrastructure(), orgIdentifier, projectIdentifier, infraIdentifier,
             deploymentStageConfig.getServiceConfig(), accountId, stageField);
@@ -339,11 +332,52 @@ public class ServiceEnvironmentV2MigrationService {
     migrateStageYaml(null, migratedInfrastructureEntity, resultantSpecNode);
   }
 
+  private void checkStageTemplateExistence(
+      String accountId, SvcEnvMigrationRequestDto requestDto, String templateKey, TemplateObject targetTemplateObject) {
+    TemplateResponseDTO targetTemplateResponse;
+    String orgIdentifier = null;
+    String projectIdentifier = null;
+    String templateRef = targetTemplateObject.getTemplateRef();
+    if (targetTemplateObject.getTemplateRef().startsWith("org.")) {
+      orgIdentifier = requestDto.getOrgIdentifier();
+      templateRef = templateRef.replace("org.", "");
+    } else if (targetTemplateObject.getTemplateRef().startsWith("account.")) {
+      templateRef = templateRef.replace("account.", "");
+    } else {
+      projectIdentifier = requestDto.getProjectIdentifier();
+      orgIdentifier = requestDto.getOrgIdentifier();
+    }
+    targetTemplateResponse = NGRestUtils.getResponse(templateResourceClient.get(
+        templateRef, accountId, orgIdentifier, projectIdentifier, targetTemplateObject.getVersionLabel(), false));
+
+    if (targetTemplateResponse == null) {
+      throw new InvalidRequestException(format("target template: %s corresponding to source template doesn't"
+              + "exist: %s",
+          targetTemplateObject.getTemplateRef(), templateKey));
+    }
+  }
+
   private boolean isSkipEntityUpdation(String entityRef, List<String> skipEntities) {
     if (isNotEmpty(skipEntities) && skipEntities.contains(entityRef)) {
       return true;
     }
     return false;
+  }
+
+  private String getStageType(YamlNode stageParentNode) {
+    YamlNode stageNode = stageParentNode.getField("stage").getNode();
+    boolean isStageTemplatePresent = isStageContainStageTemplate(stageParentNode);
+    if (isStageTemplatePresent) {
+      return stageNode.getField("template")
+          .getNode()
+          .getField("templateInputs")
+          .getNode()
+          .getField("type")
+          .getNode()
+          .getCurrJsonNode()
+          .textValue();
+    }
+    return stageNode.getField("type").getNode().getCurrJsonNode().textValue();
   }
 
   private void checkServiceAccess(String accountId, String orgIdentifier, String projectIdentifier, String serviceRef) {
@@ -455,7 +489,7 @@ public class ServiceEnvironmentV2MigrationService {
             "Infrastructure yaml is not valid, template variables and infra variables doesn't match");
       }
     }
-    return infrastructureEntityService.create(infrastructureEntity);
+    return infrastructureEntity;
   }
 
   private ServiceEntity addServiceV2YamlInServiceEntity(
@@ -500,7 +534,7 @@ public class ServiceEnvironmentV2MigrationService {
           return getV1ServiceEntity(serviceEntity, isServiceV2Flag, serviceIdentifier);
         }
       } catch (Exception e) {
-        throw new InvalidRequestException(format("not able to parse service due to %s", e.getMessage()));
+        throw new InvalidRequestException(e.getMessage());
       }
     }
     throw new InvalidRequestException(format("service doesn't exist with identifier: %s", serviceIdentifier));

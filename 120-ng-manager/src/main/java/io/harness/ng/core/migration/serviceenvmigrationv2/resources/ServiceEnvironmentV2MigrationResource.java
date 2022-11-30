@@ -14,8 +14,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.ServiceEnvironmentResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -52,13 +52,12 @@ public class ServiceEnvironmentV2MigrationResource {
   @POST
   @Path("/pipeline")
   @ApiOperation(value = "Migrate a pipeline to new service and environment framework")
-  public ResponseDTO<ServiceEnvironmentResponseDto> migratePipelineWithServiceInfraV2(
+  public ResponseDTO<SvcEnvMigrationResponseDto> migratePipelineWithServiceInfraV2(
       @NotNull @QueryParam("accountIdentifier") String accountId, @Valid SvcEnvMigrationRequestDto requestDto) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
 
-    ServiceEnvironmentResponseDto response =
-        serviceEnvironmentV2MigrationService.migratePipelineWithServiceEnvV2(requestDto, accountId);
+    SvcEnvMigrationResponseDto response = serviceEnvironmentV2MigrationService.migratePipeline(requestDto, accountId);
     return ResponseDTO.newResponse(response);
   }
 }

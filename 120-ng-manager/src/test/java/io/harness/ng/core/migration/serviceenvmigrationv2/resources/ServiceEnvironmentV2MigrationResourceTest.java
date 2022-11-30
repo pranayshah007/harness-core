@@ -13,8 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageRequestDto;
-import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageResponseDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 import io.harness.rule.Owner;
 
 import org.junit.Before;
@@ -33,24 +33,25 @@ public class ServiceEnvironmentV2MigrationResourceTest extends CategoryTest {
   private final String ACCOUNT_ID = "account_01";
   private final String ORG_IDENTIFIER = "org_01";
   private final String PROJ_IDENTIFIER = "proj_01";
-  private final String INFRA_IDENTIFIER = "infra_01";
-  private final String STAGE_V1_YAML = "v1 yaml";
-  private final String STAGE_V2_YAML = "v2 yaml";
+  private final String PIPLINE_IDENTIFIER = "pipeline_01";
+  private final String INFRA_IDENTIFIER_FORMAT = "<+environment.identifier>_infra";
+  private final String PIPELINE_V2_YAML = "v2 yaml";
 
-  StageRequestDto stageRequestDto;
-  StageResponseDto stageResponseDto;
+  SvcEnvMigrationRequestDto requestDto;
+  SvcEnvMigrationResponseDto expectedResponseDto;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    stageRequestDto = StageRequestDto.builder()
-                          .orgIdentifier(ORG_IDENTIFIER)
-                          .projectIdentifier(PROJ_IDENTIFIER)
-                          .infraIdentifier(INFRA_IDENTIFIER)
-                          .yaml(STAGE_V1_YAML)
-                          .build();
+    requestDto = SvcEnvMigrationRequestDto.builder()
+                     .orgIdentifier(ORG_IDENTIFIER)
+                     .projectIdentifier(PROJ_IDENTIFIER)
+                     .pipelineIdentifier(PIPLINE_IDENTIFIER)
+                     .infraIdentifierFormat(INFRA_IDENTIFIER_FORMAT)
+                     .isUpdatePipeline(true)
+                     .build();
 
-    stageResponseDto = StageResponseDto.builder().yaml(STAGE_V2_YAML).build();
+    expectedResponseDto = SvcEnvMigrationResponseDto.builder().pipelineYaml(PIPELINE_V2_YAML).build();
   }
 
   @Test
@@ -60,11 +61,11 @@ public class ServiceEnvironmentV2MigrationResourceTest extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEnvironmentV2MigrationService.migrateStage(stageRequestDto, ACCOUNT_ID)).thenReturn(STAGE_V2_YAML);
-    StageResponseDto responseDto =
-        serviceEnvironmentV2MigrationResource.migrateOldServiceInfraFromStage(ACCOUNT_ID, stageRequestDto).getData();
+    when(serviceEnvironmentV2MigrationService.migratePipeline(requestDto, ACCOUNT_ID)).thenReturn(expectedResponseDto);
+    SvcEnvMigrationResponseDto actualResponse =
+        serviceEnvironmentV2MigrationResource.migratePipelineWithServiceInfraV2(ACCOUNT_ID, requestDto).getData();
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
-    assertThat(responseDto).isEqualTo(stageResponseDto);
+    assertThat(actualResponse).isEqualTo(expectedResponseDto);
   }
 }
