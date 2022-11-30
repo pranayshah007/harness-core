@@ -268,6 +268,22 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
   }
 
   @Override
+  public <T> PageResponse<T> querySecondary(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
+    if (!authFilters(req, cls)) {
+      return aPageResponse().withTotal(0).build();
+    }
+    return super.querySecondary(cls, req, queryChecks);
+  }
+
+  @Override
+  public <T> PageResponse<T> queryAnalytics(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
+    if (!authFilters(req, cls)) {
+      return aPageResponse().withTotal(0).build();
+    }
+    return super.queryAnalytics(cls, req, queryChecks);
+  }
+
+  @Override
   public <T> PageResponse<T> query(Class<T> cls, PageRequest<T> req, Set<QueryChecks> queryChecks) {
     if (!authFilters(req, cls)) {
       return aPageResponse().withTotal(0).build();
