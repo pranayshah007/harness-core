@@ -237,7 +237,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String buildIdentifier) {
     Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).exists(false);
+    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).equals(null);
 
     if (envIdentifier != null) {
       criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);
@@ -304,7 +304,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       criteria.and(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG).is(buildIdentifier);
     }
 
-    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).exists(true);
+    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).ne(null);
 
     MatchOperation matchStage = Aggregation.match(criteria);
 
