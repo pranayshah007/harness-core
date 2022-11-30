@@ -73,6 +73,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
@@ -949,5 +950,28 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
                         .build())
                 .artifactTaskType(ArtifactTaskType.GET_LAST_SUCCESSFUL_BUILD)
                 .build());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testGetSetupAbstractionsForArtifactSourceTasks() {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(ACCOUNT_ID)
+                                .orgIdentifier("orgId")
+                                .projectIdentifier("projectId")
+                                .build();
+
+    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    assertThat(abstractions).hasSize(4);
+    assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNotNull();
+    assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId/projectId");
+
+    ngAccess = BaseNGAccess.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier("orgId").build();
+
+    abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+    assertThat(abstractions).hasSize(3);
+    assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNull();
+    assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId");
   }
 }
