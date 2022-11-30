@@ -145,7 +145,7 @@ public class InstanceServiceImpl implements InstanceService {
 
   @Override
   public List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp) {
-    return instanceRepository.getActiveInstancesByServiceAndEnv(project, timestamp).getMappedResults();
+    return instanceRepository.getActiveInstancesByServiceAndEnv(project, timestamp);
   }
 
   /*

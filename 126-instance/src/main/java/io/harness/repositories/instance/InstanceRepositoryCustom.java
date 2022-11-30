@@ -28,7 +28,7 @@ public interface InstanceRepositoryCustom {
 
   Instance findAndModify(Criteria criteria, Update update);
 
-  AggregationResults<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp);
+  List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp);
 
   List<Instance> getActiveInstances(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, long timestampInMs);

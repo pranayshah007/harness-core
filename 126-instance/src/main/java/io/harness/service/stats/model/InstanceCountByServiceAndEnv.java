@@ -8,19 +8,24 @@ package io.harness.service.stats.model;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.entities.Instance;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Value;
+import lombok.experimental.FieldNameConstants;
 
-@Getter
+@Value
 @Builder
 @AllArgsConstructor
+@FieldNameConstants(innerTypeName = "InstanceCountByServiceAndEnvKeys")
 @OwnedBy(HarnessTeam.CDP)
 public class InstanceCountByServiceAndEnv {
   private String serviceIdentifier;
   private String envIdentifier;
-  private Instance firstDocument;
+  private String accountId;
+  private String projectIdentifier;
+  private String orgIdentifier;
+  private String instanceType;
+  private String connectorRef;
   private int count;
 }

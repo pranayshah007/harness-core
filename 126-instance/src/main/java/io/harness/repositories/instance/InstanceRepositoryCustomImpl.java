@@ -7,6 +7,7 @@
 
 package io.harness.repositories.instance;
 
+import static io.harness.data.structure.CollectionUtils.nullIfEmpty;
 import static io.harness.entities.Instance.InstanceKeysAdditional;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
@@ -26,10 +27,17 @@ import io.harness.models.constants.InstanceSyncConstants;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.ng.core.entities.Project;
 import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
+import io.harness.service.stats.model.InstanceCountByServiceAndEnv.InstanceCountByServiceAndEnvKeys;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -68,11 +76,18 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(
-      Project project, long timestamp) {
+  public List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp) {
     GroupOperation groupByEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.envIdentifier)
-                                      .first(InstanceSyncConstants.ROOT)
-                                      .as(InstanceSyncConstants.FIRST_DOCUMENT)
+                                      .first(InstanceKeys.accountIdentifier)
+                                      .as(InstanceCountByServiceAndEnvKeys.accountId)
+                                      .first(InstanceKeys.orgIdentifier)
+                                      .as(InstanceCountByServiceAndEnvKeys.orgIdentifier)
+                                      .first(InstanceKeys.projectIdentifier)
+                                      .as(InstanceCountByServiceAndEnvKeys.projectIdentifier)
+                                      .first(InstanceKeys.instanceType)
+                                      .as(InstanceCountByServiceAndEnvKeys.instanceType)
+                                      .first(InstanceKeys.connectorRef)
+                                      .as(InstanceCountByServiceAndEnvKeys.connectorRef)
                                       .count()
                                       .as(InstanceSyncConstants.COUNT);
     if (timestamp <= 0) {
@@ -85,8 +100,9 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .and(InstanceKeys.isDeleted)
                                         .is(false);
       MatchOperation match = Aggregation.match(nonDeletedCriteria);
-      return secondaryMongoTemplate.aggregate(
-          newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
+      return secondaryMongoTemplate
+          .aggregate(newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class)
+          .getMappedResults();
     }
     Criteria createdBeforeCriteria = Criteria.where(InstanceKeys.accountIdentifier)
                                          .is(project.getAccountIdentifier())
@@ -110,9 +126,62 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .lte(timestamp)
                                         .and(InstanceKeys.deletedAt)
                                         .gte(timestamp);
-    MatchOperation match = Aggregation.match(new Criteria().orOperator(createdBeforeCriteria, deletedAfterCriteria));
-    return secondaryMongoTemplate.aggregate(
+
+    MatchOperation match = Aggregation.match(createdBeforeCriteria);
+    AggregationResults<InstanceCountByServiceAndEnv> activeInstancesDetail = secondaryMongoTemplate.aggregate(
         newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
+
+    MatchOperation matchDeletedInstances = Aggregation.match(deletedAfterCriteria);
+    AggregationResults<InstanceCountByServiceAndEnv> deletedInstanceDetail = secondaryMongoTemplate.aggregate(
+        newAggregation(matchDeletedInstances, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
+    return mergeInstanceCount(activeInstancesDetail, deletedInstanceDetail);
+  }
+
+  private List<InstanceCountByServiceAndEnv> mergeInstanceCount(
+      AggregationResults<InstanceCountByServiceAndEnv> activeInstancesDetail,
+      AggregationResults<InstanceCountByServiceAndEnv> deletedInstanceDetail) {
+    Map<Pair<String, String>, InstanceCountByServiceAndEnv> instanceCountByServiceAndEnvMap =
+        nullIfEmpty(activeInstancesDetail.getMappedResults())
+            .stream()
+            .collect(Collectors.toMap(
+                value -> Pair.of(value.getServiceIdentifier(), value.getEnvIdentifier()), Function.identity()));
+
+    Map<Pair<String, String>, InstanceCountByServiceAndEnv> deletedCountByServiceAndEnvMap =
+        nullIfEmpty(activeInstancesDetail.getMappedResults())
+            .stream()
+            .collect(Collectors.toMap(
+                value -> Pair.of(value.getServiceIdentifier(), value.getEnvIdentifier()), Function.identity()));
+
+    Map<Pair<String, String>, InstanceCountByServiceAndEnv> mergedInstanceCountByServiceAndEnvMap = new HashMap<>();
+
+    activeInstancesDetail.getMappedResults().forEach(instanceDetail -> {
+      Pair<String, String> key = Pair.of(instanceDetail.getServiceIdentifier(), instanceDetail.getEnvIdentifier());
+      InstanceCountByServiceAndEnv active = instanceCountByServiceAndEnvMap.getOrDefault(key, null);
+      InstanceCountByServiceAndEnv deleted = deletedCountByServiceAndEnvMap.getOrDefault(key, null);
+      if (deleted == null) {
+        mergedInstanceCountByServiceAndEnvMap.put(key, active);
+      } else {
+        mergedInstanceCountByServiceAndEnvMap.put(key,
+            InstanceCountByServiceAndEnv.builder()
+                .instanceType(active.getInstanceType())
+                .accountId(active.getAccountId())
+                .connectorRef(active.getConnectorRef())
+                .envIdentifier(active.getEnvIdentifier())
+                .serviceIdentifier(active.getServiceIdentifier())
+                .orgIdentifier(active.getOrgIdentifier())
+                .projectIdentifier(active.getProjectIdentifier())
+                .count(active.getCount() + deleted.getCount())
+                .build());
+      }
+    });
+
+    deletedInstanceDetail.getMappedResults().stream().forEach(instanceDetail -> {
+      Pair<String, String> key = Pair.of(instanceDetail.getServiceIdentifier(), instanceDetail.getEnvIdentifier());
+      if (mergedInstanceCountByServiceAndEnvMap.getOrDefault(key, null) == null) {
+        mergedInstanceCountByServiceAndEnvMap.put(key, instanceDetail);
+      }
+    });
+    return new ArrayList<>(mergedInstanceCountByServiceAndEnvMap.values());
   }
 
   /*
@@ -394,6 +463,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.lastDeployedAt)
                             .gte(startTS)
                             .lte(endTS);
+    // index: account lastdeployedat
     return secondaryMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
   }
 
@@ -424,7 +494,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.lastDeployedAt)
                             .gte(startTS)
                             .lte(endTS);
-
+    // add index on acc, org, proj, lastdeployedat, service identifier
     return secondaryMongoTemplate
         .findDistinct(new Query(criteria), InstanceKeys.serviceIdentifier, Instance.class, String.class)
         .size();
@@ -442,6 +512,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         group(InstanceKeys.orgIdentifier, InstanceKeys.projectIdentifier, InstanceKeys.serviceIdentifier)
             .count()
             .as(InstanceSyncConstants.COUNT);
+    // add index account, lastdeployedat, org, proj, service
     return secondaryMongoTemplate
         .aggregate(newAggregation(matchStage, groupByOrgIdProjectIdServiceId), Instance.class,
             CountByOrgIdProjectIdAndServiceId.class)

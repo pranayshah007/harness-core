@@ -11,13 +11,11 @@ import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.dtos.InstanceDTO;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint;
 import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
-import io.harness.mappers.InstanceMapper;
 import io.harness.models.constants.TimescaleConstants;
 import io.harness.ng.core.entities.Project;
 import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
@@ -79,9 +77,7 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     for (InstanceCountByServiceAndEnv instanceCountByServiceAndEnv : envInstanceCounts) {
       if (instanceCountByServiceAndEnv.getCount() > 0) {
         try {
-          int size = instanceCountByServiceAndEnv.getCount();
-          InstanceDTO instance = InstanceMapper.toDTO(instanceCountByServiceAndEnv.getFirstDocument());
-          Map<String, String> data = populateInstanceData(instance, size);
+          Map<String, String> data = populateInstanceData(instanceCountByServiceAndEnv);
           log.info("Adding instance record {} to the list", data);
           dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
         } catch (Exception e) {
@@ -92,16 +88,16 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     return dataPointList;
   }
 
-  private Map<String, String> populateInstanceData(InstanceDTO instance, int size) {
+  private Map<String, String> populateInstanceData(InstanceCountByServiceAndEnv instanceCountByServiceAndEnv) {
     Map<String, String> data = new HashMap<>();
-    data.put(TimescaleConstants.ACCOUNT_ID.getKey(), instance.getAccountIdentifier());
-    data.put(TimescaleConstants.ORG_ID.getKey(), instance.getOrgIdentifier());
-    data.put(TimescaleConstants.PROJECT_ID.getKey(), instance.getProjectIdentifier());
-    data.put(TimescaleConstants.SERVICE_ID.getKey(), instance.getServiceIdentifier());
-    data.put(TimescaleConstants.ENV_ID.getKey(), instance.getEnvIdentifier());
-    data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instance.getInstanceType().name());
-    data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(size));
-    String connectorRef = instance.getConnectorRef();
+    data.put(TimescaleConstants.ACCOUNT_ID.getKey(), instanceCountByServiceAndEnv.getAccountId());
+    data.put(TimescaleConstants.ORG_ID.getKey(), instanceCountByServiceAndEnv.getOrgIdentifier());
+    data.put(TimescaleConstants.PROJECT_ID.getKey(), instanceCountByServiceAndEnv.getProjectIdentifier());
+    data.put(TimescaleConstants.SERVICE_ID.getKey(), instanceCountByServiceAndEnv.getServiceIdentifier());
+    data.put(TimescaleConstants.ENV_ID.getKey(), instanceCountByServiceAndEnv.getEnvIdentifier());
+    data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instanceCountByServiceAndEnv.getInstanceType());
+    data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(instanceCountByServiceAndEnv.getCount()));
+    String connectorRef = instanceCountByServiceAndEnv.getConnectorRef();
     if (connectorRef == null) {
       connectorRef = "";
     }
