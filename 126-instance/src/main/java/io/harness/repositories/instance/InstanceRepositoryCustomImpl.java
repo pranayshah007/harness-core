@@ -175,7 +175,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       }
     });
 
-    deletedInstanceDetail.getMappedResults().stream().forEach(instanceDetail -> {
+    deletedInstanceDetail.getMappedResults().forEach(instanceDetail -> {
       Pair<String, String> key = Pair.of(instanceDetail.getServiceIdentifier(), instanceDetail.getEnvIdentifier());
       if (mergedInstanceCountByServiceAndEnvMap.getOrDefault(key, null) == null) {
         mergedInstanceCountByServiceAndEnvMap.put(key, instanceDetail);
