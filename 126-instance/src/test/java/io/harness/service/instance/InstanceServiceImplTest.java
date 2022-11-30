@@ -40,14 +40,11 @@ import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
-import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.repositories.instance.InstanceRepository;
 import io.harness.rule.Owner;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.bson.Document;
@@ -62,8 +59,6 @@ import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 public class InstanceServiceImplTest extends InstancesTestBase {
-  private static final String SERVICE_ID = "svc";
-  private static final String ENV_ID = "env";
   private final String INSTANCE_KEY = "instance_key";
   @Mock InstanceRepository instanceRepository;
   @InjectMocks InstanceServiceImpl instanceService;
@@ -165,26 +160,22 @@ public class InstanceServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getActiveInstancesByEnvTest() {
+  public void getActiveInstancesByAccountTest() {
+    String accountIdentifier = "Acc";
+    String orgIdentifier = "Org";
+    String projectIdentifier = "Proj";
+    String serviceIdentifier = "Svc";
     long timestamp = 123L;
-    int count = 10;
-    Project mockProject = Project.builder().build();
-    Instance firstDocument = Instance.builder().envIdentifier(ENV_ID).build();
-    when(instanceRepository.getActiveInstancesByServiceAndEnv(mockProject, timestamp))
-        .thenReturn(new AggregationResults<>(Collections.singletonList(InstanceCountByServiceAndEnv.builder()
-                                                                           .serviceIdentifier(SERVICE_ID)
-                                                                           .envIdentifier(ENV_ID)
-                                                                           .count(count)
-                                                                           .firstDocument(firstDocument)
-                                                                           .build()),
-            new Document()));
-    List<InstanceCountByServiceAndEnv> instancesByEnv =
-        instanceService.getActiveInstancesByServiceAndEnv(mockProject, timestamp);
-    assertThat(instancesByEnv.size()).isEqualTo(1);
-    assertThat(instancesByEnv.get(0).getServiceIdentifier()).isEqualTo(SERVICE_ID);
-    assertThat(instancesByEnv.get(0).getEnvIdentifier()).isEqualTo(ENV_ID);
-    assertThat(instancesByEnv.get(0).getCount()).isEqualTo(count);
-    assertThat(instancesByEnv.get(0).getFirstDocument()).isEqualTo(firstDocument);
+    InstanceInfo instanceInfo = K8sInstanceInfo.builder().build();
+    Instance instance =
+        Instance.builder().instanceInfo(instanceInfo).deletedAt(234L).createdAt(123L).lastModifiedAt(3245L).build();
+    when(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+             accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp))
+        .thenReturn(Arrays.asList(instance));
+    List<InstanceDTO> instanceDTOList = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp);
+    assertThat(instanceDTOList.size()).isEqualTo(1);
+    assertThat(instanceDTOList.get(0).getCreatedAt()).isEqualTo(123L);
   }
 
   @Test
