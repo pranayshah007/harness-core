@@ -32,6 +32,7 @@ public class ServiceStepV3Parameters implements StepParameters {
   private ParameterField<Map<String, Object>> serviceOverrideInputs;
   private List<String> childrenNodeIds;
   private ServiceDefinitionType deploymentType;
+  private boolean deployedToFilteredListEnabled;
   @Override
   public String toViewJson() {
     return RecastOrchestrationUtils.toJson(Map.of("service", serviceRef.fetchFinalValue()));

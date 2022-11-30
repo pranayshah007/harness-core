@@ -94,8 +94,20 @@ public class ClusterPlanCreatorUtils {
           .build();
     }
 
+    // Deploy to filtered list
+    if (isNotEmpty(envConfig.getFilters().getValue())) {
+      ClusterStepParameters.builder()
+          .envClusterRefs(Collections.singletonList(EnvClusterRefs.builder()
+                                                        .envRef(envRef)
+                                                        .envName(envConfig.getName())
+                                                        .clusterRefs(getClusterRefs(envConfig))
+                                                        .build()))
+          .filters(envConfig.getFilters().getValue())
+          .build();
+    }
+
     checkArgument(isNotEmpty(envConfig.getGitOpsClusterRefs()),
-        "list of gitops clusterRefs must be provided when not deploying to all clusters");
+        "list of gitOps clusterRefs must be provided when not deploying to all clusters");
 
     return ClusterStepParameters.builder()
         .envClusterRefs(Collections.singletonList(EnvClusterRefs.builder()
@@ -121,6 +133,7 @@ public class ClusterPlanCreatorUtils {
     checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
         "list of environments must be provided when not deploying to all clusters");
 
+    // Deploy to filtered list
     final List<EnvClusterRefs> clusterRefs =
         config.getEnvironmentPlanCreatorConfigs()
             .stream()
@@ -133,7 +146,7 @@ public class ClusterPlanCreatorUtils {
                        .build())
             .collect(Collectors.toList());
 
-    return clusterStepParametersBuilder.envClusterRefs(clusterRefs).build();
+    return clusterStepParametersBuilder.filters(config.getFilters().getValue()).envClusterRefs(clusterRefs).build();
   }
 
   private ClusterStepParameters getStepParams(EnvironmentsPlanCreatorConfig envConfig) {
@@ -141,6 +154,19 @@ public class ClusterPlanCreatorUtils {
 
     ClusterStepParametersBuilder clusterStepParametersBuilder = ClusterStepParameters.builder();
     List<EnvClusterRefs> envClusterRefList = new ArrayList<>();
+
+    // Deploy to filtered list
+    if (isNotEmpty(envConfig.getFilters().getValue())) {
+      for (IndividualEnvData envData : envConfig.getIndividualEnvDataList()) {
+        EnvClusterRefs envClusterRefs =
+            EnvClusterRefs.builder().envName(envData.getEnvName()).envRef(envData.getEnvRef()).build();
+
+        envClusterRefList.add(envClusterRefs);
+      }
+      return clusterStepParametersBuilder.filters(envConfig.getFilters().getValue())
+          .envClusterRefs(envClusterRefList)
+          .build();
+    }
 
     for (IndividualEnvData envData : envConfig.getIndividualEnvDataList()) {
       EnvClusterRefs envClusterRefs = EnvClusterRefs.builder()

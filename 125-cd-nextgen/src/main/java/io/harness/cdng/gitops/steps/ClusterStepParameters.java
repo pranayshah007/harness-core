@@ -10,7 +10,9 @@ package io.harness.cdng.gitops.steps;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -33,6 +35,7 @@ public class ClusterStepParameters implements StepParameters {
   private String envGroupName;
   private boolean deployToAllEnvs;
   @Singular private List<EnvClusterRefs> envClusterRefs;
+  List<FilterYaml> filters;
 
   public static ClusterStepParameters WithEnvGroup(@NotNull Metadata envGroup) {
     return ClusterStepParameters.builder()

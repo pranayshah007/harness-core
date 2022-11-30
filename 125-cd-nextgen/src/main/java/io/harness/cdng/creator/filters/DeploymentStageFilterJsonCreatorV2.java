@@ -206,7 +206,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
                                             .getValue()
                                             .stream()
                                             .map(FilterYaml::getEntities)
-                                            .flatMap(EnumSet::stream)
+                                            .flatMap(Set::stream)
                                             .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
                                             .collect(Collectors.toSet());
       if (!unsupportedEntities.isEmpty()) {

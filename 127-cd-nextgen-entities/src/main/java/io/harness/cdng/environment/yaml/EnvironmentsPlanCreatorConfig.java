@@ -13,8 +13,10 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.environment.bean.IndividualEnvData;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
@@ -49,4 +51,5 @@ public class EnvironmentsPlanCreatorConfig {
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) String name;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   List<IndividualEnvData> individualEnvDataList;
+  ParameterField<List<FilterYaml>> filters;
 }
