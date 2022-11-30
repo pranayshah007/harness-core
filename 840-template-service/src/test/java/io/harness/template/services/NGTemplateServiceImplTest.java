@@ -11,11 +11,13 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -102,6 +104,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -137,7 +140,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
   @InjectMocks InputsValidator inputsValidator;
   @InjectMocks TemplateInputsValidator templateInputsValidator;
-  @InjectMocks TemplateMergeServiceImpl templateMergeService;
+  @Spy @InjectMocks TemplateMergeServiceImpl templateMergeService;
 
   private final String ACCOUNT_ID = RandomStringUtils.randomAlphanumeric(6);
   private final String ORG_IDENTIFIER = "orgId";
@@ -1073,6 +1076,40 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
     setupGitContext(branchInfo);
     templateService.create(templateEntity, false, "");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testYamlValidationInRemoteTemplateGetFail() {
+    String yaml = readFile("template.yaml");
+    TemplateEntity templateEntity = TemplateEntity.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .orgIdentifier(ORG_IDENTIFIER)
+                                        .projectIdentifier(PROJ_IDENTIFIER)
+                                        .identifier(TEMPLATE_IDENTIFIER)
+                                        .name(TEMPLATE_IDENTIFIER)
+                                        .versionLabel(TEMPLATE_VERSION_LABEL)
+                                        .storeType(StoreType.REMOTE)
+                                        .templateEntityType(TemplateEntityType.MONITORED_SERVICE_TEMPLATE)
+                                        .templateScope(Scope.PROJECT)
+                                        .yaml(yaml)
+                                        .build();
+    doReturn(Optional.of(templateEntity))
+        .when(templateServiceHelper)
+        .getTemplate(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), anyBoolean());
+
+    ArgumentCaptor<TemplateEntity> templateCaptor = ArgumentCaptor.forClass(TemplateEntity.class);
+
+    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+    assertThat(optionalTemplateEntity.isPresent()).isTrue();
+    verify(templateGitXService, times(1))
+        .performBasicValidationForRemoteTemplates(eq(templateEntity.getOrgIdentifier()),
+            eq(templateEntity.getProjectIdentifier()), eq(templateEntity.getIdentifier()),
+            eq(templateEntity.getVersionLabel()), eq(templateEntity.getName()), eq(yaml));
+
+    verify(templateSchemaService, times(1)).validateYamlSchemaInternal(any(TemplateEntity.class));
   }
 
   @Test
