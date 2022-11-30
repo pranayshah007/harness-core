@@ -27,10 +27,15 @@ java_library(
         "//980-commons:module",
         "//990-commons-test:module",
         "//999-annotations:module",
+        "//access-control/contracts:module",
+        "//clients/access-control/sdk:module",
         "@maven//:com_google_code_findbugs_annotations",
         "@maven//:com_google_inject_guice",
         "@maven//:junit_junit",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mockito_mockito_core"
     ],
 )
 
