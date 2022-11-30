@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
 
+import java.util.List;
 import java.util.Map;
 
 @Value
@@ -35,7 +36,8 @@ public class TasExecutionPassThroughData implements PassThroughData {
   String zippedManifestId;
   PcfManifestsPackage pcfManifestsPackage;
   Map<String,String> allFilesFetched;
-  String rawScriptString;
   String repoRoot;
   CfCliVersionNG cfCliVersion;
+  String rawScript;
+  List<String> pathsFromScript;
 }

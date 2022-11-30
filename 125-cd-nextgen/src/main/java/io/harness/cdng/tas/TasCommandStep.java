@@ -134,7 +134,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return tasStepHelper.startChainLink(this, ambiance, stepParameters);
+    return tasStepHelper.startChainLinkForCommandStep(this, ambiance, stepParameters);
   }
 
   @Override
