@@ -9,6 +9,7 @@ package io.harness.logstreaming;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
+
 import static org.apache.commons.lang3.StringUtils.replaceEach;
 
 import io.harness.data.structure.EmptyPredicate;
