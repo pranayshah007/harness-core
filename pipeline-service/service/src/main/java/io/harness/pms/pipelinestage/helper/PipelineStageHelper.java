@@ -13,8 +13,10 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
+import io.harness.expression.ExpressionMode;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -26,6 +28,7 @@ import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters;
 import io.harness.pms.pipelinestage.PipelineStageStepParameters.PipelineStageStepParametersKeys;
+import io.harness.pms.pipelinestage.outcome.PipelineStageOutcome;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.ChildExecutionDetailDTO.ChildExecutionDetailDTOBuilder;
@@ -34,6 +37,7 @@ import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO.PipelineExecutionDetailDTOBuilder;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -61,6 +65,7 @@ public class PipelineStageHelper {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final PmsGitSyncHelper pmsGitSyncHelper;
   @Inject private final AccessControlClient accessControlClient;
+  @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   public void validateNestedChainedPipeline(PipelineEntity entity) {
     TemplateMergeResponseDTO templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity);
@@ -187,5 +192,25 @@ public class PipelineStageHelper {
     // Validates nodeType which should be Pipeline
     return graphLayoutNodeDTO.containsKey(stageNodeId)
         && graphLayoutNodeDTO.get(stageNodeId).getNodeType().equals(StepSpecTypeConstants.PIPELINE_STAGE);
+  }
+
+  public PipelineStageOutcome resolveOutputVariables(
+      Map<String, ParameterField<String>> map, NodeExecution nodeExecution) {
+    Map<String, String> resolvedMap = new HashMap<>();
+
+    for (Map.Entry<String, ParameterField<String>> entry : map.entrySet()) {
+      String expression;
+      ParameterField<String> valueField = entry.getValue();
+      if (valueField.getExpressionValue() != null) {
+        expression = valueField.getExpressionValue();
+      } else {
+        expression = valueField.getValue();
+      }
+
+      resolvedMap.put(entry.getKey(), expression);
+    }
+
+    return new PipelineStageOutcome((Map<String, Object>) pmsEngineExpressionService.resolve(
+        nodeExecution.getAmbiance(), resolvedMap, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
   }
 }

@@ -2442,6 +2442,12 @@
             "org": {
               "type": "string"
             },
+            "outputs": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PipelineStageOutputs"
+              }
+            },
             "pipeline": {
               "type": "string"
             },
@@ -2463,6 +2469,23 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "PipelineStageOutputs": {
+      "type": "object",
+      "required": [
+        "name",
+        "value"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PmsEmailChannel": {
