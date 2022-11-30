@@ -280,7 +280,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             .build();
       }
 
-    } else if (parameters.getSourceType() == TerraformSourceType.S3_URI) {
+    } else if (parameters.getSourceType() == TerraformSourceType.S3) {
       /**
        * Handle S3 Logic
        */
@@ -928,7 +928,8 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private void fetchTfVarS3Source(
+  @VisibleForTesting
+  public void fetchTfVarS3Source(
       TerraformProvisionParameters parameters, String tfVarDirectory, LogCallback logCallback) {
     if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
       TfVarS3Source tfVarS3Source = (TfVarS3Source) parameters.getTfVarS3Source();
