@@ -415,6 +415,8 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   @VisibleForTesting
   static class TimelineKey {
     ActivityType type;
+
+    // activity sub type.
     Integer index;
   }
 }

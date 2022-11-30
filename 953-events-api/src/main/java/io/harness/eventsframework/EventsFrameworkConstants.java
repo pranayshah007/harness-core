@@ -105,6 +105,8 @@ public final class EventsFrameworkConstants {
   public static final int PMS_ORCHESTRATION_NOTIFY_EVENT_MAX_TOPIC_SIZE = 5000;
 
   public static final String CD_DEPLOYMENT_EVENT = "cd_deployment_event";
+
+  public static final String INTERNAL_CHANGE_EVENT_FF = "feature_flag_change_event";
   public static final int CD_DEPLOYMENT_EVENT_BATCH_SIZE = 1;
   public static final int CD_DEPLOYMENT_EVENT_MAX_TOPIC_SIZE = 5000;
 
