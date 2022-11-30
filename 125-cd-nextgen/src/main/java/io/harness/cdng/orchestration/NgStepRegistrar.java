@@ -99,6 +99,7 @@ import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasBGAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStep;
+import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -211,6 +212,7 @@ public class NgStepRegistrar {
     engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
 
+    engineSteps.put(ElastigroupSetupStep.STEP_TYPE, TasSwapRollbackStep.class);
     return engineSteps;
   }
 }

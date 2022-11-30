@@ -10,12 +10,16 @@ import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
+@AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
     String accountId;
