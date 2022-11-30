@@ -154,7 +154,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                                                  StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
                                                  boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
 
-    TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
+    TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepParameters.getSpec();
 
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
