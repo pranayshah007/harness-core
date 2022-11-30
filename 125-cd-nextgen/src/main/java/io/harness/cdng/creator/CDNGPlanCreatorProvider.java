@@ -135,6 +135,7 @@ import io.harness.cdng.creator.plan.steps.ecs.EcsRunTaskStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.elastigroup.ElastigroupSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.tas.TasSwapRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.terragrunt.TerragruntPlanStepPlanCreator;
@@ -176,6 +177,7 @@ import io.harness.cdng.creator.variables.TasBasicAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCanaryAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRollbackStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -384,6 +386,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TerragruntDestroyStepPlanCreator());
     planCreators.add(new TerragruntRollbackStepPlanCreator());
 
+    //TAS
+    planCreators.add(new TasSwapRollbackStepPlanCreator());
+
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -491,6 +496,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TerragruntDestroyStepVariableCreator());
     variableCreators.add(new TerragruntRollbackStepVariableCreator());
 
+    variableCreators.add(new TasSwapRollbackStepVariableCreator());
     return variableCreators;
   }
 
@@ -948,6 +954,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
             .build();
 
+    StepInfo tasSwapRollback =
+            StepInfo.newBuilder()
+                    .setName("Tas Swap Rollback")
+                    .setType(StepSpecTypeConstants.TAS_SWAP_ROLLBACK)
+                    .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
+                    .setFeatureFlag(FeatureName.TAS_NG.name())
+                    .build();
+
     StepInfo terragruntPlan = StepInfo.newBuilder()
                                   .setName("Terragrunt Plan")
                                   .setType(StepSpecTypeConstants.TERRAGRUNT_PLAN)
@@ -1052,6 +1066,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terragruntDestroy);
     stepInfos.add(terragruntRollback);
 
+    stepInfos.add(tasSwapRollback);
     return stepInfos;
   }
 }

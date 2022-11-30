@@ -194,4 +194,5 @@ public class EntityYamlRootNames {
   public static final String TAS_APP_RESIZE_STEP = "TasAppResizeStep";
   public static final String TAS_ROLLBACK_STEP = "TasRollbackStep";
   public static final String TAS_SWAP_ROUTES_STEP = "TasSwapRoutesStep";
+  public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
 }

@@ -464,7 +464,10 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.TAS_ROLLBACK_STEP, IdentifierRef.class, EntityYamlRootNames.TAS_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.TAS_SWAP_ROUTES_STEP)
   TAS_SWAP_ROUTES_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROUTES_STEP, IdentifierRef.class,
-      EntityYamlRootNames.TAS_SWAP_ROUTES_STEP);
+      EntityYamlRootNames.TAS_SWAP_ROUTES_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP)
+  TAS_SWAP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP, IdentifierRef.class,
+          EntityYamlRootNames.TAS_SWAP_ROLLBACK_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

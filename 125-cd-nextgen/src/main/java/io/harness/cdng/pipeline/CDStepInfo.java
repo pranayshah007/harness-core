@@ -65,6 +65,7 @@ import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBasicAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasRollbackStep;
+import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
@@ -96,7 +97,7 @@ import io.swagger.annotations.ApiModel;
         TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, ElastigroupDeployStepInfo.class,
         ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class, TasCanaryAppSetupStepInfo.class,
         TasBGAppSetupStepInfo.class, TasBasicAppSetupStep.class, TasAppResizeStep.class, TasSwapRoutesStep.class,
-        TasRollbackStep.class})
+        TasRollbackStep.class, TasSwapRollbackStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {
