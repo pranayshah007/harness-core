@@ -12,10 +12,8 @@ import static io.harness.rbac.CDNGRbacPermissions.SERVICE_CREATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.rule.OwnerRule.SHIVAM;
 import static io.harness.rule.OwnerRule.TATHAGAT;
-import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -32,7 +30,6 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.beans.ServiceV2YamlMetadata;
 import io.harness.ng.core.beans.ServicesV2YamlMetadataDTO;
@@ -116,54 +113,6 @@ public class ServiceResourceV2Test extends CategoryTest {
             Resource.of(NGResourceType.SERVICE, null), SERVICE_CREATE_PERMISSION);
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
-  }
-
-  @Test
-  @Owner(developers = YOGESH)
-  @Category(UnitTests.class)
-  public void testCRUDMustBeAtProjectLevel() {
-    ServiceRequestDTO accLevel = ServiceRequestDTO.builder().identifier("id").build();
-    ServiceRequestDTO orgLevel = ServiceRequestDTO.builder().identifier("id").orgIdentifier("org").build();
-    ServiceRequestDTO invalidLevel = ServiceRequestDTO.builder().identifier("id").projectIdentifier("proj").build();
-
-    // Create
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.create("accountId", accLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.create("accountId", orgLevel))
-        .withMessage("project identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.create("accountId", invalidLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
-
-    // update
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", accLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", orgLevel))
-        .withMessage("project identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.update("yes", "accountId", invalidLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
-
-    // upsert
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", accLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", orgLevel))
-        .withMessage("project identifier must be specified. Services can only be created at Project scope");
-
-    assertThatExceptionOfType(InvalidRequestException.class)
-        .isThrownBy(() -> serviceResourceV2.upsert("yes", "accountId", invalidLevel))
-        .withMessage("org identifier must be specified. Services can only be created at Project scope");
   }
 
   @Test

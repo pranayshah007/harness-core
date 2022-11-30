@@ -24,6 +24,8 @@
     - Project Template
 - name: Services
   tags:
+    - Account Services
+    - Org Services
     - Project Services
 - name: Roles
   tags:
