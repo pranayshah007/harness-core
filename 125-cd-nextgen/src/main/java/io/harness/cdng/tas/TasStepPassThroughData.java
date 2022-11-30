@@ -58,4 +58,5 @@ public class TasStepPassThroughData implements PassThroughData {
   Set<String> manifestStoreTypeVisited;
   String rawScript;
   String repoRoot;
+  List<String> pathsFromScript;
 }

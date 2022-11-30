@@ -27,6 +27,7 @@ import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
@@ -36,6 +37,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.google.common.base.Splitter;
+import io.fabric8.utils.Strings;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -88,6 +90,7 @@ import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pcf.CfCommandUnitConstants;
+import io.harness.pcf.model.PcfConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -107,6 +110,7 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import software.wings.beans.GitFileConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
@@ -121,16 +125,20 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.wings.beans.appmanifest.ApplicationManifest;
+import software.wings.beans.appmanifest.StoreType;
 
 @Slf4j
 public class TasStepHelper {
@@ -144,6 +152,18 @@ public class TasStepHelper {
   private static int DEFAULT_INSTANCE_COUNT = 2;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
+
+  public static final String FILE_START_REPO_ROOT_REGEX = PcfConstants.FILE_START_REPO_ROOT_REGEX;
+  public static final String FILE_START_SERVICE_MANIFEST_REGEX = PcfConstants.FILE_START_SERVICE_MANIFEST_REGEX;
+  public static final String FILE_END_REGEX = "(\\s|,|;|'|\"|:|$)";
+
+  public static final Pattern PATH_REGEX_REPO_ROOT_PATTERN =
+          Pattern.compile(FILE_START_REPO_ROOT_REGEX + ".*?" + FILE_END_REGEX);
+  public static final Pattern FILE_START_SERVICE_MANIFEST_PATTERN =
+          Pattern.compile(FILE_START_SERVICE_MANIFEST_REGEX + ".*?" + FILE_END_REGEX);
+
+  public static final String START_SLASH_ALL_MATCH = "\\A/+";
+  public static final String END_SLASH_ALL_MATCH = "/+\\Z";
 
   public TaskChainResponse startChainLink(
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -202,9 +222,15 @@ public class TasStepHelper {
     TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
             manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
 
+    final boolean serviceManifestRemote = isServiceManifestRemote(tasManifestOutcome);
 
     //TODO: findRepoRoot
-    String repoRoot= "";
+    String repoRoot = "/";
+    if (serviceManifestRemote) {
+      repoRoot = getRepoRoot(tasManifestOutcome);
+    }
+
+    final List<String> pathsFromScript = findPathFromScript(rawScript, repoRoot);
 
     TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
             .tasManifestOutcome(tasManifestOutcome)
@@ -213,48 +239,74 @@ public class TasStepHelper {
             .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
             .rawScript(rawScript)
             .repoRoot(repoRoot)
+            .pathsFromScript(pathsFromScript)
             .build();
+
+      //  fire task to fetch remote files
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
             shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
 
-//    return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
-    return executeTasTaskForCommandStep(ambiance, stepElementParameters, tasStepExecutor, tasStepPassThroughData, tasManifestOutcome, null);
+    return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
   }
 
-  public TaskChainResponse executeTasTaskForCommandStep(Ambiance ambiance, StepElementParameters stepElementParameters,
-                                          TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
-                                          ManifestOutcome tasManifestOutcome, UnitProgressData unitProgressData) {
-    return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
-            TasExecutionPassThroughData.builder()
-                    .cfCliVersion(((TasManifestOutcome) tasManifestOutcome).getCfCliVersion())
-                    .rawScriptString(tasStepPassThroughData.getRawScript())
-                    .repoRoot(tasStepPassThroughData.getRepoRoot())
-                    .build(),
-            tasStepPassThroughData.getShouldOpenFetchFilesStream(),
-            UnitProgressData.builder()
-                    .unitProgresses(Arrays.asList(UnitProgress.newBuilder()
-                                    .setUnitName(CfCommandUnitConstants.FetchCommandScript)
-                                    .setStatus(UnitStatus.SUCCESS)
-                                    .setStartTime(System.currentTimeMillis() - 100)
-                                    .setEndTime(System.currentTimeMillis() - 50)
-                                    .build()
-//                            ,UnitProgress.newBuilder()
-//                                    .setUnitName(CfCommandUnitConstants.FetchGitFiles)
-//                                    .setStatus(UnitStatus.SUCCESS)
-//                                    .setStartTime(System.currentTimeMillis() - 50)
-//                                    .setEndTime(System.currentTimeMillis() - 25)
-//                                    .build(),
-//                            UnitProgress.newBuilder()
-//                                    .setUnitName(CfCommandUnitConstants.FetchCustomFiles)
-//                                    .setStatus(UnitStatus.SUCCESS)
-//                                    .setStartTime(System.currentTimeMillis() - 25)
-//                                    .setEndTime(System.currentTimeMillis())
-//                                    .build()
-                    ))
-                    .build());
+  private String toRelativePath(String path) {
+    return path.trim().replaceFirst(START_SLASH_ALL_MATCH, "");
   }
+
+  private String getRepoRoot(TasManifestOutcome tasManifestOutcome) {
+    // TODO : make sure it is git store only
+    final GitStoreConfig gitFileConfig = (GitStoreConfig)  tasManifestOutcome.getStore();
+    List<String> paths = getParameterFieldValue(gitFileConfig.getPaths());
+    return "/" + toRelativePath((paths!= null && !paths.isEmpty()) ? paths.get(0) : "/").trim();
+  }
+
+  private boolean isServiceManifestRemote(TasManifestOutcome serviceManifest) {
+    return !ManifestStoreType.HARNESS.equals(serviceManifest.getStore().getKind());
+  }
+
+  List<String> findPathFromScript(String rendredScript, String repoRoot) {
+    final Set<String> finalPathLists = new HashSet<>();
+    final List<String> repoRootPrefixPathList =
+            findPathFromScript(rendredScript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
+    List<String> serviceManifestPrefixPathList = findPathFromScript(
+            rendredScript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
+
+    if (!(isEmpty(repoRoot) || "/".equals(repoRoot))) {
+      serviceManifestPrefixPathList = serviceManifestPrefixPathList.stream()
+              .map(path -> repoRoot + path)
+              .map(this::removeTrailingSlash)
+              .collect(Collectors.toList());
+    }
+
+    finalPathLists.addAll(repoRootPrefixPathList);
+    finalPathLists.addAll(serviceManifestPrefixPathList);
+    return new ArrayList<>(finalPathLists);
+  }
+
+  private String removeTrailingSlash(String s) {
+    return s.replaceFirst(END_SLASH_ALL_MATCH, "");
+  }
+
+  private List<String> findPathFromScript(
+          String renderedScript, Pattern matchPattern, String prefixRegex, String fileEndRegex) {
+    final Matcher matcher = matchPattern.matcher(renderedScript);
+    List<String> filePathList = new ArrayList<>();
+    while (matcher.find()) {
+      final String filePath = renderedScript.substring(matcher.start(), matcher.end())
+              .trim()
+              .replaceFirst(prefixRegex, "")
+              .replaceFirst(fileEndRegex, "");
+      filePathList.add(filePath);
+    }
+    return filePathList.stream().map(this::canonacalizePath).distinct().collect(Collectors.toList());
+  }
+
+  private String canonacalizePath(String path) {
+    return Strings.defaultIfEmpty(path.trim(), "/");
+  }
+
 
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
@@ -316,6 +368,7 @@ public class TasStepHelper {
   public TasManifestFileContents getFileContentsFromManifest(NGAccess ngAccess, List<String> scopedFilePathList,
       String manifestType, String manifestIdentifier, LogCallback logCallback) {
     List<String> fileContents = new ArrayList<>();
+    List<String> filePaths = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
       logCallback.saveExecutionLog(
           color(format("%nFetching %s files with identifier: %s", manifestType, manifestIdentifier), LogColor.White,
@@ -331,6 +384,7 @@ public class TasStepHelper {
           if (NGFileType.FILE.equals(fileStoreNodeDTO.getType())) {
             FileNodeDTO file = (FileNodeDTO) fileStoreNodeDTO;
             fileContents.add(file.getContent());
+            filePaths.add(scopedFilePath);
             logCallback.saveExecutionLog(color(format("- %s", scopedFilePath), LogColor.White));
           } else {
             throw new UnsupportedOperationException("Only File type is supported. Please enter the correct file path");
@@ -340,7 +394,7 @@ public class TasStepHelper {
     }
     return TasManifestFileContents.builder()
         .manifestType(manifestType)
-        .localStoreFetchFilesResult(LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).build())
+        .localStoreFetchFilesResult(LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).LocalStoreFilePaths(filePaths).build())
         .build();
   }
 
@@ -795,12 +849,29 @@ public class TasStepHelper {
         getManifestFilesContents(ambiance, new HashMap<>(), tasStepPassThroughData.getCustomFetchContent(),
             tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
+    Map<String,String> allFilesFetched = new HashMap<>();
+    for(FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
+      entry.getFiles().stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+    }
+    for(List<TasManifestFileContents> tasManifestFileContentsList : tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
+      for(TasManifestFileContents tasManifestFileContents: tasManifestFileContentsList) {
+        for(int iterate = 0; iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size(); iterate++) {
+          allFilesFetched.put(tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
+                  tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
+        }
+      }
+    }
+
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
             .applicationName(fetchTasApplicationName(pcfManifestsPackage))
             .infrastructure(tasStepPassThroughData.getInfrastructure())
             .zippedManifestId(tasStepPassThroughData.getZippedManifestFileId())
             .pcfManifestsPackage(pcfManifestsPackage)
+            .repoRoot(tasStepPassThroughData.getRepoRoot())
+            .cfCliVersion(tasStepPassThroughData.getTasManifestOutcome().getCfCliVersion())
+            .pathsFromScript(tasStepPassThroughData.getPathsFromScript())
+            .allFilesFetched(allFilesFetched)
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder()
