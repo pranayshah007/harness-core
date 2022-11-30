@@ -18,8 +18,8 @@ import io.harness.category.element.DeprecatedIntegrationTests;
 import io.harness.limits.Action;
 import io.harness.limits.ActionType;
 import io.harness.limits.checker.rate.UsageBucket.UsageBucketKeys;
+import io.harness.limits.checkers.LimitChecker;
 import io.harness.limits.impl.model.RateLimit;
-import io.harness.limits.lib.LimitChecker;
 import io.harness.rule.Owner;
 
 import software.wings.dl.WingsPersistence;

@@ -10,6 +10,7 @@ package io.harness.repositories.custom;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory;
 import io.harness.ngtriggers.beans.entity.TriggerEventHistory.TriggerEventHistoryKeys;
 
@@ -18,9 +19,12 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.repository.support.PageableExecutionUtils;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE, onConstructor = @__({ @Inject }))
 @Slf4j
@@ -28,10 +32,26 @@ import org.springframework.data.mongodb.core.query.Query;
 public class TriggerEventHistoryRepositoryCustomImpl implements TriggerEventHistoryRepositoryCustom {
   private final MongoTemplate mongoTemplate;
 
+  private final TriggerEventHistoryReadHelper triggerEventHistoryReadHelper;
+
   @Override
   public List<TriggerEventHistory> findAll(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, TriggerEventHistory.class);
+  }
+
+  @Override
+  public Page<TriggerEventHistory> findAll(Criteria criteria, Pageable pageable) {
+    try {
+      Query query = new Query(criteria).with(pageable);
+      long count = triggerEventHistoryReadHelper.findCount(query);
+      List<TriggerEventHistory> eventHistoryList = triggerEventHistoryReadHelper.find(query);
+
+      return PageableExecutionUtils.getPage(eventHistoryList, pageable, () -> count);
+    } catch (IllegalArgumentException ex) {
+      log.error(ex.getMessage(), ex);
+      throw new InvalidRequestException("Trigger event history not found", ex);
+    }
   }
 
   @Override

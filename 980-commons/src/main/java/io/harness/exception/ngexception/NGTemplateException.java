@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.Level;
 import io.harness.exception.WingsException;
+import io.harness.exception.metadata.ErrorMetadataDTO;
 
 import java.util.EnumSet;
 
