@@ -7,8 +7,6 @@
 
 package io.harness.ng.core.migration.background;
 
-import static io.harness.persistence.HQuery.excludeAuthority;
-
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -21,20 +19,21 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.git.model.ChangeType;
 import io.harness.migration.NGMigration;
-import io.harness.persistence.HIterator;
-import io.harness.persistence.HPersistence;
 import io.harness.repositories.ConnectorRepository;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.mongodb.morphia.query.Query;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
 public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NGMigration {
-  @Inject private HPersistence persistence;
+  @Inject private MongoTemplate mongoTemplate;
   @Inject private ConnectorRepository connectorRepository;
   private static final String DEBUG_LOG = "[ServiceNowConnectorAuthMigration]: ";
 
@@ -42,30 +41,37 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
   public void migrate() {
     try {
       log.info(DEBUG_LOG + "Starting migration to ServiceNowAuthenticationDTO in ServiceNow connector");
-      Query<ServiceNowConnector> serviceNowConnectorQuery =
-          persistence.createQuery(ServiceNowConnector.class, excludeAuthority)
-              .field(ServiceNowConnector.ConnectorKeys.type)
-              .equal(ConnectorType.SERVICENOW);
-
-      try (HIterator<ServiceNowConnector> iterator = new HIterator<>(serviceNowConnectorQuery.fetch())) {
-        for (ServiceNowConnector serviceNowConnector : iterator) {
-          if (!isNull(serviceNowConnector.getServiceNowAuthentication())
-              || !isNull(serviceNowConnector.getAuthType())) {
-            log.info(String.format(
-                "%s Skipping since serviceNow connector with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
-                DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
-                serviceNowConnector.getOrgIdentifier(), serviceNowConnector.getProjectIdentifier(),
-                serviceNowConnector.getServiceNowAuthentication(), serviceNowConnector.getAuthType()));
-            continue;
-          }
-          ServiceNowAuthentication serviceNowAuthentication =
-              mapBaseLevelAuthToServiceNowAuthentication(serviceNowConnector);
-
-          if (serviceNowAuthentication == null) {
-            continue;
-          }
-          findAndModifyServiceNowConnector(serviceNowConnector, serviceNowAuthentication);
+      List<ServiceNowConnector> serviceNowConnectors = new ArrayList<>();
+      try {
+        Criteria serviceNowConnectorCriteria =
+            Criteria.where(ServiceNowConnector.ConnectorKeys.type).is(ConnectorType.SERVICENOW);
+        Query serviceNowConnectorQuery = new Query(serviceNowConnectorCriteria);
+        serviceNowConnectors = mongoTemplate.find(serviceNowConnectorQuery, ServiceNowConnector.class);
+        if (isNull(serviceNowConnectors)) {
+          log.info(String.format("%s no serviceNow connectors fetched", DEBUG_LOG));
         }
+        log.info(
+            String.format("%s Running migration on %s serviceNow connectors", DEBUG_LOG, serviceNowConnectors.size()));
+      } catch (Exception e) {
+        log.error(DEBUG_LOG + " Failed trying to fetch servicenow connectors", e);
+      }
+
+      for (ServiceNowConnector serviceNowConnector : serviceNowConnectors) {
+        if (!isNull(serviceNowConnector.getServiceNowAuthentication()) || !isNull(serviceNowConnector.getAuthType())) {
+          log.info(String.format(
+              "%s Skipping since serviceNow connector with identifier %s in account %s, org %s, project %s already has authentication object as %s and auth type as %s",
+              DEBUG_LOG, serviceNowConnector.getIdentifier(), serviceNowConnector.getAccountIdentifier(),
+              serviceNowConnector.getOrgIdentifier(), serviceNowConnector.getProjectIdentifier(),
+              serviceNowConnector.getServiceNowAuthentication(), serviceNowConnector.getAuthType()));
+          continue;
+        }
+        ServiceNowAuthentication serviceNowAuthentication =
+            mapBaseLevelAuthToServiceNowAuthentication(serviceNowConnector);
+
+        if (serviceNowAuthentication == null) {
+          continue;
+        }
+        findAndModifyServiceNowConnector(serviceNowConnector, serviceNowAuthentication);
       }
       log.info(
           DEBUG_LOG + "Migration of adding auth type and serviceNow authentication to serviceNow connector completed");

@@ -13,12 +13,10 @@ import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.harness.NgManagerTestBase;
 import io.harness.annotations.dev.HarnessTeam;
@@ -29,51 +27,35 @@ import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector.Ser
 import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
-import io.harness.persistence.HIterator;
-import io.harness.persistence.HPersistence;
-import io.harness.persistence.HQuery;
 import io.harness.repositories.ConnectorRepository;
 import io.harness.rule.Owner;
 
-import org.junit.Before;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mongodb.morphia.query.FieldEnd;
-import org.mongodb.morphia.query.MorphiaIterator;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PopulateYamlAuthFieldInNGServiceNowConnectorMigrationTest extends NgManagerTestBase {
-  @Mock private HPersistence persistence;
+  @Mock private MongoTemplate mongoTemplate;
   @Mock private ConnectorRepository connectorRepository;
-  @Mock private HQuery hQuery;
-  @Mock private FieldEnd fieldEnd;
+
   @InjectMocks PopulateYamlAuthFieldInNGServiceNowConnectorMigration migration;
   private static final String accountIdentifier = "accId";
   private static final String orgIdentifier = "orgId";
   private static final String projectIdentifier = "projectID";
   private static final String identifier = "iD";
 
-  @Before
-  public void setup() {
-    when(persistence.createQuery(any(), any())).thenReturn(hQuery);
-    when(hQuery.field(any())).thenReturn(fieldEnd);
-    when(fieldEnd.equal(any())).thenReturn(hQuery);
-  }
-
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
-  public void testMigrate() throws Exception {
-    MorphiaIterator<ServiceNowConnector, ServiceNowConnector> morphiaIterator = mock(MorphiaIterator.class);
-    when(morphiaIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(morphiaIterator.next()).thenReturn(buildServiceNowConnector(false));
-    whenNew(HIterator.class).withAnyArguments().thenReturn(new HIterator(morphiaIterator));
-    when(hQuery.fetch()).thenReturn(morphiaIterator);
+  public void testMigrate() {
+    when(mongoTemplate.find(any(), any())).thenReturn(Collections.singletonList(buildServiceNowConnector(false)));
     migration.migrate();
     ArgumentCaptor<Criteria> criteriaArgumentCaptor = ArgumentCaptor.forClass(Criteria.class);
     ArgumentCaptor<Update> updateArgumentCaptor = ArgumentCaptor.forClass(Update.class);
@@ -95,12 +77,8 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigrationTest extends N
   @Test
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)
-  public void testMigrateShouldBeIdemPotent() throws Exception {
-    MorphiaIterator<ServiceNowConnector, ServiceNowConnector> morphiaIterator = mock(MorphiaIterator.class);
-    when(morphiaIterator.hasNext()).thenReturn(true).thenReturn(false);
-    when(morphiaIterator.next()).thenReturn(buildServiceNowConnector(true));
-    whenNew(HIterator.class).withAnyArguments().thenReturn(new HIterator(morphiaIterator));
-
+  public void testMigrateShouldBeIdemPotent() {
+    when(mongoTemplate.find(any(), any())).thenReturn(Collections.singletonList(buildServiceNowConnector(true)));
     migration.migrate();
     verifyNoMoreInteractions(connectorRepository);
   }
