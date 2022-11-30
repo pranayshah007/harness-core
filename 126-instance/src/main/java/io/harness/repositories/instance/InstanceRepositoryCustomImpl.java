@@ -297,7 +297,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<InstancesByBuildId> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+  public List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
       String pipelineExecutionId, String buildId, int limit) {
     Criteria criteria = getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -321,22 +321,8 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterIdentifier);
     }
 
-    MatchOperation matchStage = Aggregation.match(criteria);
-    GroupOperation group = group(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
-                               .push(InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
-                               .as(InstanceSyncConstants.buildId)
-                               .push(Aggregation.ROOT)
-                               .as(InstanceSyncConstants.INSTANCES);
-
-    ProjectionOperation projection = Aggregation.project()
-                                         .andExpression(InstanceSyncConstants.ID)
-                                         .as(InstanceSyncConstants.buildId)
-                                         .andExpression(InstanceSyncConstants.INSTANCES)
-                                         .slice(limit)
-                                         .as(InstanceSyncConstants.INSTANCES);
-
-    return secondaryMongoTemplate.aggregate(
-        newAggregation(matchStage, group, projection), Instance.class, InstancesByBuildId.class);
+    Query query = new Query().addCriteria(criteria);
+    return secondaryMongoTemplate.find(query, Instance.class);
   }
 
   /*

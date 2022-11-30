@@ -57,9 +57,9 @@ public interface InstanceRepositoryCustom {
   AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
       long timestampInMs, int limit);
-  AggregationResults<InstancesByBuildId> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
-      String pipelineExecutionId, String buildId, int limit);
+  List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String serviceId, String envId, String infraId, String clusterIdentifier, String pipelineExecutionId,
+      String buildId, int limit);
 
   AggregationResults<CountByServiceIdAndEnvType> getActiveServiceInstanceCountBreakdown(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, List<String> serviceId, long timestampInMs);

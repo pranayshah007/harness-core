@@ -218,19 +218,13 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
   public InstanceDetailsByBuildId getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
       String pipelineExecutionId, String buildId) {
-    AggregationResults<InstancesByBuildId> instancesByBuildId =
+    List<Instance> instancesByBuildId =
         instanceService.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId,
             infraId, clusterIdentifier, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
 
-    List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
-
-    instancesByBuildId.getMappedResults().forEach(buildIdAndInstances -> {
-      List<Instance> instances = buildIdAndInstances.getInstances();
-      buildIdAndInstancesList.add(new InstanceDetailsByBuildId(
-          buildId, instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instances))));
-    });
-
-    return buildIdAndInstancesList.get(0);
+    return InstanceDetailsByBuildId.builder()
+        .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId)))
+        .build();
   }
 
   /*
