@@ -302,7 +302,7 @@ public class AzureResource {
       String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
     if (isEmpty(envId)) {
       throw new InvalidRequestException(
-          String.valueOf(format("%s must be provided", NGCommonEntityConstants.ENVIRONMENT_KEY)));
+          String.valueOf(format("%s must be provided", NGCommonEntityConstants.SUBSCRIPTION_ID)));
     }
 
     if (isEmpty(infraDefinitionId)) {
