@@ -229,7 +229,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmBlockingStub.createFile(any()))
         .thenReturn(CreateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
     CreateFileResponse createFileResponse =
-        scmServiceClient.createFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub);
+        scmServiceClient.createFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(createFileResponse).isNotNull();
     assertThat(createFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
     assertThat(createFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
@@ -244,7 +244,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmBlockingStub.updateFile(any()))
         .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId("").build());
     UpdateFileResponse updateFileResponse =
-        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub);
+        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
     assertThat(updateFileResponse.getStatus() == SCM_INTERNAL_SERVER_ERROR_CODE).isTrue();
     assertThat(updateFileResponse.getError().equals(SCM_INTERNAL_SERVER_ERROR_MESSAGE)).isTrue();
@@ -261,7 +261,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
     when(scmBlockingStub.getLatestCommitOnFile(any()))
         .thenReturn(GetLatestCommitOnFileResponse.newBuilder().setCommitId(conflictCommitId).build());
     UpdateFileResponse updateFileResponse =
-        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub);
+        scmServiceClient.updateFile(scmConnector, getGitFileDetailsDefault(), scmBlockingStub, false);
     assertThat(updateFileResponse).isNotNull();
     assertThat(updateFileResponse.equals(getErrorUpdateFileResponse(conflictCommitId))).isTrue();
   }
