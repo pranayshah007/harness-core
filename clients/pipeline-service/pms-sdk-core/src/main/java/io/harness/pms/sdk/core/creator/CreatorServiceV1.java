@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class CreatorServiceV1 {
-  public MergeCreationResponse resolveDependencies(
+  public MergeCreationResponse resolveDependency(
       String currentYaml, YamlField field, CreatorContext ctx, Map<String, String> metadata) {
     return MergeCreationResponse.parentBuilder().build();
   }
@@ -21,8 +21,11 @@ public abstract class CreatorServiceV1 {
     return CreationResponse.newBuilder().build();
   }
 
-  public Map<String, DependencyV1> mergeCreationResponsesAndGiveNewDependencies(MergeCreationResponse finalResponse,
-      List<MergeCreationResponse> creationResponses, Map<String, DependencyV1> originalDependencies) {
+  public void mergeCreationResponsesIntoFinalResponse(MergeCreationResponse finalResponse,
+      List<MergeCreationResponse> creationResponses, Map<String, DependencyV1> originalDependencies) {}
+
+  public Map<String, DependencyV1> getNewDependenciesFromCreationResponse(
+      List<MergeCreationResponse> creationResponses) {
     return Collections.emptyMap();
   }
 

@@ -37,13 +37,14 @@ public class CreatorFrameworkEngine {
     CreatorContext ctx = creatorService.getContext(creationRequest);
 
     while (!dependencies.isEmpty()) {
-      dependencies = createInternal(creatorService, finalResponse, ctx, dependencies);
+      dependencies = createAndGetChildrenDependencies(creatorService, finalResponse, ctx, dependencies);
+      // Remove initial dependencies. Also breaking condition if loop does not exit.
     }
     return creatorService.getMappedCreationResponseProto(finalResponse);
   }
 
-  Map<String, DependencyV1> createInternal(CreatorServiceV1 service, MergeCreationResponse finalResponse,
-      CreatorContext ctx, Map<String, DependencyV1> dependencies) {
+  Map<String, DependencyV1> createAndGetChildrenDependencies(CreatorServiceV1 service,
+      MergeCreationResponse finalResponse, CreatorContext ctx, Map<String, DependencyV1> dependencies) {
     String currentYaml = ctx.getYaml();
     YamlField fullField;
     try {
@@ -56,7 +57,7 @@ public class CreatorFrameworkEngine {
 
     dependencies.forEach((key1, value) -> completableFutures.supplyAsync(() -> {
       try {
-        return service.resolveDependencies(
+        return service.resolveDependency(
             currentYaml, fullField.fromYamlPath(value.getValue()), ctx, value.getDependencyMetadataMap());
       } catch (IOException e) {
         throw new InvalidRequestException("");
@@ -69,6 +70,8 @@ public class CreatorFrameworkEngine {
     } catch (InterruptedException | TimeoutException | ExecutionException e) {
       //
     }
-    return service.mergeCreationResponsesAndGiveNewDependencies(finalResponse, creationResponses, dependencies);
+    Map<String, DependencyV1> newDependencies = service.getNewDependenciesFromCreationResponse(creationResponses);
+    service.mergeCreationResponsesIntoFinalResponse(finalResponse, creationResponses, dependencies);
+    return newDependencies;
   }
 }
