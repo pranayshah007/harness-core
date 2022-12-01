@@ -135,6 +135,15 @@ public class Instance {
                  .sortField(InstanceKeys.deletedAt)
                  .sortField(InstanceKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_organizationId_projectId_lastDeployedAt_serviceIdentifier_idx")
+                 .field(InstanceKeys.accountIdentifier)
+                 .field(InstanceKeys.orgIdentifier)
+                 .field(InstanceKeys.projectIdentifier)
+                 .field(InstanceKeys.lastDeployedAt)
+                 .field(InstanceKeys.serviceIdentifier)
+                 .sortField(InstanceKeys.lastDeployedAt)
+                 .build())
         .build();
   }
 
