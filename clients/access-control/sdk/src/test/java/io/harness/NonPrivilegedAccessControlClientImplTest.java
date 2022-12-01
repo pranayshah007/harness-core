@@ -20,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.NGAccessDeniedException;
 import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
 import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
@@ -85,6 +86,7 @@ public class NonPrivilegedAccessControlClientImplTest {
       PermissionCheckDTO permissionCheckDTO = PermissionCheckDTO.builder()
                                                   .resourceScope(resourceScope)
                                                   .permission("some_entity_view")
+                                                  .resourceType("some-entity_type")
                                                   .resourceIdentifier(randomAlphabetic(10000))
                                                   .build();
       permissionCheckDTOList.add(permissionCheckDTO);
@@ -92,11 +94,29 @@ public class NonPrivilegedAccessControlClientImplTest {
     return permissionCheckDTOList;
   }
 
+  @Test(expected = NGAccessDeniedException.class)
+  @Owner(developers = JIMIT_GANDHI)
+  @Category(UnitTests.class)
+  public void checkForAccessOrThrow_ForSomeResourceNotHavingPermission_ShouldThrowNGAccessDeniedException()
+      throws IOException {
+    List<PermissionCheckDTO> permissionCheckDTOList = getPermissionsList();
+    ResponseDTO<AccessCheckResponseDTO> restResponse = ResponseDTO.newResponse(getAccessCheckResponse(false));
+    Response<ResponseDTO<AccessCheckResponseDTO>> response = Response.success(restResponse);
+    Call<ResponseDTO<AccessCheckResponseDTO>> responseDTOCall = mock(Call.class);
+    when(accessControlHttpClient.checkForAccess(any())).thenReturn(responseDTOCall);
+    when(responseDTOCall.execute()).thenReturn(response);
+    accessControlClient.checkForAccessOrThrow(permissionCheckDTOList);
+  }
+
   private AccessCheckResponseDTO getAccessCheckResponse(boolean permitted) {
     List<AccessControlDTO> accessControlList = new ArrayList<>();
     for (int i = 0; i < 1000; i++) {
-      AccessControlDTO accessControlDTO =
-          AccessControlDTO.builder().permission("some_entity_view").permitted(permitted).build();
+      AccessControlDTO accessControlDTO = AccessControlDTO.builder()
+                                              .permission("some_entity_view")
+                                              .resourceType("some-entity_type")
+                                              .resourceIdentifier(randomAlphabetic(10000))
+                                              .permitted(permitted)
+                                              .build();
       accessControlList.add(accessControlDTO);
     }
     return AccessCheckResponseDTO.builder().accessControlList(accessControlList).build();
