@@ -155,7 +155,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
@@ -211,7 +211,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
@@ -263,7 +263,7 @@ public class MSTeamsServiceImplTest extends CategoryTest {
     when(notificationTemplateService.getTemplateAsString(eq(msTeamsTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
-    when(delegateGrpcClientWrapper.executeSyncTaskV2(any()))
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
         .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
     notificationProcessingResponse = msTeamService.send(notificationRequest);
     assertEquals(notificationExpectedResponse, notificationProcessingResponse);
