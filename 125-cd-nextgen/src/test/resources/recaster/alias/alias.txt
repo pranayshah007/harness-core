@@ -687,3 +687,5 @@ io.harness.cdng.aws.asg.AsgStepExceptionPassThroughData
 io.harness.cdng.aws.asg.AsgRollingRollbackStepNode
 io.harness.cdng.aws.asg.AsgRollingRollbackStepParameters
 io.harness.cdng.aws.asg.AsgRollingRollbackStepInfo
+io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary$Environment
+io.harness.cdng.pipeline.executions.beans.GitOpsExecutionSummary
