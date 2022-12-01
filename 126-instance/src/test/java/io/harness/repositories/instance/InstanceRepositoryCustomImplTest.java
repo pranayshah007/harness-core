@@ -24,6 +24,7 @@ import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
@@ -63,12 +64,16 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   @Mock MongoTemplate mongoTemplate;
   @Mock MongoTemplate secondaryMongoTemplate;
   @Mock SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
+  @Mock MongoTemplate analyticsMongoTemplate;
+  @Mock AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder;
   InstanceRepositoryCustomImpl instanceRepositoryCustom;
 
   @Before
   public void setup() {
     when(secondaryMongoTemplateHolder.getSecondaryMongoTemplate()).thenReturn(secondaryMongoTemplate);
-    instanceRepositoryCustom = new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder);
+    when(analyticsMongoTemplateHolder.getAnalyticsMongoTemplate()).thenReturn(analyticsMongoTemplate);
+    instanceRepositoryCustom =
+        new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder, analyticsMongoTemplateHolder);
   }
 
   @Test
@@ -110,7 +115,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                             .and(InstanceKeys.isDeleted)
                             .is(false);
     Query query = new Query().addCriteria(criteria);
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
 
     assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, -1))
@@ -135,7 +140,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                              .and(InstanceKeys.createdAt)
                              .lte(TIMESTAMP);
     Query query1 = new Query().addCriteria(criteria1);
-    when(secondaryMongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
+    when(analyticsMongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
 
     Instance instance2 = Instance.builder().instanceKey("def").build();
     Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier)
@@ -153,7 +158,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                              .and(InstanceKeys.deletedAt)
                              .gte(TIMESTAMP);
     Query query2 = new Query().addCriteria(criteria2);
-    when(secondaryMongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
+    when(analyticsMongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
 
     assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))

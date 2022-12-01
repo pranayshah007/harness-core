@@ -23,6 +23,7 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
 
 import com.google.inject.Inject;
@@ -48,13 +49,16 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
+  private final MongoTemplate analyticsMongoTemplate;
   private final String INSTANCE_NG_COLLECTION = "instanceNG";
 
   @Inject
-  public InstanceRepositoryCustomImpl(
-      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+  public InstanceRepositoryCustomImpl(MongoTemplate mongoTemplate,
+      SecondaryMongoTemplateHolder secondaryMongoTemplateHolder,
+      AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder) {
     this.mongoTemplate = mongoTemplate;
     this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+    this.analyticsMongoTemplate = analyticsMongoTemplateHolder.getAnalyticsMongoTemplate();
   }
 
   @Override
@@ -83,7 +87,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                               .and(InstanceKeys.isDeleted)
                               .is(false);
       Query query = new Query().addCriteria(criteria);
-      return secondaryMongoTemplate.find(query, Instance.class);
+      return analyticsMongoTemplate.find(query, Instance.class);
     }
     Set<Instance> instances = new HashSet<>();
     instances.addAll(
@@ -108,7 +112,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.createdAt)
                             .lte(timestamp);
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   private List<Instance> getInstancesDeletedAfter(String accountIdentifier, String orgIdentifier,
@@ -128,7 +132,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.deletedAt)
                             .gte(timestamp);
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   /*

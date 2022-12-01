@@ -42,8 +42,8 @@ import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.CountOptions;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 
 @Singleton
 @Slf4j
@@ -110,12 +110,13 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
   public boolean isStatusMismatchedAndUpdated(Map<String, String> tsdbRunningWFs) {
     boolean statusMismatch = false;
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     Query<WorkflowExecution> query = persistence.createQuery(WorkflowExecution.class, excludeAuthority)
                                          .field(WorkflowExecutionKeys.uuid)
                                          .hasAnyOf(tsdbRunningWFs.keySet())
                                          .project(WorkflowExecutionKeys.serviceExecutionSummaries, false);
 
-    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(options))) {
       for (WorkflowExecution workflowExecution : iterator) {
         if (isStatusMismatchedInMongoAndTSDB(
                 tsdbRunningWFs, workflowExecution.getUuid(), workflowExecution.getStatus().toString())) {
@@ -143,8 +144,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   }
 
   public void insertMissingRecords(String accountId, long durationStartTs, long durationEndTs) {
+    FindOptions options = persistence.analyticNodePreferenceOptions();
     Query<WorkflowExecution> query = persistence.createQuery(WorkflowExecution.class, excludeAuthority)
-                                         .order(Sort.descending(WorkflowExecutionKeys.createdAt))
                                          .filter(WorkflowExecutionKeys.accountId, accountId)
                                          .field(WorkflowExecutionKeys.startTs)
                                          .exists()
@@ -152,7 +153,7 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
 
     addTimeQuery(query, durationStartTs, durationEndTs, WorkflowExecutionKeys.startTs, WorkflowExecutionKeys.endTs);
 
-    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch())) {
+    try (HIterator<WorkflowExecution> iterator = new HIterator<>(query.fetch(options))) {
       for (WorkflowExecution workflowExecution : iterator) {
         checkAndAddIfRequired(workflowExecution);
       }

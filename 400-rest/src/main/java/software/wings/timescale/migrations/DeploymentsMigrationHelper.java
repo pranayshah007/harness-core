@@ -31,6 +31,9 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.ReadPreference;
+import com.mongodb.Tag;
+import com.mongodb.TagSet;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -250,9 +253,11 @@ public class DeploymentsMigrationHelper {
                                    .append(WorkflowExecutionKeys.status, Boolean.TRUE)
                                    .append(WorkflowExecutionKeys.duration, Boolean.TRUE);
 
-    DBCursor dataRecords = collection.find(objectsToBeUpdated, projection)
-                               .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
-                               .limit(batchLimit);
+    DBCursor dataRecords =
+        collection.find(objectsToBeUpdated, projection)
+            .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
+            .setReadPreference(ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))))
+            .limit(batchLimit);
 
     int updated = 0;
     List<DBObject> workflowExecutionObjects = new ArrayList<>();
@@ -266,10 +271,12 @@ public class DeploymentsMigrationHelper {
           executeTimeScaleOnDemandRollbackQueries(
               workflowExecutionObjects, updateStatementRollback, updateStatementOriginal);
           sleep(Duration.ofMillis(100));
-          dataRecords = collection.find(objectsToBeUpdated, projection)
-                            .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
-                            .skip(updated)
-                            .limit(batchLimit);
+          dataRecords =
+              collection.find(objectsToBeUpdated, projection)
+                  .sort(new BasicDBObject().append(WorkflowExecutionKeys.createdAt, -1))
+                  .setReadPreference(ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))))
+                  .skip(updated)
+                  .limit(batchLimit);
           log.info(debugLine + UPDATED_RECORDS_LOG_LINE, collectionName, updated);
         }
       }

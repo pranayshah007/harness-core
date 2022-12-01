@@ -46,6 +46,7 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
   private static final String PROJECT_ID = "proj";
   private static final String SERVICE_ID = "svc";
   private static final int SYNC_INTERVAL_MINUTES = 30;
+  private static final int MAX_CALLS_PER_SERVICE = 48;
 
   @Mock private InstanceStatsService instanceStatsService;
   @Mock private InstanceService instanceService;
@@ -100,6 +101,23 @@ public class InstanceStatsCollectorImplTest extends InstancesTestBase {
         .when(usageMetricsEventPublisher)
         .publishInstanceStatsTimeSeries(eq(ACCOUNT_ID), anyLong(), eq(instances));
     assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = VIKYATH_HAREKAL)
+  @Category(UnitTests.class)
+  public void createStatsLimitTest() throws Exception {
+    Instant lastSnapshot = Instant.now().minusSeconds((SYNC_INTERVAL_MINUTES * (MAX_CALLS_PER_SERVICE + 1) + 5) * 60L);
+    InstanceDTO instanceDTO = InstanceDTO.builder().build();
+    mockServices();
+    when(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(lastSnapshot);
+    when(instanceService.getActiveInstancesByAccountOrgProjectAndService(
+             eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong()))
+        .thenReturn(Collections.singletonList(instanceDTO));
+    assertThat(instanceStatsCollector.createStats(ACCOUNT_ID)).isTrue();
+    verify(instanceService, times(MAX_CALLS_PER_SERVICE))
+        .getActiveInstancesByAccountOrgProjectAndService(
+            eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJECT_ID), eq(SERVICE_ID), anyLong());
   }
 
   private void mockServices() {
