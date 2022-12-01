@@ -43,6 +43,8 @@ function check_file_present(){
      fi
 }
 
+echo "Starting"
+
 export PURPOSE=srm
 export STATUS_ID_TO_MOVE=151
 
