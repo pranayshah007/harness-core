@@ -9,7 +9,6 @@ package io.harness.mongo.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.mongo.helper.MongoConstants.ANALYTICS;
-import static io.harness.mongo.helper.MongoConstants.SECONDARY;
 
 import io.harness.annotations.dev.OwnedBy;
 
