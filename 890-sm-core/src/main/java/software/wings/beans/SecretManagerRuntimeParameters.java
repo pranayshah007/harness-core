@@ -55,4 +55,14 @@ public class SecretManagerRuntimeParameters implements AccountAccess, Persistent
   public String getUuid() {
     return this.uuid;
   }
+
+  public software.wings.beans.dto.SecretManagerRuntimeParameters toDto() {
+    return software.wings.beans.dto.SecretManagerRuntimeParameters.builder()
+        .accountId(accountId)
+        .uuid(uuid)
+        .secretManagerId(secretManagerId)
+        .executionId(executionId)
+        .runtimeParameters(runtimeParameters)
+        .build();
+  }
 }
