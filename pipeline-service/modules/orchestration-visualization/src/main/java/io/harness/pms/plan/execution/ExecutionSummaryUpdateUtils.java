@@ -33,21 +33,24 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {
   public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    // LayoutNodeMap contains only stage or stage-strategy nodes. If the current nodeExecution does not correspond to
-    // stage then return here.
-    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
-      // returning false because update is not applied.
-      return false;
-    }
+    boolean updateApplied = false;
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
     if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
       // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
       Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
+      // Updating the barrier information in the stage node.
       if (stage.isPresent()) {
         Level stageNode = stage.get();
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
+        updateApplied = true;
       }
+    }
+    // LayoutNodeMap contains only stage or stage-strategy nodes. If the current nodeExecution does not correspond to
+    // stage then return here. And do not update the graph for current nodeExecution.
+    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
+      // returning false because update is not applied.
+      return updateApplied;
     }
     if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
       update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".status", status);
