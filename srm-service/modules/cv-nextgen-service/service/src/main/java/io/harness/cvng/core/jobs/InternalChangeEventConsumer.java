@@ -13,8 +13,12 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.queue.QueueController;
 
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
+@Singleton
 public class InternalChangeEventConsumer extends AbstractStreamConsumer {
   private static final int MAX_WAIT_TIME_SEC = 10;
   ChangeEventService changeEventService;
