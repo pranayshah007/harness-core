@@ -36,7 +36,7 @@ public class TasBasicAppSetupStepNode extends CdAbstractStepNode {
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
+    return StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
   }
 
   @Override
