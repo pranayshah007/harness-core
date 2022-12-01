@@ -110,8 +110,12 @@ import io.harness.cdng.creator.plan.steps.K8sRollingRollbackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sScaleStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.ShellScriptProvisionStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasAppResizeStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasBGAppSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasBasicAppSetupStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TasCanaryAppSetupStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.TasSwapRoutesStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
@@ -166,8 +170,12 @@ import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.StepGroupVariableCreator;
+import io.harness.cdng.creator.variables.TasAppResizeStepVariableCreator;
 import io.harness.cdng.creator.variables.TasBGAppSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.TasBasicAppSetupStepVariableCreator;
 import io.harness.cdng.creator.variables.TasCanaryAppSetupStepVariableCreator;
+import io.harness.cdng.creator.variables.TasRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.TasSwapRoutesStepVariableCreator;
 import io.harness.cdng.customDeployment.CustomDeploymentConstants;
 import io.harness.cdng.customDeployment.variablecreator.FetchInstanceScriptStepVariableCreator;
 import io.harness.cdng.jenkins.jenkinsstep.JenkinsBuildStepVariableCreator;
@@ -306,6 +314,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new FetchInstanceScriptStepPlanCreator());
     planCreators.add(new TasCanaryAppSetupStepPlanCreator());
     planCreators.add(new TasBGAppSetupStepPlanCreator());
+    planCreators.add(new TasBasicAppSetupStepPlanCreator());
+    planCreators.add(new TasAppResizeStepPlanCreator());
+    planCreators.add(new TasSwapRoutesStepPlanCreator());
+    planCreators.add(new TasRollbackStepPlanCreator());
     planCreators.add(new TerraformPlanStepPlanCreator());
     planCreators.add(new TerraformDestroyStepPlanCreator());
     planCreators.add(new TerraformRollbackStepPlanCreator());
@@ -446,6 +458,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new FetchInstanceScriptStepVariableCreator());
     variableCreators.add(new TasCanaryAppSetupStepVariableCreator());
     variableCreators.add(new TasBGAppSetupStepVariableCreator());
+    variableCreators.add(new TasBasicAppSetupStepVariableCreator());
+    variableCreators.add(new TasAppResizeStepVariableCreator());
+    variableCreators.add(new TasSwapRoutesStepVariableCreator());
+    variableCreators.add(new TasRollbackStepVariableCreator());
     variableCreators.add(new JenkinsBuildStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     // ECS
@@ -862,7 +878,32 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.TAS_NG.name())
             .build();
-
+    StepInfo tasBasicAppSetup =
+        StepInfo.newBuilder()
+            .setName(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+            .setType(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.TAS_NG.name())
+            .build();
+    StepInfo tasAppResize = StepInfo.newBuilder()
+                                .setName(StepSpecTypeConstants.TAS_APP_RESIZE)
+                                .setType(StepSpecTypeConstants.TAS_APP_RESIZE)
+                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                                .setFeatureFlag(FeatureName.TAS_NG.name())
+                                .build();
+    StepInfo tasSwapRoutes =
+        StepInfo.newBuilder()
+            .setName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+            .setType(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+            .setFeatureFlag(FeatureName.TAS_NG.name())
+            .build();
+    StepInfo tasRollback = StepInfo.newBuilder()
+                               .setName(StepSpecTypeConstants.TAS_ROLLBACK)
+                               .setType(StepSpecTypeConstants.TAS_ROLLBACK)
+                               .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
+                               .setFeatureFlag(FeatureName.TAS_NG.name())
+                               .build();
     StepInfo shellScriptProvision = StepInfo.newBuilder()
                                         .setName("Shell Script Provision")
                                         .setType(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
@@ -994,6 +1035,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(fetchInstanceScript);
     stepInfos.add(tasCanaryAppSetup);
     stepInfos.add(tasBGAppSetup);
+    stepInfos.add(tasBasicAppSetup);
+    stepInfos.add(tasAppResize);
+    stepInfos.add(tasSwapRoutes);
+    stepInfos.add(tasRollback);
     stepInfos.add(ecsBlueGreenCreateService);
     stepInfos.add(ecsBlueGreenSwapTargetGroups);
     stepInfos.add(ecsBlueGreenRollback);

@@ -31,16 +31,16 @@ public class TasRollbackStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull TasRollbackStepNode.StepType type = StepType.TasRollback;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  TasRollbackStepInfo tasAppResizeStepInfo;
+  TasRollbackStepInfo tasRollbackStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.TAS_APP_RESIZE;
+    return StepSpecTypeConstants.TAS_ROLLBACK;
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return tasAppResizeStepInfo;
+    return tasRollbackStepInfo;
   }
 
   enum StepType {

@@ -31,16 +31,15 @@ public class TasSwapRoutesStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull TasSwapRoutesStepNode.StepType type = StepType.TasSwapRoutes;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  TasRollbackStepInfo tasAppResizeStepInfo;
+  TasSwapRoutesStepInfo tasSwapRoutesStepInfo;
 
   @Override
   public String getType() {
-    return StepSpecTypeConstants.TAS_APP_RESIZE;
+    return StepSpecTypeConstants.TAS_SWAP_ROUTES;
   }
-
   @Override
   public StepSpecType getStepSpecType() {
-    return tasAppResizeStepInfo;
+    return tasSwapRoutesStepInfo;
   }
 
   enum StepType {
