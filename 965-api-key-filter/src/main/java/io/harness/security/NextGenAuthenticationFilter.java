@@ -21,7 +21,6 @@ import static io.harness.exception.WingsException.USER;
 import static javax.ws.rs.Priorities.AUTHENTICATION;
 import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.BCryptVersion.$2A;
 
-import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -44,19 +43,28 @@ import io.harness.serviceaccountclient.remote.ServiceAccountClient;
 import io.harness.token.remote.TokenClient;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import javax.cache.Cache;
 import javax.annotation.Priority;
+import javax.cache.Cache;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ResourceInfo;
 import javax.ws.rs.core.Context;
@@ -90,23 +98,27 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   public static final String X_API_KEY = "X-Api-Key";
   public static final String AUTHORIZATION_HEADER = "Authorization";
+  public static final String JWT_TOKEN_PUBLIC_KEYS_URL_CACHE = "jwtTokenPublicKeysUrlCache";
   private static final String delimiter = "\\.";
   private static final String ISSUER_HARNESS_CONST = "Harness Inc";
 
   private TokenClient tokenClient;
   private NGSettingsClient settingsClient;
   private ServiceAccountClient serviceAccountClient;
+  private Cache<String, String> jwtTokenPublicKeyUrlCache;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
-  @Inject @Named("jwtTokenPublicKeysUrlCache") private Cache<String, String> jwtTokenPublicKeyUrlCache;
+  //@Inject @Named(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE) private Cache<String, String> jwtTokenPublicKeyUrlCache;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
       @Named("PRIVILEGED") TokenClient tokenClient, @Named("PRIVILEGED") NGSettingsClient settingsClient,
-      @Named("PRIVILEGED") ServiceAccountClient serviceAccountClient) {
+      @Named("PRIVILEGED") ServiceAccountClient serviceAccountClient,
+      @Named(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE) Cache<String, String> jwtTokenPublicKeyUrlCache) {
     super(predicate, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
     this.tokenClient = tokenClient;
     this.settingsClient = settingsClient;
     this.serviceAccountClient = serviceAccountClient;
+    this.jwtTokenPublicKeyUrlCache = jwtTokenPublicKeyUrlCache;
   }
 
   @Override
@@ -313,8 +325,8 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   }
 
   private Principal getPrincipalFromServiceAccountDto(ServiceAccountDTO serviceAccountDto) {
-    return new ServiceAccountPrincipal(
-        serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(), serviceAccountDto.getEmail(), serviceAccountDto.getAccountIdentifier());
+    return new ServiceAccountPrincipal(serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(),
+        serviceAccountDto.getEmail(), serviceAccountDto.getAccountIdentifier());
   }
 
   private void validateJwtToken(
@@ -436,38 +448,84 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
               accountIdentifier),
           UNEXPECTED);
     } else {
-      Request httpGetRequest = new Request.Builder().url(publicKeysUrlSettingStr).method("GET", null).build();
-      OkHttpClient client = new OkHttpClient();
-      try (Response response = client.newCall(httpGetRequest).execute()) {
-        if (response.isSuccessful()) {
-          ResponseBody responseBody = response.body();
-          if (responseBody != null) {
-            String publicCertsJsonString = responseBody.string();
-            validateJwtToken(jwtToken, keySettingStr, valueSettingStr, publicCertsJsonString, accountIdentifier);
-            ServiceAccountDTO serviceAccountDTO = NGRestUtils.getResponse(
-                serviceAccountClient.getServiceAccount(serviceAccountSettingStr, accountIdentifier));
-            Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
-            io.harness.security.SecurityContextBuilder.setContext(servicePrincipal);
-            SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
+      String publicCertsJsonString = null;
+      final String trimmedPublicKeyUrlStr = publicKeysUrlSettingStr.trim();
+      if (jwtTokenPublicKeyUrlCache.containsKey(trimmedPublicKeyUrlStr)) {
+        log.info(
+            "NG_SCIM_JWT: [JWT_TOKEN_PUBLIC_KEYS_URL] Fetching public keys information for url {} from cache for account {}",
+            trimmedPublicKeyUrlStr, accountIdentifier);
+        publicCertsJsonString = jwtTokenPublicKeyUrlCache.get(trimmedPublicKeyUrlStr);
+      } else {
+        Request httpGetRequest = new Request.Builder().url(publicKeysUrlSettingStr).method("GET", null).build();
+        OkHttpClient client = getUnsafeOkHttpClient();
+        try (Response response = client.newCall(httpGetRequest).execute()) {
+          if (response.isSuccessful()) {
+            ResponseBody responseBody = response.body();
+            if (responseBody != null) {
+              publicCertsJsonString = responseBody.string();
+              jwtTokenPublicKeyUrlCache.put(trimmedPublicKeyUrlStr, publicCertsJsonString);
+            }
+          } else {
+            logAndThrowTokenException(
+                String.format("NG_SCIM_JWT: Invalid public key URL: %s, for requests in account %s: ",
+                    publicKeysUrlSettingStr, accountIdentifier),
+                INVALID_INPUT_SET);
           }
-        } else {
+        } catch (SSLHandshakeException sslExc) {
           logAndThrowTokenException(
-              String.format("NG_SCIM_JWT: Invalid public key URL: %s, for requests in account %s: ",
+              String.format(
+                  "NG_SCIM_JWT: Certificate chain not trusted for public keys URL: %s host, configured at settings in account: %s",
+                  publicKeysUrlSettingStr, accountIdentifier),
+              INVALID_INPUT_SET);
+        } catch (IOException e) {
+          logAndThrowTokenException(
+              String.format("NG_SCIM_JWT: Error fetching public certificate from public keys URL: %s, in account %s: ",
                   publicKeysUrlSettingStr, accountIdentifier),
               INVALID_INPUT_SET);
         }
-      } catch (SSLHandshakeException sslExc) {
-        logAndThrowTokenException(
-            String.format(
-                "NG_SCIM_JWT: Certificate chain not trusted for public keys URL: %s host, configured at settings in account: %s",
-                publicKeysUrlSettingStr, accountIdentifier),
-            INVALID_INPUT_SET);
-      } catch (IOException e) {
-        logAndThrowTokenException(
-            String.format("NG_SCIM_JWT: Error fetching public certificate from public keys URL: %s, in account %s: ",
-                publicKeysUrlSettingStr, accountIdentifier),
-            INVALID_INPUT_SET);
       }
+      validateJwtToken(jwtToken, keySettingStr, valueSettingStr, publicCertsJsonString, accountIdentifier);
+      ServiceAccountDTO serviceAccountDTO =
+          NGRestUtils.getResponse(serviceAccountClient.getServiceAccount(serviceAccountSettingStr, accountIdentifier));
+      Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
+      io.harness.security.SecurityContextBuilder.setContext(servicePrincipal);
+      SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
     }
   }
+
+  private static OkHttpClient getUnsafeOkHttpClient() {
+    try {
+      // Create a trust manager that does not validate certificate chains
+      final TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager(){
+          @Override public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType)
+              throws CertificateException{}
+
+          @Override public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
+              throws CertificateException{} @Override public java.security.cert.X509Certificate[] getAcceptedIssuers(){
+                  return new X509Certificate[0];
+    }
+  }
+};
+
+// Install the all-trusting trust manager
+final SSLContext sslContext = SSLContext.getInstance("SSL");
+sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+// Create an ssl socket factory with our all-trusting manager
+final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+return new OkHttpClient.Builder()
+    .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+    .hostnameVerifier(new HostnameVerifier() {
+      @Override
+      public boolean verify(String hostname, SSLSession session) {
+        return true;
+      }
+    })
+    .build();
+}
+catch (Exception e) {
+  log.error("Runtime test error");
+  throw new RuntimeException(e);
+}
+}
 }

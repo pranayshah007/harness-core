@@ -23,6 +23,7 @@ import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static com.google.common.collect.ImmutableMap.of;
+import static io.harness.security.NextGenAuthenticationFilter.JWT_TOKEN_PUBLIC_KEYS_URL_CACHE;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
@@ -254,6 +255,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.servlet.DispatcherType;
 import javax.servlet.FilterRegistration;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -917,8 +921,12 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     serviceToSecretMapping.put(
         IDENTITY_SERVICE.getServiceId(), configuration.getNextGenConfig().getJwtIdentityServiceSecret());
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNextGenConfig().getNgManagerServiceSecret());
+
     environment.jersey().register(new NextGenAuthenticationFilter(
-        predicate, null, serviceToSecretMapping, tokenClient, ngSettingsClient, serviceAccountPrincipalClient));
+        predicate, null, serviceToSecretMapping, tokenClient, ngSettingsClient, serviceAccountPrincipalClient,
+        harnessCacheManager.getCache(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE, String.class, String.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 10)),
+        versionInfoManager.getVersionInfo().getBuildNo())));
   }
 
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {

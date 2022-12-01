@@ -38,13 +38,13 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIAB
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
+import static io.harness.security.NextGenAuthenticationFilter.JWT_TOKEN_PUBLIC_KEYS_URL_CACHE;
 import static java.lang.Boolean.TRUE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.GitopsModule;
 import io.harness.Microservice;
 import io.harness.NgIteratorsConfig;
-import io.harness.SchemaCacheKey;
 import io.harness.YamlBaseUrlServiceImpl;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
@@ -330,7 +330,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
-import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
@@ -496,21 +495,12 @@ public class NextGenModule extends AbstractModule {
   }
 
   @Provides
-  @Named("jwtTokenPublicKeysUrlCache")
+  @Named(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE)
   @Singleton
-  public Cache<String, String> getLicenseCache(
+  public Cache<String, String> getJwtTokenPublicKeysCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache("jwtTokenPublicKeysUrlCache", String.class, String.class,
-        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)), versionInfoManager.getVersionInfo().getBuildNo());
-  }
-
-  @Provides
-  @Singleton
-  @Named("schemaDetailsCache")
-  public Cache<SchemaCacheKey, YamlSchemaDetailsWrapperValue> schemaDetailsCache(
-      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache("schemaDetailsCache", SchemaCacheKey.class, YamlSchemaDetailsWrapperValue.class,
-        CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)),
+    return harnessCacheManager.getCache(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE, String.class, String.class,
+        AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 10)),
         versionInfoManager.getVersionInfo().getBuildNo());
   }
 
