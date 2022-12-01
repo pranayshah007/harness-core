@@ -50,7 +50,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
-import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 
 @OwnedBy(DX)
@@ -169,6 +169,6 @@ public abstract class AbstractGitSyncSdkModule extends AbstractModule {
   public Cache<String, Boolean> gitEnabledCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache("gitEnabledCacheSdk", String.class, Boolean.class,
-        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
+        CreatedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
   }
 }
