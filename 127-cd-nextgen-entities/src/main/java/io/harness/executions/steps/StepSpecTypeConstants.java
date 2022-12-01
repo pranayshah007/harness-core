@@ -67,6 +67,10 @@ public interface StepSpecTypeConstants {
 
   String TAS_CANARY_APP_SETUP = "TasCanaryAppSetup";
   String TAS_BG_APP_SETUP = "TasBGAppSetup";
+  String TAS_APP_RESIZE = "TasAppResize";
+  String TAS_ROLLBACK = "TasRollback";
+  String TAS_SWAP_ROUTES = "TasSwapRoutes";
+  String TAS_BASIC_APP_SETUP = "TasBasicAppSetup";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
@@ -84,10 +88,4 @@ public interface StepSpecTypeConstants {
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
 
-  String TAS_APP_RESIZE = "TasAppResize";
-  String TAS_ROLLBACK = "TasRollback";
-  String TAS_SWAP_ROUTES = "TasSwapRoutes";
-  String TAS_CANARY_APP_SETUP = "TasCanaryAppSetup";
-  String TAS_BG_APP_SETUP = "TasBGAppSetup";
-  String TAS_BASIC_APP_SETUP = "TasBasicAppSetup";
 }

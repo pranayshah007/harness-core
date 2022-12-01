@@ -26,6 +26,7 @@ public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
   public static final String GITOPS_MERGE_PR = "MergePR";
   public static final String GITOPS_UPDATE_RELEASE_REPO = "GitOpsUpdateReleaseRepo";
+  public static final String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
   public static final String ENVIRONMENT_GROUP = "environmentGroup";
   public static final String PROJECT = "project";
   public static final String PIPELINE = "pipeline";
@@ -182,4 +183,9 @@ public class EntityYamlRootNames {
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
   public static final String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
   public static final String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
+  public static final String TERRAGRUNT_PLAN = "TerragruntPlan";
+  public static final String TERRAGRUNT_APPLY = "TerragruntApply";
+  public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
+  public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+
 }

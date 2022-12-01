@@ -7,9 +7,9 @@
 
 package io.harness.cdng.tas;
 
-import static io.harness.cdng.manifest.ManifestType.AUTOSCALER;
+import static io.harness.cdng.manifest.ManifestType.TAS_AUTOSCALER;
 import static io.harness.cdng.manifest.ManifestType.TAS_MANIFEST;
-import static io.harness.cdng.manifest.ManifestType.VARS;
+import static io.harness.cdng.manifest.ManifestType.TAS_VARS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -218,9 +218,9 @@ public class TasStepHelper {
     localStoreFetchFilesResultMap.add(getFileContentsFromManifest(ngAccess,
         List.of(localStoreConfig.getFiles().getValue().get(0)), TAS_MANIFEST, manifestIdentifier, logCallback));
     localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, varsScopedFilePathList, VARS, manifestIdentifier, logCallback));
+        getFileContentsFromManifest(ngAccess, varsScopedFilePathList, TAS_VARS, manifestIdentifier, logCallback));
     localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, autoScalerScopedFilePath, AUTOSCALER, manifestIdentifier, logCallback));
+        getFileContentsFromManifest(ngAccess, autoScalerScopedFilePath, TAS_AUTOSCALER, manifestIdentifier, logCallback));
     return localStoreFetchFilesResultMap;
     // TODO: Check if default vars.yaml file need to be fetched
   }
@@ -290,9 +290,9 @@ public class TasStepHelper {
                                                         .collect(Collectors.toCollection(LinkedList::new));
     TasManifestOutcome tasManifestOutcome = null;
     for (ManifestOutcome manifestOutcome : orderedManifestOutcomes) {
-      if (AUTOSCALER.equals(manifestOutcome.getType())) {
+      if (TAS_AUTOSCALER.equals(manifestOutcome.getType())) {
         autoScalerManifestOutcomeList.add((AutoScalerManifestOutcome) manifestOutcome);
-      } else if (VARS.equals(manifestOutcome.getType())) {
+      } else if (TAS_VARS.equals(manifestOutcome.getType())) {
         varsManifestOutcomeList.add((VarsManifestOutcome) manifestOutcome);
       } else if (TAS_MANIFEST.equals(manifestOutcome.getType())) {
         if (isNull(tasManifestOutcome)) {
@@ -677,12 +677,12 @@ public class TasStepHelper {
     List<String> varsPaths = getParameterFieldValue(tasManifestOutcome.getVarsPaths());
     if (!isEmpty(varsPaths)) {
       gitFetchFilesConfigList.add(populateGitFetchFilesConfig(
-          gitStoreConfig, tasManifestOutcome, VARS, connectorDTO, ambiance, identifier, varsPaths));
+          gitStoreConfig, tasManifestOutcome, TAS_VARS, connectorDTO, ambiance, identifier, varsPaths));
     }
     List<String> autoScalerPath = getParameterFieldValue(tasManifestOutcome.getAutoScalerPath());
     if (!isEmpty(autoScalerPath)) {
       gitFetchFilesConfigList.add(populateGitFetchFilesConfig(
-          gitStoreConfig, tasManifestOutcome, AUTOSCALER, connectorDTO, ambiance, identifier, autoScalerPath));
+          gitStoreConfig, tasManifestOutcome, TAS_AUTOSCALER, connectorDTO, ambiance, identifier, autoScalerPath));
     }
     gitFetchFilesConfigList.add(populateGitFetchFilesConfig(gitStoreConfig, tasManifestOutcome, TAS_MANIFEST,
         connectorDTO, ambiance, identifier, getParameterFieldValue(gitStoreConfig.getPaths())));
@@ -744,9 +744,9 @@ public class TasStepHelper {
               } else {
                 List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
                 if (!isEmpty(varsPaths) && varsPaths.contains(file.getFilePath())) {
-                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), VARS);
+                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), TAS_VARS);
                 } else {
-                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), AUTOSCALER);
+                  addToPcfManifestPackageByType(pcfManifestsPackage, List.of(file.getFileContent()), TAS_AUTOSCALER);
                 }
               }
             }
@@ -767,10 +767,10 @@ public class TasStepHelper {
             } else {
               List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
               if (!isEmpty(varsPaths) && varsPaths.contains(customSourceFile.getFilePath())) {
-                addToPcfManifestPackageByType(pcfManifestsPackage, List.of(customSourceFile.getFileContent()), VARS);
+                addToPcfManifestPackageByType(pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
               } else {
                 addToPcfManifestPackageByType(
-                    pcfManifestsPackage, List.of(customSourceFile.getFileContent()), AUTOSCALER);
+                    pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_AUTOSCALER);
               }
             }
           } else {
@@ -815,7 +815,7 @@ public class TasStepHelper {
   public void addToPcfManifestPackageByType(
       PcfManifestsPackage pcfManifestsPackage, List<String> fileContents, String manifestType) {
     switch (manifestType) {
-      case AUTOSCALER:
+      case TAS_AUTOSCALER:
         if (!isNull(pcfManifestsPackage.getAutoscalarManifestYml()) || fileContents.size() > 1) {
           throw new UnsupportedOperationException("Only one AutoScaler Yml is supported");
         }
@@ -823,7 +823,7 @@ public class TasStepHelper {
           pcfManifestsPackage.setAutoscalarManifestYml(fileContents.get(0));
         }
         break;
-      case VARS:
+      case TAS_VARS:
         if (isNull(pcfManifestsPackage.getVariableYmls())) {
           pcfManifestsPackage.setVariableYmls(new ArrayList<>());
         }

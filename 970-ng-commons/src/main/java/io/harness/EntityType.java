@@ -408,9 +408,23 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
+          EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_PLAN)
+  TERRAGRUNT_PLAN_STEP(
+          ModuleType.CD, EntityTypeConstants.TERRAGRUNT_PLAN, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_PLAN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_APPLY)
+  TERRAGRUNT_APPLY_STEP(
+          ModuleType.CD, EntityTypeConstants.TERRAGRUNT_APPLY, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_APPLY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_DESTROY)
+  TERRAGRUNT_DESTROY_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_DESTROY, IdentifierRef.class,
+          EntityYamlRootNames.TERRAGRUNT_DESTROY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
+  TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
+          EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CHAOS_STEP)
   CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP)
