@@ -214,9 +214,12 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
         getNGEnvironmentConfig(environment);
       }
       try {
-        ngEnvironmentConfig = mergeEnvironmentInputs(
-            environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.getIdentifier()));
-
+        if (isNotEmpty(parameters.getEnvToEnvInputs())) {
+          ngEnvironmentConfig = mergeEnvironmentInputs(
+              environment.getYaml(), parameters.getEnvToEnvInputs().get(environment.getIdentifier()));
+        } else {
+          ngEnvironmentConfig = mergeEnvironmentInputs(environment.getYaml(), null);
+        }
       } catch (IOException ex) {
         throw new InvalidRequestException("Unable to read yaml for environment: " + environment.getIdentifier(), ex);
       }

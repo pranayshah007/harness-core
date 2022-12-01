@@ -40,6 +40,7 @@ import io.harness.utils.YamlPipelineUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import graphql.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -165,7 +166,8 @@ public class EnvGroupPlanCreatorHelper {
         .build();
   }
 
-  private static void createEnvConfigs(
+  @VisibleForTesting
+  protected void createEnvConfigs(
       List<EnvironmentPlanCreatorConfig> envConfigs, EnvironmentYamlV2 envV2Yaml, Environment environment) {
     String originalEnvYaml = environment.getYaml();
 
@@ -190,7 +192,8 @@ public class EnvGroupPlanCreatorHelper {
     envConfigs.add(EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envV2Yaml, null));
   }
 
-  private static void createEnvConfigsForFiltersFlow(
+  @VisibleForTesting
+  protected void createEnvConfigsForFiltersFlow(
       List<EnvironmentPlanCreatorConfig> envConfigs, Environment environment, List<String> clusterRefs) {
     String originalEnvYaml = environment.getYaml();
 
