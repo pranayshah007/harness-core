@@ -43,7 +43,7 @@ function check_file_present(){
      fi
 }
 
-echo "Starting"
+echo "Starting ${BASE_BRANCH}"
 
 export PURPOSE=srm
 export STATUS_ID_TO_MOVE=151
