@@ -126,7 +126,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
             .existingInActiveApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
             .newApplicationName(getNewAppicationName(tasSetupDataOutcome))
-            .cfCommandType(CfCommandTypeNG.SWAP_ROUTES)
+            .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROUTES)
             .tasInfraConfig(tasInfraConfig)
             .timeoutIntervalInMin(10)
             .build();
@@ -159,7 +159,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     BaseNGAccess baseNGAccess = tasEntityHelper.getBaseNGAccess(accountId, orgId, projectId);
     ConnectorInfoDTO connectorInfoDTO =
-        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), baseNGAccess);
+        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), accountId, orgId, projectId);
     return TasInfraConfig.builder()
         .organization(infrastructureOutcome.getOrganization())
         .space(infrastructureOutcome.getSpace())
