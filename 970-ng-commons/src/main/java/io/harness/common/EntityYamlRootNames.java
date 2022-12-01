@@ -195,5 +195,5 @@ public class EntityYamlRootNames {
   public static final String TAS_ROLLBACK_STEP = "TasRollbackStep";
   public static final String TAS_SWAP_ROUTES_STEP = "TasSwapRoutesStep";
   public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
-  public static final String TAS_COMMAND_STEP = "TanzuCommand";
+  public static final String TANZU_COMMAND_STEP = "TanzuCommand";
 }

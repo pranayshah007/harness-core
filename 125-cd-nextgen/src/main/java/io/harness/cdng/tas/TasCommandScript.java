@@ -10,8 +10,11 @@ package io.harness.cdng.tas;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.harness.annotation.RecasterAlias;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.elastigroup.ElastigroupInstancesSpec;
 import io.harness.cdng.elastigroup.ElastigroupInstancesType;
+import io.harness.yaml.YamlSchemaTypes;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +24,7 @@ import javax.validation.constraints.NotNull;
 
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 @Data
 @Builder
@@ -29,6 +33,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @RecasterAlias("io.harness.cdng.tas.TasCommandScript")
 public class TasCommandScript {
   @NotNull @JsonProperty("store")
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.TAS_COMMAND_SCRIPT_STORE_YAML_CONFIGURATION_CLASSPATH)
   TasCommandScriptStore store;
 
   @Builder
