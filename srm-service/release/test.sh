@@ -98,14 +98,14 @@ sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_F
 
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
 
-git checkout ${SHA}
-git checkout -b release/${PURPOSE}/${VERSION}xx
+echo "git checkout ${SHA}"
+echo "git checkout -b release/${PURPOSE}/${VERSION}xx"
 
 sed -i "s:build.number=???00:build.number=${VERSION}00:g" ${VERSION_FILE}
 
-git add ${VERSION_FILE}
-git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${VERSION}xx"
-git push origin release/${PURPOSE}/${VERSION}xx
+echo "git add ${VERSION_FILE}"
+echo "git commit --allow-empty -m \"Set the proper version branch release/${PURPOSE}/${VERSION}xx\""
+echo "git push origin release/${PURPOSE}/${VERSION}xx"
 
 #creating the fix version
 #TODO: Uncomment
