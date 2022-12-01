@@ -12,7 +12,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.EnvironmentsFilterYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChild;
@@ -44,7 +44,7 @@ public class EnvironmentsYaml implements Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
   @YamlSchemaTypes(runtime)
-  ParameterField<List<FilterYaml>> filters;
+  ParameterField<List<EnvironmentsFilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.ENVIRONMENT_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {expression})

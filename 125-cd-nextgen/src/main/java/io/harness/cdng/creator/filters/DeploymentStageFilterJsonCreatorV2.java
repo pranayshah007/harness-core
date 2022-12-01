@@ -17,8 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.filters.Entity;
-import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -28,8 +26,6 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.service.beans.ServicesYaml;
-import io.harness.data.structure.EmptyPredicate;
-import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
@@ -54,7 +50,6 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -198,23 +193,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("environmentRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-
-    if (ParameterField.isNotNull(env.getFilters()) && !env.getFilters().isExpression()
-        && EmptyPredicate.isNotEmpty(env.getFilters().getValue())) {
-      Set<Entity> unsupportedEntities = env.getFilters()
-                                            .getValue()
-                                            .stream()
-                                            .map(FilterYaml::getEntities)
-                                            .flatMap(EnumSet::stream)
-                                            .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
-                                            .collect(Collectors.toSet());
-      if (!unsupportedEntities.isEmpty()) {
-        throw new InvalidYamlRuntimeException(
-            format("Environment filters can only support [%s]. Please add the correct filters in stage [%s]",
-                HarnessStringUtils.join(",", Entity.infrastructures.name(), Entity.gitOpsClusters.name()),
-                YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-      }
     }
 
     if (!environmentRef.isExpression()) {

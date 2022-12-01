@@ -14,7 +14,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
-import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.filters.EnvironmentFilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentYamlV2VisitorHelper;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
@@ -60,7 +60,7 @@ public class EnvironmentYamlV2 implements Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
   @YamlSchemaTypes(runtime)
-  ParameterField<List<FilterYaml>> filters;
+  ParameterField<List<EnvironmentFilterYaml>> filters;
 
   @ApiModelProperty(dataType = SwaggerConstants.INFRASTRUCTURE_DEFINITION_YAML_NODE_LIST_CLASSPATH)
   @YamlSchemaTypes({runtime})
