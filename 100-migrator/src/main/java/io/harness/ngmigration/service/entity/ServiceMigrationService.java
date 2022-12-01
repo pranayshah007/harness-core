@@ -22,7 +22,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -47,7 +46,6 @@ import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.remote.ServiceResourceClient;
@@ -163,7 +161,8 @@ public class ServiceMigrationService extends NgMigrationService {
       children.addAll(
           service.getServiceVariables()
               .stream()
-              .filter(serviceVariable -> serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT))
+              .filter(Objects::nonNull)
+              .filter(serviceVariable -> ServiceVariableType.ENCRYPTED_TEXT.equals(serviceVariable.getType()))
               .map(serviceVariable -> CgEntityId.builder().id(serviceVariable.getEncryptedValue()).type(SECRET).build())
               .collect(Collectors.toList()));
     }
@@ -193,14 +192,6 @@ public class ServiceMigrationService extends NgMigrationService {
           .build();
     }
     return NGMigrationStatus.builder().status(true).build();
-  }
-
-  public ServiceConfig getServiceConfig(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    NGYamlFile entityDetail = migratedEntities.get(entityId);
-    return ServiceConfig.builder()
-        .serviceRef(ParameterField.createValueField(entityDetail.getNgEntityDetail().getIdentifier()))
-        .build();
   }
 
   @Override

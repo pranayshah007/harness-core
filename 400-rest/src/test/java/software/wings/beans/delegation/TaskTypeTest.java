@@ -406,6 +406,8 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(366, "GITOPS_FETCH_APP_TASK");
     taskTypeOrdinalMapping.put(367, "VAULT_TOKEN_LOOKUP");
     taskTypeOrdinalMapping.put(368, "NG_VAULT_TOKEN_LOOKUP");
+    taskTypeOrdinalMapping.put(369, "VALIDATE_TAS_CONNECTOR_TASK_NG");
+    taskTypeOrdinalMapping.put(370, "CF_COMMAND_TASK_NG");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

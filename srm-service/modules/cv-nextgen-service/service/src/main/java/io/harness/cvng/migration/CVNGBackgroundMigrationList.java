@@ -31,6 +31,7 @@ import io.harness.cvng.migration.list.CleanUpMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.CleanUpOldDocuments;
 import io.harness.cvng.migration.list.CleanupDeprecatedDocuments;
 import io.harness.cvng.migration.list.CustomHealthCustomPackForExistingProjects;
+import io.harness.cvng.migration.list.DeleteActivitiesNotAssociatedWithMonitoredServices;
 import io.harness.cvng.migration.list.DeleteInvalidOrchestratorsMigration;
 import io.harness.cvng.migration.list.DeleteOldAnalysisOrchestratorMigration;
 import io.harness.cvng.migration.list.DeleteOrchestratorWithInvalidVerificationTaskId;
@@ -120,6 +121,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(52, WriteServiceLevelObjectivesToV2.class))
         .add(Pair.of(53, AddTypeToServiceLevelObjectivesV2.class))
         .add(Pair.of(54, AddStartedAtToServiceLevelObjectiveV2.class))
+        .add(Pair.of(55, DeleteActivitiesNotAssociatedWithMonitoredServices.class))
         .build();
   }
 }

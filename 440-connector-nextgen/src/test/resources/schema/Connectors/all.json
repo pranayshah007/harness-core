@@ -2017,6 +2017,7 @@
             "ElasticSearch",
             "GcpSecretManager",
             "AzureArtifacts",
+            "Tas",
             "Spot"
           ]
         }
@@ -2707,6 +2708,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/SumoLogicConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Tas"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasConnector"
               }
             }
           }
@@ -5626,6 +5643,102 @@
               }
             },
             "url": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credential"
+          ],
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/TasCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ManualConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ManualConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasManualDetails"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TasCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasManualDetails": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TasCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "endpointUrl",
+            "passwordRef"
+          ],
+          "properties": {
+            "endpointUrl": {
+              "type": "string",
+              "readOnly": true
+            },
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
               "type": "string"
             }
           }

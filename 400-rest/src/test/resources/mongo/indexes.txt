@@ -77,6 +77,7 @@ artifacts {"name": "appId_artifactStreamId_metadata_image", "background": true} 
 artifacts {"name": "appId_artifactStreamId_status_createdAt", "background": true} {"appId": 1, "artifactStreamId": 1, "status": 1, "createdAt": -1}
 artifacts {"name": "artifactStream_artifactPath", "background": true} {"artifactStreamId": 1, "metadata.artifactPath": 1}
 artifacts {"name": "artifactStream_buildNo", "background": true} {"artifactStreamId": 1, "metadata.buildNo": 1}
+artifacts {"name": "artifactStream_createdAt_buildNo", "background": true} {"artifactStreamId": 1, "createdAt": -1, "metadata.buildNo": 1}
 artifacts {"name": "artifactStream_revision", "background": true} {"artifactStreamId": 1, "revision": 1}
 artifacts {"name": "createdAt_1", "background": true} {"createdAt": 1}
 artifacts {"name": "owners", "background": true} {"artifactStreamId": 1, "appId": 1}
@@ -235,6 +236,7 @@ deploymentSummary {"name": "inframappingId_awsAmiDeploymentKeyAsgName_createdAtD
 deploymentSummary {"name": "inframappingId_awsCodeDeployDeploymentKeyKey_createdAtDesc", "background": true} {"infraMappingId": 1, "awsCodeDeployDeploymentKey.key": 1, "createdAt": -1}
 deploymentSummary {"name": "inframappingId_awsLambdafunction_awsLambdaVersion_createdAtDesc", "background": true} {"infraMappingId": 1, "awsLambdaDeploymentKey.functionName": 1, "awsLambdaDeploymentKey.version": 1, "createdAt": -1}
 deploymentSummary {"name": "inframappingId_containerlabelsAndVersion", "background": true} {"infraMappingId": 1, "containerDeploymentKey.labels": 1, "containerDeploymentKey.newVersion": 1, "createdAt": -1}
+deploymentSummary {"name": "inframappingId_spotInstAmiDeploymentElasticGroupId_createdAtDesc", "background": true} {"infraMappingId": 1, "spotinstAmiDeploymentKey.elastigroupId": 1, "createdAt": -1}
 deploymentTimeSeriesEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 deploymentTimeSeriesEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 ecsServiceSpecification {"name": "accountId_1", "background": true} {"accountId": 1}

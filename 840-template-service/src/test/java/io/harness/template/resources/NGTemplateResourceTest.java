@@ -210,9 +210,9 @@ public class NGTemplateResourceTest extends CategoryTest {
   public void testGetTemplate() {
     doReturn(Optional.of(entityWithMongoVersion))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, false);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
@@ -228,10 +228,11 @@ public class NGTemplateResourceTest extends CategoryTest {
     String incorrectPipelineIdentifier = "notTheIdentifierWeNeed";
     doReturn(Optional.empty())
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false,
+            false);
     assertThatThrownBy(()
                            -> templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, false))
+                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, null))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -388,7 +389,7 @@ public class NGTemplateResourceTest extends CategoryTest {
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), false);
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "false");
     assertThat(responseDTO.getData()).isEqualTo(templateMergeResponseDTO);
     verify(templateService)
         .checkLinkedTemplateAccess(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, templateMergeResponseDTO);

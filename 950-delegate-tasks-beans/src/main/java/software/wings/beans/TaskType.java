@@ -406,7 +406,9 @@ public enum TaskType {
   TERRAGRUNT_ROLLBACK_TASK_NG(TaskGroup.TERRAGRUNT, "Terragrunt Rollback Task", true),
   GITOPS_FETCH_APP_TASK(TaskGroup.GITOPS, "Gitops Fetch App Task"),
   VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
-  NG_VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault");
+  NG_VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
+  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
+  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service");
 
   private final TaskGroup taskGroup;
   private final String displayName;

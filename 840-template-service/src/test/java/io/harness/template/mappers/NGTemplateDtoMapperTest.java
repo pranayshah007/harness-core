@@ -8,10 +8,13 @@
 package io.harness.template.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SOURABH;
 
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,6 +23,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
@@ -227,5 +235,46 @@ public class NGTemplateDtoMapperTest extends CategoryTest {
     NGTemplateDtoMapper.validateIconForTemplate(icon3);
     String icon4 = "data:image/svg+xml;base64,ICONSTRING";
     NGTemplateDtoMapper.validateIconForTemplate(icon4);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testWritePipelineDtoWithCache() {
+    CacheResponse cacheResponse = CacheResponse.builder().cacheState(CacheState.VALID_CACHE).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+
+    TemplateEntity remote = TemplateEntity.builder()
+                                .accountId(ACCOUNT_ID)
+                                .orgIdentifier(ORG_IDENTIFIER)
+                                .projectIdentifier(PROJ_IDENTIFIER)
+                                .identifier(TEMPLATE_IDENTIFIER)
+                                .name(TEMPLATE_IDENTIFIER)
+                                .versionLabel(TEMPLATE_VERSION_LABEL)
+                                .yaml(yaml)
+                                .storeType(StoreType.REMOTE)
+                                .build();
+
+    TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(remote);
+    assertThat(templateResponseDTO).isNotNull();
+    assertThat(templateResponseDTO.getCacheResponseMetadata().getCacheState()).isEqualTo(CacheState.VALID_CACHE);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testParseLoadFromCacheHeaderParam() {
+    //    when null is passed for string loadFromCache
+    assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(null));
+    //    when empty is passed for string loadFromCache
+    assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(""));
+    //    when true is passed for string loadFromCache
+    assertTrue(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam("true"));
+    //    when false is passed for string loadFromCache
+    assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam("false"));
+    //    when junk value is passed for string loadFromCache
+    assertFalse(NGTemplateDtoMapper.parseLoadFromCacheHeaderParam("abcs"));
   }
 }

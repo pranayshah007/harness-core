@@ -265,7 +265,6 @@ message Provider {
   // If skipVerify is false, we can pass in a path of additional certs to allow
   // This might be useful in self hosted repositories which use self signed certs.
   string additional_certs_path = 10;
-  string url = 12;
 }
 
 /*

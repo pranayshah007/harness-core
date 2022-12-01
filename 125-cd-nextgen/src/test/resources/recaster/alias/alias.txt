@@ -246,6 +246,9 @@ io.harness.cdng.service.beans.CustomDeploymentServiceSpec
 io.harness.cdng.infra.beans.CustomDeploymentInfraMapping
 io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure
 io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome
+io.harness.cdng.infra.beans.TanzuApplicationServiceInfraMapping
+io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure
+io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome
 io.harness.cdng.creator.plan.stage.DeploymentStageNode
 io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig
 io.harness.cdng.artifact.NexusArtifactSummary
@@ -590,3 +593,9 @@ io.harness.cdng.provision.terragrunt.TerragruntStepConfiguration
 io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters
 io.harness.cdng.provision.terragrunt.InlineTerragruntBackendConfigSpec
 io.harness.cdng.provision.terragrunt.RemoteTerragruntBackendConfigSpec
+io.harness.cdng.manifest.yaml.kinds.TasManifest
+io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome
+io.harness.cdng.manifest.yaml.VarsManifestOutcome
+io.harness.cdng.manifest.yaml.TasManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.VarsManifest
+io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest

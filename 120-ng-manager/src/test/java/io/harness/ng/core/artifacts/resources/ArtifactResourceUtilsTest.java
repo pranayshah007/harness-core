@@ -220,8 +220,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
                                                                  .build())));
 
     Call<ResponseDTO<TemplateMergeResponseDTO>> mergeTemplateToYamlCall = mock(Call.class);
-    when(
-        templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), anyBoolean(), any()))
+    when(templateResourceClient.applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(mergeTemplateToYamlCall);
     when(mergeTemplateToYamlCall.execute())
         .thenReturn(Response.success(ResponseDTO.newResponse(
@@ -234,8 +233,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
     assertThat(imagePath).isEqualTo("library/nginx");
     verify(pipelineServiceClient)
         .getMergeInputSetFromPipelineTemplate(any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
-    verify(templateResourceClient)
-        .applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), anyBoolean(), any());
+    verify(templateResourceClient).applyTemplatesOnGivenYaml(any(), any(), any(), any(), any(), any(), any(), any());
   }
 
   @Test
