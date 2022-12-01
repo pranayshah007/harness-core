@@ -445,8 +445,9 @@ public enum EntityType {
       EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),
   @JsonProperty(EntityTypeConstants.TAS_BG_APP_SETUP_STEP)
   TAS_BG_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BG_APP_SETUP_STEP, IdentifierRef.class,
-      EntityYamlRootNames.TAS_BG_APP_SETUP_STEP);
-
+      EntityYamlRootNames.TAS_BG_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.IACM_STAGE)
+  IACM_STAGE(ModuleType.IACM, EntityTypeConstants.IACM_STAGE, IdentifierRef.class, EntityYamlRootNames.IACM_STAGE);
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;
