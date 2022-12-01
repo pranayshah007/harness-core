@@ -16,7 +16,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 public class CfSwapRoutesRequestNG implements CfCommandRequestNG {
   String accountId;
-  CfCommandTypeNG cfCommandType;
+  CfCommandTypeNG cfCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;

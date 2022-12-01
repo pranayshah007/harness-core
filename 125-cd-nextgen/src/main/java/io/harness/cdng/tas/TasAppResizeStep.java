@@ -9,7 +9,6 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
-import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
@@ -139,7 +138,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     BaseNGAccess baseNGAccess = tasEntityHelper.getBaseNGAccess(accountId, orgId, projectId);
     ConnectorInfoDTO connectorInfoDTO =
-        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), baseNGAccess);
+        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), accountId, orgId, projectId);
     TasInfraConfig tasInfraConfig =
         TasInfraConfig.builder()
             .organization(infrastructureOutcome.getOrganization())
@@ -158,7 +157,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .upsizeCount(upsizeCount)
             .downSizeCount(downsizeCount)
             .instanceData(tasSetupDataOutcome.getInstanceData())
-            .cfCommandType(CfCommandTypeNG.APP_RESIZE)
+            .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
             .resizeStrategy(tasSetupDataOutcome.getResizeStrategy())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)

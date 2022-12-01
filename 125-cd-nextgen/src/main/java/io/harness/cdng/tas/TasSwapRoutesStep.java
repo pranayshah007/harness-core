@@ -10,7 +10,6 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
-import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;

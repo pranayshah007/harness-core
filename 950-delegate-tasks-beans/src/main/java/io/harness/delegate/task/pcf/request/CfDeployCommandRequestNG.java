@@ -21,7 +21,7 @@ import java.util.List;
 @OwnedBy(HarnessTeam.CDP)
 public class CfDeployCommandRequestNG implements CfCommandRequestNG {
     String accountId;
-    CfCommandTypeNG cfCommandType;
+    CfCommandTypeNG cfCommandTypeNG;
     String commandName;
     CommandUnitsProgress commandUnitsProgress;
     Integer timeoutIntervalInMin;

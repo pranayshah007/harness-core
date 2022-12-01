@@ -392,7 +392,6 @@ public enum TaskType {
   SHELL_SCRIPT_PROVISION(TaskGroup.SHELL_SCRIPT_PROVISION_NG, "Shell Script Provision Task"),
   ECS_GIT_FETCH_RUN_TASK_NG(TaskGroup.ECS, "ECS Git Fetch Run Task"),
   TRIGGER_AUTHENTICATION_TASK(TaskGroup.TRIGGER),
-  VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   SPOT_TASK_NG(TaskGroup.SPOTINST, "Spot NG Task"),
   FETCH_INSTANCE_SCRIPT_TASK_NG(TaskGroup.CUSTOM_DEPLOYMENT_NG, "Fetch Instance Script Task"),
   AZURE_WEB_APP_TASK_NG_V2(TaskGroup.AZURE, "Azure Web App Task V2", false),
@@ -408,6 +407,7 @@ public enum TaskType {
   GITOPS_FETCH_APP_TASK(TaskGroup.GITOPS, "Gitops Fetch App Task"),
   VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
   NG_VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
+  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service");
   VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
   CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
   ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task");
