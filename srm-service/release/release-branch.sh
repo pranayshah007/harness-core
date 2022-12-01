@@ -43,7 +43,7 @@ function check_file_present(){
      fi
 }
 
-export PURPOSE=srm-service
+export PURPOSE=srm
 export STATUS_ID_TO_MOVE=151
 
 git config --global user.email "bot@harness.io"
