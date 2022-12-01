@@ -58,8 +58,8 @@ git fetch --all
 
 set -ex
 
-git fetch origin refs/heads/${BASE_BRANCH}; git checkout ${BASE_BRANCH} && git branch
-check_branch_name "${BASE_BRANCH}"
+git fetch origin refs/heads/$BASE_BRANCH; git checkout $BASE_BRANCH && git branch
+check_branch_name "$BASE_BRANCH"
 
 # Check for not merged hot fixes
 echo "STEP1: INFO: Checking for Not Merged Hot Fixes in Master."
@@ -69,18 +69,18 @@ check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
 git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/${BASE_BRANCH} --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
+git log --remotes=origin/$BASE_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq > develop.txt
 
 NOT_MERGED=`comm -23 release.txt develop.txt`
 
 if [ ! -z "$NOT_MERGED" ]
 then
-    echo "ERROR: There are jira issues in srm-service release branches that are not reflected in ${BASE_BRANCH}."
+    echo "ERROR: There are jira issues in srm-service release branches that are not reflected in $BASE_BRANCH."
     exit 1
 fi
 
 # Bumping version in build.properties in develop branch.
-echo "STEP2: INFO: Bumping version in build.properties in ${BASE_BRANCH} branch."
+echo "STEP2: INFO: Bumping version in build.properties in $BASE_BRANCH branch."
 
 export SHA=`git rev-parse HEAD`
 export VERSION_FILE=srm-service/build.properties
@@ -94,8 +94,8 @@ sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_F
 #TODO: Uncomment
 #git add ${VERSION_FILE}
 #git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-#git push origin ${BASE_BRANCH}
-#print_err "$?" "Pushing build.properties to ${BASE_BRANCH} branch failed"
+#git push origin $BASE_BRANCH
+#print_err "$?" "Pushing build.properties to $BASE_BRANCH branch failed"
 
 
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
