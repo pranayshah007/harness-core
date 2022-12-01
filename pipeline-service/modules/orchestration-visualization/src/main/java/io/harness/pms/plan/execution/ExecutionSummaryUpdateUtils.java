@@ -33,7 +33,10 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {
   public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    boolean updateApplied = false;
+    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
+      // returning false because update is not applied.
+      return false;
+    }
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
     if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
@@ -42,7 +45,6 @@ public class ExecutionSummaryUpdateUtils {
       if (stage.isPresent()) {
         Level stageNode = stage.get();
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
-        updateApplied = true;
       }
     }
     if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
@@ -50,10 +52,6 @@ public class ExecutionSummaryUpdateUtils {
       update.set(
           PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
           nodeExecution.getResolvedStepParameters());
-      updateApplied = true;
-    }
-    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
-      return updateApplied;
     }
     // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
     // there is a PlanNode
