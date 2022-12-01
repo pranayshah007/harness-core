@@ -273,8 +273,7 @@ public class TasStepHelper {
   private String getRepoRoot(TasManifestOutcome tasManifestOutcome) {
     if(ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind())) {
       final GitStoreConfig gitFileConfig = (GitStoreConfig) tasManifestOutcome.getStore();
-      List<String> paths = getParameterFieldValue(gitFileConfig.getPaths());
-      return "/" + toRelativePath((paths != null && !paths.isEmpty()) ? paths.get(0) : "/").trim();
+      return "/" + toRelativePath(defaultIfEmpty(getParameterFieldValue(gitFileConfig.getFolderPath()), "/").trim());
     }
     else {
       return "/";
