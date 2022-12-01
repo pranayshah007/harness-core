@@ -21,7 +21,7 @@ import java.util.Set;
 public class TasCommandStepVariableCreator extends GenericStepVariableCreator<TasCommandStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Collections.singleton(StepSpecTypeConstants.TAS_COMMAND);
+    return Collections.singleton(StepSpecTypeConstants.TANZU_COMMAND);
   }
 
   @Override

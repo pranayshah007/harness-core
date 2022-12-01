@@ -202,14 +202,29 @@ public class TasStepHelper {
   public TaskChainResponse startChainLinkForCommandStep(
           TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
 
-    //TODO: Complete parameters for task to fetch store for script
-    HarnessStore storeConfig = HarnessStore.builder().build();
-    logCallback = cdStepHelper.getLogCallback(
-            CfCommandUnitConstants.FetchCommandScript, ambiance, true);
-    //TODO: make sure list we get is not empty and size is 1 always
-    String scriptString = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript" , "TasCommandScript", logCallback).getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(0);
+    TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
-    //TODO: Resolve expressions
+    HarnessStore storeConfig;
+    if(ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec())) {
+      storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
+    } else {
+      throw new InvalidRequestException("Harness Store is only supported for TAS Command Scripts", USER);
+    }
+
+    LogCallback logCallback = cdStepHelper.getLogCallback(
+            CfCommandUnitConstants.FetchCommandScript, ambiance, true);
+    String scriptString = null;
+    TasManifestFileContents tasManifestFileContents = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
+            "TasCommandScript" , "TasCommandScript", logCallback);
+    if(tasManifestFileContents.getLocalStoreFetchFilesResult() != null && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents() != null
+      && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().size() == 1) {
+      scriptString = tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(0);
+    }
+    logCallback.saveExecutionLog("Done", INFO, SUCCESS);
+
+    //Resolving expressions
+    ExpressionEvaluatorUtils.updateExpressions(
+            scriptString, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
@@ -222,11 +237,11 @@ public class TasStepHelper {
     TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
             manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
 
-    final boolean serviceManifestRemote = isServiceManifestRemote(tasManifestOutcome);
+    final boolean serviceManifestStoreInGitSubset = ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind());
 
-    //TODO: findRepoRoot
+    //Finding Repo Root
     String repoRoot = "/";
-    if (serviceManifestRemote) {
+    if (serviceManifestStoreInGitSubset) {
       repoRoot = getRepoRoot(tasManifestOutcome);
     }
 
@@ -256,14 +271,14 @@ public class TasStepHelper {
   }
 
   private String getRepoRoot(TasManifestOutcome tasManifestOutcome) {
-    // TODO : make sure it is git store only
-    final GitStoreConfig gitFileConfig = (GitStoreConfig)  tasManifestOutcome.getStore();
-    List<String> paths = getParameterFieldValue(gitFileConfig.getPaths());
-    return "/" + toRelativePath((paths!= null && !paths.isEmpty()) ? paths.get(0) : "/").trim();
-  }
-
-  private boolean isServiceManifestRemote(TasManifestOutcome serviceManifest) {
-    return !ManifestStoreType.HARNESS.equals(serviceManifest.getStore().getKind());
+    if(ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind())) {
+      final GitStoreConfig gitFileConfig = (GitStoreConfig) tasManifestOutcome.getStore();
+      List<String> paths = getParameterFieldValue(gitFileConfig.getPaths());
+      return "/" + toRelativePath((paths != null && !paths.isEmpty()) ? paths.get(0) : "/").trim();
+    }
+    else {
+      return "/";
+    }
   }
 
   List<String> findPathFromScript(String rendredScript, String repoRoot) {
@@ -850,16 +865,38 @@ public class TasStepHelper {
             tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
     Map<String,String> allFilesFetched = new HashMap<>();
-    for(FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
-      entry.getFiles().stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
-    }
-    for(List<TasManifestFileContents> tasManifestFileContentsList : tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
-      for(TasManifestFileContents tasManifestFileContents: tasManifestFileContentsList) {
-        for(int iterate = 0; iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size(); iterate++) {
-          allFilesFetched.put(tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
-                  tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
+    if(tasStepPassThroughData.getGitFetchFilesResultMap() != null && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
+      for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
+        if(entry.getFiles() != null) {
+          entry.getFiles().stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
         }
       }
+    }
+    if(tasStepPassThroughData.getLocalStoreFileMapContents() != null && tasStepPassThroughData.getLocalStoreFileMapContents().values() != null) {
+      for (List<TasManifestFileContents> tasManifestFileContentsList : tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
+        for (TasManifestFileContents tasManifestFileContents : tasManifestFileContentsList) {
+          for (int iterate = 0; iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size(); iterate++) {
+            allFilesFetched.put(tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
+                    tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
+          }
+        }
+      }
+    }
+
+    List<UnitProgress> unitProgressList = Arrays.asList(UnitProgress.newBuilder()
+            .setUnitName(CfCommandUnitConstants.FetchFiles)
+            .setStatus(UnitStatus.SUCCESS)
+            .setStartTime(System.currentTimeMillis() - 5)
+            .setEndTime(System.currentTimeMillis())
+            .build());
+
+    if(tasStepPassThroughData.getRawScript() != null) {
+      unitProgressList.add(0, UnitProgress.newBuilder()
+              .setUnitName(CfCommandUnitConstants.FetchCommandScript)
+              .setStatus(UnitStatus.SUCCESS)
+              .setStartTime(System.currentTimeMillis() - 200)
+              .setEndTime(System.currentTimeMillis() - 100)
+              .build());
     }
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
@@ -875,12 +912,7 @@ public class TasStepHelper {
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder()
-            .unitProgresses(Collections.singletonList(UnitProgress.newBuilder()
-                                                          .setUnitName(CfCommandUnitConstants.FetchFiles)
-                                                          .setStatus(UnitStatus.SUCCESS)
-                                                          .setStartTime(System.currentTimeMillis() - 5)
-                                                          .setEndTime(System.currentTimeMillis())
-                                                          .build()))
+            .unitProgresses(unitProgressList)
             .build());
   }
 

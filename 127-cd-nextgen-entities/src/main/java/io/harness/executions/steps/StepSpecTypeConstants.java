@@ -89,5 +89,5 @@ public interface StepSpecTypeConstants {
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
 
   String SWAP_ROLLBACK = "SwapRollback";
-  String TAS_COMMAND = "TanzuCommand";
+  String TANZU_COMMAND = "TanzuCommand";
 }

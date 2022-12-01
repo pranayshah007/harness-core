@@ -25,19 +25,14 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @Data
 @Builder
 @NoArgsConstructor
-@TypeAlias("elastigroupInstances")
-@RecasterAlias("io.harness.cdng.elastigroup.ElastigroupInstances")
+@TypeAlias("tasCommandScript")
+@RecasterAlias("io.harness.cdng.tas.TasCommandScript")
 public class TasCommandScript {
-  @NotNull @JsonProperty("type")
-  ElastigroupInstancesType type;
-
-  @JsonProperty("spec")
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ElastigroupInstancesSpec spec;
+  @NotNull @JsonProperty("store")
+  TasCommandScriptStore store;
 
   @Builder
-  public TasCommandScript(ElastigroupInstancesType type, ElastigroupInstancesSpec spec) {
-    this.type = type;
-    this.spec = spec;
+  public TasCommandScript(TasCommandScriptStore store) {
+    this.store = store;
   }
 }

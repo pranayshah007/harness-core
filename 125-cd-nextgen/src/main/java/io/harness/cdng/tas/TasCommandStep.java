@@ -27,6 +27,7 @@ import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.pcf.CfCommandRequest;
+import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
@@ -80,7 +81,7 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 @Slf4j
 public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac implements TasStepExecutor {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-                                               .setType(ExecutionNodeType.TAS_BG_APP_SETUP.getYamlType())
+                                               .setType(ExecutionNodeType.TANZU_COMMAND.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private TasStepHelper tasStepHelper;
@@ -123,7 +124,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
-                                                        .setUnitName(CfCommandUnitConstants.FetchFiles)
+                                                        .setUnitName(CfCommandUnitConstants.Pcfplugin)
                                                         .setStatus(UnitStatus.SUCCESS)
                                                         .setStartTime(System.currentTimeMillis() - 5)
                                                         .setEndTime(System.currentTimeMillis())
@@ -153,28 +154,16 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
                                                  StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
                                                  boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
-
-    TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepParameters.getSpec();
-
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
 
     CfCliVersionNG cfCliVersion = executionPassThroughData.getCfCliVersion();
 
-    CfCommandRequest commandRequest =
-            CfRunPluginCommandRequest.builder()
-                    .accountId(app.getAccountId())
-                    .commandName(PCF_PLUGIN_COMMAND)
-                    .pcfConfig(tasInfraConfig)
-                    .timeoutIntervalInMin(timeoutIntervalInMin)
-                    .renderedScriptString(resolveRenderedScript(rawScriptString, pcfPluginStateExecutionData))
-                    .filePathsInScript(resolveFilePathsInScript(pathsFromScript, pcfPluginStateExecutionData))
-                    .fileDataList(fileDataList)
-                    .repoRoot(executionPassThroughData.getRepoRoot())
-                    .cfCliVersion(cfCliVersion)
-                    .build();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    long timeout = CDStepHelper.getTimeoutInMillis(stepParameters);
 
+    //TODO: remove this
     TaskParameters taskParameters = ShellScriptTaskParametersNG.builder()
                                         .accountId(AmbianceUtils.getAccountId(ambiance))
                                         .environmentVariables(new HashMap<>())
@@ -193,8 +182,8 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
                             .build();
 
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, List.of(CfCommandUnitConstants.FetchFiles),
-            CfCommandUnitConstants.FetchFiles, null, stepHelper.getEnvironmentType(ambiance));
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, List.of(CfCommandUnitConstants.Pcfplugin),
+            CfCommandUnitConstants.Pcfplugin, null, stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)

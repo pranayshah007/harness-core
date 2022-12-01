@@ -46,7 +46,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @SimpleVisitorHelper(helperClass = TasCommandStepInfoVisitorHelper.class)
-@JsonTypeName(StepSpecTypeConstants.TAS_COMMAND)
+@JsonTypeName(StepSpecTypeConstants.TANZU_COMMAND)
 @TypeAlias("tasCommandStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasCommandStepInfo")
 public class TasCommandStepInfo extends TasCommandBaseStepInfo implements CDStepInfo, Visitable {
@@ -56,15 +56,10 @@ public class TasCommandStepInfo extends TasCommandBaseStepInfo implements CDStep
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  @YamlSchemaTypes({string, list})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> tempRoutes;
+
   @Builder(builderMethodName = "infoBuilder")
-  public TasCommandStepInfo(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
-                            ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                            ParameterField<List<String>> tempRoutes) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
-    this.tempRoutes = tempRoutes;
+  public TasCommandStepInfo(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(script, delegateSelectors);
   }
 
   @Override
@@ -80,10 +75,7 @@ public class TasCommandStepInfo extends TasCommandBaseStepInfo implements CDStep
   @Override
   public SpecParameters getSpecParameters() {
     return TasCommandStepParameters.infoBuilder()
-        .instanceCount(this.instanceCount)
-        .existingVersionToKeep(this.existingVersionToKeep)
-        .additionalRoutes(this.additionalRoutes)
-        .tempRoutes(this.tempRoutes)
+        .script(this.script)
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

@@ -37,8 +37,8 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 public class TasCommandBaseStepInfo {
   @NotNull
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH)
-  ElastigroupInstances instances;
+  @ApiModelProperty(dataType = SwaggerConstants.TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH)
+  TasCommandScript script;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

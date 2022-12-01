@@ -27,16 +27,13 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.TAS_COMMAND)
+@JsonTypeName(StepSpecTypeConstants.TANZU_COMMAND)
 @TypeAlias("tasCommandStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasCommandStepParameters")
 public class TasCommandStepParameters extends TasCommandBaseStepInfo implements SpecParameters {
   ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCommandStepParameters(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
-                                  ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-                                  ParameterField<List<String>> tempRoutes) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
-    this.tempRoutes = tempRoutes;
+  public TasCommandStepParameters(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(script, delegateSelectors);
   }
 }
