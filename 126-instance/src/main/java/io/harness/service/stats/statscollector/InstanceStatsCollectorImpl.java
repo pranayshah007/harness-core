@@ -39,6 +39,7 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private static final int SYNC_INTERVAL_MINUTES = 30;
   private static final long SYNC_INTERVAL = TimeUnit.MINUTES.toMinutes(SYNC_INTERVAL_MINUTES);
   private static final long RELAXED_SYNC_INTERVAL_IN_MILLIS = 15 * 60 * 1000L;
+  private static final int MAX_CALLS_PER_SERVICE = 60 / SYNC_INTERVAL_MINUTES * 24;
 
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
@@ -65,7 +66,14 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
           ranAtLeastOnce = ranAtLeastOnce || success;
         } else {
           SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+          int callsPerService = 0;
           while (snapshotTimeProvider.hasNext()) {
+            if (callsPerService >= MAX_CALLS_PER_SERVICE) {
+              log.warn(
+                  "Tried publishing {} stats for service {}. Pending backlog will be published in the next iteration",
+                  MAX_CALLS_PER_SERVICE, service.getIdentifier());
+              break;
+            }
             Instant nextTs = snapshotTimeProvider.next();
             if (nextTs == null) {
               throw new IllegalStateException(
@@ -74,6 +82,7 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
             boolean success = createStats(
                 accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
             ranAtLeastOnce = ranAtLeastOnce || success;
+            ++callsPerService;
           }
         }
       }
