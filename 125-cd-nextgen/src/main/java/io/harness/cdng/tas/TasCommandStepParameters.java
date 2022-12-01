@@ -31,7 +31,6 @@ import java.util.List;
 @TypeAlias("tasCommandStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasCommandStepParameters")
 public class TasCommandStepParameters extends TasCommandBaseStepInfo implements SpecParameters {
-  ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")
   public TasCommandStepParameters(TasCommandScript script, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(script, delegateSelectors);
