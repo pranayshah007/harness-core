@@ -9,14 +9,14 @@ package io.harness.service.stats.statscollector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.InstanceDTO;
 import io.harness.helper.SnapshotTimeProvider;
-import io.harness.ng.core.entities.Project;
-import io.harness.ng.core.entities.Project.ProjectKeys;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 import io.harness.service.instance.InstanceService;
 import io.harness.service.instancestats.InstanceStatsService;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 import io.harness.service.stats.usagemetrics.eventpublisher.UsageMetricsEventPublisher;
 
 import com.google.inject.Inject;
@@ -39,8 +39,6 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private static final int SYNC_INTERVAL_MINUTES = 30;
   private static final long SYNC_INTERVAL = TimeUnit.MINUTES.toMinutes(SYNC_INTERVAL_MINUTES);
   private static final long RELAXED_SYNC_INTERVAL_IN_MILLIS = 15 * 60 * 1000L;
-  // Data points for 1 day
-  private static final int MAX_EVENTS_PER_PROJECT = 60 / SYNC_INTERVAL_MINUTES * 24;
 
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
@@ -49,47 +47,34 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
   @Override
   public boolean createStats(String accountId) {
-    // Currently we are fetching last snapshot for each project separately in the loop.
+    // Currently we are fetching last snapshot for each service separately in the loop.
     // We explored other options as well, these can be revisited if we see any perf issues,
-    // - group by org, project - takes more than a minute
-    // - IN / UNION query for each org, project combination
+    // - group by org, project, service - takes more than a minute
+    // - IN / UNION query for each org, project, service combination
     // - store metadata and latest time snapshot in a separate table
-
     boolean ranAtLeastOnce = false;
     log.info("Collect and publish stats. Account: {}", accountId);
-    try (HIterator<Project> projects =
-             new HIterator<>(getFetchProjectsQuery(accountId).fetch(persistence.analyticNodePreferenceOptions()))) {
-      while (projects.hasNext()) {
-        Project project = projects.next();
-        try {
-          Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(project);
-          if (null == lastSnapshot) {
-            boolean success = createStats(project, alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
-            ranAtLeastOnce = ranAtLeastOnce || success;
-          } else {
-            SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
-            int eventsPerProject = 0;
-            while (snapshotTimeProvider.hasNext()) {
-              if (eventsPerProject >= MAX_EVENTS_PER_PROJECT) {
-                log.warn("Published {} events for project {}. Pending backlog will be published in the next iteration",
-                    MAX_EVENTS_PER_PROJECT, project.getId());
-                break;
-              }
-              Instant nextTs = snapshotTimeProvider.next();
-              if (nextTs == null) {
-                throw new IllegalStateException(
-                    "nextTs is null even though hasNext() returned true. Shouldn't be possible");
-              }
-              boolean success = createStats(project, nextTs);
-              if (success) {
-                ++eventsPerProject;
-              }
-              ranAtLeastOnce = ranAtLeastOnce || success;
+    try (HIterator<ServiceEntity> services = new HIterator<>(getFetchServicesQuery(accountId).fetch())) {
+      while (services.hasNext()) {
+        ServiceEntity service = services.next();
+        Instant lastSnapshot = instanceStatsService.getLastSnapshotTime(
+            accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier());
+        if (null == lastSnapshot) {
+          boolean success = createStats(accountId, service.getOrgIdentifier(), service.getProjectIdentifier(),
+              service.getIdentifier(), alignedWithMinute(Instant.now(), SYNC_INTERVAL_MINUTES));
+          ranAtLeastOnce = ranAtLeastOnce || success;
+        } else {
+          SnapshotTimeProvider snapshotTimeProvider = new SnapshotTimeProvider(lastSnapshot, SYNC_INTERVAL);
+          while (snapshotTimeProvider.hasNext()) {
+            Instant nextTs = snapshotTimeProvider.next();
+            if (nextTs == null) {
+              throw new IllegalStateException(
+                  "nextTs is null even though hasNext() returned true. Shouldn't be possible");
             }
+            boolean success = createStats(
+                accountId, service.getOrgIdentifier(), service.getProjectIdentifier(), service.getIdentifier(), nextTs);
+            ranAtLeastOnce = ranAtLeastOnce || success;
           }
-        } catch (Exception ex) {
-          log.error("Could not create stats for project: {} (account: {}, org: {})", project.getIdentifier(),
-              project.getAccountIdentifier(), project.getOrgIdentifier(), ex);
         }
       }
     }
@@ -100,13 +85,13 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
   // ------------------------ PRIVATE METHODS -----------------------------
 
-  private Query<Project> getFetchProjectsQuery(String accountId) {
-    return persistence.createQuery(Project.class)
-        .filter(ProjectKeys.accountIdentifier, accountId)
-        .filter(ProjectKeys.deleted, false)
-        .project(ProjectKeys.accountIdentifier, true)
-        .project(ProjectKeys.orgIdentifier, true)
-        .project(ProjectKeys.identifier, true);
+  private Query<ServiceEntity> getFetchServicesQuery(String accountId) {
+    return persistence.createQuery(ServiceEntity.class)
+        .filter(ServiceEntityKeys.accountId, accountId)
+        .filter(ServiceEntityKeys.deleted, false)
+        .project(ServiceEntityKeys.orgIdentifier, true)
+        .project(ServiceEntityKeys.projectIdentifier, true)
+        .project(ServiceEntityKeys.identifier, true);
   }
 
   private Instant alignedWithMinute(Instant instant, int minuteToTruncateTo) {
@@ -121,23 +106,22 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
 
     return value;
   }
-  private boolean createStats(Project project, Instant instant) {
+  private boolean createStats(String accountId, String orgId, String projectId, String serviceId, Instant instant) {
+    List<InstanceDTO> instances;
     try {
       if (isRecentCollection(instant)) {
-        List<InstanceCountByServiceAndEnv> instancesByServiceAndEnv =
-            instanceService.getActiveInstancesByServiceAndEnv(project, -1);
-        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
-            project, Instant.now().toEpochMilli(), instancesByServiceAndEnv);
+        instances =
+            instanceService.getActiveInstancesByAccountOrgProjectAndService(accountId, orgId, projectId, serviceId, -1);
+        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, Instant.now().toEpochMilli(), instances);
       } else {
-        List<InstanceCountByServiceAndEnv> instancesByEnv =
-            instanceService.getActiveInstancesByServiceAndEnv(project, instant.toEpochMilli());
-        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(project, instant.toEpochMilli(), instancesByEnv);
+        instances = instanceService.getActiveInstancesByAccountOrgProjectAndService(
+            accountId, orgId, projectId, serviceId, instant.toEpochMilli());
+        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
       }
       return true;
     } catch (Exception e) {
-      log.error("Unable to publish instance stats for project: {} (account: {}, org: {}) at {}",
-          project.getIdentifier(), project.getAccountIdentifier(), project.getOrgIdentifier(), instant.toEpochMilli(),
-          e);
+      log.error("Unable to publish instance stats for service: {} (account: {}, org: {}, project: {}) at {}", serviceId,
+          accountId, orgId, projectId, instant, e);
       return false;
     }
   }

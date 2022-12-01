@@ -19,10 +19,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.filters.Entity;
-import io.harness.cdng.environment.filters.FilterType;
-import io.harness.cdng.environment.filters.FilterYaml;
-import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -58,7 +54,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import junitparams.JUnitParamsRunner;
@@ -543,73 +538,7 @@ public class DeploymentStageFilterJsonCreatorV2Test extends CategoryTest {
             .deploymentType(KUBERNETES)
             .build());
 
-    final DeploymentStageNode node8 = new DeploymentStageNode();
-    node8.setDeploymentStageConfig(
-        DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environment(EnvironmentYamlV2.builder()
-                             .environmentRef(ParameterField.<String>builder().value("env").build())
-                             .infrastructureDefinition(ParameterField.createValueField(null))
-                             .infrastructureDefinitions(ParameterField.createValueField(null))
-                             .deployToAll(ParameterField.createValueField(false))
-                             .gitOpsClusters(ParameterField.createValueField(null))
-                             .build())
-            .deploymentType(KUBERNETES)
-            .build());
-
-    final DeploymentStageNode node9 = new DeploymentStageNode();
-    node9.setDeploymentStageConfig(
-        DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environment(EnvironmentYamlV2.builder()
-                             .environmentRef(ParameterField.<String>builder().value("env").build())
-                             .filters(ParameterField.createValueField(
-                                 List.of(FilterYaml.builder()
-                                             .type(FilterType.tags)
-                                             .spec(TagsFilter.builder().build())
-                                             .entities(EnumSet.of(Entity.environments, Entity.infrastructures))
-                                             .build())))
-                             .build())
-            .deploymentType(KUBERNETES)
-            .build());
-
-    final DeploymentStageNode node10 = new DeploymentStageNode();
-    node10.setDeploymentStageConfig(
-        DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environmentGroup(EnvironmentGroupYaml.builder()
-                                  .envGroupRef(ParameterField.createValueField("envgroup"))
-                                  .deployToAll(ParameterField.createValueField(true))
-                                  .filters(ParameterField.createValueField(List.of(FilterYaml.builder().build())))
-                                  .build())
-            .deploymentType(KUBERNETES)
-            .build());
-
-    final DeploymentStageNode node11 = new DeploymentStageNode();
-    node11.setDeploymentStageConfig(
-        DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environmentGroup(
-                EnvironmentGroupYaml.builder()
-                    .envGroupRef(ParameterField.createValueField("envgroup"))
-                    .deployToAll(ParameterField.createValueField(true))
-                    .environments(ParameterField.createValueField(List.of(EnvironmentYamlV2.builder().build())))
-                    .build())
-            .deploymentType(KUBERNETES)
-            .build());
-
-    // environments/deployToAll/filters not specified
-    final DeploymentStageNode node12 = new DeploymentStageNode();
-    node12.setDeploymentStageConfig(
-        DeploymentStageConfig.builder()
-            .service(ServiceYamlV2.builder().serviceRef(ParameterField.<String>builder().value("svc").build()).build())
-            .environmentGroup(
-                EnvironmentGroupYaml.builder().envGroupRef(ParameterField.createValueField("envgroup")).build())
-            .deploymentType(KUBERNETES)
-            .build());
-
-    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}, {node8}, {node9}, {node10},
-        {node10}, {node11}, {node12}};
+    return new Object[][] {{node1}, {node2}, {node3}, {node4}, {node5}, {node6}, {node7}};
   }
   private Object[][] getDeploymentStageConfigEnvGroup() throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();

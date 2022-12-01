@@ -217,15 +217,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       }
     }
 
-    if (!gitOpsEnabled) {
-      if (ParameterField.isNull(env.getInfrastructureDefinition())
-          && ParameterField.isNull(env.getInfrastructureDefinitions()) && ParameterField.isNull(env.getFilters())) {
-        throw new InvalidYamlRuntimeException(format(
-            "InfrastructureDefinition or InfrastructureDefinitions or filters must be specified for environment in stage [%s]",
-            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-      }
-    }
-
     if (!environmentRef.isExpression()) {
       Optional<Environment> environmentEntityOptional = environmentService.get(
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
@@ -297,20 +288,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-    if ((!envGroupYaml.getDeployToAll().isExpression() && !envGroupYaml.getDeployToAll().getValue())
-        && ParameterField.isNull(envGroupYaml.getFilters()) && ParameterField.isNull(envGroupYaml.getEnvironments())) {
-      throw new InvalidYamlRuntimeException(format(
-          "environments or deployToAll or filters should be present in environmentGroup yaml in the stage [%s]. Please add it and try again",
-          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-
-    if (!envGroupYaml.getDeployToAll().isExpression() && envGroupYaml.getDeployToAll().getValue()
-        && (ParameterField.isNotNull(envGroupYaml.getFilters())
-            || ParameterField.isNotNull(envGroupYaml.getEnvironments()))) {
-      throw new InvalidYamlRuntimeException(format(
-          "environments or filters should not be present in environmentGroup yaml since deployToAll is set to true in the stage [%s]. Please add it and try again",
-          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }
 
