@@ -33,6 +33,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {
   public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
+    // LayoutNodeMap contains only stage or stage-strategy nodes. If the current nodeExecution does not correspond to
+    // stage then return here.
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
       // returning false because update is not applied.
       return false;
