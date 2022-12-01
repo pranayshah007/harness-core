@@ -92,6 +92,8 @@ import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepParameters;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
+import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasCommandStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -206,5 +208,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TasCanaryAppSetupStepParameters.class, 12621);
     kryo.register(TasBGAppSetupStepInfo.class, 12622);
     kryo.register(TasBGAppSetupStepParameters.class, 12623);
+    kryo.register(TasCommandStepInfo.class, 12624);
+    kryo.register(TasCommandStepParameters.class, 12625);
   }
 }

@@ -58,6 +58,8 @@ import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasCommandStep;
+import io.harness.cdng.tas.TasCommandStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -84,7 +86,7 @@ import io.swagger.annotations.ApiModel;
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
         FetchInstanceScriptStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
         ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class, EcsRunTaskStepInfo.class,
-        ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class})
+        ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class, TasCommandStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

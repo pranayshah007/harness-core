@@ -182,7 +182,10 @@ public enum NGStepType {
       StepSpecTypeConstants.ELASTIGROUP_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SETUP)
   ELASTIGROUP_SETUP("Elastigroup Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
-      StepSpecTypeConstants.ELASTIGROUP_SETUP);
+      StepSpecTypeConstants.ELASTIGROUP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
+  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS",
+          StepSpecTypeConstants.TANZU_COMMAND);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
