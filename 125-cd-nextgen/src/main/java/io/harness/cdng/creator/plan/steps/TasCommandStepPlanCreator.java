@@ -18,14 +18,13 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 
 import java.util.Set;
 
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
-import static io.harness.executions.steps.StepSpecTypeConstants.TAS_COMMAND;
+import static io.harness.executions.steps.StepSpecTypeConstants.TANZU_COMMAND;
 
 @OwnedBy(HarnessTeam.CDP)
 public class TasCommandStepPlanCreator extends CDPMSStepPlanCreatorV2<TasCommandStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
-    return Sets.newHashSet(TAS_COMMAND);
+    return Sets.newHashSet(TANZU_COMMAND);
   }
 
   @Override

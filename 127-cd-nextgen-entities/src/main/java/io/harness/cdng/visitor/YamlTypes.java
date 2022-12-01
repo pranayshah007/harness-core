@@ -173,4 +173,5 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 }
