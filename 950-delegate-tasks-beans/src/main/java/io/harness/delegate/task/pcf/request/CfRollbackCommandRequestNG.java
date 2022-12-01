@@ -5,9 +5,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfServiceData;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
-import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.pcf.model.CfCliVersion;
 
@@ -20,7 +18,7 @@ import lombok.Value;
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
     String accountId;
-    CfCommandTypeNG pcfCommandType;
+    CfCommandTypeNG cfCommandTypeNG;
     String commandName;
     CommandUnitsProgress commandUnitsProgress;
     Integer timeoutIntervalInMin;

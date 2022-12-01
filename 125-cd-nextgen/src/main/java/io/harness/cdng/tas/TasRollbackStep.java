@@ -8,7 +8,6 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
-import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
@@ -114,7 +113,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .instanceData(tasAppResizeDataOutcome.getInstanceData())
             .tasInfraConfig(tasInfraConfig)
-            .pcfCommandType(CfCommandTypeNG.ROLLBACK)
+            .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
             .timeoutIntervalInMin(10)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
@@ -142,7 +141,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     BaseNGAccess baseNGAccess = tasEntityHelper.getBaseNGAccess(accountId, orgId, projectId);
     ConnectorInfoDTO connectorInfoDTO =
-        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), baseNGAccess);
+        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), accountId, orgId, projectId);
     return TasInfraConfig.builder()
         .organization(infrastructureOutcome.getOrganization())
         .space(infrastructureOutcome.getSpace())
