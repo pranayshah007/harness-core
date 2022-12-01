@@ -77,7 +77,7 @@ public class EnvironmentsPlanCreatorHelper {
     // If no clusters are eligible then throw an exception.
 
     if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
-      List<io.harness.cdng.gitops.entity.Cluster> filteredClusters = new ArrayList<>();
+      Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters;
       List<FilterYaml> filterYamls = environmentsYaml.getFilters().getValue();
 
       Page<Cluster> clusters =
@@ -94,8 +94,8 @@ public class EnvironmentsPlanCreatorHelper {
         List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
             accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
 
-        filteredClusters = environmentInfraFilterHelper.applyFilteringOnClusters(
-            filteredClusters, filterYamls, clsToCluster, clusterList);
+        filteredClusters =
+            environmentInfraFilterHelper.applyFilteringOnClusters(filterYamls, clsToCluster, clusterList);
         Set<String> filteredClsRefs = filteredClusters.stream().map(e -> e.getClusterRef()).collect(Collectors.toSet());
 
         IndividualEnvData envData = IndividualEnvData.builder()
@@ -110,7 +110,6 @@ public class EnvironmentsPlanCreatorHelper {
         environmentYamlV2List.add(environmentYamlV2);
       }
 
-      // EnvironmentsYaml.builder().values(ParameterField.createValueField(environmentYamlV2List)).build();
       environmentsYaml.getValues().setValue(environmentYamlV2List);
       environmentsPlanCreatorConfig.filters(environmentsYaml.getFilters());
 

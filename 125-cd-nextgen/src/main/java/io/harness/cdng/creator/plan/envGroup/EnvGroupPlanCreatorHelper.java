@@ -42,6 +42,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,13 +88,13 @@ public class EnvGroupPlanCreatorHelper {
     // If no clusters are eligible then throw an exception.
 
     if (isNotEmpty(envGroupYaml.getFilters().getValue())) {
-      List<Environment> filteredEnvs = new ArrayList<>();
-      List<io.harness.cdng.gitops.entity.Cluster> filteredClusters = new ArrayList<>();
+      Set<Environment> filteredEnvs;
+      Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters;
 
       List<FilterYaml> filterYamls = envGroupYaml.getFilters().getValue();
 
       // Environment Filtering applied
-      filteredEnvs = environmentInfraFilterHelper.applyFiltersOnEnvs(environments, filteredEnvs, filterYamls);
+      filteredEnvs = environmentInfraFilterHelper.applyFiltersOnEnvs(environments, filterYamls);
 
       List<String> filteredEnvRefs = filteredEnvs.stream().map(e -> e.getIdentifier()).collect(Collectors.toList());
 
@@ -108,8 +109,7 @@ public class EnvGroupPlanCreatorHelper {
       List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
           accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
 
-      filteredClusters = environmentInfraFilterHelper.applyFilteringOnClusters(
-          filteredClusters, filterYamls, clsToCluster, clusterList);
+      filteredClusters = environmentInfraFilterHelper.applyFilteringOnClusters(filterYamls, clsToCluster, clusterList);
 
       List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
       for (Environment env : filteredEnvs) {

@@ -8,7 +8,6 @@
 package io.harness.cdng.environment.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,91 +53,107 @@ public class EnvironmentInfraFilterHelper {
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
-  public boolean areAllTagFiltersMatching(List<NGTag> envTags, List<NGTag> listOfTags) {
-    List<NGTag> differences = envTags.stream().filter(t -> listOfTags.contains(t)).collect(Collectors.toList());
-    return isNotEmpty(differences) ? true : false;
+  public boolean areAllTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
+    int count = 0;
+    for (NGTag tag : entityTags) {
+      if (tagsInFilter.contains(tag)) {
+        count++;
+      }
+    }
+    return count != 0 && count == entityTags.size() ? true : false;
   }
 
-  public boolean areAnyTagFiltersMatching(List<NGTag> envTags, List<NGTag> listOfTags) {
-    List<NGTag> differences = envTags.stream().filter(t -> listOfTags.contains(t)).collect(Collectors.toList());
-    // If number of tags in filter is equal to number of tags in
-    // difference means there were no matches
-    return differences.size() != listOfTags.size() ? true : false;
+  public boolean areAnyTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
+    for (NGTag tag : entityTags) {
+      if (tagsInFilter.contains(tag)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public List<Environment> processTagsFilterYamlForEnvironments(FilterYaml filterYaml, List<Environment> envs) {
     List<Environment> filteredEnvs = new ArrayList<>();
+    if (filterYaml.getType().name().equals(FilterType.all)) {
+      return envs;
+    }
     // filter env that match all tags
     if (filterYaml.getType().equals(FilterType.tags)) {
       TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
       for (Environment environment : envs) {
         if (tagsFilter.getMatchType().name().equals("all")
-            && areAllTagFiltersMatching(environment.getTags(), tagsFilter.getTags())) {
+            && areAllTagFiltersMatching(environment.getTags(), TagMapper.convertToList(tagsFilter.getTags()))) {
           filteredEnvs.add(environment);
-        }
-        if (tagsFilter.getMatchType().name().equals("any")
-            && areAnyTagFiltersMatching(environment.getTags(), tagsFilter.getTags())) {
+        } else if (tagsFilter.getMatchType().name().equals("any")
+            && areAnyTagFiltersMatching(environment.getTags(), TagMapper.convertToList(tagsFilter.getTags()))) {
           filteredEnvs.add(environment);
+        } else {
+          throw new InvalidRequestException(
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().name()));
         }
       }
     }
 
-    if (filterYaml.getType().name().equals(FilterType.all)) {
-      return envs;
-    }
     return filteredEnvs;
   }
 
   public List<io.harness.cdng.gitops.entity.Cluster> processTagsFilterYamlForGitOpsClusters(FilterYaml filterYaml,
       List<Cluster> clusters, Map<String, io.harness.cdng.gitops.entity.Cluster> ngGitOpsClusters) {
     List<io.harness.cdng.gitops.entity.Cluster> filteredClusters = new ArrayList<>();
-    // filter env that match all tags
-    if (filterYaml.getType().equals(FilterType.tags)) {
-      TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
-      for (Cluster cluster : clusters) {
-        if (tagsFilter.getMatchType().equals("all")
-            && areAllTagFiltersMatching(TagMapper.convertToList(cluster.getTags()), tagsFilter.getTags())) {
-          filteredClusters.add(ngGitOpsClusters.get(cluster.getIdentifier()));
-        }
-        if (tagsFilter.getMatchType().equals("any")
-            && areAnyTagFiltersMatching(TagMapper.convertToList(cluster.getTags()), tagsFilter.getTags())) {
-          filteredClusters.add(ngGitOpsClusters.get(cluster.getIdentifier()));
-        }
-      }
-    }
 
     if (filterYaml.getType().equals(FilterType.all)) {
       return ngGitOpsClusters.values().stream().collect(Collectors.toList());
     }
+
+    if (filterYaml.getType().equals(FilterType.tags)) {
+      TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
+      for (Cluster cluster : clusters) {
+        if (tagsFilter.getMatchType().name().equals("all")
+            && areAllTagFiltersMatching(
+                TagMapper.convertToList(cluster.getTags()), TagMapper.convertToList(tagsFilter.getTags()))) {
+          filteredClusters.add(ngGitOpsClusters.get(cluster.getIdentifier()));
+        } else if (tagsFilter.getMatchType().name().equals("any")
+            && areAnyTagFiltersMatching(
+                TagMapper.convertToList(cluster.getTags()), TagMapper.convertToList(tagsFilter.getTags()))) {
+          filteredClusters.add(ngGitOpsClusters.get(cluster.getIdentifier()));
+        } else {
+          throw new InvalidRequestException(
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().name()));
+        }
+      }
+    }
     return filteredClusters;
   }
 
-  public List<Environment> applyFiltersOnEnvs(
-      List<Environment> environments, List<Environment> filteredEnvs, List<FilterYaml> filterYamls) {
+  public Set<Environment> applyFiltersOnEnvs(List<Environment> environments, List<FilterYaml> filterYamls) {
+    Set<Environment> setOfFilteredEnvs = new HashSet<>();
+
     for (FilterYaml filterYaml : filterYamls) {
       if (filterYaml.getEntities().contains(Entity.environments)) {
-        filteredEnvs = processTagsFilterYamlForEnvironments(filterYaml, environments);
+        setOfFilteredEnvs.addAll(processTagsFilterYamlForEnvironments(filterYaml, environments));
       }
     }
-    if (isEmpty(filteredEnvs)) {
+
+    if (isEmpty(setOfFilteredEnvs)) {
       throw new InvalidRequestException("No Environments are eligible for deployment due to applied filters");
     }
-    return filteredEnvs;
+    return setOfFilteredEnvs;
   }
 
-  public List<io.harness.cdng.gitops.entity.Cluster> applyFilteringOnClusters(
-      List<io.harness.cdng.gitops.entity.Cluster> filteredClusters, List<FilterYaml> filterYamls,
+  public Set<io.harness.cdng.gitops.entity.Cluster> applyFilteringOnClusters(List<FilterYaml> filterYamls,
       Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster, List<io.harness.gitops.models.Cluster> content) {
+    Set<io.harness.cdng.gitops.entity.Cluster> setOfFilteredCls = new HashSet<>();
+
     for (FilterYaml filterYaml : filterYamls) {
       if (filterYaml.getEntities().contains(Entity.gitOpsClusters)) {
-        filteredClusters = processTagsFilterYamlForGitOpsClusters(filterYaml, content, clsToCluster);
+        setOfFilteredCls.addAll(processTagsFilterYamlForGitOpsClusters(filterYaml, content, clsToCluster));
       }
     }
 
-    if (isEmpty(filteredClusters)) {
+    if (isEmpty(setOfFilteredCls)) {
       throw new InvalidRequestException("No GitOps cluster is eligible after applying filters");
     }
-    return filteredClusters;
+    return setOfFilteredCls;
   }
 
   public List<io.harness.gitops.models.Cluster> fetchClustersFromGitOps(
