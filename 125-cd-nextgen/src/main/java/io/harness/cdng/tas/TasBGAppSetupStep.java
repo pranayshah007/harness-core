@@ -113,7 +113,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                                                         .setEndTime(System.currentTimeMillis())
                                                         .build()))
         .build();
-  }]
+  }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
