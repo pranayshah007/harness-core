@@ -8,6 +8,9 @@
 package io.harness.ci.executionplan;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.beans.yaml.extended.volumes.EmptyDirYaml.EmptyDirYamlSpec;
+import static io.harness.beans.yaml.extended.volumes.HostPathYaml.HostPathYamlSpec;
+import static io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml.PersistentVolumeClaimYamlSpec;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_BUILD_NUMBER;
 import static io.harness.ci.commonconstants.BuildEnvironmentConstants.DRONE_COMMIT_BRANCH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
@@ -62,13 +65,10 @@ import io.harness.beans.yaml.extended.CustomTextVariable;
 import io.harness.beans.yaml.extended.CustomVariable;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
-import io.harness.beans.yaml.extended.volumes.EmptyDirYaml.EmptyDirYamlSpec;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
-import io.harness.beans.yaml.extended.volumes.HostPathYaml.HostPathYamlSpec;
 import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml;
-import io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml.PersistentVolumeClaimYamlSpec;
 import io.harness.ci.commonconstants.CIExecutionConstants;
 import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.cimanager.stages.IntegrationStageConfigImpl;
