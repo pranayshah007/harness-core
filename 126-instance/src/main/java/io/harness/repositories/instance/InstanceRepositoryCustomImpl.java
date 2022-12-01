@@ -24,7 +24,7 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
-import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.ng.core.entities.Project;
 import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
@@ -47,14 +47,14 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.DX)
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
-  private final MongoTemplate secondaryMongoTemplate;
+  private final MongoTemplate analyticsMongoTemplate;
   private final String INSTANCE_NG_COLLECTION = "instanceNG";
 
   @Inject
   public InstanceRepositoryCustomImpl(
-      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+      MongoTemplate mongoTemplate, AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder) {
     this.mongoTemplate = mongoTemplate;
-    this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+    this.analyticsMongoTemplate = analyticsMongoTemplateHolder.getAnalyticsMongoTemplate();
   }
 
   @Override
@@ -86,7 +86,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .and(InstanceKeys.isDeleted)
                                         .is(false);
       MatchOperation match = Aggregation.match(nonDeletedCriteria);
-      return secondaryMongoTemplate.aggregate(
+      return analyticsMongoTemplate.aggregate(
           newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
     }
     Criteria createdBeforeCriteria = Criteria.where(InstanceKeys.accountIdentifier)
@@ -112,7 +112,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                         .and(InstanceKeys.deletedAt)
                                         .gte(timestamp);
     MatchOperation match = Aggregation.match(new Criteria().orOperator(createdBeforeCriteria, deletedAfterCriteria));
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
   }
 
@@ -127,7 +127,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier, timestampInMs);
 
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -140,7 +140,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeysAdditional.instanceInfoNamespace)
                             .is(instanceInfoNamespace);
     Query query = new Query().addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, InstanceKeys.createdAt));
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -155,7 +155,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .and(InstanceKeys.serviceIdentifier)
             .is(serviceId);
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -165,7 +165,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.serviceIdentifier)
                             .is(serviceId);
     Query query = new Query(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -186,7 +186,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.isDeleted)
                             .is(false);
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   @Override
@@ -202,7 +202,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         group(InstanceKeys.envIdentifier, InstanceKeys.envName, InstanceSyncConstants.PRIMARY_ARTIFACT_TAG)
             .count()
             .as(InstanceSyncConstants.COUNT);
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, EnvBuildInstanceCount.class);
   }
 
@@ -227,7 +227,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfo.class);
   }
 
@@ -256,7 +256,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         InstanceSyncConstants.PRIMARY_ARTIFACT_TAG, InstanceSyncConstants.PRIMARY_ARTIFACT_DISPLAY_NAME)
                                     .count()
                                     .as(InstanceSyncConstants.COUNT);
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId), Instance.class, ActiveServiceInstanceInfoV2.class);
   }
 
@@ -352,7 +352,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                                          .slice(limit)
                                          .as(InstanceSyncConstants.INSTANCES);
 
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(matchStage, group, projection), Instance.class, InstancesByBuildId.class);
   }
 
@@ -382,7 +382,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
     }
 
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.find(query, Instance.class);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -410,7 +410,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
             .andExpression(InstanceSyncConstants.COUNT)
             .as(InstanceSyncConstants.COUNT);
 
-    return secondaryMongoTemplate.aggregate(
+    return analyticsMongoTemplate.aggregate(
         newAggregation(matchStage, groupEnvId, projection), Instance.class, CountByServiceIdAndEnvType.class);
   }
 
@@ -477,7 +477,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public Instance findFirstInstance(Criteria criteria) {
     Query query = new Query().addCriteria(criteria);
-    return secondaryMongoTemplate.findOne(query, Instance.class);
+    return analyticsMongoTemplate.findOne(query, Instance.class);
   }
 
   @Override
@@ -498,7 +498,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.lastDeployedAt)
                             .gte(startTS)
                             .lte(endTS);
-    return secondaryMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
+    return analyticsMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
   }
 
   @Override
@@ -513,7 +513,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .and(InstanceKeys.lastDeployedAt)
                             .gte(startTS)
                             .lte(endTS);
-    return secondaryMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
+    return analyticsMongoTemplate.count(new Query().addCriteria(criteria), Instance.class);
   }
 
   @Override
@@ -529,7 +529,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
                             .gte(startTS)
                             .lte(endTS);
 
-    return secondaryMongoTemplate
+    return analyticsMongoTemplate
         .findDistinct(new Query(criteria), InstanceKeys.serviceIdentifier, Instance.class, String.class)
         .size();
   }
@@ -546,7 +546,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
         group(InstanceKeys.orgIdentifier, InstanceKeys.projectIdentifier, InstanceKeys.serviceIdentifier)
             .count()
             .as(InstanceSyncConstants.COUNT);
-    return secondaryMongoTemplate
+    return analyticsMongoTemplate
         .aggregate(newAggregation(matchStage, groupByOrgIdProjectIdServiceId), Instance.class,
             CountByOrgIdProjectIdAndServiceId.class)
         .getMappedResults()

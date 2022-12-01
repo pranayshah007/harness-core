@@ -24,7 +24,7 @@ import io.harness.entities.Instance.InstanceKeysAdditional;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
-import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
@@ -63,14 +63,14 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   private final long START_TIMESTAMP = 124L;
   private final long END_TIMESTAMP = 125L;
   @Mock MongoTemplate mongoTemplate;
-  @Mock MongoTemplate secondaryMongoTemplate;
-  @Mock SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
+  @Mock MongoTemplate analyticsMongoTemplate;
+  @Mock AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder;
   InstanceRepositoryCustomImpl instanceRepositoryCustom;
 
   @Before
   public void setup() {
-    when(secondaryMongoTemplateHolder.getSecondaryMongoTemplate()).thenReturn(secondaryMongoTemplate);
-    instanceRepositoryCustom = new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder);
+    when(analyticsMongoTemplateHolder.getAnalyticsMongoTemplate()).thenReturn(analyticsMongoTemplate);
+    instanceRepositoryCustom = new InstanceRepositoryCustomImpl(mongoTemplate, analyticsMongoTemplateHolder);
   }
 
   @Test
@@ -105,7 +105,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv(instance);
     AggregationResults<InstanceCountByServiceAndEnv> results =
         new AggregationResults<>(Collections.singletonList(instanceCountByServiceAndEnv), new Document());
-    when(secondaryMongoTemplate.aggregate(
+    when(analyticsMongoTemplate.aggregate(
              any(Aggregation.class), eq(Instance.class), eq(InstanceCountByServiceAndEnv.class)))
         .thenReturn(results);
 
@@ -124,7 +124,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     InstanceCountByServiceAndEnv instanceCountByServiceAndEnv2 = mockInstanceCountByServiceAndEnv(instance2);
     AggregationResults<InstanceCountByServiceAndEnv> results = new AggregationResults<>(
         Arrays.asList(instanceCountByServiceAndEnv1, instanceCountByServiceAndEnv2), new Document());
-    when(secondaryMongoTemplate.aggregate(
+    when(analyticsMongoTemplate.aggregate(
              any(Aggregation.class), eq(Instance.class), eq(InstanceCountByServiceAndEnv.class)))
         .thenReturn(results);
 
@@ -163,7 +163,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     Criteria criteria = new Criteria().orOperator(filterNotDeleted, filterDeletedAfter);
     Instance instance = Instance.builder().build();
     Query query = new Query().addCriteria(criteria);
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
     assertThat(instanceRepositoryCustom.getActiveInstances(ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, TIMESTAMP))
         .isEqualTo(Arrays.asList(instance));
   }
@@ -180,7 +180,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                             .is(INSTANCE_INFO_POD_NAMESPACE);
     Query query = new Query().addCriteria(criteria).with(Sort.by(Sort.Direction.DESC, InstanceKeys.createdAt));
     Instance instance = Instance.builder().build();
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
     assertThat(instanceRepositoryCustom.getActiveInstancesByInstanceInfo(
                    ACCOUNT_ID, INSTANCE_INFO_POD_NAMESPACE, INSTANCE_INFO_PODNAME))
         .isEqualTo(Arrays.asList(instance));
@@ -220,7 +220,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                             .is(SERVICE_ID);
     Query query = new Query().addCriteria(criteria);
     Instance instance = Instance.builder().build();
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
     assertThat(instanceRepositoryCustom.getActiveInstancesByServiceId(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))
         .isEqualTo(Arrays.asList(instance));
@@ -242,7 +242,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
                             .is(false);
     Query query = new Query().addCriteria(criteria);
     Instance instance = Instance.builder().build();
-    when(secondaryMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Arrays.asList(instance));
     assertThat(instanceRepositoryCustom.getActiveInstancesByInfrastructureMappingId(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, INFRASTRUCTURE_MAPPING_ID))
         .isEqualTo(Arrays.asList(instance));
@@ -256,7 +256,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
         new EnvBuildInstanceCount(ENVIRONMENT_ID, ENVIRONMENT_NAME, TAG, COUNT);
     AggregationResults<EnvBuildInstanceCount> aggregationResults =
         new AggregationResults<>(Arrays.asList(envBuildInstanceCount), new Document());
-    when(secondaryMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(EnvBuildInstanceCount.class)))
+    when(analyticsMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(EnvBuildInstanceCount.class)))
         .thenReturn(aggregationResults);
     assertThat(instanceRepositoryCustom.getEnvBuildInstanceCountByServiceId(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))
@@ -273,7 +273,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
     InstancesByBuildId instancesByBuildId = new InstancesByBuildId("buildId", Arrays.asList(instance));
     AggregationResults<InstancesByBuildId> aggregationResults =
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
-    when(secondaryMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(InstancesByBuildId.class)))
+    when(analyticsMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(InstancesByBuildId.class)))
         .thenReturn(aggregationResults);
     assertThat(instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit))
@@ -288,7 +288,7 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
         new CountByServiceIdAndEnvType(SERVICE_ID, EnvironmentType.Production, COUNT);
     AggregationResults<CountByServiceIdAndEnvType> aggregationResults =
         new AggregationResults<>(Arrays.asList(countByServiceIdAndEnvType), new Document());
-    when(secondaryMongoTemplate.aggregate(
+    when(analyticsMongoTemplate.aggregate(
              any(Aggregation.class), eq(Instance.class), eq(CountByServiceIdAndEnvType.class)))
         .thenReturn(aggregationResults);
     assertThat(instanceRepositoryCustom.getActiveServiceInstanceCountBreakdown(
