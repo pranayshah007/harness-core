@@ -349,6 +349,7 @@ import io.harness.delegate.beans.storeconfig.InlineStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
@@ -541,6 +542,7 @@ import io.harness.delegate.task.ecs.EcsInfraConfig;
 import io.harness.delegate.task.ecs.EcsInfraType;
 import io.harness.delegate.task.ecs.EcsLoadBalancerConfig;
 import io.harness.delegate.task.ecs.EcsRollingRollbackConfig;
+import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenCreateServiceRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenPrepareRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsBlueGreenRollbackRequest;
@@ -553,6 +555,8 @@ import io.harness.delegate.task.ecs.request.EcsPrepareRollbackDataRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingDeployRequest;
 import io.harness.delegate.task.ecs.request.EcsRollingRollbackRequest;
 import io.harness.delegate.task.ecs.request.EcsRunTaskRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRequest;
+import io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenCreateServiceResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsBlueGreenRollbackResponse;
@@ -565,6 +569,8 @@ import io.harness.delegate.task.ecs.response.EcsPrepareRollbackDataResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingDeployResponse;
 import io.harness.delegate.task.ecs.response.EcsRollingRollbackResponse;
 import io.harness.delegate.task.ecs.response.EcsRunTaskResponse;
+import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
+import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupStartupScriptFetchRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -1341,6 +1347,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(OpenshiftManifestDelegateConfig.class, 19701);
     kryo.register(S3HelmStoreDelegateConfig.class, 19702);
     kryo.register(GcsHelmStoreDelegateConfig.class, 19703);
+    kryo.register(S3StoreDelegateConfig.class, 19706);
 
     kryo.register(SpotValidateTaskResponse.class, 21006);
     kryo.register(SpotTaskParams.class, 21007);
@@ -1987,10 +1994,18 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
+
     kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
+
     kryo.register(GitOpsFetchAppTaskParams.class, 573561);
     kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
+
+    kryo.register(EcsS3FetchRequest.class, 573563);
+    kryo.register(EcsS3FetchResponse.class, 573564);
+    kryo.register(EcsS3FetchFileConfig.class, 573565);
+    kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
+    kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
   }
 }

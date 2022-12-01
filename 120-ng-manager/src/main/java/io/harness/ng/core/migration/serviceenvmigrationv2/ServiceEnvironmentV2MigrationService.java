@@ -208,7 +208,7 @@ public class ServiceEnvironmentV2MigrationService {
     String resolvedStageYaml =
         NGRestUtils
             .getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, requestDto.getOrgIdentifier(),
-                requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null, false,
+                requestDto.getProjectIdentifier(), null, null, null, null, null, null, null, null, null,
                 TemplateApplyRequestDTO.builder().originalEntityYaml(stageYaml).checkForAccess(true).build()))
             .getMergedPipelineYaml();
     YamlField stageField = getYamlField(stageYaml, "stage");

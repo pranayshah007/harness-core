@@ -1568,6 +1568,7 @@
 19703:io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig
 19704:io.harness.delegate.task.artifacts.S3ArtifactDelegateResponse
 19705:io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest
+19706:io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig
 19800:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType
 19801:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO
 19802:io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoCredentialsDTO
@@ -2335,6 +2336,11 @@
 573560:io.harness.delegate.beans.terragrunt.response.TerragruntRollbackTaskResponse
 573561:io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams
 573562:io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse
+573563:io.harness.delegate.task.ecs.request.EcsS3FetchRequest
+573564:io.harness.delegate.task.ecs.response.EcsS3FetchResponse
+573565:io.harness.delegate.task.ecs.EcsS3FetchFileConfig
+573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
+573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

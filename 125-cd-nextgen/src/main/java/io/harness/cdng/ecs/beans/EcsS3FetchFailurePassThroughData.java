@@ -10,10 +10,9 @@ package io.harness.cdng.ecs.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.infra.beans.InfrastructureOutcome;
+import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -21,16 +20,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("ecsGitFetchPassThroughData")
-@RecasterAlias("io.harness.cdng.ecs.beans.EcsGitFetchPassThroughData")
-public class EcsGitFetchPassThroughData implements PassThroughData {
-  String taskDefinitionHarnessFileContent;
-  String serviceDefinitionHarnessFileContent;
-  List<String> scalableTargetHarnessFileContentList;
-  List<String> scalingPolicyHarnessFileContentList;
-  String ecsRunTaskRequestDefinitionHarnessFileContent;
-  String targetGroupArnKey;
-  InfrastructureOutcome infrastructureOutcome;
-  EcsS3ManifestFileConfigs ecsS3ManifestFileConfigs;
-  EcsRunTaskS3FileConfigs ecsRunTaskS3FileConfigs;
+@TypeAlias("ecsS3FetchFailurePassThroughData")
+@RecasterAlias("io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData")
+public class EcsS3FetchFailurePassThroughData implements PassThroughData {
+  String errorMsg;
+  UnitProgressData unitProgressData;
 }

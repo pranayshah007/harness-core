@@ -14,6 +14,7 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsGitFetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsPrepareRollbackDataPassThroughData;
+import io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExceptionPassThroughData;
 import io.harness.cdng.ecs.beans.EcsStepExecutorParams;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -83,6 +84,8 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     if (passThroughData instanceof EcsGitFetchFailurePassThroughData) {
       return ecsStepCommonHelper.handleGitTaskFailure((EcsGitFetchFailurePassThroughData) passThroughData);
+    } else if (passThroughData instanceof EcsS3FetchFailurePassThroughData) {
+      return ecsStepCommonHelper.handleS3TaskFailure((EcsS3FetchFailurePassThroughData) passThroughData);
     } else if (passThroughData instanceof EcsStepExceptionPassThroughData) {
       return ecsStepCommonHelper.handleStepExceptionFailure((EcsStepExceptionPassThroughData) passThroughData);
     }
@@ -121,7 +124,7 @@ public class EcsRunTaskStep extends TaskChainExecutableWithRollbackAndRbac imple
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return ecsStepCommonHelper.startChainLinkEcsRunTask(this, ambiance, stepParameters);
+    return ecsStepCommonHelper.startChainLinkEcsRunTask(this, ambiance, stepParameters, ecsStepHelper);
   }
 
   @Override

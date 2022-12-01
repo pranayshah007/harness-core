@@ -48,6 +48,7 @@ import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.ssh.SshEntityHelper;
@@ -96,6 +97,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -412,6 +414,18 @@ public class CDStepHelper {
         .manifestType(manifestType)
         .succeedIfFileNotFound(succeedIfFileNotFound)
         .gitStoreDelegateConfig(gitStoreDelegateConfig)
+        .build();
+  }
+
+  public S3StoreDelegateConfig getS3StoreDelegateConfig(
+      @Nonnull S3StoreConfig s3StoreConfig, @Nonnull ConnectorInfoDTO awsConnectorDTO, Ambiance ambiance) {
+    return S3StoreDelegateConfig.builder()
+        .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
+        .region(getParameterFieldValue(s3StoreConfig.getRegion()))
+        .paths(s3StoreConfig.getPaths().getValue())
+        .awsConnector((AwsConnectorDTO) awsConnectorDTO.getConnectorConfig())
+        .encryptedDataDetails(
+            k8sEntityHelper.getEncryptionDataDetails(awsConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
         .build();
   }
 

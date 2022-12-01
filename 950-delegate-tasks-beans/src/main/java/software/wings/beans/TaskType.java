@@ -408,7 +408,8 @@ public enum TaskType {
   VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
   NG_VAULT_TOKEN_LOOKUP(TaskGroup.KMS, "Token lookup of token in Hashicorp Vault"),
   VALIDATE_TAS_CONNECTOR_TASK_NG(TaskGroup.TAS, "Tas connector validation task"),
-  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service");
+  CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
+  ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;
