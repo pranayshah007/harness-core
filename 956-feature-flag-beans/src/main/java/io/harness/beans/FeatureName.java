@@ -504,8 +504,8 @@ public enum FeatureName {
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
-  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC);
-
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
+  SRM_SLO_TIME_SCALE_DB_INTEGRATION("Push SLO data to the timescale db for custom dashboard", HarnessTeam.CV);
   @Deprecated
   FeatureName() {
     scope = Scope.PER_ACCOUNT;
