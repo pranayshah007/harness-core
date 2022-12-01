@@ -42,9 +42,13 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.ECS_CANARY_DELETE, StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE,
         StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS, StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK,
         StepSpecTypeConstants.CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT, StepSpecTypeConstants.SHELL_SCRIPT_PROVISION,
-        StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.ECS_RUN_TASK,
-        StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
+        StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO, StepSpecTypeConstants.GITOPS_FETCH_LINKED_APPS,
+        StepSpecTypeConstants.ECS_RUN_TASK, StepSpecTypeConstants.CHAOS_STEP, StepSpecTypeConstants.ELASTIGROUP_DEPLOY,
         StepSpecTypeConstants.ELASTIGROUP_ROLLBACK, StepSpecTypeConstants.ELASTIGROUP_SETUP,
-        StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP);
+        StepSpecTypeConstants.TERRAGRUNT_PLAN, StepSpecTypeConstants.TERRAGRUNT_APPLY,
+        StepSpecTypeConstants.TERRAGRUNT_DESTROY, StepSpecTypeConstants.TERRAGRUNT_ROLLBACK,
+        StepSpecTypeConstants.TAS_CANARY_APP_SETUP, StepSpecTypeConstants.TAS_BG_APP_SETUP,
+        StepSpecTypeConstants.TAS_BASIC_APP_SETUP, StepSpecTypeConstants.TAS_APP_RESIZE,
+        StepSpecTypeConstants.TAS_SWAP_ROUTES, StepSpecTypeConstants.TAS_ROLLBACK);
   }
 }

@@ -64,6 +64,10 @@ public interface EntityTypeConstants {
 
   String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
   String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
+  String TAS_BASIC_APP_SETUP_STEP = "TasBasicAppSetupStep";
+  String TAS_APP_RESIZE_STEP = "TasAppResizeStep";
+  String TAS_ROLLBACK_STEP = "TasRollbackStep";
+  String TAS_SWAP_ROUTES_STEP = "TasSwapRoutesStep";
   String RUN_STEP = "Run";
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
