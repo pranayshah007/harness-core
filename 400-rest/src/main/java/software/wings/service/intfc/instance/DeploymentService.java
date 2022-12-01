@@ -32,7 +32,7 @@ public interface DeploymentService extends OwnedByApplication {
 
   /**
    * Save instance information.
-   * Filter with workflow execution Id
+   * Filter with State and Workflow Execution Id
    * @param instance the instance
    * @return the instance
    */
