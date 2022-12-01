@@ -272,6 +272,18 @@ public class ServiceAccountResource {
   }
 
   @GET
+  @Path("{identifier}")
+  @Hidden
+  @InternalApi
+  @ApiOperation(value = "Get Service Account by Id", nickname = "getServiceAccountByIdAndAccountId")
+  public ResponseDTO<ServiceAccountDTO> getServiceAccountByIdAndAccountId(
+      @NotNull @PathParam(IDENTIFIER) @ResourceIdentifier String identifier,
+      @NotBlank @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    return ResponseDTO.newResponse(
+        serviceAccountService.getServiceAccountDTO(accountIdentifier, null, null, identifier));
+  }
+
+  @GET
   @Path("internal/{identifier}")
   @Hidden
   @InternalApi

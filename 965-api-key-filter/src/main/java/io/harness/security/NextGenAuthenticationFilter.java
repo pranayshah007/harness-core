@@ -113,7 +113,8 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       Map<String, JWTTokenHandler> serviceToJWTTokenHandlerMapping, Map<String, String> serviceToSecretMapping,
       @Named("PRIVILEGED") TokenClient tokenClient, @Named("PRIVILEGED") NGSettingsClient settingsClient,
       @Named("PRIVILEGED") ServiceAccountClient serviceAccountClient,
-      @Named(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE) Cache<String, String> jwtTokenPublicKeyUrlCache) {
+                                     @Named(JWT_TOKEN_PUBLIC_KEYS_URL_CACHE) Cache<String, String> jwtTokenPublicKeyUrlCache
+  ) {
     super(predicate, serviceToJWTTokenHandlerMapping, serviceToSecretMapping);
     this.tokenClient = tokenClient;
     this.settingsClient = settingsClient;
@@ -452,10 +453,13 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       final String trimmedPublicKeyUrlStr = publicKeysUrlSettingStr.trim();
       if (jwtTokenPublicKeyUrlCache.containsKey(trimmedPublicKeyUrlStr)) {
         log.info(
-            "NG_SCIM_JWT: [JWT_TOKEN_PUBLIC_KEYS_URL] Fetching public keys information for url {} from cache for account {}",
+            "NG_SCIM_JWT: [JWT_TOKEN_PUBLIC_KEYS_URL_CACHE_HIT] Fetching public keys information for url {} from cache, for account {}",
             trimmedPublicKeyUrlStr, accountIdentifier);
         publicCertsJsonString = jwtTokenPublicKeyUrlCache.get(trimmedPublicKeyUrlStr);
       } else {
+        log.info(
+            "NG_SCIM_JWT: [JWT_TOKEN_PUBLIC_KEYS_URL_CACHE_MISS] Fetching public keys information from actual URL {} for account {}",
+            trimmedPublicKeyUrlStr, accountIdentifier);
         Request httpGetRequest = new Request.Builder().url(publicKeysUrlSettingStr).method("GET", null).build();
         OkHttpClient client = getUnsafeOkHttpClient();
         try (Response response = client.newCall(httpGetRequest).execute()) {
@@ -478,6 +482,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
                   publicKeysUrlSettingStr, accountIdentifier),
               INVALID_INPUT_SET);
         } catch (IOException e) {
+          // should remove from cache?
           logAndThrowTokenException(
               String.format("NG_SCIM_JWT: Error fetching public certificate from public keys URL: %s, in account %s: ",
                   publicKeysUrlSettingStr, accountIdentifier),
@@ -503,29 +508,29 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
           @Override public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
               throws CertificateException{} @Override public java.security.cert.X509Certificate[] getAcceptedIssuers(){
                   return new X509Certificate[0];
+        }
+      }
+    };
+
+    // Install the all-trusting trust manager
+    final SSLContext sslContext = SSLContext.getInstance("SSL");
+    sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+    // Create an ssl socket factory with our all-trusting manager
+    final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+    return new OkHttpClient.Builder()
+        .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
+        .hostnameVerifier(new HostnameVerifier() {
+          @Override
+          public boolean verify(String hostname, SSLSession session) {
+            return true;
+          }
+        })
+        .build();
+    }
+    catch (Exception e) {
+      log.error("Runtime test error");
+      throw new RuntimeException(e);
     }
   }
-};
-
-// Install the all-trusting trust manager
-final SSLContext sslContext = SSLContext.getInstance("SSL");
-sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-// Create an ssl socket factory with our all-trusting manager
-final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-
-return new OkHttpClient.Builder()
-    .sslSocketFactory(sslSocketFactory, (X509TrustManager) trustAllCerts[0])
-    .hostnameVerifier(new HostnameVerifier() {
-      @Override
-      public boolean verify(String hostname, SSLSession session) {
-        return true;
-      }
-    })
-    .build();
-}
-catch (Exception e) {
-  log.error("Runtime test error");
-  throw new RuntimeException(e);
-}
-}
 }

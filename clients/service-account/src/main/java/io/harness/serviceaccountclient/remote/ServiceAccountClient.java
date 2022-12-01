@@ -24,7 +24,7 @@ import retrofit2.http.Query;
 public interface ServiceAccountClient {
   String BASE_SERVICE_PRINCIPAL_URL = "serviceaccount";
 
-  @GET(BASE_SERVICE_PRINCIPAL_URL + "/{identifier}")
+  @GET(BASE_SERVICE_PRINCIPAL_URL + "/internal/{identifier}")
   Call<ResponseDTO<ServiceAccountDTO>> getServiceAccount(
       @Path(value = IDENTIFIER_KEY) String identifier, @Query(value = ACCOUNT_KEY) String accountIdentifier);
 }
