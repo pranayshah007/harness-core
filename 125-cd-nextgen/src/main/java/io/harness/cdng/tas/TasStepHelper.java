@@ -206,7 +206,7 @@ public class TasStepHelper {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
     HarnessStore storeConfig;
-    if(ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec())) {
+    if(ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
       storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
     } else {
       throw new InvalidRequestException("Harness Store is only supported for TAS Command Scripts", USER);
@@ -897,7 +897,16 @@ public class TasStepHelper {
       }
     }
 
-    List<UnitProgress> unitProgressList = Arrays.asList(UnitProgress.newBuilder()
+    List<UnitProgress> unitProgressList = new ArrayList<>();
+    if(tasStepPassThroughData.getRawScript() != null) {
+      unitProgressList.add(UnitProgress.newBuilder()
+              .setUnitName(CfCommandUnitConstants.FetchCommandScript)
+              .setStatus(UnitStatus.SUCCESS)
+              .setStartTime(System.currentTimeMillis() - 200)
+              .setEndTime(System.currentTimeMillis() - 100)
+              .build());
+    }
+    unitProgressList.addAll(Arrays.asList(UnitProgress.newBuilder()
                     .setUnitName(CfCommandUnitConstants.FetchFiles)
                     .setStatus(UnitStatus.SUCCESS)
                     .setStartTime(System.currentTimeMillis() - 100)
@@ -914,16 +923,7 @@ public class TasStepHelper {
                     .setStatus(UnitStatus.SUCCESS)
                     .setStartTime(System.currentTimeMillis() - 25)
                     .setEndTime(System.currentTimeMillis())
-                    .build());
-
-    if(tasStepPassThroughData.getRawScript() != null) {
-      unitProgressList.add(0, UnitProgress.newBuilder()
-              .setUnitName(CfCommandUnitConstants.FetchCommandScript)
-              .setStatus(UnitStatus.SUCCESS)
-              .setStartTime(System.currentTimeMillis() - 200)
-              .setEndTime(System.currentTimeMillis() - 100)
-              .build());
-    }
+                    .build()));
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
