@@ -17,7 +17,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class K8sSteadyStateConstants {
-  public static final Integer WATCH_CALL_TIMEOUT_SECONDS = 300;
+  public static final Integer WATCH_CALL_TIMEOUT_SECONDS = 60;
   public static final Pattern RESOURCE_VERSION_PATTERN =
       Pattern.compile("Timeout: Too large resource version: (\\d+), current: (\\d+)");
 }
