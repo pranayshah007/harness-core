@@ -51,13 +51,21 @@ import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntApplyStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntDestroyStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntPlanStepInfo;
+import io.harness.cdng.provision.terragrunt.TerragruntRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
+import io.harness.cdng.tas.TasRollbackStep;
+import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -82,9 +90,13 @@ import io.swagger.annotations.ApiModel;
         AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
         EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
-        FetchInstanceScriptStepInfo.class, TasCanaryAppSetupStepInfo.class, TasBGAppSetupStepInfo.class,
-        ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class, EcsRunTaskStepInfo.class,
-        ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class})
+        FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
+        EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
+        ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
+        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, ElastigroupDeployStepInfo.class,
+        ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class, TasCanaryAppSetupStepInfo.class,
+        TasBGAppSetupStepInfo.class, TasBasicAppSetupStep.class, TasAppResizeStep.class, TasSwapRoutesStep.class,
+        TasRollbackStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

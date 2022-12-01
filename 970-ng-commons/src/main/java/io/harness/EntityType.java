@@ -408,23 +408,12 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO(ModuleType.CD, EntityTypeConstants.GITOPS_UPDATE_RELEASE_REPO, IdentifierRef.class,
       EntityYamlRootNames.GITOPS_UPDATE_RELEASE_REPO),
+  @JsonProperty(EntityTypeConstants.GITOPS_FETCH_LINKED_APPS)
   GITOPS_FETCH_LINKED_APPS(ModuleType.CD, EntityTypeConstants.GITOPS_FETCH_LINKED_APPS, IdentifierRef.class,
-          EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
+      EntityYamlRootNames.GITOPS_FETCH_LINKED_APPS),
   @JsonProperty(EntityTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_RUN_TASK, IdentifierRef.class, EntityYamlRootNames.ECS_RUN_TASK),
-  @JsonProperty(EntityTypeConstants.TERRAFORM_PLAN)
-  TERRAGRUNT_PLAN_STEP(
-          ModuleType.CD, EntityTypeConstants.TERRAGRUNT_PLAN, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_PLAN),
-  @JsonProperty(EntityTypeConstants.TERRAFORM_APPLY)
-  TERRAGRUNT_APPLY_STEP(
-          ModuleType.CD, EntityTypeConstants.TERRAGRUNT_APPLY, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_APPLY),
-  @JsonProperty(EntityTypeConstants.TERRAFORM_DESTROY)
-  TERRAGRUNT_DESTROY_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_DESTROY, IdentifierRef.class,
-          EntityYamlRootNames.TERRAGRUNT_DESTROY),
-  @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
-  TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
-          EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
   @JsonProperty(EntityTypeConstants.CHAOS_STEP)
   CHAOS_STEP(ModuleType.CHAOS, EntityTypeConstants.CHAOS_STEP, IdentifierRef.class, EntityYamlRootNames.CHAOS_STEP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_DEPLOY_STEP)
@@ -440,14 +429,43 @@ public enum EntityType {
       ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SETUP, IdentifierRef.class, EntityYamlRootNames.ELASTIGROUP_SETUP),
   @JsonProperty(EntityTypeConstants.BITRISE_STEP)
   BITRISE_STEP(ModuleType.CI, EntityTypeConstants.BITRISE_STEP, IdentifierRef.class, EntityYamlRootNames.BITRISE_STEP),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_PLAN)
+  TERRAGRUNT_PLAN_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_PLAN, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_PLAN),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_APPLY)
+  TERRAGRUNT_APPLY_STEP(
+      ModuleType.CD, EntityTypeConstants.TERRAGRUNT_APPLY, IdentifierRef.class, EntityYamlRootNames.TERRAGRUNT_APPLY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_DESTROY)
+  TERRAGRUNT_DESTROY_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_DESTROY, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_DESTROY),
+  @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
+  TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.IACM_STAGE)
+  IACM_STAGE(ModuleType.IACM, EntityTypeConstants.IACM_STAGE, IdentifierRef.class, EntityYamlRootNames.IACM_STAGE),
+  @JsonProperty(EntityTypeConstants.IACM_STEPS)
+  IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
   @JsonProperty(EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP)
   TAS_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP, IdentifierRef.class,
       EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),
   @JsonProperty(EntityTypeConstants.TAS_BG_APP_SETUP_STEP)
   TAS_BG_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BG_APP_SETUP_STEP, IdentifierRef.class,
       EntityYamlRootNames.TAS_BG_APP_SETUP_STEP),
-  @JsonProperty(EntityTypeConstants.IACM_STAGE)
-  IACM_STAGE(ModuleType.IACM, EntityTypeConstants.IACM_STAGE, IdentifierRef.class, EntityYamlRootNames.IACM_STAGE);
+  @JsonProperty(EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP)
+  TAS_BASIC_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BASIC_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_APP_RESIZE_STEP)
+  TAS_APP_RESIZE_STEP(ModuleType.CD, EntityTypeConstants.TAS_APP_RESIZE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_APP_RESIZE_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_ROLLBACK_STEP)
+  TAS_ROLLBACK_STEP(
+      ModuleType.CD, EntityTypeConstants.TAS_ROLLBACK_STEP, IdentifierRef.class, EntityYamlRootNames.TAS_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROUTES_STEP)
+  TAS_SWAP_ROUTES_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROUTES_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROUTES_STEP);
+
   private final ModuleType moduleType;
   String yamlName;
   List<String> yamlRootElementString;
