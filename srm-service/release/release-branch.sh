@@ -56,6 +56,7 @@ git fetch --all
 
 set -ex
 
+#TODO: Use env variable to check which branch to cut from ?????
 git fetch origin refs/heads/develop; git checkout develop && git branch
 check_branch_name "develop"
 
@@ -81,7 +82,7 @@ fi
 echo "STEP2: INFO: Bumping version in build.properties in develop branch."
 
 export SHA=`git rev-parse HEAD`
-export VERSION_FILE=access-control/build.properties
+export VERSION_FILE=srm-service/build.properties
 
 export VERSION=`cat ${VERSION_FILE} | grep 'build.number=' | sed -e 's: *build.number=::g'`
 export VERSION=${VERSION%??}
@@ -89,10 +90,11 @@ export NEW_VERSION=$(( ${VERSION}+1 ))
 
 sed -i "s:build.number=${VERSION}00:build.number=${NEW_VERSION}00:g" ${VERSION_FILE}
 
-git add ${VERSION_FILE}
-git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
-git push origin develop
-print_err "$?" "Pushing build.properties to develop branch failed"
+#TODO: Uncomment
+#git add ${VERSION_FILE}
+#git commit -m "Branching to release/${PURPOSE}/${VERSION}xx. New version ${NEW_VERSION}xx"
+#git push origin develop
+#print_err "$?" "Pushing build.properties to develop branch failed"
 
 
 echo "STEP3: INFO: Creating a release branch for ${PURPOSE}"
@@ -107,8 +109,9 @@ git commit --allow-empty -m "Set the proper version branch release/${PURPOSE}/${
 git push origin release/${PURPOSE}/${VERSION}xx
 
 #creating the fix version
-chmod +x srm-service/release/release-branch-create-srm-versions.sh
-srm-service/release/release-branch-create-srm-versions.sh
-
-chmod +x srm-service/release/release-branch-update-jiras.sh
-srm-service/release/release-branch-update-jiras.sh
+#TODO: Uncomment
+#chmod +x srm-service/release/release-branch-create-srm-versions.sh
+#srm-service/release/release-branch-create-srm-versions.sh
+#
+#chmod +x srm-service/release/release-branch-update-jiras.sh
+#srm-service/release/release-branch-update-jiras.sh
