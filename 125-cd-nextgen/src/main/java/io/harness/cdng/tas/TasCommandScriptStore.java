@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.harness.annotation.RecasterAlias;
 import io.harness.cdng.elastigroup.ElastigroupInstancesSpec;
 import io.harness.cdng.elastigroup.ElastigroupInstancesType;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import lombok.Builder;
 import lombok.Data;
@@ -30,14 +31,14 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 @RecasterAlias("io.harness.cdng.tas.TasCommandScriptStore")
 public class TasCommandScriptStore {
   @NotNull @JsonProperty("type")
-  TasCommandScriptStoreType type;
+  String type;
 
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   StoreConfig spec;
 
   @Builder
-  public TasCommandScriptStore(TasCommandScriptStoreType type, StoreConfig spec) {
+  public TasCommandScriptStore(String type, StoreConfig spec) {
     this.type = type;
     this.spec = spec;
   }
