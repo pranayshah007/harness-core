@@ -60,8 +60,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   private static final String FIND_DEPLOYMENT_IN_TSDB =
       "SELECT EXECUTIONID,STARTTIME FROM DEPLOYMENT WHERE EXECUTIONID=?";
 
-  private static final String HINT_CONCILIATION_END_TS = "accountId_status_pipelineExecutionId_endTs";
-  private static final String HINT_CONCILIATION_START_TS = "accountId_status_pipelineExecutionId_startTs";
+  private static final String HINT_CONCILIATION_ENDTS = "accountId_endTs_status_pipelineExecutionId";
+  private static final String HINT_CONCILIATION_STARTTS = "accountId_startTs_status_pipelineExecutionId";
 
   @Override
   public ReconciliationStatus performReconciliation(
@@ -98,8 +98,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
     if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_CONCILIATION_QUERY, accountId)) {
       finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
       runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
-      countOptionsEnd.hint(HINT_CONCILIATION_END_TS);
-      countOptionsStart.hint(HINT_CONCILIATION_START_TS);
+      countOptionsEnd.hint(HINT_CONCILIATION_ENDTS);
+      countOptionsStart.hint(HINT_CONCILIATION_STARTTS);
     } else {
       finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
       runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
