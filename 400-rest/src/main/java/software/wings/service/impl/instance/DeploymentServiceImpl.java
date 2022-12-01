@@ -76,6 +76,25 @@ public class DeploymentServiceImpl implements DeploymentService {
   }
 
   @Override
+  public DeploymentSummary saveWithFilterExecutionIds(@Valid DeploymentSummary deploymentSummary) {
+    Query<DeploymentSummary> query = wingsPersistence.createAuthorizedQuery(DeploymentSummary.class);
+    query.filter("infraMappingId", deploymentSummary.getInfraMappingId());
+    query.filter("workflowExecutionId", deploymentSummary.getWorkflowExecutionId());
+    query.filter("stateExecutionInstanceId", deploymentSummary.getStateExecutionInstanceId());
+    DeploymentKey deploymentKey = addDeploymentKeyFilterToQuery(query, deploymentSummary);
+    query.order(Sort.descending(DeploymentSummary.CREATED_AT_KEY));
+
+    if (query.get() == null) {
+      synchronized (deploymentKey) {
+        String key = wingsPersistence.save(deploymentSummary);
+        return wingsPersistence.getWithAppId(DeploymentSummary.class, deploymentSummary.getAppId(), key);
+      }
+    }
+
+    return deploymentSummary;
+  }
+
+  @Override
   public Optional<DeploymentSummary> get(@Valid DeploymentSummary deploymentSummary) {
     Query<DeploymentSummary> query = wingsPersistence.createAuthorizedQuery(DeploymentSummary.class);
     // If later someone needs to extend deploymentKey to add more attributes to key, this method can be modified
