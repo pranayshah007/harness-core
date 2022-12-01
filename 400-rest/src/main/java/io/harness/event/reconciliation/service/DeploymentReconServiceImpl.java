@@ -60,7 +60,8 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
   private static final String FIND_DEPLOYMENT_IN_TSDB =
       "SELECT EXECUTIONID,STARTTIME FROM DEPLOYMENT WHERE EXECUTIONID=?";
 
-  private static final String HINT_CONCILIATION = "accountId_status_pipelineExecutionId_endTs";
+  private static final String HINT_CONCILIATION_END_TS = "accountId_status_pipelineExecutionId_endTs";
+  private static final String HINT_CONCILIATION_START_TS = "accountId_status_pipelineExecutionId_startTs";
 
   @Override
   public ReconciliationStatus performReconciliation(
@@ -92,18 +93,20 @@ public class DeploymentReconServiceImpl implements DeploymentReconService {
                                                                 .field(WorkflowExecutionKeys.status)
                                                                 .in(ExecutionStatus.persistedActiveStatuses());
 
-    CountOptions countOptions = new CountOptions();
+    CountOptions countOptionsEnd = new CountOptions();
+    CountOptions countOptionsStart = new CountOptions();
     if (featureFlagService.isEnabled(FeatureName.SPG_OPTIMIZE_CONCILIATION_QUERY, accountId)) {
       finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
       runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).equal(null);
-      countOptions.hint(HINT_CONCILIATION);
+      countOptionsEnd.hint(HINT_CONCILIATION_END_TS);
+      countOptionsStart.hint(HINT_CONCILIATION_START_TS);
     } else {
       finishedWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
       runningWFExecutionCountQuery.field(WorkflowExecutionKeys.pipelineExecutionId).doesNotExist();
     }
 
-    long finishedWFExecutionCount = finishedWFExecutionCountQuery.count(countOptions);
-    long runningWFExecutionCount = runningWFExecutionCountQuery.count(countOptions);
+    long finishedWFExecutionCount = finishedWFExecutionCountQuery.count(countOptionsEnd);
+    long runningWFExecutionCount = runningWFExecutionCountQuery.count(countOptionsStart);
 
     return finishedWFExecutionCount + runningWFExecutionCount;
   }
