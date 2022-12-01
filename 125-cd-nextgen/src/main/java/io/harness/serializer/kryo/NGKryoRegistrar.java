@@ -94,10 +94,19 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepInfo;
+import io.harness.cdng.tas.TasAppResizeStepNode;
+import io.harness.cdng.tas.TasAppResizeStepParameters;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepParameters;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
+import io.harness.cdng.tas.TasBasicAppSetupStepParameters;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepParameters;
+import io.harness.cdng.tas.TasRollbackStepInfo;
+import io.harness.cdng.tas.TasRollbackStepParameters;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -214,9 +223,17 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
 
-    kryo.register(TasCanaryAppSetupStepInfo.class, 12620);
-    kryo.register(TasCanaryAppSetupStepParameters.class, 12621);
-    kryo.register(TasBGAppSetupStepInfo.class, 12622);
-    kryo.register(TasBGAppSetupStepParameters.class, 12623);
+    kryo.register(TasCanaryAppSetupStepInfo.class, 12626);
+    kryo.register(TasCanaryAppSetupStepParameters.class, 12627);
+    kryo.register(TasBGAppSetupStepInfo.class, 12628);
+    kryo.register(TasBGAppSetupStepParameters.class, 12629);
+    kryo.register(TasBasicAppSetupStepInfo.class, 12630);
+    kryo.register(TasBasicAppSetupStepParameters.class, 12631);
+    kryo.register(TasAppResizeStepInfo.class, 12632);
+    kryo.register(TasAppResizeStepParameters.class, 12633);
+    kryo.register(TasSwapRoutesStepInfo.class, 12634);
+    kryo.register(TasSwapRoutesStepParameters.class, 12635);
+    kryo.register(TasRollbackStepInfo.class, 12636);
+    kryo.register(TasRollbackStepParameters.class, 12637);
   }
 }
