@@ -724,3 +724,5 @@ enableOpentelemetry: false
 disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
 
 redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}

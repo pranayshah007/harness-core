@@ -70,7 +70,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
   @Inject private HPersistence persistence;
   @Inject private MongoTemplate mongoTemplate;
   @Inject private QueueConsumer<NotifyEvent> notifyConsumer;
-  @Inject private NotifyResponseCleaner notifyResponseCleaner;
+  @Inject private NotifyResponseCleanupHelper notifyResponseCleaner;
   @Inject private TestNotifyEventListener notifyEventListener;
   @Inject private QueueListenerController queueListenerController;
   @Inject private KryoSerializer kryoSerializer;
@@ -430,7 +430,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
                                               .build();
     String notificationId = persistence.save(notifyResponse);
 
-    notifyResponseCleaner.executeInternal();
+    notifyResponseCleaner.execute();
 
     assertThat(persistence.get(NotifyResponse.class, notificationId)).isNull();
   }
