@@ -7,55 +7,61 @@
 
 package io.harness.cvng.core.services.impl;
 
+import io.harness.cvng.beans.CVMonitoringCategory;
+import io.harness.cvng.beans.DataCollectionInfo;
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.cvng.beans.DataCollectionRequestType;
+import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.SyncDataCollectionRequest;
 import io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
+import io.harness.cvng.core.beans.healthsource.LogRecord;
 import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.MetricRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.TimeSeries;
 import io.harness.cvng.core.beans.healthsource.TimeSeriesDataPoint;
-import io.harness.cvng.core.entities.TimeSeriesRecord;
+import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.SumologicLogCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricInfo;
+import io.harness.cvng.core.entities.VerificationTask;
+import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.HealthSourceRawRecordService;
+import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.OnboardingService;
+import io.harness.datacollection.entity.LogDataRecord;
+import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.ng.core.Status;
+import io.harness.serializer.JsonUtils;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.Gson;
 import com.google.inject.Inject;
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordService {
   @Inject private OnboardingService onboardingService;
 
+  @Inject private MetricPackService metricPackService;
+
+  @Inject private Map<DataSourceType, DataCollectionInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
+
   @Override
   public HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
-      HealthSourceRecordsRequest healthSourceRecordsRequest, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier) {
-    Object result = getResponseFromHealthSourceProvider(healthSourceRecordsRequest, accountIdentifier, orgIdentifier,
-        projectIdentifier, MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL);
-    //    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) result;
-    // TODO set properly for error
-
-    HealthSourceRecordsResponse healthSourceRecordsResponse =
-        HealthSourceRecordsResponse.builder()
-            .status(Status.SUCCESS)
-            .providerType(healthSourceRecordsRequest.getProviderType())
-            .build();
-    healthSourceRecordsResponse.getRawRecords().add(result);
-    return healthSourceRecordsResponse;
-  }
-
-  private Object getResponseFromHealthSourceProvider(HealthSourceRecordsRequest healthSourceRecordsRequest,
-      String accountId, String orgId, String projectId, String dsl) {
+      HealthSourceRecordsRequest healthSourceRecordsRequest, String accountId, String orgId, String projectId) {
     // we need to have tracing id as well TODO
     //  TODO which data collection info to use Metric or Log ?
     //  how to form the data collection Info
@@ -69,7 +75,7 @@ public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordSe
         request = SumologicMetricSampleDataRequest.builder()
                       .from(healthSourceRecordsRequest.getStartTime())
                       .to(healthSourceRecordsRequest.getEndTime())
-                      .dsl(dsl)
+                      .dsl(MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL)
                       .query(healthSourceRecordsRequest.getQuery())
                       .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
                       .build();
@@ -112,22 +118,81 @@ public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordSe
     OnboardingResponseDTO onboardingResponseDTO =
         onboardingService.getOnboardingResponse(accountId, onboardingRequestDTO);
     Object result = onboardingResponseDTO.getResult();
-    return result;
+    // TODO set properly for error
+
+    HealthSourceRecordsResponse healthSourceRecordsResponse =
+        HealthSourceRecordsResponse.builder()
+            .status(Status.SUCCESS)
+            .providerType(healthSourceRecordsRequest.getProviderType())
+            .build();
+    healthSourceRecordsResponse.getRawRecords().add(result);
+    return healthSourceRecordsResponse;
   }
 
   @Override
   public MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, String accountIdentifier,
       String orgIdentifier, String projectIdentifier) {
+    SumologicMetricCVConfig sumologicMetricCVConfig =
+        SumologicMetricCVConfig.builder()
+            .accountId(accountIdentifier)
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .groupName("Default_Group")
+            .monitoredServiceIdentifier("fetch_sample_data_test") // TODO What to set here.
+            .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+            .category(CVMonitoringCategory.PERFORMANCE) // TODO Why is this performance ?
+            .build();
+
+    sumologicMetricCVConfig.setMetricInfos(Collections.singletonList(
+        SumologicMetricInfo.builder()
+            .query(queryRecordsRequest.getQuery())
+            .identifier("sample_metric")
+            .metricName("sample_metric")
+            .serviceInstanceFieldName(queryRecordsRequest.getProviderParams().getServiceInstanceField())
+            .build()));
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(
+        accountIdentifier, orgIdentifier, projectIdentifier, DataSourceType.SUMOLOGIC_METRICS);
+    sumologicMetricCVConfig.setMetricPack(metricPacks.get(0));
+    metricPackService.populateDataCollectionDsl(DataSourceType.SUMOLOGIC_METRICS, metricPacks.get(0));
+
+    DataCollectionInfoMapper dataCollectionInfoMapper =
+        dataSourceTypeDataCollectionInfoMapperMap.get(queryRecordsRequest.getProviderType());
+
+    DataCollectionInfo sumologicMetricDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(sumologicMetricCVConfig, VerificationTask.TaskType.SLI);
+
+    sumologicMetricDataCollectionInfo.setCollectHostData(false);
+    DataCollectionRequest request = SyncDataCollectionRequest.builder()
+                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                        .dataCollectionInfo(sumologicMetricDataCollectionInfo)
+                                        .endTime(Instant.ofEpochMilli(queryRecordsRequest.getEndTime()))
+                                        .startTime(Instant.ofEpochMilli(queryRecordsRequest.getStartTime()))
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .dataCollectionRequest(request)
+                                                    .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+                                                    .accountId(accountIdentifier)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .tracingId("tracingId")
+                                                    .build();
+
+    OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
+    final Gson gson = new Gson();
+    Type type = new TypeToken<List<TimeSeriesRecord>>() {}.getType();
+    List<TimeSeriesRecord> timeSeriesRecords = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
+
+    // How to put actual Header ?
+
     // TODO use actual DSL instead of onboard with the option for hostwise.
-    Object result = getResponseFromHealthSourceProvider(
-        queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier, MetricPackServiceImpl.SUMOLOGIC_DSL);
-    List<LinkedHashMap> timeSeriesRecords = (List<LinkedHashMap>) result;
+
     TimeSeries timeSeries =
         TimeSeries.builder().timeseriesName("sampleTimeseries").build(); // TODO Understand multiple Timeseries
-    timeSeriesRecords.forEach(x
+    timeSeriesRecords.forEach(timeSeriesRecord
         -> timeSeries.getData().add(TimeSeriesDataPoint.builder()
-                                        .timestamp((Long) x.get("timestamp"))
-                                        .value((Double) x.get("metricValue"))
+                                        .timestamp(timeSeriesRecord.getTimestamp())
+                                        .value(timeSeriesRecord.getMetricValue())
                                         .build()));
     MetricRecordsResponse metricRecordsResponse = MetricRecordsResponse.builder().status(Status.SUCCESS).build();
     metricRecordsResponse.getTimeSeriesData().add(timeSeries); // TODO Add actual data.
@@ -137,8 +202,57 @@ public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordSe
   @Override
   public LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, String accountIdentifier,
       String orgIdentifier, String projectIdentifier) {
+    SumologicLogCVConfig sumologicLogCVConfig =
+        SumologicLogCVConfig.builder()
+            .orgIdentifier(orgIdentifier)
+            .projectIdentifier(projectIdentifier)
+            .accountId(accountIdentifier)
+            .monitoredServiceIdentifier("fetch_sample_data_test")
+            .serviceInstanceIdentifier(queryRecordsRequest.getProviderParams().getServiceInstanceField())
+            .query(queryRecordsRequest.getQuery())
+            .queryName("queryName")
+            .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+            .build();
+    DataCollectionInfoMapper dataCollectionInfoMapper =
+        dataSourceTypeDataCollectionInfoMapperMap.get(queryRecordsRequest.getProviderType());
+    DataCollectionInfo sumologicLogDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(sumologicLogCVConfig, VerificationTask.TaskType.SLI);
+    sumologicLogDataCollectionInfo.setDataCollectionDsl(sumologicLogCVConfig.getDataCollectionDsl());
+    // TODO Is something also need to be done for host data ?
+    DataCollectionRequest request = SyncDataCollectionRequest.builder()
+                                        .type(DataCollectionRequestType.SYNC_DATA_COLLECTION)
+                                        .dataCollectionInfo(sumologicLogDataCollectionInfo)
+                                        .endTime(Instant.ofEpochMilli(queryRecordsRequest.getEndTime()))
+                                        .startTime(Instant.ofEpochMilli(queryRecordsRequest.getStartTime()))
+                                        .build();
+
+    OnboardingRequestDTO onboardingRequestDTO = OnboardingRequestDTO.builder()
+                                                    .dataCollectionRequest(request)
+                                                    .connectorIdentifier(queryRecordsRequest.getConnectorIdentifier())
+                                                    .accountId(accountIdentifier)
+                                                    .orgIdentifier(orgIdentifier)
+                                                    .projectIdentifier(projectIdentifier)
+                                                    .tracingId("tracingId")
+                                                    .build();
+
+    OnboardingResponseDTO response = onboardingService.getOnboardingResponse(accountIdentifier, onboardingRequestDTO);
+    final Gson gson = new Gson();
+    Type type = new TypeToken<List<LogDataRecord>>() {}.getType();
+    List<LogDataRecord> logDataRecords = gson.fromJson(JsonUtils.asJson(response.getResult()), type);
+
+    // Where are we setting the DSL?
+
     // TODO use actual DSL instead of onboard with the option for hostwise.
+    // How to get the query name ?
+    List<LogRecord> logRecords = new ArrayList<>();
+    logDataRecords.forEach(logDataRecord
+        -> logRecords.add(LogRecord.builder()
+                              .timestamp(logDataRecord.getTimestamp())
+                              .message(logDataRecord.getLog())
+                              .serviceInstance(logDataRecord.getHostname())
+                              .build()));
     LogRecordsResponse logRecordsResponse = LogRecordsResponse.builder().status(Status.SUCCESS).build();
+    logRecordsResponse.getLogRecords().addAll(logRecords);
     return logRecordsResponse;
   }
 }
