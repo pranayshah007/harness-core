@@ -119,6 +119,7 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.remote.client.NGRestUtils;
+import io.harness.rest.RestResponse;
 import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.KryoSerializer;
@@ -3133,6 +3134,14 @@ public class UserServiceImpl implements UserService {
     }
   }
 
+  public boolean ifUserHasAccessToSupportAccount(String userId, String accountId) {
+    if (isNotEmpty(userId) && isNotEmpty(accountId) && harnessUserGroupService.isHarnessSupportUser(userId)
+        && !accountService.isRestrictedAccessEnabled(accountId)) {
+      return true;
+    }
+    return false;
+  }
+
   private Set<Account> getRestrictedAccountsWithActiveAccessRequest(Set<String> restrictedAccountIds, User user) {
     Set<Account> accountSet = new HashSet<>();
     restrictedAccountIds.forEach(restrictedAccountId -> {
@@ -3188,7 +3197,7 @@ public class UserServiceImpl implements UserService {
     }
     if (user == null) {
       log.info("User [{}] not found in Cache. Load it from DB", userId);
-      user = get(userId, true);
+      user = get(userId);
       try {
         userCache.put(user.getUuid(), user);
       } catch (Exception ex) {

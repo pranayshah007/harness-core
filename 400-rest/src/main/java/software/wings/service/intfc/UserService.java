@@ -657,4 +657,6 @@ public interface UserService extends OwnedByAccount {
 
   io.harness.ng.beans.PageResponse<Account> getUserAccountsAndSupportAccounts(
       String userId, int pageIndex, int pageSize, String searchTerm);
+
+  boolean ifUserHasAccessToSupportAccount(String userId, String accountId);
 }
