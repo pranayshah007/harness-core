@@ -1,8 +1,6 @@
 package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.integer;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -11,12 +9,9 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
-import software.wings.beans.InstanceUnitType;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
