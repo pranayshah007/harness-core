@@ -643,7 +643,8 @@
           "required": [
             "connectorRef",
             "repository",
-            "repositoryFormat"
+            "repositoryFormat",
+            "repositoryUrl"
           ],
           "properties": {
             "artifactDirectory": {
@@ -669,7 +670,8 @@
               ]
             },
             "repositoryUrl": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "tag": {
               "type": "string"
