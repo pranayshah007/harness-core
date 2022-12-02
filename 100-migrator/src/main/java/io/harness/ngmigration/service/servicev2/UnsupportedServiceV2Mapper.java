@@ -7,6 +7,7 @@
 
 package io.harness.ngmigration.service.servicev2;
 
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.ngmigration.beans.MigrationInputDTO;
@@ -29,7 +30,7 @@ public class UnsupportedServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
-      List<ManifestConfigWrapper> manifests) {
+      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles) {
     return null;
   }
 }

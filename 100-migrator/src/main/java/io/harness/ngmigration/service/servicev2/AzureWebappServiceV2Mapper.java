@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec;
 import io.harness.cdng.service.beans.AzureWebAppServiceSpec.AzureWebAppServiceSpecBuilder;
@@ -33,13 +34,14 @@ public class AzureWebappServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
-      List<ManifestConfigWrapper> manifests) {
+      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     AzureWebAppServiceSpecBuilder webAppServiceSpecBuilder = AzureWebAppServiceSpec.builder();
     if (primaryArtifact != null) {
       webAppServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     webAppServiceSpecBuilder.variables(MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities));
+    webAppServiceSpecBuilder.configFiles(configFiles);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.AZURE_WEBAPP)
         .serviceSpec(webAppServiceSpecBuilder.build())

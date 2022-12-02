@@ -110,6 +110,7 @@ message Nexus3RegistryPayload {
   string classifier = 8;
   string extension = 9;
   string repositoryPort = 10;
+  string group = 11;
 }
 
 message Nexus2RegistryPayload {

@@ -30,14 +30,12 @@ deploymentAccounts {"name": "unique_account_id", "unique": true} {"accountIdenti
 deploymentSummaryNG {"name": "idx_accountIdentifier_orgIdentifier_projectIdentifier", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 deploymentSummaryNG {"name": "idx_instanceSyncKey_createdAt", "background": true} {"instanceSyncKey": 1, "createdAt": -1}
 entityActivity {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
-entityActivity {"name": "referredEntityFQN_1", "background": true} {"referredEntityFQN": 1}
 entityActivity {"name": "referredFqn_type_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1}
 entityActivity {"name": "referredFqn_type_time_referredByType", "background": true} {"referredEntityFQN": 1, "referredEntityType": 1, "activityTime": 1, "referredByEntityType": 1}
 entityActivity {"name": "type_referredFqn_referredByType_desSort_Index", "background": true} {"type": 1, "referredEntityFQN": 1, "referredEntityType": 1, "referredByEntityType": 1, "activityTime": -1}
 entitySetupUsage {"name": "EntitySetupUsage_unique_index", "unique": true} {"referredByEntityType": 1, "referredByEntityFQN": 1, "referredByEntityRepoIdentifier": 1, "referredByEntityBranch": 1, "referredEntityType": 1, "referredEntityFQN": 1, "referredEntityRepoIdentifier": 1, "referredEntityBranch": 1, "accountIdentifier": 1}
 entitySetupUsage {"name": "ReferredByEntityIndex", "background": true} {"accountIdentifier": 1, "referredByEntityType": 1, "referredByEntityFQN": 1}
 entitySetupUsage {"name": "ReferredEntityIndex", "background": true} {"accountIdentifier": 1, "referredEntityType": 1, "referredEntityFQN": 1}
-entitySetupUsage {"name": "accountIdentifier_1", "background": true} {"accountIdentifier": 1}
 entitySetupUsage {"name": "account_referredByFQN_referredByIsDefault_createdAt_index", "background": true} {"accountIdentifier": 1, "referredByEntityFQN": 1, "referredByEntityIsDefault": 1, "createdAt": -1}
 entitySetupUsage {"name": "account_referredBy_createdAt_index", "background": true} {"accountIdentifier": 1, "referredByEntityFQN": 1, "referredByEntityType": 1, "referredEntityType": 1, "referredByEntityIsDefault": 1, "createdAt": -1}
 entitySetupUsage {"name": "account_referredBy_referred_index", "background": true} {"accountIdentifier": 1, "referredByEntityFQN": 1, "referredByEntityType": 1, "referredEntityFQN": 1, "referredEntityType": 1}
@@ -53,13 +51,11 @@ genericEvent {"name": "earliestGet_1", "background": true, "expireAfterSeconds":
 genericEvent {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 gitBranches {"name": "unique_accountIdentifier_repoURL_branchName_idx", "unique": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1}
 gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_createdAtSort", "background": true} {"accountIdentifier": 1, "repoURL": 1, "branchName": 1, "gitSyncDirection": 1, "createdAt": -1}
-gitCommitNG {"name": "commitId_1", "background": true} {"commitId": 1}
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}
 gitFileActivityNG {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
 gitFileLocation {"name": "account_org_project__idx", "background": true} {"accountId": 1, "organizationId": 1, "projectId": 1}
 gitFullSyncConfig {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
-gitFullSyncEntityInfo {"name": "account_org_project__idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 gitFullSyncEntityInfo {"name": "account_org_project_entityType_status_filePath_name_repo_branch_idx", "background": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "entityDetail.type": 1, "syncStatus": 1, "filePath": 1, "entityDetail.name": 1, "repoName": 1, "branchName": 1}
 gitFullSyncEntityInfo {"name": "nextRuntime_1", "background": true} {"nextRuntime": 1}
 gitFullSyncJob {"name": "account_org_project__idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
@@ -88,6 +84,7 @@ instanceNG {"name": "accountId_organizationId_projectId_isDeleted_createdAt_dele
 instanceNG {"name": "accountId_organizationId_projectId_isDeleted_envId_clusterIdentifier_serviceId_primaryArtifact_lastPipelineExecutionId_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "isDeleted": 1, "envIdentifier": 1, "instanceInfo.clusterIdentifier": 1, "serviceIdentifier": 1, "primaryArtifact.tag": 1, "lastPipelineExecutionId": 1}
 instanceNG {"name": "accountId_organizationId_projectId_isDeleted_envId_serviceId_primaryArtifact_lastPipelineExecutionId_infraIdentifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "isDeleted": 1, "envIdentifier": 1, "serviceIdentifier": 1, "primaryArtifact.tag": 1, "lastPipelineExecutionId": 1, "infraIdentifier": 1}
 instanceNG {"name": "accountId_organizationId_projectId_lastDeployedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastDeployedAt": 1}
+instanceNG {"name": "accountId_organizationId_projectId_lastDeployedAt_serviceIdentifier_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "lastDeployedAt": 1, "serviceIdentifier": 1}
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_envId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "envIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_instanceInfo.Agent_ClusterIdentifier_createdAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "instanceInfo.agentIdentifier": 1, "instanceInfo.clusterIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
 instanceNG {"name": "accountId_organizationId_projectId_serviceId_isDeleted_createdAt_deletedAt_idx", "background": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "serviceIdentifier": 1, "isDeleted": 1, "createdAt": 1, "deletedAt": 1}
@@ -121,7 +118,6 @@ organizations {"name": "identifier_1", "background": true} {"identifier": 1}
 organizations {"name": "unique_accountIdentifier_organizationIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "identifier": 1}
 outboxEvents {"name": "blocked_createdAt_nextUnblockAttemptAt_outbox_Idx", "background": true} {"blocked": 1, "createdAt": 1, "nextUnblockAttemptAt": 1}
 outboxEvents {"name": "eventType_blocked_outbox_Idx", "background": true} {"eventType": 1, "blocked": 1}
-pollingDocuments {"name": "accountId", "background": true} {"accountId": 1}
 pollingDocuments {"name": "accountId_organizationIdentifier_projectIdentifier_pollingType_pollingItem", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "pollingType": 1, "pollingInfo": 1, "signatures": 1}
 primaryVersion {"name": "createdAt_1", "background": true} {"createdAt": 1}
 primaryVersion {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
@@ -180,8 +176,6 @@ yamlChangeSetNG {"name": "accountId_queuekey_status_queuedOn_index", "background
 yamlChangeSetNG {"name": "accountId_status_createdAt_index", "background": true} {"accountId": 1, "status": 1, "createdAt": 1}
 yamlChangeSetNG {"name": "accountId_status_retryCount_index", "background": true} {"accountId": 1, "status": 1, "retryCount": 1}
 yamlChangeSetNG {"name": "status_1", "background": true} {"status": 1}
-yamlGitConfigs {"name": "accountId_orgId_projectId_Index", "background": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1}
 yamlGitConfigs {"name": "accountId_orgId_projectId_identifier_unique_Index", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 yamlGitConfigs {"name": "accountId_orgId_projectId_repo_unique_Index", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "repo": 1}
-yamlGitConfigs {"name": "repo_1", "background": true} {"repo": 1}
 yamlGitConfigs {"name": "repo_branch_index", "background": true} {"repo": 1, "branch": 1}

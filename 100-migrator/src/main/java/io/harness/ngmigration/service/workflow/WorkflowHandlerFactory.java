@@ -10,6 +10,7 @@ package io.harness.ngmigration.service.workflow;
 import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.exception.InvalidRequestException;
 
+import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.Workflow;
 
 import com.google.inject.Inject;
@@ -25,6 +26,10 @@ public class WorkflowHandlerFactory {
   @Inject BasicWorkflowHandlerImpl basicWorkflowHandler;
 
   public WorkflowHandler getWorkflowHandler(Workflow workflow) {
+    // Special case.
+    if (workflow.getOrchestration() instanceof CanaryOrchestrationWorkflow) {
+      return canaryWorkflowHandler;
+    }
     switch (workflow.getOrchestration().getOrchestrationWorkflowType()) {
       case ROLLING:
         return rollingWorkflowHandler;
@@ -54,8 +59,8 @@ public class WorkflowHandlerFactory {
     try {
       return getWorkflowHandler(workflow1).areSimilar(workflow1, workflow2);
     } catch (Exception e) {
-      log.error(
-          String.format("There was an error with comparing Worflows %s & %s", workflow2.getName(), workflow1.getName()),
+      log.error(String.format(
+                    "There was an error with comparing Workflows %s & %s", workflow2.getName(), workflow1.getName()),
           e);
       return false;
     }

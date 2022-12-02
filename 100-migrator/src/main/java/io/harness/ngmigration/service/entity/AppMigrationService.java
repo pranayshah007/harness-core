@@ -45,6 +45,8 @@ import software.wings.beans.Pipeline.PipelineKeys;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableKeys;
+import software.wings.beans.Workflow;
+import software.wings.beans.Workflow.WorkflowKeys;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.ApplicationManifest.ApplicationManifestKeys;
 import software.wings.beans.template.Template;
@@ -106,6 +108,17 @@ public class AppMigrationService extends NgMigrationService {
                         .map(Pipeline::getUuid)
                         .distinct()
                         .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.PIPELINE).build())
+                        .collect(Collectors.toSet()));
+
+    List<Workflow> workflows = hPersistence.createQuery(Workflow.class)
+                                   .filter(WorkflowKeys.accountId, application.getAccountId())
+                                   .filter(WorkflowKeys.appId, appId)
+                                   .project(WorkflowKeys.uuid, true)
+                                   .asList();
+    children.addAll(workflows.stream()
+                        .map(Workflow::getUuid)
+                        .distinct()
+                        .map(id -> CgEntityId.builder().id(id).type(NGMigrationEntityType.WORKFLOW).build())
                         .collect(Collectors.toSet()));
 
     List<Service> services = serviceResourceService.findServicesByAppInternal(appId);

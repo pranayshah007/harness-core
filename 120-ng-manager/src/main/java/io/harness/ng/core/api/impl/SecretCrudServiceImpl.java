@@ -37,6 +37,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -47,6 +48,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
@@ -774,8 +776,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       return;
     }
 
-    Optional<Secret> secretOptional =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
+    BaseNGAccess secretRefScopeInfo =
+        SecretRefHelper.getScopeIdentifierForSecretRef(secretRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    Optional<Secret> secretOptional = ngSecretService.get(accountIdentifier, secretRefScopeInfo.getOrgIdentifier(),
+        secretRefScopeInfo.getProjectIdentifier(), secretRef.getIdentifier());
 
     if (!secretOptional.isPresent()) {
       throw new EntityNotFoundException(

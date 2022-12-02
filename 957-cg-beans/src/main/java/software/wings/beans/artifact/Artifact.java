@@ -137,7 +137,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   @EqualsAndHashCode.Exclude @Deprecated public static final String LAST_UPDATED_AT_KEY2 = "lastUpdatedAt";
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser createdBy;
   @EqualsAndHashCode.Exclude @SchemaIgnore @FdIndex private long createdAt;
 
@@ -182,7 +182,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   private ContentStatus contentStatus;
   private Map<String, String> source;
   private String settingId;
-  @FdIndex private String accountId;
+  private String accountId;
   private String artifactStreamType;
   private String uiDisplayName;
   private String buildIdentity;

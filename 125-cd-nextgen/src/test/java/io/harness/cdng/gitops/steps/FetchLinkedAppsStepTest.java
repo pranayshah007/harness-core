@@ -234,4 +234,31 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
     StepResponse.StepOutcome stepOutcome = (StepResponse.StepOutcome) ((List) stepResponse.getStepOutcomes()).get(0);
     assertThat(((GitOpsLinkedAppsOutcome) stepOutcome.getOutcome()).getApps()).hasSize(1);
   }
+
+  @Test
+  @Owner(developers = VAIBHAV_SI)
+  @Category(UnitTests.class)
+  public void shouldNotSetOutcomeWhenNoAppsFound() throws Exception {
+    Ambiance ambiance = Ambiance.newBuilder().build();
+    FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
+    doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
+    GitOpsFetchAppTaskResponse taskResponse =
+        GitOpsFetchAppTaskResponse.builder().taskStatus(TaskStatus.SUCCESS).build();
+    ThrowingSupplier<GitOpsFetchAppTaskResponse> throwingSupplier = () -> taskResponse;
+    GitopsClustersOutcome gitopsClustersOutcome =
+        new GitopsClustersOutcome(Collections.singletonList(GitopsClustersOutcome.ClusterData.builder().build()));
+    doReturn(OptionalSweepingOutput.builder().found(true).output(gitopsClustersOutcome).build())
+        .when(executionSweepingOutputService)
+        .resolveOptional(any(), any());
+    Call call = mock(Call.class);
+    PageResponse pageResponse = PageResponse.builder().content(Collections.emptyList()).build();
+    doReturn(call).when(gitopsResourceClient).listApps(any());
+    doReturn(Response.success(pageResponse)).when(call).execute();
+
+    StepResponse stepResponse =
+        fetchLinkedAppsStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, throwingSupplier);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).isEmpty();
+  }
 }

@@ -32,9 +32,7 @@ public class Nexus2RegistryPollingItemGenerator implements PollingItemGenerator 
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
-    String repository = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryName");
-    String artifactPath = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactPath");
-    String repositoryUrl = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryUrl");
+    String repository = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repository");
     String artifactId = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactId");
     String repositoryFormat =
         buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryFormat");
@@ -42,7 +40,6 @@ public class Nexus2RegistryPollingItemGenerator implements PollingItemGenerator 
     String packageName = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.packageName");
     String classifier = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.classifier");
     String extension = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.extension");
-    String repositoryPort = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryPort");
 
     Nexus2RegistryPayload.Builder nexus2RegistryPayload = Nexus2RegistryPayload.newBuilder();
     nexus2RegistryPayload.setRepositoryFormat(repositoryFormat).setRepository(repository);

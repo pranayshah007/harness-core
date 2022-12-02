@@ -9,8 +9,6 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
-import software.wings.beans.InstanceUnitType;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -32,8 +30,4 @@ public class TasAppResizeBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @JsonIgnore String tasSetupFqn;
-  ParameterField<Integer> upsizeInstanceCount;
-  ParameterField<InstanceUnitType> upsizeInstanceUnitType;
-  ParameterField<Integer> downsizeInstanceCount;
-  ParameterField<InstanceUnitType> downsizeInstanceUnitType;
 }

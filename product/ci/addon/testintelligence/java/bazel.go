@@ -40,7 +40,7 @@ func (b *bazelRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (b *bazelRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+func (b *bazelRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
 
 	// bazel query 'kind(java.*, tests(//...))'

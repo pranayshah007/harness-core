@@ -32,6 +32,7 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   ResizeStrategy resizeStrategy;
   String cfAppNamePrefix;
   CfCliVersion cfCliVersion;
+  Integer timeoutIntervalInMinutes;
   CfAppSetupTimeDetails oldApplicationDetails;
   CfAppSetupTimeDetails newApplicationDetails;
   List<String> tempRouteMap;

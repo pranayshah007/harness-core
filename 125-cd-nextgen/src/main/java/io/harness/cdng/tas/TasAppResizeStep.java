@@ -120,10 +120,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
           .build();
     }
 
-    Integer upsizeInstanceCount = tasAppResizeStepParameters.getUpsizeInstanceCount().getValue();
-    Integer downsizeInstanceCount = tasAppResizeStepParameters.getDownsizeInstanceCount().getValue();
-    InstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getUpsizeInstanceUnitType().getValue();
-    InstanceUnitType downsizeCountType = tasAppResizeStepParameters.getDownsizeInstanceUnitType().getValue();
+    Integer upsizeInstanceCount = tasAppResizeStepParameters.getNewAppInstances().getValue();
+    Integer downsizeInstanceCount = tasAppResizeStepParameters.getOldAppInstances().getValue();
+    InstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
+    InstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     Integer totalDesiredCount = tasSetupDataOutcome.getDesiredActualFinalCount();
 
@@ -146,7 +146,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .encryptionDataDetails(tasEntityHelper.getEncryptionDataDetails(connectorInfoDTO, baseNGAccess))
             .tasConnectorDTO((TasConnectorDTO) connectorInfoDTO.getConnectorConfig())
             .build();
-    // todo: timeout
     CfDeployCommandRequestNG cfDeployCommandRequestNG =
         CfDeployCommandRequestNG.builder()
             .accountId(accountId)
@@ -162,7 +161,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
-            .timeoutIntervalInMin(2)
+            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .totalPreviousInstanceCount(tasSetupDataOutcome.getTotalPreviousInstanceCount())
             .build();
     final TaskData taskData = TaskData.builder()

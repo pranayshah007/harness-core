@@ -13,6 +13,8 @@ import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
+import io.harness.ngmigration.beans.summary.AccountSummary;
+import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.persistence.HPersistence;
 
@@ -101,5 +103,14 @@ public class AccountMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return false;
+  }
+
+  @Override
+  public BaseSummary getSummary(List<CgEntityNode> entities) {
+    if (EmptyPredicate.isEmpty(entities)) {
+      return null;
+    }
+    Account account = (Account) entities.get(0).getEntity();
+    return new AccountSummary(entities.size(), account.getAccountName());
   }
 }
