@@ -232,7 +232,8 @@ public class PerspectiveResource {
         && breakdown == BudgetBreakdown.MONTHLY) {
       Double[] lastYearMonthlyCost =
           budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
-      response = BudgetUtils.getYearlyMonthWiseKeyValuePairs(startTime, lastYearMonthlyCost);
+      response = BudgetUtils.getYearlyMonthWiseKeyValuePairs(
+          BudgetUtils.getStartOfLastPeriod(startTime, period), lastYearMonthlyCost);
     }
     return ResponseDTO.newResponse(response);
   }

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -26,4 +26,4 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("brakemanStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.BrakemanStepInfo")
-public class BrakemanStepInfo extends SecurityStepInfo {}
+public class BrakemanStepInfo extends STOGenericStepInfo {}

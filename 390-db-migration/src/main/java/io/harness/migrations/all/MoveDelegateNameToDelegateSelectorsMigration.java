@@ -38,7 +38,7 @@ public class MoveDelegateNameToDelegateSelectorsMigration implements Migration {
   @Override
   public void migrate() {
     log.info("Running MoveDelegateNameToDelegateSelectorsMigration");
-    List<Account> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+    List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : allAccounts) {
       String accountId = account.getUuid();
       log.info(

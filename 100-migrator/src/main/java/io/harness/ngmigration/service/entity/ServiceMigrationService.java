@@ -10,7 +10,9 @@ package io.harness.ngmigration.service.entity;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.encryption.Scope.PROJECT;
 
+import static software.wings.beans.ConfigFile.DEFAULT_TEMPLATE_ID;
 import static software.wings.ngmigration.NGMigrationEntityType.ARTIFACT_STREAM;
+import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
 import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 import static software.wings.ngmigration.NGMigrationEntityType.SERVICE;
@@ -21,8 +23,8 @@ import static java.util.stream.Collectors.groupingBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.gitsync.beans.YamlDTO;
@@ -47,13 +49,14 @@ import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.ngmigration.service.servicev2.ServiceV2Factory;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.service.remote.ServiceResourceClient;
 import io.harness.utils.YamlPipelineUtils;
 
 import software.wings.api.DeploymentType;
+import software.wings.beans.ConfigFile;
+import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.appmanifest.ApplicationManifest;
@@ -66,6 +69,7 @@ import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationStatus;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactStreamService;
+import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.ServiceResourceService;
 import software.wings.utils.ArtifactType;
 
@@ -80,6 +84,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -90,6 +95,8 @@ public class ServiceMigrationService extends NgMigrationService {
   @Inject private ManifestMigrationService manifestMigrationService;
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private ServiceResourceClient serviceResourceClient;
+  @Inject ConfigService configService;
+  @Inject ConfigFileMigrationService configFileMigrationService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -147,6 +154,8 @@ public class ServiceMigrationService extends NgMigrationService {
         artifactStreamService.getArtifactStreamsForService(service.getAppId(), serviceId);
     List<ApplicationManifest> applicationManifests =
         applicationManifestService.listAppManifests(service.getAppId(), serviceId);
+    List<ConfigFile> configFiles =
+        configService.getConfigFilesForEntity(service.getAppId(), DEFAULT_TEMPLATE_ID, serviceId);
     Set<CgEntityId> children = new HashSet<>();
     if (isNotEmpty(artifactStreams)) {
       children.addAll(
@@ -159,11 +168,19 @@ public class ServiceMigrationService extends NgMigrationService {
                           .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
                           .collect(Collectors.toList()));
     }
+
+    // Only consider config files that override for all environments
+    if (isNotEmpty(configFiles)) {
+      children.addAll(configFiles.stream()
+                          .map(configFile -> CgEntityId.builder().id(configFile.getUuid()).type(CONFIG_FILE).build())
+                          .collect(Collectors.toList()));
+    }
     if (isNotEmpty(service.getServiceVariables())) {
       children.addAll(
           service.getServiceVariables()
               .stream()
-              .filter(serviceVariable -> serviceVariable.getType().equals(ServiceVariableType.ENCRYPTED_TEXT))
+              .filter(Objects::nonNull)
+              .filter(serviceVariable -> ServiceVariableType.ENCRYPTED_TEXT.equals(serviceVariable.getType()))
               .map(serviceVariable -> CgEntityId.builder().id(serviceVariable.getEncryptedValue()).type(SECRET).build())
               .collect(Collectors.toList()));
     }
@@ -193,14 +210,6 @@ public class ServiceMigrationService extends NgMigrationService {
           .build();
     }
     return NGMigrationStatus.builder().status(true).build();
-  }
-
-  public ServiceConfig getServiceConfig(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
-    NGYamlFile entityDetail = migratedEntities.get(entityId);
-    return ServiceConfig.builder()
-        .serviceRef(ParameterField.createValueField(entityDetail.getNgEntityDetail().getIdentifier()))
-        .build();
   }
 
   @Override
@@ -242,11 +251,23 @@ public class ServiceMigrationService extends NgMigrationService {
     MigratorExpressionUtils.render(service, inputDTO.getCustomExpressions());
     Set<CgEntityId> manifests =
         graph.get(entityId).stream().filter(cgEntityId -> cgEntityId.getType() == MANIFEST).collect(Collectors.toSet());
+    Set<CgEntityId> configFileIds =
+        entities.values()
+            .stream()
+            .filter(entry -> CONFIG_FILE == entry.getType())
+            .map(entry -> (ConfigFile) entry.getEntity())
+            .filter(configFile -> configFile.getEntityType() == EntityType.SERVICE)
+            .filter(ConfigFile::isTargetToAllEnv)
+            .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
+            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getEntityId()).build())
+            .collect(Collectors.toSet());
     List<ManifestConfigWrapper> manifestConfigWrapperList =
         manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities);
+    List<ConfigFileWrapper> configFileWrapperList =
+        configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
 
     ServiceDefinition serviceDefinition = ServiceV2Factory.getService2Mapper(service).getServiceDefinition(
-        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList);
+        inputDTO, entities, graph, service, migratedEntities, manifestConfigWrapperList, configFileWrapperList);
     if (serviceDefinition == null) {
       return Collections.emptyList();
     }

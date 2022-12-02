@@ -21,7 +21,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.pms.data.PmsEngineExpressionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.pipeline.PipelineEntity;

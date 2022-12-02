@@ -1,0 +1,16 @@
+template:
+  name: testpipeline
+  identifier: testpipeline
+  versionLabel: "1"
+  type: Pipeline
+  projectIdentifier: njh
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stages:
+      - stage:
+          name: gfd
+          identifier: gfd
+          template:
+            templateRef: testStage
+            versionLabel: "1"

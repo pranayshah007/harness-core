@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.SHIVAM;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,6 +46,8 @@ import io.harness.polling.contracts.EcrPayload;
 import io.harness.polling.contracts.GcrPayload;
 import io.harness.polling.contracts.GcsHelmPayload;
 import io.harness.polling.contracts.HttpHelmPayload;
+import io.harness.polling.contracts.Nexus2RegistryPayload;
+import io.harness.polling.contracts.Nexus3RegistryPayload;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.PollingPayloadData;
 import io.harness.polling.contracts.Qualifier;
@@ -639,6 +642,284 @@ public class BuildTriggerHelperTest extends CategoryTest {
     assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoRepository))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("repository can not be blank. Needs to have concrete value");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testValidatePollingItemForArtifact_Nexus3Registry() {
+    PollingItem pollingItem = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepository("repo")
+                                          .setRepositoryFormat("docker")
+                                          .setArtifactId("nexus")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setRepositoryPort("8080")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+    validatePollingItemForArtifact(pollingItem);
+
+    final PollingItem pollingItemNoRepo = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("docker")
+                                          .setArtifactId("nexus")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setRepositoryPort("8080")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoRepo))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("repository can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoRepositoryFormat =
+        generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+            PollingPayloadData.newBuilder()
+                .setConnectorRef("conn")
+                .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                              .setRepository("repo")
+                                              .setArtifactId("nexus")
+                                              .setArtifactPath("path")
+                                              .setRepositoryUrl("http://docker.com")
+                                              .setRepositoryPort("8080")
+                                              .setGroupId("groupId")
+                                              .setPackageName("packageName")
+                                              .build())
+                .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoRepositoryFormat))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("repositoryFormat not supported");
+    final PollingItem pollingItemNoURL = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("docker")
+                                          .setRepository("repo")
+                                          .setArtifactId("nexus")
+                                          .setArtifactPath("path")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoURL))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("repositoryUrl can not be blank. Needs to have concrete value"
+            + " \n "
+            + "repositoryPort can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoPath = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("docker")
+                                          .setRepository("repo")
+                                          .setArtifactId("nexus")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoPath))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("artifactPath can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoGroupId = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("maven")
+                                          .setRepository("repo")
+                                          .setArtifactId("nexus")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoGroupId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("groupId can not be blank. Needs to have concrete value");
+    final PollingItem pollingItemNoArtifactId = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("maven")
+                                          .setRepository("repo")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoArtifactId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("artifactId can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoPackageName = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("nuget")
+                                          .setRepository("repo")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setGroupId("groupId")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoPackageName))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("packageName can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoPackageNameNPM = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("npm")
+                                          .setRepository("repo")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setGroupId("groupId")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoPackageNameNPM))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("packageName can not be blank. Needs to have concrete value");
+    final PollingItem pollingItemNoGroup = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus3RegistryPayload(Nexus3RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("raw")
+                                          .setRepository("repo")
+                                          .setArtifactPath("path")
+                                          .setRepositoryUrl("http://docker.com")
+                                          .setGroupId("groupId")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoGroup))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("group can not be blank. Needs to have concrete value");
+  }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testValidatePollingItemForArtifact_Nexus2Registry() {
+    PollingItem pollingItem = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepository("repo")
+                                          .setRepositoryFormat("maven")
+                                          .setArtifactId("nexus")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+    validatePollingItemForArtifact(pollingItem);
+
+    PollingItem pollingItemNoRepo = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("maven")
+                                          .setArtifactId("nexus")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoRepo))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("repository can not be blank. Needs to have concrete value");
+
+    PollingItem pollingItemNoRepositoryFormat = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepository("repo")
+                                          .setArtifactId("nexus")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoRepositoryFormat))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("repositoryFormat not supported");
+
+    final PollingItem pollingItemNoGroupId = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("maven")
+                                          .setRepository("repo")
+                                          .setArtifactId("nexus")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoGroupId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("groupId can not be blank. Needs to have concrete value");
+    final PollingItem pollingItemNoArtifactId = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("maven")
+                                          .setRepository("repo")
+                                          .setGroupId("groupId")
+                                          .setPackageName("packageName")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoArtifactId))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("artifactId can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoPackageName = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("nuget")
+                                          .setRepository("repo")
+                                          .setGroupId("groupId")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoPackageName))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("packageName can not be blank. Needs to have concrete value");
+
+    final PollingItem pollingItemNoPackageNameNPM = generatePollingItem(io.harness.polling.contracts.Category.ARTIFACT,
+        PollingPayloadData.newBuilder()
+            .setConnectorRef("conn")
+            .setNexus2RegistryPayload(Nexus2RegistryPayload.newBuilder()
+                                          .setRepositoryFormat("npm")
+                                          .setRepository("repo")
+                                          .setGroupId("groupId")
+                                          .build())
+            .build());
+
+    assertThatThrownBy(() -> buildTriggerHelper.validatePollingItemForArtifact(pollingItemNoPackageNameNPM))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("packageName can not be blank. Needs to have concrete value");
   }
 
   private void validatePollingItemForArtifact(PollingItem pollingItem) {

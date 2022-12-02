@@ -197,15 +197,15 @@ public class NGTemplateResource {
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @Parameter(description = "This contains details of Git Entity like Git Branch info")
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") boolean loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     // if label is not given, return stable template
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(
         String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
             templateIdentifier, versionLabel, projectId, orgId, accountId));
-    Optional<TemplateEntity> templateEntity =
-        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, deleted);
+    Optional<TemplateEntity> templateEntity = templateService.get(accountId, orgId, projectId, templateIdentifier,
+        versionLabel, deleted, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
 
     String version = "0";
     if (templateEntity.isPresent()) {
@@ -674,7 +674,7 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") boolean loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYaml(accountId, orgId,
@@ -701,7 +701,7 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull TemplateApplyRequestDTO templateApplyRequestDTO,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") boolean loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
     TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,

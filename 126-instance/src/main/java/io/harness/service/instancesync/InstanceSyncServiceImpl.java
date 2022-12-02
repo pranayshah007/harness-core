@@ -20,6 +20,7 @@ import io.harness.dtos.deploymentinfo.DeploymentInfoDTO;
 import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.DeploymentInfoDetailsDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.helper.InstanceSyncHelper;
 import io.harness.helper.InstanceSyncLocalCacheManager;
@@ -193,6 +194,11 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
           log.error(
               "Infrastructure mapping not found for {}", instanceSyncPerpetualTaskInfoDTO.getInfrastructureMappingId());
           // delete perpetual task as well as instance sync perpetual task info record
+          instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
+          return;
+        }
+
+        if (!doSvcAndEnvExist(infrastructureMappingDTO.get())) {
           instanceSyncHelper.cleanUpInstanceSyncPerpetualTaskInfo(instanceSyncPerpetualTaskInfoDTO);
           return;
         }
@@ -604,5 +610,21 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
             instanceIds, oldInfrastructureMappingDTO.getId(), infrastructureMappingDTO.getId());
       }
     });
+  }
+
+  private boolean doSvcAndEnvExist(InfrastructureMappingDTO infrastructureMappingDTO) {
+    try {
+      ServiceEntity serviceEntity = instanceSyncHelper.fetchService(infrastructureMappingDTO);
+    } catch (EntityNotFoundException e) {
+      log.error("Service not found", e);
+      return false;
+    }
+    try {
+      Environment environment = instanceSyncHelper.fetchEnvironment(infrastructureMappingDTO);
+    } catch (EntityNotFoundException e) {
+      log.error("Environment not found", e);
+      return false;
+    }
+    return true;
   }
 }

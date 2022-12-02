@@ -65,6 +65,8 @@ import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetai
 import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsServiceImpl;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceService;
 import io.harness.cdng.servicenow.resources.service.ServiceNowResourceServiceImpl;
+import io.harness.cdng.tas.service.TasResourceService;
+import io.harness.cdng.tas.service.TasResourceServiceImpl;
 import io.harness.cdng.usage.impl.CDLicenseUsageImpl;
 import io.harness.cdng.yaml.CdYamlSchemaService;
 import io.harness.cdng.yaml.CdYamlSchemaServiceImpl;
@@ -134,6 +136,7 @@ public class NGModule extends AbstractModule {
     bind(EnvironmentGroupService.class).to(EnvironmentGroupServiceImpl.class);
     bind(AcrResourceService.class).to(AcrResourceServiceImpl.class);
     bind(AzureResourceService.class).to(AzureResourceServiceImpl.class);
+    bind(TasResourceService.class).to(TasResourceServiceImpl.class);
     bind(JenkinsResourceService.class).to(JenkinsResourceServiceImpl.class);
     bind(GithubPackagesResourceService.class).to(GithubPackagesResourceServiceImpl.class);
     bind(AzureArtifactsResourceService.class).to(AzureArtifactsResourceServiceImpl.class);

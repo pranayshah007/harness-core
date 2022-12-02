@@ -149,7 +149,7 @@ ciExecutionServiceConfig:
       defaultMacExecutionCount: 10      
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.19
+  addonImage: harness/ci-addon:1.14.21
   liteEngineImage: harness/ci-lite-engine:1.14.22
   isLocal: false
   cacheIntelligenceConfig:

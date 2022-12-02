@@ -630,6 +630,9 @@ public class HelmTaskHelperBase {
     if (isEmpty(chartVersion)) {
       return true;
     }
+    if (chartVersion.charAt(0) == '^') {
+      return true;
+    }
     String chart = "";
     try {
       chart = new String(Files.readAllBytes(Paths.get(chartDirectory, chartName, "Chart.yaml")));

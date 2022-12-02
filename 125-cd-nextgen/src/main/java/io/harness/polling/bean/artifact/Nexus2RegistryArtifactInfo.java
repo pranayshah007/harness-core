@@ -18,6 +18,8 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.pms.yaml.ParameterField;
 
+import software.wings.utils.RepositoryFormat;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -42,18 +44,18 @@ public class Nexus2RegistryArtifactInfo implements ArtifactInfo {
   @Override
   public ArtifactConfig toArtifactConfig() {
     NexusRegistryConfigSpec nexusRegistryConfigSpec;
-    if (repositoryFormat.equalsIgnoreCase("maven")) {
+    if (repositoryFormat.equalsIgnoreCase(RepositoryFormat.maven.name())) {
       nexusRegistryConfigSpec = NexusRegistryMavenConfig.builder()
                                     .artifactId(ParameterField.<String>builder().value(artifactId).build())
                                     .groupId(ParameterField.<String>builder().value(groupId).build())
                                     .classifier(ParameterField.<String>builder().value(classifier).build())
                                     .extension(ParameterField.<String>builder().value(extension).build())
                                     .build();
-    } else if (repositoryFormat.equalsIgnoreCase("npm")) {
+    } else if (repositoryFormat.equalsIgnoreCase(RepositoryFormat.npm.name())) {
       nexusRegistryConfigSpec = NexusRegistryNpmConfig.builder()
                                     .packageName(ParameterField.<String>builder().value(packageName).build())
                                     .build();
-    } else if (repositoryFormat.equalsIgnoreCase("nuget")) {
+    } else if (repositoryFormat.equalsIgnoreCase(RepositoryFormat.nuget.name())) {
       nexusRegistryConfigSpec = NexusRegistryNugetConfig.builder()
                                     .packageName(ParameterField.<String>builder().value(packageName).build())
                                     .build();

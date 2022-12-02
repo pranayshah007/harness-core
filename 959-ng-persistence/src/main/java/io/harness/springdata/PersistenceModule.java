@@ -8,6 +8,7 @@
 package io.harness.springdata;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.mongo.helper.MongoConstants.ANALYTICS;
 import static io.harness.mongo.helper.MongoConstants.SECONDARY;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +23,8 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.mongodb.ReadPreference;
+import com.mongodb.Tag;
+import com.mongodb.TagSet;
 import org.springframework.data.mongodb.UncategorizedMongoDbException;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.guice.module.BeanFactoryProvider;
@@ -49,6 +52,16 @@ public abstract class PersistenceModule extends AbstractModule {
     HMongoTemplate template =
         new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter(), primaryMongoConfig);
     template.setReadPreference(ReadPreference.secondaryPreferred());
+    return template;
+  }
+
+  @Provides
+  @Named(ANALYTICS)
+  @Singleton
+  protected MongoTemplate getAnalyticsMongoTemplate(MongoTemplate mongoTemplate, MongoConfig primaryMongoConfig) {
+    HMongoTemplate template =
+        new HMongoTemplate(mongoTemplate.getMongoDbFactory(), mongoTemplate.getConverter(), primaryMongoConfig);
+    template.setReadPreference(ReadPreference.secondaryPreferred(new TagSet(new Tag("nodeType", "ANALYTICS"))));
     return template;
   }
 

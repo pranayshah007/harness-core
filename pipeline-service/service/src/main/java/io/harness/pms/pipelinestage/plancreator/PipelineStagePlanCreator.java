@@ -97,7 +97,7 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getNode()
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
-                    .getField("pipelineInputs")))
+                    .getField(YAMLFieldNameConstants.INPUTS)))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(

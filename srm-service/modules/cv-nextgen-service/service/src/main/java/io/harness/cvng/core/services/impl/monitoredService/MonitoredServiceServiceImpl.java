@@ -513,6 +513,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                              .projectIdentifier(monitoredService.getProjectIdentifier())
                              .build());
       setupUsageEventService.sendDeleteEventsForMonitoredService(projectParams, identifier);
+      activityService.deleteByMonitoredServiceIdentifier(monitoredServiceParams);
     }
     return deleted;
   }

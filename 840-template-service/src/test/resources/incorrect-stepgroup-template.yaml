@@ -1,0 +1,25 @@
+template:
+  name: testingStepG
+  identifier: testingStepG
+  versionLabel: r1h
+  type: StepGroup
+  projectIdentifier: njh
+  orgIdentifier: default
+  tags: {}
+  spec:
+    steps:
+      - step:
+          type: ShellScript
+          name: Shell Script
+          identifier: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: echo "hi"
+            environmentVariables: []
+            outputVariables: []
+          timeout: 10m
+    outputVariables: []

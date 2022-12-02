@@ -101,7 +101,7 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   private TemplateEntityGetResponse getTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
     Optional<TemplateEntity> optionalTemplateEntity =
-        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, false);
+        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, false, false);
 
     if (!optionalTemplateEntity.isPresent()) {
       throw new InvalidRequestException(

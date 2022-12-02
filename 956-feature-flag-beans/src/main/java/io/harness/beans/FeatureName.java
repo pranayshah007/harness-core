@@ -165,7 +165,6 @@ public enum FeatureName {
   CUSTOM_DASHBOARD_ENABLE_REALTIME_DEPLOYMENT_MIGRATION,
   CUSTOM_DASHBOARD_ENABLE_CRON_INSTANCE_DATA_MIGRATION,
   CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION,
-  SSH_SECRET_ENGINE,
   WHITELIST_PUBLIC_API,
   WHITELIST_GRAPHQL,
   TIMEOUT_FAILURE_SUPPORT,
@@ -318,6 +317,7 @@ public enum FeatureName {
   CVNG_LICENSE_ENFORCEMENT,
   CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
+  CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
@@ -440,6 +440,7 @@ public enum FeatureName {
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
+  SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
   PL_FORCE_DELETE_CONNECTOR_SECRET(
@@ -488,6 +489,7 @@ public enum FeatureName {
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
+  CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),

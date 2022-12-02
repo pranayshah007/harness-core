@@ -7,8 +7,8 @@
 
 package io.harness.repositories.instancestats;
 
-import java.sql.Timestamp;
+import io.harness.models.InstanceStats;
 
 public interface InstanceStatsRepository {
-  Timestamp getLastSnapshotTime(String accountId, String orgId, String projectId) throws Exception;
+  InstanceStats getLatestRecord(String accountId, String orgId, String projectId, String serviceId);
 }

@@ -21,4 +21,5 @@ public abstract class LogClusterState extends AnalysisState {
   protected LogClusterLevel clusterLevel;
   private Set<String> workerTaskIds;
   private Map<String, ExecutionStatus> workerTaskStatus;
+  protected String verificationJobInstanceId;
 }

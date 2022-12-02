@@ -23,6 +23,7 @@ You can run multiple PR check triggers by comma separating them in a single comm
     - CodeFormat: `trigger codeformat`
     - Checkstyle: `trigger checkstyle`
 - MessageMetadata: `trigger messagecheck`
+- File-Permission-Check: `trigger checkpermission`
 - Recency: `trigger recency`
 - BuildNumberMetadata: `trigger buildnum`
 - PMD: `trigger pmd`

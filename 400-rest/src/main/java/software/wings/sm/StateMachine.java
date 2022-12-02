@@ -122,7 +122,7 @@ public class StateMachine implements PersistentEntity, UuidAware, CreatedAtAware
   public static final String MAPPING_ERROR_MESSAGE = MAPPING_ERROR_MESSAGE_PREFIX + MAPPING_ERROR_MESSAGE_SUFFIX;
 
   @Id private String uuid;
-  @FdIndex @NotNull protected String appId;
+  @NotNull protected String appId;
   @FdIndex private long createdAt;
 
   @FdIndex private String accountId;

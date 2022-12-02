@@ -82,6 +82,7 @@ public class OrchestrationStepsModuleRegistrars {
           .addAll(NGCoreClientRegistrars.kryoRegistrars)
           .addAll(DelegateTaskRegistrars.kryoRegistrars)
           .addAll(NGCommonModuleRegistrars.kryoRegistrars)
+          .addAll(ContainerRegistrars.kryoRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
@@ -378,18 +379,21 @@ public class OrchestrationStepsModuleRegistrars {
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
-          .add(YamlSchemaRootClass.builder()
-                   .entityType(EntityType.POLICY_STEP)
-                   .availableAtProjectLevel(true)
-                   .availableAtOrgLevel(false)
-                   .availableAtAccountLevel(false)
-                   .clazz(PolicyStepNode.class)
-                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
-                                           .namespace(SchemaNamespaceConstants.PMS)
-                                           .modulesSupported(Arrays.asList(ModuleType.values()))
-                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
-                                           .build())
-                   .build())
+          .add(
+              YamlSchemaRootClass.builder()
+                  .entityType(EntityType.POLICY_STEP)
+                  .availableAtProjectLevel(true)
+                  .availableAtOrgLevel(false)
+                  .availableAtAccountLevel(false)
+                  .clazz(PolicyStepNode.class)
+                  .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                          .namespace(SchemaNamespaceConstants.PMS)
+                                          .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.CI, ModuleType.CF,
+                                              ModuleType.CE, ModuleType.PMS, ModuleType.STO, ModuleType.TEMPLATESERVICE,
+                                              ModuleType.CV, ModuleType.CHAOS, ModuleType.GOVERNANCE))
+                                          .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                          .build())
+                  .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.STRATEGY_NODE)
                    .availableAtProjectLevel(true)

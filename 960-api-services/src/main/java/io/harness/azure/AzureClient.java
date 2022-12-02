@@ -28,7 +28,10 @@ import io.harness.network.Http;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.http.HttpClient;
 import com.azure.core.http.HttpPipeline;
+import com.azure.core.http.policy.HttpLogOptions;
+import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.management.profile.AzureProfile;
+import com.azure.core.util.Configuration;
 import com.azure.core.util.HttpClientOptions;
 import com.azure.identity.ClientCertificateCredentialBuilder;
 import com.azure.identity.ClientSecretCredentialBuilder;
@@ -40,6 +43,7 @@ import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.inject.Singleton;
 import com.jakewharton.retrofit2.adapter.reactor.ReactorCallAdapterFactory;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
@@ -59,6 +63,13 @@ public class AzureClient extends AzureClientBase {
     return getAzureClient(azureConfig, null);
   }
 
+  protected HttpPipeline getAzureHttpPipeline(
+      TokenCredential tokenCredential, AzureProfile azureProfile, RetryPolicy retryPolicy, HttpClient httpClient) {
+    return HttpPipelineProvider.buildHttpPipeline(tokenCredential, azureProfile, (String[]) null,
+        (new HttpLogOptions()).setLogLevel(AzureUtils.getAzureLogLevel(log)), (Configuration) null, retryPolicy,
+        (List) null, httpClient);
+  }
+
   protected HttpPipeline getAzureHttpPipeline(TokenCredential tokenCredential, AzureProfile azureProfile) {
     return HttpPipelineProvider.buildHttpPipeline(tokenCredential, azureProfile);
   }
@@ -66,7 +77,9 @@ public class AzureClient extends AzureClientBase {
   protected HttpPipeline getAzureHttpPipeline(AzureConfig azureConfig, String subscriptionId) {
     return getAzureHttpPipeline(getAuthenticationTokenCredentials(azureConfig),
         AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId,
-            AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
+            AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())),
+        AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())),
+        getAzureHttpClient());
   }
 
   protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
@@ -75,6 +88,8 @@ public class AzureClient extends AzureClientBase {
           AzureResourceManager.configure()
               .withLogLevel(AzureUtils.getAzureLogLevel(log))
               .withHttpClient(getAzureHttpClient())
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
               .authenticate(getAuthenticationTokenCredentials(azureConfig),
                   AzureUtils.getAzureProfile(AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
 

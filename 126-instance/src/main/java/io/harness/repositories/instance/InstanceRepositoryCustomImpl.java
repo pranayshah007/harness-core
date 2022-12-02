@@ -24,13 +24,15 @@ import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
 import io.harness.models.constants.InstanceSyncConstants;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
-import io.harness.ng.core.entities.Project;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndReplaceOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -48,13 +50,16 @@ import org.springframework.data.mongodb.core.query.Update;
 public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   private final MongoTemplate mongoTemplate;
   private final MongoTemplate secondaryMongoTemplate;
+  private final MongoTemplate analyticsMongoTemplate;
   private final String INSTANCE_NG_COLLECTION = "instanceNG";
 
   @Inject
-  public InstanceRepositoryCustomImpl(
-      MongoTemplate mongoTemplate, SecondaryMongoTemplateHolder secondaryMongoTemplateHolder) {
+  public InstanceRepositoryCustomImpl(MongoTemplate mongoTemplate,
+      SecondaryMongoTemplateHolder secondaryMongoTemplateHolder,
+      AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder) {
     this.mongoTemplate = mongoTemplate;
     this.secondaryMongoTemplate = secondaryMongoTemplateHolder.getSecondaryMongoTemplate();
+    this.analyticsMongoTemplate = analyticsMongoTemplateHolder.getAnalyticsMongoTemplate();
   }
 
   @Override
@@ -69,51 +74,66 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   }
 
   @Override
-  public AggregationResults<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(
-      Project project, long timestamp) {
-    GroupOperation groupByEnvId = group(InstanceKeys.serviceIdentifier, InstanceKeys.envIdentifier)
-                                      .first(InstanceSyncConstants.ROOT)
-                                      .as(InstanceSyncConstants.FIRST_DOCUMENT)
-                                      .count()
-                                      .as(InstanceSyncConstants.COUNT);
+  public List<Instance> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
     if (timestamp <= 0) {
-      Criteria nonDeletedCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                        .is(project.getAccountIdentifier())
-                                        .and(InstanceKeys.orgIdentifier)
-                                        .is(project.getOrgIdentifier())
-                                        .and(InstanceKeys.projectIdentifier)
-                                        .is(project.getIdentifier())
-                                        .and(InstanceKeys.isDeleted)
-                                        .is(false);
-      MatchOperation match = Aggregation.match(nonDeletedCriteria);
-      return secondaryMongoTemplate.aggregate(
-          newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
+      Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                              .is(accountIdentifier)
+                              .and(InstanceKeys.orgIdentifier)
+                              .is(orgIdentifier)
+                              .and(InstanceKeys.projectIdentifier)
+                              .is(projectIdentifier)
+                              .and(InstanceKeys.serviceIdentifier)
+                              .is(serviceIdentifier)
+                              .and(InstanceKeys.isDeleted)
+                              .is(false);
+      Query query = new Query().addCriteria(criteria);
+      return analyticsMongoTemplate.find(query, Instance.class);
     }
-    Criteria createdBeforeCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                         .is(project.getAccountIdentifier())
-                                         .and(InstanceKeys.orgIdentifier)
-                                         .is(project.getOrgIdentifier())
-                                         .and(InstanceKeys.projectIdentifier)
-                                         .is(project.getIdentifier())
-                                         .and(InstanceKeys.isDeleted)
-                                         .is(false)
-                                         .and(InstanceKeys.createdAt)
-                                         .lte(timestamp);
-    Criteria deletedAfterCriteria = Criteria.where(InstanceKeys.accountIdentifier)
-                                        .is(project.getAccountIdentifier())
-                                        .and(InstanceKeys.orgIdentifier)
-                                        .is(project.getOrgIdentifier())
-                                        .and(InstanceKeys.projectIdentifier)
-                                        .is(project.getIdentifier())
-                                        .and(InstanceKeys.isDeleted)
-                                        .is(true)
-                                        .and(InstanceKeys.createdAt)
-                                        .lte(timestamp)
-                                        .and(InstanceKeys.deletedAt)
-                                        .gte(timestamp);
-    MatchOperation match = Aggregation.match(new Criteria().orOperator(createdBeforeCriteria, deletedAfterCriteria));
-    return secondaryMongoTemplate.aggregate(
-        newAggregation(match, groupByEnvId), Instance.class, InstanceCountByServiceAndEnv.class);
+    Set<Instance> instances = new HashSet<>();
+    instances.addAll(
+        getInstancesCreatedBefore(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
+    instances.addAll(
+        getInstancesDeletedAfter(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
+    return new ArrayList<>(instances);
+  }
+
+  private List<Instance> getInstancesCreatedBefore(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceIdentifier)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false)
+                            .and(InstanceKeys.createdAt)
+                            .lte(timestamp);
+    Query query = new Query().addCriteria(criteria);
+    return analyticsMongoTemplate.find(query, Instance.class);
+  }
+
+  private List<Instance> getInstancesDeletedAfter(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceIdentifier, long timestamp) {
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(accountIdentifier)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(orgIdentifier)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(projectIdentifier)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(serviceIdentifier)
+                            .and(InstanceKeys.isDeleted)
+                            .is(true)
+                            .and(InstanceKeys.createdAt)
+                            .lte(timestamp)
+                            .and(InstanceKeys.deletedAt)
+                            .gte(timestamp);
+    Query query = new Query().addCriteria(criteria);
+    return analyticsMongoTemplate.find(query, Instance.class);
   }
 
   /*
@@ -237,7 +257,7 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
       String buildIdentifier) {
     Criteria criteria = getCriteriaForActiveInstancesV2(accountIdentifier, orgIdentifier, projectIdentifier);
 
-    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).equals(null);
+    criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(null);
 
     if (envIdentifier != null) {
       criteria.and(InstanceKeys.envIdentifier).is(envIdentifier);

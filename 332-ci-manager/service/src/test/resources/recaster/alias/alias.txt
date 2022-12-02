@@ -155,6 +155,12 @@ io.harness.beans.yaml.extended.TIDotNetBuildEnvName
 io.harness.advisers.rollback.RollbackTriggeredOutput
 io.harness.ci.beans.entities.TIServiceConfig
 io.harness.beans.execution.PRWebhookEvent
+io.harness.yaml.sto.variables.STOYamlImageType
+io.harness.yaml.sto.variables.STOYamlAuthType
+io.harness.yaml.sto.variables.STOYamlScanMode
+io.harness.yaml.sto.variables.STOYamlGenericConfig
+io.harness.yaml.sto.variables.STOYamlTargetType
+io.harness.yaml.sto.variables.STOYamlLogLevel
 io.harness.beans.sweepingoutputs.K8PodDetails
 io.harness.beans.steps.stepinfo.InitializeStepInfo
 io.harness.ci.pipeline.executions.beans.TIBuildDetails

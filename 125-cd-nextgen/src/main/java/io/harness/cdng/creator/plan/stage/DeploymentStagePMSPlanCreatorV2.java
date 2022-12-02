@@ -294,9 +294,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   public GraphLayoutResponse getLayoutNodeInfo(PlanCreationContext context, DeploymentStageNode config) {
     Map<String, GraphLayoutNode> stageYamlFieldMap = new LinkedHashMap<>();
     YamlField yamlField = context.getCurrentField();
-    if (config.getDeploymentStageConfig().getServices() != null
-        || config.getDeploymentStageConfig().getEnvironments() != null
-        || config.getDeploymentStageConfig().getEnvironmentGroup() != null) {
+    if (MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(config)) {
       YamlField siblingField = yamlField.getNode().nextSiblingFromParentArray(
           yamlField.getName(), Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.PARALLEL));
       EdgeLayoutList edgeLayoutList;

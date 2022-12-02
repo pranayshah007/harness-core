@@ -29,6 +29,7 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostFilterSpec;
@@ -49,6 +50,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
@@ -276,6 +278,25 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
             customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());
         infrastructureOutcome = customDeploymentInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+
+        TanzuApplicationServiceInfrastructureOutcome tanzuInfrastructureOutcome =
+            TanzuApplicationServiceInfrastructureOutcome.builder()
+                .connectorRef(tanzuInfrastructure.getConnectorRef().getValue())
+                .organization(tanzuInfrastructure.getOrganization().getValue())
+                .space(tanzuInfrastructure.getSpace().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
+                .build();
+
+        setInfraIdentifierAndName(tanzuInfrastructureOutcome, tanzuInfrastructureOutcome.getInfraIdentifier(),
+            tanzuInfrastructure.getInfraName());
+        infrastructureOutcome = tanzuInfrastructureOutcome;
         break;
 
       default:

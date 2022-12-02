@@ -371,6 +371,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           scope, scmConnector, scmCreateFileRequestDTO.getBranchName(), scmCreateFileRequestDTO.getBaseBranch());
     }
     boolean useGitClient = gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier());
+    if (useGitClient) {
+      log.info("Executing using gitClient");
+    }
     CreateFileResponse createFileResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.createFile(CreateGitFileRequestDTO.builder()
@@ -414,6 +417,9 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
           scope, scmConnector, scmUpdateFileRequestDTO.getBranchName(), scmUpdateFileRequestDTO.getBaseBranch());
     }
     boolean isGitClientEnabled = gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier());
+    if (isGitClientEnabled) {
+      log.info("Executing using gitClient");
+    }
     UpdateFileResponse updateFileResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.updateFile(UpdateGitFileRequestDTO.builder()

@@ -249,6 +249,7 @@ public class VmExecuteStepUtils {
                            .frameworkVersion(runTestStep.getFrameworkVersion())
                            .parallelizeTests(runTestStep.isParallelizeTests())
                            .testSplitStrategy(runTestStep.getTestSplitStrategy())
+                           .testGlobs(runTestStep.getTestGlobs())
                            .build())
         .image(runTestStep.getImage())
         .pull(runTestStep.getPullPolicy())
