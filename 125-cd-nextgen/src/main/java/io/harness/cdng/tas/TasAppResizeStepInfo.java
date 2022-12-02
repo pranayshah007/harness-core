@@ -48,11 +48,8 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasAppResizeStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasAppResizeFqn,
-      ParameterField<Integer> totalInstanceCount, ParameterField<InstanceUnitType> instanceUnitType,
-      ParameterField<Integer> downsizeInstanceCount, ParameterField<InstanceUnitType> downsizeInstanceUnitType) {
-    super(delegateSelectors, tasAppResizeFqn, totalInstanceCount, instanceUnitType, downsizeInstanceCount,
-        downsizeInstanceUnitType);
+  public TasAppResizeStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasAppResizeFqn) {
+    super(delegateSelectors, tasAppResizeFqn);
   }
 
   @Override
