@@ -65,6 +65,7 @@ public class BillingDataGenerationValidator {
     if (null != lastReceivedPublishedMessage
         && Instant.ofEpochMilli(lastReceivedPublishedMessage.getLastReceivedAt()).isAfter(bufferedStartTime)) {
       generateData = true;
+      log.info("[TRUE] Should generate biling data for {} {} {} ", accountId, clusterId, startTime);
     }
     if (!generateData) {
       log.info("Not generating biling data for {} {} {} ", accountId, clusterId, startTime);

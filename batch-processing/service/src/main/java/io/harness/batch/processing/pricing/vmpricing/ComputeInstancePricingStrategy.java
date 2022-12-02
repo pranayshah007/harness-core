@@ -87,6 +87,9 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
     PricingData customVMPricing = getCustomVMPricing(
         instanceData, startTime, endTime, parentInstanceActiveSecond, instanceFamily, region, cloudProvider);
 
+    log.info("accountId: {}, instanceId: {}, customVmPricing: {}", instanceData.getAccountId(),
+        instanceData.getInstanceId(), customVMPricing);
+
     if (null == customVMPricing) {
       if (GCPCustomInstanceDetailProvider.isCustomGCPInstance(instanceFamily, cloudProvider)) {
         return GCPCustomInstanceDetailProvider.getGCPCustomInstancePricingData(instanceFamily, instanceCategory);
@@ -101,6 +104,10 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
 
       ProductDetails vmComputePricingInfo =
           vmPricingService.getComputeVMPricingInfo(instanceFamily, region, cloudProvider);
+
+      log.info("vmComputePricingInfo::: accountId: {}, vmComputePricingInfo: {}", instanceData.getAccountId(),
+          vmComputePricingInfo);
+
       if (null == vmComputePricingInfo) {
         return getUserCustomInstancePricingData(instanceData, instanceCategory);
       }
@@ -138,6 +145,10 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
         pricingProfileService.fetchPricingProfile(instanceData.getAccountId(), instanceCategory);
     double cpuPricePerHr = profileData.getVCpuPricePerHr();
     double memoryPricePerHr = profileData.getMemoryGbPricePerHr();
+
+    log.info("getUserCustomInstancePricingData accountId: {}, cpuPricePerHr: {}, memoryPricePerHr: {}",
+        instanceData.getAccountId(), cpuPricePerHr, memoryPricePerHr);
+
     Double cpuUnits = instanceData.getTotalResource().getCpuUnits();
     Double memoryMb = instanceData.getTotalResource().getMemoryMb();
     if (instanceData.getInstanceType() == InstanceType.K8S_POD) {
@@ -145,6 +156,7 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       memoryMb = Double.valueOf(instanceData.getMetaData().get(InstanceMetaDataConstants.PARENT_RESOURCE_MEMORY));
     }
     double pricePerHr = ((cpuPricePerHr * cpuUnits) / 1024) + ((memoryPricePerHr * memoryMb) / 1024);
+    log.info("PricePerHour: accountId: {}, pricePerHr: {}", instanceData.getAccountId(), pricePerHr);
     return PricingData.builder()
         .pricePerHour(pricePerHr)
         .cpuUnit(cpuUnits)

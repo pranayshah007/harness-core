@@ -123,7 +123,7 @@ public class BillingCalculationService {
     double pricePerHour = pricingData.getPricePerHour();
     BillingAmountBreakup billingAmountBreakup = createBillingAmount(instanceActiveSeconds, pricingData, instanceData);
 
-    log.debug("Billing amount {} {} {}", billingAmountBreakup, pricePerHour, instanceActiveSeconds);
+    log.info("Billing amount {} {} {}", billingAmountBreakup, pricePerHour, instanceActiveSeconds);
     PricingSource pricingSource =
         null != pricingData.getPricingSource() ? pricingData.getPricingSource() : PricingSource.PUBLIC_API;
     double networkCost = 0;

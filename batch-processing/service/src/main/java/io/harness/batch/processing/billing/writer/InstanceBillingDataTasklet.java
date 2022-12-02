@@ -123,6 +123,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
       try {
         createBillingData(accountId, startTime, endTime, batchJobType, instanceDataLists,
             claimRefToPVInstanceBillingData, pvcClaimCount);
+        log.info("Creation of billing data completed: acountId: {}", accountId);
       } catch (Exception ex) {
         log.error("Exception in billing step", ex);
         throw ex;
@@ -196,7 +197,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
             .filter(this::validInstanceForBilling)
             .collect(Collectors.groupingBy(InstanceData::getClusterId));
     String awsDataSetId = customBillingMetaDataService.getAwsDataSetId(accountId);
-    log.debug("AWS data set {}", awsDataSetId);
+
+    log.info("AWS data set {}", awsDataSetId);
     if (awsDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       Set<String> eksFargateResourceIds = new HashSet<>();
@@ -222,6 +224,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       if (isNotEmpty(resourceIds)) {
         awsCustomBillingService.updateAwsEC2BillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, awsDataSetId, accountId);
+        log.info("AWS accountId: {}, resourceId: {}, startTime: {}, endTime: {}", accountId, resourceIds, startTime,
+            endTime);
       }
 
       if (isNotEmpty(eksFargateResourceIds)) {
@@ -232,7 +236,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     }
 
     String azureDataSetId = customBillingMetaDataService.getAzureDataSetId(accountId);
-    log.debug("Azure data set {}", azureDataSetId);
+    log.info("Azure data set {}", azureDataSetId);
     if (azureDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -248,10 +252,13 @@ public class InstanceBillingDataTasklet implements Tasklet {
       if (isNotEmpty(resourceIds)) {
         azureCustomBillingService.updateAzureVMBillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, azureDataSetId);
+        log.info("Azure accountId: {}, resourceId: {}, startTime: {}, endTime: {}", accountId, resourceIds, startTime,
+            endTime);
       }
     }
 
     String gcpDataSetId = customBillingMetaDataService.getGcpDataSetId(accountId);
+    log.info("GCP data set {}", gcpDataSetId);
     if (gcpDataSetId != null) {
       Set<String> resourceIds = new HashSet<>();
       instanceDataLists.forEach(instanceData -> {
@@ -269,6 +276,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       if (isNotEmpty(resourceIds)) {
         gcpCustomBillingService.updateGcpVMBillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, gcpDataSetId);
+        log.info("GCP accountId: {}, resourceId: {}, startTime: {}, endTime: {}", accountId, resourceIds, startTime,
+            endTime);
       }
     }
 
@@ -289,9 +298,12 @@ public class InstanceBillingDataTasklet implements Tasklet {
                 instanceData.getAccountId(), instanceData.getClusterId(), startTime)) {
           Double parentInstanceActiveSecond = null;
           String parentInstanceId = getParentInstanceId(instanceData);
+          log.info("accountId: {}, parentInstanceId: {}", accountId, parentInstanceId);
           if (null != parentInstanceId) {
             parentInstanceActiveSecond = parentInstanceActiveSecondMap.getOrDefault(
                 billingCalculationService.getInstanceClusterIdKey(parentInstanceId, instanceData.getClusterId()), null);
+            log.info("accountId: {}, parentInstanceId: {}, parentInstanceActiveSecond: {} ", accountId,
+                parentInstanceId, parentInstanceActiveSecond);
           }
           InstanceBillingData instanceBillingData = getInstanceBillingData(instanceData, utilizationDataForInstances,
               startTime, endTime, claimRefToPVInstanceBillingData, pvcClaimCount, parentInstanceActiveSecond);
@@ -339,7 +351,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
     BillingData billingData = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, parentInstanceActiveSecond, startTime, endTime);
 
-    log.trace("Instance detail {} :: {} ", instanceData.getInstanceId(), billingData.getBillingAmountBreakup());
+    log.info("Instance detail {} :: {} ", instanceData.getInstanceId(), billingData.getBillingAmountBreakup());
 
     HarnessServiceInfo harnessServiceInfo = getHarnessServiceInfo(instanceData);
     HarnessServiceInfoNG harnessServiceInfoNG = getHarnessServiceInfoNG(instanceData);

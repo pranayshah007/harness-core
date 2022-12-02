@@ -229,7 +229,9 @@ public class BatchJobRunner {
         // adding 6 hrs buffer because sometime last hr data is not present for few instances and we consider cost as 0
         endAt = endAt.plus(6, ChronoUnit.HOURS);
       }
-      return customBillingMetaDataService.checkPipelineJobFinished(accountId, startAt, endAt);
+      Boolean isFinished = customBillingMetaDataService.checkPipelineJobFinished(accountId, startAt, endAt);
+      log.info("Here!!!! accountId: {}, isFinished: {}", accountId, isFinished);
+      return isFinished;
     }
     return true;
   }

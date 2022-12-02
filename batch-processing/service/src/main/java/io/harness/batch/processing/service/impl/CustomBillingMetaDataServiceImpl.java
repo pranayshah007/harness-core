@@ -116,6 +116,7 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
       Instant startAt = endTime.minus(1, ChronoUnit.HOURS);
       Map<String, VMInstanceBillingData> awsEC2BillingData =
           bigQueryHelperService.getAwsBillingData(startAt, endTime, awsDataSetId, accountId);
+      log.info("Here: accountId: {}, awsEc2Billingdata: {}", accountId, awsEC2BillingData);
       return isNotEmpty(awsEC2BillingData);
     }
     return Boolean.TRUE;
