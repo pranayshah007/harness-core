@@ -96,7 +96,6 @@ public enum FeatureName {
   GRAPHQL_DEV,
   HARNESS_TAGS,
   HELM_CHART_AS_ARTIFACT,
-  HELM_STEADY_STATE_CHECK_1_16,
   HELM_CHART_NAME_SPLIT,
   HELM_MERGE_CAPABILITIES("Add helm merge capabilities", HarnessTeam.CDP),
   INLINE_SSH_COMMAND,
@@ -240,7 +239,7 @@ public enum FeatureName {
   CCM_COMMORCH("Commitment Orchestration", HarnessTeam.CE),
   CCM_SUNSETTING_CG("Sunsetting CCM CG Features", HarnessTeam.CE),
   RECOMMENDATION_EFFICIENCY_VIEW_UI("Enable efficiency view instead cost view in Recommendation", HarnessTeam.CE),
-  CLOUD_COST_GOVERNANCE_UI("Cloud Cost governance UI", HarnessTeam.CE),
+  CCM_ENABLE_CLOUD_ASSET_GOVERNANCE_UI("Enable Cloud Asset governance UI", HarnessTeam.CE),
   DONT_RESTRICT_PARALLEL_STAGE_COUNT,
   NG_EXECUTION_INPUT,
   SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING,
@@ -497,7 +496,9 @@ public enum FeatureName {
   SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
-      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG);
+      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
+  HELM_STEADY_STATE_CHECK_1_16,
+  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE);
 
   @Deprecated
   FeatureName() {
