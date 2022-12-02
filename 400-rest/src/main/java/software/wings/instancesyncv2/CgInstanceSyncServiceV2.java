@@ -172,7 +172,7 @@ public class CgInstanceSyncServiceV2 {
   @VisibleForTesting
   DeploymentSummary saveDeploymentSummary(DeploymentSummary deploymentSummary, boolean rollback) {
     if (shouldSaveDeploymentSummary(deploymentSummary, rollback)) {
-      return deploymentService.saveWithFilterExecutionIds(deploymentSummary);
+      return deploymentService.save(deploymentSummary);
     }
     return deploymentSummary;
   }

@@ -31,14 +31,6 @@ public interface DeploymentService extends OwnedByApplication {
   @ValidationGroups(Create.class) DeploymentSummary save(@Valid DeploymentSummary instance);
 
   /**
-   * Save instance information.
-   * Filter with State and Workflow Execution Id
-   * @param instance the instance
-   * @return the instance
-   */
-  @ValidationGroups(Create.class) DeploymentSummary saveWithFilterExecutionIds(@Valid DeploymentSummary instance);
-
-  /**
    * Gets instance information.
    */
   DeploymentSummary get(String deploymentSummaryId);
