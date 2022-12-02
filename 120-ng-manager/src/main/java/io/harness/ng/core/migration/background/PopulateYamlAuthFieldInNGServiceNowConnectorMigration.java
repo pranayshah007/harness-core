@@ -7,6 +7,8 @@
 
 package io.harness.ng.core.migration.background;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -47,8 +49,9 @@ public class PopulateYamlAuthFieldInNGServiceNowConnectorMigration implements NG
             Criteria.where(ServiceNowConnector.ConnectorKeys.type).is(ConnectorType.SERVICENOW);
         Query serviceNowConnectorQuery = new Query(serviceNowConnectorCriteria);
         serviceNowConnectors = mongoTemplate.find(serviceNowConnectorQuery, ServiceNowConnector.class);
-        if (isNull(serviceNowConnectors)) {
+        if (isEmpty(serviceNowConnectors)) {
           log.info(String.format("%s no serviceNow connectors fetched", DEBUG_LOG));
+          return;
         }
         log.info(
             String.format("%s Running migration on %s serviceNow connectors", DEBUG_LOG, serviceNowConnectors.size()));
