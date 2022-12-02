@@ -1,4 +1,6 @@
 DockerFile* diptiman.adak@harness.io udham.singh@harness.io
+product/ci/addon/testintelligence/java/bazel.go
+product/ci/addon/testintelligence/java/bazel_test.go
 .bazel* diptiman.adak@harness.io udham.singh@harness.io
 bazel* diptiman.adak@harness.io udham.singh@harness.io
 /dockerization/delegate/ raghu@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
