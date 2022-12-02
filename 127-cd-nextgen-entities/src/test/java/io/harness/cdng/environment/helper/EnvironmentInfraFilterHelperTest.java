@@ -15,7 +15,6 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.cdng.environment.filters.AllowAllFilter;
 import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
@@ -26,66 +25,68 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(JUnitParamsRunner.class)
 public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
-  @Parameters(method = "getFilters")
-  public void testProcessTagsFilterYamlForEnvironmentsForMatchAll(FilterYaml input) {
+  public void testProcessTagsFilterYamlForEnvironmentsForMatchAll() {
     EnvironmentInfraFilterHelper environmentInfraFilterHelper = new EnvironmentInfraFilterHelper();
-    List<NGTag> envTags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
+    Set<Environment> listOfEnvironment = getEnvironmentListForAllTagMatch();
+    Map<String, String> mapOfTags = Map.of("env", "dev");
+    final FilterYaml filterYaml = FilterYaml.builder()
+                                      .entities(Set.of(Entity.environments))
+                                      .type(FilterType.tags)
+                                      .spec(TagsFilter.builder().matchType(MatchType.all).tags(mapOfTags).build())
+                                      .build();
 
-    List<Environment> listOfEnvironment = Arrays.asList(Environment.builder().tags(envTags).build());
-
-    List<Environment> filteredEnv =
-        environmentInfraFilterHelper.processTagsFilterYamlForEnvironments(input, listOfEnvironment);
-    assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
+    Set<Environment> filteredEnv =
+        environmentInfraFilterHelper.processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+    assertThat(filteredEnv.size()).isEqualTo(1);
   }
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
-  @Parameters(method = "getFilters")
-  public void testProcessTagsFilterYamlForEnvironmentsForMatchAny(FilterYaml filterYaml) {
+  public void testProcessTagsFilterYamlForEnvironmentsForMatchAny() {
     EnvironmentInfraFilterHelper environmentInfraFilterHelper = new EnvironmentInfraFilterHelper();
-    List<NGTag> envTags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
-    List<Environment> listOfEnvironment = Arrays.asList(Environment.builder().tags(envTags).build());
+    Set<Environment> listOfEnvironment = getEnvironmentListForAnyTagMatch();
 
-    List<Environment> filteredEnv =
+    Map<String, String> mapOfTags = Map.of("env", "dev", "env1", "dev1");
+    final FilterYaml filterYaml = FilterYaml.builder()
+                                      .entities(Set.of(Entity.environments))
+                                      .type(FilterType.tags)
+                                      .spec(TagsFilter.builder().matchType(MatchType.any).tags(mapOfTags).build())
+                                      .build();
+
+    Set<Environment> filteredEnv =
         environmentInfraFilterHelper.processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
   }
 
-  private Object[][] getFilters() {
-    Map<String, String> mapOfTags = Map.of("env", "dev", "env1", "dev1");
-    final FilterYaml filter1 = FilterYaml.builder()
-                                   .entities(Set.of(Entity.environments))
-                                   .type(FilterType.tags)
-                                   .spec(TagsFilter.builder().matchType(MatchType.any).tags(mapOfTags).build())
-                                   .build();
+  @NotNull
+  private static Set<Environment> getEnvironmentListForAnyTagMatch() {
+    List<NGTag> env1Tags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
+    List<NGTag> env2Tags = Arrays.asList(
+        NGTag.builder().key("env").value("dev").build(), NGTag.builder().key("env1").value("dev2").build());
+    final Set<Environment> listOfEnvironment = new HashSet<>(
+        Arrays.asList(Environment.builder().tags(env1Tags).build(), Environment.builder().tags(env2Tags).build()));
+    return listOfEnvironment;
+  }
 
-    final FilterYaml filter2 = FilterYaml.builder()
-                                   .entities(Set.of(Entity.environments))
-                                   .type(FilterType.tags)
-                                   .spec(TagsFilter.builder().matchType(MatchType.all).tags(mapOfTags).build())
-                                   .build();
-
-    final FilterYaml filter3 = FilterYaml.builder()
-                                   .entities(Set.of(Entity.environments))
-                                   .type(FilterType.all)
-                                   .spec(AllowAllFilter.builder().build())
-                                   .build();
-
-    return new Object[][] {{filter1}, {filter2}, {filter3}};
+  @NotNull
+  private static Set<Environment> getEnvironmentListForAllTagMatch() {
+    List<NGTag> env1Tags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
+    List<NGTag> env2Tags = Arrays.asList(NGTag.builder().key("env1").value("dev2").build());
+    final Set<Environment> listOfEnvironment = new HashSet<>(
+        Arrays.asList(Environment.builder().tags(env1Tags).build(), Environment.builder().tags(env2Tags).build()));
+    return listOfEnvironment;
   }
 }

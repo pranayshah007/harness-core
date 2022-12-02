@@ -12,7 +12,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
-import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;

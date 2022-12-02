@@ -20,7 +20,6 @@ import io.harness.walktree.visitor.Visitable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.EnumSet;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;

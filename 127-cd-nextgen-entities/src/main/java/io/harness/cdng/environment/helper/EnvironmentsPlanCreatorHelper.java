@@ -24,6 +24,7 @@ import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.ParameterField;
@@ -32,7 +33,6 @@ import io.harness.serializer.KryoSerializer;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,13 +40,19 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @OwnedBy(GITOPS)
 @Singleton
 public class EnvironmentsPlanCreatorHelper {
   @Inject private EnvironmentService environmentService;
+  @Inject private EnvironmentFilterHelper environmentFilterHelper;
+  ;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private ClusterService clusterService;
@@ -69,52 +75,109 @@ public class EnvironmentsPlanCreatorHelper {
     Map<String, Environment> envMapping =
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
-    List<IndividualEnvData> listEnvData = new ArrayList<>();
     EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfig = EnvironmentsPlanCreatorConfig.builder();
 
     // Filters are specified so no environment exists in the yaml.
     // Apply filtering based on provided filters on all environments and clusters in the environments List
     // If no clusters are eligible then throw an exception.
+    boolean individualEnvLevelFilters = false;
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
+                                                        .getValue()
+                                                        .stream()
+                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
+                                                        .collect(Collectors.toList());
+    if (isNotEmpty(envV2YamlsWithFilters)) {
+      individualEnvLevelFilters = true;
+    }
 
-    if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
-      Set<io.harness.cdng.gitops.entity.Cluster> filteredClusters;
-      List<FilterYaml> filterYamls = environmentsYaml.getFilters().getValue();
+    Set<IndividualEnvData> listEnvData = new HashSet<>();
+    // Apply Filters
+    if (areFiltersPresent(environmentsYaml, individualEnvLevelFilters)) {
+      // Process Environment level Filters
+      Set<IndividualEnvData> envsLevelIndividualEnvData = new HashSet<>();
+      Set<IndividualEnvData> individualEnvFiltering = new HashSet<>();
+      if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
+        List<FilterYaml> filterYamls = environmentsYaml.getFilters().getValue();
 
-      Page<Cluster> clusters =
-          clusterService.listAcrossEnv(0, 1000, accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
-      Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster = new HashMap<>();
-      clusters.getContent().forEach(k -> clsToCluster.put(k.getClusterRef(), k));
+        Set<Environment> allEnvsInProject =
+            getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier);
 
-      List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
-      for (Environment env : environments) {
-        List<Cluster> clustersInEnv =
-            clusters.stream().filter(e -> e.getEnvRef() != env.getIdentifier()).collect(Collectors.toList());
-        Set<String> clsRefs = clustersInEnv.stream().map(e -> e.getClusterRef()).collect(Collectors.toSet());
+        // Apply filters on environments
+        Set<Environment> filteredEnvs = environmentInfraFilterHelper.applyFiltersOnEnvs(allEnvsInProject, filterYamls);
 
-        List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
-            accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
+        List<String> filteredEnvRefs =
+            filteredEnvs.stream().map(Environment::getIdentifier).collect(Collectors.toList());
 
-        filteredClusters =
-            environmentInfraFilterHelper.applyFilteringOnClusters(filterYamls, clsToCluster, clusterList);
-        Set<String> filteredClsRefs = filteredClusters.stream().map(e -> e.getClusterRef()).collect(Collectors.toSet());
+        // GetAll ClustersRefs
+        Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
+            environmentInfraFilterHelper.getClusterRefToNGGitOpsClusterMap(
+                accountIdentifier, orgIdentifier, projectIdentifier, filteredEnvRefs);
 
-        IndividualEnvData envData = IndividualEnvData.builder()
-                                        .envRef(env.getIdentifier())
-                                        .envName(env.getName())
-                                        .gitOpsClusterRefs(filteredClsRefs)
-                                        .build();
-        listEnvData.add(envData);
+        // Apply filtering for clusterRefs for filtered environments
+        List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
+        for (Environment env : filteredEnvs) {
+          List<Cluster> clustersInEnv = clsToCluster.values()
+                                            .stream()
+                                            .filter(e -> e.getEnvRef().equals(env.getIdentifier()))
+                                            .collect(Collectors.toList());
+          if (isNotEmpty(clustersInEnv)) {
+            buildIndividualEnvDataList(accountIdentifier, orgIdentifier, projectIdentifier, envsLevelIndividualEnvData,
+                filterYamls, clsToCluster, env, clustersInEnv);
 
-        EnvironmentYamlV2 environmentYamlV2 =
-            EnvironmentYamlV2.builder().environmentRef(ParameterField.createValueField(env.getIdentifier())).build();
-        environmentYamlV2List.add(environmentYamlV2);
+            EnvironmentYamlV2 environmentYamlV2 =
+                EnvironmentYamlV2.builder()
+                    .environmentRef(ParameterField.createValueField(env.getIdentifier()))
+                    .build();
+            environmentYamlV2List.add(environmentYamlV2);
+          }
+        }
+
+        environmentsYaml.getValues().setValue(environmentYamlV2List);
       }
 
-      environmentsYaml.getValues().setValue(environmentYamlV2List);
-      environmentsPlanCreatorConfig.filters(environmentsYaml.getFilters());
+      // Process Individual environment level filters if they exist
+      if (individualEnvLevelFilters) {
+        List<String> envRefsWithFilters =
+            envV2YamlsWithFilters.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
 
-    } else {
+        Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
+            environmentInfraFilterHelper.getClusterRefToNGGitOpsClusterMap(
+                accountIdentifier, orgIdentifier, projectIdentifier, envRefsWithFilters);
+
+        for (EnvironmentYamlV2 environmentYamlV2 : envV2YamlsWithFilters) {
+          List<Cluster> clustersInEnv =
+              clsToCluster.values()
+                  .stream()
+                  .filter(e -> e.getEnvRef().equals(environmentYamlV2.getEnvironmentRef().getValue()))
+                  .collect(Collectors.toList());
+          if (isNotEmpty(clustersInEnv)) {
+            buildIndividualEnvDataList(accountIdentifier, orgIdentifier, projectIdentifier, individualEnvFiltering,
+                environmentYamlV2.getFilters().getValue(), clsToCluster,
+                envMapping.get(environmentYamlV2.getEnvironmentRef().getValue()), clustersInEnv);
+          }
+        }
+      }
+
+      // Merge the two sets:
+      for (IndividualEnvData envData : envsLevelIndividualEnvData) {
+        List<IndividualEnvData> data = individualEnvFiltering.stream()
+                                           .filter(ed -> ed.getEnvRef().equals(envData.getEnvRef()))
+                                           .collect(Collectors.toList());
+        if (isNotEmpty(data)) {
+          continue;
+        }
+        listEnvData.add(envData);
+      }
+      listEnvData.addAll(individualEnvFiltering);
+    }
+
+    if (isNotEmpty(environmentYamlV2s)) {
       for (EnvironmentYamlV2 envV2Yaml : environmentYamlV2s) {
+        if (isNotEmpty(envV2Yaml.getFilters().getValue())) {
+          log.info("Environment contains filters. It must have been already processed");
+          continue;
+        }
+
         if (!envV2Yaml.getDeployToAll().getValue() && isEmpty(envV2Yaml.getGitOpsClusters().getValue())) {
           throw new InvalidRequestException("List of GitOps clusters must be provided");
         }
@@ -126,14 +189,64 @@ public class EnvironmentsPlanCreatorHelper {
                                         .gitOpsClusterRefs(getClusterRefs(envV2Yaml))
                                         .deployToAll(envV2Yaml.getDeployToAll().getValue())
                                         .build();
+
         listEnvData.add(envData);
       }
     }
-
     return environmentsPlanCreatorConfig.orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
-        .individualEnvDataList(listEnvData)
+        .individualEnvDataList(new ArrayList<>(listEnvData))
         .build();
+  }
+
+  private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml, boolean individualEnvLevelFilters) {
+    return isNotEmpty(environmentsYaml.getFilters().getValue()) || individualEnvLevelFilters;
+  }
+
+  @NotNull
+  private Set<Environment> getAllEnvironmentsInProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    // Fetch All Environments
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "");
+
+    PageRequest pageRequest =
+        PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, Environment.EnvironmentKeys.createdAt));
+    Page<Environment> allEnvsInProject = environmentService.list(criteria, pageRequest);
+    if (isEmpty(allEnvsInProject.getContent())) {
+      throw new InvalidRequestException(
+          "Filters are applied for environments, but no enviroments exists for the project");
+    }
+    return new HashSet<>(allEnvsInProject.getContent());
+  }
+
+  private void buildIndividualEnvDataList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      Set<IndividualEnvData> listEnvData, List<FilterYaml> filterYamls, Map<String, Cluster> clsToCluster,
+      Environment env, List<Cluster> clustersInEnv) {
+    Set<String> clsRefs = clustersInEnv.stream().map(Cluster::getClusterRef).collect(Collectors.toSet());
+
+    List<io.harness.gitops.models.Cluster> clusterList = environmentInfraFilterHelper.fetchClustersFromGitOps(
+        accountIdentifier, orgIdentifier, projectIdentifier, clsRefs);
+
+    Set<Cluster> filteredClusters =
+        environmentInfraFilterHelper.applyFilteringOnClusters(filterYamls, clsToCluster, new HashSet<>(clusterList));
+    Set<String> filteredClsRefs = filteredClusters.stream()
+                                      .filter(c -> c.getEnvRef().equals(env.getIdentifier()))
+                                      .map(Cluster::getClusterRef)
+                                      .collect(Collectors.toSet());
+
+    listEnvData.add(getIndividualEnvData(env.getIdentifier(), env.getName(), filteredClsRefs, false));
+  }
+
+  private static IndividualEnvData getIndividualEnvData(
+      String envRef, String envName, Set<String> filteredClsRefs, boolean isDeployToAll) {
+    IndividualEnvData envData = IndividualEnvData.builder()
+                                    .envRef(envRef)
+                                    .envName(envName)
+                                    .deployToAll(isDeployToAll)
+                                    .gitOpsClusterRefs(filteredClsRefs)
+                                    .build();
+    return envData;
   }
 
   private Set<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
