@@ -14,11 +14,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
+
+import java.util.List;
+import java.util.Map;
 
 @Value
 @Builder
@@ -31,4 +35,9 @@ public class TasExecutionPassThroughData implements PassThroughData {
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   PcfManifestsPackage pcfManifestsPackage;
+  Map<String,String> allFilesFetched;
+  String repoRoot;
+  CfCliVersionNG cfCliVersion;
+  String rawScript;
+  List<String> pathsFromScript;
 }

@@ -100,6 +100,7 @@ import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasBGAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStep;
 import io.harness.cdng.tas.TasSwapRollbackStep;
+import io.harness.cdng.tas.TasCommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -213,6 +214,8 @@ public class NgStepRegistrar {
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
 
     engineSteps.put(TasSwapRollbackStep.STEP_TYPE, TasSwapRollbackStep.class);
+    engineSteps.put(TasCommandStep.STEP_TYPE, TasCommandStep.class);
+
     return engineSteps;
   }
 }

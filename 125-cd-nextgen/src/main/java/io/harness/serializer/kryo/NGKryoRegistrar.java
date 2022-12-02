@@ -108,6 +108,8 @@ import io.harness.cdng.tas.TasRollbackStepParameters;
 import io.harness.cdng.tas.TasSwapRollbackStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.cdng.tas.TasSwapRoutesStepParameters;
+import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasCommandStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -237,5 +239,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TasRollbackStepInfo.class, 12636);
     kryo.register(TasRollbackStepParameters.class, 12637);
     kryo.register(TasSwapRollbackStepInfo.class, 12638);
+    kryo.register(TasCommandStepInfo.class, 12639);
+    kryo.register(TasCommandStepParameters.class, 12640);
   }
 }

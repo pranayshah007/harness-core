@@ -72,6 +72,7 @@ import io.harness.cdng.tas.TasCanaryAppSetupStepNode;
 import io.harness.cdng.tas.TasRollbackStepNode;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
 import io.harness.cdng.tas.TasSwapRollbackStepNode;
+import io.harness.cdng.tas.TasCommandStepNode;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.NGKryoRegistrar;
@@ -849,6 +850,18 @@ public class CDNGRegistrars {
                       .availableAtOrgLevel(false)
                       .availableAtAccountLevel(false)
                       .clazz(TasSwapRollbackStepNode.class)
+                      .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                              .namespace(SchemaNamespaceConstants.CD)
+                              .modulesSupported(Collections.singletonList(ModuleType.CD))
+                              .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                              .build())
+                      .build())
+              .add(YamlSchemaRootClass.builder()
+                      .entityType(EntityType.TANZU_COMMAND_STEP)
+                      .availableAtProjectLevel(true)
+                      .availableAtOrgLevel(false)
+                      .availableAtAccountLevel(false)
+                      .clazz(TasCommandStepNode.class)
                       .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                               .namespace(SchemaNamespaceConstants.CD)
                               .modulesSupported(Collections.singletonList(ModuleType.CD))

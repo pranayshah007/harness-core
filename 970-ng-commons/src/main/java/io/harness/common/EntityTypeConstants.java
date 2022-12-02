@@ -186,4 +186,5 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  String TANZU_COMMAND_STEP = "TanzuCommand";
 }

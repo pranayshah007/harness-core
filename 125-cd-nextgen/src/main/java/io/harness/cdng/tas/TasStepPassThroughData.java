@@ -56,4 +56,7 @@ public class TasStepPassThroughData implements PassThroughData {
   @Setter @NonFinal Boolean shouldExecuteGitStoreFetch;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   Set<String> manifestStoreTypeVisited;
+  String rawScript;
+  String repoRoot;
+  List<String> pathsFromScript;
 }
