@@ -40,6 +40,7 @@ public class RoleDBOMapper {
         .allowedScopeLevels(roleDBO.getAllowedScopeLevels())
         .permissions(roleDBO.getPermissions())
         .managed(roleDBO.isManaged())
+        .internal(roleDBO.isInternal())
         .description(roleDBO.getDescription())
         .tags(roleDBO.getTags())
         .createdAt(roleDBO.getCreatedAt())

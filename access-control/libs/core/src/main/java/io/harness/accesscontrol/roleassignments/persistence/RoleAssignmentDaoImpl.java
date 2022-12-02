@@ -166,6 +166,9 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
         criteria.and(RoleAssignmentDBOKeys.principalScopeLevel).in(roleAssignmentFilter.getPrincipalScopeLevelFilter());
       }
     }
+
+    criteria.and(RoleAssignmentDBOKeys.internal).is(false);
+
     Criteria[] principalCriteria = roleAssignmentFilter.getPrincipalFilter()
                                        .stream()
                                        .map(principal
