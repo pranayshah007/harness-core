@@ -81,7 +81,7 @@ public class CgEventConfig
   private List<String> delegateSelectors;
   private boolean enabled;
 
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 

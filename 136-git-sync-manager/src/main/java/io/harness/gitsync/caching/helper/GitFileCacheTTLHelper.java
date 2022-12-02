@@ -36,7 +36,11 @@ public class GitFileCacheTTLHelper {
     return cacheDetailsBuilder.build();
   }
 
-  private boolean isExpiredCache(long cacheExpiryAt, long currentTime) {
-    return cacheExpiryAt - currentTime < 0;
+  public long getValidUntilTime(long currentTime) {
+    return currentTime + GitFileCacheTTL.VALID_CACHE_DURATION.getDurationInMs();
+  }
+
+  private boolean isExpiredCache(long validUntil, long currentTime) {
+    return validUntil - currentTime < 0;
   }
 }

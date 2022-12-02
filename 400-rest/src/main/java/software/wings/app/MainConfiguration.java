@@ -238,6 +238,9 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   // If this flag is enabled event framework is utilized for wait engine notification mechanism
   @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
 
+  // If flag is enabled, only one thread does Notify response cleanup.
+  @JsonProperty(value = "lockNotifyResponseCleanup") private boolean lockNotifyResponseCleanup;
+
   private int applicationPort;
   private boolean sslEnabled;
 

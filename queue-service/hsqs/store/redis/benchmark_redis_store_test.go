@@ -40,7 +40,7 @@ func BenchmarkEndToEndSimpleEnqueueWithGroupRegistration(b *testing.B) {
 			if _, err := redisStore.Enqueue(ctx, store.EnqueueRequest{
 				Topic:        topic,
 				SubTopic:     "A" + strconv.Itoa(k),
-				Payload:      []byte{0, 1, 2, 3, 4, 5, 6, 7, 8},
+				Payload:      "Payload",
 				ProducerName: producer,
 			}); err != nil {
 				b.Fatalf("could not enqueue a task: %v", err.Error())

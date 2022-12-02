@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
@@ -483,5 +484,39 @@ public class StageExecutionHelperTest extends CategoryTest {
 
     StageExecutionInfo value = stageExecutionInfoArgumentCaptor.getValue();
     assertThat(value.getExecutionDetails()).isInstanceOf(DefaultExecutionDetails.class);
+  }
+
+  @Test
+  @Owner(developers = VLAD)
+  @Category(UnitTests.class)
+  public void testRollbackArtifactAzureWebApp() {
+    StepResponseBuilder stepResponseBuilder = StepResponse.builder();
+    stepResponseBuilder.status(Status.SUCCEEDED);
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, ORG_IDENTIFIER)
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, PROJECT_IDENTIFIER)
+                            .setStageExecutionId(EXECUTION_ID)
+                            .build();
+
+    Scope scope = Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER);
+
+    ExecutionInfoKey executionInfoKey = ExecutionInfoKey.builder()
+                                            .scope(scope)
+                                            .envIdentifier(ENV_IDENTIFIER)
+                                            .infraIdentifier(INFRA_IDENTIFIER)
+                                            .serviceIdentifier(SERVICE_IDENTIFIER)
+                                            .build();
+
+    doReturn(Optional.empty())
+        .when(stageExecutionInfoService)
+        .getLatestSuccessfulStageExecutionInfo(eq(executionInfoKey), eq(EXECUTION_ID));
+
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, InfrastructureKind.AZURE_WEB_APP);
+    List<ArtifactOutcome> result =
+        stageExecutionHelper.getRollbackArtifacts(ambiance, executionInfoKey, InfrastructureKind.AZURE_WEB_APP);
+    assertThat(result.size()).isEqualTo(0);
   }
 }

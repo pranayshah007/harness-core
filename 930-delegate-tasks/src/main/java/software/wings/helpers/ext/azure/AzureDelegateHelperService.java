@@ -447,6 +447,8 @@ public class AzureDelegateHelperService {
       AzureResourceManager.Authenticated authenticated =
           AzureResourceManager.configure()
               .withLogLevel(HttpLogDetailLevel.NONE)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
               .authenticate(clientSecretCredential,
                   AzureUtils.getAzureProfile(azureConfig.getTenantId(), null, azureEnvironment));
 
@@ -469,6 +471,7 @@ public class AzureDelegateHelperService {
                                                           .build();
       return AzureResourceManager.configure()
           .withLogLevel(HttpLogDetailLevel.NONE)
+          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
           .authenticate(clientSecretCredential,
               AzureUtils.getAzureProfile(azureConfig.getTenantId(), subscriptionId, azureEnvironment))
           .withSubscription(subscriptionId);

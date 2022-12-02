@@ -123,7 +123,6 @@ import io.harness.delegate.exceptionhandler.handler.AmazonClientExceptionHandler
 import io.harness.delegate.exceptionhandler.handler.AmazonServiceExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AuthenticationExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.AzureExceptionHandler;
-import io.harness.delegate.exceptionhandler.handler.AzureVaultSecretManagerExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.CVConnectorExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.DockerServerExceptionHandler;
 import io.harness.delegate.exceptionhandler.handler.GcpClientExceptionHandler;
@@ -2122,8 +2121,6 @@ public class DelegateModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AmazonServiceExceptionHandler.class));
     AmazonClientExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AmazonClientExceptionHandler.class));
-    AzureVaultSecretManagerExceptionHandler.exceptions().forEach(
-        exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureVaultSecretManagerExceptionHandler.class));
     AzureExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(AzureExceptionHandler.class));
     GcpClientExceptionHandler.exceptions().forEach(

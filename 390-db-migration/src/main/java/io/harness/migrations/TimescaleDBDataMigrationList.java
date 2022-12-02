@@ -46,8 +46,9 @@ public class TimescaleDBDataMigrationList {
         .add(Pair.of(11, AddIndexToCERecommendation.class))
         .add(Pair.of(12, BaseTimeScaleDBDataMigration.class))
         .add(Pair.of(13, AddNotificationSentStatusToAnomalies.class))
-        .add(Pair.of(14, AddOnDemandRollbackDetailsToDeployment.class))
+        .add(Pair.of(14, BaseTimeScaleDBDataMigration.class))
         .add(Pair.of(15, AddNewAndRemoveUnusedIndexesFromDeployment.class))
+        .add(Pair.of(16, AddOnDemandRollbackDetailsToDeployment.class))
         .build();
   }
 }

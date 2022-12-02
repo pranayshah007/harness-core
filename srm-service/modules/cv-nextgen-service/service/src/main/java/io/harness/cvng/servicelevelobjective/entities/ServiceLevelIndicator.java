@@ -125,7 +125,7 @@ public abstract class ServiceLevelIndicator
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D serviceLevelIndicator) {
       updateOperations.set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType())
           .set(ServiceLevelIndicatorKeys.sliMissingDataType, serviceLevelIndicator.getSliMissingDataType())
-          .inc(ServiceLevelIndicatorKeys.version);
+          .set(ServiceLevelIndicatorKeys.type, serviceLevelIndicator.getType());
     }
   }
   @FdIndex Long createNextTaskIteration;

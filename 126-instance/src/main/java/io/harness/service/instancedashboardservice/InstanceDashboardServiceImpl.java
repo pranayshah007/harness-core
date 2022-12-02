@@ -262,6 +262,7 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
             infraId, clusterIdentifier, pipelineExecutionId, buildId, InstanceSyncConstants.INSTANCE_LIMIT);
 
     return InstanceDetailsByBuildId.builder()
+        .buildId(buildId)
         .instances(instanceDetailsMapper.toInstanceDetailsDTOList(InstanceMapper.toDTO(instancesByBuildId)))
         .build();
   }

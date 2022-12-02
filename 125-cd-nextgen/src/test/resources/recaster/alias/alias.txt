@@ -7,6 +7,14 @@ io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable
 io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable
 io.harness.plancreator.customDeployment.StepTemplateRef
 io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig
+io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome
+io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest
+io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest
+io.harness.cdng.manifest.yaml.kinds.AsgConfigurationManifest
+io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome
+io.harness.cdng.manifest.yaml.AsgConfigurationManifestOutcome
+io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest
 io.harness.cdng.gitops.CreatePROutcome
 io.harness.cdng.gitops.CreatePRStepNode
 io.harness.cdng.gitOps.CreatePRPassThroughData
@@ -25,6 +33,7 @@ io.harness.yaml.core.properties.NGProperties
 io.harness.cdng.k8s.beans.K8sRollingReleaseOutput
 io.harness.cdng.k8s.DeleteResourcesWrapper
 io.harness.cdng.service.steps.ServiceConfigStepOutcome
+io.harness.cdng.service.beans.AsgServiceSpec
 io.harness.cdng.provision.terraform.TerraformPlanStepParameters
 io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome
 io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData

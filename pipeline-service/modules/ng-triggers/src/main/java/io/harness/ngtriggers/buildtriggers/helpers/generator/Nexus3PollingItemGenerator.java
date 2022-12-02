@@ -33,7 +33,7 @@ public class Nexus3PollingItemGenerator implements PollingItemGenerator {
     NGTriggerEntity ngTriggerEntity = buildTriggerOpsData.getTriggerDetails().getNgTriggerEntity();
     PollingItem.Builder builder = getBaseInitializedPollingItem(ngTriggerEntity);
     String connectorRef = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.connectorRef");
-    String repository = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryName");
+    String repository = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repository");
     String artifactPath = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactPath");
     String repositoryUrl = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryUrl");
     String artifactId = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.artifactId");
@@ -44,22 +44,25 @@ public class Nexus3PollingItemGenerator implements PollingItemGenerator {
     String classifier = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.classifier");
     String extension = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.extension");
     String repositoryPort = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.repositoryPort");
+    String group = buildTriggerHelper.validateAndFetchFromJsonNode(buildTriggerOpsData, "spec.group");
 
     Nexus3RegistryPayload.Builder nexus3RegistryPayload = Nexus3RegistryPayload.newBuilder();
     nexus3RegistryPayload.setRepositoryFormat(repositoryFormat).setRepository(repository);
-    if (repositoryFormat.equalsIgnoreCase("maven")) {
+    if ("maven".equalsIgnoreCase(repositoryFormat)) {
       nexus3RegistryPayload.setArtifactId(artifactId)
           .setGroupId(groupId)
           .setClassifier(classifier)
           .setExtension(extension);
-    } else if (repositoryFormat.equalsIgnoreCase("docker")) {
+    } else if ("docker".equalsIgnoreCase(repositoryFormat)) {
       nexus3RegistryPayload.setRepositoryUrl(repositoryUrl)
           .setRepositoryPort(repositoryPort)
           .setArtifactPath(artifactPath);
-    } else if (repositoryFormat.equalsIgnoreCase("nuget")) {
+    } else if ("nuget".equalsIgnoreCase(repositoryFormat)) {
       nexus3RegistryPayload.setPackageName(packageName);
-    } else if (repositoryFormat.equalsIgnoreCase("npm")) {
+    } else if ("npm".equalsIgnoreCase(repositoryFormat)) {
       nexus3RegistryPayload.setPackageName(packageName);
+    } else if ("raw".equalsIgnoreCase(repositoryFormat)) {
+      nexus3RegistryPayload.setGroup(group);
     } else {
       throw new RuntimeException(String.format("Repository format %s is not supported", repositoryFormat));
     }

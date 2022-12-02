@@ -8,6 +8,9 @@ package java
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	mexec "github.com/harness/harness-core/commons/go/lib/exec"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
@@ -15,8 +18,6 @@ import (
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
-	"testing"
-	"time"
 )
 
 func TestGetBazelCmd(t *testing.T) {
@@ -110,6 +111,6 @@ func TestBazelAutoDetectTests(t *testing.T) {
 	cmdFactory.EXPECT().CmdContextWithSleep(ctx, time.Duration(0), "sh", cmdArgs...).Return(cmd)
 	cmd.EXPECT().Output().Return([]byte(bazelRuleStrings), nil)
 
-	tests, _ := runner.AutoDetectTests(ctx)
+	tests, _ := runner.AutoDetectTests(ctx, []string{})
 	assert.Equal(t, testsExpected, tests)
 }

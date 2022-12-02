@@ -8,12 +8,12 @@
 package io.harness.delegatetasks;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.AzureEnvironmentType;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
@@ -22,20 +22,18 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.SecretManagementDelegateException;
+import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 
-import com.microsoft.aad.adal4j.AuthenticationException;
-import com.microsoft.azure.AzureEnvironment;
-import com.microsoft.azure.CloudException;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.keyvault.Vault;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
-import com.microsoft.rest.RestException;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.exception.HttpResponseException;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.keyvault.models.Vault;
+import com.azure.resourcemanager.resources.fluentcore.arm.models.HasName;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.microsoft.aad.msal4j.MsalServiceException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -68,70 +66,36 @@ public class NGAzureKeyVaultFetchEngineTask extends AbstractDelegateRunnableTask
       String message = "Failed to list secret engines for due to unexpected network error. Please try again.";
       log.error(message, exception);
       throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, USER);
-    } catch (RuntimeException ex) {
-      if (ex instanceof CloudException) {
-        throw ex;
-      } else if (isNestedAuthenticationException(ex)) {
-        throw new RestException(possibleExceptionMessage, null);
-      } else {
-        String message = "Failed to list secret engines for due to unexpected network error. Please try again.";
-        throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, USER);
-      }
+    } catch (MsalServiceException e) {
+      String message =
+          format("Failed to list secret engines for due to Azure authentication error. %s", e.getMessage());
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, e, USER);
+    } catch (HttpResponseException e) {
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, e.getMessage(), e, USER);
+    } catch (Exception ex) {
+      String message = format(
+          "Failed to list secret engines for due to unexpected network error. Please try again. %s", ex.getMessage());
+      throw new SecretManagementDelegateException(VAULT_OPERATION_ERROR, message, ex, USER);
     }
     return NGAzureKeyVaultFetchEngineResponse.builder().secretEngines(secretEngines).build();
   }
 
   private List<String> listVaultsInternal(AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO) throws IOException {
-    Azure azure;
     List<Vault> vaultList = new ArrayList<>();
-    ApplicationTokenCredentials credentials = new ApplicationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
-        azureKeyVaultConnectorDTO.getTenantId(),
-        String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
-        getAzureEnvironment(azureKeyVaultConnectorDTO.getAzureEnvironmentType()));
+    TokenCredential credentials =
+        KeyVaultAuthenticator.getAuthenticationTokenCredentials(azureKeyVaultConnectorDTO.getClientId(),
+            String.valueOf(azureKeyVaultConnectorDTO.getSecretKey().getDecryptedValue()),
+            azureKeyVaultConnectorDTO.getTenantId());
 
-    Azure.Authenticated authenticate = Azure.configure().authenticate(credentials);
+    AzureResourceManager azureResourceManager =
+        KeyVaultAuthenticator.getAzureResourceManager(credentials, azureKeyVaultConnectorDTO);
 
-    if (isEmpty(azureKeyVaultConnectorDTO.getSubscription())) {
-      azure = authenticate.withDefaultSubscription();
-    } else {
-      azure = authenticate.withSubscription(azureKeyVaultConnectorDTO.getSubscription());
-    }
-
-    for (ResourceGroup rGroup : azure.resourceGroups().list()) {
-      vaultList.addAll(azure.vaults().listByResourceGroup(rGroup.name()));
+    for (ResourceGroup rGroup : azureResourceManager.resourceGroups().list()) {
+      vaultList.addAll(
+          azureResourceManager.vaults().listByResourceGroup(rGroup.name()).stream().collect(Collectors.toList()));
     }
 
     return vaultList.stream().map(HasName::name).collect(Collectors.toList());
-  }
-
-  private AzureEnvironment getAzureEnvironment(AzureEnvironmentType azureEnvironmentType) {
-    if (azureEnvironmentType == null) {
-      return AzureEnvironment.AZURE;
-    }
-
-    switch (azureEnvironmentType) {
-      case AZURE_US_GOVERNMENT:
-        return AzureEnvironment.AZURE_US_GOVERNMENT;
-
-      case AZURE:
-      default:
-        return AzureEnvironment.AZURE;
-    }
-  }
-
-  private boolean isNestedAuthenticationException(Exception exception) {
-    if (exception.getCause() instanceof IOException) {
-      Exception nestedLevel1Exception = (IOException) exception.getCause();
-      if (nestedLevel1Exception.getCause() instanceof ExecutionException) {
-        Exception nestedLevel2Exception = (ExecutionException) nestedLevel1Exception.getCause();
-        if (nestedLevel2Exception.getCause() instanceof AuthenticationException) {
-          Exception nestedLevel3Exception = (AuthenticationException) nestedLevel2Exception.getCause();
-          possibleExceptionMessage = nestedLevel3Exception.getMessage();
-          return true;
-        }
-      }
-    }
-    return false;
   }
 
   public boolean isSupportingErrorFramework() {

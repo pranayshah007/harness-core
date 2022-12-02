@@ -12,8 +12,6 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_SECRET_MANAGERS;
 import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 
-import io.harness.beans.FeatureName;
-import io.harness.exception.HintException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.logging.AccountLogContext;
@@ -52,9 +50,6 @@ public class SSHVaultResource {
   @ExceptionMetered
   public RestResponse<String> saveOrUpdateSSHVaultConfig(
       @QueryParam("accountId") final String accountId, SSHVaultConfig sshVaultConfig) {
-    if (!featureFlagService.isEnabled(FeatureName.SSH_SECRET_ENGINE, accountId)) {
-      throw new HintException(String.format("Feature not allowed for account: %s ", accountId));
-    }
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       log.info("Adding SSH vault config for account {}", accountId);
       sshVaultConfig.setAccountId(accountId);
@@ -67,10 +62,6 @@ public class SSHVaultResource {
   @ExceptionMetered
   public RestResponse<Boolean> deleteVaultConfig(
       @QueryParam("accountId") final String accountId, @QueryParam("vaultConfigId") final String vaultConfigId) {
-    if (!featureFlagService.isEnabled(FeatureName.SSH_SECRET_ENGINE, accountId)) {
-      throw new HintException(String.format("Feature not allowed for account: %s ", accountId));
-    }
-
     try (AutoLogContext ignore = new AccountLogContext(accountId, OVERRIDE_ERROR)) {
       log.info("Deleting SSH vault config for account {}", accountId);
       return new RestResponse<>(sshVaultService.deleteSSHVaultConfig(accountId, vaultConfigId));
@@ -83,9 +74,6 @@ public class SSHVaultResource {
   @ExceptionMetered
   public RestResponse<List<SecretEngineSummary>> listSecretEngines(
       @QueryParam("accountId") final String accountId, SSHVaultConfig sshVaultConfig) {
-    if (!featureFlagService.isEnabled(FeatureName.SSH_SECRET_ENGINE, accountId)) {
-      throw new HintException(String.format("Feature not allowed for account: %s ", accountId));
-    }
     sshVaultConfig.setAccountId(accountId);
     return new RestResponse<>(sshVaultService.listSecretEngines(sshVaultConfig));
   }
