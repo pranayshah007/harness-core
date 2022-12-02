@@ -198,8 +198,8 @@ public enum NGStepType {
   ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
       "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
-  ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
-          "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
+  ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
+      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -231,7 +231,6 @@ public enum NGStepType {
   public static String getDisplayName(NGStepType ngStepType) {
     return ngStepType.displayName;
   }
-
   public static String getCategory(NGStepType ngStepType) {
     return ngStepType.category;
   }

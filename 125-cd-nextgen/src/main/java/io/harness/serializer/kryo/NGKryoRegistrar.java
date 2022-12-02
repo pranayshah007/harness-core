@@ -213,6 +213,5 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
     kryo.register(ElastigroupBGStageSetupStepInfo.class, 12800);
     kryo.register(ElastigroupSwapRouteStepInfo.class, 12801);
-
   }
 }

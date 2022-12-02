@@ -935,20 +935,20 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                       .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
     StepInfo elastigroupBGStageSetup =
-            StepInfo.newBuilder()
-                    .setName("Elastigroup BG Stage Setup")
-                    .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Elastigroup BG Stage Setup")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .build();
 
     StepInfo elastigroupSwapRoute =
-            StepInfo.newBuilder()
-                    .setName("Elastigroup Swap Route")
-                    .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
-                    .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
-                    .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
-                    .build();
+        StepInfo.newBuilder()
+            .setName("Elastigroup Swap Route")
+            .setType(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Elastigroup").setFolderPath("Elastigroup").build())
+            .setFeatureFlag(FeatureName.SPOT_ELASTIGROUP_NG.name())
+            .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();
 

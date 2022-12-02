@@ -10,8 +10,6 @@ package io.harness.cdng.elastigroup;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.ecs.EcsSpecParameters;
-import io.harness.ecs.EcsCommandUnitConstants;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
@@ -38,8 +36,8 @@ public class ElastigroupSetupStepParameters extends ElastigroupSetupBaseStepInfo
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(ElastigroupCommandUnitConstants.fetchStartupScript.toString(),
-        ElastigroupCommandUnitConstants.fetchElastigroupJson.toString(),
-        ElastigroupCommandUnitConstants.createSetup.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.FETCH_STARTUP_SCRIPT.toString(),
+        ElastigroupCommandUnitConstants.FETCH_ELASTIGROUP_CONFIGURATION.toString(),
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString());
   }
 }

@@ -79,9 +79,10 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     boolean isFinalDeployStep = isFinalDeployStep(stepParameters, elastigroupSetupOutcome);
 
     ElastiGroup newElastigroup = calculateNewForUpsize(
-        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastiGroupOriginalConfig(), isFinalDeployStep);
-    ElastiGroup oldElastigroup = calculateOldForDownsize(
-        stepParameters.getOldService(), elastigroupSetupOutcome.getOldElastiGroupOriginalConfig(), isFinalDeployStep);
+        stepParameters.getNewService(), elastigroupSetupOutcome.getNewElastigroupOriginalConfig(), isFinalDeployStep);
+    ElastiGroup oldElastigroup = calculateOldForDownsize(stepParameters.getOldService(),
+        elastigroupSetupOutcome.getOldElastigroupOriginalConfig(), isFinalDeployStep,
+        newElastigroup.getCapacity().getTarget());
 
     return ElastigroupDeployTaskParameters.builder()
         .spotConnector(getSpotConnector(ambiance, infrastructureOutcome))
@@ -98,7 +99,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
       CountCapacitySpec spec = (CountCapacitySpec) stepParameters.getNewService().getSpec();
 
       int requestedTarget = ParameterFieldHelper.getParameterFieldValue(spec.getCount());
-      int setupTarget = elastigroupSetupOutcome.getNewElastiGroupOriginalConfig().getCapacity().getTarget();
+      int setupTarget = elastigroupSetupOutcome.getNewElastigroupOriginalConfig().getCapacity().getTarget();
 
       return requestedTarget >= setupTarget;
     } else if (CapacitySpecType.PERCENTAGE.equals(stepParameters.getNewService().getType())) {
@@ -149,10 +150,7 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
   }
 
   private ElastiGroup calculateOldForDownsize(
-      Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep) {
-    if (requestedCapacity == null) {
-      return null;
-    }
+      Capacity requestedCapacity, ElastiGroup setupElastigroup, boolean isFinalDeployStep, int upsizeTarget) {
     if (setupElastigroup == null) {
       return null;
     }
@@ -161,7 +159,12 @@ public class ElastigroupDeployStepHelper extends CDStepHelper {
     if (isFinalDeployStep) {
       scaleDownElastigroup(result);
     } else {
-      int target = calculateTargetNumberOfInstancesForOld(requestedCapacity, result);
+      int target;
+      if (requestedCapacity == null) {
+        target = Math.max(0, setupElastigroup.getCapacity().getTarget() - upsizeTarget);
+      } else {
+        target = calculateTargetNumberOfInstancesForOld(requestedCapacity, result);
+      }
       result.getCapacity().setTarget(target);
       result.getCapacity().setMinimum(target);
       result.getCapacity().setMaximum(target);

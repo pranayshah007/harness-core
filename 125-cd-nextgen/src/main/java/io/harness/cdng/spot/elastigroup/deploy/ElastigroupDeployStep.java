@@ -138,8 +138,8 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
     InfrastructureOutcome infrastructure = cdStepHelper.getInfrastructureOutcome(ambiance);
 
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome = stepHelper.getElastigroupSetupOutcome(ambiance);
-    ElastiGroup oldElastigroup = elastigroupSetupDataOutcome.getOldElastiGroupOriginalConfig();
-    ElastiGroup newElastigroup = elastigroupSetupDataOutcome.getNewElastiGroupOriginalConfig();
+    ElastiGroup oldElastigroup = elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig();
+    ElastiGroup newElastigroup = elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig();
 
     if (oldElastigroup == null && newElastigroup == null) {
       return null;

@@ -408,7 +408,9 @@ public enum TaskType {
   ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task"),
   ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task"),
   ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),
-  ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task");
+  ELASTIGROUP_SWAP_ROUTE_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Swap Route Command Task"),
+  ELASTIGROUP_ROLLBACK(TaskGroup.ELASTIGROUP, "Elastigroup Rollback Task"),
+  ELASTIGROUP_PRE_FETCH_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Pre Fetch Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

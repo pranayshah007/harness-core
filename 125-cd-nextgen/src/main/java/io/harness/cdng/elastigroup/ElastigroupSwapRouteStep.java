@@ -7,31 +7,22 @@
 
 package io.harness.cdng.elastigroup;
 
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.elastigroup.beans.ElastigroupExecutionPassThroughData;
-import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
-import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
-import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
-import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -52,15 +43,12 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
-import io.harness.spotinst.model.ElastiGroup;
-import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -80,16 +68,15 @@ public class ElastigroupSwapRouteStep
 
   @Override
   public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
-      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-      ElastigroupStepExecutorParams elastigroupStepExecutorParams) {
+      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData) {
     ElastigroupInfrastructureOutcome infrastructureOutcome =
         (ElastigroupInfrastructureOutcome) executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
 
     SpotInstConfig spotInstConfig = elastigroupStepCommonHelper.getSpotInstConfig(infrastructureOutcome, ambiance);
 
-    OptionalSweepingOutput optionalElastigroupSetupOutput = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_BG_STAGE_SETUP_OUTCOME));
+    OptionalSweepingOutput optionalElastigroupSetupOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.ELASTIGROUP_SETUP_OUTCOME));
 
     if (!optionalElastigroupSetupOutput.isFound()) {
       elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(
@@ -109,8 +96,6 @@ public class ElastigroupSwapRouteStep
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         ElastigroupSwapRouteCommandRequest.builder()
             .blueGreen(elastigroupSetupDataOutcome.isBlueGreen())
-            .awsEncryptedDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
-            .connectorInfoDTO(connectorInfoDTO)
             .newElastigroup(elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig())
             .oldElastigroup(elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig())
             .elastigroupNamePrefix(elastigroupSetupDataOutcome.getElastigroupNamePrefix())
@@ -118,12 +103,20 @@ public class ElastigroupSwapRouteStep
             .downsizeOldElastigroup(
                 String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
             .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
-            .awsRegion(elastigroupSetupDataOutcome.getAwsRegion())
             .spotInstConfig(spotInstConfig)
             .commandName(ELASTIGROUP_SWAP_ROUTE_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
+            .loadBalancerConfig(
+                AwsLoadBalancerConfig.builder()
+                    .loadBalancerDetails(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
+                    .build())
+            .connectedCloudProvider(
+                AwsConnectedCloudProvider.builder()
+                    .connectorInfoDTO(connectorInfoDTO)
+                    .encryptionDetails(elastigroupStepCommonHelper.getEncryptedDataDetail(connectorInfoDTO, ambiance))
+                    .region(elastigroupSetupDataOutcome.getAwsRegion())
+                    .build())
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSwapRouteCommandRequest,
@@ -205,9 +198,7 @@ public class ElastigroupSwapRouteStep
         ElastigroupExecutionPassThroughData.builder()
             .infrastructure(elastigroupStepCommonHelper.getInfrastructureOutcome(ambiance))
             .build();
-    ElastigroupStepExecutorParams elastigroupStepExecutorParams = ElastigroupStepExecutorParams.builder().build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
-    return executeElastigroupTask(
-        ambiance, stepParameters, elastigroupExecutionPassThroughData, unitProgressData, elastigroupStepExecutorParams);
+    return executeElastigroupTask(ambiance, stepParameters, elastigroupExecutionPassThroughData, unitProgressData);
   }
 }

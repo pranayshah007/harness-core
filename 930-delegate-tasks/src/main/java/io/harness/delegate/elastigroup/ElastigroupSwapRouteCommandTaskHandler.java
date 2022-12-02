@@ -31,8 +31,9 @@ import io.harness.delegate.exception.ElastigroupNGException;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
 import io.harness.delegate.task.elastigroup.ElastigroupDeployTaskHelper;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
-import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
@@ -61,7 +62,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
+public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTaskHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
   @Inject private ElastigroupDeployTaskHelper elastigroupDeployTaskHelper;
@@ -70,34 +71,38 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSwapRouteCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSwapRouteCommandRequest"));
     }
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         (ElastigroupSwapRouteCommandRequest) elastigroupCommandRequest;
+    AwsConnectedCloudProvider connectedCloudProvider =
+        (AwsConnectedCloudProvider) elastigroupSwapRouteCommandRequest.getConnectedCloudProvider();
+    AwsLoadBalancerConfig loadBalancerConfig =
+        (AwsLoadBalancerConfig) elastigroupSwapRouteCommandRequest.getLoadBalancerConfig();
 
     timeoutInMillis = elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin() * 60000;
 
     LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.swapTargetGroup.toString(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
-              elastigroupSwapRouteCommandRequest.getAwsEncryptedDetails());
+          elastigroupSwapRouteCommandRequest.getConnectorEncryptedDetails());
       AwsInternalConfig awsInternalConfig = elastigroupCommandTaskNGHelper.getAwsInternalConfig(
           (AwsConnectorDTO) elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
-              elastigroupSwapRouteCommandRequest.getAwsRegion());
+          connectedCloudProvider.getRegion());
 
       SpotInstConfig spotInstConfig = elastigroupSwapRouteCommandRequest.getSpotInstConfig();
       elastigroupCommandTaskNGHelper.decryptSpotInstConfig(spotInstConfig);
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      String spotInstApiTokenRef = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
 
       String prodElastiGroupName = elastigroupSwapRouteCommandRequest.getElastigroupNamePrefix();
       String stageElastiGroupName = format(
@@ -116,16 +121,16 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
 
       if (isNotEmpty(oldElastiGroupId)) {
         deployLogCallback.saveExecutionLog(format(
-            "Sending request to rename Elastigroup with Id: [%s] to [%s]", oldElastiGroup, stageElastiGroupName));
+            "Sending request to rename Elastigroup with Id: [%s] to [%s]", oldElastiGroupId, stageElastiGroupName));
         spotInstHelperServiceDelegate.updateElastiGroup(spotInstApiTokenRef, spotInstAccountId, oldElastiGroupId,
             ElastiGroupRenameRequest.builder().name(stageElastiGroupName).build());
       }
 
-      String region = elastigroupSwapRouteCommandRequest.getAwsRegion();
+      String region = connectedCloudProvider.getRegion();
 
       deployLogCallback.saveExecutionLog("Updating Listener Rules for Load Balancer");
       for (LoadBalancerDetailsForBGDeployment loadBalancerDetailsForBGDeployment :
-          elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList()) {
+          loadBalancerConfig.getLoadBalancerDetails()) {
         elastigroupCommandTaskNGHelper.swapTargetGroups(
             region, deployLogCallback, loadBalancerDetailsForBGDeployment, awsInternalConfig);
       }
@@ -142,7 +147,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         throw new InvalidRequestException(errorMessage);
       }
 
-      if (downsizeOldElastigroup && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
+      if (downsizeOldElastigroup && elastigroupSwapRouteCommandRequest.getOldElastigroup() != null && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
         ElastiGroup temp = ElastiGroup.builder()
                                .id(oldElastiGroupId)
                                .name(stageElastiGroupName)
@@ -151,14 +156,14 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         int steadyStateTimeOut =
             elastigroupDeployTaskHelper.getTimeOut(elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin());
         elastigroupDeployTaskHelper.scaleElastigroup(temp, spotInstApiTokenRef, spotInstAccountId, steadyStateTimeOut,
-            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(),
-            ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), commandUnitsProgress);
+            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(),
+            ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), commandUnitsProgress);
       } else {
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(), true, commandUnitsProgress);
+            iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(), true, commandUnitsProgress);
         deployLogCallback.saveExecutionLog("Nothing to Downsize.", INFO, SUCCESS);
         deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
-            ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), true, commandUnitsProgress);
+            ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), true, commandUnitsProgress);
         deployLogCallback.saveExecutionLog(
             "No Downsize was required, Swap Route Successfully Completed", INFO, SUCCESS);
       }
@@ -168,16 +173,7 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
           CommandExecutionStatus.SUCCESS);
 
       ElastigroupSwapRouteResultBuilder elastigroupSwapRouteResult = ElastigroupSwapRouteResult.builder();
-      elastigroupSwapRouteResult.downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
-          .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList());
-      if (elastigroupSwapRouteCommandRequest.getOldElastigroup() != null) {
-        elastigroupSwapRouteResult.oldElastiGroupId(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId());
-        elastigroupSwapRouteResult.oldElastiGroupName(elastigroupSwapRouteCommandRequest.getOldElastigroup().getName());
-      }
-      if (elastigroupSwapRouteCommandRequest.getNewElastigroup() != null) {
-        elastigroupSwapRouteResult.newElastiGroupId(elastigroupSwapRouteCommandRequest.getNewElastigroup().getId());
-        elastigroupSwapRouteResult.newElastiGroupName(elastigroupSwapRouteCommandRequest.getNewElastigroup().getName());
-      }
+      setElastigroupResult(elastigroupSwapRouteResult, elastigroupSwapRouteCommandRequest);
 
       return ElastigroupSwapRouteResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -189,6 +185,21 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
       deployLogCallback.saveExecutionLog(color(format("Swap Routes Step Failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);
+    }
+  }
+
+  private void setElastigroupResult(ElastigroupSwapRouteResultBuilder elastigroupSwapRouteResult,
+      ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest) {
+    elastigroupSwapRouteResult.downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
+        .lbDetails(((AwsLoadBalancerConfig) (elastigroupSwapRouteCommandRequest.getLoadBalancerConfig()))
+                       .getLoadBalancerDetails());
+    if (elastigroupSwapRouteCommandRequest.getOldElastigroup() != null) {
+      elastigroupSwapRouteResult.oldElastiGroupId(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId());
+      elastigroupSwapRouteResult.oldElastiGroupName(elastigroupSwapRouteCommandRequest.getOldElastigroup().getName());
+    }
+    if (elastigroupSwapRouteCommandRequest.getNewElastigroup() != null) {
+      elastigroupSwapRouteResult.newElastiGroupId(elastigroupSwapRouteCommandRequest.getNewElastigroup().getId());
+      elastigroupSwapRouteResult.newElastiGroupName(elastigroupSwapRouteCommandRequest.getNewElastigroup().getName());
     }
   }
 }

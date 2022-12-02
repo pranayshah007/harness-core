@@ -23,6 +23,5 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 @OwnedBy(CDP)
 public interface ElastigroupStepExecutor {
   TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
-      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-      ElastigroupStepExecutorParams elastigroupStepExecutorParams);
+      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData);
 }

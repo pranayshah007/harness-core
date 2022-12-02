@@ -35,7 +35,7 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
   Integer getTimeoutIntervalInMin();
   SpotInstConfig getSpotInstConfig();
   ConnectorInfoDTO getConnectorInfoDTO();
-  List<EncryptedDataDetail> getAwsEncryptedDetails();
+  List<EncryptedDataDetail> getConnectorEncryptedDetails();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
@@ -54,7 +54,7 @@ public interface ElastigroupCommandRequest extends TaskParameters, ExecutionCapa
       if (connectorConfigDTO instanceof AwsConnectorDTO) {
         AwsConnectorDTO awsConnectorDTO = (AwsConnectorDTO) connectorConfigDTO;
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-            getAwsEncryptedDetails(), maskingEvaluator));
+            getConnectorEncryptedDetails(), maskingEvaluator));
         capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
       }
     }

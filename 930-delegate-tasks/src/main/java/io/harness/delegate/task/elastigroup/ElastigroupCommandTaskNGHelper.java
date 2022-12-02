@@ -8,6 +8,7 @@
 package io.harness.delegate.task.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.spotinst.model.SpotInstConstants.CAPACITY;
 import static io.harness.spotinst.model.SpotInstConstants.CAPACITY_MAXIMUM_CONFIG_ELEMENT;
@@ -25,6 +26,7 @@ import static io.harness.spotinst.model.SpotInstConstants.LAUNCH_SPECIFICATION;
 import static io.harness.spotinst.model.SpotInstConstants.LB_TYPE_TG;
 import static io.harness.spotinst.model.SpotInstConstants.LOAD_BALANCERS_CONFIG;
 import static io.harness.spotinst.model.SpotInstConstants.NAME_CONFIG_ELEMENT;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 import static io.harness.spotinst.model.SpotInstConstants.UNIT_INSTANCE;
 
 import static software.wings.beans.LogHelper.color;
@@ -47,6 +49,8 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
+import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
+import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.exception.InvalidRequestException;
@@ -56,6 +60,8 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
+import io.harness.spotinst.SpotInstHelperServiceDelegate;
+import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupLoadBalancer;
 import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
 
@@ -67,7 +73,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,22 +101,20 @@ public class ElastigroupCommandTaskNGHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject protected ElbV2Client elbV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
+  @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
 
   public String generateFinalJson(
       ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) throws Exception {
     Map<String, Object> jsonConfigMap =
-        getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupJson());
+        getJsonConfigMapFromElastigroupJson(elastigroupSetupCommandRequest.getElastigroupConfiguration());
     Map<String, Object> elastiGroupConfigMap = (Map<String, Object>) jsonConfigMap.get(GROUP_CONFIG_ELEMENT);
-
-    List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments =
-        elastigroupSetupCommandRequest.getAwsLoadBalancerConfigs() != null
-        ? elastigroupSetupCommandRequest.getAwsLoadBalancerConfigs()
-        : Arrays.asList();
+    AwsLoadBalancerConfig loadBalancerConfig =
+        (AwsLoadBalancerConfig) elastigroupSetupCommandRequest.getLoadBalancerConfig();
 
     removeUnsupportedFieldsForCreatingNewGroup(elastiGroupConfigMap);
     updateName(elastiGroupConfigMap, newElastiGroupName);
     updateInitialCapacity(elastiGroupConfigMap);
-    updateWithLoadBalancerAndImageConfig(loadBalancerDetailsForBGDeployments, elastiGroupConfigMap,
+    updateWithLoadBalancerAndImageConfig(loadBalancerConfig, elastiGroupConfigMap,
         elastigroupSetupCommandRequest.getImage(), elastigroupSetupCommandRequest.getStartupScript(),
         elastigroupSetupCommandRequest.isBlueGreen());
     Gson gson = new Gson();
@@ -124,14 +127,16 @@ public class ElastigroupCommandTaskNGHelper {
     return awsInternalConfig;
   }
 
-  private void updateWithLoadBalancerAndImageConfig(List<LoadBalancerDetailsForBGDeployment> lbDetailList,
+  private void updateWithLoadBalancerAndImageConfig(AwsLoadBalancerConfig loadBalancerConfig,
       Map<String, Object> elastiGroupConfigMap, String image, String userData, boolean blueGreen) {
     Map<String, Object> computeConfigMap = (Map<String, Object>) elastiGroupConfigMap.get(COMPUTE);
     Map<String, Object> launchSpecificationMap = (Map<String, Object>) computeConfigMap.get(LAUNCH_SPECIFICATION);
 
     if (blueGreen) {
+      List<LoadBalancerDetailsForBGDeployment> loadBalancerDetails =
+          loadBalancerConfig.getLoadBalancerDetails() != null ? loadBalancerConfig.getLoadBalancerDetails() : List.of();
       launchSpecificationMap.put(LOAD_BALANCERS_CONFIG,
-          ElastiGroupLoadBalancerConfig.builder().loadBalancers(generateLBConfigs(lbDetailList)).build());
+          ElastiGroupLoadBalancerConfig.builder().loadBalancers(generateLBConfigs(loadBalancerDetails)).build());
     }
 
     if (isNotEmpty(image)) {
@@ -159,7 +164,7 @@ public class ElastigroupCommandTaskNGHelper {
     }
   }
 
-  Map<String, Object> getJsonConfigMapFromElastigroupJson(String elastigroupJson) throws Exception {
+  Map<String, Object> getJsonConfigMapFromElastigroupJson(String elastigroupJson) {
     Type mapType = new TypeToken<Map<String, Object>>() {}.getType();
     Gson gson = new Gson();
 
@@ -243,7 +248,7 @@ public class ElastigroupCommandTaskNGHelper {
     }
   }
 
-  private Listener getListenerByPort(String listenerPort, List<Listener> listeners, String loadBalancer) {
+  public Listener getListenerByPort(String listenerPort, List<Listener> listeners, String loadBalancer) {
     if (EmptyPredicate.isNotEmpty(listeners)) {
       for (Listener listener : listeners) {
         if (isListenerPortMatching(listenerPort, listener)) {
@@ -255,7 +260,7 @@ public class ElastigroupCommandTaskNGHelper {
         "listener with port:" + listenerPort + "is not present in load balancer: " + loadBalancer);
   }
 
-  private String getFirstTargetGroupFromListener(
+  public String getFirstTargetGroupFromListener(
       AwsInternalConfig awsInternalConfig, String region, String listenerArn, String listenerRuleArn) {
     List<Rule> rules = newArrayList();
     String nextToken = null;
@@ -345,7 +350,11 @@ public class ElastigroupCommandTaskNGHelper {
 
   public List<LoadBalancerDetailsForBGDeployment> fetchAllLoadBalancerDetails(
       ElastigroupSetupCommandRequest setupTaskParameters, AwsInternalConfig awsConfig, LogCallback logCallback) {
-    List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs = setupTaskParameters.getAwsLoadBalancerConfigs();
+    AwsLoadBalancerConfig loadBalancerConfig = (AwsLoadBalancerConfig) setupTaskParameters.getLoadBalancerConfig();
+    AwsConnectedCloudProvider awsConnectedCloudProvider =
+        (AwsConnectedCloudProvider) setupTaskParameters.getConnectedCloudProvider();
+    List<LoadBalancerDetailsForBGDeployment> awsLoadBalancerConfigs = loadBalancerConfig.getLoadBalancerDetails();
+
     List<LoadBalancerDetailsForBGDeployment> lbDetailsWithArnValues = new ArrayList<>();
     try {
       for (LoadBalancerDetailsForBGDeployment awsLoadBalancerConfig : awsLoadBalancerConfigs) {
@@ -354,7 +363,7 @@ public class ElastigroupCommandTaskNGHelper {
                 awsLoadBalancerConfig.getLoadBalancerName()));
 
         LoadBalancerDetailsForBGDeployment loadBalancerDetailsForBGDeployment =
-            getListenerResponseDetails(awsConfig, setupTaskParameters.getAwsRegion(),
+            getListenerResponseDetails(awsConfig, awsConnectedCloudProvider.getRegion(),
                 awsLoadBalancerConfig.getLoadBalancerName(), logCallback, awsLoadBalancerConfig);
 
         lbDetailsWithArnValues.add(loadBalancerDetailsForBGDeployment);
@@ -405,7 +414,7 @@ public class ElastigroupCommandTaskNGHelper {
         .build();
   }
 
-  private List<Listener> getElbListenersForLoadBalancer(
+  public List<Listener> getElbListenersForLoadBalancer(
       String loadBalancerName, AwsInternalConfig awsInternalConfig, String region) {
     DescribeLoadBalancersRequest describeLoadBalancersRequest =
         DescribeLoadBalancersRequest.builder().names(loadBalancerName).build();
@@ -514,5 +523,39 @@ public class ElastigroupCommandTaskNGHelper {
         logCallback);
     logCallback.saveExecutionLog(
         color(format("Successfully updated Stage Listener %n%n"), LogColor.White, Bold), LogLevel.INFO);
+  }
+
+  public List<ElastiGroup> listElastigroups(
+      boolean blueGreen, String prefix, String spotInstAccountId, String spotInstApiToken) throws Exception {
+    List<ElastiGroup> elastigroups;
+    if (blueGreen) {
+      elastigroups = new ArrayList<>();
+      String stageElastigroupName = format("%s__%s", prefix, STAGE_ELASTI_GROUP_NAME_SUFFIX);
+      Optional<ElastiGroup> stageElastigroup =
+          spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiToken, spotInstAccountId, stageElastigroupName);
+      stageElastigroup.ifPresent(elastigroups::add);
+      String prodElastigroupName = prefix;
+      Optional<ElastiGroup> prodElastigroup =
+          spotInstHelperServiceDelegate.getElastiGroupByName(spotInstApiToken, spotInstAccountId, prodElastigroupName);
+      prodElastigroup.ifPresent(elastigroups::add);
+    } else {
+      elastigroups = spotInstHelperServiceDelegate.listAllElastiGroups(spotInstApiToken, spotInstAccountId, prefix);
+    }
+    return elastigroups;
+  }
+
+  public void logElastigroups(List<ElastiGroup> elastigroups, LogCallback logCallback) {
+    if(isEmpty(elastigroups)){
+      logCallback.saveExecutionLog("Found no Elastigroups");
+    } else {
+      logCallback.saveExecutionLog(format("Found following Elastigroup%s:", elastigroups.size() > 1 ? "s" : ""));
+      elastigroups.forEach(e -> {
+        logCallback.saveExecutionLog(format("- %s", getElastigroupString(e)));
+      });
+    }
+  }
+
+  public static String getElastigroupString(ElastiGroup elastiGroup){
+    return format("%s [%s]", elastiGroup.getId(), elastiGroup.getName());
   }
 }

@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
-import io.harness.delegate.elastigroup.ElastigroupCommandTaskNGHandler;
+import io.harness.delegate.elastigroup.ElastigroupCommandTaskHandler;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDelegateTaskHelper {
-  public ElastigroupCommandResponse getElastigroupCommandResponse(ElastigroupCommandTaskNGHandler commandTaskHandler,
-      ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
+  public ElastigroupCommandResponse getElastigroupCommandResponse(ElastigroupCommandTaskHandler commandTaskHandler,
+                                                                  ElastigroupCommandRequest elastigroupCommandRequest, ILogStreamingTaskClient iLogStreamingTaskClient) {
     CommandUnitsProgress commandUnitsProgress = elastigroupCommandRequest.getCommandUnitsProgress() != null
         ? elastigroupCommandRequest.getCommandUnitsProgress()
         : CommandUnitsProgress.builder().build();

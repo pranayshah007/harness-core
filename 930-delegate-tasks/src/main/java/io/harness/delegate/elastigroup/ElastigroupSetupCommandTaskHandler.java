@@ -8,6 +8,7 @@
 package io.harness.delegate.elastigroup;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper.getElastigroupString;
 import static io.harness.spotinst.model.SpotInstConstants.elastiGroupsToKeep;
 
 import static software.wings.beans.LogHelper.color;
@@ -52,14 +53,14 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
 @Slf4j
-public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNGHandler {
+public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  private long timeoutInMillis;
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
+      throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSetupCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSetupCommandRequest"));
@@ -67,14 +68,12 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
     ElastigroupSetupCommandRequest elastigroupSetupCommandRequest =
         (ElastigroupSetupCommandRequest) elastigroupCommandRequest;
 
-    timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
-
-    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.createSetup.toString(), true, commandUnitsProgress);
+    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
     try {
       // Handle canary and basic
       String prefix = format("%s__", elastigroupSetupCommandRequest.getElastigroupNamePrefix());
-      int elastiGroupVersion = 1;
+      int elastigroupVersion = 1;
       deployLogCallback.saveExecutionLog(
           format("Querying Spotinst for existing Elastigroups with prefix: [%s]", prefix));
       SpotInstConfig spotInstConfig = elastigroupSetupCommandRequest.getSpotInstConfig();
@@ -82,26 +81,34 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
       SpotPermanentTokenConfigSpecDTO spotPermanentTokenConfigSpecDTO =
           (SpotPermanentTokenConfigSpecDTO) spotInstConfig.getSpotConnectorDTO().getCredential().getConfig();
       String spotInstAccountId = spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue() != null
-          ? new String(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
+          ? String.valueOf(spotPermanentTokenConfigSpecDTO.getSpotAccountIdRef().getDecryptedValue())
           : spotPermanentTokenConfigSpecDTO.getSpotAccountId();
-      String spotInstApiTokenRef = new String(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
-      List<ElastiGroup> elastiGroups = spotInstHelperServiceDelegate.listAllElastiGroups(
-          spotInstApiTokenRef, spotInstAccountId, elastigroupSetupCommandRequest.getElastigroupNamePrefix());
-      if (isNotEmpty(elastiGroups)) {
-        elastiGroupVersion =
-            Integer.parseInt(elastiGroups.get(elastiGroups.size() - 1).getName().substring(prefix.length())) + 1;
+      String spotInstApiToken = String.valueOf(spotPermanentTokenConfigSpecDTO.getApiTokenRef().getDecryptedValue());
+      List<ElastiGroup> elastigroupsBeforeDeletion = spotInstHelperServiceDelegate.listAllElastiGroups(
+          spotInstApiToken, spotInstAccountId, elastigroupSetupCommandRequest.getElastigroupNamePrefix());
+      elastigroupCommandTaskNGHelper.logElastigroups(elastigroupsBeforeDeletion, deployLogCallback);
+      if (isNotEmpty(elastigroupsBeforeDeletion)) {
+        elastigroupVersion = Integer.parseInt(elastigroupsBeforeDeletion.get(elastigroupsBeforeDeletion.size() - 1)
+                                                  .getName()
+                                                  .substring(prefix.length()))
+            + 1;
       }
-      String newElastiGroupName = format("%s%d", prefix, elastiGroupVersion);
+      String newElastiGroupName = format("%s%d", prefix, elastigroupVersion);
 
       String finalJson =
           elastigroupCommandTaskNGHelper.generateFinalJson(elastigroupSetupCommandRequest, newElastiGroupName);
 
       deployLogCallback.saveExecutionLog(
           format("Sending request to create Elastigroup with name: [%s]", newElastiGroupName));
-      ElastiGroup elastiGroup =
-          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiTokenRef, spotInstAccountId, finalJson);
-      String newElastiGroupId = elastiGroup.getId();
-      deployLogCallback.saveExecutionLog(format("Created Elastigroup with id: [%s]", newElastiGroupId));
+      ElastiGroup elastigroup =
+          spotInstHelperServiceDelegate.createElastiGroup(spotInstApiToken, spotInstAccountId, finalJson);
+      deployLogCallback.saveExecutionLog(format("Created Elastigroup %s", getElastigroupString(elastigroup)));
+
+      /**
+       * Look at all the last consecutive Elastigroups with 0 target. Delete them. Useful when the step is aborted
+       */
+      List<ElastiGroup> elastigroups = deleteLastConsecutiveElastigroupsWithZeroCapacity(
+          elastigroupsBeforeDeletion, deployLogCallback, spotInstAccountId, spotInstApiToken);
 
       /**
        * Look at all the Elastigroups except the "LAST" elastigroup.
@@ -109,10 +116,10 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
        */
       List<ElastiGroup> groupsWithoutInstances = newArrayList();
       List<ElastiGroup> groupToDownsizeDuringDeploy = emptyList();
-      if (isNotEmpty(elastiGroups)) {
-        groupToDownsizeDuringDeploy = singletonList(elastiGroups.get(elastiGroups.size() - 1));
-        for (int i = 0; i < elastiGroups.size() - 1; i++) {
-          ElastiGroup elastigroupCurrent = elastiGroups.get(i);
+      if (isNotEmpty(elastigroups)) {
+        groupToDownsizeDuringDeploy = singletonList(elastigroups.get(elastigroups.size() - 1));
+        for (int i = 0; i < elastigroups.size() - 1; i++) {
+          ElastiGroup elastigroupCurrent = elastigroups.get(i);
           ElastiGroupCapacity capacity = elastigroupCurrent.getCapacity();
           if (capacity == null) {
             groupsWithoutInstances.add(elastigroupCurrent);
@@ -123,44 +130,42 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
             groupsWithoutInstances.add(elastigroupCurrent);
           } else {
             deployLogCallback.saveExecutionLog(
-                format("Downscaling old Elastigroup with id: [%s] to 0 instances.", elastigroupCurrent.getId()));
+                format("Downscaling old Elastigroup: %s to 0 instances.", getElastigroupString(elastigroupCurrent)));
             ElastiGroup temp = ElastiGroup.builder()
                                    .id(elastigroupCurrent.getId())
                                    .name(elastigroupCurrent.getName())
                                    .capacity(ElastiGroupCapacity.builder().minimum(0).maximum(0).target(0).build())
                                    .build();
             spotInstHelperServiceDelegate.updateElastiGroupCapacity(
-                spotInstApiTokenRef, spotInstAccountId, elastigroupCurrent.getId(), temp);
+                spotInstApiToken, spotInstAccountId, elastigroupCurrent.getId(), temp);
           }
         }
       }
 
       int lastIdx = groupsWithoutInstances.size() - elastiGroupsToKeep;
       for (int i = 0; i < lastIdx; i++) {
-        String nameToDelete = groupsWithoutInstances.get(i).getName();
-        String idToDelete = groupsWithoutInstances.get(i).getId();
+        ElastiGroup elastigroupToDelete = groupsWithoutInstances.get(i);
+        String idToDelete = elastigroupToDelete.getId();
         deployLogCallback.saveExecutionLog(
-            format("Sending request to delete Elastigroup: [%s] with id: [%s]", nameToDelete, idToDelete));
-        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiTokenRef, spotInstAccountId, idToDelete);
+            format("Sending request to delete Elastigroup: %s", getElastigroupString(elastigroupToDelete)));
+        spotInstHelperServiceDelegate.deleteElastiGroup(spotInstApiToken, spotInstAccountId, idToDelete);
       }
-
-      deployLogCallback.saveExecutionLog(
-          color("Setup Successful.", LogColor.Green, LogWeight.Bold), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       ElastigroupSetupResult elastigroupSetupResult =
           ElastigroupSetupResult.builder()
-              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
-              .newElastiGroup(elastiGroup)
-              .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getElastigroupOriginalConfig())
+              .elastigroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+              .newElastigroup(elastigroup)
+              .elastigroupOriginalConfig(elastigroupSetupCommandRequest.getGeneratedElastigroupConfig())
               .groupToBeDownsized(groupToDownsizeDuringDeploy)
-              .elastiGroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
+              .elastigroupNamePrefix(elastigroupSetupCommandRequest.getElastigroupNamePrefix())
               .isBlueGreen(elastigroupSetupCommandRequest.isBlueGreen())
               .useCurrentRunningInstanceCount(
                   ((ElastigroupSetupCommandRequest) elastigroupCommandRequest).isUseCurrentRunningInstanceCount())
-              .currentRunningInstanceCount(elastigroupSetupCommandRequest.getCurrentRunningInstanceCount())
               .maxInstanceCount(elastigroupSetupCommandRequest.getMaxInstanceCount())
               .resizeStrategy(elastigroupSetupCommandRequest.getResizeStrategy())
               .build();
+
+      deployLogCallback.saveExecutionLog("Successfully completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
 
       return ElastigroupSetupResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
@@ -174,5 +179,31 @@ public class ElastigroupSetupCommandTaskHandler extends ElastigroupCommandTaskNG
           color("Deployment Failed.", LogColor.Red, LogWeight.Bold), LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       throw new ElastigroupNGException(sanitizedException);
     }
+  }
+
+  private List<ElastiGroup> deleteLastConsecutiveElastigroupsWithZeroCapacity(List<ElastiGroup> elastigroups,
+      LogCallback deployLogCallback, String spotInstAccountId, String spotInstApiTokenRef) throws Exception {
+    List<ElastiGroup> result = newArrayList();
+    if (isNotEmpty(elastigroups)) {
+      boolean lastElastigroupWithZeroInstances = true;
+      for (int i = elastigroups.size() - 1; i >= 0; i--) {
+        ElastiGroup elastigroupCurrent = elastigroups.get(i);
+        if (lastElastigroupWithZeroInstances) {
+          ElastiGroupCapacity capacity = elastigroupCurrent.getCapacity();
+          if (capacity == null || capacity.getTarget() == 0) {
+            deployLogCallback.saveExecutionLog(format(
+                "Sending request to delete Elastigroup: %s with capacity 0", getElastigroupString(elastigroupCurrent)));
+            spotInstHelperServiceDelegate.deleteElastiGroup(
+                spotInstApiTokenRef, spotInstAccountId, elastigroupCurrent.getId());
+          } else {
+            lastElastigroupWithZeroInstances = false;
+            result.add(elastigroupCurrent);
+          }
+        } else {
+          result.add(elastigroupCurrent);
+        }
+      }
+    }
+    return result;
   }
 }

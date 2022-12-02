@@ -136,7 +136,12 @@ public class ElastigroupCommandTaskNGHelperTest extends CategoryTest {
             .prodListenerPort(prodListenerPort)
             .stageListenerPort(stageListenerPort)
             .build();
-    ElastigroupSetupCommandRequest setupTaskParameters = ElastigroupSetupCommandRequest.builder().awsRegion(region).awsLoadBalancerConfigs(Arrays.asList(loadBalancerDetailsForBGDeployment)).build();
+    ElastigroupSetupCommandRequest setupTaskParameters =
+        ElastigroupSetupCommandRequest
+            .builder()
+            //            .awsRegion(region)
+            //            .awsLoadBalancerConfigs(Arrays.asList(loadBalancerDetailsForBGDeployment))
+            .build();
     String nextToken = null;
     DescribeLoadBalancersRequest describeLoadBalancersRequest =
             DescribeLoadBalancersRequest.builder().names(loadBalancerName).build();

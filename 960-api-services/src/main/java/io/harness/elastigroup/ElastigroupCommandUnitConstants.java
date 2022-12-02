@@ -8,88 +8,52 @@
 package io.harness.elastigroup;
 
 public enum ElastigroupCommandUnitConstants {
-  createSetup {
+  FETCH_STARTUP_SCRIPT {
     @Override
     public String toString() {
-      return "Create Setup";
+      return "Fetch Startup Script";
     }
   },
-  fetchStartupScript {
+  FETCH_ELASTIGROUP_CONFIGURATION {
     @Override
     public String toString() {
-      return "Fetch Startup Scripts";
+      return "Fetch Elastigroup Configuration";
     }
   },
-  fetchManifests {
+  CREATE_ELASTIGROUP {
     @Override
     public String toString() {
-      return "Fetch Manifests";
+      return "Create Elastigroup";
     }
   },
-  prepareRollbackData {
-    @Override
-    public String toString() {
-      return "Prepare Rollback Data";
-    }
-  },
-  deploy {
-    @Override
-    public String toString() {
-      return "Deploy";
-    }
-  },
-  rollback {
-    @Override
-    public String toString() {
-      return "Rollback";
-    }
-  },
-  deleteService {
-    @Override
-    public String toString() {
-      return "Delete Service";
-    }
-  },
-  swapTargetGroup {
-    @Override
-    public String toString() {
-      return "Swap Target Group";
-    }
-  },
-  runTask {
-    @Override
-    public String toString() {
-      return "Run Task";
-    }
-  },
-  fetchElastigroupJson {
-    @Override
-    public String toString() {
-      return "Fetch Elastigroup Json";
-    }
-  },
-  upScale {
+  UPSCALE {
     @Override
     public String toString() {
       return "Upscale Elastigroup";
     }
   },
-  upScaleSteadyStateWait {
+  UPSCALE_STEADY_STATE {
     @Override
     public String toString() {
-      return "Upscale wait for steady state";
+      return "Upscale Steady State";
     }
   },
-  downScale {
+  DOWNSCALE {
     @Override
     public String toString() {
       return "Downscale Elastigroup";
     }
   },
-  downScaleSteadyStateWait {
+  DOWNSCALE_STEADY_STATE {
     @Override
     public String toString() {
-      return "Downscale wait for steady state";
+      return "Downscale Steady State";
+    }
+  },
+  SWAP_TARGET_GROUP {
+    @Override
+    public String toString() {
+      return "Swap Target Group";
     }
   }
 }

@@ -21,7 +21,6 @@ import io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassTh
 import io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome;
 import io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchFailurePassThroughData;
 import io.harness.cdng.elastigroup.beans.ElastigroupStepExceptionPassThroughData;
-import io.harness.cdng.elastigroup.beans.ElastigroupStepExecutorParams;
 import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
@@ -66,7 +65,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  private final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
+  static final String ELASTIGROUP_SETUP_COMMAND_NAME = "ElastigroupSetup";
   public static final int DEFAULT_CURRENT_RUNNING_INSTANCE_COUNT = 2;
 
   @Inject private ElastigroupStepCommonHelper elastigroupStepCommonHelper;
@@ -74,8 +73,7 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
 
   @Override
   public TaskChainResponse executeElastigroupTask(Ambiance ambiance, StepElementParameters stepParameters,
-      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData,
-      ElastigroupStepExecutorParams elastigroupStepExecutorParams) {
+      ElastigroupExecutionPassThroughData executionPassThroughData, UnitProgressData unitProgressData) {
     ElastigroupInfrastructureOutcome infrastructureOutcome =
         (ElastigroupInfrastructureOutcome) executionPassThroughData.getInfrastructure();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
@@ -99,9 +97,8 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
 
     ElastiGroup elastiGroupOriginalConfig = null;
     try {
-      elastiGroupOriginalConfig =
-          generateOriginalConfigFromJson(elastigroupStepExecutorParams.getElastigroupParameters(),
-              elastigroupSetupStepParameters.getInstances(), ambiance);
+      elastiGroupOriginalConfig = generateOriginalConfigFromJson(executionPassThroughData.getElastigroupConfiguration(),
+          elastigroupSetupStepParameters.getInstances(), ambiance);
     } catch (Exception e) {
       return elastigroupStepCommonHelper.stepFailureTaskResponseWithMessage(
           unitProgressData, "Incorrect Elastigroup Json Provided");
@@ -112,31 +109,20 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .elastigroupNamePrefix(elastigroupNamePrefix)
             .accountId(accountId)
             .spotInstConfig(spotInstConfig)
-            .elastigroupJson(elastigroupStepExecutorParams.getElastigroupParameters())
-            .startupScript(elastigroupStepCommonHelper.getBase64EncodedStartupScript(
-                ambiance, elastigroupStepExecutorParams.getStartupScript()))
+            .elastigroupConfiguration(executionPassThroughData.getElastigroupConfiguration())
+            .startupScript(executionPassThroughData.getBase64EncodedStartupScript())
             .commandName(ELASTIGROUP_SETUP_COMMAND_NAME)
-            .image(elastigroupStepExecutorParams.getImage())
+            .image(executionPassThroughData.getImage())
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .maxInstanceCount(elastiGroupOriginalConfig.getCapacity().getMaximum())
-            .currentRunningInstanceCount(
-                fetchCurrentRunningCountForSetupRequest(elastigroupSetupStepParameters.getInstances()))
             .useCurrentRunningInstanceCount(ElastigroupInstancesType.CURRENT_RUNNING.equals(
                 elastigroupSetupStepParameters.getInstances().getType()))
-            .elastigroupOriginalConfig(elastiGroupOriginalConfig)
+            .generatedElastigroupConfig(elastiGroupOriginalConfig)
             .build();
 
     return elastigroupStepCommonHelper.queueElastigroupTask(stepParameters, elastigroupSetupCommandRequest, ambiance,
         executionPassThroughData, true, TaskType.ELASTIGROUP_SETUP_COMMAND_TASK_NG);
-  }
-
-  private Integer fetchCurrentRunningCountForSetupRequest(ElastigroupInstances elastigroupInstances) {
-    if (ElastigroupInstancesType.FIXED.equals(elastigroupInstances.getType())) {
-      return null;
-    }
-
-    return Integer.valueOf(2);
   }
 
   private ElastiGroup generateOriginalConfigFromJson(
@@ -150,11 +136,11 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     } else {
       ElastigroupFixedInstances elastigroupFixedInstances = (ElastigroupFixedInstances) elastigroupInstances.getSpec();
       groupCapacity.setMinimum(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getMin(), ambiance, DEFAULT_ELASTIGROUP_MIN_INSTANCES));
+          elastigroupFixedInstances.getMin(), DEFAULT_ELASTIGROUP_MIN_INSTANCES, ambiance));
       groupCapacity.setMaximum(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getMax(), ambiance, DEFAULT_ELASTIGROUP_MAX_INSTANCES));
+          elastigroupFixedInstances.getMax(), DEFAULT_ELASTIGROUP_MAX_INSTANCES, ambiance));
       groupCapacity.setTarget(elastigroupStepCommonHelper.renderCount(
-          elastigroupFixedInstances.getDesired(), ambiance, DEFAULT_ELASTIGROUP_TARGET_INSTANCES));
+          elastigroupFixedInstances.getDesired(), DEFAULT_ELASTIGROUP_TARGET_INSTANCES, ambiance));
     }
     return elastiGroup;
   }
@@ -215,13 +201,13 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     ElastigroupSetupDataOutcome elastigroupSetupDataOutcome =
         ElastigroupSetupDataOutcome.builder()
             .resizeStrategy(elastigroupSetupResult.getResizeStrategy())
-            .elastigroupNamePrefix(elastigroupSetupResult.getElastiGroupNamePrefix())
+            .elastigroupNamePrefix(elastigroupSetupResult.getElastigroupNamePrefix())
             .useCurrentRunningInstanceCount(elastigroupSetupResult.isUseCurrentRunningInstanceCount())
-            .currentRunningInstanceCount(elastigroupSetupResult.getCurrentRunningInstanceCount())
             .maxInstanceCount(elastigroupSetupResult.getMaxInstanceCount())
             .isBlueGreen(elastigroupSetupResult.isBlueGreen())
             .oldElastigroupOriginalConfig(oldElastiGroup)
             .newElastigroupOriginalConfig(elastigroupSetupResult.getElastigroupOriginalConfig())
+            .successful(true)
             .build();
     if (oldElastiGroup != null && oldElastiGroup.getCapacity() != null) {
       elastigroupSetupDataOutcome.setCurrentRunningInstanceCount(oldElastiGroup.getCapacity().getTarget());
@@ -230,9 +216,9 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
     }
 
     elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().setName(
-        elastigroupSetupResult.getNewElastiGroup().getName());
+        elastigroupSetupResult.getNewElastigroup().getName());
     elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig().setId(
-        elastigroupSetupResult.getNewElastiGroup().getId());
+        elastigroupSetupResult.getNewElastigroup().getId());
 
     if (elastigroupSetupResult.isUseCurrentRunningInstanceCount()) {
       int min = DEFAULT_ELASTIGROUP_MIN_INSTANCES;
@@ -265,6 +251,8 @@ public class ElastigroupSetupStep extends TaskChainExecutableWithRollbackAndRbac
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    return elastigroupStepCommonHelper.startChainLink(this, ambiance, stepParameters);
+    ElastigroupExecutionPassThroughData passThroughData =
+        ElastigroupExecutionPassThroughData.builder().blueGreen(false).build();
+    return elastigroupStepCommonHelper.startChainLink(ambiance, stepParameters, passThroughData);
   }
 }

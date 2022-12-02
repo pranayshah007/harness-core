@@ -7,7 +7,6 @@
 
 package io.harness.delegate.elastigroup;
 
-import com.google.inject.Inject;
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
@@ -20,7 +19,6 @@ import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
 import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
-import io.harness.delegate.beans.elastigroup.ElastigroupSetupResult;
 import io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
@@ -29,7 +27,6 @@ import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
-import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.elastigroup.ElastigroupCommandUnitConstants;
@@ -53,11 +50,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
@@ -89,9 +83,9 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     String elastigroupNamePrefix = "prefix";
     String prefix = format("%s__", elastigroupNamePrefix);
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.swapTargetGroup.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScale.toString(), true,commandUnitsProgress);
-    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE.toString(), true,commandUnitsProgress);
+    doReturn(createServiceLogCallback).when(elastigroupCommandTaskNGHelper).getLogCallback(iLogStreamingTaskClient, ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString(), true,commandUnitsProgress);
 
     String awsRegion = "awsRegion";
 
@@ -118,28 +112,28 @@ public class ElastigroupSwapRouteCommandTaskHandlerTest extends CategoryTest {
     ElastiGroup elastiGroup = ElastiGroup.builder().name(name).id(id).build();
 
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
-            ElastigroupSwapRouteCommandRequest.builder()
-                    .timeoutIntervalInMin(timeout)
-                    .elastigroupNamePrefix(elastigroupNamePrefix)
-                    .spotInstConfig(spotInstConfig)
-                    .newElastigroup(elastiGroup)
-                    .oldElastigroup(elastiGroup)
-                    .awsRegion(awsRegion)
-                    .lBdetailsForBGDeploymentList(lbDetailList)
-                    .downsizeOldElastigroup("false")
-                    .connectorInfoDTO(connectorInfoDTO)
-                    .awsEncryptedDetails(encryptedDataDetails)
-                    .build();
+        ElastigroupSwapRouteCommandRequest.builder()
+            .timeoutIntervalInMin(timeout)
+            .elastigroupNamePrefix(elastigroupNamePrefix)
+            .spotInstConfig(spotInstConfig)
+            .newElastigroup(elastiGroup)
+            .oldElastigroup(elastiGroup)
+            //                    .awsRegion(awsRegion)
+            //                    .lBdetailsForBGDeploymentList(lbDetailList)
+            .downsizeOldElastigroup("false")
+            //                    .connectorInfoDTO(connectorInfoDTO)
+            //                    .awsEncryptedDetails(encryptedDataDetails)
+            .build();
 
     ElastigroupSwapRouteResult elastigroupSwapRouteResult =
-            ElastigroupSwapRouteResult.builder()
-                    .downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
-                    .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList())
-                    .oldElastiGroupId(id)
-                    .oldElastiGroupName(name)
-                    .newElastiGroupId(id)
-                    .newElastiGroupName(name)
-                    .build();
+        ElastigroupSwapRouteResult.builder()
+            .downsizeOldElastiGroup(elastigroupSwapRouteCommandRequest.getDownsizeOldElastigroup())
+            //                    .lbDetails(elastigroupSwapRouteCommandRequest.getLBdetailsForBGDeploymentList())
+            .oldElastiGroupId(id)
+            .oldElastiGroupName(name)
+            .newElastiGroupId(id)
+            .newElastiGroupName(name)
+            .build();
 
     ElastigroupSwapRouteResponse elastigroupSwapRouteResponse = (ElastigroupSwapRouteResponse) elastigroupSwapRouteCommandTaskHandler.executeTaskInternal(elastigroupSwapRouteCommandRequest, iLogStreamingTaskClient, commandUnitsProgress);
 

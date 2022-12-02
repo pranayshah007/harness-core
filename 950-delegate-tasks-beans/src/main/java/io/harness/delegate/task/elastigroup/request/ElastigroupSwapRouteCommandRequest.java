@@ -14,7 +14,6 @@ import io.harness.delegate.beans.pcf.ResizeStrategy;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
 import lombok.Builder;
@@ -30,21 +29,35 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 @Builder
 @OwnedBy(CDP)
 public class ElastigroupSwapRouteCommandRequest
-    implements ElastigroupCommandRequest, ExpressionReflectionUtils.NestedAnnotationResolver {
+    implements ElastigroupCommandRequest {
   String accountId;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   boolean blueGreen;
   ResizeStrategy resizeStrategy;
-  String awsRegion;
-  ConnectorInfoDTO connectorInfoDTO;
   @NonFinal @Expression(ALLOW_SECRETS) Integer timeoutIntervalInMin;
   @NonFinal @Expression(ALLOW_SECRETS) SpotInstConfig spotInstConfig;
-  List<EncryptedDataDetail> awsEncryptedDetails;
+  List<EncryptedDataDetail> connectorEncryptedDetails;
   private ElastiGroup newElastigroup;
   private ElastiGroup oldElastigroup;
   private String elastigroupNamePrefix;
   private String downsizeOldElastigroup;
   private int steadyStateTimeOut;
-  private List<LoadBalancerDetailsForBGDeployment> lBdetailsForBGDeploymentList;
+  private ConnectedCloudProvider connectedCloudProvider;
+  private LoadBalancerConfig loadBalancerConfig;
+  @Override
+  public ConnectorInfoDTO getConnectorInfoDTO() {
+    if (null != connectedCloudProvider) {
+      return connectedCloudProvider.getConnectorInfoDTO();
+    }
+    return null;
+  }
+
+  @Override
+  public List<EncryptedDataDetail> getConnectorEncryptedDetails() {
+    if (null != connectedCloudProvider) {
+      return connectedCloudProvider.getEncryptionDetails();
+    }
+    return null;
+  }
 }

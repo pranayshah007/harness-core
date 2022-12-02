@@ -37,8 +37,8 @@ public class ElastigroupSwapRouteStepParameters
   }
 
   public List<String> getCommandUnits() {
-    return Arrays.asList(ElastigroupCommandUnitConstants.swapTargetGroup.toString(),
-        ElastigroupCommandUnitConstants.downScale.toString(),
-        ElastigroupCommandUnitConstants.downScaleSteadyStateWait.toString());
+    return Arrays.asList(ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(),
+        ElastigroupCommandUnitConstants.DOWNSCALE.toString(),
+        ElastigroupCommandUnitConstants.DOWNSCALE_STEADY_STATE.toString());
   }
 }
