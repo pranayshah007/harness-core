@@ -75,7 +75,7 @@ public class CIDelegateTaskExecutor {
 
   public String queueTask(Map<String, String> setupAbstractions, HDelegateTask task, List<String> taskSelectors,
       List<String> eligibleToExecuteDelegateIds, boolean executeOnHarnessHostedDelegates, boolean emitEvent,
-      LinkedHashMap<String, String> logStreamingAbstractions) {
+      LinkedHashMap<String, String> logStreamingAbstractions, long expressionFunctorToken) {
     String accountId = task.getAccountId();
     TaskData taskData = task.getData();
     final DelegateTaskRequest delegateTaskRequest =
@@ -90,7 +90,7 @@ public class CIDelegateTaskExecutor {
             .executionTimeout(Duration.ofHours(12))
             .executeOnHarnessHostedDelegates(executeOnHarnessHostedDelegates)
             .taskSetupAbstractions(setupAbstractions)
-            .expressionFunctorToken(taskData.getExpressionFunctorToken())
+            .expressionFunctorToken((int) expressionFunctorToken)
             .eligibleToExecuteDelegateIds(eligibleToExecuteDelegateIds)
             .emitEvent(emitEvent)
             .build();
