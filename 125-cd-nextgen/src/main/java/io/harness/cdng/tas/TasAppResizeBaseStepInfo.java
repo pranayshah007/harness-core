@@ -1,6 +1,8 @@
 package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.integer;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -14,6 +16,7 @@ import software.wings.beans.InstanceUnitType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,8 +35,4 @@ public class TasAppResizeBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @JsonIgnore String tasSetupFqn;
-  ParameterField<Integer> upsizeInstanceCount;
-  ParameterField<InstanceUnitType> upsizeInstanceUnitType;
-  ParameterField<Integer> downsizeInstanceCount;
-  ParameterField<InstanceUnitType> downsizeInstanceUnitType;
 }
