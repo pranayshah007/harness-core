@@ -62,7 +62,7 @@ public class TasSwapRollbackStepInfo extends TasSwapRollbackBaseStepInfo impleme
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasRollbackStepParameters.infoBuilder().delegateSelectors(this.delegateSelectors).build();
+    return TasSwapRollbackStepParameters.infoBuilder().delegateSelectors(this.delegateSelectors).build();
   }
 
   @Override
