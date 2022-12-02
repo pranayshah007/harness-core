@@ -7,7 +7,7 @@
 
 package io.harness.cdng.manifest.yaml.kinds;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 
 import io.harness.annotation.RecasterAlias;
@@ -48,7 +48,7 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "AsgScheduledUpdateGroupActionManifestKeys")
 @SimpleVisitorHelper(helperClass = AsgScheduledUpdateGroupActionManifestVisitorHelper.class)
 @TypeAlias("asgScheduledUpdateGroupActionManifest")
-@OwnedBy(CDC)
+@OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest")
 public class AsgScheduledUpdateGroupActionManifest implements ManifestAttributes, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)

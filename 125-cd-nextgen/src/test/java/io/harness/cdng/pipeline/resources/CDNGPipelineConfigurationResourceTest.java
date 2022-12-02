@@ -86,15 +86,7 @@ public class CDNGPipelineConfigurationResourceTest extends CategoryTest {
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.ASG))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
-    /*
-    Assertions commented as these service definitions are currently not supported
-    assertThat(executionStrategyResponse.get(ServiceDefinitionType.PCF))
-        .isEqualTo(Lists.newArrayList(
-            ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
-    assertThat(executionStrategyResponse.get(ServiceDefinitionType.ECS))
-        .isEqualTo(Lists.newArrayList(
-            ExecutionStrategyType.BASIC, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY));
-     */
+
     assertThat(executionStrategyResponse.get(ServiceDefinitionType.TAS))
         .isEqualTo(Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY,
             ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.DEFAULT));
