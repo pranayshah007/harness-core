@@ -272,7 +272,7 @@ public class MailServiceImpl implements ChannelService {
                                   .build())
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTaskV2(delegateTaskRequest);
+      DelegateResponseData responseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
       if (responseData instanceof ErrorNotifyResponseData) {
         throw new NotificationException("Failed to send email. Check SMTP configuration.", DEFAULT_ERROR_CODE, USER);
       } else {
