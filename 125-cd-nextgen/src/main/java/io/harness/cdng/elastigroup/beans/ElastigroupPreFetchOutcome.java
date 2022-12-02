@@ -10,8 +10,6 @@ package io.harness.cdng.elastigroup.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
-import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.spotinst.model.ElastiGroup;
