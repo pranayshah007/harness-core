@@ -7,6 +7,8 @@
 
 package io.harness.ccm.clickHouse;
 
+import com.clickhouse.jdbc.ClickHouseDataSource;
+
 import java.sql.*;
 import java.util.Properties;
 
@@ -26,7 +28,9 @@ public class ClickHouseServiceImpl implements ClickHouseService {
 
   @Override
   public int getCountOfRowsOfQueryResult(String query, String url) throws SQLException {
-    try (Statement stmt = getConnection(url).createStatement()) {
+    ClickHouseDataSource dataSource = new ClickHouseDataSource(url, new Properties());
+    Connection connection = dataSource.getConnection("default", "Harness");
+    try (Statement stmt = connection.createStatement()) {
       int count = 0;
       try (ResultSet rs = stmt.executeQuery(query)) {
         while (rs.next()) {

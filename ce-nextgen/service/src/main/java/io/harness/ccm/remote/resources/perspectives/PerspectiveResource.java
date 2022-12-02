@@ -169,7 +169,8 @@ public class PerspectiveResource {
                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @QueryParam("query") String query) throws SQLException {
     String url = "jdbc:ch:http://localhost:8123/default";
-    return ResponseDTO.newResponse(clickHouseService.getCountOfRowsOfQueryResult(query, url));
+    String ec2Url = "jdbc:ch://44.226.85.1:8123";
+    return ResponseDTO.newResponse(clickHouseService.getCountOfRowsOfQueryResult(query, ec2Url));
   }
 
   @GET
