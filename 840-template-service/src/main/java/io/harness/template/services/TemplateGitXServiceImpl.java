@@ -163,13 +163,6 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
   public void performImportFlowYamlValidations(String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateImportRequestDTO templateImportRequest, String importedTemplate) {
-    performBasicValidationForRemoteTemplates(orgIdentifier, projectIdentifier, templateIdentifier,
-        templateImportRequest.getTemplateVersion(), templateImportRequest.getTemplateName(), importedTemplate);
-  }
-
-  @Override
-  public void performBasicValidationForRemoteTemplates(String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, String name, String importedTemplate) {
     if (EmptyPredicate.isEmpty(importedTemplate)) {
       String errorMessage =
           format("Empty YAML found on Git in branch [%s] for template [%s] under Project[%s], Organization [%s].",
@@ -199,7 +192,8 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
     }
 
     String nameFromGit = templateInnerField.getNode().getName();
-    if (!EmptyPredicate.isEmpty(name) && !name.equals(nameFromGit)) {
+    if (!EmptyPredicate.isEmpty(templateImportRequest.getTemplateName())
+        && !templateImportRequest.getTemplateName().equals(nameFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.NAME, nameFromGit);
     }
 
@@ -228,8 +222,9 @@ public class TemplateGitXServiceImpl implements TemplateGitXService {
 
     String templateVersionFromGit =
         templateInnerField.getNode().getStringValue(YAMLFieldNameConstants.TEMPLATE_VERSION);
-    if (!(EmptyPredicate.isEmpty(versionLabel) && EmptyPredicate.isEmpty(templateVersionFromGit))
-        && !versionLabel.equals(templateVersionFromGit)) {
+    if (!(EmptyPredicate.isEmpty(templateImportRequest.getTemplateVersion())
+            && EmptyPredicate.isEmpty(templateVersionFromGit))
+        && !templateImportRequest.getTemplateVersion().equals(templateVersionFromGit)) {
       changedFields.put(YAMLMetadataFieldNameConstants.TEMPLATE_VERSION, templateVersionFromGit);
     }
 
