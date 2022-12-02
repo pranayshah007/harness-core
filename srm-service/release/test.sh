@@ -46,20 +46,36 @@ function check_file_present(){
 echo "Starting $BASE_BRANCH"
 
 export PURPOSE=srm
+
+echo "PURPOSE $PURPOSE"
+
 export STATUS_ID_TO_MOVE=151
+
+echo "STATUS_ID_TO_MOVE $STATUS_ID_TO_MOVE"
 
 git config --global user.email "bot@harness.io"
 git config --global user.name "bot-harness"
 
+git config -l
+
+echo "git config"
+
 git remote set-url origin https://${DRONE_NETRC_USERNAME}:${BOT_PASSWORD}@github.com/harness/harness-core.git
 
+echo "remote set-url"
+
 git fetch --unshallow
+
+echo "fetch --unshallow"
 git fetch --all
+echo "fetch --all"
 
 set -ex
-
+echo "set -ex"
 git fetch origin refs/heads/$BASE_BRANCH; git checkout $BASE_BRANCH && git branch
+echo "git fetch origin refs"
 check_branch_name "$BASE_BRANCH"
+echo "check_branch_name"
 
 # Check for not merged hot fixes
 echo "STEP1: INFO: Checking for Not Merged Hot Fixes in Master."
