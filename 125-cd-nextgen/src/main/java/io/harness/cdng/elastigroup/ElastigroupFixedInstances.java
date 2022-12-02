@@ -9,7 +9,6 @@ package io.harness.cdng.elastigroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;

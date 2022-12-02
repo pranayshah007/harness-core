@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.execution.ExecutionDetails;
-import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.spotinst.model.ElastiGroup;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

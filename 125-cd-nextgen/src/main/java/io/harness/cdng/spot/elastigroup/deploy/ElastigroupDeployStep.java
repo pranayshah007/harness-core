@@ -32,7 +32,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
-import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.spotinst.model.ElastiGroup;
@@ -57,11 +56,8 @@ public class ElastigroupDeployStep extends TaskExecutableWithRollbackAndRbac<Ela
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  public static final String UNIT_NAME = "Execute";
-
   @Inject private ElastigroupDeployStepHelper stepHelper;
   @Inject private CDStepHelper cdStepHelper;
-  @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
 
   @Override
