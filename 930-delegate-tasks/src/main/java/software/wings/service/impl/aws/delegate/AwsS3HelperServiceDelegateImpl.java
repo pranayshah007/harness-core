@@ -167,8 +167,7 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
   /***
    *
    * @param awsConfig
-   * @param bucketName
-   * @param key
+   * @param s3URI
    * @param destinationDirectory
    * @return
    */

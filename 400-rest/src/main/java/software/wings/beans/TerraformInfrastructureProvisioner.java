@@ -22,13 +22,11 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import javax.annotation.Nullable;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
-import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -38,7 +36,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @TargetModule(HarnessModule._957_CG_BEANS)
 public class TerraformInfrastructureProvisioner extends InfrastructureProvisioner implements TerraGroupProvisioners {
   public static final String VARIABLE_KEY = "terraform";
-  @NotEmpty private String sourceRepoSettingId;
+  private String sourceRepoSettingId;
   private TerraformSourceType sourceType;
   private String awsConfigId;
   private String s3URI;
@@ -50,7 +48,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
   private String sourceRepoBranch;
   private String commitId;
   @Trimmed(message = "repoName should not contain leading and trailing spaces") @Nullable private String repoName;
-  @NotNull private String path;
+  private String path;
   private String normalizedPath;
   private List<NameValuePair> backendConfigs;
   private List<NameValuePair> environmentVariables;
@@ -122,7 +120,8 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
         List<NameValuePair.Yaml> variables, List<InfrastructureMappingBlueprint.Yaml> mappingBlueprints,
         String sourceRepoSettingName, String sourceRepoBranch, String path, List<NameValuePair.Yaml> backendConfigs,
         String repoName, List<NameValuePair.Yaml> environmentVariables, String commitId,
-        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3URI, TerraformSourceType sourceType) {
+        boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3URI, TerraformSourceType sourceType,
+        String awsConfigId) {
       super(type, harnessApiVersion, description, infrastructureProvisionerType, variables, mappingBlueprints);
       this.sourceRepoSettingName = sourceRepoSettingName;
       this.sourceRepoBranch = sourceRepoBranch;
@@ -136,6 +135,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       this.skipRefreshBeforeApplyingPlan = skipRefreshBeforeApplyingPlan;
       this.s3URI = s3URI;
       this.sourceType = sourceType;
+      this.awsConfigId = awsConfigId;
     }
   }
 }

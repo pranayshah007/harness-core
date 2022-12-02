@@ -1968,6 +1968,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
     kryo.register(GitOpsFetchAppTaskParams.class, 573561);
     kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
-    kryo.register(TerraformSourceType.class, 573563);
   }
 }

@@ -612,8 +612,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
-    kryo.register(TerraformSourceType.class, 50024);
-
     kryo.register(ServiceVariable.class, 5359);
     kryo.register(ServiceVariable.OverrideType.class, 5361);
   }

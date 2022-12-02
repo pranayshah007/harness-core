@@ -1101,33 +1101,4 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
     assertThat(terraformExecutionData.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
     Mockito.verify(delegateFileManager, times(0)).upload(any(DelegateFile.class), any(InputStream.class));
   }
-
-  @Owner(developers = AKHIL_PANDEY)
-  @Category(UnitTests.class)
-  public void testFetchTfVarS3Source() throws IOException {
-    AmazonS3URI amazonS3URI = new AmazonS3URI(
-        "s3://terraform-test-bucket-cdp-qe/terraform-manifest/aws/variableOutputScript/scriptForVariableOutputs.tf");
-    S3FileConfig s3FileConfig = new S3FileConfig("awsConfigId",
-        "s3://terraform-test-bucket-cdp-qe/terraform-manifest/aws/variableOutputScript/scriptForVariableOutputs.tf",
-        null);
-    AwsConfig awsConfig = new AwsConfig();
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<EncryptedDataDetail>();
-    TfVarS3Source.TfVarS3SourceBuilder tfVarS3SourceBuilder = TfVarS3Source.builder()
-                                                                  .awsConfig(awsConfig)
-                                                                  .s3FileConfig(s3FileConfig)
-                                                                  .encryptedDataDetails(encryptedDataDetails);
-    TfVarS3Source tfVarS3Source = tfVarS3SourceBuilder.build();
-    S3Object s3Object = new S3Object();
-    s3Object.setKey(amazonS3URI.getKey());
-    s3Object.setBucketName(amazonS3URI.getBucket());
-    TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
-        TerraformProvisionParameters.builder().sourceType(TerraformSourceType.S3).tfVarS3Source(tfVarS3Source);
-    TerraformProvisionParameters terraformProvisionParameters = terraformProvisionParametersBuilder.build();
-
-    LogCallback logCallback = new DummyLogCallbackImpl();
-    doReturn(s3Object,
-        when(awsS3HelperServiceDelegate.getObjectFromS3(
-            awsConfig, encryptedDataDetails, amazonS3URI.getBucket(), amazonS3URI.getKey())));
-    terraformProvisionTaskSpy.fetchTfVarS3Source(terraformProvisionParameters, "dummy-path-for-testing", logCallback);
-  }
 }

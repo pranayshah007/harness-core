@@ -817,7 +817,7 @@ public abstract class TerraformProvisionState extends State {
     }
   }
 
-  private ExecutionResponse execInheriteduteInternalInherited(ExecutionContext context, String activityId) {
+  private ExecutionResponse executeInternalInherited(ExecutionContext context, String activityId) {
     List<TerraformProvisionInheritPlanElement> allPlanElements = context.getContextElementList(TERRAFORM_INHERIT_PLAN);
     if (isEmpty(allPlanElements)) {
       throw new InvalidRequestException(
@@ -831,6 +831,7 @@ public abstract class TerraformProvisionState extends State {
     TerraformProvisionInheritPlanElement element = elementOptional.get();
 
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
+
     String path = context.renderExpression(terraformProvisioner.getNormalizedPath());
     if (path == null) {
       path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
@@ -930,6 +931,9 @@ public abstract class TerraformProvisionState extends State {
         ? terraformPlanHelper.getEncryptedTfPlanFromSweepingOutput(context, getPlanName(context))
         : element.getEncryptedTfPlan();
 
+    AwsConfig awsS3SourceBucketConfig =
+        (AwsConfig) getAwsConfigSettingAttribute(terraformProvisioner.getAwsConfigId()).getValue();
+
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
         TerraformProvisionParameters.builder()
@@ -948,6 +952,10 @@ public abstract class TerraformProvisionState extends State {
             .sourceRepoEncryptionDetails(
                 secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
             .scriptPath(path)
+            .s3URI(terraformProvisioner.getSourceType().equals(TerraformSourceType.S3) ? terraformProvisioner.getS3URI()
+                                                                                       : null)
+
+            .awsS3SourceBucketConfig(awsS3SourceBucketConfig)
             .variables(textVariables)
             .encryptedVariables(encryptedTextVariables)
             .backendConfigs(backendConfigs)
@@ -1038,30 +1046,42 @@ public abstract class TerraformProvisionState extends State {
   }
 
   private ExecutionResponse executeInternalRegular(ExecutionContext context, String activityId) {
+    //    Initialize variables for GIT and S3 source respectively
+    //    GIT ===>
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
-    GitConfig gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
+    GitConfig gitConfig = null;
+    String path = null;
+    //    S3 ===>
+    AwsConfig awsS3SourceBucketConfig = null;
+
+    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+      gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
+
+      String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
+      if (isNotEmpty(branch)) {
+        gitConfig.setBranch(branch);
+      }
+      if (isNotEmpty(terraformProvisioner.getCommitId())) {
+        String commitId = context.renderExpression(terraformProvisioner.getCommitId());
+        if (isNotEmpty(commitId)) {
+          gitConfig.setReference(commitId);
+        }
+      }
+      path = context.renderExpression(terraformProvisioner.getNormalizedPath());
+      if (path == null) {
+        path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+        if (path == null) {
+          throw new InvalidRequestException("Invalid Terraform script path", USER);
+        }
+      }
+      gitConfigHelperService.convertToRepoGitConfig(
+          gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
+    } else if (terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
+    }
 
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
-
-    String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
-    if (isNotEmpty(branch)) {
-      gitConfig.setBranch(branch);
-    }
-    if (isNotEmpty(terraformProvisioner.getCommitId())) {
-      String commitId = context.renderExpression(terraformProvisioner.getCommitId());
-      if (isNotEmpty(commitId)) {
-        gitConfig.setReference(commitId);
-      }
-    }
-    String path = context.renderExpression(terraformProvisioner.getNormalizedPath());
-    if (path == null) {
-      path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
-      if (path == null) {
-        throw new InvalidRequestException("Invalid Terraform script path", USER);
-      }
-    }
 
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     String workspace = context.renderExpression(this.workspace);
@@ -1130,7 +1150,7 @@ public abstract class TerraformProvisionState extends State {
       }
 
       if (fileId != null) {
-        FileMetadata fileMetadata = fileService.getFileMetadata(fileId, FileBucket.TERRAFORM_STATE);
+        FileMetadata fileMetadata = fileService.getFileMetadata(fileId, TERRAFORM_STATE);
 
         if (fileMetadata != null && fileMetadata.getMetadata() != null) {
           variables = extractData(fileMetadata, VARIABLES_KEY);
@@ -1223,8 +1243,6 @@ public abstract class TerraformProvisionState extends State {
     }
 
     targets = resolveTargets(targets, context);
-    gitConfigHelperService.convertToRepoGitConfig(
-        gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
 
     if (runPlanOnly && this instanceof DestroyTerraformProvisionState) {
       exportPlanToApplyStep = true;
@@ -1243,9 +1261,13 @@ public abstract class TerraformProvisionState extends State {
             .commandUnit(commandUnit())
             .sourceRepoSettingId(terraformProvisioner.getSourceRepoSettingId())
             .sourceRepo(gitConfig)
-            .sourceRepoEncryptionDetails(
-                secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
+            .sourceRepoEncryptionDetails(terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)
+                    ? secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId())
+                    : null)
             .scriptPath(path)
+            .s3URI(terraformProvisioner.getSourceType().equals(TerraformSourceType.S3) ? terraformProvisioner.getS3URI()
+                                                                                       : null)
+            .awsS3SourceBucketConfig(awsS3SourceBucketConfig)
             .variables(variables)
             .rawVariables(rawVariablesList)
             .encryptedVariables(encryptedVariables)
@@ -1277,15 +1299,28 @@ public abstract class TerraformProvisionState extends State {
                 featureFlagService.isEnabled(ACTIVITY_ID_BASED_TF_BASE_DIR, context.getAccountId()))
             .syncGitCloneAndCopyToDestDir(
                 featureFlagService.isEnabled(SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR, context.getAccountId()))
-            .analyseTfPlanSummary(
-                featureFlagService.isEnabled(FeatureName.ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
+            .analyseTfPlanSummary(featureFlagService.isEnabled(ANALYSE_TF_PLAN_SUMMARY, context.getAccountId()));
 
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
+    setAWSS3SourceAndAuthParamsIfPresent(
+        terraformProvisioner.getAwsConfigId(), terraformProvisioner, context, terraformProvisionParametersBuilder);
+
     return createAndRunTask(activityId, executionContext, terraformProvisionParametersBuilder.build(), delegateTag);
   }
 
+  protected void setAWSS3SourceAndAuthParamsIfPresent(String awsConfigId,
+      TerraformInfrastructureProvisioner terraformInfrastructureProvisioner, ExecutionContext context,
+      TerraformProvisionParametersBuilder terraformProvisionParametersBuilder) {
+    AwsConfig awsS3SourceBucketConfig =
+        (AwsConfig) getAwsConfigSettingAttribute(terraformInfrastructureProvisioner.getAwsConfigId()).getValue();
+    if (awsS3SourceBucketConfig != null) {
+      terraformProvisionParametersBuilder.awsS3SourceBucketConfig(awsS3SourceBucketConfig)
+          .awsS3EncryptionDetails(secretManager.getEncryptionDetails(
+              awsS3SourceBucketConfig, context.getAppId(), context.getWorkflowExecutionId()));
+    }
+  }
   protected void setAWSAuthParamsIfPresent(
       ExecutionContext context, TerraformProvisionParametersBuilder terraformProvisionParametersBuilder) {
     SettingAttribute settingAttribute = resolveAwsConfig(context);
