@@ -20,11 +20,13 @@ import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.filters.MatchType;
 import io.harness.cdng.environment.filters.TagsFilter;
+import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -39,36 +41,157 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForEnvironmentsForMatchAll() {
-    EnvironmentInfraFilterHelper environmentInfraFilterHelper = new EnvironmentInfraFilterHelper();
     Set<Environment> listOfEnvironment = getEnvironmentListForAllTagMatch();
-    Map<String, String> mapOfTags = Map.of("env", "dev");
-    final FilterYaml filterYaml = FilterYaml.builder()
-                                      .entities(Set.of(Entity.environments))
-                                      .type(FilterType.tags)
-                                      .spec(TagsFilter.builder().matchType(MatchType.all).tags(mapOfTags).build())
-                                      .build();
 
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
     Set<Environment> filteredEnv =
-        environmentInfraFilterHelper.processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(filteredEnv.size()).isEqualTo(1);
   }
+
   @Test
   @Owner(developers = ROHITKARELIA)
   @Category(UnitTests.class)
   public void testProcessTagsFilterYamlForEnvironmentsForMatchAny() {
-    EnvironmentInfraFilterHelper environmentInfraFilterHelper = new EnvironmentInfraFilterHelper();
     Set<Environment> listOfEnvironment = getEnvironmentListForAnyTagMatch();
-
-    Map<String, String> mapOfTags = Map.of("env", "dev", "env1", "dev1");
-    final FilterYaml filterYaml = FilterYaml.builder()
-                                      .entities(Set.of(Entity.environments))
-                                      .type(FilterType.tags)
-                                      .spec(TagsFilter.builder().matchType(MatchType.any).tags(mapOfTags).build())
-                                      .build();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
 
     Set<Environment> filteredEnv =
-        environmentInfraFilterHelper.processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
     assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessAllFilterYamlForEnvironments() {
+    Set<Environment> listOfEnvironment = getEnvironmentListForAnyTagMatch();
+    final FilterYaml filterYaml = getAllFilterYaml();
+
+    Set<Environment> filteredEnv =
+        getEnvironmentInfraFilterHelper().processTagsFilterYamlForEnvironments(filterYaml, listOfEnvironment);
+    assertThat(listOfEnvironment.size()).isEqualTo(filteredEnv.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessAllFilterYamlForClusters() {
+    Map<String, io.harness.cdng.gitops.entity.Cluster> listOfClusters =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+    final FilterYaml filterYaml = getAllFilterYaml();
+
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+        filterYaml, Collections.emptySet(), listOfClusters);
+    assertThat(listOfClusters.size()).isEqualTo(filteredCls.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessTagsFilterYamlForClustersForMatchAll() {
+    Map<String, io.harness.cdng.gitops.entity.Cluster> listOfClusters =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
+
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+        filterYaml, getClusterListForAllTagMatch(), listOfClusters);
+    assertThat(filteredCls.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessTagsFilterYamlForClustersForMatchAny() {
+    Map<String, io.harness.cdng.gitops.entity.Cluster> listOfClusters =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
+
+    List<Cluster> filteredCls = getEnvironmentInfraFilterHelper().processTagsFilterYamlForGitOpsClusters(
+        filterYaml, getClusterListForAnyTagMatch(), listOfClusters);
+    assertThat(listOfClusters.size()).isEqualTo(filteredCls.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testApplyFiltersOnEnvsMatchAnyTagFilter() {
+    Set<Environment> listOfEnvironment = getEnvironmentListForAnyTagMatch();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
+
+    Set<Environment> environments =
+        getEnvironmentInfraFilterHelper().applyFiltersOnEnvs(listOfEnvironment, Arrays.asList(filterYaml));
+    assertThat(environments.size()).isEqualTo(listOfEnvironment.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testApplyFiltersOnEnvsMatchAllTagFilter() {
+    Set<Environment> listOfEnvironment = getEnvironmentListForAnyTagMatch();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
+
+    Set<Environment> environments =
+        getEnvironmentInfraFilterHelper().applyFiltersOnEnvs(listOfEnvironment, Arrays.asList(filterYaml));
+    assertThat(environments.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testApplyFiltersOnClustersMatchAnyTagFilter() {
+    Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAnyTagMatch();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
+
+    Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+
+    Set<Cluster> filteredClusters = getEnvironmentInfraFilterHelper().applyFilteringOnClusters(
+        Arrays.asList(filterYaml), clsToCluster, listOfClusters);
+    assertThat(filteredClusters.size()).isEqualTo(listOfClusters.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testApplyFiltersOnClustersMatchAllTagFilter() {
+    Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAllTagMatch();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
+
+    Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+
+    Set<Cluster> filteredClusters = getEnvironmentInfraFilterHelper().applyFilteringOnClusters(
+        Arrays.asList(filterYaml), clsToCluster, listOfClusters);
+    assertThat(filteredClusters.size()).isEqualTo(1);
+  }
+
+  @NotNull
+  private static EnvironmentInfraFilterHelper getEnvironmentInfraFilterHelper() {
+    return new EnvironmentInfraFilterHelper();
+  }
+
+  private static FilterYaml getTagFilterYamlMatchTypeAll() {
+    return FilterYaml.builder()
+        .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
+        .type(FilterType.tags)
+        .spec(TagsFilter.builder().matchType(MatchType.all).tags(Map.of("env", "dev")).build())
+        .build();
+  }
+
+  private static FilterYaml getTagFilterYamlMatchTypeAny() {
+    return FilterYaml.builder()
+        .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
+        .type(FilterType.tags)
+        .spec(TagsFilter.builder().matchType(MatchType.any).tags(Map.of("env", "dev", "env1", "dev1")).build())
+        .build();
+  }
+
+  private static FilterYaml getAllFilterYaml() {
+    return FilterYaml.builder()
+        .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
+        .type(FilterType.all)
+        .build();
   }
 
   @NotNull
@@ -88,5 +211,33 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final Set<Environment> listOfEnvironment = new HashSet<>(
         Arrays.asList(Environment.builder().tags(env1Tags).build(), Environment.builder().tags(env2Tags).build()));
     return listOfEnvironment;
+  }
+
+  @NotNull
+  private static Set<io.harness.gitops.models.Cluster> getClusterListForAnyTagMatch() {
+    io.harness.gitops.models.Cluster cl1 = new io.harness.gitops.models.Cluster();
+    cl1.setTags(Map.of("env", "dev"));
+    cl1.setIdentifier("cl1");
+
+    io.harness.gitops.models.Cluster cl2 = new io.harness.gitops.models.Cluster();
+    cl2.setTags(Map.of("env", "dev", "env1", "dev1"));
+    cl2.setIdentifier("cl2");
+
+    final Set<io.harness.gitops.models.Cluster> listOfClusters = new HashSet<>(Arrays.asList(cl1, cl2));
+    return listOfClusters;
+  }
+
+  @NotNull
+  private static Set<io.harness.gitops.models.Cluster> getClusterListForAllTagMatch() {
+    io.harness.gitops.models.Cluster cl1 = new io.harness.gitops.models.Cluster();
+    cl1.setTags(Map.of("env", "dev"));
+    cl1.setIdentifier("cl1");
+
+    io.harness.gitops.models.Cluster cl2 = new io.harness.gitops.models.Cluster();
+    cl2.setTags(Map.of("env1", "dev1"));
+    cl2.setIdentifier("cl2");
+
+    final Set<io.harness.gitops.models.Cluster> listOfClusters = new HashSet<>(Arrays.asList(cl1, cl2));
+    return listOfClusters;
   }
 }

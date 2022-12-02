@@ -24,6 +24,9 @@ import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.RetryUtils;
 
@@ -44,6 +47,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.query.Criteria;
 import retrofit2.Response;
 
 @Slf4j
@@ -55,6 +61,8 @@ public class EnvironmentInfraFilterHelper {
   public static final String TAGFILTER_MATCHTYPE_ANY = "any";
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ClusterService clusterService;
+  @Inject private EnvironmentService environmentService;
+  @Inject private EnvironmentFilterHelper environmentFilterHelper;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
@@ -270,5 +278,20 @@ public class EnvironmentInfraFilterHelper {
     Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster = new HashMap<>();
     clusters.getContent().forEach(k -> clsToCluster.put(k.getClusterRef(), k));
     return clsToCluster;
+  }
+
+  public Set<Environment> getAllEnvironmentsInProject(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    // Fetch All Environments
+    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "");
+
+    PageRequest pageRequest = PageRequest.of(0, PAGE_SIZE, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
+    Page<Environment> allEnvsInProject = environmentService.list(criteria, pageRequest);
+    if (isEmpty(allEnvsInProject.getContent())) {
+      throw new InvalidRequestException(
+          "Filters are applied for environments, but no enviroments exists for the project");
+    }
+    return new HashSet<>(allEnvsInProject.getContent());
   }
 }

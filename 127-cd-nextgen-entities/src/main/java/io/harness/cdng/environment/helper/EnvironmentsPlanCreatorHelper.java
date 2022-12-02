@@ -17,7 +17,6 @@ import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
-import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig.EnvironmentsPlanCreatorConfigBuilder;
 import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.service.ClusterService;
@@ -41,10 +40,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
 @OwnedBy(GITOPS)
@@ -52,7 +47,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class EnvironmentsPlanCreatorHelper {
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentFilterHelper environmentFilterHelper;
-  ;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private ClusterService clusterService;
@@ -75,32 +69,21 @@ public class EnvironmentsPlanCreatorHelper {
     Map<String, Environment> envMapping =
         emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
-    EnvironmentsPlanCreatorConfigBuilder environmentsPlanCreatorConfig = EnvironmentsPlanCreatorConfig.builder();
-
     // Filters are specified so no environment exists in the yaml.
     // Apply filtering based on provided filters on all environments and clusters in the environments List
     // If no clusters are eligible then throw an exception.
-    boolean individualEnvLevelFilters = false;
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
-                                                        .getValue()
-                                                        .stream()
-                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
-                                                        .collect(Collectors.toList());
-    if (isNotEmpty(envV2YamlsWithFilters)) {
-      individualEnvLevelFilters = true;
-    }
 
     Set<IndividualEnvData> listEnvData = new HashSet<>();
     // Apply Filters
-    if (areFiltersPresent(environmentsYaml, individualEnvLevelFilters)) {
+    if (areFiltersPresent(environmentsYaml)) {
       // Process Environment level Filters
       Set<IndividualEnvData> envsLevelIndividualEnvData = new HashSet<>();
       Set<IndividualEnvData> individualEnvFiltering = new HashSet<>();
       if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
         List<FilterYaml> filterYamls = environmentsYaml.getFilters().getValue();
 
-        Set<Environment> allEnvsInProject =
-            getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier);
+        Set<Environment> allEnvsInProject = environmentInfraFilterHelper.getAllEnvironmentsInProject(
+            accountIdentifier, orgIdentifier, projectIdentifier);
 
         // Apply filters on environments
         Set<Environment> filteredEnvs = environmentInfraFilterHelper.applyFiltersOnEnvs(allEnvsInProject, filterYamls);
@@ -136,7 +119,8 @@ public class EnvironmentsPlanCreatorHelper {
       }
 
       // Process Individual environment level filters if they exist
-      if (individualEnvLevelFilters) {
+      if (areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+        List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
         List<String> envRefsWithFilters =
             envV2YamlsWithFilters.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
 
@@ -193,31 +177,32 @@ public class EnvironmentsPlanCreatorHelper {
         listEnvData.add(envData);
       }
     }
-    return environmentsPlanCreatorConfig.orgIdentifier(orgIdentifier)
+    return EnvironmentsPlanCreatorConfig.builder()
+        .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .individualEnvDataList(new ArrayList<>(listEnvData))
         .build();
   }
 
-  private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml, boolean individualEnvLevelFilters) {
-    return isNotEmpty(environmentsYaml.getFilters().getValue()) || individualEnvLevelFilters;
+  @NotNull
+  private static boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
+    return isNotEmpty(envV2YamlsWithFilters);
   }
 
   @NotNull
-  private Set<Environment> getAllEnvironmentsInProject(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
-    // Fetch All Environments
-    Criteria criteria = environmentFilterHelper.createCriteriaForGetList(
-        accountIdentifier, orgIdentifier, projectIdentifier, false, "");
+  private static List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
+                                                        .getValue()
+                                                        .stream()
+                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
+                                                        .collect(Collectors.toList());
+    return envV2YamlsWithFilters;
+  }
 
-    PageRequest pageRequest =
-        PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, Environment.EnvironmentKeys.createdAt));
-    Page<Environment> allEnvsInProject = environmentService.list(criteria, pageRequest);
-    if (isEmpty(allEnvsInProject.getContent())) {
-      throw new InvalidRequestException(
-          "Filters are applied for environments, but no enviroments exists for the project");
-    }
-    return new HashSet<>(allEnvsInProject.getContent());
+  private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
+    return isNotEmpty(environmentsYaml.getFilters().getValue())
+        || areFiltersSetOnIndividualEnvironments(environmentsYaml);
   }
 
   private void buildIndividualEnvDataList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
@@ -240,13 +225,12 @@ public class EnvironmentsPlanCreatorHelper {
 
   private static IndividualEnvData getIndividualEnvData(
       String envRef, String envName, Set<String> filteredClsRefs, boolean isDeployToAll) {
-    IndividualEnvData envData = IndividualEnvData.builder()
-                                    .envRef(envRef)
-                                    .envName(envName)
-                                    .deployToAll(isDeployToAll)
-                                    .gitOpsClusterRefs(filteredClsRefs)
-                                    .build();
-    return envData;
+    return IndividualEnvData.builder()
+        .envRef(envRef)
+        .envName(envName)
+        .deployToAll(isDeployToAll)
+        .gitOpsClusterRefs(filteredClsRefs)
+        .build();
   }
 
   private Set<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
