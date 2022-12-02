@@ -38,6 +38,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.Wither;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 /**
@@ -80,7 +81,11 @@ public class ArtifactoryRegistryArtifactConfig implements ArtifactConfig, Visita
   /**
    * repo server hostname.
    */
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> repositoryUrl;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> repositoryUrl;
   /**
    * Tag refers to exact tag number.
    */
