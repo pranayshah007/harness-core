@@ -286,8 +286,10 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
        * Handle S3 Logic
        */
       try {
+        encryptionService.decrypt(
+            parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
         awsS3HelperServiceDelegate.downloadS3Directory(
-            parameters.getAwsConfig(), parameters.getS3URI(), new File(workingDir));
+            parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(workingDir));
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -306,6 +308,27 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
     }
 
+    //    Reason for below if --
+
+    //    Can we have the ability to download a nested folder without downloading the above folders?
+    //
+    //            https://docs.aws.amazon.com/AWSJavaSDK/latest/javadoc/com/amazonaws/services/s3/model/GetObjectRequest.html
+    //
+    //            Retrieves objects from Amazon S3. To use GET, you must have READ access to the object. If you grant
+    //            READ access to the anonymous user, you can return the object without using an authorization header. An
+    //            Amazon S3 bucket has no directory hierarchy such as you would find in a typical computer file system.
+    //            You can, however, create a logical hierarchy by using object key names that imply a folder structure.
+    //            For example, instead of naming an object sample.jpg, you can name it photos/2006/February/sample.jpg.
+    //            To get an object from such a \ logical hierarchy, specify the full key name for the object in the GET
+    //            operation. For a virtual hosted-style request example, if you have the object
+    //            photos/2006/February/sample.jpg, specify the resource as /photos/2006/February/sample.jpg. For a
+    //            path-style request example, if you have the object photos/2006/February/sample.jpg in the bucket named
+    //            examplebucket, specify the resource as /examplebucket/photos/2006/February/sample.jpg. For more
+    //            information about request types, see HTTP Host Header Bucket Specification.
+
+    if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      workingDir = workingDir + "/" + new AmazonS3URI(parameters.getS3URI()).getKey();
+    }
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
     log.info("Script Directory: " + scriptDirectory);
     saveExecutionLog(
@@ -1113,9 +1136,6 @@ and provisioner
     FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
   }
 
-  private void downloadS3Directory(AwsConfig awsConfig, String s3URI, String destinationDirPath) throws IOException {
-    File destinationDir = new File(destinationDirPath);
-  }
   @VisibleForTesting
   public void getCommandLineVariableParams(TerraformProvisionParameters parameters, File tfVariablesFile,
       StringBuilder executeParams, StringBuilder uiLogParams) throws IOException {

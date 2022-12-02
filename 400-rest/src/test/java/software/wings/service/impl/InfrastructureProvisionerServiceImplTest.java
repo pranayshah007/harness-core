@@ -97,6 +97,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
 import software.wings.dl.WingsPersistence;
@@ -973,8 +974,8 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = aSettingAttribute().build();
     doReturn(attribute).when(settingService).get(SETTING_ID);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", null, "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -985,21 +986,21 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     SettingAttribute attribute = aSettingAttribute().build();
     doReturn(attribute).when(settingService).get(SETTING_ID);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, null, null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, null, null, "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, null, null, "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, null, null, "repo", TerraformSourceType.GIT, null, null))
         .hasMessage("Either sourceRepoBranch or commitId should be specified");
 
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", "commitId", "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", "commitId", "repo", TerraformSourceType.GIT, null, null))
         .isInstanceOf(InvalidRequestException.class);
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", "commitId", "repo"))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", "commitId", "repo", TerraformSourceType.GIT, null, null))
         .hasMessage("Cannot specify both sourceRepoBranch and commitId");
   }
 
@@ -1026,7 +1027,7 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
             .build();
     doReturn(response).when(delegateService).executeTask(any(DelegateTask.class));
     List<NameValuePair> variables = infrastructureProvisionerService.getTerraformVariables(
-        APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName);
+        APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName, TerraformSourceType.GIT, null, null);
 
     assertThat(gitConfigArgumentCaptor.getValue()).isEqualTo(gitConfig);
     assertThat(repoNameArgumentCaptor.getValue()).isEqualTo(repoName);
@@ -1036,8 +1037,8 @@ public class InfrastructureProvisionerServiceImplTest extends WingsBaseTest {
     response.getTerraformExecutionData().setExecutionStatus(ExecutionStatus.FAILED);
     response.getTerraformExecutionData().setErrorMessage("error");
     assertThatThrownBy(()
-                           -> infrastructureProvisionerService.getTerraformVariables(
-                               APP_ID, SETTING_ID, ".", ACCOUNT_ID, "branch", null, repoName))
+                           -> infrastructureProvisionerService.getTerraformVariables(APP_ID, SETTING_ID, ".",
+                               ACCOUNT_ID, "branch", null, repoName, TerraformSourceType.GIT, null, null))
         .isInstanceOf(WingsException.class);
   }
 

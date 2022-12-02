@@ -91,6 +91,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.TerraGroupProvisioners;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.shellscript.provisioner.ShellScriptInfrastructureProvisioner;
@@ -757,67 +758,71 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
 
   @Override
   public List<NameValuePair> getTerraformVariables(String appId, String scmSettingId, String terraformDirectory,
-      String accountId, String sourceRepoBranch, String commitId, String repoName) {
+      String accountId, String sourceRepoBranch, String commitId, String repoName,
+      TerraformSourceType terraformSourceType, String s3URI, String awsConfigId) {
     SettingAttribute gitSettingAttribute = settingService.get(scmSettingId);
     notNullCheck("Source repo provided is not Valid", gitSettingAttribute);
-    validateBranchCommitId(sourceRepoBranch, commitId);
-    if (!(gitSettingAttribute.getValue() instanceof GitConfig)) {
-      throw new InvalidRequestException("Source repo provided is not Valid");
-    }
+    if (terraformSourceType.equals(terraformSourceType.GIT)) {
+      validateBranchCommitId(sourceRepoBranch, commitId);
+      if (!(gitSettingAttribute.getValue() instanceof GitConfig)) {
+        throw new InvalidRequestException("Source repo provided is not Valid");
+      }
 
-    terraformDirectory = normalizeScriptPath(terraformDirectory);
-    GitConfig gitConfig = (GitConfig) gitSettingAttribute.getValue();
-    gitConfigHelperService.setSshKeySettingAttributeIfNeeded(gitConfig);
-    gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
-    gitConfigHelperService.convertToRepoGitConfig(gitConfig, repoName);
-    DelegateTask delegateTask =
-        DelegateTask.builder()
-            .accountId(accountId)
-            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
-            .data(
-                TaskData.builder()
-                    .async(false)
-                    .taskType(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK.name())
-                    .parameters(new Object[] {
-                        TerraformProvisionParameters.builder()
-                            .scriptPath(terraformDirectory)
-                            .useTfConfigInspectLatestVersion(
-                                featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
-                            .sourceRepoSettingId(gitSettingAttribute.getUuid())
-                            .sourceRepo(gitConfig)
-                            .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
-                            .sourceRepoBranch(sourceRepoBranch)
-                            .commitId(commitId)
-                            .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
-                            .build()})
-                    .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
-                    .build())
-            .build();
+      terraformDirectory = normalizeScriptPath(terraformDirectory);
+      GitConfig gitConfig = (GitConfig) gitSettingAttribute.getValue();
+      gitConfigHelperService.setSshKeySettingAttributeIfNeeded(gitConfig);
+      gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
+      gitConfigHelperService.convertToRepoGitConfig(gitConfig, repoName);
+      DelegateTask delegateTask =
+          DelegateTask.builder()
+              .accountId(accountId)
+              .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
+              .data(TaskData.builder()
+                        .async(false)
+                        .taskType(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK.name())
+                        .parameters(new Object[] {
+                            TerraformProvisionParameters.builder()
+                                .scriptPath(terraformDirectory)
+                                .useTfConfigInspectLatestVersion(
+                                    featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
+                                .sourceRepoSettingId(gitSettingAttribute.getUuid())
+                                .sourceRepo(gitConfig)
+                                .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
+                                .sourceRepoBranch(sourceRepoBranch)
+                                .commitId(commitId)
+                                .isGitHostConnectivityCheck(
+                                    featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
+                                .build()})
+                        .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
+                        .build())
+              .build();
 
-    DelegateResponseData notifyResponseData;
-    try {
-      notifyResponseData = delegateService.executeTask(delegateTask);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new InvalidRequestException("Thread was interrupted. Please try again.");
-    }
-    if (notifyResponseData instanceof ErrorNotifyResponseData) {
-      throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
-    } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
-        && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
-      throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
-    } else if (!(notifyResponseData instanceof TerraformInputVariablesTaskResponse)) {
-      throw new WingsException(ErrorCode.GENERAL_ERROR)
-          .addParam("message", "Unknown Response from delegate")
-          .addContext(DelegateResponseData.class, notifyResponseData);
-    }
+      DelegateResponseData notifyResponseData;
+      try {
+        notifyResponseData = delegateService.executeTask(delegateTask);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new InvalidRequestException("Thread was interrupted. Please try again.");
+      }
+      if (notifyResponseData instanceof ErrorNotifyResponseData) {
+        throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
+      } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
+          && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
+        throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
+      } else if (!(notifyResponseData instanceof TerraformInputVariablesTaskResponse)) {
+        throw new WingsException(ErrorCode.GENERAL_ERROR)
+            .addParam("message", "Unknown Response from delegate")
+            .addContext(DelegateResponseData.class, notifyResponseData);
+      }
 
-    TerraformInputVariablesTaskResponse taskResponse = (TerraformInputVariablesTaskResponse) notifyResponseData;
-    if (taskResponse.getTerraformExecutionData().getExecutionStatus() == ExecutionStatus.SUCCESS) {
-      return taskResponse.getVariablesList();
-    } else {
-      throw new GeneralException(taskResponse.getTerraformExecutionData().getErrorMessage());
+      TerraformInputVariablesTaskResponse taskResponse = (TerraformInputVariablesTaskResponse) notifyResponseData;
+      if (taskResponse.getTerraformExecutionData().getExecutionStatus() == ExecutionStatus.SUCCESS) {
+        return taskResponse.getVariablesList();
+      } else {
+        throw new GeneralException(taskResponse.getTerraformExecutionData().getErrorMessage());
+      }
     }
+    return null;
   }
 
   private void validateBranchCommitId(String sourceRepoBranch, String commitId) {
@@ -902,9 +907,11 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
   }
 
   private void validateTerraformProvisioner(TerraformInfrastructureProvisioner terraformProvisioner) {
-    validateSourceRepoConfig(terraformProvisioner.getSourceRepoBranch(), terraformProvisioner.getCommitId(),
-        terraformProvisioner.getPath(), terraformProvisioner.getRepoName(),
-        terraformProvisioner.getSourceRepoSettingId());
+    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+      validateSourceRepoConfig(terraformProvisioner.getSourceRepoBranch(), terraformProvisioner.getCommitId(),
+          terraformProvisioner.getPath(), terraformProvisioner.getRepoName(),
+          terraformProvisioner.getSourceRepoSettingId());
+    }
 
     ensureNoDuplicateVars(terraformProvisioner.getBackendConfigs());
     ensureNoDuplicateVars(terraformProvisioner.getEnvironmentVariables());

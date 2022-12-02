@@ -198,10 +198,22 @@ public abstract class InfrastructureProvisionerYamlHandler<Y extends InfraProvis
 
   protected void validateBranchCommitId(String sourceRepoBranch, String commitId) {
     if (isEmpty(sourceRepoBranch) && isEmpty(commitId)) {
-      throw new InvalidRequestException("Either sourceRepoBranch or commitId should be specified", USER);
+      throw new InvalidRequestException("Either sourceRepoBranch or commitId or s3URI should be specified", USER);
     }
     if (isNotEmpty(sourceRepoBranch) && isNotEmpty(commitId)) {
       throw new InvalidRequestException("Cannot specify both sourceRepoBranch and commitId", USER);
+    }
+  }
+
+  protected void validateBranchCommitId(String sourceRepoBranch, String commitId, String s3URI) {
+    if (isEmpty(sourceRepoBranch) && isEmpty(commitId)) {
+      throw new InvalidRequestException("Either sourceRepoBranch or commitId or s3URI should be specified", USER);
+    }
+    if (isNotEmpty(sourceRepoBranch) && isNotEmpty(commitId)) {
+      throw new InvalidRequestException("Cannot specify both sourceRepoBranch and commitId", USER);
+    }
+    if ((isNotEmpty(sourceRepoBranch) && isNotEmpty(s3URI)) || isNotEmpty(commitId) && isNotEmpty(s3URI)) {
+      throw new InvalidRequestException("Cannot specify both Git and S3 source", USER);
     }
   }
 }

@@ -113,7 +113,11 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private boolean isGitHostConnectivityCheck;
   private final boolean useTfConfigInspectLatestVersion;
   private final AwsConfig awsConfig;
+
   private final String awsConfigId;
+  private final AwsConfig awsS3SourceBucketConfig;
+  private List<EncryptedDataDetail> awsS3EncryptionDetails;
+
   private final String awsRoleArn;
   private final String awsRegion;
   private List<EncryptedDataDetail> awsConfigEncryptionDetails;

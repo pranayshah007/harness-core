@@ -110,7 +110,7 @@ public class TerraformInfrastructureProvisionerYamlHandler
     super.toBean(changeContext, bean, appId, yamlFilePath);
     bean.setPath(yaml.getPath());
     bean.setSourceRepoSettingId(getSourceRepoSettingId(appId, yaml.getSourceRepoSettingName()));
-    validateBranchCommitId(yaml.getSourceRepoBranch(), yaml.getCommitId());
+    validateBranchCommitId(yaml.getSourceRepoBranch(), yaml.getCommitId(), yaml.getS3URI());
     bean.setSourceRepoBranch(yaml.getSourceRepoBranch());
     bean.setCommitId(yaml.getCommitId());
     bean.setRepoName(yaml.getRepoName());

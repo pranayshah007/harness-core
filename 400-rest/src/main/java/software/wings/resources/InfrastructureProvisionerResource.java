@@ -28,6 +28,7 @@ import software.wings.beans.InfrastructureMappingBlueprint.CloudProviderType;
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.InfrastructureProvisionerDetails;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.TerraformSourceType;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.ListAPI;
@@ -179,12 +180,13 @@ public class InfrastructureProvisionerResource {
   @ExceptionMetered
   @AuthRule(permissionType = PROVISIONER, action = READ)
   public RestResponse<List<NameValuePair>> getTerraformVariables(@QueryParam("appId") String appId,
-      @QueryParam("sourceRepoSettingId") @NotNull String scmSettingId,
-      @QueryParam("path") @NotNull String terraformDirectory, @QueryParam("accountId") String accountId,
-      @QueryParam("branch") String sourceRepoBranch, @QueryParam("commitId") String commitId,
-      @QueryParam("repoName") String repoName) {
-    return new RestResponse<>(infrastructureProvisionerService.getTerraformVariables(
-        appId, scmSettingId, terraformDirectory, accountId, sourceRepoBranch, commitId, repoName));
+      @QueryParam("sourceRepoSettingId") String scmSettingId, @QueryParam("path") String terraformDirectory,
+      @QueryParam("accountId") String accountId, @QueryParam("branch") String sourceRepoBranch,
+      @QueryParam("commitId") String commitId, @QueryParam("repoName") String repoName,
+      @QueryParam("terraformSourceType") TerraformSourceType terraformSourceType, @QueryParam("s3URI") String s3URI,
+      @QueryParam("awsConfigId") String awsConfigId) {
+    return new RestResponse<>(infrastructureProvisionerService.getTerraformVariables(appId, scmSettingId,
+        terraformDirectory, accountId, sourceRepoBranch, commitId, repoName, terraformSourceType, s3URI, awsConfigId));
   }
 
   @GET
