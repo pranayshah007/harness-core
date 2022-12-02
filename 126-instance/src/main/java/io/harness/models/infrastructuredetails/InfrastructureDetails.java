@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AzureWebAppInfrastructureDetails.class, name = "AzureWebApp"),
       @JsonSubTypes.Type(value = SshWinrmInfrastructureDetails.class, name = "SshWinrm"),
       @JsonSubTypes.Type(value = EcsInfrastructureDetails.class, name = "ECS"),
-      @JsonSubTypes.Type(value = SpotInfrastructureDetails.class, name = "Spot")
+      @JsonSubTypes.Type(value = SpotInfrastructureDetails.class, name = "Spot"),
+      @JsonSubTypes.Type(value = TasInfrastructureDetails.class, name = "TAS")
 })
 public abstract class InfrastructureDetails {}

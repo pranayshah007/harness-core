@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.customDeployment.CustomDeploymentExecutionDetails;
+import io.harness.cdng.execution.DefaultExecutionDetails;
 import io.harness.cdng.execution.ExecutionDetails;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.ExecutionInfoKeyOutput;
@@ -44,7 +45,6 @@ import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.entities.instanceinfo.SshWinrmInstanceInfo;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.logging.LogCallback;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -68,7 +68,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -109,13 +108,6 @@ public class StageExecutionHelper {
   }
 
   public void saveStageExecutionInfoAndPublishExecutionInfoKey(
-      Ambiance ambiance, ExecutionInfoKey executionInfoKey, String infrastructureKind) {
-    saveStageExecutionInfo(ambiance, executionInfoKey, infrastructureKind);
-    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME,
-        ExecutionInfoKeyOutput.builder().executionInfoKey(executionInfoKey).build(), StepCategory.STAGE.name());
-  }
-
-  public void saveStageExecutionInfo(
       @NotNull Ambiance ambiance, @Valid ExecutionInfoKey executionInfoKey, @NotNull final String infrastructureKind) {
     if (isEmpty(infrastructureKind)) {
       throw new InvalidArgumentsException(format(
@@ -126,8 +118,12 @@ public class StageExecutionHelper {
       throw new InvalidArgumentsException("Execution info key cannot be null or empty");
     }
 
-    ExecutionDetails executionDetails = getExecutionDetailsByInfraKind(ambiance, infrastructureKind);
-    saveStageExecutionInfo(ambiance, executionInfoKey, executionDetails);
+    Optional<ExecutionDetails> executionDetails = getExecutionDetailsByInfraKind(ambiance, infrastructureKind);
+    if (executionDetails.isPresent()) {
+      saveStageExecutionInfoAndPublishExecutionInfoKey(ambiance, executionInfoKey, executionDetails.get());
+      executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.EXECUTION_INFO_KEY_OUTPUT_NAME,
+          ExecutionInfoKeyOutput.builder().executionInfoKey(executionInfoKey).build(), StepCategory.STAGE.name());
+    }
   }
 
   public Optional<ArtifactOutcome> getRollbackArtifact(
@@ -165,8 +161,8 @@ public class StageExecutionHelper {
           (CustomDeploymentExecutionDetails) executionDetails.get();
       return customDeploymentExecutionDetails.getArtifactsOutcome();
     }
-    throw new InvalidRequestException(
-        format("Not supported rollback artifact for infrastructure, infrastructureKind: %s", infrastructureKind));
+    DefaultExecutionDetails defaultExecutionDetails = (DefaultExecutionDetails) executionDetails.get();
+    return defaultExecutionDetails.getArtifactsOutcome();
   }
 
   public Optional<ArtifactOutcome> getArtifact(Ambiance ambiance) {
@@ -194,7 +190,7 @@ public class StageExecutionHelper {
   public Set<String> saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(Ambiance ambiance,
       ExecutionInfoKey executionInfoKey, InfrastructureOutcome infrastructureOutcome, Set<String> hosts,
       final String serviceType, boolean skipInstances, LogCallback logCallback) {
-    if (!isInfrastructureSupportCommands(infrastructureOutcome.getKind())) {
+    if (!isSkipInstancesSupportedForInfraKind(infrastructureOutcome.getKind())) {
       throw new InvalidArgumentsException(
           format("Skip instances not supported for infrastructure kind: [%s]", infrastructureOutcome.getKind()));
     }
@@ -256,16 +252,19 @@ public class StageExecutionHelper {
     ArtifactDetails artifactDetails = artifactDetailsOptional.orElse(null);
 
     List<InstanceInfo> instanceInfoList = hosts.stream()
-                                              .map(host
-                                                  -> getSshWinRmInstanceInfo(infrastructureOutcome.getKind(),
-                                                      serviceType, infrastructureOutcome.getInfrastructureKey(), host))
+                                              .map(host -> getInstanceInfo(infrastructureOutcome, serviceType, host))
                                               .collect(Collectors.toList());
 
     instanceDeploymentInfoService.createAndUpdate(
         executionInfoKey, instanceInfoList, artifactDetails, ambiance.getStageExecutionId());
   }
 
-  private void saveStageExecutionInfo(
+  private boolean isSkipInstancesSupportedForInfraKind(String infrastructureKind) {
+    return isSshWinRmInfrastructureKind(infrastructureKind)
+        || InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind);
+  }
+
+  private void saveStageExecutionInfoAndPublishExecutionInfoKey(
       Ambiance ambiance, ExecutionInfoKey executionInfoKey, ExecutionDetails executionDetails) {
     StageExecutionInfoBuilder stageExecutionInfoBuilder =
         StageExecutionInfo.builder()
@@ -286,27 +285,33 @@ public class StageExecutionHelper {
     stageExecutionInfoService.save(stageExecutionInfoBuilder.build());
   }
 
-  @Nullable
-  private ExecutionDetails getExecutionDetailsByInfraKind(Ambiance ambiance, final String infrastructureKind) {
+  private Optional<ExecutionDetails> getExecutionDetailsByInfraKind(
+      Ambiance ambiance, final String infrastructureKind) {
     if (InfrastructureKind.PDC.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)
         || InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)) {
       Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
       List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
-      return SshWinRmStageExecutionDetails.builder()
-          .artifactsOutcome(artifactsOutcome)
-          .configFilesOutcome(cdStepHelper.getConfigFilesOutcome(ambiance).orElse(null))
-          .build();
+      return Optional.of(SshWinRmStageExecutionDetails.builder()
+                             .artifactsOutcome(artifactsOutcome)
+                             .configFilesOutcome(cdStepHelper.getConfigFilesOutcome(ambiance).orElse(null))
+                             .build());
     } else if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructureKind)) {
-      return AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build();
+      return Optional.of(
+          AzureWebAppsStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
     } else if (InfrastructureKind.CUSTOM_DEPLOYMENT.equals(infrastructureKind)) {
       Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
       List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
-      return CustomDeploymentExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build();
+      return Optional.of(CustomDeploymentExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build());
     } else if (InfrastructureKind.ELASTIGROUP.equals(infrastructureKind)) {
-      return ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build();
+      return Optional.of(ElastigroupStageExecutionDetails.builder().pipelineExecutionId(ambiance.getPlanExecutionId()).build());
     }
-    return null;
+    Optional<ArtifactOutcome> artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance);
+    List<ArtifactOutcome> artifactsOutcome = artifactOutcome.map(Lists::newArrayList).orElse(new ArrayList<>());
+    if (isNotEmpty(artifactsOutcome)) {
+      return Optional.of(DefaultExecutionDetails.builder().artifactsOutcome(artifactsOutcome).build());
+    }
+    return Optional.empty();
   }
 
   private Optional<ArtifactDetails> getArtifactDetails(Ambiance ambiance) {
@@ -322,25 +327,27 @@ public class StageExecutionHelper {
     }
   }
 
-  private SshWinrmInstanceInfo getSshWinRmInstanceInfo(
-      String infrastructureKind, String serviceType, String infrastructureKey, String host) {
-    if (InfrastructureKind.PDC.equals(infrastructureKind)) {
-      return PdcInstanceInfo.builder().host(host).serviceType(serviceType).infrastructureKey(infrastructureKey).build();
-    } else if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureKind)) {
+  private InstanceInfo getInstanceInfo(InfrastructureOutcome infrastructureOutcome, String serviceType, String host) {
+    if (InfrastructureKind.PDC.equals(infrastructureOutcome.getKind())) {
+      return PdcInstanceInfo.builder()
+          .host(host)
+          .serviceType(serviceType)
+          .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
+          .build();
+    } else if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructureOutcome.getKind())) {
       return AzureSshWinrmInstanceInfo.builder()
           .host(host)
           .serviceType(serviceType)
-          .infrastructureKey(infrastructureKey)
+          .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
           .build();
-    } else if (InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureKind)) {
+    } else if (InfrastructureKind.SSH_WINRM_AWS.equals(infrastructureOutcome.getKind())) {
       return AwsSshWinrmInstanceInfo.builder()
           .host(host)
           .serviceType(serviceType)
-          .infrastructureKey(infrastructureKey)
+          .infrastructureKey(infrastructureOutcome.getInfrastructureKey())
           .build();
     }
-
     throw new InvalidArgumentsException(
-        format("Unsupported SshWinRmInstanceInfo for infrastructure kind: [%s]", infrastructureKind));
+        format("Unsupported SshWinRmInstanceInfo for infrastructure kind: [%s]", infrastructureOutcome.getKind()));
   }
 }

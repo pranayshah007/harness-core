@@ -19,11 +19,7 @@ public interface DelegateRingService {
 
   Map<String, List<String>> getDelegateVersionsForAllRings(boolean skipCache);
 
-  Map<String, String> getImmutableDelegateVersionsForAllRings(boolean skipCache);
-
   List<String> getDelegateVersionsForRing(String ringName, boolean skipCache);
-
-  String getImmutableDelegateVersionsForRing(String ringName, boolean skipCache);
 
   String getWatcherVersions(String accountId);
 

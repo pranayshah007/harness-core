@@ -41,17 +41,17 @@ func (g *gradleRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(g.log, g.fs)
 }
 
-func (g *gradleRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+func (g *gradleRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
-	javaTests, err := GetJavaTests()
+	javaTests, err := GetJavaTests(testGlobs)
 	if err != nil {
 		return tests, err
 	}
-	scalaTests, err := GetScalaTests()
+	scalaTests, err := GetScalaTests(testGlobs)
 	if err != nil {
 		return tests, err
 	}
-	kotlinTests, err := GetKotlinTests()
+	kotlinTests, err := GetKotlinTests(testGlobs)
 	if err != nil {
 		return tests, err
 	}

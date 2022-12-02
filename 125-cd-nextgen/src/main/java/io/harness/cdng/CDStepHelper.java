@@ -48,6 +48,7 @@ import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.service.steps.ServiceSweepingOutput;
 import io.harness.cdng.ssh.SshEntityHelper;
@@ -69,9 +70,14 @@ import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
@@ -96,6 +102,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -281,7 +288,24 @@ public class CDStepHelper {
         && ((BitbucketConnectorDTO) scmConnector).getApiAccess() == null
         && isBitbucketUsernameTokenAuth((BitbucketConnectorDTO) scmConnector)) {
       addApiAuthIfRequiredBitbucket(scmConnector);
+    } else if (scmConnector instanceof AzureRepoConnectorDTO
+        && ((AzureRepoConnectorDTO) scmConnector).getApiAccess() == null && isAzureRepoTokenAuth(scmConnector)) {
+      addApiAuthIfRequiredAzureRepo(scmConnector);
     }
+  }
+
+  public void addApiAuthIfRequiredAzureRepo(ScmConnector scmConnector) {
+    AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
+    SecretRefData tokenRef =
+        ((AzureRepoUsernameTokenDTO) ((AzureRepoHttpCredentialsDTO) azureRepoConnectorDTO.getAuthentication()
+                                          .getCredentials())
+                .getHttpCredentialsSpec())
+            .getTokenRef();
+    AzureRepoApiAccessDTO apiAccessDTO = AzureRepoApiAccessDTO.builder()
+                                             .type(AzureRepoApiAccessType.TOKEN)
+                                             .spec(AzureRepoTokenSpecDTO.builder().tokenRef(tokenRef).build())
+                                             .build();
+    azureRepoConnectorDTO.setApiAccess(apiAccessDTO);
   }
 
   public void addApiAuthIfRequiredBitbucket(ScmConnector scmConnector) {
@@ -340,6 +364,13 @@ public class CDStepHelper {
         String repoUrl = getGitRepoUrl(bitbucketConnectorDTO, repoName);
         bitbucketConnectorDTO.setUrl(repoUrl);
         bitbucketConnectorDTO.setConnectionType(GitConnectionType.REPO);
+      }
+    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
+      AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) scmConnector;
+      if (azureRepoConnectorDTO.getConnectionType() == AzureRepoConnectionTypeDTO.PROJECT) {
+        String repoUrl = getGitRepoUrl(azureRepoConnectorDTO, repoName);
+        azureRepoConnectorDTO.setUrl(repoUrl);
+        azureRepoConnectorDTO.setConnectionType(AzureRepoConnectionTypeDTO.REPO);
       }
     }
   }
@@ -412,6 +443,18 @@ public class CDStepHelper {
         .manifestType(manifestType)
         .succeedIfFileNotFound(succeedIfFileNotFound)
         .gitStoreDelegateConfig(gitStoreDelegateConfig)
+        .build();
+  }
+
+  public S3StoreDelegateConfig getS3StoreDelegateConfig(
+      @Nonnull S3StoreConfig s3StoreConfig, @Nonnull ConnectorInfoDTO awsConnectorDTO, Ambiance ambiance) {
+    return S3StoreDelegateConfig.builder()
+        .bucketName(getParameterFieldValue(s3StoreConfig.getBucketName()))
+        .region(getParameterFieldValue(s3StoreConfig.getRegion()))
+        .paths(s3StoreConfig.getPaths().getValue())
+        .awsConnector((AwsConnectorDTO) awsConnectorDTO.getConnectorConfig())
+        .encryptedDataDetails(
+            k8sEntityHelper.getEncryptionDataDetails(awsConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
         .build();
   }
 
@@ -530,6 +573,12 @@ public class CDStepHelper {
         if (!(connectorInfoDTO.getConnectorConfig() instanceof BitbucketConnectorDTO)) {
           throw new InvalidRequestException(
               format("Invalid connector selected in %s. Select Bitbucket connector", message));
+        }
+        break;
+      case ManifestStoreType.AZURE_REPO:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof AzureRepoConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Azure_Repo connector", message));
         }
         break;
       case ManifestStoreType.HTTP:

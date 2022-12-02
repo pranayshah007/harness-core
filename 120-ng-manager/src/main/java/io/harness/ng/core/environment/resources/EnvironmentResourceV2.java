@@ -77,6 +77,8 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.ng.overview.dto.InstanceGroupedByServiceList;
+import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.rbac.CDNGRbacUtility;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.InternalApi;
@@ -170,6 +172,7 @@ public class EnvironmentResourceV2 {
   private final ServiceEntityValidationHelper serviceEntityValidationHelper;
   private final EnvironmentFilterHelper environmentFilterHelper;
   private final EnvironmentGroupService environmentGroupService;
+  private final CDOverviewDashboardService cdOverviewDashboardService;
   public static final String ENVIRONMENT_YAML_METADATA_INPUT_PARAM_MESSAGE =
       "Lists of Environment Identifiers and service identifiers for the entities";
 
@@ -373,6 +376,29 @@ public class EnvironmentResourceV2 {
       }
     });
     return ResponseDTO.newResponse(getNGPageResponse(environmentEntities.map(EnvironmentMapper::toResponseWrapper)));
+  }
+
+  @GET
+  @Path("/getActiveServiceInstancesForEnvironment")
+  @ApiOperation(value = "Get list of instances grouped by service for particular environment",
+      nickname = "getActiveServiceInstancesForEnvironment")
+  @Hidden
+  public ResponseDTO<InstanceGroupedByServiceList>
+  getActiveServiceInstancesForEnvironment(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) String environmentIdentifier,
+      @QueryParam(NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) String serviceIdentifier,
+      @QueryParam(NGCommonEntityConstants.BUILD_KEY) String buildId) {
+    /*
+    if (tag != null && serviceIdentifier == null) {
+
+    }
+
+     */
+    return ResponseDTO.newResponse(cdOverviewDashboardService.getInstanceGroupedByServiceList(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier, buildId));
   }
 
   @POST

@@ -18,9 +18,11 @@ import io.harness.ngtriggers.resource.NGTriggerResource;
 import io.harness.ngtriggers.resource.NGTriggerResourceImpl;
 import io.harness.ngtriggers.resource.NGTriggerWebhookConfigResource;
 import io.harness.ngtriggers.resource.NGTriggerWebhookConfigResourceImpl;
+import io.harness.ngtriggers.service.NGTriggerEventsService;
 import io.harness.ngtriggers.service.NGTriggerService;
 import io.harness.ngtriggers.service.NGTriggerWebhookRegistrationService;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
+import io.harness.ngtriggers.service.impl.NGTriggerEventServiceImpl;
 import io.harness.ngtriggers.service.impl.NGTriggerServiceImpl;
 import io.harness.ngtriggers.service.impl.NGTriggerWebhookRegistrationServiceImpl;
 import io.harness.ngtriggers.service.impl.NGTriggerYamlSchemaServiceImpl;
@@ -70,6 +72,7 @@ public class NGTriggersModule extends AbstractModule {
 
     install(SCMJavaClientModule.getInstance());
     bind(NGTriggerService.class).to(NGTriggerServiceImpl.class);
+    bind(NGTriggerEventsService.class).to(NGTriggerEventServiceImpl.class);
     bind(NGTriggerWebhookRegistrationService.class).to(NGTriggerWebhookRegistrationServiceImpl.class);
     bind(NGTriggerYamlSchemaService.class).to(NGTriggerYamlSchemaServiceImpl.class);
     bind(NGTriggerResource.class).to(NGTriggerResourceImpl.class);

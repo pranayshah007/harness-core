@@ -1121,6 +1121,14 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .isInstanceOf(HelmClientException.class);
   }
 
+  @Test
+  @Owner(developers = ACHYUTH)
+  @Category(UnitTests.class)
+  public void testChartVersionRange() {
+    String chartVer = "^2.0.1";
+    assertThat(helmTaskHelperBase.checkChartVersion(chartVer, "chart/", "nginx")).isTrue();
+  }
+
   private String getHelmCollectionResult() {
     return "NAME\tCHART VERSION\tAPP VERSION\tDESCRIPTION\n"
         + "repoName/chartName\t1.0.2\t0\tDeploys harness delegate\n"

@@ -10,11 +10,10 @@ package io.harness.cdng.environment.filters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.common.beans.NGTag;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -28,5 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDC)
 public class TagsFilter implements FilterSpec {
   @NotNull @ApiModelProperty(required = true) private MatchType matchType;
-  @NotNull @ApiModelProperty(required = true) private List<NGTag> tags;
+  @NotNull @ApiModelProperty(required = true) private Map<String, String> tags;
 }

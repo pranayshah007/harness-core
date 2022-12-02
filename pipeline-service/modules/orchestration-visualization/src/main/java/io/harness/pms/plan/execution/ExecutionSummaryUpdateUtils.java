@@ -39,11 +39,17 @@ public class ExecutionSummaryUpdateUtils {
     if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
       // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
       Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
+      // Updating the barrier information in the stage node.
       if (stage.isPresent()) {
         Level stageNode = stage.get();
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
         updateApplied = true;
       }
+    }
+    // LayoutNodeMap contains only stage or stage-strategy nodes. If the current nodeExecution does not correspond to
+    // stage then return here. And do not update the graph for current nodeExecution.
+    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
+      return updateApplied;
     }
     if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
       update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".status", status);
@@ -51,9 +57,6 @@ public class ExecutionSummaryUpdateUtils {
           PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
           nodeExecution.getResolvedStepParameters());
       updateApplied = true;
-    }
-    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
-      return updateApplied;
     }
     // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
     // there is a PlanNode

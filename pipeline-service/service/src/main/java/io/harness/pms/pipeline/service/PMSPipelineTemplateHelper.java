@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -82,7 +83,7 @@ public class PMSPipelineTemplateHelper {
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId, false,
+              accountId, orgId, projectId, BOOLEAN_FALSE_VALUE,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -90,7 +91,7 @@ public class PMSPipelineTemplateHelper {
                   .build()));
         }
         return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, false,
+            null, null, null, null, null, null, null, null, BOOLEAN_FALSE_VALUE,
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(yaml)
                 .checkForAccess(checkForTemplateAccess)

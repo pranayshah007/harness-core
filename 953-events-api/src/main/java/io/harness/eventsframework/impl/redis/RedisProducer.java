@@ -93,7 +93,7 @@ public class RedisProducer extends AbstractProducer {
           this.getTopicName());
       return messageId.toString();
     } catch (Exception ex) {
-      log.error("Exception occurred in sendInternal", ex);
+      log.warn("Exception occurred in sendInternal", ex);
       throw ex;
     }
   }

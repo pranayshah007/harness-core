@@ -65,13 +65,13 @@ public class SCMServiceGitClientImpl implements ScmClient {
   ScmServiceClient scmServiceClient;
 
   @Override
-  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    return scmServiceClient.createFile(scmConnector, gitFileDetails, scmBlockingStub);
+  public CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient) {
+    return scmServiceClient.createFile(scmConnector, gitFileDetails, scmBlockingStub, useGitClient);
   }
 
   @Override
-  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails) {
-    return scmServiceClient.updateFile(scmConnector, gitFileDetails, scmBlockingStub);
+  public UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails, boolean useGitClient) {
+    return scmServiceClient.updateFile(scmConnector, gitFileDetails, scmBlockingStub, useGitClient);
   }
 
   @Override

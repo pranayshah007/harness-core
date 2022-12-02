@@ -122,6 +122,7 @@ public interface NodeExecutionService {
   Optional<NodeExecution> getByNodeIdentifier(@NonNull String nodeIdentifier, @NonNull String planExecutionId);
 
   Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId);
+  Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
 
   long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses);
 

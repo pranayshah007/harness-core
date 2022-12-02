@@ -18,6 +18,8 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -52,6 +54,7 @@ public class ServiceStepsHelper {
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
 
   void validateResources(Ambiance ambiance, NGServiceConfig serviceConfig) {
     final ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
@@ -64,9 +67,13 @@ public class ServiceStepsHelper {
         PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
             executionPrincipalInfo.getPrincipalType());
     ServiceDefinition serviceDefinition = serviceConfig.getNgServiceV2InfoConfig().getServiceDefinition();
-    Set<EntityDetailProtoDTO> entityDetails =
+    Set<EntityDetailProtoDTO> entityDetailsProto =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(entityDetailsProto));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
+
     accessControlClient.checkForAccessOrThrow(io.harness.accesscontrol.acl.api.Principal.of(principalType, principal),
         io.harness.accesscontrol.acl.api.ResourceScope.of(AmbianceUtils.getAccountId(ambiance),
             AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance)),

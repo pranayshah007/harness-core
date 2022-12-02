@@ -13,7 +13,7 @@ public interface ServiceSpecType {
   String SSH = "Ssh";
   String ECS = "ECS";
   String NATIVE_HELM = "NativeHelm";
-  String PCF = "Pcf";
+  String TAS = "TAS";
   String SERVERLESS_AWS_LAMBDA = "ServerlessAwsLambda";
   String WINRM = "WinRm";
   String AZURE_WEBAPP = "AzureWebApp";

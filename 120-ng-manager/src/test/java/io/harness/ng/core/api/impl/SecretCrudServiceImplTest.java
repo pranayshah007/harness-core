@@ -38,6 +38,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
+import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -48,6 +49,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHAuthDTO;
 import io.harness.ng.core.dto.secrets.SSHConfigDTO;
 import io.harness.ng.core.dto.secrets.SSHCredentialSpecDTO;
@@ -60,6 +62,8 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
+import io.harness.ng.core.dto.secrets.WinRmAuthDTO;
+import io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.models.Secret;
 import io.harness.ng.core.models.SecretTextSpec;
@@ -833,6 +837,66 @@ public class SecretCrudServiceImplTest extends CategoryTest {
         Criteria.where(SecretKeys.orgIdentifier).is(ORG_ID).and(SecretKeys.projectIdentifier).is(null),
         Criteria.where(SecretKeys.orgIdentifier).is(null).and(SecretKeys.projectIdentifier).is(null)));
     verifyForSuperSubScope(expectedCriteria, resultCriteria, ORG_ID, PROJECT_ID, true, false);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testValidateSshWinRmSecretRef_WinRm_NTLM_AccountScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    SecretRefData password = SecretRefData.builder().identifier(identifier).scope(Scope.ACCOUNT).build();
+    SecretDTOV2 secretDTO =
+        SecretDTOV2.builder()
+            .spec(WinRmCredentialsSpecDTO.builder()
+                      .auth(WinRmAuthDTO.builder().spec(NTLMConfigDTO.builder().password(password).build()).build())
+                      .build())
+            .build();
+    when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.of(Secret.builder().build()));
+    secretCrudService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTO);
+    verify(ngSecretServiceV2, times(1)).get(accountIdentifier, null, null, identifier);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testValidateSshWinRmSecretRef_WinRm_NTLM_OrgScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    SecretRefData password = SecretRefData.builder().identifier(identifier).scope(Scope.ORG).build();
+    SecretDTOV2 secretDTO =
+        SecretDTOV2.builder()
+            .spec(WinRmCredentialsSpecDTO.builder()
+                      .auth(WinRmAuthDTO.builder().spec(NTLMConfigDTO.builder().password(password).build()).build())
+                      .build())
+            .build();
+    when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.of(Secret.builder().build()));
+    secretCrudService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTO);
+    verify(ngSecretServiceV2, times(1)).get(accountIdentifier, orgIdentifier, null, identifier);
+  }
+
+  @Test
+  @Owner(developers = TEJAS)
+  @Category(UnitTests.class)
+  public void testValidateSshWinRmSecretRef_WinRm_NTLM_ProjectScope() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    SecretRefData password = SecretRefData.builder().identifier(identifier).scope(Scope.PROJECT).build();
+    SecretDTOV2 secretDTO =
+        SecretDTOV2.builder()
+            .spec(WinRmCredentialsSpecDTO.builder()
+                      .auth(WinRmAuthDTO.builder().spec(NTLMConfigDTO.builder().password(password).build()).build())
+                      .build())
+            .build();
+    when(ngSecretServiceV2.get(any(), any(), any(), any())).thenReturn(Optional.of(Secret.builder().build()));
+    secretCrudService.validateSshWinRmSecretRef(accountIdentifier, orgIdentifier, projectIdentifier, secretDTO);
+    verify(ngSecretServiceV2, times(1)).get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
   }
 
   private void verifyForSuperSubScope(Criteria expectedCriteria, Criteria resultCriteria, String orgId,

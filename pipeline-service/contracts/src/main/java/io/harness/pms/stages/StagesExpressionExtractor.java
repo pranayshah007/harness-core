@@ -8,8 +8,8 @@
 package io.harness.pms.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;

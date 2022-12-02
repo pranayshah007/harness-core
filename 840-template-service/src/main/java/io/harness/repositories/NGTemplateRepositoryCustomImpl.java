@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static java.lang.String.format;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -134,11 +135,11 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly) {
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache) {
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache);
   }
 
   @Override
@@ -155,11 +156,11 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
   public Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(String accountId,
       String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache) {
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, loadFromCache);
   }
 
   @Override
@@ -180,7 +181,7 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
     Criteria criteria =
         buildCriteriaForFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNot(
             accountId, orgIdentifier, projectIdentifier, templateIdentifier, notDeleted);
-    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly);
+    return getTemplateEntity(criteria, accountId, orgIdentifier, projectIdentifier, getMetadataOnly, false);
   }
 
   private Criteria
@@ -235,8 +236,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
         .is(accountId);
   }
 
-  private Optional<TemplateEntity> getTemplateEntity(
-      Criteria criteria, String accountId, String orgIdentifier, String projectIdentifier, boolean getMetadataOnly) {
+  private Optional<TemplateEntity> getTemplateEntity(Criteria criteria, String accountId, String orgIdentifier,
+      String projectIdentifier, boolean getMetadataOnly, boolean loadFromCache) {
     Query query = new Query(criteria);
     TemplateEntity savedEntity = mongoTemplate.findOne(query, TemplateEntity.class);
     if (savedEntity == null) {
@@ -255,6 +256,8 @@ public class NGTemplateRepositoryCustomImpl implements NGTemplateRepositoryCusto
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
               .repoName(savedEntity.getRepo())
+              .entityType(EntityType.TEMPLATE)
+              .loadFromCache(loadFromCache)
               .build(),
           Collections.emptyMap());
     }

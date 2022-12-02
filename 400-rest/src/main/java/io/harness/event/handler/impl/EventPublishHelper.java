@@ -90,6 +90,7 @@ import software.wings.verification.CVConfiguration;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -231,6 +232,7 @@ public class EventPublishHelper {
                                                    .addFieldsIncluded("_id")
                                                    .withLimit("1")
                                                    .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     List<CVConfiguration> cvConfigurations = cvConfigurationService.listConfigurations(accountId, pageRequest);
 
     if (isEmpty(cvConfigurations)) {
@@ -277,6 +279,7 @@ public class EventPublishHelper {
               .addFilter("createdBy.email", Operator.EQ, userEmail)
               .addOrder(UserGroup.CREATED_AT_KEY, OrderType.ASC)
               .build();
+      pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
       PageResponse<UserGroup> pageResponse = userGroupService.list(accountId, pageRequest, false, null, null);
       List<UserGroup> userGroups = pageResponse.getResponse();
       if (isEmpty(userGroups)) {
@@ -313,6 +316,7 @@ public class EventPublishHelper {
                                           .addOrder(User.CREATED_AT_KEY, OrderType.ASC)
                                           .withLimit("10")
                                           .build();
+      pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
 
       PageResponse<User> pageResponse = userService.list(pageRequest, false);
       List<User> users = pageResponse.getResponse();
@@ -367,6 +371,7 @@ public class EventPublishHelper {
                                              .addFieldsIncluded("_id")
                                              .withLimit("1")
                                              .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     PageResponse<Whitelist> pageResponse = whitelistService.list(accountId, pageRequest);
     List<Whitelist> whitelistConfigs = pageResponse.getResponse();
     if (isEmpty(whitelistConfigs)) {
@@ -483,6 +488,7 @@ public class EventPublishHelper {
                                             .addFieldsIncluded("_id")
                                             .withLimit("1")
                                             .build();
+    pageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
     PageResponse<Workflow> pageResponse = workflowService.listWorkflows(pageRequest);
     List<Workflow> workflows = pageResponse.getResponse();
     if (isEmpty(workflows)) {
@@ -700,6 +706,8 @@ public class EventPublishHelper {
             .addFieldsIncluded("_id")
             .withLimit("1")
             .build();
+    cvPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
+
     List<ContinuousVerificationExecutionMetaData> cvExecutionMetaDataList =
         continuousVerificationService.getCVDeploymentData(cvPageRequest);
 
@@ -837,6 +845,7 @@ public class EventPublishHelper {
                                                               .addOrder(WorkflowExecutionKeys.createdAt, OrderType.ASC)
                                                               .withLimit("1")
                                                               .build();
+    executionPageRequest.setOptions(Arrays.asList(PageRequest.Option.SKIPCOUNT));
 
     PageResponse<WorkflowExecution> executionPageResponse =
         workflowExecutionService.listExecutions(executionPageRequest, false);

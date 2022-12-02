@@ -42,12 +42,16 @@ public interface ManifestType {
   String EcsScalingPolicyDefinition = "EcsScalingPolicyDefinition";
   String EcsScalableTargetDefinition = "EcsScalableTargetDefinition";
   String EcsRunTaskRequestDefinition = "EcsRunTaskRequestDefinition";
+  String TAS_MANIFEST = "TasManifest";
+  String TAS_VARS = "TasVars";
+  String TAS_AUTOSCALER = "TasAutoScaler";
 
   static HashSet<String> getAllManifestTypes() {
     return new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES, ManifestType.OpenshiftTemplate,
         ManifestType.KustomizePatches, ManifestType.Kustomize, ManifestType.HelmChart, ManifestType.CONFIG_FILE,
         ManifestType.OpenshiftParam, ManifestType.ServerlessAwsLambda, ManifestType.ReleaseRepo,
         ManifestType.DeploymentRepo, ManifestType.EcsTaskDefinition, ManifestType.EcsServiceDefinition,
-        ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition));
+        ManifestType.EcsScalableTargetDefinition, ManifestType.EcsScalingPolicyDefinition, ManifestType.TAS_MANIFEST,
+        ManifestType.TAS_VARS, ManifestType.TAS_AUTOSCALER));
   }
 }

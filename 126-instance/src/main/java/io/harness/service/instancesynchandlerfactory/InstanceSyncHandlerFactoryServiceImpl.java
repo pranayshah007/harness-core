@@ -24,6 +24,7 @@ import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
 import io.harness.service.instancesynchandler.PdcInstanceSyncHandler;
 import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
 import io.harness.service.instancesynchandler.SpotInstanceSyncHandler;
+import io.harness.service.instancesynchandler.TasInstanceSyncHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -44,6 +45,7 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
   private final AwsSshWinrmInstanceSyncHandler awsSshWinrmInstanceSyncHandler;
   private final CustomDeploymentInstanceSyncHandler customDeploymentInstanceSyncHandler;
   private final SpotInstanceSyncHandler spotInstanceSyncHandler;
+  private final TasInstanceSyncHandler tasInstanceSyncHandler;
 
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType, String infraKind) {
@@ -67,6 +69,8 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return customDeploymentInstanceSyncHandler;
       case ServiceSpecType.ELASTIGROUP:
         return spotInstanceSyncHandler;
+      case ServiceSpecType.TAS:
+        return tasInstanceSyncHandler;
       default:
         throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }

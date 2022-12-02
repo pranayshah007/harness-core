@@ -1,0 +1,32 @@
+template:
+  name: testStepGrp2
+  identifier: testStepGrp2
+  versionLabel: v1
+  type: StepGroup
+  projectIdentifier: njh
+  orgIdentifier: default
+  tags: {}
+  spec:
+    stageType: Deployment
+    steps:
+      - step:
+          type: ShellScript
+          name: Shell Script
+          identifier: ShellScript
+          spec:
+            shell: Bash
+            onDelegate: true
+            source:
+              type: Inline
+              spec:
+                script: echo "high"
+            environmentVariables: []
+            outputVariables: []
+          timeout: 10m
+      - stepGroup:
+          identifier: dfss
+          name: dfsss
+          template:
+            templateRef: testingStepG
+            versionLabel: r1h
+    outputVariables: []

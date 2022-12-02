@@ -106,10 +106,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
     log.info(String.format(
         "Deleting Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
-    boolean deleted = pmsPipelineService.delete(account, org, project, pipeline, null);
-    if (!deleted) {
-      throw new InvalidRequestException(String.format("Pipeline with identifier %s cannot be deleted.", pipeline));
-    }
+    pmsPipelineService.delete(account, org, project, pipeline, null);
     return Response.status(204).build();
   }
 

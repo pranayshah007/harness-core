@@ -441,6 +441,13 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.TERRAFORM_ROLLBACK)
   TERRAGRUNT_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TERRAGRUNT_ROLLBACK, IdentifierRef.class,
       EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
+  @JsonProperty(EntityTypeConstants.IACM_STAGE)
+  IACM_STAGE(ModuleType.IACM, EntityTypeConstants.IACM_STAGE, IdentifierRef.class, EntityYamlRootNames.IACM_STAGE),
+  @JsonProperty(EntityTypeConstants.IACM_STEPS)
+  IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
+  @JsonProperty(EntityTypeConstants.IACM)
+  IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM);
+      EntityYamlRootNames.TERRAGRUNT_ROLLBACK),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
   ELASTIGROUP_BG_STAGE_SETUP_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_BG_STAGE_SETUP, IdentifierRef.class,
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),

@@ -14,13 +14,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.limits.checker.MongoStaticLimitChecker;
 import io.harness.limits.checker.rate.MongoSlidingWindowRateLimitChecker;
+import io.harness.limits.checkers.LimitChecker;
 import io.harness.limits.configuration.InvalidLimitConfigurationException;
 import io.harness.limits.configuration.LimitConfigurationService;
 import io.harness.limits.configuration.NoLimitConfiguredException;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
 import io.harness.limits.lib.Limit;
-import io.harness.limits.lib.LimitChecker;
 import io.harness.limits.lib.LimitType;
 
 import software.wings.dl.WingsPersistence;

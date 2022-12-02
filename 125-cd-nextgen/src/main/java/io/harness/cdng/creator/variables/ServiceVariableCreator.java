@@ -106,9 +106,32 @@ public class ServiceVariableCreator {
             addVariablesForCustomDeploymentServiceSpec(customDeploymentSpecNode, yamlPropertiesMap);
           }
           break;
+        case ServiceSpecType.TAS:
+          specNode = serviceDefNode.getNode().getField(YamlTypes.SERVICE_SPEC);
+          if (specNode != null) {
+            addVariablesForTasServiceSpec(specNode, yamlPropertiesMap);
+          }
+          break;
         default:
           throw new InvalidRequestException("Invalid service type");
       }
+    }
+  }
+
+  private static void addVariablesForTasServiceSpec(
+      YamlField serviceSpecNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField artifactsNode = serviceSpecNode.getNode().getField(YamlTypes.ARTIFACT_LIST_CONFIG);
+    if (VariableCreatorHelper.isNotYamlFieldEmpty(artifactsNode)) {
+      addVariablesForArtifacts(artifactsNode, yamlPropertiesMap);
+    }
+    YamlField manifestsNode = serviceSpecNode.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
+    if (manifestsNode != null) {
+      addVariablesForManifests(manifestsNode, yamlPropertiesMap);
+    }
+
+    YamlField variablesField = serviceSpecNode.getNode().getField(YAMLFieldNameConstants.VARIABLES);
+    if (variablesField != null) {
+      VariableCreatorHelper.addVariablesForVariables(variablesField, yamlPropertiesMap, YamlTypes.SERVICE_CONFIG);
     }
   }
 

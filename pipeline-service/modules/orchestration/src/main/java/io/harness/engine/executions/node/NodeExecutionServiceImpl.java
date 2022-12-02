@@ -178,6 +178,18 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
   }
 
   @Override
+  public Optional<NodeExecution> getPipelineNodeExecutionWithProjections(
+      @NonNull String planExecutionId, Set<String> fields) {
+    Query query = query(where(NodeExecutionKeys.planExecutionId).is(planExecutionId))
+                      .addCriteria(where(NodeExecutionKeys.stepCategory).is(StepCategory.PIPELINE))
+                      .with(Sort.by(Direction.ASC, NodeExecutionKeys.createdAt));
+    for (String fieldName : fields) {
+      query.fields().include(fieldName);
+    }
+    return Optional.ofNullable(mongoTemplate.findOne(query, NodeExecution.class));
+  }
+
+  @Override
   public long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses) {
     return nodeExecutionReadHelper.findCountByParentIdAndStatusIn(parentId, flowingStatuses);
   }

@@ -21,14 +21,18 @@ tags:
     description: Everything about project scoped secret
   - name: Project Services
     description: This contains APIs for performing CRUD operations on Services.
+  - name: Org Services
+    description: This contains APIs for performing CRUD operations on org scoped Services.
+  - name: Account Services
+    description: This contains APIs for performing CRUD operations on account scoped Services.
 paths:
   '/v1/orgs/{org}/projects/{project}/services/{service}':
     get:
-      summary: Retrieve a Service
+      summary: Retrieve a service
       operationId: get-service
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
-      description: 'Retrieves specified Service '
+      description: 'Retrieves the specified service'
       security:
         - x-api-key: []
       responses:
@@ -50,7 +54,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ServiceRequest'
-      description: Update Services
+      description: Updates the specified service
       security:
         - x-api-key: []
       tags:
@@ -120,7 +124,7 @@ paths:
         - $ref: '#/components/parameters/AccountHeader'
       requestBody:
         $ref: '#/components/requestBodies/ServiceRequest'
-      description: Creates a Service
+      description: Creates a service
       security:
         - x-api-key: []
       tags:
@@ -128,6 +132,212 @@ paths:
     parameters:
       - $ref: '#/components/parameters/OrgPathParam'
       - $ref: '#/components/parameters/ProjectPathParam'
+  '/v1/orgs/{org}/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-org-scoped-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: 'Retrieves the specified service'
+      security:
+        - x-api-key: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Org Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update Service
+      operationId: update-org-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+    delete:
+      summary: Delete a service
+      operationId: delete-org-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the requested service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+  '/v1/orgs/{org}/services':
+    get:
+      summary: List Services
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceListResponse'
+      operationId: get-org-scoped-services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/ServiceIdentifiers'
+        - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: boolean
+          in: query
+          name: is_access_list
+          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+        - schema:
+            type: string
+            enum:
+              - Kubernetes
+              - NativeHelm
+              - Ssh
+              - WinRm
+              - ServerlessAwsLambda
+              - AzureWebApp
+          name: type
+          in: query
+          description: Service Definition type
+        - schema:
+            type: boolean
+          name: git_ops_enabled
+          in: query
+          description: Enables use of this service in Harness GitOps PR Pipelines
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: [ ]
+      description: Returns all services that the current user has view permissions for given project.
+      tags:
+        - Org Services
+    post:
+      summary: Create a service
+      operationId: create-org-scoped-service
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Creates a service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Org Services
+    parameters:
+      - $ref: '#/components/parameters/OrgPathParam'
+  '/v1/services/{service}':
+    get:
+      summary: Retrieve a service
+      operationId: get-account-scoped-service
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: 'Retrieves the specified service'
+      security:
+        - x-api-key: [ ]
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      tags:
+        - Account Services
+    parameters:
+      - $ref: '#/components/parameters/ServicePathParam'
+    put:
+      summary: Update service
+      operationId: update-account-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Updates the specified service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+    delete:
+      summary: Delete a service
+      operationId: delete-account-scoped-service
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      description: Deletes the requested service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+  '/v1/services':
+    get:
+      summary: List services
+      responses:
+        '200':
+          $ref: '#/components/responses/ServiceListResponse'
+      operationId: get-account-scoped-services
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/SearchTerm'
+        - $ref: '#/components/parameters/ServiceIdentifiers'
+        - $ref: '#/components/parameters/Sort'
+        - schema:
+            type: boolean
+          in: query
+          name: is_access_list
+          description: Specify whether list an access list or not. Access List refers to list of services that current user has permission to use in the pipeline.
+        - schema:
+            type: string
+            enum:
+              - Kubernetes
+              - NativeHelm
+              - Ssh
+              - WinRm
+              - ServerlessAwsLambda
+              - AzureWebApp
+          name: type
+          in: query
+          description: Service Definition type
+        - schema:
+            type: boolean
+          name: git_ops_enabled
+          in: query
+          description: Enables use of this service in Harness GitOps PR Pipelines
+        - $ref: '#/components/parameters/AccountHeader'
+        - $ref: '#/components/parameters/Order'
+      security:
+        - x-api-key: [ ]
+      description: Returns all services that the current user has view permissions for given project.
+      tags:
+        - Account Services
+    post:
+      summary: Create a service
+      operationId: create-account-scoped-service
+      responses:
+        '201':
+          $ref: '#/components/responses/ServiceResponse'
+      parameters:
+        - $ref: '#/components/parameters/AccountHeader'
+      requestBody:
+        $ref: '#/components/requestBodies/ServiceRequest'
+      description: Creates a service
+      security:
+        - x-api-key: [ ]
+      tags:
+        - Account Services
+    parameters: []
   /v1/orgs:
     post:
       summary: Create an organization

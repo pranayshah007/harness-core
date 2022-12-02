@@ -489,10 +489,10 @@ public class WingsApplication extends Application<MainConfiguration> {
     log.info("Starting app...");
     ConfigSecretUtils.resolveSecrets(configuration.getSecretsConfiguration(), configuration);
 
-    ExecutorService mainPoolExecutor = ThreadPool.create(configuration.getCommonPoolConfig().getCorePoolSize(),
-        configuration.getCommonPoolConfig().getMaxPoolSize(), configuration.getCommonPoolConfig().getIdleTime(),
-        configuration.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
+    ExecutorService mainPoolExecutor =
+        ThreadPool.create(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors() * 20,
+            configuration.getCommonPoolConfig().getIdleTime(), configuration.getCommonPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build());
     ExecutorModule.getInstance().setExecutorService(
         new InstrumentedExecutorService(mainPoolExecutor, threadPoolMetricRegistry, "main"));
 

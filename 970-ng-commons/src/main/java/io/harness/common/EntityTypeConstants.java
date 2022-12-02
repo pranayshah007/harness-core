@@ -170,6 +170,9 @@ public interface EntityTypeConstants {
   String CHAOS_STEP = "Chaos";
   String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  String IACM_STAGE = "IACMStage";
+  String IACM_STEPS = "IACMStep";
+  String IACM = "IACM";
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String TERRAGRUNT_PLAN = "TerragruntPlan";
   String TERRAGRUNT_APPLY = "TerragruntApply";

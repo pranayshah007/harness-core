@@ -12,7 +12,7 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.accesscontrol.acl.PermissionCheck;
 import io.harness.exception.AccessDeniedException;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 
 import java.util.HashMap;
 import java.util.Map;
