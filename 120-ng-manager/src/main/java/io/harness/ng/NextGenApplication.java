@@ -434,7 +434,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     registerIterators(appConfig.getNgIteratorsConfig(), injector);
     registerJobs(injector);
     registerQueueListeners(injector);
-    //    registerNotificationTemplates(injector);
+    registerNotificationTemplates(injector);
     registerPmsSdkEvents(appConfig, injector);
     initializeMonitoring(appConfig, injector);
     registerObservers(injector);
@@ -450,7 +450,6 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
       intializeGitSync(injector);
       GitSyncSdkInitHelper.initGitSyncSdk(injector, environment, getGitSyncConfiguration(appConfig));
     }
-    log.info("Checking ");
     registerMigrations(injector);
     injector.getInstance(CDRetentionHandlerNG.class).configureRetentionPolicy();
 
