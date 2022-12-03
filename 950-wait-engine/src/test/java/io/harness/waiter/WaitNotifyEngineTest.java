@@ -9,6 +9,7 @@ package io.harness.waiter;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.SANJA;
@@ -42,6 +43,7 @@ import io.harness.waiter.ProgressUpdate.ProgressUpdateKeys;
 import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -74,6 +76,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
   @Inject private TestNotifyEventListener notifyEventListener;
   @Inject private QueueListenerController queueListenerController;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   /**
    * Setup response map.
@@ -105,6 +108,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       String id = waitNotifyEngine.doneWith(uuid, data);
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
@@ -131,6 +135,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
@@ -159,6 +164,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
@@ -195,6 +201,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse1 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse1).isNotNull();
+      assertThat(notifyResponse1.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult1 =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse1.getResponseData());
       assertThat(responseDataResult1).isEqualTo(data1);
@@ -208,6 +215,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse2 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse2).isNotNull();
+      assertThat(notifyResponse2.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult2 =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse2.getResponseData());
       assertThat(responseDataResult2).isEqualTo(data2);
@@ -221,6 +229,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse3 = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse3).isNotNull();
+      assertThat(notifyResponse3.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse3.getResponseData());
       assertThat(responseDataResult).isEqualTo(data3);
@@ -356,6 +365,7 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
 
       NotifyResponse notifyResponse = persistence.get(NotifyResponse.class, id);
       assertThat(notifyResponse).isNotNull();
+      assertThat(notifyResponse.isUsingKryoWithoutReference()).isFalse();
       ResponseData responseDataResult =
           (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
       assertThat(responseDataResult).isEqualTo(data);
@@ -403,6 +413,56 @@ public class WaitNotifyEngineTest extends WaitEngineTestBase {
       assertThat(progressUpdate2).hasSize(2);
       ProgressData progressDataResult2 =
           (ProgressData) kryoSerializer.asInflatedObject(progressUpdate2.get(1).getProgressData());
+      assertThat(progressDataResult2).isEqualTo(data2);
+
+      while (progressCallCount.get() < 2) {
+        Thread.yield();
+      }
+
+      StringNotifyProgressData result1 = (StringNotifyProgressData) progressDataList.get(0);
+      StringNotifyProgressData result2 = (StringNotifyProgressData) progressDataList.get(1);
+
+      assertThat(progressDataList).hasSize(2);
+      assertThat(Arrays.asList(result1.getData(), result2.getData()))
+          .containsExactlyInAnyOrder(data1.getData(), data2.getData());
+      assertThat(progressCallCount.get()).isEqualTo(2);
+    }
+  }
+
+  /**
+   * Should wait for progress on correlation id.
+   */
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void shouldWaitForProgressOnCorrelationIdUsingKryoWithoutReference() throws InterruptedException {
+    String uuid = generateUuid();
+    try (MaintenanceGuard guard = new MaintenanceGuard(false)) {
+      String waitInstanceId =
+          waitNotifyEngine.waitForAllOn(TEST_PUBLISHER, new TestNotifyCallback(), new TestProgressCallback(), uuid);
+
+      assertThat(persistence.get(WaitInstance.class, waitInstanceId)).isNotNull();
+      StringNotifyProgressData data1 = StringNotifyProgressData.builder().data("progress1-" + uuid).build();
+      waitNotifyEngine.progressOn(uuid, data1, true);
+
+      ProgressUpdate progressUpdate = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
+                                          .filter(ProgressUpdateKeys.correlationId, uuid)
+                                          .get();
+      assertThat(progressUpdate).isNotNull();
+      ProgressData progressDataResult =
+          (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData());
+      assertThat(progressDataResult).isEqualTo(data1);
+
+      StringNotifyProgressData data2 = StringNotifyProgressData.builder().data("progress2-" + uuid).build();
+      waitNotifyEngine.progressOn(uuid, data2, true);
+
+      List<ProgressUpdate> progressUpdate2 = persistence.createQuery(ProgressUpdate.class, excludeAuthority)
+                                                 .filter(ProgressUpdateKeys.correlationId, uuid)
+                                                 .order(Sort.ascending(ProgressUpdateKeys.createdAt))
+                                                 .asList();
+      assertThat(progressUpdate2).hasSize(2);
+      ProgressData progressDataResult2 =
+          (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate2.get(1).getProgressData());
       assertThat(progressDataResult2).isEqualTo(data2);
 
       while (progressCallCount.get() < 2) {

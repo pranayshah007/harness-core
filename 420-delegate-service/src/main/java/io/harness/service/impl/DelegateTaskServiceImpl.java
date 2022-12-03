@@ -48,6 +48,7 @@ import software.wings.beans.TaskType;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -66,6 +67,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Getter private Subject<DelegateTaskRetryObserver> retryObserverSubject = new Subject<>();
   @Inject private RemoteObserverInformer remoteObserverInformer;
@@ -272,8 +274,9 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
             "Failed to obtain Delegate callback service for the given task. Skipping processing of task response.");
         return;
       }
-
-      if (delegateTask.getTaskDataV2().isAsync()) {
+      boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
+                                                           : delegateTask.getData().isAsync();
+      if (async) {
         delegateCallbackService.publishAsyncTaskResponse(
             delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
       } else {
@@ -302,7 +305,9 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   }
 
   private void handleInprocResponseV2(DelegateTask delegateTask, DelegateTaskResponse response) {
-    if (delegateTask.getTaskDataV2().isAsync()) {
+    boolean async = delegateTask.getTaskDataV2() != null ? delegateTask.getTaskDataV2().isAsync()
+                                                         : delegateTask.getData().isAsync();
+    if (async) {
       String waitId = delegateTask.getWaitId();
       if (waitId != null) {
         waitNotifyEngine.doneWith(waitId, response.getResponse());
@@ -312,6 +317,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
+                           .usingKryoWithoutReference(true)
                            .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
                            .build());
     }

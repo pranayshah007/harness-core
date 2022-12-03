@@ -33,4 +33,5 @@ public class DelegateTaskProgressResponse implements PersistentEntity {
   @FdIndex private long processAfter;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
+  private boolean usingKryoWithoutReference;
 }
