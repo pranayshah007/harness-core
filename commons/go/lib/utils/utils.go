@@ -8,14 +8,16 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"github.com/harness/harness-core/commons/go/lib/filesystem"
-	"github.com/harness/harness-core/product/ci/ti-service/types"
-	"go.uber.org/zap"
+	"io"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
-	"io"
+
+	"github.com/harness/harness-core/commons/go/lib/filesystem"
+	"github.com/harness/harness-core/product/ci/ti-service/types"
+	zglob "github.com/mattn/go-zglob"
+	"go.uber.org/zap"
 )
 
 type NodeType int32
@@ -87,31 +89,49 @@ func IsSupported(node Node) bool {
 	return node.Type == NodeType_TEST || node.Type == NodeType_SOURCE || node.Type == NodeType_RESOURCE
 }
 
+// GetFiles gets list of all file paths matching a provided regex
+func GetFiles(path string) ([]string, error) {
+	fmt.Println("path: ", path)
+	matches, err := zglob.Glob(path)
+	if err != nil {
+		return []string{}, err
+	}
+	return matches, err
+}
+
 // ParseCsharpNode extracts the class name from a Dotnet file path
 // e.g., src/abc/def/A.cs
 // will return class = A
-func ParseCsharpNode(file types.File) (*Node, error) {
+func ParseCsharpNode(file types.File, testGlobs []string) (*Node, error) {
 	var node Node
 	node.Pkg = ""
 	node.Class = ""
 	node.Lang = LangType_UNKNOWN
 	node.Type = NodeType_OTHER
-	filename := strings.TrimSpace(file.Name)
-	if strings.HasSuffix(filename, ".cs") {
-		node.Lang = LangType_CSHARP
-		node.Type = NodeType_SOURCE // TODO: How to detect source and test from the file name in csharp?
-		f := strings.TrimSuffix(filename, ".cs")
-		parts := strings.Split(f, "/")
-		node.Class = parts[len(parts)-1]
-	}
 
+	filename := strings.TrimSpace(file.Name)
+	if !strings.HasSuffix(filename, ".cs") {
+		return &node, nil
+	}
+	node.Lang = LangType_CSHARP
+	node.Type = NodeType_SOURCE
+
+	for _, glob := range testGlobs {
+		if matched, _ := zglob.Match(glob, filename); !matched {
+			continue
+		}
+		node.Type = NodeType_TEST
+	}
+	f := strings.TrimSuffix(filename, ".cs")
+	parts := strings.Split(f, "/")
+	node.Class = parts[len(parts)-1]
 	return &node, nil
 }
 
 //ParseJavaNodeFromPath extracts the pkg and class names from a Java file path
 // e.g., 320-ci-execution/src/main/java/io/harness/stateutils/buildstate/ConnectorUtils.java
 // will return pkg = io.harness.stateutils.buildstate, class = ConnectorUtils
-func ParseJavaNodeFromPath(file string) (*Node, error) {
+func ParseJavaNodeFromPath(file string, testGlobs []string) (*Node, error) {
 	return ParseJavaNode(types.File{
 		Name: file,
 	})
@@ -237,7 +257,7 @@ func ParseFileNames(files []types.File) ([]Node, error) {
 			continue
 		}
 		if strings.HasSuffix(path, ".cs") {
-			node, _ := ParseCsharpNode(file)
+			node, _ := ParseCsharpNode(file, []string{})
 			nodes = append(nodes, *node)
 		} else {
 			node, _ := ParseJavaNode(file)
@@ -272,10 +292,10 @@ func GetRepoUrl(repo string) string {
 }
 
 // ReadJavaPkg read java file and return it's package name
-func ReadJavaPkg(log *zap.SugaredLogger, fs filesystem.FileSystem, f string, excludeList []string, packageLen int) (string, error){
+func ReadJavaPkg(log *zap.SugaredLogger, fs filesystem.FileSystem, f string, excludeList []string, packageLen int) (string, error) {
 	absPath, err := filepath.Abs(f)
 	result := ""
-	if !strings.HasSuffix(absPath, ".java") && !strings.HasSuffix(absPath,".scala") && !strings.HasSuffix(absPath,".kt") {
+	if !strings.HasSuffix(absPath, ".java") && !strings.HasSuffix(absPath, ".scala") && !strings.HasSuffix(absPath, ".kt") {
 		return result, nil
 	}
 	if err != nil {

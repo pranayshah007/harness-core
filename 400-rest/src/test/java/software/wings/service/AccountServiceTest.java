@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._955_ACCOUNT_MGMT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ANKIT;
+import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
@@ -594,13 +595,12 @@ public class AccountServiceTest extends WingsBaseTest {
     Account account = anAccount().withCompanyName(HARNESS_NAME).build();
     wingsPersistence.save(account);
     assertThat(accountService.get(account.getUuid())).isEqualTo(account);
-    assertThat(accountService.listAllAccounts()).isNotEmpty();
+    assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
     assertThat(accountService.listHarnessSupportAccounts(Collections.emptySet())).isNotEmpty();
-    assertThat(accountService.listAllAccounts().get(0)).isNotNull();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo()).isNotEmpty();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo().get(0)).isNotNull();
-    assertThat(accountService.listAllAccountWithDefaultsWithoutLicenseInfo().get(0).getUuid())
-        .isEqualTo(account.getUuid());
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
+    assertThat(accountService.getAccountsWithBasicInfo(false)).isNotEmpty();
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0)).isNotNull();
+    assertThat(accountService.getAccountsWithBasicInfo(false).get(0).getUuid()).isEqualTo(account.getUuid());
     assertThat(accountService.listAllActiveAccounts()).isNotEmpty();
   }
 
@@ -1485,5 +1485,34 @@ public class AccountServiceTest extends WingsBaseTest {
     Account account = saveAccount(generateUuid());
     boolean updated = accountService.updateAccountPreference(account.getUuid(), "thisKeyDoesntExist", new Integer(2));
     assertThat(updated).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_checkIfMultipleAccountsExist() {
+    Account account = anAccount().withCompanyName(HARNESS_NAME).build();
+    wingsPersistence.save(account);
+    assertThat(accountService.doMultipleAccountsExist()).isEqualTo(false);
+    account = anAccount().withCompanyName("test").build();
+    wingsPersistence.save(account);
+    assertThat(accountService.doMultipleAccountsExist()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void test_listAllAccountsDTO() {
+    Account account = anAccount()
+                          .withCompanyName(HARNESS_NAME)
+                          .withAccountName("Account Name 1")
+                          .withAccountKey("ACCOUNT_KEY")
+                          .withDefaultExperience(DefaultExperience.CG)
+                          .withNextGenEnabled(true)
+                          .withGlobalDelegateAccount(false)
+                          .build();
+    wingsPersistence.save(account);
+    assertThat(accountService.getAllAccounts().get(0).getDefaultExperience()).isEqualTo(DefaultExperience.CG);
+    assertThat(accountService.getAllAccounts().get(0).getCompanyName()).isEqualTo(HARNESS_NAME);
   }
 }

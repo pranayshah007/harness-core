@@ -34,8 +34,8 @@ import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import retrofit2.HttpException;
 import retrofit2.Response;
-import retrofit2.adapter.rxjava.HttpException;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AzureAppServicesRuntimeExceptionHandlerTest extends CategoryTest {

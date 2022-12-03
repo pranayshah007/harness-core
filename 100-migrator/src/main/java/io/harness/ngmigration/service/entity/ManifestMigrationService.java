@@ -24,9 +24,7 @@ import io.harness.datacollection.utils.EmptyPredicate;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
-import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.filestore.FileUsage;
-import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideInfoConfig;
 import io.harness.ngmigration.beans.BaseProvidedInput;
@@ -40,7 +38,6 @@ import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
 import io.harness.ngmigration.client.TemplateClient;
-import io.harness.ngmigration.dto.ImportError;
 import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
@@ -77,10 +74,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
 import org.apache.commons.lang3.StringUtils;
-import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
@@ -176,34 +170,7 @@ public class ManifestMigrationService extends NgMigrationService {
   @Override
   public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
       TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
-    FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
-    RequestBody identifier = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getIdentifier());
-    RequestBody name = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getName());
-    RequestBody fileUsage = RequestBody.create(MediaType.parse("text/plain"), fileYamlDTO.getFileUsage());
-    RequestBody type = RequestBody.create(MediaType.parse("text/plain"), "FILE");
-    RequestBody parentIdentifier = RequestBody.create(MediaType.parse("text/plain"), "Root");
-    RequestBody mimeType = RequestBody.create(MediaType.parse("text/plain"), "txt");
-    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
-
-    Response<ResponseDTO<FileDTO>> resp = null;
-    try {
-      resp = ngClient
-                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
-                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
-                     mimeType)
-                 .execute();
-      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
-    } catch (IOException e) {
-      log.error("Failed to create file", e);
-      return MigrationImportSummaryDTO.builder()
-          .errors(
-              Collections.singletonList(ImportError.builder()
-                                            .message("There was an error creating the inline manifest in file store")
-                                            .entity(yamlFile.getCgBasicInfo())
-                                            .build()))
-          .build();
-    }
-    return handleResp(yamlFile, resp);
+    return migrateFile(auth, ngClient, inputDTO, yamlFile);
   }
 
   @Override

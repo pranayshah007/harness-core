@@ -7,16 +7,24 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.persistence.HQuery.excludeAuthorityCount;
+
+import static software.wings.beans.Application.ApplicationKeys;
+import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
+
 import io.harness.migrations.Migration;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 
 import com.google.inject.Inject;
-import java.util.List;
+import org.mongodb.morphia.query.Query;
 
 public class FetchAndSaveAccounts implements Migration {
   @Inject private AccountService accountService;
+  @Inject private WingsPersistence wingsPersistence;
 
   /**
    * licenseInfo was previously marked with @Transient in {@link Account} model.
@@ -28,9 +36,13 @@ public class FetchAndSaveAccounts implements Migration {
    */
   @Override
   public void migrate() {
-    List<Account> allAccounts = accountService.listAllAccounts();
-    for (Account account : allAccounts) {
-      accountService.update(account);
+    Query<Account> query =
+        wingsPersistence.createQuery(Account.class, excludeAuthorityCount).filter(ApplicationKeys.appId, GLOBAL_APP_ID);
+
+    try (HIterator<Account> allAccounts = new HIterator<>(query.fetch())) {
+      for (Account account : allAccounts) {
+        accountService.update(account);
+      }
     }
   }
 }

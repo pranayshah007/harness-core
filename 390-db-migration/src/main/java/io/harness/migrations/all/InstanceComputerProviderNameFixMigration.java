@@ -19,8 +19,8 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
@@ -32,24 +32,26 @@ public class InstanceComputerProviderNameFixMigration implements Migration {
   @Override
   public void migrate() {
     try {
-      List<Account> accounts = accountService.listAllAccounts();
+      Query<Account> query = accountService.getBasicAccountQuery();
 
-      for (Account account : accounts) {
-        log.info("Updating data for account:" + account.getAccountName());
-        try (HIterator<Instance> instanceRecords =
-                 new HIterator<Instance>(wingsPersistence.createQuery(Instance.class)
-                                             .filter(InstanceKeys.accountId, account.getUuid())
-                                             .field(InstanceKeys.computeProviderName)
-                                             .doesNotExist()
-                                             .fetch())) {
-          while (instanceRecords.hasNext()) {
-            Instance instance = instanceRecords.next();
-            SettingAttribute cloudProviderSetting = settingsService.get(instance.getComputeProviderId());
-            if (cloudProviderSetting != null) {
-              final UpdateOperations<Instance> operations =
-                  wingsPersistence.createUpdateOperations(Instance.class)
-                      .set(InstanceKeys.computeProviderName, cloudProviderSetting.getName());
-              wingsPersistence.update(instance, operations);
+      try (HIterator<Account> accounts = new HIterator<>(query.fetch())) {
+        for (Account account : accounts) {
+          log.info("Updating data for account:" + account.getAccountName());
+          try (HIterator<Instance> instanceRecords =
+                   new HIterator<Instance>(wingsPersistence.createQuery(Instance.class)
+                                               .filter(InstanceKeys.accountId, account.getUuid())
+                                               .field(InstanceKeys.computeProviderName)
+                                               .doesNotExist()
+                                               .fetch())) {
+            while (instanceRecords.hasNext()) {
+              Instance instance = instanceRecords.next();
+              SettingAttribute cloudProviderSetting = settingsService.get(instance.getComputeProviderId());
+              if (cloudProviderSetting != null) {
+                final UpdateOperations<Instance> operations =
+                    wingsPersistence.createUpdateOperations(Instance.class)
+                        .set(InstanceKeys.computeProviderName, cloudProviderSetting.getName());
+                wingsPersistence.update(instance, operations);
+              }
             }
           }
         }

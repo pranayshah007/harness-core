@@ -306,7 +306,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private String envName;
   private EnvironmentType envType;
   private WorkflowType workflowType;
-  @FdIndex private ExecutionStatus status;
+  private ExecutionStatus status;
   @Transient private Graph graph;
 
   @Transient private GraphNode executionNode; // used for workflow details.

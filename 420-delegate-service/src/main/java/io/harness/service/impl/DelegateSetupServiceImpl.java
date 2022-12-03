@@ -56,6 +56,7 @@ import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
 import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -86,7 +87,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateSetupServiceImpl implements DelegateSetupService {
+public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateConnectionDao delegateConnectionDao;
@@ -890,5 +891,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       }
     }
     return implicitTags;
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    persistence.delete(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.accountId, accountId));
   }
 }

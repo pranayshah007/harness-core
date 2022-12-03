@@ -42,8 +42,8 @@ func (_ *nunitConsoleRunner) AutoDetectPackages() ([]string, error) {
 	return []string{}, errors.New("not implemented")
 }
 
-func (b *nunitConsoleRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
-	return []types.RunnableTest{}, nil
+func (b *nunitConsoleRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
+	return GetCsharpTests(testGlobs)
 }
 
 func (b *nunitConsoleRunner) GetCmd(_ context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {

@@ -92,7 +92,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @OwnedBy(STO)
 public enum STOStepType {
-  AQUA_TRIVY("AquaTrivy", FeatureName.STO_STEP_PALETTE_V1, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
+  AQUA_TRIVY("AquaTrivy", FeatureName.STO_STEP_PALETTE_V2, AquaTrivyScanNode.class, EntityType.AQUA_TRIVY,
       new AquaTrivyStepPlanCreator(), new String[] {"Security"}),
   AWS_ECR("AWSECR", FeatureName.STO_STEP_PALETTE_V2, AwsEcrScanNode.class, EntityType.AWS_ECR,
       new AwsEcrStepPlanCreator(), new String[] {"Security"}),

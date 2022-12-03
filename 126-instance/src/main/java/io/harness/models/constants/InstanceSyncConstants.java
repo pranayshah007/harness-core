@@ -33,8 +33,6 @@ public final class InstanceSyncConstants {
   public static final int INTERVAL_MINUTES = 10;
   public static final int VALIDATION_TIMEOUT_MINUTES = 2;
   public static final String COUNT = "count";
-  public static final String FIRST_DOCUMENT = "firstDocument";
-  public static final String ROOT = "$$ROOT";
   public static final String PRIMARY_ARTIFACT_TAG = InstanceKeys.primaryArtifact + "." + ArtifactDetailsKeys.tag;
   public static final String PRIMARY_ARTIFACT_DISPLAY_NAME =
       InstanceKeys.primaryArtifact + "." + ArtifactDetailsKeys.displayName;

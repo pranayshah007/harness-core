@@ -17,7 +17,6 @@ import static io.harness.template.beans.NGTemplateConstants.STABLE_VERSION;
 import static io.harness.utils.RestCallToNGManagerClientUtils.execute;
 
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.accesscontrol.acl.api.Resource;
@@ -418,19 +417,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     try {
-      Optional<TemplateEntity> templateOptional = templateServiceHelper.getTemplate(
+      return templateServiceHelper.getTemplate(
           accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache);
-      if (templateOptional.isPresent() && StoreType.REMOTE.equals(templateOptional.get().getStoreType())) {
-        TemplateEntity templateEntity = templateOptional.get();
-
-        if (isNotBlank(templateEntity.getYaml())) {
-          applyTemplatesToYamlAndValidateSchema(templateEntity);
-          templateGitXService.performBasicValidationForRemoteTemplates(templateEntity.getOrgIdentifier(),
-              templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel(),
-              templateEntity.getName(), templateEntity.getYaml());
-        }
-      }
-      return templateOptional;
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
