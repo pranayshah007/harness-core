@@ -68,6 +68,7 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serializer.KryoSerializer;
@@ -452,8 +453,10 @@ public class ArtifactsStepV2 implements AsyncExecutableWithRbac<EmptyStepParamet
                                                               .getShellScriptBaseStepInfo()
                                                               .getSource()
                                                               .getSpec();
-      return !isEmpty(customScriptInlineSource.getScript().getValue().trim()) ? ACTION.CREATE_DELEGATE_TASK
-                                                                              : ACTION.RUN_SYNC;
+      return customScriptInlineSource != null && ParameterField.isNotNull(customScriptInlineSource.getScript())
+              && !isEmpty(customScriptInlineSource.getScript().getValue().trim())
+          ? ACTION.CREATE_DELEGATE_TASK
+          : ACTION.RUN_SYNC;
     }
   }
 
