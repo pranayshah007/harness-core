@@ -8,6 +8,7 @@
 package io.harness.cdng.environment.helper;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -15,6 +16,8 @@ import io.harness.cdng.environment.filters.Entity;
 import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.filters.TagsFilter;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -27,6 +30,8 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.utils.RetryUtils;
 
@@ -63,6 +68,8 @@ public class EnvironmentInfraFilterHelper {
   @Inject private ClusterService clusterService;
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentFilterHelper environmentFilterHelper;
+
+  @Inject private InfrastructureEntityService infrastructureEntityService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
@@ -293,5 +300,82 @@ public class EnvironmentInfraFilterHelper {
           "Filters are applied for environments, but no enviroments exists for the project");
     }
     return new HashSet<>(allEnvsInProject.getContent());
+  }
+
+  public Set<InfrastructureEntity> getInfrastructureForEnvironmentList(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    List<InfrastructureEntity> infrastructureEntityList =
+        infrastructureEntityService.getAllInfrastructureFromEnvIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+    return new HashSet<>(infrastructureEntityList);
+  }
+
+  public Set<InfrastructureEntity> processTagsFilterYamlForInfraStructures(
+      FilterYaml filterYaml, Set<InfrastructureEntity> infras) {
+    if (filterYaml.getType().name().equals(FilterType.all.name())) {
+      return infras;
+    }
+    // filter env that match all tags
+    Set<InfrastructureEntity> filteredInfras = new HashSet<>();
+    if (filterYaml.getType().equals(FilterType.tags)) {
+      TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
+      for (InfrastructureEntity infra : infras) {
+        if (applyMatchAllFilter(infra.getTags(), tagsFilter)) {
+          filteredInfras.add(infra);
+          continue;
+        }
+        if (applyMatchAnyFilter(infra.getTags(), tagsFilter)) {
+          filteredInfras.add(infra);
+          continue;
+        }
+        if (isSupportedFilter(tagsFilter)) {
+          throw new InvalidRequestException(
+              String.format("TagFilter of type [%s] is not supported", tagsFilter.getMatchType().name()));
+        }
+      }
+    }
+
+    return filteredInfras;
+  }
+
+  public Set<InfrastructureEntity> applyFilteringOnInfras(
+      Iterable<FilterYaml> filterYamls, Set<InfrastructureEntity> infras) {
+    Set<InfrastructureEntity> setOfFilteredInfras = new HashSet<>();
+
+    boolean filterOnInfraExists = false;
+    for (FilterYaml filterYaml : filterYamls) {
+      if (filterYaml.getEntities().contains(Entity.infrastructures)) {
+        filterOnInfraExists = true;
+        setOfFilteredInfras.addAll(processTagsFilterYamlForInfraStructures(filterYaml, infras));
+      }
+    }
+
+    if (!filterOnInfraExists) {
+      setOfFilteredInfras.addAll(infras);
+    }
+
+    if (isEmpty(setOfFilteredInfras) && filterOnInfraExists) {
+      log.info("No Environments are eligible for deployment due to applied filters");
+    }
+    return setOfFilteredInfras;
+  }
+
+  public boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
+    return isNotEmpty(environmentsYaml.getFilters().getValue())
+        || areFiltersSetOnIndividualEnvironments(environmentsYaml);
+  }
+
+  public boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
+    return isNotEmpty(envV2YamlsWithFilters);
+  }
+
+  public List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
+                                                        .getValue()
+                                                        .stream()
+                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
+                                                        .collect(Collectors.toList());
+    return envV2YamlsWithFilters;
   }
 }

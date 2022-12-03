@@ -39,7 +39,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(GITOPS)
@@ -75,7 +74,7 @@ public class EnvironmentsPlanCreatorHelper {
 
     Set<IndividualEnvData> listEnvData = new HashSet<>();
     // Apply Filters
-    if (areFiltersPresent(environmentsYaml)) {
+    if (environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
       // Process Environment level Filters
       Set<IndividualEnvData> envsLevelIndividualEnvData = new HashSet<>();
       Set<IndividualEnvData> individualEnvFiltering = new HashSet<>();
@@ -119,8 +118,9 @@ public class EnvironmentsPlanCreatorHelper {
       }
 
       // Process Individual environment level filters if they exist
-      if (areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
-        List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
+      if (environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+        List<EnvironmentYamlV2> envV2YamlsWithFilters =
+            environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml);
         List<String> envRefsWithFilters =
             envV2YamlsWithFilters.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
 
@@ -182,27 +182,6 @@ public class EnvironmentsPlanCreatorHelper {
         .projectIdentifier(projectIdentifier)
         .individualEnvDataList(new ArrayList<>(listEnvData))
         .build();
-  }
-
-  @NotNull
-  private static boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
-    return isNotEmpty(envV2YamlsWithFilters);
-  }
-
-  @NotNull
-  private static List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
-                                                        .getValue()
-                                                        .stream()
-                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
-                                                        .collect(Collectors.toList());
-    return envV2YamlsWithFilters;
-  }
-
-  private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
-    return isNotEmpty(environmentsYaml.getFilters().getValue())
-        || areFiltersSetOnIndividualEnvironments(environmentsYaml);
   }
 
   private void buildIndividualEnvDataList(String accountIdentifier, String orgIdentifier, String projectIdentifier,
