@@ -23,6 +23,7 @@ import io.harness.cdng.environment.filters.TagsFilter;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -175,7 +176,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     return FilterYaml.builder()
         .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
         .type(FilterType.tags)
-        .spec(TagsFilter.builder().matchType(MatchType.all).tags(Map.of("env", "dev")).build())
+        .spec(TagsFilter.builder()
+                  .matchType(MatchType.all)
+                  .tags(ParameterField.createValueField(Map.of("env", "dev")))
+                  .build())
         .build();
   }
 
@@ -183,7 +187,10 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     return FilterYaml.builder()
         .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
         .type(FilterType.tags)
-        .spec(TagsFilter.builder().matchType(MatchType.any).tags(Map.of("env", "dev", "env1", "dev1")).build())
+        .spec(TagsFilter.builder()
+                  .matchType(MatchType.any)
+                  .tags(ParameterField.createValueField(Map.of("env", "dev", "env1", "dev1")))
+                  .build())
         .build();
   }
 

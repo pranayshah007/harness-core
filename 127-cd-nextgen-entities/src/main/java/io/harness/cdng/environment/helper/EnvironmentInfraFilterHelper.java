@@ -122,12 +122,12 @@ public class EnvironmentInfraFilterHelper {
 
   private boolean applyMatchAnyFilter(List<NGTag> entityTags, TagsFilter tagsFilter) {
     return tagsFilter.getMatchType().name().equals(TAGFILTER_MATCHTYPE_ANY)
-        && areAnyTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags()));
+        && areAnyTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags().getValue()));
   }
 
   private boolean applyMatchAllFilter(List<NGTag> entityTags, TagsFilter tagsFilter) {
     return tagsFilter.getMatchType().name().equals(TAGFILTER_MATCHTYPE_ALL)
-        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags()));
+        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags().getValue()));
   }
 
   /**
