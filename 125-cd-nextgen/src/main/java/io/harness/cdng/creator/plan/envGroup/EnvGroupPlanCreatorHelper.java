@@ -15,6 +15,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
@@ -30,6 +31,7 @@ import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -61,6 +63,7 @@ public class EnvGroupPlanCreatorHelper {
   @Inject private EnvironmentService environmentService;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private ClusterService clusterService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
       PlanCreationContext ctx, EnvironmentGroupYaml envGroupYaml) {
@@ -90,7 +93,8 @@ public class EnvGroupPlanCreatorHelper {
     // Apply filtering based on provided filters on all environments and clusters in the envGroup
     // If no clusters are eligible then throw an exception.
 
-    if (isNotEmpty(envGroupYaml.getFilters().getValue())) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
+        && ParameterField.isNotNull(envGroupYaml.getFilters()) && isNotEmpty(envGroupYaml.getFilters().getValue())) {
       List<FilterYaml> filterYamls = envGroupYaml.getFilters().getValue();
 
       // Environment Filtering applied
@@ -149,7 +153,8 @@ public class EnvGroupPlanCreatorHelper {
         for (EnvironmentYamlV2 envV2Yaml : envV2Yamls) {
           Environment environment = envMapping.get(envV2Yaml.getEnvironmentRef().getValue());
 
-          if (isNotEmpty(envV2Yaml.getFilters().getValue())) {
+          if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
+              && isNotEmpty(envV2Yaml.getFilters().getValue())) {
             processFiltersForEachEnvironment(
                 accountIdentifier, orgIdentifier, projectIdentifier, envV2Yaml, envConfigs, environment);
           } else {

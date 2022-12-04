@@ -76,6 +76,11 @@ public class EnvironmentInfraFilterHelper {
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
   public boolean areAllTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
+    // Safety check, the list is
+    if (isEmpty(entityTags)) {
+      return false;
+    }
+
     int count = 0;
     for (NGTag tag : entityTags) {
       if (tagsInFilter.contains(tag)) {
@@ -86,6 +91,9 @@ public class EnvironmentInfraFilterHelper {
   }
 
   public boolean areAnyTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
+    if (isEmpty(entityTags)) {
+      return false;
+    }
     for (NGTag tag : entityTags) {
       if (tagsInFilter.contains(tag)) {
         return true;
@@ -101,12 +109,12 @@ public class EnvironmentInfraFilterHelper {
    * @return - List of filtered Environments
    */
   public Set<Environment> processTagsFilterYamlForEnvironments(FilterYaml filterYaml, Set<Environment> envs) {
-    if (filterYaml.getType().name().equals(FilterType.all.name())) {
+    if (FilterType.all.name().equals(filterYaml.getType().name())) {
       return envs;
     }
     // filter env that match all tags
     Set<Environment> filteredEnvs = new HashSet<>();
-    if (filterYaml.getType().equals(FilterType.tags)) {
+    if (FilterType.tags.equals(filterYaml.getType())) {
       TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
       for (Environment environment : envs) {
         if (applyMatchAllFilter(environment.getTags(), tagsFilter)) {
@@ -146,12 +154,12 @@ public class EnvironmentInfraFilterHelper {
    */
   public List<io.harness.cdng.gitops.entity.Cluster> processTagsFilterYamlForGitOpsClusters(FilterYaml filterYaml,
       Set<Cluster> clusters, Map<String, io.harness.cdng.gitops.entity.Cluster> ngGitOpsClusters) {
-    if (filterYaml.getType().name().equals(FilterType.all.name())) {
+    if (FilterType.all.name().equals(filterYaml.getType().name())) {
       return ngGitOpsClusters.values().stream().collect(Collectors.toList());
     }
 
     List<io.harness.cdng.gitops.entity.Cluster> filteredClusters = new ArrayList<>();
-    if (filterYaml.getType().equals(FilterType.tags)) {
+    if (FilterType.tags.equals(filterYaml.getType())) {
       TagsFilter tagsFilter = (TagsFilter) filterYaml.getSpec();
       for (Cluster cluster : clusters) {
         if (applyMatchAllFilter(TagMapper.convertToList(cluster.getTags()), tagsFilter)) {

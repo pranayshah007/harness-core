@@ -506,7 +506,9 @@ public enum FeatureName {
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
-  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC);
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
+  CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
+      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC);
 
   @Deprecated
   FeatureName() {

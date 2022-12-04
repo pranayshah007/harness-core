@@ -14,8 +14,12 @@ import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
 import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.ResourceTypeConstants;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
@@ -88,6 +92,7 @@ public class ArtifactResourceUtils {
   @Inject NexusResourceService nexusResourceService;
   @Inject GARResourceService garResourceService;
   @Inject ArtifactoryResourceService artifactoryResourceService;
+  @Inject AccessControlClient accessControlClient;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -260,6 +265,7 @@ public class ArtifactResourceUtils {
   @NotNull
   public ArtifactConfig locateArtifactInService(
       String accountId, String orgId, String projectId, String serviceRef, String imageTagFqn) {
+    String TEMPLATE_ACCESS_PERMISSION = "core_template_access";
     YamlNode artifactTagLeafNode =
         serviceEntityService.getYamlNodeForFqn(accountId, orgId, projectId, serviceRef, imageTagFqn);
 
@@ -276,6 +282,10 @@ public class ArtifactResourceUtils {
       if (isNotEmpty(templateRef)) {
         IdentifierRef templateIdentifier =
             IdentifierRefHelper.getIdentifierRef(templateRef, accountId, orgId, projectId);
+        accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, templateIdentifier.getOrgIdentifier(),
+                                                      templateIdentifier.getProjectIdentifier()),
+            Resource.of(ResourceTypeConstants.TEMPLATE, templateIdentifier.getIdentifier()),
+            TEMPLATE_ACCESS_PERMISSION);
         TemplateResponseDTO response = NGRestUtils.getResponse(
             templateResourceClient.get(templateIdentifier.getIdentifier(), templateIdentifier.getAccountIdentifier(),
                 templateIdentifier.getOrgIdentifier(), templateIdentifier.getProjectIdentifier(), versionLabel, false));

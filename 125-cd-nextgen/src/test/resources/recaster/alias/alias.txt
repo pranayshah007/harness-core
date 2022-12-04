@@ -340,7 +340,7 @@ io.harness.cdng.serverless.ServerlessAwsLambdaRollbackOutcome
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepNode
 io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters
-io.harness.cdng.serverless.ServerlessGitFetchOutcome
+io.harness.cdng.serverless.ServerlessFetchFileOutcome
 io.harness.cdng.serverless.ServerlessStepPassThroughData
 io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData
 io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome
@@ -603,6 +603,7 @@ io.harness.cdng.provision.terragrunt.TerragruntStepConfiguration
 io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters
 io.harness.cdng.provision.terragrunt.InlineTerragruntBackendConfigSpec
 io.harness.cdng.provision.terragrunt.RemoteTerragruntBackendConfigSpec
+io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
 io.harness.cdng.manifest.yaml.kinds.TasManifest
