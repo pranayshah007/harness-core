@@ -104,15 +104,15 @@ public class ServerlessAwsLambdaRollbackStepTest {
           .build();
   private final String manifestFileOverrideContent = "asfdasfd";
   private final Pair<String, String> manifestFilePathContent = Pair.of("a", "b");
-  private final ServerlessGitFetchOutcome serverlessGitFetchOutcome =
-      ServerlessGitFetchOutcome.builder()
+  private final ServerlessFetchFileOutcome serverlessFetchFileOutcome =
+      ServerlessFetchFileOutcome.builder()
           .manifestFilePathContent(manifestFilePathContent)
           .manifestFileOverrideContent(manifestFileOverrideContent)
           .build();
   private final OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
       OptionalSweepingOutput.builder().output(serverlessAwsLambdaRollbackDataOutcome).found(true).build();
-  private final OptionalSweepingOutput serverlessGitFetchOptionalOutput =
-      OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(true).build();
+  private final OptionalSweepingOutput serverlessFetchFileOptionalOutput =
+      OptionalSweepingOutput.builder().output(serverlessFetchFileOutcome).found(true).build();
 
   public static final String SERVERLESS_AWS_LAMBDA_ROLLBACK_COMMAND_NAME = "ServerlessAwsLambdaRollback";
 
@@ -178,8 +178,8 @@ public class ServerlessAwsLambdaRollbackStepTest {
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
   public void obtainTaskAfterRbacIfNoServerlessRollbackDataOptionalOutputTest() {
-    OptionalSweepingOutput serverlessGitFetchOptionalOutput =
-        OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(false).build();
+    OptionalSweepingOutput serverlessFetchFileOptionalOutput =
+        OptionalSweepingOutput.builder().output(serverlessFetchFileOutcome).found(false).build();
     OptionalSweepingOutput serverlessRollbackDataOptionalOutput =
         OptionalSweepingOutput.builder().output(serverlessAwsLambdaRollbackDataOutcome).found(false).build();
     doReturn(serverlessRollbackDataOptionalOutput)
@@ -188,12 +188,12 @@ public class ServerlessAwsLambdaRollbackStepTest {
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
                 + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
-    doReturn(serverlessGitFetchOptionalOutput)
+    doReturn(serverlessFetchFileOptionalOutput)
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+                + OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME));
     TaskRequest taskRequest =
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     SkipTaskRequest skipTaskRequest =
@@ -213,12 +213,12 @@ public class ServerlessAwsLambdaRollbackStepTest {
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
                 + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
-    doReturn(serverlessGitFetchOptionalOutput)
+    doReturn(serverlessFetchFileOptionalOutput)
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(
                 ((ServerlessAwsLambdaRollbackStepParameters) specParameters).getServerlessAwsLambdaRollbackFnq() + "."
-                + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+                + OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME));
     doReturn(infrastructureOutcome)
         .when(outcomeService)
         .resolve(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -227,8 +227,8 @@ public class ServerlessAwsLambdaRollbackStepTest {
         .when(serverlessStepCommonHelper)
         .getServerlessManifestOutcome(manifestsOutcome.values(), serverlessAwsLambdaStepHelper);
 
-    manifestParams.put("manifestFileOverrideContent", serverlessGitFetchOutcome.getManifestFileOverrideContent());
-    manifestParams.put("manifestFilePathContent", serverlessGitFetchOutcome.getManifestFilePathContent());
+    manifestParams.put("manifestFileOverrideContent", serverlessFetchFileOutcome.getManifestFileOverrideContent());
+    manifestParams.put("manifestFilePathContent", serverlessFetchFileOutcome.getManifestFilePathContent());
 
     doReturn(serverlessManifestConfig)
         .when(serverlessStepCommonHelper)
@@ -250,7 +250,7 @@ public class ServerlessAwsLambdaRollbackStepTest {
             .commandName(SERVERLESS_AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .manifestContent(serverlessGitFetchOutcome.getManifestFileOverrideContent())
+            .manifestContent(serverlessFetchFileOutcome.getManifestFileOverrideContent())
             .build();
 
     TaskRequest expectedTaskRequest = TaskRequest.newBuilder().build();

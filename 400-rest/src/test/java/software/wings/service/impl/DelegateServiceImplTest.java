@@ -152,6 +152,7 @@ import org.atmosphere.cpr.Broadcaster;
 import org.atmosphere.cpr.BroadcasterFactory;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -281,6 +282,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Owner(developers = ASHISHSANODIA)
   @Category(UnitTests.class)
   @HarnessAlwaysRun
+  @Ignore("CI-6355: TI team to follow up")
   public void shouldExecuteTaskV2() {
     Delegate delegate = createDelegateBuilder().build();
     persistence.save(delegate);
