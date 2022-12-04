@@ -406,70 +406,26 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     if (isNotEmpty(stageNode.getDeploymentStageConfig().getEnvironments())
         && environmentInfraFilterHelper.areFiltersPresent(stageNode.getDeploymentStageConfig().getEnvironments())) {
       EnvironmentsYaml environmentsYaml = stageConfig.getEnvironments();
-
+      List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
       if (environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
-        Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
-        if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
-          List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
-              accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml.getFilters().getValue());
-          envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
-        }
-
-        // Process filtering at individual Environment level
-        Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
-        if (environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
-          processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
-              individualEnvironmentYamlV2, environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml));
-        }
-
-        // Merge the two lists
-        List<EnvironmentYamlV2> mergedFilteredEnvs =
-            getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
-
-        // If there are envs in the filtered list and there are
-        // specific infras specific, pick the specified infras
-        List<EnvironmentYamlV2> finalyamlV2List =
-            getFinalEnvsList(environmentsYaml.getValues().getValue(), mergedFilteredEnvs);
-
-        // If same env then merge infradefs
-        if (isNotEmpty(environmentsYaml.getValues())) {
-          List<EnvironmentYamlV2> yamlV2List = environmentsYaml.getValues().getValue();
-          mergeInfraDefinitionsForSameEnvs(finalyamlV2List, yamlV2List);
-        }
-
-        // Set the filtered envYamlV2 in the environments yaml so normal processing continues
-        environmentsYaml.getValues().setValue(finalyamlV2List);
+        finalyamlV2List = processFilteringForEnvironmentsLevelFilters(
+            accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml);
       }
+      // Set the filtered envYamlV2 in the environments yaml so normal processing continues
+      environmentsYaml.getValues().setValue(finalyamlV2List);
     }
+
     // If deploying to environment group with filters
     if (isNotEmpty(stageConfig.getEnvironmentGroup())
         && (isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())
             || isNotEmpty(getEnvYamlV2WithFilters(stageConfig.getEnvironmentGroup())))) {
-      List<FilterYaml> filterYamls = stageConfig.getEnvironmentGroup().getFilters().getValue();
-
-      Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
-      if (isNotEmpty(filterYamls)) {
-        List<EnvironmentYamlV2> filteredEnvList =
-            processEnvironmentInfraFilters(accountIdentifier, orgIdentifier, projectIdentifier, filterYamls);
-        envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
-      }
-
       EnvironmentGroupYaml environmentGroupYaml = stageConfig.getEnvironmentGroup();
-      Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
-      if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
-        if (isNotEmpty(getEnvYamlV2WithFilters(environmentGroupYaml))) {
-          processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
-              individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentGroupYaml));
-        }
-      }
-
-      // Merge the two lists
-      List<EnvironmentYamlV2> mergedFilteredEnvs =
-          getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
 
       List<EnvironmentYamlV2> finalyamlV2List =
-          getFinalEnvsList(environmentGroupYaml.getEnvironments().getValue(), mergedFilteredEnvs);
+          processFilteringForEnvironmentGroupLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
+              environmentGroupYaml, stageConfig.getEnvironmentGroup().getFilters().getValue());
 
+      // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
       environmentGroupYaml.getEnvironments().setValue(finalyamlV2List);
     }
 
@@ -507,6 +463,60 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
+  }
+
+  @NotNull
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentsLevelFilters(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> finalyamlV2List;
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
+      List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml.getFilters().getValue());
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+    }
+
+    // Process filtering at individual Environment level
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
+    if (environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+      processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+          individualEnvironmentYamlV2, environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml));
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    // If there are envs in the filtered list and there are
+    // specific infras specific, pick the specified infras
+    finalyamlV2List = getFinalEnvsList(environmentsYaml.getValues().getValue(), mergedFilteredEnvs);
+
+    return finalyamlV2List;
+  }
+
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentGroupLevelFilters(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, EnvironmentGroupYaml environmentGroupYaml,
+      List<FilterYaml> filterYamls) {
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(filterYamls)) {
+      List<EnvironmentYamlV2> filteredEnvList =
+          processEnvironmentInfraFilters(accountIdentifier, orgIdentifier, projectIdentifier, filterYamls);
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+    }
+
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
+      if (isNotEmpty(getEnvYamlV2WithFilters(environmentGroupYaml))) {
+        processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+            individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentGroupYaml));
+      }
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    return getFinalEnvsList(environmentGroupYaml.getEnvironments().getValue(), mergedFilteredEnvs);
   }
 
   @NotNull
