@@ -508,7 +508,10 @@ public enum FeatureName {
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
   CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
   CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
-      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC);
+      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC),
+
+  CDS_TERRAFORM_S3_SUPPORT(
+      "Enable support for S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
