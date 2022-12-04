@@ -42,14 +42,18 @@ import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 import io.harness.subscription.utils.NGFeatureFlagHelperService;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,25 +67,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final StripeCustomerRepository stripeCustomerRepository;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
+  private final TelemetryReporter telemetryReporter;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
   private final String deployMode = System.getenv().get("DEPLOY_MODE");
+
   private static final String EDITION_CHECK_FAILED =
       "Cannot create a subscription of %s edition. An active subscription of %s edition already exists.";
   private static final String QUANTITY_GREATER_THAN_MAX =
       "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
+  private static final String SUBSCRIPTION = "subscription";
 
   @Inject
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
-      NGFeatureFlagHelperService nGFeatureFlagHelperService, Map<String, StripeEventHandler> eventHandlers) {
+      NGFeatureFlagHelperService nGFeatureFlagHelperService, TelemetryReporter telemetryReporter,
+      Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
     this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
+    this.telemetryReporter = telemetryReporter;
     this.eventHandlers = eventHandlers;
   }
 
@@ -161,6 +170,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
+    // the module for telemetry event is hard-coded as CF. This method createFfSubscription will be deprecated for
+    // a generic createSubscription where the module won't be hardcoded
+    sendTelemetryEvent("Subscription Creation Initiated", null, accountIdentifier, ModuleType.CF.toString());
+
     isSelfServiceEnable();
 
     // TODO: transaction control in case any race condition
@@ -269,6 +282,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
+    sendTelemetryEvent(
+        "Subscription Creation Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+
     isSelfServiceEnable();
 
     // TODO: transaction control in case any race condition
@@ -317,6 +333,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Override
   public SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO) {
+    sendTelemetryEvent(
+        "Subscription Modification Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+
     isSelfServiceEnable();
 
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
@@ -341,6 +360,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
       throw new InvalidRequestException("Invalid subscriptionId");
     }
+
+    sendTelemetryEvent(
+        "Subscription Cancellation Initiated", null, accountIdentifier, subscriptionDetail.getModuleType().toString());
 
     stripeHelper.cancelSubscription(
         SubscriptionParams.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
@@ -540,5 +562,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (deployMode.equals("KUBERNETES_ONPREM")) {
       throw new UnsupportedOperationException("Self Service is not available for OnPrem deployments.");
     }
+  }
+
+  private void sendTelemetryEvent(String event, String email, String accountId, String module) {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("module", module);
+    telemetryReporter.sendTrackEvent(event, email, accountId, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), SUBSCRIPTION);
   }
 }

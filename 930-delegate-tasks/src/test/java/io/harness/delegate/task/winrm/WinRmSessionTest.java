@@ -71,6 +71,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -82,7 +83,6 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @OwnedBy(CDP)
 public class WinRmSessionTest extends CategoryTest {
   private static final String SCRIPT_EXEC_COMMAND = "powershell -f file.ps1";
-  @Mock private SshHelperUtils sshHelperUtils;
   @Mock private Writer writer;
   @Mock private Writer error;
   @Mock private LogCallback logCallback;
@@ -318,25 +318,10 @@ public class WinRmSessionTest extends CategoryTest {
     ShellCommand shell = mock(ShellCommand.class);
     WinRmTool winRmTool = mock(WinRmTool.class);
     io.harness.delegate.task.winrm.PyWinrmArgs pyWinrmArgs = mock(io.harness.delegate.task.winrm.PyWinrmArgs.class);
-    setupMocks(commands, shell, winRmTool, pyWinrmArgs);
+    setupMocks(commands, shell, winRmTool, pyWinrmArgs, AuthenticationScheme.KERBEROS);
 
     winRmSession.executeCommandsList(commandsList, writer, error, false, "executeCommand");
     assertThat(commandsList.get(commandsList.size() - 1).get(1)).isEqualTo("executeCommand");
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
-  public void testExecuteCommandsListV2WithScriptExecCommandKerberos() throws JSchException, IOException {
-    List<String> commands = new ArrayList<>();
-    commands.add("command");
-    ShellCommand shell = mock(ShellCommand.class);
-    WinRmTool winRmTool = mock(WinRmTool.class);
-    io.harness.delegate.task.winrm.PyWinrmArgs pyWinrmArgs = mock(io.harness.delegate.task.winrm.PyWinrmArgs.class);
-    setupMocks(commands, shell, winRmTool, pyWinrmArgs);
-
-    winRmSession.executeCommandsListV2(commands, writer, error, false, SCRIPT_EXEC_COMMAND, true);
-    assertThat(commands.get(1)).isEqualTo(SCRIPT_EXEC_COMMAND);
   }
 
   @Test
@@ -349,7 +334,7 @@ public class WinRmSessionTest extends CategoryTest {
     ShellCommand shell = mock(ShellCommand.class);
     WinRmTool winRmTool = mock(WinRmTool.class);
 
-    setupMocks(commands, shell, winRmTool, null);
+    setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
     winRmSession.executeCommandsList(commandsList, writer, error, false, "executeCommand");
     verify(winRmTool).executeCommand(commands);
@@ -359,16 +344,60 @@ public class WinRmSessionTest extends CategoryTest {
   @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
-  public void testExecuteCommandsListV2WithScriptExecCommand() throws JSchException, IOException {
+  public void testExecuteCopyScriptToRemote() throws JSchException, IOException {
     List<String> commands = Collections.singletonList("command");
     ShellCommand shell = mock(ShellCommand.class);
     WinRmTool winRmTool = mock(WinRmTool.class);
 
-    setupMocks(commands, shell, winRmTool, null);
+    setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
-    winRmSession.executeCommandsListV2(commands, writer, error, false, SCRIPT_EXEC_COMMAND, true);
-    verify(shell).execute("command", writer, error);
-    verify(shell).execute(SCRIPT_EXEC_COMMAND, writer, error);
+    winRmSession.copyScriptToRemote(commands, writer, error);
+    verify(winRmTool).executeCommand("command");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteCopyScriptToRemoteKerberos() throws JSchException, IOException {
+    List<String> commands = new ArrayList<>();
+    commands.add("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+    io.harness.delegate.task.winrm.PyWinrmArgs pyWinrmArgs = mock(io.harness.delegate.task.winrm.PyWinrmArgs.class);
+    setupMocks(commands, shell, winRmTool, pyWinrmArgs, AuthenticationScheme.KERBEROS);
+
+    WinRmSession spy = spy(winRmSession);
+    spy.copyScriptToRemote(commands, writer, error);
+    verify(spy).executeCommandWithKerberos("command", writer, false);
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteScript() throws JSchException, IOException {
+    List<String> commands = Collections.singletonList("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+
+    setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
+
+    winRmSession.executeScript(SCRIPT_EXEC_COMMAND, writer, error);
+    verify(winRmTool).executeCommand("powershell -f file.ps1 -OutputFormat Text");
+  }
+
+  @Test
+  @Owner(developers = BOJAN)
+  @Category(UnitTests.class)
+  public void testExecuteScriptWithKerberos() throws JSchException, IOException {
+    List<String> commands = Collections.singletonList("command");
+    ShellCommand shell = mock(ShellCommand.class);
+    WinRmTool winRmTool = mock(WinRmTool.class);
+    io.harness.delegate.task.winrm.PyWinrmArgs pyWinrmArgs = mock(io.harness.delegate.task.winrm.PyWinrmArgs.class);
+    setupMocks(commands, shell, winRmTool, pyWinrmArgs, AuthenticationScheme.KERBEROS);
+
+    WinRmSession spy = spy(winRmSession);
+    spy.executeScript(SCRIPT_EXEC_COMMAND, writer, error);
+    verify(spy).executeCommandWithKerberos("powershell -f file.ps1", writer, false);
   }
 
   @Test
@@ -381,25 +410,11 @@ public class WinRmSessionTest extends CategoryTest {
     ShellCommand shell = mock(ShellCommand.class);
     WinRmTool winRmTool = mock(WinRmTool.class);
 
-    setupMocks(commands, shell, winRmTool, null);
+    setupMocks(commands, shell, winRmTool, null, AuthenticationScheme.NTLM);
 
     winRmSession.executeCommandsList(commandsList, writer, error, false, null);
     verify(winRmTool).executeCommand(commands);
     verifyZeroInteractions(shell);
-  }
-
-  @Test
-  @Owner(developers = BOJAN)
-  @Category(UnitTests.class)
-  public void testExecuteCommandsListV2WithoutScriptExecCommand() throws JSchException, IOException {
-    List<String> commands = Collections.singletonList("command");
-    ShellCommand shell = mock(ShellCommand.class);
-    WinRmTool winRmTool = mock(WinRmTool.class);
-
-    setupMocks(commands, shell, winRmTool, null);
-
-    winRmSession.executeCommandsListV2(commands, writer, error, false, null, false);
-    verify(shell).execute("command", writer, error);
   }
 
   @Test
@@ -449,29 +464,38 @@ public class WinRmSessionTest extends CategoryTest {
             KERBEROS_CACHE_NAME_ENV, format("%s:%s", FILE_CACHE_TYPE, sessionConfig.getSessionCacheFilePath())));
   }
 
-  private void setupMocks(List<String> commands, ShellCommand shell, WinRmTool winRmTool, PyWinrmArgs pyWinrmArgs)
-      throws JSchException {
+  private void setupMocks(List<String> commands, ShellCommand shell, WinRmTool winRmTool, PyWinrmArgs pyWinrmArgs,
+      AuthenticationScheme authenticationScheme) throws JSchException {
     WinRmClientBuilder winRmClientBuilder = spy(WinRmClient.builder("http://localhost"));
-    PowerMockito.mockStatic(SshHelperUtils.class);
     PowerMockito.mockStatic(WinRmClient.class);
-    WinRmClient winRmClient = mock(WinRmClient.class);
+    try (MockedStatic<SshHelperUtils> mockStatic = Mockito.mockStatic(SshHelperUtils.class)) {
+      mockStatic.when(() -> SshHelperUtils.executeLocalCommand(any(), any(), any(), anyBoolean(), any()))
+          .thenReturn(true);
 
-    when(WinRmClient.builder(anyString())).thenAnswer(invocationOnMock -> winRmClientBuilder);
-    doReturn(winRmClient).when(winRmClientBuilder).build();
-    when(winRmClient.createShell()).thenReturn(shell);
-    winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
-                             .skipCertChecks(true)
-                             .username("TestUser")
-                             .password("password")
-                             .environment(new HashMap<>())
-                             .hostname("localhost")
-                             .workingDirectory("workingDirectory")
-                             .authenticationScheme(AuthenticationScheme.NTLM)
-                             .build();
-    winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
-    on(winRmSession).set("args", pyWinrmArgs);
-    on(winRmSession).set("shell", shell);
-    on(winRmSession).set("winRmTool", winRmTool);
-    when(winRmTool.executeCommand(commands)).thenReturn(new WinRmToolResponse("", "", 0));
+      mockStatic.when(() -> SshHelperUtils.generateTGT(any(), any(), any(), any(), any()))
+          .thenAnswer((Answer<Void>) invocation -> null);
+
+      WinRmClient winRmClient = mock(WinRmClient.class);
+
+      when(WinRmClient.builder(anyString())).thenAnswer(invocationOnMock -> winRmClientBuilder);
+      doReturn(winRmClient).when(winRmClientBuilder).build();
+      when(winRmClient.createShell()).thenReturn(shell);
+      winRmSessionConfig = io.harness.delegate.task.winrm.WinRmSessionConfig.builder()
+                               .skipCertChecks(true)
+                               .username("TestUser")
+                               .password("password")
+                               .domain("test.domain")
+                               .environment(new HashMap<>())
+                               .hostname("localhost")
+                               .workingDirectory("workingDirectory")
+                               .authenticationScheme(authenticationScheme)
+                               .build();
+      winRmSession = new WinRmSession(winRmSessionConfig, logCallback);
+      on(winRmSession).set("args", pyWinrmArgs);
+      on(winRmSession).set("shell", shell);
+      on(winRmSession).set("winRmTool", winRmTool);
+      when(winRmTool.executeCommand(commands)).thenReturn(new WinRmToolResponse("", "", 0));
+      when(winRmTool.executeCommand(any(String.class))).thenReturn(new WinRmToolResponse("", "", 0));
+    }
   }
 }

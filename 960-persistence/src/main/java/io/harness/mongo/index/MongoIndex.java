@@ -29,19 +29,11 @@ public interface MongoIndex {
   List<String> getFields();
 
   default void checks(Logger log) {
-    if (getFields().size() == 1 && !getFields().get(0).contains(".")) {
-      log.error("Composite index with only one field {}", getFields().get(0));
-    }
-
     getFields().forEach(a -> {
       if (getFields().stream().filter(b -> a.equals(b)).count() > 1) {
         throw new Error(format("Index %s has field %s more than once", getName(), a));
       }
     });
-
-    if (isUnique() && !getName().startsWith("unique")) {
-      log.error("Index {} is unique indexes and its name is not prefixed with unique", getName());
-    }
   }
 
   default BasicDBObject buildBasicDBObject(String id) {

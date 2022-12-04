@@ -8,8 +8,16 @@
 package io.harness.ci.serializer.vm;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_ENV_PREFIX;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -21,6 +29,7 @@ import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.reports.JUnitTestReport;
 import io.harness.beans.yaml.extended.reports.UnitTestReportType;
 import io.harness.ci.buildstate.ConnectorUtils;
+import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.SerializerUtils;
@@ -43,6 +52,9 @@ import io.harness.yaml.core.timeout.Timeout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -99,6 +111,7 @@ public class VmPluginStepSerializer {
   private VmPluginStep convertContainerStep(Ambiance ambiance, String identifier, String image,
       String connectorIdentifier, Map<String, String> envVars, long timeout, StageInfraDetails stageInfraDetails,
       PluginStepInfo pluginStepInfo) {
+    setEnvVariablesForHostedCachingSteps(stageInfraDetails, identifier, envVars);
     VmPluginStepBuilder pluginStepBuilder =
         VmPluginStep.builder().image(image).envVariables(envVars).timeoutSecs(timeout);
 
@@ -146,5 +159,28 @@ public class VmPluginStepSerializer {
       }
     }
     return stepBuilder.build();
+  }
+
+  private void setEnvVariablesForHostedCachingSteps(
+      StageInfraDetails stageInfraDetails, String identifier, Map<String, String> envVarMap) {
+    if (stageInfraDetails != null && stageInfraDetails.getType() == StageInfraDetails.Type.DLITE_VM) {
+      switch (identifier) {
+        case SAVE_CACHE_STEP_ID:
+        case RESTORE_CACHE_STEP_ID:
+          CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
+          try {
+            String cacheKeyString = new String(Files.readAllBytes(Paths.get(cacheIntelligenceConfig.getServiceKey())));
+            envVarMap.put(PLUGIN_JSON_KEY, cacheKeyString);
+          } catch (IOException e) {
+            log.error("Cannot read storage key file for Cache Intelligence steps");
+          }
+          envVarMap.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
+          envVarMap.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
+          envVarMap.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
+          break;
+        default:
+          break;
+      }
+    }
   }
 }

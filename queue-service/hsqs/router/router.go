@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/harness/harness-core/queue-service/hsqs/config"
+	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -42,6 +43,9 @@ func New(config *config.Config) *echo.Echo {
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
 	e.Use(middleware.JWTWithConfig(jwtConfig))
+
+	p := prometheus.NewPrometheus("echo", urlSkipperFunc)
+	p.Use(e)
 
 	return e
 }
@@ -76,7 +80,23 @@ func skipperFunc(c echo.Context) bool {
 		return true
 	} else if strings.Contains(c.Request().URL.Path, "healthz") {
 		return true
+	} else if strings.Contains(c.Request().URL.Path, "metrics") {
+		return true
 	} else if strings.Contains(c.Request().URL.Path, "queue") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "pprof") {
+		return true
+	}
+	return false
+}
+
+// skip url from prometheus metrics
+func urlSkipperFunc(c echo.Context) bool {
+	if strings.Contains(c.Request().URL.Path, "swagger") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "healthz") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "pprof") {
 		return true
 	}
 	return false

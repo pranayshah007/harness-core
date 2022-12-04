@@ -93,7 +93,7 @@ public class ExecutionInterrupt implements PersistentEntity, UuidAware, CreatedA
   private String envId;
   @NotNull @FdIndex private String executionUuid;
   @FdIndex private String stateExecutionInstanceId;
-  @FdIndex private String accountId;
+  private String accountId;
 
   private Map<String, Object> properties;
 

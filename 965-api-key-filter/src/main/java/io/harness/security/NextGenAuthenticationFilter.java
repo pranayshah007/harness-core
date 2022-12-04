@@ -10,6 +10,7 @@ package io.harness.security;
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
 
@@ -24,17 +25,21 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.token.remote.TokenClient;
+import io.harness.util.JWTTokenFlowAuthFilterUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -57,7 +62,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   public static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String delimiter = "\\.";
 
-  private TokenClient tokenClient;
+  private final TokenClient tokenClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
@@ -73,17 +78,21 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       // Predicate testing failed with the current request context
       return;
     }
-
+    boolean isScimCall = isScimAPI();
     Optional<String> apiKeyOptional =
-        isScimAPI() ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
+        isScimCall ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
 
     if (apiKeyOptional.isPresent()) {
       Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(containerRequestContext);
-      if (!accountIdentifierOptional.isPresent()) {
+      if (accountIdentifierOptional.isEmpty()) {
         throw new InvalidRequestException("Account detail is not present in the request");
       }
       String accountIdentifier = accountIdentifierOptional.get();
-      validateApiKey(accountIdentifier, apiKeyOptional.get());
+      if (isJWTTokenTypeCheck(accountIdentifier, apiKeyOptional.get())) {
+        validateApiKeyForJwt(accountIdentifier, apiKeyOptional.get(), isScimCall);
+      } else {
+        validateApiKey(accountIdentifier, apiKeyOptional.get());
+      }
     } else {
       super.filter(containerRequestContext);
     }
@@ -92,7 +101,6 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private boolean isScimAPI() {
     Class<?> resourceClass = resourceInfo.getResourceClass();
     Method resourceMethod = resourceInfo.getResourceMethod();
-
     return resourceMethod.getAnnotation(ScimAPI.class) != null || resourceClass.getAnnotation(ScimAPI.class) != null;
   }
 
@@ -110,13 +118,24 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
         checkIfApiKeyHasExpired(tokenId, tokenDTO);
         Principal principal = getPrincipal(tokenDTO);
-        SecurityContextBuilder.setContext(principal);
+        io.harness.security.SecurityContextBuilder.setContext(principal);
         SourcePrincipalContextBuilder.setSourcePrincipal(principal);
       } else {
         logAndThrowTokenException(String.format("Invalid API token %s: Token not found", tokenId), INVALID_TOKEN);
       }
     } else {
       logAndThrowTokenException("Invalid API token: Token is Empty", INVALID_TOKEN);
+    }
+  }
+
+  private void validateApiKeyForJwt(String accountIdentifier, String apiKey, boolean isScimCall) {
+    if (isScimCall) {
+      handleSCIMJwtTokenFlow(accountIdentifier, apiKey);
+    } else {
+      logAndThrowTokenException(
+          "NG_SCIM_JWT: Invalid API call: Externally issued JWT token can be only used for making SCIM API calls. Account id for API called: "
+              + accountIdentifier,
+          INVALID_REQUEST);
     }
   }
 
@@ -224,5 +243,45 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private boolean isNewApiKeyToken(String[] splitToken) {
     return splitToken.length == 4;
+  }
+
+  private Principal getPrincipalFromServiceAccountDto(ServiceAccountDTO serviceAccountDto) {
+    return new ServiceAccountPrincipal(serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(),
+        serviceAccountDto.getEmail(), serviceAccountDto.getAccountIdentifier());
+  }
+
+  private void handleSCIMJwtTokenFlow(String accountIdentifier, String jwtToken) {
+    List<SettingResponseDTO> settingsResponse =
+        JWTTokenFlowAuthFilterUtils.getSettingListResponseByAccountForSCIMAndJWT(accountIdentifier, tokenClient);
+    final String[] settingsStringValues =
+        JWTTokenFlowAuthFilterUtils.getSettingsStringValuesArrayFromListDTO(settingsResponse, accountIdentifier);
+
+    String publicKeysJsonString =
+        JWTTokenFlowAuthFilterUtils.getPublicKeysJsonStringFromUrl(accountIdentifier, settingsStringValues[2]);
+    JWTTokenFlowAuthFilterUtils.validateJwtTokenAndMatchClaimKeyValue(
+        jwtToken, settingsStringValues[0], settingsStringValues[1], publicKeysJsonString, accountIdentifier);
+
+    ServiceAccountDTO serviceAccountDTO = JWTTokenFlowAuthFilterUtils.getServiceAccountByIdAndAccountId(
+        settingsStringValues[3], accountIdentifier, tokenClient);
+
+    if (null != serviceAccountDTO) {
+      log.info(String.format(
+          "NG_SCIM_JWT: Service account details successfully fetched for account: %s, with ServiceAccount Id: %s",
+          accountIdentifier, serviceAccountDTO.getIdentifier()));
+
+      // set ServicePrincipal in SecurityContext for Harness internal authorization
+      Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
+      io.harness.security.SecurityContextBuilder.setContext(servicePrincipal);
+      SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
+
+      log.info(String.format(
+          "NG_SCIM_JWT: Security context set with ServicePrincipal id: %s, for SCIM request using externally issued JWT token in account: %s",
+          servicePrincipal.getName(), accountIdentifier));
+    }
+  }
+
+  private boolean isJWTTokenTypeCheck(String accountIdentifier, String token) {
+    String[] splitToken = token.split(delimiter);
+    return splitToken.length == 3 && JWTTokenFlowAuthFilterUtils.isJWTTokenType(splitToken, accountIdentifier);
   }
 }

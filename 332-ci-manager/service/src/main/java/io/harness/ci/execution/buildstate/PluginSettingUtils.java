@@ -718,17 +718,18 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
 
     final String connectorRef = stepInfo.getConnectorRef().getValue();
-    String repoName = stepInfo.getRepoName().getValue();
-    Pair<String, String> buildEnvVar = getBuildEnvVar(stepInfo);
+    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
 
+    String repoName = stepInfo.getRepoName().getValue();
     // Overwrite all codebase env variables by setting to blank
     map.putAll(getBlankCodebaseEnvVars());
 
     map.putAll(getSslVerifyEnvVars(stepInfo.getSslVerify()));
-    map.putAll(getGitEnvVars(connectorRef, repoName, ambiance));
-    map.putAll(getBuildEnvVars(buildEnvVar));
+    map.putAll(getGitEnvVars(gitConnector, repoName));
+    map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
-    map.putAll(getPluginDepthEnvVars(stepInfo.getDepth(), buildEnvVar));
+    map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
 
     return map;
   }
@@ -751,22 +752,34 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private Map<String, String> getGitEnvVars(String connectorRef, String repoName, Ambiance ambiance) {
-    // Get the Git Connector
-    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
-
+  private Map<String, String> getGitEnvVars(ConnectorDetails gitConnector, String repoName) {
     // Get the Git Connector Reference environment variables
     return codebaseUtils.getGitEnvVariables(gitConnector, repoName);
   }
 
-  private static Map<String, String> getBuildEnvVars(Pair<String, String> buildEnvVar) {
+  private Map<String, String> getBuildEnvVars(
+      Ambiance ambiance, ConnectorDetails gitConnector, GitCloneStepInfo gitCloneStepInfo) {
+    final String identifier = gitCloneStepInfo.getIdentifier();
+    final String type = gitCloneStepInfo.getStepType().getType();
+    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
+    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
     Map<String, String> map = new HashMap<>();
-    if (buildEnvVar != null) {
-      String type = buildEnvVar.getKey();
-      setMandatoryEnvironmentVariable(map, type, buildEnvVar.getValue());
-      if (DRONE_TAG.equals(type)) {
-        setMandatoryEnvironmentVariable(map, DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
+
+    if (buildTypeAndValue != null) {
+      switch (buildTypeAndValue.getKey()) {
+        case BRANCH:
+          setMandatoryEnvironmentVariable(map, DRONE_COMMIT_BRANCH, buildTypeAndValue.getValue());
+          break;
+        case TAG:
+          setMandatoryEnvironmentVariable(map, DRONE_TAG, buildTypeAndValue.getValue());
+          setMandatoryEnvironmentVariable(map, DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
+          break;
+        case PR:
+          map.putAll(codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector));
+          break;
+        default:
+          throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
+              buildTypeAndValue.getKey(), type, identifier));
       }
     } else {
       throw new CIStageExecutionException("Build environment variables are null");
@@ -811,60 +824,17 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private static Map<String, String> getPluginDepthEnvVars(
-      ParameterField<Integer> depthParameter, Pair<String, String> buildEnvVar) {
+  private static Map<String, String> getPluginDepthEnvVars(ParameterField<Integer> depthParameter) {
     Map<String, String> map = new HashMap<>();
-    Integer depth = null;
+    Integer depth = GIT_CLONE_MANUAL_DEPTH;
     if (depthParameter != null && depthParameter.getValue() != null) {
       depth = depthParameter.getValue();
-    } else {
-      if (buildEnvVar != null && isNotEmpty(buildEnvVar.getValue())) {
-        depth = GIT_CLONE_MANUAL_DEPTH;
-      }
     }
     if (depth != null && depth != 0) {
       String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase();
       map.put(pluginDepthKey, depth.toString());
     }
     return map;
-  }
-
-  /**
-   * Get Build Env variable - branch or tag
-   *
-   * @param gitCloneStepInfo gitCloneStepInfo
-   * @return a pair containing whether the build is configured for a branch or tag, and the value of the branch or tag
-   */
-  private static Pair<String, String> getBuildEnvVar(GitCloneStepInfo gitCloneStepInfo) {
-    final String identifier = gitCloneStepInfo.getIdentifier();
-    final String type = gitCloneStepInfo.getStepType().getType();
-    Pair<String, String> buildEnvVar = null;
-    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
-
-    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
-    if (buildTypeAndValue != null) {
-      final String buildValue = buildTypeAndValue.getValue();
-      switch (buildTypeAndValue.getKey()) {
-        case BRANCH:
-          if (isNotEmpty(buildValue)) {
-            buildEnvVar = new ImmutablePair<>(DRONE_COMMIT_BRANCH, buildValue);
-          } else {
-            throw new CIStageExecutionException("Branch should not be empty for branch build type");
-          }
-          break;
-        case TAG:
-          if (isNotEmpty(buildValue)) {
-            buildEnvVar = new ImmutablePair<>(DRONE_TAG, buildValue);
-          } else {
-            throw new CIStageExecutionException("Tag should not be empty for tag build type");
-          }
-          break;
-        default:
-          throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
-              buildTypeAndValue.getKey(), type, identifier));
-      }
-    }
-    return buildEnvVar;
   }
 
   private static Pair<BuildType, String> getBuildTypeAndValue(Build build) {

@@ -219,6 +219,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.delegatetasks.collect.artifacts.AzureArtifactsCollectionTaskParameters;
 import software.wings.delegatetasks.cv.DataCollectionException;
+import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionResponse;
@@ -1007,5 +1008,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformSecretCleanupTaskResponse.class, 40117);
     kryo.register(TerraformSecretCleanupFailureException.class, 40118);
     kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
+    kryo.register(RateLimitExceededException.class, 50027);
   }
 }

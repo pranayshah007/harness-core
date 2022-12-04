@@ -80,6 +80,10 @@ aeriform("//300-cv-nextgen:module")
 
 aeriform("//300-cv-nextgen:tests")
 
+aeriform("//310-iacm-manager:module")
+
+aeriform("//311-iacm-utilities:module")
+
 aeriform("//315-sto-manager:module")
 
 aeriform("//315-sto-manager:tests")

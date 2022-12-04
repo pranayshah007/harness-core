@@ -260,7 +260,7 @@ public class WorkflowMigrationService extends NgMigrationService {
             .filename("workflows/" + name + ".yaml")
             .yaml(NGTemplateConfig.builder()
                       .templateInfoConfig(NGTemplateInfoConfig.builder()
-                                              .type(workflowHandler.getTemplateType())
+                                              .type(workflowHandler.getTemplateType(workflow))
                                               .identifier(identifier)
                                               .name(name)
                                               .description(ParameterField.createValueField(description))

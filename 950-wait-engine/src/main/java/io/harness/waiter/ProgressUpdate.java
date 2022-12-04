@@ -68,4 +68,5 @@ public class ProgressUpdate implements WaitEngineEntity, CreatedAtAccess {
   long expireProcessing;
 
   @Default @FdTtlIndex @NonFinal @Wither Date validUntil = Date.from(OffsetDateTime.now().plus(TTL).toInstant());
+  private boolean usingKryoWithoutReference;
 }

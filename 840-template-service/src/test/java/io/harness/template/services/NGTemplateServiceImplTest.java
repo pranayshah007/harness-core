@@ -238,7 +238,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
     Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
@@ -654,8 +654,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
-    Optional<TemplateEntity> optionalTemplateEntity =
-        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);

@@ -16,6 +16,8 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.LOG_ANALYSIS_SAVE_PAT
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_ANALYSIS_URL;
 import static io.harness.cvng.analysis.CVAnalysisConstants.PREVIOUS_LOG_ANALYSIS_PATH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TEST_DATA_PATH;
+import static io.harness.cvng.core.utils.FeatureFlagNames.SRM_LOG_HOST_SAMPLING_ENABLE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -46,7 +48,9 @@ import io.harness.cvng.analysis.services.api.LogClusterService;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.LogCVConfig;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.CVConfigService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.utils.DateTimeUtils;
@@ -54,6 +58,7 @@ import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.AnalysisProgressLog;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ProgressLog;
@@ -65,6 +70,7 @@ import com.google.inject.Inject;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -73,6 +79,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.mongodb.morphia.query.FindOptions;
@@ -89,6 +96,8 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private HostRecordService hostRecordService;
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
+
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public String scheduleServiceGuardLogAnalysisTask(AnalysisInput input) {
@@ -123,7 +132,13 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
 
   @Override
   public String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput) {
-    LogAnalysisLearningEngineTask task = createLogCanaryAnalysisLearningEngineTask(analysisInput);
+    VerificationTask verificationTask = verificationTaskService.get(analysisInput.getVerificationTaskId());
+    LogAnalysisLearningEngineTask task;
+    if (featureFlagService.isFeatureFlagEnabled(verificationTask.getAccountId(), SRM_LOG_HOST_SAMPLING_ENABLE)) {
+      task = createLogCanaryAnalysisLearningEngineTask_v2(analysisInput);
+    } else {
+      task = createLogCanaryAnalysisLearningEngineTask(analysisInput);
+    }
     log.info("Scheduling LogCanaryAnalysisLearningEngineTask {}", task);
     return learningEngineTaskService.createLearningEngineTask(task);
   }
@@ -174,6 +189,107 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
     return task;
   }
 
+  private LogAnalysisLearningEngineTask createLogCanaryAnalysisLearningEngineTask_v2(AnalysisInput input) {
+    String taskId = generateUuid();
+    Set<String> controlHosts = new HashSet<>();
+    Set<String> testHosts = new HashSet<>();
+    if (isNotEmpty(input.getControlHosts())) {
+      controlHosts = input.getControlHosts();
+    }
+    if (isNotEmpty(input.getTestHosts())) {
+      testHosts = input.getTestHosts();
+    }
+    String verificationJobInstanceId =
+        verificationTaskService.getVerificationJobInstanceId(input.getVerificationTaskId());
+    Optional<TimeRange> preDeploymentTimeRange =
+        verificationJobInstanceService.getPreDeploymentTimeRange(verificationJobInstanceId);
+    VerificationJobInstance verificationJobInstance =
+        verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId);
+    LogAnalysisLearningEngineTask task = null;
+    if (preDeploymentTimeRange.isPresent()) {
+      task = CanaryLogAnalysisLearningEngineTask.builder()
+                 .controlHosts(getControlHosts(input.getVerificationTaskId(), preDeploymentTimeRange.get()))
+                 .build();
+      task.setControlDataUrl(createDeploymentDataUrl(input.getVerificationTaskId(),
+          preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime()));
+      task = CanaryLogAnalysisLearningEngineTask.builder().controlHosts(controlHosts).testHosts(testHosts).build();
+      task.setControlDataUrl(
+          getControlDataUrlForDeploymentLog(input, verificationJobInstance, verificationJobInstance.getResolvedJob()));
+      task.setAnalysisType(LearningEngineTaskType.LOG_ANALYSIS);
+      TestVerificationJob testVerificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
+      String baselineVerificationJobInstanceId = testVerificationJob.getBaselineVerificationJobInstanceId();
+      task = TestLogAnalysisLearningEngineTask.builder().build();
+      task.setAnalysisType(LearningEngineTaskType.TEST_LOG_ANALYSIS);
+      if (baselineVerificationJobInstanceId != null) {
+        VerificationJobInstance baselineVerificationJobInstance =
+            verificationJobInstanceService.getVerificationJobInstance(baselineVerificationJobInstanceId);
+        Optional<String> baselineVerificationTaskId = verificationTaskService.findBaselineVerificationTaskId(
+            input.getVerificationTaskId(), verificationJobInstance);
+        task.setControlDataUrl(baselineVerificationTaskId.isPresent()
+                ? createDeploymentDataUrl(baselineVerificationTaskId.get(),
+                    baselineVerificationJobInstance.getStartTime(), baselineVerificationJobInstance.getEndTime())
+                : null);
+      }
+    }
+    task.setPreviousAnalysisUrl(
+        getPreviousAnalysisUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
+    task.setTestDataUrl(
+        createDeploymentDataUrl(input.getVerificationTaskId(), input.getStartTime(), input.getEndTime()));
+    task.setTestDataUrl(getTestDataUrlForDeploymentLog(input));
+    task.setAnalysisStartTime(input.getStartTime());
+    task.setVerificationTaskId(input.getVerificationTaskId());
+    task.setFailureUrl(learningEngineTaskService.createFailureUrl(taskId));
+    task.setAnalysisEndTime(input.getEndTime());
+    task.setAnalysisEndEpochMinute(DateTimeUtils.instantToEpochMinute(input.getEndTime()));
+    task.setAnalysisSaveUrl(createDeploymentAnalysisSaveUrl(taskId));
+    task.setUuid(taskId);
+    return task;
+  }
+
+  private String getControlDataUrlForDeploymentLog(
+      AnalysisInput analysisInput, VerificationJobInstance verificationJobInstance, VerificationJob verificationJob) {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
+    uriBuilder.addParameter("verificationTaskId", analysisInput.getVerificationTaskId());
+    if (isNotEmpty(analysisInput.getControlHosts())) {
+      uriBuilder.addParameter("hosts", String.join(",", analysisInput.getControlHosts()));
+    } else {
+      uriBuilder.addParameter("hosts", "");
+    }
+    if (analysisInput.getLearningEngineTaskType().equals(LearningEngineTaskType.CANARY_DEPLOYMENT_LOG)) {
+      uriBuilder.addParameter(LogAnalysisRecordKeys.analysisStartTime,
+          Long.toString(verificationJobInstance.getStartTime().toEpochMilli()));
+      uriBuilder.addParameter(
+          LogAnalysisRecordKeys.analysisEndTime, Long.toString(analysisInput.getEndTime().toEpochMilli()));
+    } else if (analysisInput.getLearningEngineTaskType().equals(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_LOG)) {
+      Optional<TimeRange> preDeploymentTimeRange =
+          verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
+      Preconditions.checkState(preDeploymentTimeRange.isPresent(),
+          "Pre-deployment time range is empty for canary analysis task. This should not happen");
+      uriBuilder.addParameter(LogAnalysisRecordKeys.analysisStartTime,
+          Long.toString(preDeploymentTimeRange.get().getStartTime().toEpochMilli()));
+      uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime,
+          Long.toString(preDeploymentTimeRange.get().getEndTime().toEpochMilli()));
+    }
+    return getUriString(uriBuilder);
+  }
+
+  private String getTestDataUrlForDeploymentLog(AnalysisInput input) {
+    URIBuilder uriBuilder = new URIBuilder();
+    uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + TEST_DATA_PATH);
+    uriBuilder.addParameter("verificationTaskId", input.getVerificationTaskId());
+    uriBuilder.addParameter(
+        LogAnalysisRecordKeys.analysisStartTime, Long.toString(input.getStartTime().toEpochMilli()));
+    uriBuilder.addParameter(LogAnalysisRecordKeys.analysisEndTime, Long.toString(input.getEndTime().toEpochMilli()));
+
+    if (isNotEmpty(input.getTestHosts())) {
+      uriBuilder.addParameter("hosts", String.join(",", input.getTestHosts()));
+    } else {
+      uriBuilder.addParameter("hosts", "");
+    }
+    return getUriString(uriBuilder);
+  }
+
   private String getPreviousAnalysisUrl(String verificationTaskId, Instant startTime, Instant endTime) {
     URIBuilder uriBuilder = new URIBuilder();
     uriBuilder.setPath(SERVICE_BASE_URL + "/" + LOG_ANALYSIS_RESOURCE + "/" + PREVIOUS_ANALYSIS_URL);
@@ -201,6 +317,17 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
       String verificationTaskId, Instant analysisStartTime, Instant analysisEndTime) {
     return logClusterService.getClusteredLogData(
         verificationTaskId, analysisStartTime, analysisEndTime, LogClusterLevel.L2);
+  }
+
+  @Override
+  public List<LogClusterDTO> getTestDataForDeploymentLog(
+      String verificationTaskId, Instant analysisStartTime, Instant analysisEndTime, String commaSeparatedHosts) {
+    Set<String> hostSet = new HashSet<>();
+    if (commaSeparatedHosts != null) {
+      hostSet = Arrays.stream(commaSeparatedHosts.split(",")).collect(Collectors.toSet());
+    }
+    return logClusterService.getClusteredLogDataForDeploymentLog(
+        verificationTaskId, analysisStartTime, analysisEndTime, LogClusterLevel.L2, hostSet);
   }
 
   @Override

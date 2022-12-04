@@ -19,10 +19,11 @@ import lombok.experimental.UtilityClass;
 public class CustomRequestResponseMapper {
   public CustomArtifactDelegateResponse toCustomArtifactDelegateResponse(
       BuildDetails buildDetails, CustomArtifactDelegateRequest attributeRequest) {
+    String version = attributeRequest.getVersion() != null ? attributeRequest.getVersion() : buildDetails.getNumber();
     return CustomArtifactDelegateResponse.builder()
         .buildDetails(ArtifactBuildDetailsMapper.toBuildDetailsNG(buildDetails))
         .sourceType(ArtifactSourceType.CUSTOM_ARTIFACT)
-        .version(attributeRequest.getVersion() != null ? attributeRequest.getVersion() : buildDetails.getNumber())
+        .version(version)
         .metadata(buildDetails.getMetadata())
         .build();
   }

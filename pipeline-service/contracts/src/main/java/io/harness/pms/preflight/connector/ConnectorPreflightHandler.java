@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Singleton
@@ -144,38 +145,59 @@ public class ConnectorPreflightHandler {
       String projectIdentifier, Map<Scope, List<String>> scopeToConnectorIdentifiers) {
     List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
     if (scopeToConnectorIdentifiers.containsKey(Scope.ACCOUNT)) {
-      PageResponse<ConnectorResponseDTO> response =
-          NGRestUtils.getResponse(connectorResourceClient.listConnectors(accountIdentifier, null, null, PAGE, SIZE,
-                                      ConnectorFilterPropertiesDTO.builder()
-                                          .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.ACCOUNT))
-                                          .build(),
-                                      false),
-              "Could not get connector response for account: " + accountIdentifier + " after {} attempts.");
-      connectorResponses.addAll(response.getContent());
+      connectorResponses =
+          getConnectorResponsesFromNgManager(accountIdentifier, null, null, scopeToConnectorIdentifiers, Scope.ACCOUNT);
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.ORG)) {
-      PageResponse<ConnectorResponseDTO> response = NGRestUtils.getResponse(
-          connectorResourceClient.listConnectors(accountIdentifier, orgIdentifier, null, PAGE, SIZE,
-              ConnectorFilterPropertiesDTO.builder()
-                  .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.ORG))
-                  .build(),
-              false),
-          "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
-              + " after {} attempts.");
-      connectorResponses.addAll(response.getContent());
+      connectorResponses = getConnectorResponsesFromNgManager(
+          accountIdentifier, orgIdentifier, null, scopeToConnectorIdentifiers, Scope.ORG);
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.PROJECT)) {
-      PageResponse<ConnectorResponseDTO> response = NGRestUtils.getResponse(
-          connectorResourceClient.listConnectors(accountIdentifier, orgIdentifier, projectIdentifier, PAGE, SIZE,
-              ConnectorFilterPropertiesDTO.builder()
-                  .connectorIdentifiers(scopeToConnectorIdentifiers.get(Scope.PROJECT))
-                  .build(),
-              false),
-          "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
-              + ", project: " + projectIdentifier + " after {} attempts.");
-      connectorResponses.addAll(response.getContent());
+      connectorResponses = getConnectorResponsesFromNgManager(
+          accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers, Scope.PROJECT);
     }
     return connectorResponses;
+  }
+
+  @VisibleForTesting
+  List<ConnectorResponseDTO> getConnectorResponsesFromNgManager(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Map<Scope, List<String>> scopeToConnectorIdentifiers, Scope scope) {
+    List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
+    long currentPage = 0;
+    long totalPages = 0;
+    do {
+      PageResponse<ConnectorResponseDTO> response =
+          NGRestUtils.getResponse(connectorResourceClient.listConnectors(accountIdentifier, orgIdentifier,
+                                      projectIdentifier, Integer.parseInt(Long.toString(currentPage)), SIZE,
+                                      ConnectorFilterPropertiesDTO.builder()
+                                          .connectorIdentifiers(scopeToConnectorIdentifiers.get(scope))
+                                          .build(),
+                                      false),
+              getErrorMessage(accountIdentifier, orgIdentifier, projectIdentifier));
+
+      if (response == null || response.getTotalItems() == 0) {
+        break;
+      }
+
+      connectorResponses.addAll(response.getContent());
+      totalPages = response.getTotalPages();
+      currentPage++;
+    } while (currentPage < totalPages);
+    return connectorResponses;
+  }
+
+  @NotNull
+  @VisibleForTesting
+  String getErrorMessage(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    if (orgIdentifier == null) {
+      return "Could not get connector response for account: " + accountIdentifier + " after {} attempts.";
+    } else if (projectIdentifier == null) {
+      return "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
+          + " after {} attempts.";
+    } else {
+      return "Could not get connector response for account: " + accountIdentifier + ", org: " + orgIdentifier
+          + ", project: " + projectIdentifier + " after {} attempts.";
+    }
   }
 
   public List<ConnectorCheckResponse> getConnectorCheckResponse(Map<String, Object> fqnToObjectMapMergedYaml,

@@ -42,7 +42,10 @@ Parameters:
     Default: false
     Type: String
     AllowedValues: [true, false]
-
+  CommitmentOrchestratorEnabled:
+    Default: false
+    Type: String
+    AllowedValues: [ true, false ]
 Conditions:
   CreatingHarnessBillingMonitoringPolicy: !Equals 
     - !Ref BillingEnabled
@@ -55,6 +58,9 @@ Conditions:
     - true
   CreateHarnessGovernancePolicy: !Equals 
     - !Ref GovernanceEnabled
+    - true
+  CreateHarnessCommitmentOrchestratorPolicy: !Equals
+    - !Ref CommitmentOrchestratorEnabled
     - true
 Resources:
   HarnessCloudFormationRole:
@@ -299,5 +305,32 @@ Resources:
                   - s3:Get*
                   - s3:List* 
                 Resource: "*"
+      Roles:
+        - !Ref HarnessCloudFormationRole
+  HarnessCommitmentOrchestratorPolicy:
+    Type: 'AWS::IAM::ManagedPolicy'
+    Condition: CreateHarnessCommitmentOrchestratorPolicy
+    Properties:
+      Description: Policy granting Harness Access to Enable Commitment Orchestrator
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - 'ec2:ModifyReservedInstances'
+              - 'ec2:GetReservedInstancesExchangeQuote'
+              - 'ec2:AcceptReservedInstancesExchangeQuote'
+              - 'ec2:DescribeReservedInstancesOfferings'
+              - 'ec2:DescribeReservedInstances'
+              - 'ec2:DescribeReservedInstancesModifications'
+              - 'ec2:DescribeInstanceTypeOfferings'
+              - 'ec2:PurchaseReservedInstancesOffering'
+              - 'ce:GetSavingsPlansCoverage'
+              - 'ce:GetReservationCoverage'
+              - 'ce:GetSavingsPlansUtilization'
+              - 'ce:GetDimensionValues'
+              - 'ce:GetReservationUtilization'
+              - 'ce:GetSavingsPlansUtilizationDetails'
+            Resource: '*'
       Roles:
         - !Ref HarnessCloudFormationRole

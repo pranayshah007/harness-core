@@ -12,7 +12,9 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.utils.NGYamlUtils;
+import io.harness.ngmigration.beans.FileYamlDTO;
 import io.harness.ngmigration.beans.MigrationInputDTO;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
@@ -42,10 +44,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import retrofit2.Response;
 
 @Slf4j
 public abstract class NgMigrationService {
+  private static final MediaType TEXT_PLAIN = MediaType.parse("text/plain");
+
   @Inject MigratorMappingService migratorMappingService;
 
   public abstract MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile);
@@ -164,5 +170,37 @@ public abstract class NgMigrationService {
                 .entity(yamlFile.getCgBasicInfo())
                 .build()))
         .build();
+  }
+
+  protected MigrationImportSummaryDTO migrateFile(
+      String auth, NGClient ngClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    FileYamlDTO fileYamlDTO = (FileYamlDTO) yamlFile.getYaml();
+    RequestBody identifier = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getIdentifier());
+    RequestBody name = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getName());
+    RequestBody fileUsage = RequestBody.create(TEXT_PLAIN, fileYamlDTO.getFileUsage());
+    RequestBody type = RequestBody.create(TEXT_PLAIN, "FILE");
+    RequestBody parentIdentifier = RequestBody.create(TEXT_PLAIN, "Root");
+    RequestBody mimeType = RequestBody.create(TEXT_PLAIN, "txt");
+    RequestBody content = RequestBody.create(MediaType.parse("application/octet-stream"), fileYamlDTO.getContent());
+
+    Response<ResponseDTO<FileDTO>> resp;
+    try {
+      resp = ngClient
+                 .createFileInFileStore(auth, inputDTO.getAccountIdentifier(), inputDTO.getOrgIdentifier(),
+                     inputDTO.getProjectIdentifier(), content, name, identifier, fileUsage, type, parentIdentifier,
+                     mimeType)
+                 .execute();
+      log.info("Connector creation Response details {} {}", resp.code(), resp.message());
+    } catch (IOException e) {
+      log.error("Failed to create file", e);
+      return MigrationImportSummaryDTO.builder()
+          .errors(
+              Collections.singletonList(ImportError.builder()
+                                            .message("There was an error creating the inline manifest in file store")
+                                            .entity(yamlFile.getCgBasicInfo())
+                                            .build()))
+          .build();
+    }
+    return handleResp(yamlFile, resp);
   }
 }

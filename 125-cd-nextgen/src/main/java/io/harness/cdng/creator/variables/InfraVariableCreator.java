@@ -139,10 +139,25 @@ public class InfraVariableCreator {
           addVariablesForElastigroupInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.TAS:
+          addVariablesForTASInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
     }
+  }
+
+  private void addVariablesForTASInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.ORG, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.SPACE, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariablesForKubernetesInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {

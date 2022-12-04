@@ -9,7 +9,7 @@ package io.harness.plan;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 
 import lombok.experimental.UtilityClass;
 

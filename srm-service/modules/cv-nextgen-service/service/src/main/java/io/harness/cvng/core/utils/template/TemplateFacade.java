@@ -7,6 +7,8 @@
 
 package io.harness.cvng.core.utils.template;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
@@ -28,7 +30,8 @@ public class TemplateFacade {
   public String resolveYaml(ProjectParams projectParams, String yaml) {
     TemplateMergeResponseDTO templateMergeResponseDTO =
         NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(projectParams.getAccountIdentifier(),
-            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), null, null, null, false,
+            projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), null, null, null,
+            BOOLEAN_FALSE_VALUE,
             TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(false).build()));
     String resolvedYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     return getResolvedYamlWithInputTemplateMerged(resolvedYaml, yaml);

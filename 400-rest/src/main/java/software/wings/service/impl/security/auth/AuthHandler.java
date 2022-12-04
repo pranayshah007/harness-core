@@ -1809,7 +1809,7 @@ public class AuthHandler {
 
   public UserGroup buildDefaultAdminUserGroup(String accountId, User user) {
     AccountPermissions accountPermissions =
-        AccountPermissions.builder().permissions(getAllAccountPermissions()).build();
+        AccountPermissions.builder().permissions(getDefaultEnabledAccountPermissions()).build();
 
     Set<AppPermission> appPermissions = Sets.newHashSet();
     AppPermission appPermission = AppPermission.builder()
@@ -1961,6 +1961,14 @@ public class AuthHandler {
         MANAGE_SECRET_MANAGERS, MANAGE_AUTHENTICATION_SETTINGS, MANAGE_IP_WHITELIST, MANAGE_DEPLOYMENT_FREEZES,
         MANAGE_PIPELINE_GOVERNANCE_STANDARDS, MANAGE_API_KEYS, MANAGE_CUSTOM_DASHBOARDS, CREATE_CUSTOM_DASHBOARDS,
         MANAGE_SSH_AND_WINRM, MANAGE_RESTRICTED_ACCESS, HIDE_NEXTGEN_BUTTON);
+  }
+
+  public Set<PermissionType> getDefaultEnabledAccountPermissions() {
+    Set<PermissionType> allAccountPermissions = getAllAccountPermissions();
+    Set<PermissionType> disabledPermissions = Sets.newHashSet(HIDE_NEXTGEN_BUTTON);
+    return allAccountPermissions.stream()
+        .filter(permission -> !disabledPermissions.contains(permission))
+        .collect(Collectors.toSet());
   }
 
   private Set<Action> getAllActions() {

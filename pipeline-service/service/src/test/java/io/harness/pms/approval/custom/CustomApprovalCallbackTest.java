@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -69,15 +70,22 @@ import java.util.HashMap;
 import java.util.Map;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.CDC)
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({CustomApprovalCallback.class, ShellScriptHelperService.class})
 public class CustomApprovalCallbackTest extends CategoryTest {
+  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private ShellScriptHelperService shellScriptHelperService;
@@ -265,6 +273,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackNonFatalException() {
+    mockStatic(ShellScriptHelperService.class);
     Map<String, Object> outputVars = ImmutableMap.of("Status", "status");
     CustomApprovalInstance instance =
         CustomApprovalInstance.builder()
@@ -295,8 +304,9 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             .build();
 
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
-    when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
-        .thenReturn(ShellScriptOutcome.builder().outputVariables(null).build());
+    when(ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
+        .thenAnswer(
+            (Answer<ShellScriptOutcome>) invocation -> ShellScriptOutcome.builder().outputVariables(null).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     assertThatThrownBy(() -> customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build())))
         .isInstanceOf(HarnessCustomApprovalException.class)

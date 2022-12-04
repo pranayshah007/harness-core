@@ -58,11 +58,8 @@ public class ActivityServiceImpl implements ActivityService {
   }
 
   @Override
-  public Activity getByVerificationJobInstanceId(String verificationJobInstanceId) {
-    return hPersistence.createQuery(Activity.class, excludeAuthority)
-        .field(ActivityKeys.verificationJobInstanceIds)
-        .contains(verificationJobInstanceId)
-        .get();
+  public List<Activity> getByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams) {
+    return createQuery(monitoredServiceParams).asList();
   }
 
   @Override
@@ -180,10 +177,15 @@ public class ActivityServiceImpl implements ActivityService {
         }
         hPersistence.save(activity);
       }
-      log.info("Registered  an activity of type {} for account {}, project {}, org {}", activity.getType(),
+      log.info("Registered an activity of type {} for account {}, project {}, org {}", activity.getType(),
           activity.getAccountId(), activity.getProjectIdentifier(), activity.getOrgIdentifier());
       return activity.getUuid();
     }
+  }
+
+  @Override
+  public boolean deleteByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams) {
+    return hPersistence.delete(createQuery(monitoredServiceParams));
   }
 
   private Query<Activity> createQuery(MonitoredServiceParams monitoredServiceParams) {

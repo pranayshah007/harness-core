@@ -18,4 +18,5 @@ public class Application {
   String identifier;
   String name;
   String agentIdentifier;
+  String url;
 }

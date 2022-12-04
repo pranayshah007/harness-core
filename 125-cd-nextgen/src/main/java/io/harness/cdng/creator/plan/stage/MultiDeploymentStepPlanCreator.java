@@ -12,6 +12,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
@@ -31,6 +32,10 @@ public class MultiDeploymentStepPlanCreator {
       throw new InvalidRequestException("Invalid use of strategy field. Please check");
     }
     StepParameters stepParameters = metadata.getMultiDeploymentStepParameters();
+    // Returning expressionMode = RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED, because multiDeployment planNode might have
+    // service inputs and those can be execution time input. So those will be converted to expressions that can be
+    // resolved at execution time. Passing this expressionMode will make sure that expression remain as is if not
+    // resolved instead of null during the stepParameters resolution.
     return PlanNode.builder()
         .uuid(multiDeploymentNodeId)
         .identifier(metadata.getStrategyNodeIdentifier())
@@ -38,6 +43,7 @@ public class MultiDeploymentStepPlanCreator {
         .group(StepOutcomeGroup.STRATEGY.name())
         .name(metadata.getStrategyNodeName())
         .stepParameters(stepParameters)
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())

@@ -7,6 +7,14 @@
 
 package io.harness.ngmigration.service.workflow;
 
+import static io.harness.beans.OrchestrationWorkflowType.BASIC;
+import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
+import static io.harness.beans.OrchestrationWorkflowType.CUSTOM;
+import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
+import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
+import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
+
+import io.harness.beans.OrchestrationWorkflowType;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ngmigration.service.step.StepMapperFactory;
 
@@ -19,10 +27,15 @@ import software.wings.service.impl.yaml.handler.workflow.CanaryWorkflowYamlHandl
 import software.wings.yaml.workflow.CanaryWorkflowYaml;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import java.util.List;
+import java.util.Set;
 
 public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
+  private static final Set<OrchestrationWorkflowType> ROLLING_WORKFLOW_TYPES =
+      Sets.newHashSet(BASIC, BLUE_GREEN, ROLLING);
+
   @Inject CanaryWorkflowYamlHandler canaryWorkflowYamlHandler;
   @Inject private StepMapperFactory stepMapperFactory;
 
@@ -41,8 +54,12 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public TemplateEntityType getTemplateType() {
-    return TemplateEntityType.PIPELINE_TEMPLATE;
+  public TemplateEntityType getTemplateType(Workflow workflow) {
+    OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    if (ROLLING_WORKFLOW_TYPES.contains(workflowType) || CUSTOM == workflowType) {
+      return STAGE_TEMPLATE;
+    }
+    return PIPELINE_TEMPLATE;
   }
 
   @Override
@@ -72,6 +89,13 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
+    OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
+    if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
+      return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
+    }
+    if (workflowType == CUSTOM) {
+      return getCustomStageTemplateSpec(workflow, stepMapperFactory);
+    }
     return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
   }
 

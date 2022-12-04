@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.InstancesTestBase;
 import io.harness.category.element.UnitTests;
-import io.harness.ng.core.entities.Project;
+import io.harness.models.InstanceStats;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
 import io.harness.rule.Owner;
 
@@ -34,21 +34,18 @@ public class InstanceStatsServiceImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLastSnapshotTimeTestIfRecordReturnedNotNull() throws Exception {
-    Timestamp timestamp = Timestamp.valueOf("2012-07-07 01:01:01");
-    Project project =
-        Project.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).identifier(PROJECT_ID).build();
-    when(instanceStatsRepository.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID)).thenReturn(timestamp);
-    assertThat(instanceStatsService.getLastSnapshotTime(project)).isEqualTo(timestamp.toInstant());
+  public void getLastSnapshotTimeTestIfRecordReturnedNotNull() {
+    InstanceStats instanceStats = InstanceStats.builder().reportedAt(Timestamp.valueOf("2012-07-07 01:01:01")).build();
+    when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(instanceStats);
+    assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID))
+        .isEqualTo(instanceStats.getReportedAt().toInstant());
   }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getLastSnapshotTimeTestIfRecordReturnedNull() throws Exception {
-    Project project =
-        Project.builder().accountIdentifier(ACCOUNT_ID).orgIdentifier(ORG_ID).identifier(PROJECT_ID).build();
-    when(instanceStatsRepository.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID)).thenReturn(null);
-    assertThat(instanceStatsService.getLastSnapshotTime(project)).isNull();
+  public void getLastSnapshotTimeTestIfRecordReturnedNull() {
+    when(instanceStatsRepository.getLatestRecord(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).thenReturn(null);
+    assertThat(instanceStatsService.getLastSnapshotTime(ACCOUNT_ID, ORG_ID, PROJECT_ID, SERVICE_ID)).isNull();
   }
 }

@@ -35,7 +35,7 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public TemplateEntityType getTemplateType() {
+  public TemplateEntityType getTemplateType(Workflow workflow) {
     return TemplateEntityType.PIPELINE_TEMPLATE;
   }
 

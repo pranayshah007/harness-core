@@ -9,7 +9,7 @@ package io.harness.ngtriggers.beans.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.metadata.ErrorMetadataDTO;
+import io.harness.exception.ngexception.ErrorMetadataDTO;
 import io.harness.ngtriggers.Constants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

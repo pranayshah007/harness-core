@@ -110,7 +110,7 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
         + "spec:\n"
         + "  pipeline: \"childPipeline\"\n"
         + "  org: \"org\"\n"
-        + "  pipelineInputs: \n"
+        + "  inputs: \n"
         + "     dummy: dummy\n"
         + "  inputSetReferences: \n"
         + "     - ref1\n"
@@ -118,7 +118,10 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
 
     pipelineStageYamlField = YamlUtils.injectUuidInYamlField(yamlFieldWithoutSpec);
     FilterCreationContext filterCreationContextCase2 =
-        FilterCreationContext.builder().currentField(pipelineStageYamlField).build();
+        FilterCreationContext.builder()
+            .setupMetadata(SetupMetadata.newBuilder().setAccountId("acc").setOrgId("org").setProjectId("org").build())
+            .currentField(pipelineStageYamlField)
+            .build();
 
     assertThatThrownBy(()
                            -> pipelineStageFilterCreator.handleNode(filterCreationContextCase2,
