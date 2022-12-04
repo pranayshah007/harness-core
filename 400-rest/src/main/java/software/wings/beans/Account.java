@@ -599,7 +599,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
     private boolean globalDelegateAccount;
-    private Boolean smpAccount;
+    private boolean isSmpAccount;
 
     private Builder() {}
 
@@ -638,7 +638,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
     }
 
     public Builder withSmpAccount(Boolean isSmpAccount) {
-      this.smpAccount = isSmpAccount;
+      this.isSmpAccount = isSmpAccount;
       return this;
     }
 
@@ -810,7 +810,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
           .withIsProductLed(isProductLed)
-          .withSmpAccount(smpAccount)
+          .withSmpAccount(isSmpAccount)
           .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
@@ -847,7 +847,7 @@ public class Account extends Base implements PersistentRegularIterable, NGMigrat
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
       account.setProductLed(isProductLed);
-      account.setIsSmpAccount(smpAccount);
+      account.setSmpAccount(isSmpAccount);
       account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
