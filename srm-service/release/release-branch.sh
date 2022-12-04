@@ -65,8 +65,9 @@ echo "INFO: Step 8: Checking $BASE_BRANCH and current branch are the same"
 check_branch_name "${BASE_BRANCH}"
 
 echo "INFO: Step 9: Checking for Not Merged Hot Fixes in BASE_BRANCH."
+export CURRENT_BRANCH=[${BASE_BRANCH:0:1}]${BASE_BRANCH:1}
 git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/${BASE_BRANCH} --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > base.txt
+git log --remotes=origin/$CURRENT_BRANCH --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > base.txt
 
 NOT_MERGED=$(comm -23 release.txt base.txt)
 
