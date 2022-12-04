@@ -78,7 +78,7 @@ public class EnvironmentsPlanCreatorHelper {
     Set<IndividualEnvData> listEnvData = new HashSet<>();
     // Apply Filters
     if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
-        && areFiltersPresent(environmentsYaml)) {
+        && environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
       // Process Environment level Filters
       Set<IndividualEnvData> envsLevelIndividualEnvData = new HashSet<>();
       Set<IndividualEnvData> individualEnvFiltering = new HashSet<>();
@@ -122,7 +122,8 @@ public class EnvironmentsPlanCreatorHelper {
       }
 
       // Process Individual environment level filters if they exist
-      if (environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+      if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
+          && environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
         List<EnvironmentYamlV2> envV2YamlsWithFilters =
             environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml);
         List<String> envRefsWithFilters =
@@ -186,26 +187,6 @@ public class EnvironmentsPlanCreatorHelper {
         .projectIdentifier(projectIdentifier)
         .individualEnvDataList(new ArrayList<>(listEnvData))
         .build();
-  }
-
-  @NotNull
-  private static boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
-    return isNotEmpty(envV2YamlsWithFilters);
-  }
-
-  @NotNull
-  private static List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
-    return environmentsYaml.getValues()
-        .getValue()
-        .stream()
-        .filter(e -> isNotEmpty(e.getFilters().getValue()))
-        .collect(Collectors.toList());
-  }
-
-  private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
-    return isNotEmpty(environmentsYaml.getFilters().getValue())
-        || areFiltersSetOnIndividualEnvironments(environmentsYaml);
   }
 
   private void buildIndividualEnvDataList(String accountIdentifier, String orgIdentifier, String projectIdentifier,

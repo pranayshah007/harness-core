@@ -43,6 +43,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ngexception.NGFreezeException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
@@ -153,6 +154,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+  @Inject private FeatureFlagService featureFlagService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -403,32 +405,33 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     String projectIdentifier = ctx.getProjectIdentifier();
 
     // If deploying to Environments with filters
-    if (isNotEmpty(stageNode.getDeploymentStageConfig().getEnvironments())
-        && environmentInfraFilterHelper.areFiltersPresent(stageNode.getDeploymentStageConfig().getEnvironments())) {
-      EnvironmentsYaml environmentsYaml = stageConfig.getEnvironments();
-      List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
-      if (environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
-        finalyamlV2List = processFilteringForEnvironmentsLevelFilters(
-            accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml);
+    if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)) {
+      if (isNotEmpty(stageNode.getDeploymentStageConfig().getEnvironments())
+          && environmentInfraFilterHelper.areFiltersPresent(stageNode.getDeploymentStageConfig().getEnvironments())) {
+        EnvironmentsYaml environmentsYaml = stageConfig.getEnvironments();
+        List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+        if (environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
+          finalyamlV2List = processFilteringForEnvironmentsLevelFilters(
+              accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml);
+        }
+        // Set the filtered envYamlV2 in the environments yaml so normal processing continues
+        environmentsYaml.getValues().setValue(finalyamlV2List);
       }
-      // Set the filtered envYamlV2 in the environments yaml so normal processing continues
-      environmentsYaml.getValues().setValue(finalyamlV2List);
+
+      // If deploying to environment group with filters
+      if (isNotEmpty(stageConfig.getEnvironmentGroup())
+          && (isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())
+              || isNotEmpty(getEnvYamlV2WithFilters(stageConfig.getEnvironmentGroup())))) {
+        EnvironmentGroupYaml environmentGroupYaml = stageConfig.getEnvironmentGroup();
+
+        List<EnvironmentYamlV2> finalyamlV2List =
+            processFilteringForEnvironmentGroupLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
+                environmentGroupYaml, stageConfig.getEnvironmentGroup().getFilters().getValue());
+
+        // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
+        environmentGroupYaml.getEnvironments().setValue(finalyamlV2List);
+      }
     }
-
-    // If deploying to environment group with filters
-    if (isNotEmpty(stageConfig.getEnvironmentGroup())
-        && (isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())
-            || isNotEmpty(getEnvYamlV2WithFilters(stageConfig.getEnvironmentGroup())))) {
-      EnvironmentGroupYaml environmentGroupYaml = stageConfig.getEnvironmentGroup();
-
-      List<EnvironmentYamlV2> finalyamlV2List =
-          processFilteringForEnvironmentGroupLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
-              environmentGroupYaml, stageConfig.getEnvironmentGroup().getFilters().getValue());
-
-      // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
-      environmentGroupYaml.getEnvironments().setValue(finalyamlV2List);
-    }
-
     MultiDeploymentSpawnerUtils.validateMultiServiceInfra(stageConfig);
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
         && stageConfig.getEnvironmentGroup() == null) {
