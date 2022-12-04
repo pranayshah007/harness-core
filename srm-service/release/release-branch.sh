@@ -59,16 +59,16 @@ echo "INFO: Step 5: Setting shell condition - exit on error TRUE."
 set -e
 echo "INFO: Step 6: Setting shell condition - debug TRUE."
 set -x
-echo "INFO: Step 7: Fetching $BASE_BRANCH"
+echo "INFO: Step 7: Fetching BASE_BRANCH"
 git fetch origin refs/heads/${BASE_BRANCH}; git checkout ${BASE_BRANCH} && git branch
 echo "INFO: Step 8: Checking $BASE_BRANCH and current branch are the same"
 check_branch_name "${BASE_BRANCH}"
 
-echo "INFO: Step 9: Checking for Not Merged Hot Fixes in $BASE_BRANCH."
+echo "INFO: Step 9: Checking for Not Merged Hot Fixes in BASE_BRANCH."
 git log --remotes=origin/release/${PURPOSE}/* --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > release.txt
-git log --remotes=origin/${BASE_BRANCH} --pretty=oneline --abbrev-commit | grep -iE "\[(SRM-[0-9]+]:" -o | sort | uniq > develop.txt
+git log --remotes=origin/${BASE_BRANCH} --pretty=oneline --abbrev-commit | grep -iE "\[SRM-[0-9]+]:" -o | sort | uniq > base.txt
 
-NOT_MERGED=$(comm -23 release.txt develop.txt)
+NOT_MERGED=$(comm -23 release.txt base.txt)
 
 if [ ! -z "$NOT_MERGED" ]
 then
