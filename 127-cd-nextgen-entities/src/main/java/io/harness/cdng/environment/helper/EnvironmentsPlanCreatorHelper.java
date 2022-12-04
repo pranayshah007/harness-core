@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.environment.bean.IndividualEnvData;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
@@ -22,6 +23,7 @@ import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -50,6 +52,7 @@ public class EnvironmentsPlanCreatorHelper {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
   @Inject private ClusterService clusterService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public EnvironmentsPlanCreatorConfig createEnvironmentsPlanCreatorConfig(
       PlanCreationContext ctx, EnvironmentsYaml environmentsYaml) {
@@ -75,7 +78,8 @@ public class EnvironmentsPlanCreatorHelper {
 
     Set<IndividualEnvData> listEnvData = new HashSet<>();
     // Apply Filters
-    if (areFiltersPresent(environmentsYaml)) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
+        && areFiltersPresent(environmentsYaml)) {
       // Process Environment level Filters
       Set<IndividualEnvData> envsLevelIndividualEnvData = new HashSet<>();
       Set<IndividualEnvData> individualEnvFiltering = new HashSet<>();
