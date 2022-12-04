@@ -123,7 +123,8 @@ public class EnvironmentsPlanCreatorHelper {
       }
 
       // Process Individual environment level filters if they exist
-      if (areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+      if (featureFlagService.isEnabled(FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS, accountIdentifier)
+          && areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
         List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
         List<String> envRefsWithFilters =
             envV2YamlsWithFilters.stream().map(e -> e.getEnvironmentRef().getValue()).collect(Collectors.toList());
