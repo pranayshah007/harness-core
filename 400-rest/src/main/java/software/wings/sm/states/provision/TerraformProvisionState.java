@@ -65,6 +65,7 @@ import static software.wings.beans.LogColor.Yellow;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK;
+import static software.wings.beans.TaskType.TERRAFORM_PROVISION_TASK_V2;
 import static software.wings.beans.delegation.TerraformProvisionParameters.TIMEOUT_IN_MINUTES;
 import static software.wings.utils.Utils.splitCommaSeparatedFilePath;
 
@@ -136,6 +137,7 @@ import software.wings.beans.NameValuePair;
 import software.wings.beans.PhaseStep;
 import software.wings.beans.S3FileConfig;
 import software.wings.beans.SettingAttribute;
+import software.wings.beans.TaskType;
 import software.wings.beans.TemplateExpression;
 import software.wings.beans.TerraformBackendConfig;
 import software.wings.beans.TerraformInfrastructureProvisioner;
@@ -811,7 +813,7 @@ public abstract class TerraformProvisionState extends State {
 
   protected ExecutionResponse executeInternal(ExecutionContext context, String activityId) {
     if (inheritApprovedPlan) {
-      return executeInternal(context, activityId);
+      return executeInternalInherited(context, activityId);
     } else {
       return executeInternalRegular(context, activityId);
     }
@@ -832,12 +834,32 @@ public abstract class TerraformProvisionState extends State {
 
     TerraformInfrastructureProvisioner terraformProvisioner = getTerraformInfrastructureProvisioner(context);
 
-    String path = context.renderExpression(terraformProvisioner.getNormalizedPath());
-    if (path == null) {
-      path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+    //    GIT Initializations
+    GitConfig gitConfig;
+    gitConfig = null;
+    String path = null;
+
+    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+      path = context.renderExpression(terraformProvisioner.getNormalizedPath());
       if (path == null) {
-        throw new InvalidRequestException("Invalid Terraform script path", USER);
+        path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
+        if (path == null) {
+          throw new InvalidRequestException("Invalid Terraform script path", USER);
+        }
       }
+      gitConfig = gitUtilsManager.getGitConfig(element.getSourceRepoSettingId());
+      if (isNotEmpty(element.getSourceRepoReference())) {
+        gitConfig.setReference(element.getSourceRepoReference());
+        String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
+        if (isNotEmpty(branch)) {
+          gitConfig.setBranch(branch);
+        }
+
+      } else {
+        throw new InvalidRequestException("No commit id found in context inherit tf plan element.");
+      }
+      gitConfigHelperService.convertToRepoGitConfig(
+          gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
     }
 
     String workspace = context.renderExpression(element.getWorkspace());
@@ -848,17 +870,6 @@ public abstract class TerraformProvisionState extends State {
       fileId = fileService.getLatestFileId(
           generateEntityId(context, workspace, terraformProvisioner, false), TERRAFORM_STATE);
       log.info("{} fileId with old entityId", fileId == null ? "Didn't retrieve" : "Retrieved");
-    }
-    GitConfig gitConfig = gitUtilsManager.getGitConfig(element.getSourceRepoSettingId());
-    if (isNotEmpty(element.getSourceRepoReference())) {
-      gitConfig.setReference(element.getSourceRepoReference());
-      String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());
-      if (isNotEmpty(branch)) {
-        gitConfig.setBranch(branch);
-      }
-
-    } else {
-      throw new InvalidRequestException("No commit id found in context inherit tf plan element.");
     }
 
     List<NameValuePair> allBackendConfigs = element.getBackendConfigs();
@@ -909,9 +920,6 @@ public abstract class TerraformProvisionState extends State {
     List<String> targets = element.getTargets();
     targets = resolveTargets(targets, context);
 
-    gitConfigHelperService.convertToRepoGitConfig(
-        gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
-
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
         ? getSecretManagerContainingTfPlan(terraformProvisioner.getKmsId(), context.getAccountId())
         : null;
@@ -922,7 +930,7 @@ public abstract class TerraformProvisionState extends State {
       if (getTfVarGitFileConfig() != null) {
         tfVarSource = fetchTfVarGitSource(context);
       }
-    } else if (tfVarSourceType.equals(TfVarSourceType.S3)) {
+    } else if (tfVarSource != null && tfVarSourceType.equals(TfVarSourceType.S3)) {
       tfVarSource = fetchTfVarS3Source(context);
     }
 
@@ -930,9 +938,6 @@ public abstract class TerraformProvisionState extends State {
         featureFlagService.isEnabled(FeatureName.OPTIMIZED_TF_PLAN, context.getAccountId())
         ? terraformPlanHelper.getEncryptedTfPlanFromSweepingOutput(context, getPlanName(context))
         : element.getEncryptedTfPlan();
-
-    AwsConfig awsS3SourceBucketConfig =
-        (AwsConfig) getAwsConfigSettingAttribute(terraformProvisioner.getAwsConfigId()).getValue();
 
     ExecutionContextImpl executionContext = (ExecutionContextImpl) context;
     TerraformProvisionParametersBuilder terraformProvisionParametersBuilder =
@@ -949,13 +954,12 @@ public abstract class TerraformProvisionState extends State {
             .commandUnit(commandUnit())
             .sourceRepoSettingId(element.getSourceRepoSettingId())
             .sourceRepo(gitConfig)
-            .sourceRepoEncryptionDetails(
-                secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
+            .sourceRepoEncryptionDetails(terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)
+                    ? null
+                    : secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId()))
             .scriptPath(path)
             .s3URI(terraformProvisioner.getSourceType().equals(TerraformSourceType.S3) ? terraformProvisioner.getS3URI()
                                                                                        : null)
-
-            .awsS3SourceBucketConfig(awsS3SourceBucketConfig)
             .variables(textVariables)
             .encryptedVariables(encryptedTextVariables)
             .backendConfigs(backendConfigs)
@@ -989,6 +993,10 @@ public abstract class TerraformProvisionState extends State {
     if (featureFlagService.isEnabled(TERRAFORM_AWS_CP_AUTHENTICATION, context.getAccountId())) {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
+
+    setAWSS3SourceAndAuthParamsIfPresent(
+        terraformProvisioner.getAwsConfigId(), terraformProvisioner, context, terraformProvisionParametersBuilder);
+
     return createAndRunTask(
         activityId, executionContext, terraformProvisionParametersBuilder.build(), element.getDelegateTag());
   }
@@ -1019,7 +1027,7 @@ public abstract class TerraformProvisionState extends State {
             .description("Terraform provision task execution")
             .data(TaskData.builder()
                       .async(true)
-                      .taskType(TERRAFORM_PROVISION_TASK.name())
+                      .taskType(getTaskType(parameters, executionContext))
                       .parameters(new Object[] {parameters})
                       .timeout(defaultIfNullTimeout(TimeUnit.MINUTES.toMillis(TIMEOUT_IN_MINUTES)))
                       .expressionFunctorToken(expressionFunctorToken)
@@ -1043,6 +1051,17 @@ public abstract class TerraformProvisionState extends State {
         .delegateTaskId(delegateTaskId)
         .stateExecutionData(ScriptStateExecutionData.builder().activityId(activityId).build())
         .build();
+  }
+
+  // ToDo:   Unit Test - AKHIL_PANDEY
+  protected String getTaskType(TerraformProvisionParameters parameters, ExecutionContext context) {
+    if (featureFlagService.isEnabled(FeatureName.CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())) {
+      if (parameters.getSourceType().equals(TerraformSourceType.S3)
+          || (tfVarSourceType != null && tfVarSourceType.equals(TfVarSourceType.S3))) {
+        return TERRAFORM_PROVISION_TASK_V2.name();
+      }
+    }
+    return TERRAFORM_PROVISION_TASK.name();
   }
 
   private ExecutionResponse executeInternalRegular(ExecutionContext context, String activityId) {

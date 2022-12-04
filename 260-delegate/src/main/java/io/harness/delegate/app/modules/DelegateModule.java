@@ -1794,6 +1794,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.FETCH_S3_FILE_TASK).toInstance(S3FetchFilesTask.class);
 
     mapBinder.addBinding(TaskType.TERRAFORM_PROVISION_TASK).toInstance(TerraformProvisionTask.class);
+    mapBinder.addBinding(TaskType.TERRAFORM_PROVISION_TASK_V2).toInstance(TerraformProvisionTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK)
         .toInstance(TerraformInputVariablesObtainTask.class);
     mapBinder.addBinding(TaskType.TERRAFORM_FETCH_TARGETS_TASK).toInstance(TerraformFetchTargetsTask.class);
