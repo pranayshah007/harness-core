@@ -90,7 +90,7 @@ public class EnvGroupPlanCreatorHelper {
     // Apply filtering based on provided filters on all environments and clusters in the envGroup
     // If no clusters are eligible then throw an exception.
 
-    if (isNotEmpty(envGroupYaml.getFilters().getValue())) {
+    if (ParameterField.isNotNull(envGroupYaml.getFilters()) && isNotEmpty(envGroupYaml.getFilters().getValue())) {
       List<FilterYaml> filterYamls = envGroupYaml.getFilters().getValue();
 
       // Environment Filtering applied

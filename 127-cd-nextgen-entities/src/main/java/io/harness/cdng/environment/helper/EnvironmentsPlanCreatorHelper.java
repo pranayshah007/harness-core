@@ -192,12 +192,11 @@ public class EnvironmentsPlanCreatorHelper {
 
   @NotNull
   private static List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
-                                                        .getValue()
-                                                        .stream()
-                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
-                                                        .collect(Collectors.toList());
-    return envV2YamlsWithFilters;
+    return environmentsYaml.getValues()
+        .getValue()
+        .stream()
+        .filter(e -> isNotEmpty(e.getFilters().getValue()))
+        .collect(Collectors.toList());
   }
 
   private static boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
