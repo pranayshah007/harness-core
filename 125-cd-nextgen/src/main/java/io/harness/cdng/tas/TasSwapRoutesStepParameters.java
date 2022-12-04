@@ -8,7 +8,6 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,8 +20,8 @@ import lombok.NoArgsConstructor;
 @RecasterAlias("io.harness.cdng.tas.TasSwapRoutesStepParameters")
 public class TasSwapRoutesStepParameters extends TasSwapRoutesBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasSwapRoutesStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, boolean downSizeOldApplication, String tasSetupFqn) {
+  public TasSwapRoutesStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> downSizeOldApplication, String tasSetupFqn) {
     super(delegateSelectors, downSizeOldApplication, tasSetupFqn);
   }
 }

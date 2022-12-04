@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = TasAppResizeStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
 @TypeAlias("TasSwapRoutesStepInfo")
-@RecasterAlias("io.harness.cdng.pcf.TasSwapRoutesStepInfo")
+@RecasterAlias("io.harness.cdng.tas.TasSwapRoutesStepInfo")
 public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -43,14 +43,14 @@ public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasSwapRoutesStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, boolean downSizeOldApplication, String tasSetupFqn) {
+  public TasSwapRoutesStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      ParameterField<Boolean> downSizeOldApplication, String tasSetupFqn) {
     super(delegateSelectors, downSizeOldApplication, tasSetupFqn);
   }
 
   @Override
   public StepType getStepType() {
-    return null;
+    return TasSwapRoutesStep.STEP_TYPE;
   }
 
   @Override
@@ -60,8 +60,9 @@ public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements 
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasSwapRoutesStepParameters.infoBuilder()
-        .downSizeOldApplication(this.downSizeOldApplication)
+    return TasSwapRoutesStepParameters
+        .infoBuilder()
+        //   .downSizeOldApplication(this.downSizeOldApplication)
         .delegateSelectors(this.delegateSelectors)
         .build();
   }

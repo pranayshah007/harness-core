@@ -26,7 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.TAS_APP_RESIZE)
 @TypeAlias("TasAppResizeStepNode")
-@RecasterAlias("io.harness.cdng.pcf.TasAppResizeStepNode")
+@RecasterAlias("io.harness.cdng.tas.TasAppResizeStepNode")
 public class TasAppResizeStepNode extends CdAbstractStepNode {
   @JsonProperty("type") @NotNull TasAppResizeStepNode.StepType type = StepType.TasAppResize;
   @JsonProperty("spec")

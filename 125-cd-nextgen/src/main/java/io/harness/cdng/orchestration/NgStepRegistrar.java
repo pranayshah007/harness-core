@@ -97,10 +97,14 @@ import io.harness.cdng.service.steps.ServiceStepV3;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStep;
 import io.harness.cdng.ssh.CommandStep;
+import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasBGAppSetupStep;
+import io.harness.cdng.tas.TasBasicAppSetupStep;
 import io.harness.cdng.tas.TasCanaryAppSetupStep;
-import io.harness.cdng.tas.TasSwapRollbackStep;
 import io.harness.cdng.tas.TasCommandStep;
+import io.harness.cdng.tas.TasRollbackStep;
+import io.harness.cdng.tas.TasSwapRollbackStep;
+import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -199,6 +203,10 @@ public class NgStepRegistrar {
     engineSteps.put(FetchInstanceScriptStep.STEP_TYPE, FetchInstanceScriptStep.class);
     engineSteps.put(TasCanaryAppSetupStep.STEP_TYPE, TasCanaryAppSetupStep.class);
     engineSteps.put(TasBGAppSetupStep.STEP_TYPE, TasBGAppSetupStep.class);
+    engineSteps.put(TasBasicAppSetupStep.STEP_TYPE, TasBasicAppSetupStep.class);
+    engineSteps.put(TasAppResizeStep.STEP_TYPE, TasAppResizeStep.class);
+    engineSteps.put(TasSwapRoutesStep.STEP_TYPE, TasSwapRoutesStep.class);
+    engineSteps.put(TasRollbackStep.STEP_TYPE, TasRollbackStep.class);
     engineSteps.put(ShellScriptProvisionStep.STEP_TYPE, ShellScriptProvisionStep.class);
 
     // Chaos

@@ -1,11 +1,11 @@
 package io.harness.cdng.tas;
 
-import static software.wings.beans.InstanceUnitType.PERCENTAGE;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.NGInstanceUnitType;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
@@ -25,6 +25,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -34,6 +35,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -46,8 +48,6 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
-import software.wings.beans.InstanceUnitType;
-
 import com.google.inject.Inject;
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +55,10 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfCommandResponseNG> {
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.TAS_APP_RESIZE.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
   @Inject private TasEntityHelper tasEntityHelper;
@@ -120,10 +124,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
           .build();
     }
 
-    Integer upsizeInstanceCount = tasAppResizeStepParameters.getNewAppInstances().getValue();
-    Integer downsizeInstanceCount = tasAppResizeStepParameters.getOldAppInstances().getValue();
-    InstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
-    InstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
+    Integer upsizeInstanceCount = getCount(tasAppResizeStepParameters, true);
+    Integer downsizeInstanceCount = getCount(tasAppResizeStepParameters, false);
+    NGInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
+    NGInstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     Integer totalDesiredCount = tasSetupDataOutcome.getDesiredActualFinalCount();
 
@@ -176,12 +180,39 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  private Integer getdownsizeCount(InstanceUnitType downsizeCountType, Integer downsizeInstanceCount,
+  private Integer getCount(TasAppResizeStepParameters tasAppResizeStepParameters, boolean forNewApp) {
+    if (forNewApp) {
+      if (tasAppResizeStepParameters.getNewAppInstances().getType() == NGInstanceUnitType.COUNT) {
+        return ((CountInstanceSelection) tasAppResizeStepParameters.getNewAppInstances().getSpec())
+            .getCount()
+            .getValue();
+      } else {
+        return Integer.parseInt(
+            ((PercentageInstanceSelection) tasAppResizeStepParameters.getNewAppInstances().getSpec())
+                .getPercentage()
+                .getValue());
+      }
+
+    } else {
+      if (tasAppResizeStepParameters.getOldAppInstances().getType() == NGInstanceUnitType.COUNT) {
+        return ((CountInstanceSelection) tasAppResizeStepParameters.getOldAppInstances().getSpec())
+            .getCount()
+            .getValue();
+      } else {
+        return Integer.parseInt(
+            ((PercentageInstanceSelection) tasAppResizeStepParameters.getOldAppInstances().getSpec())
+                .getPercentage()
+                .getValue());
+      }
+    }
+  }
+
+  private Integer getdownsizeCount(NGInstanceUnitType downsizeCountType, Integer downsizeInstanceCount,
       Integer totalDesiredCount, Integer upsizeCount) {
     if (downsizeInstanceCount == null) {
       return Math.max(totalDesiredCount - upsizeCount, 0);
     } else {
-      if (downsizeCountType == PERCENTAGE) {
+      if (downsizeCountType == NGInstanceUnitType.PERCENTAGE) {
         int percent = Math.min(downsizeInstanceCount, 100);
         int count = (int) Math.round((percent * totalDesiredCount) / 100.0);
         return Math.max(count, 0);
@@ -193,8 +224,8 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
   }
 
   private Integer getUpsizeCount(
-      Integer upsizeInstanceCount, InstanceUnitType upsizeInstanceCountType, Integer totalDesiredCount) {
-    if (upsizeInstanceCountType == PERCENTAGE) {
+      Integer upsizeInstanceCount, NGInstanceUnitType upsizeInstanceCountType, Integer totalDesiredCount) {
+    if (upsizeInstanceCountType == NGInstanceUnitType.PERCENTAGE) {
       int percent = Math.min(upsizeInstanceCount, 100);
       int count = (int) Math.round((percent * totalDesiredCount) / 100.0);
       return Math.max(count, 1);

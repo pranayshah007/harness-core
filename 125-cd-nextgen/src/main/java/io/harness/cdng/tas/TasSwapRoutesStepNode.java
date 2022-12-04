@@ -24,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
+@JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
 @TypeAlias("TasSwapRoutesStepNode")
 @RecasterAlias("io.harness.cdng.pcf.TasSwapRoutesStepNode")
 public class TasSwapRoutesStepNode extends CdAbstractStepNode {
@@ -43,7 +43,7 @@ public class TasSwapRoutesStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TasSwapRoutes(StepSpecTypeConstants.TAS_ROLLBACK);
+    TasSwapRoutes(StepSpecTypeConstants.TAS_SWAP_ROUTES);
     @Getter String name;
     StepType(String name) {
       this.name = name;

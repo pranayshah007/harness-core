@@ -12,6 +12,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,8 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "TasAppResizeBaseStepInfoKeys")
 @TypeAlias("TasAppResizeBaseStepInfo")
 public class TasAppResizeBaseStepInfo {
+  @NotNull TasInstanceSelectionWrapper newAppInstances;
+  TasInstanceSelectionWrapper oldAppInstances;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

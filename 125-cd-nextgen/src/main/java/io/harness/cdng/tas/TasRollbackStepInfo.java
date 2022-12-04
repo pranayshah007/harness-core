@@ -33,7 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @SimpleVisitorHelper(helperClass = TasAppResizeStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
 @TypeAlias("TasRollbackStepInfo")
-@RecasterAlias("io.harness.cdng.pcf.TasRollbackStepInfo")
+@RecasterAlias("io.harness.cdng.tas.TasRollbackStepInfo")
 public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -50,7 +50,7 @@ public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDS
 
   @Override
   public StepType getStepType() {
-    return null;
+    return TasRollbackStep.STEP_TYPE;
   }
 
   @Override
