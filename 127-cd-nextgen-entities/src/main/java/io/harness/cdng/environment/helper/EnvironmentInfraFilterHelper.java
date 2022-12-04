@@ -371,11 +371,10 @@ public class EnvironmentInfraFilterHelper {
   }
 
   public List<EnvironmentYamlV2> getEnvV2YamlsWithFilters(EnvironmentsYaml environmentsYaml) {
-    List<EnvironmentYamlV2> envV2YamlsWithFilters = environmentsYaml.getValues()
-                                                        .getValue()
-                                                        .stream()
-                                                        .filter(e -> isNotEmpty(e.getFilters().getValue()))
-                                                        .collect(Collectors.toList());
-    return envV2YamlsWithFilters;
+    return environmentsYaml.getValues()
+        .getValue()
+        .stream()
+        .filter(e -> isNotEmpty(e.getFilters().getValue()))
+        .collect(Collectors.toList());
   }
 }

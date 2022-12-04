@@ -443,7 +443,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
     // If deploying to environment group with filters
     if (isNotEmpty(stageConfig.getEnvironmentGroup())
-        && isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())) {
+        && (isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())
+            || isNotEmpty(getEnvYamlV2WithFilters(stageConfig.getEnvironmentGroup())))) {
       List<FilterYaml> filterYamls = stageConfig.getEnvironmentGroup().getFilters().getValue();
 
       Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
@@ -456,15 +457,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       EnvironmentGroupYaml environmentGroupYaml = stageConfig.getEnvironmentGroup();
       Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
       if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
-        List<EnvironmentYamlV2> envYamlV2WithFilters = environmentGroupYaml.getEnvironments()
-                                                           .getValue()
-                                                           .stream()
-                                                           .filter(eg -> isNotEmpty(eg.getFilters().getValue()))
-                                                           .collect(Collectors.toList());
-
-        if (isNotEmpty(envYamlV2WithFilters)) {
-          processFiltersOnIndividualEnvironmentsLevel(
-              accountIdentifier, orgIdentifier, projectIdentifier, individualEnvironmentYamlV2, envYamlV2WithFilters);
+        if (isNotEmpty(getEnvYamlV2WithFilters(environmentGroupYaml))) {
+          processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+              individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentGroupYaml));
         }
       }
 
@@ -474,12 +469,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       List<EnvironmentYamlV2> finalyamlV2List =
           getFinalEnvsList(environmentGroupYaml.getEnvironments().getValue(), mergedFilteredEnvs);
-
-      // If same env then merge infradefs
-      if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
-        List<EnvironmentYamlV2> yamlV2List = environmentGroupYaml.getEnvironments().getValue();
-        mergeInfraDefinitionsForSameEnvs(finalyamlV2List, yamlV2List);
-      }
 
       environmentGroupYaml.getEnvironments().setValue(finalyamlV2List);
     }
@@ -518,6 +507,16 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getEnvYamlV2WithFilters(EnvironmentGroupYaml environmentGroupYaml) {
+    List<EnvironmentYamlV2> envYamlV2WithFilters = environmentGroupYaml.getEnvironments()
+                                                       .getValue()
+                                                       .stream()
+                                                       .filter(eg -> isNotEmpty(eg.getFilters().getValue()))
+                                                       .collect(Collectors.toList());
+    return envYamlV2WithFilters;
   }
 
   private static void mergeInfraDefinitionsForSameEnvs(
@@ -857,7 +856,10 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
               accountIdentifier, orgIdentifier, projectIdentifier, env.getIdentifier());
 
       if (isNotEmpty(infrastructureEntitySet)) {
-        environmentYamlV2List = filterInfras(filterYamls, env.getIdentifier(), infrastructureEntitySet);
+        List<EnvironmentYamlV2> temp = filterInfras(filterYamls, env.getIdentifier(), infrastructureEntitySet);
+        if (isNotEmpty(temp)) {
+          environmentYamlV2List.add(temp.get(0));
+        }
       }
     }
     return environmentYamlV2List;
