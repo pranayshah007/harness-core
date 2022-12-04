@@ -8,6 +8,9 @@ import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 
 import java.util.List;
+
+import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import lombok.Builder;
 import lombok.Value;
 
@@ -32,4 +35,6 @@ public class CfSwapRoutesRequestNG implements CfCommandRequestNG {
   CfAppSetupTimeDetails existingInActiveApplicationDetails;
   CfAppSetupTimeDetails newApplicationDetails;
   String cfAppNamePrefix;
+  boolean useAppAutoscalar;
+  CfCliVersion cfCliVersion;
 }

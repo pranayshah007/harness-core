@@ -116,6 +116,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
+    //TODO: From the TasSwapRoute Manager side, we need an outcome to know if swap route occured or not. Then in the request body set the boolean flag for that
+
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
             CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
