@@ -37,5 +37,6 @@ public class SchedulerDTO {
     String expectCode;
     String expectBody;
     String debug;
+    String tlsNoVerifyPeer;
   }
 }

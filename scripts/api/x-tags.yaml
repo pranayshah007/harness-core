@@ -17,6 +17,7 @@
 - name: Pipelines
   tags:
     - Pipelines
+    - Input Sets
 - name: Templates
   tags:
     - Account Template
@@ -24,6 +25,8 @@
     - Project Template
 - name: Services
   tags:
+    - Account Services
+    - Org Services
     - Project Services
 - name: Roles
   tags:

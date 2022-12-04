@@ -41,9 +41,6 @@ public class SettingsResourceImpl implements SettingsResource {
   @NGAccessControlCheck(resourceType = SETTING_RESOURCE_TYPE, permission = SETTING_VIEW_PERMISSION)
   public ResponseDTO<SettingValueResponseDTO> get(String identifier, @AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
-    if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
-    }
     return ResponseDTO.newResponse(
         settingsService.get(identifier, accountIdentifier, orgIdentifier, projectIdentifier));
   }
@@ -53,9 +50,6 @@ public class SettingsResourceImpl implements SettingsResource {
   public ResponseDTO<List<SettingResponseDTO>> list(@AccountIdentifier String accountIdentifier,
       @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, SettingCategory category,
       String groupIdentifier) {
-    if (!isSettingsFeatureEnabled(accountIdentifier)) {
-      throw new InvalidRequestException(String.format(FEATURE_NOT_AVAILABLE, accountIdentifier));
-    }
     return ResponseDTO.newResponse(
         settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category, groupIdentifier));
   }

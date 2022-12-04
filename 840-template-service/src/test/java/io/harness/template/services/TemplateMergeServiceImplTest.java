@@ -426,6 +426,102 @@ public class TemplateMergeServiceImplTest extends TemplateServiceTestBase {
   }
 
   @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesForStepGroupTemplates() {
+    String fileName = "stepgroup-template.yaml";
+    String stepGroupTemplate = readFile(fileName);
+    TemplateEntity templateEntity1 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stepGroupTemplate)
+                                         .identifier("testingStepG")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("r1h")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testingStepG", "r1h", false))
+        .thenReturn(Optional.of(templateEntity1));
+
+    String stepGroup2 = "stepgroup-template-nested.yaml";
+    String stepGroupTemplate2 = readFile(stepGroup2);
+    TemplateEntity templateEntity2 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stepGroupTemplate2)
+                                         .identifier("testStepGrp2")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("v1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testStepGrp2", "v1", false))
+        .thenReturn(Optional.of(templateEntity2));
+
+    String stageTemplate = "stage-template-with-stepgroup-templates.yaml";
+    String stageTemplateYaml = readFile(stageTemplate);
+    TemplateEntity templateEntity3 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(stageTemplateYaml)
+                                         .identifier("testStage")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testStage", "1", false))
+        .thenReturn(Optional.of(templateEntity3));
+
+    String pipelineTemplate = "pipeline-template-with-stage-with-stepgroup-template.yaml";
+    String pipelineTemplateYaml = readFile(pipelineTemplate);
+    TemplateEntity templateEntity4 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(pipelineTemplateYaml)
+                                         .identifier("testpipeline")
+                                         .templateScope(Scope.PROJECT)
+                                         .deleted(false)
+                                         .versionLabel("1")
+                                         .build();
+
+    when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "testpipeline", "1", false))
+        .thenReturn(Optional.of(templateEntity4));
+
+    String pipelineYamlFile = "pipeline-with-stepgroup-template.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+
+    TemplateMergeResponseDTO pipelineMergeResponse =
+        templateMergeService.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+    String finalPipelineYaml = pipelineMergeResponse.getMergedPipelineYaml();
+    assertThat(finalPipelineYaml).isNotNull();
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).isNotNull();
+    List<TemplateReferenceSummary> templateReferenceSummaryList = new ArrayList<>();
+    templateReferenceSummaryList.add(TemplateReferenceSummary.builder()
+                                         .templateIdentifier("testpipeline")
+                                         .versionLabel("1")
+                                         .scope(Scope.PROJECT)
+                                         .fqn("pipeline")
+                                         .moduleInfo(new HashSet<>())
+                                         .build());
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).hasSize(1);
+    assertThat(pipelineMergeResponse.getTemplateReferenceSummaries()).containsAll(templateReferenceSummaryList);
+
+    String resFile = "pipeline-with-stepgroup-template-field-replaced.yaml";
+    String resPipeline = readFile(resFile);
+    assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
+
+  @Test
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testMergeTemplateSpecToPipelineYamlHavingTemplateFields() {

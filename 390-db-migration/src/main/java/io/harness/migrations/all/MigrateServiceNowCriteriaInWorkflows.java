@@ -42,7 +42,7 @@ public class MigrateServiceNowCriteriaInWorkflows implements Migration {
   @Inject private AccountService accountService;
 
   public void migrate() {
-    List<Account> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+    List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : allAccounts) {
       String accountId = account.getUuid();
       log.info(StringUtils.join(DEBUG_LINE, "Starting ServiceNow Criteria migration for accountId:", accountId));

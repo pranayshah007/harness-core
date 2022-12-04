@@ -53,6 +53,7 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -149,7 +150,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       Set<String> duplicates = new HashSet<>();
       int emptyOverrides = 0;
       for (NGVariable variableOverride : variableOverrides) {
-        if (isEmpty(variableOverride.getName())) {
+        if (StringUtils.isBlank(variableOverride.getName())) {
           emptyOverrides++;
         } else if (!variableKeys.add(variableOverride.getName())) {
           duplicates.add(variableOverride.getName());

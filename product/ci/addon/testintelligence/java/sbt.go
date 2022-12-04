@@ -37,13 +37,13 @@ func (b *sbtRunner) AutoDetectPackages() ([]string, error) {
 	return DetectPkgs(b.log, b.fs)
 }
 
-func (b *sbtRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, error) {
+func (b *sbtRunner) AutoDetectTests(ctx context.Context, testGlobs []string) ([]types.RunnableTest, error) {
 	tests := make([]types.RunnableTest, 0)
-	javaTests, err := GetJavaTests()
+	javaTests, err := GetJavaTests(testGlobs)
 	if err != nil {
 		return tests, err
 	}
-	scalaTests, err := GetScalaTests()
+	scalaTests, err := GetScalaTests(testGlobs)
 	if err != nil {
 		return tests, err
 	}
@@ -53,22 +53,22 @@ func (b *sbtRunner) AutoDetectTests(ctx context.Context) ([]types.RunnableTest, 
 }
 
 func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	if ignoreInstr {
-		b.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return fmt.Sprintf("%s %s 'test'", sbtCmd, userArgs), nil
-	}
-
+	// Agent arg
+	inputUserArgs := userArgs
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
 	instrArg := fmt.Sprintf("'set javaOptions ++= Seq(\"%s\")'", agentArg)
-	defaultCmd := fmt.Sprintf("%s %s %s 'test'", sbtCmd, userArgs, instrArg) // run all the tests
 
+	// Run all the tests
 	if runAll {
-		// Run all the tests
-		return defaultCmd, nil
+		if ignoreInstr {
+			return fmt.Sprintf("%s %s 'test'", sbtCmd, inputUserArgs), nil
+		}
+		return fmt.Sprintf("%s %s %s 'test'", sbtCmd, userArgs, instrArg), nil
 	}
 	if len(tests) == 0 {
 		return fmt.Sprintf("echo \"Skipping test run, received no tests to execute\""), nil
 	}
+
 	// Use only unique classes
 	testsList := []string{}
 	set := make(map[string]interface{})
@@ -79,6 +79,10 @@ func (b *sbtRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, user
 		}
 		set[t.Class] = struct{}{}
 		testsList = append(testsList, t.Pkg+"."+t.Class)
+	}
+
+	if ignoreInstr {
+		return fmt.Sprintf("%s %s 'testOnly %s'", sbtCmd, userArgs, strings.Join(testsList, " ")), nil
 	}
 	return fmt.Sprintf("%s %s %s 'testOnly %s'", sbtCmd, userArgs, instrArg, strings.Join(testsList, " ")), nil
 }

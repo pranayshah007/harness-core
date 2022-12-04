@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.PatternSyntaxException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -202,7 +203,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
             MAX_NO_OF_TAGS_PER_IMAGE);
 
     BuildDetailsInternal response = artifactoryRegistryService.getLastSuccessfulBuildFromRegex(
-        artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "\\\\*");
+        artifactoryInternalConfig, "test2", "extra/megaapp", RepositoryFormat.docker.name(), "*");
     assertThat(response).isNotNull();
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.TAG)).isEqualTo("latest");
     assertThat(response.getMetadata().get(ArtifactMetadataKeys.IMAGE))
@@ -373,7 +374,7 @@ public class ArtifactoryRegistryServiceImplTest extends CategoryTest {
     assertThatThrownBy(()
                            -> artifactoryRegistryService.getLastSuccessfulBuildFromRegex(artifactoryInternalConfig,
                                "test2", "extra/megaapp", RepositoryFormat.docker.name(), "(r!egex"))
-        .isInstanceOf(HintException.class);
+        .isInstanceOf(PatternSyntaxException.class);
   }
 
   @Test

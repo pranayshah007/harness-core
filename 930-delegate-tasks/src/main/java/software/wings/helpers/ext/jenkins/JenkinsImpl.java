@@ -45,6 +45,7 @@ import software.wings.beans.command.JenkinsTaskParams;
 import software.wings.common.BuildDetailsComparator;
 import software.wings.helpers.ext.jenkins.BuildDetails.BuildStatus;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.TimeLimiter;
@@ -151,6 +152,12 @@ public class JenkinsImpl implements Jenkins {
       throws URISyntaxException {
     jenkinsHttpClient = new CustomJenkinsHttpClient(new URI(jenkinsUrl), new String(token), getUnSafeBuilder());
     jenkinsServer = new CustomJenkinsServer(jenkinsHttpClient);
+  }
+
+  @VisibleForTesting
+  JenkinsImpl(CustomJenkinsServer jenkinsServer, CustomJenkinsHttpClient jenkinsHttpClient) {
+    this.jenkinsHttpClient = jenkinsHttpClient;
+    this.jenkinsServer = jenkinsServer;
   }
 
   /* (non-Javadoc)
@@ -556,6 +563,9 @@ public class JenkinsImpl implements Jenkins {
     if (queueItem == null) {
       log.info("Queue item value is null");
       return null;
+    } else if (queueItem.isCancelled()) {
+      log.info("Queued job cancelled for URL {}", queueReference.getQueueItemUrlPart());
+      throw new ArtifactServerException("Queued job cancelled", USER);
     } else if (queueItem.getExecutable() == null) {
       log.info("Executable value is null");
       return null;

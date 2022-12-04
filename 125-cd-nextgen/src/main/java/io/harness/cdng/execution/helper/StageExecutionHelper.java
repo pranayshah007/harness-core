@@ -143,8 +143,13 @@ public class StageExecutionHelper {
           (CustomDeploymentExecutionDetails) executionDetails.get();
       return customDeploymentExecutionDetails.getArtifactsOutcome();
     }
-    DefaultExecutionDetails defaultExecutionDetails = (DefaultExecutionDetails) executionDetails.get();
-    return defaultExecutionDetails.getArtifactsOutcome();
+
+    if (executionDetails.get() instanceof DefaultExecutionDetails) {
+      DefaultExecutionDetails defaultExecutionDetails = (DefaultExecutionDetails) executionDetails.get();
+      return defaultExecutionDetails.getArtifactsOutcome();
+    }
+
+    return Collections.emptyList();
   }
 
   public Optional<ArtifactOutcome> getArtifact(Ambiance ambiance) {

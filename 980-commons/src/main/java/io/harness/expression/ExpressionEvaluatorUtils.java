@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.algorithm.IdentifierName;
 import io.harness.exception.CriticalExpressionEvaluationException;
+import io.harness.expression.common.ExpressionConstants;
 
 import com.google.common.collect.ImmutableSet;
 import java.lang.reflect.Array;
@@ -317,8 +318,8 @@ public class ExpressionEvaluatorUtils {
     substitutor.setVariableResolver(variableResolver);
     substitutor.setValueDelimiter("");
     if (newDelimiters) {
-      substitutor.setVariablePrefix(EngineExpressionEvaluator.EXPR_START);
-      substitutor.setVariableSuffix(EngineExpressionEvaluator.EXPR_END);
+      substitutor.setVariablePrefix(ExpressionConstants.EXPR_START);
+      substitutor.setVariableSuffix(ExpressionConstants.EXPR_END);
     }
     return substitutor;
   }

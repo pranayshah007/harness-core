@@ -38,7 +38,7 @@ public class WFEAddDeploymentMetaData implements Migration {
     long lastTimeStamp = 0L;
     try {
       FindOptions findOptions = new FindOptions();
-      List<Account> accounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+      List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
       for (Account account : accounts) {
         long count = 0L;
         try (HIterator<WorkflowExecution> iterator =

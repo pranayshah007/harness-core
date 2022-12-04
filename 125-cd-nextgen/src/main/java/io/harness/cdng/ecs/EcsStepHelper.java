@@ -20,6 +20,7 @@ public interface EcsStepHelper {
   List<ManifestOutcome> getEcsManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes);
   ManifestOutcome getEcsTaskDefinitionManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes);
   ManifestOutcome getEcsServiceDefinitionManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes);
+  ManifestOutcome getEcsRunTaskRequestDefinitionManifestOutcome(@NotEmpty Collection<ManifestOutcome> manifestOutcomes);
   List<ManifestOutcome> getManifestOutcomesByType(
       @NotEmpty Collection<ManifestOutcome> manifestOutcomes, String manifestType);
 }

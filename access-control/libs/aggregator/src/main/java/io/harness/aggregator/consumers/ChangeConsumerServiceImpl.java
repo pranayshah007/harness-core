@@ -58,6 +58,11 @@ public class ChangeConsumerServiceImpl implements ChangeConsumerService {
   @Override
   public List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment) {
     Set<String> principals = getPrincipalsFromRoleAssignment(roleAssignment);
+    return getAClsForRoleAssignment(roleAssignment, principals);
+  }
+
+  @Override
+  public List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals) {
     Set<String> permissions = getPermissionsFromRole(roleAssignment);
     Set<ResourceSelector> resourceSelectors = getResourceSelectorsFromRoleAssignment(roleAssignment);
 

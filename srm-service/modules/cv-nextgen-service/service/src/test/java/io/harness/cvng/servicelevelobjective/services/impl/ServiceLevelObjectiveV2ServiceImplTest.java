@@ -1127,10 +1127,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelObjectiveV2DTO sloDTO = simpleServiceLevelObjectiveDTO1;
     ServiceLevelIndicatorDTO responseSLIDTO =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    String sliIndicator =
-        serviceLevelIndicatorService
-            .getServiceLevelIndicator(builderFactory.getProjectParams(), responseSLIDTO.getIdentifier())
-            .getUuid();
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), responseSLIDTO.getIdentifier());
+    String sliIndicator = serviceLevelIndicator.getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
@@ -1138,16 +1137,20 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
-    String updatedSliIndicator =
-        serviceLevelIndicatorService
-            .getServiceLevelIndicator(builderFactory.getProjectParams(),
-                ((SimpleServiceLevelObjectiveSpec) updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()
-                        .getSpec())
-                    .getServiceLevelIndicators()
-                    .get(0)
-                    .getIdentifier())
-            .getUuid();
+    ServiceLevelIndicator updatedServiceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()
+                    .getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    String updatedSliIndicator = updatedServiceLevelIndicator.getUuid();
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isNotEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
+    serviceLevelIndicator.setSliMissingDataType(SLIMissingDataType.BAD);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
     verify(compositeSLOService, times(0)).reset(any());
     verify(compositeSLOService, times(1)).recalculate(any());
   }

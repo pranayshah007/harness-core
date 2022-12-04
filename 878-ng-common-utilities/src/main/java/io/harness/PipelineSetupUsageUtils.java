@@ -20,6 +20,7 @@ import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,28 +57,32 @@ public class PipelineSetupUsageUtils {
         entityDetails.add(referredUsage.getReferredEntity());
       } else if (fqnToObjectMapMergedYaml.containsKey(fqn)) {
         Object finalNode = fqnToObjectMapMergedYaml.get(fqn);
+        if (finalNode instanceof NullNode) {
+          throw new InvalidRequestException("Value for the field at path [" + fqn + "] is not provided!");
+        }
         if (finalNode instanceof ArrayNode) {
           ((ArrayNode) finalNode)
               .forEach(node
-                  -> entityDetails.add(getEntityDetailFromTextNode(
-                      accountIdentifier, orgIdentifier, projectIdentifier, (TextNode) node, referredUsage, metadata)));
+                  -> entityDetails.add(getEntityDetailFromTextNode(orgIdentifier, projectIdentifier, accountIdentifier,
+                      (TextNode) node, referredUsage, metadata, fqn)));
         } else {
           entityDetails.add(getEntityDetailFromTextNode(
-              accountIdentifier, orgIdentifier, projectIdentifier, (TextNode) finalNode, referredUsage, metadata));
+              orgIdentifier, projectIdentifier, accountIdentifier, (TextNode) finalNode, referredUsage, metadata, fqn));
         }
       }
     }
     return entityDetails.stream().filter(Objects::nonNull).collect(Collectors.toList());
   }
 
-  private EntityDetail getEntityDetailFromTextNode(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata) {
+  private EntityDetail getEntityDetailFromTextNode(String orgIdentifier, String projectIdentifier,
+      String accountIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata,
+      String fqnForNode) {
     String finalValue = node.asText();
     if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
       return null;
     }
-    if (ParameterField.containsInputSetValidator(finalValue)) {
-      finalValue = ParameterField.getValueFromParameterFieldWithInputSetValidator(finalValue);
+    if (ParameterField.containsInputSetValidator(finalValue, fqnForNode)) {
+      finalValue = ParameterField.getValueFromParameterFieldWithInputSetValidator(finalValue, fqnForNode);
     }
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);

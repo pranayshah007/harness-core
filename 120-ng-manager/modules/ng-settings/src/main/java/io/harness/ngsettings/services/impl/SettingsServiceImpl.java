@@ -15,6 +15,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingUpdateType;
@@ -45,7 +46,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -317,7 +317,7 @@ public class SettingsServiceImpl implements SettingsService {
         settingConfigurationRepository.findByIdentifierAndAllowedScopesIn(
             identifier, Collections.singletonList(ScopeLevel.of(scope)));
     if (settingConfigurationOptional.isEmpty()) {
-      throw new NotFoundException(String.format(
+      throw new EntityNotFoundException(String.format(
           "Setting [%s] is either invalid or is not applicable in scope [%s]", identifier, ScopeLevel.of(scope)));
     }
     return settingConfigurationOptional.get();

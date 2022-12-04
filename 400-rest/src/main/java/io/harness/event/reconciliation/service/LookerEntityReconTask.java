@@ -37,7 +37,7 @@ public class LookerEntityReconTask implements Runnable {
   public void run() {
     try {
       long startTime = System.currentTimeMillis();
-      List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+      List<Account> accountList = accountService.getAccountsWithBasicInfo(false);
       Set<String> accountIds = featureFlagService.getAccountIds(FeatureName.TIME_SCALE_CG_SYNC);
       for (Account account : accountList) {
         if (featureFlagService.isEnabled(FeatureName.LOOKER_ENTITY_RECONCILIATION, account.getUuid())

@@ -13,6 +13,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.common.NGTaskType;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -57,6 +58,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
@@ -304,16 +306,15 @@ public class AzureArtifactsResourceServiceImpl implements AzureArtifactsResource
                                                         .attributes(azureArtifactsDelegateRequest)
                                                         .build();
 
+    Map<String, String> abstractions = ArtifactStepHelper.getTaskSetupAbstractions(ngAccess);
+
     final DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
             .accountId(ngAccess.getAccountIdentifier())
             .taskType(NGTaskType.AZURE_ARTIFACT_TASK_NG.name())
             .taskParameters(artifactTaskParameters)
             .executionTimeout(java.time.Duration.ofSeconds(timeoutInSecs))
-            .taskSetupAbstraction("orgIdentifier", ngAccess.getOrgIdentifier())
-            .taskSetupAbstraction("ng", "true")
-            .taskSetupAbstraction("owner", ngAccess.getOrgIdentifier() + "/" + ngAccess.getProjectIdentifier())
-            .taskSetupAbstraction("projectIdentifier", ngAccess.getProjectIdentifier())
+            .taskSetupAbstractions(abstractions)
             .taskSelectors(azureArtifactsDelegateRequest.getAzureArtifactsConnectorDTO().getDelegateSelectors())
             .build();
 

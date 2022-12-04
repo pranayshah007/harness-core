@@ -18,7 +18,6 @@ import io.harness.hsqs.client.model.EnqueueRequest;
 import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.hsqs.client.model.UnAckRequest;
 import io.harness.hsqs.client.model.UnAckResponse;
-import io.harness.ng.core.dto.ResponseDTO;
 
 import java.util.List;
 import retrofit2.Call;
@@ -31,15 +30,13 @@ public interface HsqsServiceClient {
   String V1_ENDPOINT = "v1/";
 
   @POST(V1_ENDPOINT + "queue/")
-  Call<ResponseDTO<EnqueueResponse>> enqueue(@Body EnqueueRequest enqueueRequest, @Header("Authorization") String auth);
+  Call<EnqueueResponse> enqueue(@Body EnqueueRequest enqueueRequest, @Header("Authorization") String auth);
 
   @POST(V1_ENDPOINT + "dequeue")
-  Call<ResponseDTO<List<DequeueResponse>>> dequeue(
-      @Body DequeueRequest dequeueRequest, @Header("Authorization") String auth);
+  Call<List<DequeueResponse>> dequeue(@Body DequeueRequest dequeueRequest, @Header("Authorization") String auth);
 
-  @POST(V1_ENDPOINT + "ack")
-  Call<ResponseDTO<AckResponse>> ack(@Body AckRequest ackRequest, @Header("Authorization") String auth);
+  @POST(V1_ENDPOINT + "ack") Call<AckResponse> ack(@Body AckRequest ackRequest, @Header("Authorization") String auth);
 
   @POST(V1_ENDPOINT + "nack")
-  Call<ResponseDTO<UnAckResponse>> unack(@Body UnAckRequest unAckRequest, @Header("Authorization") String auth);
+  Call<UnAckResponse> unack(@Body UnAckRequest unAckRequest, @Header("Authorization") String auth);
 }

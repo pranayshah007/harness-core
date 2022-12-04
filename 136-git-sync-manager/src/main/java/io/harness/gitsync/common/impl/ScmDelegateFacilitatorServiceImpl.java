@@ -752,6 +752,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), createGitFileRequestDTO.getScmConnector());
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .useGitClient(createGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.ADD_V2)
                                               .scmConnector(createGitFileRequestDTO.getScmConnector())
                                               .gitFileDetails(gitFileDetails)
@@ -780,6 +781,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetailsForNewGitX(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
     ScmPushTaskParams scmPushTaskParams = ScmPushTaskParams.builder()
+                                              .useGitClient(updateGitFileRequestDTO.isUseGitClient())
                                               .changeType(ChangeType.UPDATE_V2)
                                               .scmConnector(updateGitFileRequestDTO.getScmConnector())
                                               .gitFileDetails(gitFileDetails)

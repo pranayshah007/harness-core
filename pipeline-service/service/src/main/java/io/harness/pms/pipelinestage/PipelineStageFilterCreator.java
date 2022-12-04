@@ -61,7 +61,7 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
       throw new InvalidRequestException("Pipeline Stage Yaml is empty");
     }
 
-    if (isNotNull(pipelineStageConfig.getPipelineInputs()) && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
+    if (isNotNull(pipelineStageConfig.getInputs()) && isNotEmpty(pipelineStageConfig.getInputSetReferences())) {
       throw new InvalidRequestException("Pipeline Inputs and Pipeline Input Set references are not allowed together");
     }
 

@@ -215,7 +215,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         nodeExecution = Preconditions.checkNotNull(nodeExecutionService.updateStatusWithOpsV2(
             nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class), NodeProjectionUtils.fieldsForResume));
       } else {
-        log.warn("NodeExecution with id {} is already in Running status", nodeExecutionId);
+        // This will happen if the node is not in any paused or waiting statuses.
+        log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
       }
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {

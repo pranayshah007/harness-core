@@ -18,7 +18,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.encryption.Scope;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -79,7 +78,7 @@ public class YamlGitConfig implements PersistentEntity, UuidAware, CreatedAtAwar
    */
   String gitConnectorsRepo;
   String gitConnectorsBranch;
-  @NotEmpty @FdIndex String repo;
+  @NotEmpty String repo;
   @NotEmpty String branch;
   @NotEmpty String webhookToken;
   Scope scope;
@@ -110,11 +109,6 @@ public class YamlGitConfig implements PersistentEntity, UuidAware, CreatedAtAwar
                 .name("repo_branch_index")
                 .fields(Arrays.asList(YamlGitConfigKeys.repo, YamlGitConfigKeys.branch))
                 .build())
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_Index")
-                 .fields(Arrays.asList(
-                     YamlGitConfigKeys.accountId, YamlGitConfigKeys.orgIdentifier, YamlGitConfigKeys.projectIdentifier))
-                 .build())
         .build();
   }
 }

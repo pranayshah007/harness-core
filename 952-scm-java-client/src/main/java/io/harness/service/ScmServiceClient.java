@@ -54,11 +54,11 @@ import java.util.Set;
 
 @OwnedBy(DX)
 public interface ScmServiceClient {
-  CreateFileResponse createFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  CreateFileResponse createFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient);
 
-  UpdateFileResponse updateFile(
-      ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub);
+  UpdateFileResponse updateFile(ScmConnector scmConnector, GitFileDetails gitFileDetails,
+      SCMGrpc.SCMBlockingStub scmBlockingStub, boolean useGitClient);
 
   DeleteFileResponse deleteFile(
       ScmConnector scmConnector, GitFileDetails gitFileDetails, SCMGrpc.SCMBlockingStub scmBlockingStub);

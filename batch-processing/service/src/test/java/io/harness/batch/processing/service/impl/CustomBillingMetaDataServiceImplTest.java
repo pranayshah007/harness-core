@@ -81,7 +81,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
     when(ceMetadataRecordDao.getByAccountId(ACCOUNT_ID))
         .thenReturn(CEMetadataRecord.builder().accountId(ACCOUNT_ID).awsDataPresent(true).build());
     when(customBillingMetaDataService.getAwsDataSetId(ACCOUNT_ID)).thenReturn(AWS_DATA_SETID);
-    when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID)).thenReturn(null);
+    when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID, ACCOUNT_ID)).thenReturn(null);
     when(billingDataService.isAWSClusterDataPresent(ACCOUNT_ID, START_TIME.minus(3, ChronoUnit.DAYS))).thenReturn(true);
     Boolean jobFinished = customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME);
     assertThat(jobFinished).isFalse();
@@ -99,7 +99,7 @@ public class CustomBillingMetaDataServiceImplTest extends CategoryTest {
     when(ceMetadataRecordDao.getByAccountId(ACCOUNT_ID))
         .thenReturn(CEMetadataRecord.builder().accountId(ACCOUNT_ID).awsDataPresent(true).build());
     when(customBillingMetaDataService.getAwsDataSetId(ACCOUNT_ID)).thenReturn(AWS_DATA_SETID);
-    when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID))
+    when(bigQueryHelperService.getAwsBillingData(START_TIME, END_TIME, AWS_DATA_SETID, ACCOUNT_ID))
         .thenReturn(vmInstanceBillingDataMap);
     when(billingDataService.isAWSClusterDataPresent(ACCOUNT_ID, START_TIME.minus(3, ChronoUnit.DAYS))).thenReturn(true);
     Boolean jobFinished = customBillingMetaDataService.checkPipelineJobFinished(ACCOUNT_ID, START_TIME, END_TIME);

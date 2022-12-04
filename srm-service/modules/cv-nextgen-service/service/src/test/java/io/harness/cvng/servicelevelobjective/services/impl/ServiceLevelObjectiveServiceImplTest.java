@@ -61,6 +61,7 @@ import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
@@ -413,6 +414,40 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                              .getIdentifier())
                                      .getUuid();
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdate_SLIUpdate_WithMissingDataType() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
+        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
+    ServiceLevelIndicatorDTO responseSLIDTO =
+        serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getServiceLevelIndicators().get(0);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), responseSLIDTO.getIdentifier());
+    String sliIndicator = serviceLevelIndicator.getUuid();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 = sloDTO.getServiceLevelIndicators().get(0);
+    serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
+    sloDTO.setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
+    ServiceLevelObjectiveResponse updateServiceLevelObjectiveResponse =
+        serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO);
+    ServiceLevelIndicator updatedServiceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            updateServiceLevelObjectiveResponse.getServiceLevelObjectiveDTO()
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    String updatedSliIndicator = updatedServiceLevelIndicator.getUuid();
+    assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isNotEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
+    serviceLevelIndicator.setSliMissingDataType(SLIMissingDataType.BAD);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
   }
 
   @Test

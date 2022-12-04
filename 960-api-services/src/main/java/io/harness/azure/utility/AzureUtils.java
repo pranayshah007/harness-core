@@ -16,7 +16,10 @@ import io.harness.network.Http;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.core.http.ProxyOptions;
 import com.azure.core.http.okhttp.implementation.ProxyAuthenticator;
+import com.azure.core.http.policy.FixedDelayOptions;
 import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.policy.RetryOptions;
+import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.management.AzureEnvironment;
 import com.azure.core.management.Region;
 import com.azure.core.management.profile.AzureProfile;
@@ -40,6 +43,7 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -301,5 +305,21 @@ public class AzureUtils {
     TokenRequestContext tokenRequestContext = new TokenRequestContext();
     tokenRequestContext.addScopes(resourceToScopes);
     return tokenRequestContext;
+  }
+
+  public FixedDelayOptions getDefaultDelayOptions() {
+    return getFixedDelayOptions(0, Duration.ofSeconds(1));
+  }
+
+  public FixedDelayOptions getFixedDelayOptions(int maxRetries, Duration delay) {
+    return new FixedDelayOptions(maxRetries, delay);
+  }
+
+  public RetryOptions getRetryOptions(FixedDelayOptions delayOptions) {
+    return new RetryOptions(delayOptions);
+  }
+
+  public RetryPolicy getRetryPolicy(RetryOptions retryOptions) {
+    return new RetryPolicy(retryOptions);
   }
 }

@@ -9,6 +9,7 @@ package io.harness.ccm;
 
 import static io.harness.ccm.AWSConnectorTestHelper.createNonEmptyObjectListing;
 import static io.harness.ccm.AWSConnectorTestHelper.createReportDefinition;
+import static io.harness.rule.OwnerRule.ANMOL;
 import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -247,6 +248,39 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateOptimizationPermissionMissing() {
     ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.OPTIMIZATION));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
+        .when(awsClient)
+        .simulatePrincipalPolicy(any(), any(), any(), any(), any());
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+
+    assertThat(result.getErrors()).hasSize(1);
+    assertThat(result.getErrors().get(0).getReason()).isEqualTo(REASON);
+    assertThat(result.getErrors().get(0).getMessage()).isEqualTo(MESSAGE_SUGGESTION);
+    assertThat(result.getErrors().get(0).getCode()).isEqualTo(403);
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateCommitmentOrchestratorSuccess() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.COMMITMENT_ORCHESTRATOR));
+    ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
+    ConnectorValidationResult result = connectorValidator.validate(ceawsConnectorResponseDTO, null);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+    assertThat(result.getErrors()).isNullOrEmpty();
+    assertThat(result.getTestedAt()).isLessThanOrEqualTo(Instant.now().toEpochMilli());
+  }
+
+  @Test
+  @Owner(developers = ANMOL)
+  @Category(UnitTests.class)
+  public void testValidateCommitmentOrchestratorPermissionMissing() {
+    ceAwsConnectorDTO.setFeaturesEnabled(Collections.singletonList(CEFeatures.COMMITMENT_ORCHESTRATOR));
     ceawsConnectorResponseDTO = AWSConnectorTestHelper.getCEAwsConnectorResponseDTO(ceAwsConnectorDTO);
     doReturn(Collections.singletonList(DENY_EVALUATION_RESULT))
         .when(awsClient)
