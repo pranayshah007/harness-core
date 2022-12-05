@@ -108,8 +108,15 @@ public interface K8sConstants {
       + "users:\n"
       + "- name: HARNESS_USER\n"
       + "  user:\n"
-      + "    auth-provider:\n"
-      + "      name: gcp\n";
+      + "    exec:\n"
+      + "       apiVersion: client.authentication.k8s.io/v1\n"
+      + "       args: null\n"
+      + "       command: gke-gcloud-auth-plugin\n"
+      + "       env: null\n"
+      + "       installHint: Install gke-gcloud-auth-plugin for use with kubectl by following\n"
+      + "         https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke\n"
+      + "       interactiveMode: Never\n"
+      + "       provideClusterInfo: true\n";
 
   String AZURE_KUBE_CONFIG_TEMPLATE = "apiVersion: v1\n"
       + "clusters:\n"
@@ -131,14 +138,20 @@ public interface K8sConstants {
       + "- name: ${CLUSTER_USER}\n"
       + "  user:\n"
       + "    token: ${TOKEN}\n"
-      + "    auth-provider:\n"
-      + "      name: azure\n"
-      + "      config:\n"
-      + "        apiserver-id: ${APISERVER_ID}\n"
-      + "        client-id: ${CLIENT_ID}\n"
-      + "        config-mode: \"${CONFIG_MODE}\"\n"
-      + "        environment: ${ENVIRONMENT}\n"
-      + "        tenant-id: ${TENANT_ID}\n";
+      + "      exec:\n"
+      + "        apiVersion: client.authentication.k8s.io/v1\n"
+      + "        args:\n"
+      + "          - --server-id\n"
+      + "          - ${APISERVER_ID}\n"
+      + "          - --client-id\n"
+      + "          - ${CLIENT_ID}\n"
+      + "          - --environment:\n"
+      + "          - ${ENVIRONMENT}\n"
+      + "          - --tenant-id:\n"
+      + "          - ${TENANT_ID}\n"
+      + "         command: kubelogin\n"
+      + "         env: null\n"
+      + "         provideClusterInfo: true\n";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
