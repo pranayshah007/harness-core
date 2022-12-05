@@ -215,6 +215,7 @@ import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
 import io.harness.ng.overview.service.CDOverviewDashboardServiceImpl;
 import io.harness.ng.scim.NGScimGroupServiceImpl;
+import io.harness.ng.scim.NGScimSystemServiceImpl;
 import io.harness.ng.scim.NGScimUserServiceImpl;
 import io.harness.ng.serviceaccounts.service.api.ServiceAccountService;
 import io.harness.ng.serviceaccounts.service.impl.ServiceAccountServiceImpl;
@@ -260,6 +261,7 @@ import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.resourcegroupclient.ResourceGroupClientModule;
 import io.harness.scim.service.ScimGroupService;
+import io.harness.scim.service.ScimSystemService;
 import io.harness.scim.service.ScimUserService;
 import io.harness.secretmanagerclient.SecretManagementClientModule;
 import io.harness.secrets.SecretNGManagerClientModule;
@@ -556,6 +558,7 @@ public class NextGenModule extends AbstractModule {
     bind(WebhookEventService.class).to(WebhookServiceImpl.class);
     bind(ScimUserService.class).to(NGScimUserServiceImpl.class);
     bind(ScimGroupService.class).to(NGScimGroupServiceImpl.class);
+    bind(ScimSystemService.class).to(NGScimSystemServiceImpl.class);
 
     install(new ValidationModule(getValidatorFactory()));
     install(new AbstractMongoModule() {
