@@ -34,7 +34,7 @@ public class ScheduleSegmentPublishJob implements Migration {
       // delete entries if any
       wingsPersistence.delete(wingsPersistence.createQuery(SegmentGroupEventJobContext.class));
 
-      List<Account> accounts = accountService.listAllAccounts();
+      List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
       List<List<Account>> accountLists = Lists.partition(accounts, SegmentGroupEventJobService.ACCOUNT_BATCH_SIZE);
 
       Instant nextIteration = Instant.now();

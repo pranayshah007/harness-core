@@ -23,6 +23,7 @@ import software.wings.service.impl.analysis.LogMLAnalysisStatus;
 import software.wings.service.impl.analysis.LogMLFeedbackRecord;
 import software.wings.service.impl.analysis.LogRequest;
 import software.wings.service.intfc.analysis.ClusterLevel;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.sm.StateType;
 import software.wings.verification.CVConfiguration;
 
@@ -34,7 +35,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
-public interface LogAnalysisService {
+public interface LogAnalysisService extends OwnedByAccount {
   @ValidationGroups(Create.class)
   Boolean saveLogData(@NotNull StateType stateType, String accountId, @NotNull String appId, String cvConfigId,
       String stateExecutionId, String workflowId, String workflowExecutionId, String serviceId,

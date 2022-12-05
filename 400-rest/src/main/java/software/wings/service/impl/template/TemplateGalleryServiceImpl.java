@@ -194,7 +194,7 @@ public class TemplateGalleryServiceImpl implements TemplateGalleryService {
 
   @Override
   public void copyHarnessTemplates() {
-    List<Account> accounts = accountService.listAllAccounts();
+    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : accounts) {
       if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
         deleteByAccountId(account.getUuid());
@@ -205,7 +205,7 @@ public class TemplateGalleryServiceImpl implements TemplateGalleryService {
 
   @Override
   public void createCommandLibraryGallery() {
-    List<Account> accounts = accountService.listAllAccounts();
+    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : accounts) {
       if (!GLOBAL_ACCOUNT_ID.equals(account.getUuid())) {
         saveHarnessCommandLibraryGalleryToAccount(account.getUuid(), account.getAccountName());
@@ -346,7 +346,7 @@ public class TemplateGalleryServiceImpl implements TemplateGalleryService {
       return;
     }
 
-    List<Account> accounts = accountService.listAllAccounts();
+    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : accounts) {
       try {
         log.info("Copying template [{}] started for account [{}]", templateName, account.getUuid());
@@ -443,7 +443,7 @@ public class TemplateGalleryServiceImpl implements TemplateGalleryService {
       return;
     }
 
-    List<Account> accounts = accountService.listAllAccounts();
+    List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : accounts) {
       try {
         log.info("Copying templates started for account [{}]", account.getUuid());

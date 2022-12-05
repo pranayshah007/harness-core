@@ -24,7 +24,8 @@ public interface BigQueryHelperService {
   Map<String, VMInstanceBillingData> getEKSFargateBillingData(
       List<String> resourceIds, Instant startTime, Instant endTime, String dataSetId);
 
-  Map<String, VMInstanceBillingData> getAwsBillingData(Instant startTime, Instant endTime, String dataSetId);
+  Map<String, VMInstanceBillingData> getAwsBillingData(
+      Instant startTime, Instant endTime, String dataSetId, String accountId);
 
   void updateCloudProviderMetaData(String accountId, CEMetadataRecordBuilder ceMetadataRecordBuilder);
 

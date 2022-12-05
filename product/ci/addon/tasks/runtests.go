@@ -408,7 +408,7 @@ func formatTests(tests []types.RunnableTest) string {
 	return strings.Join(testStrings, ", ")
 }
 
-func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr *bool) {
+func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp) {
 	if !r.parallelizeTests {
 		r.log.Info("Skipping test splitting as requested")
 		return
@@ -455,7 +455,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 				// Error while auto-detecting, no tests for other parallel steps
 				selection.Tests = []types.RunnableTest{}
 				r.runOnlySelectedTests = true
-				*ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
 				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests in parallel step 0")
 			}
 			return
@@ -479,7 +478,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 	// Modify runner input to run selected tests
 	selection.Tests = splitTests
 	r.runOnlySelectedTests = true
-	*ignoreInstr = false
 }
 
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
@@ -500,9 +498,11 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		}
 	}
 
-	// Test selection
+	// Ignore instrumentation when it's a manual run or user has unchecked RunOnlySelectedTests option
 	isManual := isManualFn()
 	ignoreInstr := isManual || !r.runOnlySelectedTests
+
+	// Test selection
 	selection = r.getTestSelection(ctx, files, isManual)
 
 	// Runner selection
@@ -570,7 +570,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test splitting: only when parallelism is enabled
 	if isParallelismEnabled() {
-		r.computeSelectedTests(ctx, runner, &selection, &ignoreInstr)
+		r.computeSelectedTests(ctx, runner, &selection)
 	}
 
 	// Test command
@@ -588,6 +588,9 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", err
 	}
 
+	if ignoreInstr {
+		r.log.Infow("Ignoring instrumentation and not attaching agent")
+	}
 	return resolvedCmd, nil
 }
 

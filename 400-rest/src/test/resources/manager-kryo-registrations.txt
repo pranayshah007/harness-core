@@ -2146,6 +2146,10 @@
 60013:io.harness.delegate.task.artifacts.ami.AMITag
 60014:io.harness.delegate.task.artifacts.ami.AMIFilter
 60015:io.harness.delegate.task.ssh.EmptyHostDelegateConfig
+60016:io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig
+60017:io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest
+60018:io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult
+60019:io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

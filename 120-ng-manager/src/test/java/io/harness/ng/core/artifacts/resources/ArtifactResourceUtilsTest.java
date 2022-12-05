@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.NgManagerTestBase;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -76,6 +77,7 @@ public class ArtifactResourceUtilsTest extends NgManagerTestBase {
   @Mock EnvironmentService environmentService;
   @Mock GARResourceService garResourceService;
   @Mock ArtifactoryResourceService artifactoryResourceService;
+  @Mock AccessControlClient accessControlClient;
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_ID = "orgId";
   private static final String PROJECT_ID = "projectId";

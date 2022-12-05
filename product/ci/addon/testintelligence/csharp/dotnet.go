@@ -58,10 +58,6 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	installLoggerCmd := "dotnet add package JUnitTestLogger --version 1.1.0"
 	defaultRunCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\"", dotnetCmd)
 	agentFullName := path.Join(b.agentPath, "dotnet-agent.injector.dll")
-	if ignoreInstr {
-		b.log.Infow("ignoring instrumentation and not attaching agent")
-		return fmt.Sprintf("%s\n%s", installLoggerCmd, defaultRunCmd), nil
-	}
 
 	var instrumentCmd string
 	// Run all the DLLs through the injector
@@ -72,7 +68,9 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 		}
 	}
 	if runAll {
-		b.log.Infow("Running all tests")
+		if ignoreInstr {
+			return fmt.Sprintf("%s\n%s", installLoggerCmd, defaultRunCmd), nil
+		}
 		return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, defaultRunCmd), nil // Add instrumentation here
 	}
 
@@ -106,5 +104,8 @@ func (b *dotnetRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, u
 	}
 	// dotnet /dotnet-agent.injector.dll /TestProject1.dll ./Config.yaml
 	runtestCmd := fmt.Sprintf("%s test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"%s\"", dotnetCmd, testStr)
+	if ignoreInstr {
+		return fmt.Sprintf("%s\n%s", installLoggerCmd, runtestCmd), nil
+	}
 	return fmt.Sprintf("%s\n%s%s", installLoggerCmd, instrumentCmd, runtestCmd), nil
 }

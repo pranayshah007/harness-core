@@ -46,17 +46,17 @@ public class ExecutionSummaryUpdateUtils {
         updateApplied = true;
       }
     }
-    // LayoutNodeMap contains only stage or stage-strategy nodes. If the current nodeExecution does not correspond to
-    // stage then return here. And do not update the graph for current nodeExecution.
-    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
-      return updateApplied;
-    }
-    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+    // Making update in graph only if the strategy is at stage level.
+    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())) {
       update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".status", status);
       update.set(
           PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
           nodeExecution.getResolvedStepParameters());
       updateApplied = true;
+    }
+    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
+      return updateApplied;
     }
     // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
     // there is a PlanNode
