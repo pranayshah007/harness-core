@@ -80,22 +80,20 @@ func (b *bazelRunner) AutoDetectTests(ctx context.Context, testGlobs []string) (
 }
 
 func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, userArgs, agentConfigPath string, ignoreInstr, runAll bool) (string, error) {
-	if ignoreInstr {
-		b.log.Infow("ignoring instrumentation and not attaching Java agent")
-		return fmt.Sprintf("%s %s //...", bazelCmd, userArgs), nil
-	}
-
 	agentArg := fmt.Sprintf(javaAgentArg, agentConfigPath)
 	instrArg := fmt.Sprintf("--define=HARNESS_ARGS=%s", agentArg)
-	defaultCmd := fmt.Sprintf("%s %s %s //...", bazelCmd, userArgs, instrArg) // run all the tests
 
+	// Run all the tests
 	if runAll {
-		// Run all the tests
-		return defaultCmd, nil
+		if ignoreInstr {
+			return fmt.Sprintf("%s %s //...", bazelCmd, userArgs), nil
+		}
+		return fmt.Sprintf("%s %s %s //...", bazelCmd, userArgs, instrArg), nil
 	}
 	if len(tests) == 0 {
 		return fmt.Sprintf("echo \"Skipping test run, received no tests to execute\""), nil
 	}
+
 	// Use only unique classes
 	pkgs := []string{}
 	clss := []string{}
@@ -172,11 +170,13 @@ func (b *bazelRunner) GetCmd(ctx context.Context, tests []types.RunnableTest, us
 				rulesM[r] = struct{}{}
 			}
 		}
-
 	}
 	if len(rules) == 0 {
 		return fmt.Sprintf("echo \"Could not find any relevant test rules. Skipping the run\""), nil
 	}
 	testList := strings.Join(rules, " ")
+	if ignoreInstr {
+		return fmt.Sprintf("%s %s %s", bazelCmd, userArgs, testList), nil
+	}
 	return fmt.Sprintf("%s %s %s %s", bazelCmd, userArgs, instrArg, testList), nil
 }

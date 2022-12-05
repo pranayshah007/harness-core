@@ -58,6 +58,7 @@ import software.wings.service.intfc.yaml.sync.YamlGitConfigService;
 
 import com.google.inject.Inject;
 import java.util.List;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -117,6 +118,7 @@ public class ServiceClassLocatorTest extends WingsBaseTest {
   @Test
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void testAccountDescendingServices() {
     for (int i = 0; i < 3; ++i) {
       List<OwnedByAccount> ownedByAccounts = serviceClassLocator.descendingServicesForInterface(OwnedByAccount.class);

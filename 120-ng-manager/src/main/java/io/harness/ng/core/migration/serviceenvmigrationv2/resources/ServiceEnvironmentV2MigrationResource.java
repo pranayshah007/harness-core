@@ -14,6 +14,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 
@@ -58,6 +60,20 @@ public class ServiceEnvironmentV2MigrationResource {
         requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
 
     SvcEnvMigrationResponseDto response = serviceEnvironmentV2MigrationService.migratePipeline(requestDto, accountId);
+    return ResponseDTO.newResponse(response);
+  }
+
+  @POST
+  @Path("/project")
+  @ApiOperation(value = "Migrate a project to new service and environment framework", nickname = "svc-env migration")
+  public ResponseDTO<SvcEnvMigrationProjectWrapperResponseDto> migrateProject(
+      @NotNull @QueryParam("accountIdentifier") String accountId,
+      @Valid SvcEnvMigrationProjectWrapperRequestDto requestDto) {
+    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+        requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(), accountId);
+
+    SvcEnvMigrationProjectWrapperResponseDto response =
+        serviceEnvironmentV2MigrationService.migrateProject(requestDto, accountId);
     return ResponseDTO.newResponse(response);
   }
 }

@@ -12,6 +12,7 @@ import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -197,8 +198,8 @@ public class EnvironmentMapperTest extends CategoryTest {
     final String yaml = readFile(filename, getClass());
     final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
                                                  .identifier("ENV1")
-                                                 .orgIdentifier("ORG_ID1")
-                                                 .projectIdentifier("PROJECT_ID1")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
                                                  .description("dto description")
                                                  .type(PreProduction)
                                                  .tags(Collections.singletonMap("dto_key", "dto_value"))
@@ -220,7 +221,7 @@ public class EnvironmentMapperTest extends CategoryTest {
     final String filename = "env-with-no-override.yaml";
     final String yaml = readFile(filename, getClass());
     final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
-                                                 .identifier("ENV")
+                                                 .identifier("ENV1")
                                                  .orgIdentifier("ORG_ID")
                                                  .projectIdentifier("PROJECT_ID")
                                                  .type(PreProduction)
@@ -384,5 +385,101 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThat(cfg.getType()).isEqualTo(PreProduction);
     assertThat(cfg.getTags().get("k1")).isEqualTo("v1");
     assertThat(cfg.getVariables()).isNull();
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidOrgId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+    final String yaml = readFile(filename, getClass());
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("default1")
+                                                 .projectIdentifier("pq")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Org Identifier ORG_ID passed in yaml is not same as passed in query params default1");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidProjectId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("ENV")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("proj")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Project Identifier PROJECT_ID passed in yaml is not same as passed in query params proj");
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToEnvironmentValidateInvalidId() {
+    final String filename = "env-with-manifest-overrides.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("env")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .projectIdentifier("PROJECT_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Environment Identifier ENV passed in yaml is not same as passed in query params env");
+  }
+
+  // org level templates
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToOrgLevelEnvironment() {
+    final String filename = "env-org-level.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO = EnvironmentRequestDTO.builder()
+                                                 .identifier("env")
+                                                 .orgIdentifier("ORG_ID")
+                                                 .type(PreProduction)
+                                                 .yaml(yaml)
+                                                 .build();
+
+    assertThat(EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO)).isNotNull();
+  }
+
+  // When org passed in query is null
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testToOrgAsNull() {
+    final String filename = "env-org-level.yaml";
+
+    final String yaml = readFile(filename, getClass());
+
+    final EnvironmentRequestDTO requestDTO =
+        EnvironmentRequestDTO.builder().identifier("env").type(PreProduction).yaml(yaml).build();
+
+    assertThatThrownBy(() -> EnvironmentMapper.toEnvironmentEntity("ACCOUNT_ID", requestDTO))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Org Identifier ORG_ID passed in yaml is not same as passed in query params null");
   }
 }

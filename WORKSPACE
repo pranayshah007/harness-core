@@ -283,6 +283,83 @@ go_repository(
     version = "v0.19.0",
 )
 
+go_repository(
+    name = "com_github_appleboy_gofight_v2",
+    importpath = "github.com/appleboy/gofight/v2",
+    sum = "h1:VOy3jow4vIK8BRQJoC/I9muxyYlJ2yb9ht2hZoS3rf4=",
+    version = "v2.1.2",
+)
+
+go_repository(
+    name = "com_github_go_kit_log",
+    importpath = "github.com/go-kit/log",
+    sum = "h1:7i2K3eKTos3Vc0enKCfnVcgHh2olr/MyfboYq7cAcFw=",
+    version = "v0.2.0",
+)
+
+go_repository(
+    name = "com_github_golang_jwt_jwt_v4",
+    importpath = "github.com/golang-jwt/jwt/v4",
+    sum = "h1:rcc4lwaZgFMCZ5jxF9ABolDcIHdBytAFgqFPbSJQAYs=",
+    version = "v4.4.2",
+)
+
+go_repository(
+    name = "com_github_googleapis_go_type_adapters",
+    importpath = "github.com/googleapis/go-type-adapters",
+    sum = "h1:9XdMn+d/G57qq1s8dNc5IesGCXHf6V2HZ2JwRxfA2tA=",
+    version = "v1.0.0",
+)
+
+go_repository(
+    name = "com_github_gorilla_securecookie",
+    importpath = "github.com/gorilla/securecookie",
+    sum = "h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyCS8BvQ=",
+    version = "v1.1.1",
+)
+
+go_repository(
+    name = "com_github_gorilla_sessions",
+    importpath = "github.com/gorilla/sessions",
+    sum = "h1:DHd3rPN5lE3Ts3D8rKkQ8x/0kqfeNmBAaiSi+o7FsgI=",
+    version = "v1.2.1",
+)
+
+go_repository(
+    name = "com_github_hdrhistogram_hdrhistogram_go",
+    importpath = "github.com/HdrHistogram/hdrhistogram-go",
+    sum = "h1:5IcZpTvzydCQeHzK4Ef/D5rrSqwxob0t8PQPMybUNFM=",
+    version = "v1.1.2",
+)
+
+go_repository(
+    name = "com_github_labstack_echo_contrib",
+    importpath = "github.com/labstack/echo-contrib",
+    sum = "h1:bzSG0SpuZZd7BmJLvsWtPfU23W0Enh3K0tok3aENVKA=",
+    version = "v0.13.0",
+)
+
+go_repository(
+    name = "com_github_uber_jaeger_client_go",
+    importpath = "github.com/uber/jaeger-client-go",
+    sum = "h1:D6wyKGCecFaSRUpo8lCVbaOOb6ThwMmTEbhRwtKR97o=",
+    version = "v2.30.0+incompatible",
+)
+
+go_repository(
+    name = "com_github_uber_jaeger_lib",
+    importpath = "github.com/uber/jaeger-lib",
+    sum = "h1:td4jdvLcExb4cBISKIpHuGoVXh+dVKhn2Um6rjCsSsg=",
+    version = "v2.4.1+incompatible",
+)
+
+go_repository(
+    name = "com_google_cloud_go_profiler",
+    importpath = "cloud.google.com/go/profiler",
+    sum = "h1:R6y/xAeifaUXxd2x6w+jIwKxoKl8Cv5HJvcvASTPWJo=",
+    version = "v0.3.0",
+)
+
 go_rules_dependencies()
 
 go_register_toolchains(version = "1.18.7")
@@ -4580,6 +4657,7 @@ plain_artifacts = [
     "com.azure.resourcemanager:azure-resourcemanager-storage:2.14.0",
     "com.azure:azure-security-keyvault-keys:4.4.1",
     "com.azure:azure-security-keyvault-secrets:4.4.1",
+    "com.azure:azure-security-keyvault-administration:4.1.2",
     "com.azure:azure-storage-blob:12.16.0",
     "com.azure:azure-storage-common:12.15.1",
     "com.bettercloud:vault-java-driver:4.0.0",
@@ -4720,41 +4798,7 @@ plain_artifacts = [
     "com.mashape.unirest:unirest-java:1.4.9",
     "com.mchange:c3p0:0.9.5.4",
     "com.mchange:mchange-commons-java:0.2.15",
-    "com.microsoft.azure:adal4j:1.6.4",
-    "com.microsoft.azure:azure-annotations:1.10.0",
-    "com.microsoft.azure:azure-client-authentication:1.7.0",
-    "com.microsoft.azure:azure-client-runtime:1.7.0",
-    "com.microsoft.azure:azure-keyvault-core:1.2.4",
-    "com.microsoft.azure:azure-keyvault-cryptography:1.2.4",
-    "com.microsoft.azure:azure-keyvault-webkey:1.2.4",
-    "com.microsoft.azure:azure-keyvault:1.2.4",
-    "com.microsoft.azure:azure-mgmt-appservice:1.31.1",
-    "com.microsoft.azure:azure-mgmt-batch:1.31.1",
-    "com.microsoft.azure:azure-mgmt-batchai:1.31.1",
-    "com.microsoft.azure:azure-mgmt-cdn:1.31.1",
-    "com.microsoft.azure:azure-mgmt-compute:1.31.1",
-    "com.microsoft.azure:azure-mgmt-containerinstance:1.31.1",
-    "com.microsoft.azure:azure-mgmt-containerregistry:1.31.1",
-    "com.microsoft.azure:azure-mgmt-containerservice:1.31.1",
-    "com.microsoft.azure:azure-mgmt-cosmosdb:1.31.1",
-    "com.microsoft.azure:azure-mgmt-dns:1.31.1",
-    "com.microsoft.azure:azure-mgmt-eventhub:1.31.1",
-    "com.microsoft.azure:azure-mgmt-graph-rbac:1.31.1",
-    "com.microsoft.azure:azure-mgmt-keyvault:1.31.1",
-    "com.microsoft.azure:azure-mgmt-locks:1.31.1",
-    "com.microsoft.azure:azure-mgmt-monitor:1.31.1",
-    "com.microsoft.azure:azure-mgmt-msi:1.31.1",
-    "com.microsoft.azure:azure-mgmt-network:1.31.1",
-    "com.microsoft.azure:azure-mgmt-redis:1.31.1",
-    "com.microsoft.azure:azure-mgmt-resources:1.31.1",
-    "com.microsoft.azure:azure-mgmt-search:1.31.1",
-    "com.microsoft.azure:azure-mgmt-servicebus:1.31.1",
-    "com.microsoft.azure:azure-mgmt-sql:1.31.1",
-    "com.microsoft.azure:azure-mgmt-storage:1.31.1",
-    "com.microsoft.azure:azure-mgmt-trafficmanager:1.31.1",
-    "com.microsoft.azure:azure-storage:6.1.0",
     "com.microsoft.azure:msal4j:1.11.0",
-    "com.microsoft.rest:client-runtime:1.7.4",
     "com.networknt:json-schema-validator:1.0.54",
     "com.nimbusds:lang-tag:1.5",
     "com.nimbusds:nimbus-jose-jwt:8.19",
@@ -5382,14 +5426,6 @@ maven_install(
             ],
             group = "com.google.apis",
             version = "v1-rev48-1.23.0",
-        ),
-        maven.artifact(
-            artifact = "azure",
-            exclusions = [
-                "org.slf4j:slf4j-simple",
-            ],
-            group = "com.microsoft.azure",
-            version = "1.31.1",
         ),
         maven.artifact(
             artifact = "clojure",

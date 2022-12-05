@@ -36,6 +36,8 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.StageMigrationFailureResponse;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.TemplateObject;
@@ -49,6 +51,8 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
+import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
+import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
@@ -96,6 +100,7 @@ public class ServiceEnvironmentV2MigrationService {
   @Inject private EntityRefreshService entityRefreshService;
   @Inject private TemplateResourceClient templateResourceClient;
   private final ObjectMapper objectMapper = new ObjectMapper();
+  private final Integer PIPELINE_SIZE = 25;
 
   private DeploymentStageConfig getDeploymentStageConfig(String stageYaml) {
     if (isEmpty(stageYaml)) {
@@ -106,6 +111,54 @@ public class ServiceEnvironmentV2MigrationService {
     } catch (IOException ex) {
       throw new InvalidRequestException("not able to parse stage yaml due to " + ex.getMessage());
     }
+  }
+
+  public SvcEnvMigrationProjectWrapperResponseDto migrateProject(
+      @NonNull SvcEnvMigrationProjectWrapperRequestDto requestDto, @NonNull String accountId) {
+    int currentPage = 0;
+    int currentSize = 0;
+    List<StageMigrationFailureResponse> failures = new ArrayList<>();
+    List<String> migratedPipelines = new ArrayList<>();
+    do {
+      List<PMSPipelineSummaryResponseDTO> pipelines =
+          NGRestUtils
+              .getResponse(pipelineServiceClient.listPipelines(accountId, requestDto.getOrgIdentifier(),
+                  requestDto.getProjectIdentifier(), currentPage, PIPELINE_SIZE, null, null, null, null,
+                  PipelineFilterPropertiesDto.builder().build()))
+              .getContent();
+      currentPage++;
+      if (pipelines == null || pipelines.size() == 0) {
+        break;
+      }
+      currentSize = pipelines.size();
+
+      for (PMSPipelineSummaryResponseDTO pipeline : pipelines) {
+        if (isNotEmpty(requestDto.getSkipPipelines())
+            && requestDto.getSkipPipelines().contains(pipeline.getIdentifier())) {
+          continue;
+        }
+        SvcEnvMigrationResponseDto pipelineResponse =
+            migratePipeline(SvcEnvMigrationRequestDto.builder()
+                                .orgIdentifier(requestDto.getOrgIdentifier())
+                                .projectIdentifier(requestDto.getProjectIdentifier())
+                                .pipelineIdentifier(pipeline.getIdentifier())
+                                .isUpdatePipeline(requestDto.isUpdatePipeline())
+                                .skipServices(requestDto.getSkipServices())
+                                .skipInfras(requestDto.getSkipInfras())
+                                .infraIdentifierFormat(requestDto.getInfraIdentifierFormat())
+                                .templateMap(requestDto.getTemplateMap())
+                                .build(),
+                accountId);
+        failures.addAll(pipelineResponse.getFailures());
+        if (pipelineResponse.isMigrated()) {
+          migratedPipelines.add(pipeline.getIdentifier());
+        }
+      }
+    } while (currentSize == PIPELINE_SIZE);
+    return SvcEnvMigrationProjectWrapperResponseDto.builder()
+        .failures(failures)
+        .migratedPipelines(migratedPipelines)
+        .build();
   }
 
   public SvcEnvMigrationResponseDto migratePipeline(
@@ -126,6 +179,7 @@ public class ServiceEnvironmentV2MigrationService {
       return SvcEnvMigrationResponseDto.builder().build();
     }
     List<StageMigrationFailureResponse> failures = new ArrayList<>();
+    boolean updatePipelineRequired = false;
 
     // Loop over each stage and update each stage yaml
     for (int currentIndex = 0; currentIndex < stageArrayNode.size(); currentIndex++) {
@@ -137,18 +191,23 @@ public class ServiceEnvironmentV2MigrationService {
       Optional<JsonNode> migratedStageNode = createMigratedYaml(accountId, stageYamlNode, requestDto, failures);
       if (migratedStageNode.isPresent()) {
         stageArrayNode.set(currentIndex, migratedStageNode.get());
+        updatePipelineRequired = true;
       }
     }
 
     ObjectNode pipelineParentNode = objectMapper.createObjectNode();
     pipelineParentNode.set("pipeline", pipelineYamlField.getNode().getCurrJsonNode());
     String migratedPipelineYaml = YamlPipelineUtils.writeYamlString(pipelineParentNode);
-    if (requestDto.isUpdatePipeline()) {
+    if (requestDto.isUpdatePipeline() && updatePipelineRequired) {
       checkPipelineAccess(accountId, requestDto.getOrgIdentifier(), requestDto.getProjectIdentifier(),
           requestDto.getPipelineIdentifier());
       updatePipeline(existingPipeline, migratedPipelineYaml, requestDto, accountId);
     }
-    return SvcEnvMigrationResponseDto.builder().pipelineYaml(migratedPipelineYaml).failures(failures).build();
+    return SvcEnvMigrationResponseDto.builder()
+        .pipelineYaml(migratedPipelineYaml)
+        .migrated(updatePipelineRequired)
+        .failures(failures)
+        .build();
   }
 
   private void updatePipeline(PMSPipelineResponseDTO existingPipeline, String migratedPipelineYaml,

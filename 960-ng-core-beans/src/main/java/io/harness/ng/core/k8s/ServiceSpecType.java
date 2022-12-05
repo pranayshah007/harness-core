@@ -19,4 +19,5 @@ public interface ServiceSpecType {
   String AZURE_WEBAPP = "AzureWebApp";
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String ELASTIGROUP = "Elastigroup";
+  String ASG = "Asg";
 }

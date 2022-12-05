@@ -149,6 +149,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -465,6 +466,7 @@ public class AccountServiceTest extends WingsBaseTest {
   @Test
   @Owner(developers = BRETT)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void shouldDeleteAccount() {
     String accountId = wingsPersistence.save(anAccount().withCompanyName(HARNESS_NAME).build());
     accountService.delete(accountId);

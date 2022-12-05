@@ -47,6 +47,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(PIPELINE)
@@ -60,9 +61,7 @@ public class EnvironmentMapper {
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
 
-      validate(ngEnvironmentConfig);
-      validateEnvGlobalOverrides(ngEnvironmentConfig);
-
+      validateOrThrow(environmentRequestDTO, ngEnvironmentConfig);
       environment = Environment.builder()
                         .identifier(environmentRequestDTO.getIdentifier())
                         .accountId(accountId)
@@ -87,7 +86,13 @@ public class EnvironmentMapper {
     return environment;
   }
 
-  private void validate(NGEnvironmentConfig ngEnvironmentConfig) {
+  private void validateOrThrow(EnvironmentRequestDTO environmentRequestDTO, NGEnvironmentConfig ngEnvironmentConfig) {
+    validateOrThrow(ngEnvironmentConfig);
+    validateEnvGlobalOverridesOrThrow(ngEnvironmentConfig);
+    validateYamlOrThrow(ngEnvironmentConfig, environmentRequestDTO);
+  }
+
+  private void validateOrThrow(NGEnvironmentConfig ngEnvironmentConfig) {
     Set<ConstraintViolation<NGEnvironmentConfig>> violations = validator.validate(ngEnvironmentConfig);
     if (isEmpty(violations)) {
       return;
@@ -227,7 +232,7 @@ public class EnvironmentMapper {
     }
   }
 
-  private void validateEnvGlobalOverrides(NGEnvironmentConfig ngEnvironmentConfig) {
+  private void validateEnvGlobalOverridesOrThrow(NGEnvironmentConfig ngEnvironmentConfig) {
     if (ngEnvironmentConfig.getNgEnvironmentInfoConfig() != null
         && ngEnvironmentConfig.getNgEnvironmentInfoConfig().getNgEnvironmentGlobalOverride() != null) {
       final NGEnvironmentGlobalOverride environmentGlobalOverride =
@@ -273,5 +278,26 @@ public class EnvironmentMapper {
       }
     });
     return duplicateIds;
+  }
+
+  private void validateYamlOrThrow(NGEnvironmentConfig config, EnvironmentRequestDTO dto) {
+    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getOrgIdentifier(), dto.getOrgIdentifier()) != 0) {
+      throw new InvalidRequestException(
+          String.format("Org Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getNgEnvironmentInfoConfig().getOrgIdentifier(), dto.getOrgIdentifier()));
+    }
+
+    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getProjectIdentifier(), dto.getProjectIdentifier())
+        != 0) {
+      throw new InvalidRequestException(
+          String.format("Project Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getNgEnvironmentInfoConfig().getProjectIdentifier(), dto.getProjectIdentifier()));
+    }
+
+    if (StringUtils.compare(config.getNgEnvironmentInfoConfig().getIdentifier(), dto.getIdentifier()) != 0) {
+      throw new InvalidRequestException(
+          String.format("Environment Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getNgEnvironmentInfoConfig().getIdentifier(), dto.getIdentifier()));
+    }
   }
 }
