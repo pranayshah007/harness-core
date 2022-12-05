@@ -13,10 +13,13 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 
 import static java.lang.String.format;
 
+import io.harness.EntityType;
 import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
@@ -27,7 +30,9 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.ScmException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
@@ -62,6 +67,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.PipelineVersion;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.utils.PmsFeatureFlagHelper;
 
@@ -109,6 +115,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Inject private final PipelineCloneHelper pipelineCloneHelper;
   @Inject private final PmsFeatureFlagHelper pmsFeatureFlagHelper;
   @Inject private final PipelineSettingsService pipelineSettingsService;
+  @Inject private final EntitySetupUsageClient entitySetupUsageClient;
 
   public static final String CREATING_PIPELINE = "creating new pipeline";
   public static final String UPDATING_PIPELINE = "updating existing pipeline";
@@ -458,6 +465,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, Long version) {
+    validateSetupUsage(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     }
@@ -471,6 +479,29 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       throw new InvalidRequestException(
           format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.", pipelineIdentifier,
               projectIdentifier, orgIdentifier));
+    }
+  }
+
+  public void validateSetupUsage(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(accountId)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .identifier(pipelineIdentifier)
+                                      .build();
+    Boolean isEntityReferenced;
+    try {
+      isEntityReferenced = NGRestUtils.getResponse(entitySetupUsageClient.isEntityReferenced(
+          accountId, identifierRef.getFullyQualifiedName(), EntityType.PIPELINES));
+    } catch (Exception ex) {
+      log.info("Encountered exception while requesting the Entity Reference records of [{}], with exception",
+          pipelineIdentifier, ex);
+      throw new UnexpectedException("Error while deleting the Pipeline");
+    }
+    if (isEntityReferenced) {
+      throw new ReferencedEntityException(
+          String.format("Could not delete the pipeline %s as it is referenced by other entities", pipelineIdentifier));
     }
   }
 

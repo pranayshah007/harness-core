@@ -8,6 +8,7 @@
 package io.harness.steps.pipelinestage;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,6 +27,7 @@ import com.google.api.client.util.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -75,5 +77,43 @@ public class PipelineStageVariableCreatorTest extends CategoryTest {
             "pipeline.stages.childPipeline.name", "pipeline.stages.childPipeline.spec.project",
             "pipeline.stages.childPipeline.description", "pipeline.stages.childPipeline.spec.org",
             "pipeline.stages.childPipeline.spec.inputs", "pipeline.stages.childPipeline.spec.pipelineInputs");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void createVariablesForChildren() throws IOException {
+    // Pipeline Node
+    String yamlField = "---\n"
+        + "name: \"parent pipeline\"\n"
+        + "identifier: \"rc-" + generateUuid() + "\"\n"
+        + "timeout: \"1w\"\n"
+        + "type: \"Pipeline\"\n"
+        + "spec:\n"
+        + "  pipeline: \"childPipeline\"\n"
+        + "  org: \"org\"\n"
+        + "  project: \"project\"\n"
+        + "  outputs:\n"
+        + "   - name: var1\n"
+        + "     __uuid: uuid1\n"
+        + "     value: value1\n"
+        + "   - name: var2\n"
+        + "     __uuid: uuid1\n"
+        + "     value: value2\n";
+    YamlField fullYamlField = YamlUtils.readTree(yamlField);
+    // yaml input expressions
+    LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodes =
+        pipelineStageVariableCreator.createVariablesForChildrenNodes(
+            VariableCreationContext.builder().currentField(fullYamlField).build(), fullYamlField);
+
+    assertThat(variablesForChildrenNodes.size()).isEqualTo(1);
+
+    List<String> fqnPropertiesList = variablesForChildrenNodes.get(fullYamlField.getUuid())
+                                         .getYamlProperties()
+                                         .values()
+                                         .stream()
+                                         .map(YamlProperties::getFqn)
+                                         .collect(Collectors.toList());
+    assertThat(fqnPropertiesList).containsOnly("output.var2", "output.var1");
   }
 }

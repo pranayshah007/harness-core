@@ -114,7 +114,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
-      String connectorRef, String repoName, Boolean loadFromCache, Boolean loadFromFallbackBranch) {
+      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch) {
     GitAwareContextHelper.populateGitDetails(
         GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
@@ -122,7 +122,8 @@ public class PipelinesApiImpl implements PipelinesApi {
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
+          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
