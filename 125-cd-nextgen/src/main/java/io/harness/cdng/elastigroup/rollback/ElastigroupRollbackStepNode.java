@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.spot.elastigroup.deploy;
+package io.harness.cdng.elastigroup.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
@@ -31,27 +31,27 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_DEPLOY)
-@TypeAlias("ElastigroupDeployStepNode")
+@JsonTypeName(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK)
+@TypeAlias("ElastigroupRollbackStepNode")
 @OwnedBy(CDP)
-@RecasterAlias("io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepNode")
-public class ElastigroupDeployStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull StepType type = StepType.ElastigroupDeploy;
+@RecasterAlias("io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepNode")
+public class ElastigroupRollbackStepNode extends CdAbstractStepNode {
+  @JsonProperty("type") @NotNull StepType type = StepType.ElastigroupRollback;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  ElastigroupDeployStepInfo elastigroupDeployStepInfo;
+  ElastigroupRollbackStepInfo elastigroupRollbackStepInfo;
   @Override
   public String getType() {
-    return StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
+    return StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
   }
 
   @Override
   public StepSpecType getStepSpecType() {
-    return elastigroupDeployStepInfo;
+    return elastigroupRollbackStepInfo;
   }
 
   enum StepType {
-    ElastigroupDeploy(StepSpecTypeConstants.ELASTIGROUP_DEPLOY);
+    ElastigroupRollback(StepSpecTypeConstants.ELASTIGROUP_ROLLBACK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

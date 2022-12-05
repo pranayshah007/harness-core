@@ -19,6 +19,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.elastigroup.ElastigroupEntityHelper;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepHelper;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStepParameters;
 import io.harness.delegate.task.spot.elastigroup.deploy.ElastigroupDeployTaskResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;

@@ -5,13 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.cdng.spot.elastigroup.rollback;
+package io.harness.cdng.elastigroup.rollback;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupSpecParameters;
+import io.harness.cdng.elastigroup.deploy.ElastigroupSpecParameters;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 

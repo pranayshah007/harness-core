@@ -20,6 +20,7 @@ import io.harness.cdng.ecs.EcsBlueGreenSwapTargetGroupsStep;
 import io.harness.cdng.ecs.EcsCanaryDeployStep;
 import io.harness.cdng.ecs.EcsRollingDeployStep;
 import io.harness.cdng.ecs.EcsRollingRollbackStep;
+import io.harness.cdng.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.k8s.K8sBlueGreenStep;
@@ -27,7 +28,6 @@ import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
 import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
-import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStep;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 
