@@ -7,6 +7,9 @@
 
 package io.harness.delegate.task.elastigroup.request;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
@@ -15,20 +18,16 @@ import io.harness.delegate.task.elastigroup.response.SpotInstConfig;
 import io.harness.expression.Expression;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.model.ElastiGroup;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.NonFinal;
 
-import java.util.List;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.expression.Expression.ALLOW_SECRETS;
-
 @Data
 @Builder
 @OwnedBy(CDP)
-public class ElastigroupSwapRouteCommandRequest
-    implements ElastigroupCommandRequest {
+public class ElastigroupSwapRouteCommandRequest implements ElastigroupCommandRequest {
   String accountId;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;

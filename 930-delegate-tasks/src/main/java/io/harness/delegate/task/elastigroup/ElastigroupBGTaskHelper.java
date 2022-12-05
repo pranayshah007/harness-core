@@ -7,11 +7,21 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ExecutionError;
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.defaultSteadyStateTimeout;
+import static io.harness.threading.Morpheus.sleep;
+
+import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.concurrent.HTimeLimiter;
@@ -26,27 +36,18 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ExecutionError;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.defaultSteadyStateTimeout;
-import static io.harness.threading.Morpheus.sleep;
-import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

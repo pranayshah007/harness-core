@@ -7,7 +7,15 @@
 
 package io.harness.delegate.elastigroup;
 
-import com.google.inject.Inject;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -36,20 +44,13 @@ import io.harness.logging.LogLevel;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
+
+import com.google.inject.Inject;
+import java.util.List;
+import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -84,8 +85,8 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
 
     timeoutInMillis = elastigroupSetupCommandRequest.getTimeoutIntervalInMin() * 60000;
 
-    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
+    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
+        ElastigroupCommandUnitConstants.CREATE_ELASTIGROUP.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSetupCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
@@ -153,11 +154,13 @@ public class ElastigroupBGStageSetupCommandTaskHandler extends ElastigroupComman
       if (prodOptionalElastiGroup.isPresent()) {
         ElastiGroup prodElastiGroup = prodOptionalElastiGroup.get();
         deployLogCallback.saveExecutionLog(format("Found existing Prod Elastigroup with name: [%s] and id: [%s]",
-            prodElastiGroup.getName(), prodElastiGroup.getId()), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+                                               prodElastiGroup.getName(), prodElastiGroup.getId()),
+            LogLevel.INFO, CommandExecutionStatus.SUCCESS);
         prodElastiGroupList = singletonList(prodElastiGroup);
       } else {
-        deployLogCallback.saveExecutionLog(format("Not able to find Prod Elastigroup with name: [%s]",
-                prodElastiGroupName), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        deployLogCallback.saveExecutionLog(
+            format("Not able to find Prod Elastigroup with name: [%s]", prodElastiGroupName), LogLevel.INFO,
+            CommandExecutionStatus.SUCCESS);
         prodElastiGroupList = emptyList();
       }
       elastigroupSetupResult.setGroupToBeDownsized(prodElastiGroupList);

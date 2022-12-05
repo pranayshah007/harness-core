@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.git.GitDecryptionHelper;
@@ -27,13 +26,14 @@ import io.harness.delegate.task.git.GitFetchTaskHelper;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
-import org.jose4j.lang.JoseException;
 
+import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
+import org.jose4j.lang.JoseException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

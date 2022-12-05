@@ -7,23 +7,22 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.elastigroup.ElastigroupBGStageSetupCommandTaskHandler;
 import io.harness.delegate.elastigroup.ElastigroupSwapRouteCommandTaskHandler;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupCommandResponse;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import org.apache.commons.lang3.NotImplementedException;
 
+import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import org.apache.commons.lang3.NotImplementedException;
 
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupSwapRouteCommandTaskNG extends AbstractDelegateRunnableTask {
@@ -31,8 +30,8 @@ public class ElastigroupSwapRouteCommandTaskNG extends AbstractDelegateRunnableT
   @Inject private ElastigroupSwapRouteCommandTaskHandler elastigroupSwapRouteCommandTaskHandler;
 
   public ElastigroupSwapRouteCommandTaskNG(DelegateTaskPackage delegateTaskPackage,
-                                           ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
-                                           BooleanSupplier preExecute) {
+      ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
+      BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
 
     SecretSanitizerThreadLocal.addAll(delegateTaskPackage.getSecrets());
@@ -47,7 +46,7 @@ public class ElastigroupSwapRouteCommandTaskNG extends AbstractDelegateRunnableT
   public ElastigroupCommandResponse run(TaskParameters parameters) {
     ElastigroupCommandRequest elastigroupCommandRequest = (ElastigroupCommandRequest) parameters;
     return elastigroupDelegateTaskHelper.getElastigroupCommandResponse(
-            elastigroupSwapRouteCommandTaskHandler, elastigroupCommandRequest, getLogStreamingTaskClient());
+        elastigroupSwapRouteCommandTaskHandler, elastigroupCommandRequest, getLogStreamingTaskClient());
   }
 
   @Override

@@ -23,18 +23,17 @@ import io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchR
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.secret.SecretSanitizerThreadLocal;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
-import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
+import org.jose4j.lang.JoseException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupParametersFetchTask extends AbstractDelegateRunnableTask {
-
   public ElastigroupParametersFetchTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {

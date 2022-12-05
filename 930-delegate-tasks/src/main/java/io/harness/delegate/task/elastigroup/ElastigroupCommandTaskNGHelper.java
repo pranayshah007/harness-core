@@ -545,17 +545,15 @@ public class ElastigroupCommandTaskNGHelper {
   }
 
   public void logElastigroups(List<ElastiGroup> elastigroups, LogCallback logCallback) {
-    if(isEmpty(elastigroups)){
+    if (isEmpty(elastigroups)) {
       logCallback.saveExecutionLog("Found no Elastigroups");
     } else {
       logCallback.saveExecutionLog(format("Found following Elastigroup%s:", elastigroups.size() > 1 ? "s" : ""));
-      elastigroups.forEach(e -> {
-        logCallback.saveExecutionLog(format("- %s", getElastigroupString(e)));
-      });
+      elastigroups.forEach(e -> { logCallback.saveExecutionLog(format("- %s", getElastigroupString(e))); });
     }
   }
 
-  public static String getElastigroupString(ElastiGroup elastiGroup){
+  public static String getElastigroupString(ElastiGroup elastiGroup) {
     return format("%s [%s]", elastiGroup.getId(), elastiGroup.getName());
   }
 }

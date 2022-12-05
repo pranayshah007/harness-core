@@ -7,8 +7,18 @@
 
 package io.harness.delegate.elastigroup;
 
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult.ElastigroupSwapRouteResultBuilder;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+
+import static software.wings.beans.LogHelper.color;
+
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -39,21 +49,15 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult.ElastigroupSwapRouteResultBuilder;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-import static software.wings.beans.LogHelper.color;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.inject.Inject;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -67,7 +71,8 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
 
   @Override
   protected ElastigroupCommandResponse executeTaskInternal(ElastigroupCommandRequest elastigroupCommandRequest,
-      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws ElastigroupNGException {
+      ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress)
+      throws ElastigroupNGException {
     if (!(elastigroupCommandRequest instanceof ElastigroupSwapRouteCommandRequest)) {
       throw new InvalidArgumentsException(
           Pair.of("elastigroupCommandRequest", "Must be instance of ElastigroupSwapRouteCommandRequest"));
@@ -81,8 +86,8 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
 
     timeoutInMillis = elastigroupSwapRouteCommandRequest.getTimeoutIntervalInMin() * 60000;
 
-    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(
-        iLogStreamingTaskClient, ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true, commandUnitsProgress);
+    LogCallback deployLogCallback = elastigroupCommandTaskNGHelper.getLogCallback(iLogStreamingTaskClient,
+        ElastigroupCommandUnitConstants.SWAP_TARGET_GROUP.toString(), true, commandUnitsProgress);
     try {
       elastigroupCommandTaskNGHelper.decryptAwsCredentialDTO(
           elastigroupSwapRouteCommandRequest.getConnectorInfoDTO().getConnectorConfig(),
@@ -143,7 +148,8 @@ public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTa
         throw new InvalidRequestException(errorMessage);
       }
 
-      if (downsizeOldElastigroup && elastigroupSwapRouteCommandRequest.getOldElastigroup() != null && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
+      if (downsizeOldElastigroup && elastigroupSwapRouteCommandRequest.getOldElastigroup() != null
+          && isNotEmpty(elastigroupSwapRouteCommandRequest.getOldElastigroup().getId())) {
         ElastiGroup temp = ElastiGroup.builder()
                                .id(oldElastiGroupId)
                                .name(stageElastiGroupName)
