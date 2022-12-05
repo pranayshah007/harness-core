@@ -185,10 +185,14 @@ public class ScmFetchFilesHelperNG {
     }
 
     createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeFile(finalPath.toString(), getFileContent(fileContent));
+    FileIo.writeFile(finalPath.toString(), getFileContent(fileContent, useBase64));
   }
 
-  private byte[] getFileContent(FileContent fileContent) {
+  private byte[] getFileContent(FileContent fileContent, boolean useBase64) {
+    if (!useBase64) {
+      return fileContent.getContent().getBytes(StandardCharsets.UTF_8);
+    }
+
     try {
       return Base64.getDecoder().decode(fileContent.getContent());
     } catch (IllegalArgumentException e) {
