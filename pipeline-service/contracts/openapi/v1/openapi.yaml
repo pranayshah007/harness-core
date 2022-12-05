@@ -167,7 +167,7 @@ paths:
           name: Load-From-Cache
           description: Flag to enable loading the remote pipeline from git or git cache
         - schema:
-            type: boolean
+            type: string
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch
