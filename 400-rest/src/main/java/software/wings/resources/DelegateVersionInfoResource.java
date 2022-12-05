@@ -67,6 +67,15 @@ public class DelegateVersionInfoResource {
   }
 
   @GET
+  @Path("/supportedDelegateVersions")
+  @Timed
+  @ExceptionMetered
+  @PublicApi
+  public RestResponse<> getDelegateVersionFromRing() {
+    return new RestResponse<>(delegateRingService.getDelegateVersionsForAllRings(false));
+  }
+
+  @GET
   @Path("/delegate")
   @Timed
   @ExceptionMetered

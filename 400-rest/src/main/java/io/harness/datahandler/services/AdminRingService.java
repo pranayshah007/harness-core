@@ -9,21 +9,56 @@ package io.harness.datahandler.services;
 
 import io.harness.delegate.beans.DelegateRing;
 import io.harness.delegate.beans.DelegateRing.DelegateRingKeys;
+import io.harness.delegate.beans.DelegateVersion;
+import io.harness.delegate.beans.DelegateVersion.DelegateVersionKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 import org.mongodb.morphia.query.UpdateResults;
 
 @RequiredArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 public class AdminRingService {
   private final HPersistence persistence;
 
   public boolean updateDelegateImageTag(final String imageTag, final String ringName) {
+
+    final DelegateVersion delegateVersion = persistence.createQuery(DelegateVersion.class).filter(DelegateVersionKeys.delegateImage, imageTag).get();
+    if(delegateVersion == null) {
+      Date validUntil = fetchExpiryFromImageTag(imageTag);
+      String minimalImageTag = imageTag.concat("minimal");
+      persistence.insert(DelegateVersion.builder().delegateImage(imageTag)
+              .validUntil(validUntil)
+              .build());
+      persistence.insert(DelegateVersion.builder().delegateImage(minimalImageTag)
+              .validUntil(validUntil)
+              .build());
+    }
     return updateRingKey(imageTag, ringName, DelegateRingKeys.delegateImageTag);
+  }
+
+  private Date fetchExpiryFromImageTag(String imageTag) {
+    String[] split = imageTag.split(":");
+    String version = split[1];
+    Calendar calendar = Calendar.getInstance();
+    SimpleDateFormat sdf = new SimpleDateFormat("yy.MM");
+    try {
+      calendar.setTime(sdf.parse(version));
+    } catch (ParseException e) {
+      log.error("Unable to parse version {}", version, e);
+    }
+    calendar.add(Calendar.MONTH, 3);
+    return calendar.getTime();
   }
 
   public boolean updateUpgraderImageTag(final String imageTag, final String ringName) {

@@ -24,6 +24,7 @@ import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateDTO;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
+import io.harness.delegate.beans.DelegateVersionDTO;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
@@ -248,4 +249,7 @@ public interface DelegateService extends OwnedByAccount {
   void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner);
 
   List<DelegateDTO> listDelegatesHavingTags(String accountId, DelegateTags tags);
+
+  List<DelegateVersionDTO> fetchSupportedDelegateVersions();
+
 }

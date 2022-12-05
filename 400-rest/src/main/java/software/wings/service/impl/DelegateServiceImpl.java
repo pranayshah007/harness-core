@@ -118,6 +118,8 @@ import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.beans.DelegateType;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
+import io.harness.delegate.beans.DelegateVersion;
+import io.harness.delegate.beans.DelegateVersionDTO;
 import io.harness.delegate.beans.DuplicateDelegateException;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.delegate.beans.FileMetadata;
@@ -343,6 +345,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final String deployVersion = System.getenv(DEPLOY_VERSION);
   private static final String DELEGATES_UPDATED_RESPONSE = "Following delegates have been updated";
   private static final String NO_DELEGATES_UPDATED_RESPONSE = "No delegate is waiting for approval/rejection";
+
+  private static final String DOCKER_REPO_PREFIX = "harness/delegate:";
 
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
@@ -2578,6 +2582,19 @@ public class DelegateServiceImpl implements DelegateService {
   public DelegateRegisterResponse register(final DelegateParams delegateParams, final boolean isConnectedUsingMtls) {
     // TODO: remove broadcasts from the flow of this function. Because it's called only in the first registration,
     // which is before the open of websocket connection.
+
+    // Don't register delegate if image is not supported.
+    if (delegateParams.isImmutable()) {
+      String imageTag = DOCKER_REPO_PREFIX.concat(delegateParams.getVersion());
+      DelegateVersion delegateVersion = persistence.createQuery(DelegateVersion.class)
+                                            .filter(DelegateVersion.DelegateVersionKeys.delegateImage, imageTag)
+                                            .get();
+      if (delegateVersion == null) {
+        throw new InvalidRequestException(
+            format("delegate image %s is not supported, delegateId: %s", imageTag, delegateParams.getDelegateId()));
+      }
+    }
+
     if (licenseService.isAccountDeleted(delegateParams.getAccountId())) {
       delegateMetricsService.recordDelegateMetrics(
           Delegate.builder().accountId(delegateParams.getAccountId()).version(delegateParams.getVersion()).build(),
@@ -4431,6 +4448,18 @@ public class DelegateServiceImpl implements DelegateService {
         .map(delegate
             -> DelegateDTO.convertToDTO(delegate, delegateSetupService.listDelegateImplicitSelectors(delegate)))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<DelegateVersionDTO> fetchSupportedDelegateVersions() {
+    List<DelegateVersion> delegateVersionList = persistence.createQuery(DelegateVersion.class).asList();
+    return delegateVersionList.stream()
+        .map(versionInfo
+            -> DelegateVersionDTO.builder()
+                   .delegateImage(versionInfo.getDelegateImage())
+                   .validUntil(versionInfo.getValidUntil())
+                   .build())
+        .collect(toList());
   }
 
   private boolean checkForDelegateHavingAllTags(Delegate delegate, DelegateTags tags) {
