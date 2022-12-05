@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public enum ChartmuseumVersion implements ClientToolVersion {
   V0_8("v0.8.2"),
-  V0_12("v0.12.0");
+  V0_12("v0.15.0");
 
   private final String version;
 }
