@@ -5,14 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
  */
 
-package io.harness.delegate.task.spot;
+package io.harness.delegate.task.elastigroup;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
-import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
-import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
-import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.spot.SpotConfig;
 import io.harness.connector.task.spot.SpotNgConfigMapper;
@@ -31,13 +26,18 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.spotinst.model.ElastiGroup;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 
-import com.google.inject.Inject;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.DOWN_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_COMMAND_UNIT;
+import static io.harness.spotinst.model.SpotInstConstants.UP_SCALE_STEADY_STATE_WAIT_COMMAND_UNIT;
 
 @Slf4j
 @OwnedBy(CDP)

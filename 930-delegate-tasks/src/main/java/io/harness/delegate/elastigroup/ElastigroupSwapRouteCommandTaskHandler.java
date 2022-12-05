@@ -7,18 +7,8 @@
 
 package io.harness.delegate.elastigroup;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult.ElastigroupSwapRouteResultBuilder;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-
-import static software.wings.beans.LogHelper.color;
-
-import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
-
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -29,8 +19,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.exception.ElastigroupNGException;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
+import io.harness.delegate.task.elastigroup.ElastigroupBGTaskHelper;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
-import io.harness.delegate.task.elastigroup.ElastigroupDeployTaskHelper;
 import io.harness.delegate.task.elastigroup.request.AwsConnectedCloudProvider;
 import io.harness.delegate.task.elastigroup.request.AwsLoadBalancerConfig;
 import io.harness.delegate.task.elastigroup.request.ElastigroupCommandRequest;
@@ -49,15 +39,21 @@ import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
-
-import software.wings.beans.LogColor;
-import software.wings.beans.LogWeight;
-
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.Inject;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
+import software.wings.beans.LogColor;
+import software.wings.beans.LogWeight;
+
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult.ElastigroupSwapRouteResultBuilder;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+import static software.wings.beans.LogHelper.color;
 
 @OwnedBy(HarnessTeam.CDP)
 @NoArgsConstructor
@@ -65,7 +61,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ElastigroupSwapRouteCommandTaskHandler extends ElastigroupCommandTaskHandler {
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  @Inject private ElastigroupDeployTaskHelper elastigroupDeployTaskHelper;
+  @Inject private ElastigroupBGTaskHelper elastigroupDeployTaskHelper;
   @Inject protected TimeLimiter timeLimiter;
   private long timeoutInMillis;
 

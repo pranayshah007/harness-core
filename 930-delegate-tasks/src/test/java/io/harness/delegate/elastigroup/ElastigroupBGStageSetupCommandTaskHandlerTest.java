@@ -7,14 +7,6 @@
 
 package io.harness.delegate.elastigroup;
 
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
-
-import static java.lang.String.format;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-
 import io.harness.CategoryTest;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
@@ -32,8 +24,8 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
+import io.harness.delegate.task.elastigroup.ElastigroupBGTaskHelper;
 import io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper;
-import io.harness.delegate.task.elastigroup.ElastigroupDeployTaskHelper;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSetupCommandRequest;
 import io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest;
 import io.harness.delegate.task.elastigroup.response.ElastigroupSetupResponse;
@@ -48,11 +40,6 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -60,6 +47,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
+import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -75,7 +74,7 @@ public class ElastigroupBGStageSetupCommandTaskHandlerTest extends CategoryTest 
   @Mock private LogCallback createServiceLogCallback;
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @Mock protected SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  @Mock private ElastigroupDeployTaskHelper elastigroupDeployTaskHelper;
+  @Mock private ElastigroupBGTaskHelper elastigroupDeployTaskHelper;
 
   @InjectMocks private ElastigroupBGStageSetupCommandTaskHandler elastigroupBGStageSetupCommandTaskHandler;
 
