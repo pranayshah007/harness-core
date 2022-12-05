@@ -7,31 +7,51 @@
 
 package io.harness.cvng.core.dsl;
 
+import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.rule.OwnerRule.ANSUMAN;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.HoverflyCVNextGenTestBase;
+import io.harness.cvng.beans.DataSourceType;
+import io.harness.cvng.beans.SumologicMetricDataCollectionInfo;
 import io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest;
+import io.harness.cvng.core.entities.MetricPack;
+import io.harness.cvng.core.entities.SumologicMetricCVConfig;
+import io.harness.cvng.core.entities.SumologicMetricInfo;
+import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
+import io.harness.cvng.core.services.impl.SumologicMetricDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
+import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Sets;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
+import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,6 +64,9 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
   private static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
   BuilderFactory builderFactory;
   @Inject MetricPackService metricPackService;
+  @Inject SumologicMetricDataCollectionInfoMapper dataCollectionInfoMapper;
+
+  private ExecutorService executorService;
   DataCollectionDSLService dataCollectionDSLService;
 
   @Before
@@ -56,6 +79,54 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     metricPackService.createDefaultMetricPackAndThresholds(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier());
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testExecute_sumologicDSLSLO() throws IOException {
+    Instant instant = Instant.ofEpochMilli(1668431400000L);
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.SUMOLOGIC_METRICS);
+
+    SumologicMetricCVConfig sumologicMetricCVConfig =
+        builderFactory.sumologicMetricCVConfigBuilder()
+            .metricInfos(Collections.singletonList(SumologicMetricInfo.builder()
+                                                       .query("metric=Mem_UsedPercent")
+                                                       .identifier("Mem_UsedPercent")
+                                                       .metricName("Mem_UsedPercent")
+                                                       .build()))
+            .build();
+    sumologicMetricCVConfig.setMetricPack(metricPacks.get(0));
+    metricPackService.populateDataCollectionDsl(sumologicMetricCVConfig.getType(), metricPacks.get(0));
+    SumologicMetricDataCollectionInfo sumologicMetricDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(sumologicMetricCVConfig, VerificationTask.TaskType.SLI);
+    /// 11:10:38.485 [testExecute_splunkDSLWithHostData] INFO  io.harness.antlr.visitor.StatementVisitor -
+    /// {time=1654798800, value=1730.3}
+    SumoLogicConnectorDTO sumoLogicConnectorDTO =
+        SumoLogicConnectorDTO.builder()
+            .url("https://api.in.sumologic.com/")
+            .accessIdRef(SecretRefData.builder().decryptedValue(SECRET_REF_DATA.toCharArray()).build())
+            .accessKeyRef(
+                SecretRefData.builder().decryptedValue(SECRET_REF_DATA.toCharArray()).build()) // TODO Use encrypted
+            .build();
+    Map<String, Object> params = sumologicMetricDataCollectionInfo.getDslEnvVariables(sumoLogicConnectorDTO);
+
+    Map<String, String> headers = new HashMap<>();
+    headers.putAll(sumologicMetricDataCollectionInfo.collectionHeaders(sumoLogicConnectorDTO));
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(5)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("https://api.in.sumologic.com/")
+                                              .build();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        sumologicMetricCVConfig.getDataCollectionDsl(), runtimeParameters, System.out::println);
+    assertThat(Sets.newHashSet(timeSeriesRecords))
+        .isEqualTo(new Gson().fromJson(readJson("expected-sumologic-metric-sample-dsl-output.json"),
+            new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
   }
 
   @Test
@@ -83,6 +154,11 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
     Map<String, Object> params = sumologicMetricSampleDataRequest.fetchDslEnvVariables();
 
     Map<String, String> headers = new HashMap<>(sumologicMetricSampleDataRequest.collectionHeaders());
+    /*    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+            metricSampleDataRequestDSL, runtimeParameters, callDetails -> { System.out.println(callDetails); });*/
+    /*  assertThat(Sets.newHashSet(timeSeriesRecords))
+          .isEqualTo(new Gson().fromJson(readJson("expected-sumologic-metric-sample-dsl-output.json"),
+              new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));*/
     RuntimeParameters runtimeParameters =
         RuntimeParameters.builder()
             .startTime(instant.minus(Duration.ofMinutes(FIVE_MINUTES))) // TODO find use of these
@@ -92,5 +168,9 @@ public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestB
             .baseUrl("https://api.in.sumologic.com/")
             .build();
     dataCollectionDSLService.execute(metricSampleDataRequestDSL, runtimeParameters, (CallDetails callDetails) -> {});
+  }
+  private String readJson(String name) throws IOException {
+    return FileUtils.readFileToString(
+        new File(getResourceFilePath("hoverfly/sumologic/" + name)), StandardCharsets.UTF_8);
   }
 }

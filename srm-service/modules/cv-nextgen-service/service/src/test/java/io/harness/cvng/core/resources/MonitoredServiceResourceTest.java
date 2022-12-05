@@ -8,6 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ANSUMAN;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
@@ -34,6 +35,7 @@ import io.harness.cvng.core.beans.monitoredService.TimeSeriesMetricPackDTO;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.DatadogMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SumologicMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -359,6 +361,30 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     HealthSourceMetricDefinition healthSourceMetricDefinition =
         ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
     assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");
+  }
+
+  @Test
+  @Owner(developers = ANSUMAN)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_withSumologicMetric() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-sumologic-metrics.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    //    assertThat(((SumologicMetricHealthSourceSpec)
+    //    healthSource.getSpec()).getFeature()).isEqualTo("SumologicMetrics"); TODO Assert something else
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((SumologicMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("sumologic_response_time");
   }
 
   @Test
