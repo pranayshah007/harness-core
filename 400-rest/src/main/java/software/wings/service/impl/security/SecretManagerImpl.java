@@ -743,8 +743,8 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
-  public Optional<software.wings.beans.dto.SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
-      String executionId, String secretManagerId) {
+  public Optional<software.wings.beans.dto.SecretManagerRuntimeParameters>
+  getSecretManagerRuntimeCredentialsForExecution(String executionId, String secretManagerId) {
     SecretManagerRuntimeParameters secretManagerRuntimeParameters =
         wingsPersistence.createQuery(SecretManagerRuntimeParameters.class)
             .field(SecretManagerRuntimeParametersKeys.executionId)
