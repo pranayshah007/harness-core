@@ -8,7 +8,6 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,7 +18,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.tas.TasRollbackStepParameters")
-public class TasRollbackStepParameters extends TasRollabackBaseStepInfo implements SpecParameters {
+public class TasRollbackStepParameters extends TasRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public TasRollbackStepParameters(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn, String tasSetupFqn) {

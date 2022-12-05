@@ -4,7 +4,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.TasRollbackStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -30,11 +30,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SimpleVisitorHelper(helperClass = TasAppResizeStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = TasRollbackStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_ROLLBACK)
 @TypeAlias("TasRollbackStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasRollbackStepInfo")
-public class TasRollbackStepInfo extends TasRollabackBaseStepInfo implements CDStepInfo, Visitable {
+public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements CDStepInfo, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

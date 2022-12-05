@@ -16,7 +16,6 @@ import lombok.Data;
 @Data
 @RecasterAlias("io.harness.cdng.tas.TasInstanceSelectionWrapper")
 public class TasInstanceSelectionWrapper {
-  NGInstanceUnitType type;
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  TasInstanceSelectionBase spec;
+  TasInstanceUnitType type;
+  Integer value;
 }

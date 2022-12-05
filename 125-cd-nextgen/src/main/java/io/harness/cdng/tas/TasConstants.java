@@ -12,4 +12,6 @@ public class TasConstants {
   public final static String MATCH_RUNNING_INSTANCES = "MatchRunningInstances";
   public final static String UPSCALE_NEW_FIRST = "UpScaleNewFirst";
   public final static String DOWNSCALE_OLD_FIRST = "DownScaleOldFirst";
+  public final static String PERCENTAGE = "Percentage";
+  public final static String COUNT = "Count";
 }

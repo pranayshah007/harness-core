@@ -1,10 +1,14 @@
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.tas.TasAppResizeStepParameters;
 import io.harness.cdng.tas.TasSwapRoutesStepNode;
+import io.harness.cdng.tas.TasSwapRoutesStepParameters;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
@@ -31,6 +35,11 @@ public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwap
 
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, TasSwapRoutesStepNode stepElement) {
-    return super.getStepParameters(ctx, stepElement);
+    final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
+    String tasSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
+    TasSwapRoutesStepParameters tasSwapRoutesStepParameters =
+        (TasSwapRoutesStepParameters) ((StepElementParameters) stepParameters).getSpec();
+    tasSwapRoutesStepParameters.setTasSetupFqn(tasSetupFqn);
+    return stepParameters;
   }
 }

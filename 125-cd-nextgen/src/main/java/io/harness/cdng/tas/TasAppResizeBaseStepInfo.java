@@ -24,7 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldNameConstants(innerTypeName = "TasAppResizeBaseStepInfoKeys")
-@TypeAlias("TasAppResizeBaseStepInfo")
+@TypeAlias("tasAppResizeBaseStepInfo")
 public class TasAppResizeBaseStepInfo {
   @NotNull TasInstanceSelectionWrapper newAppInstances;
   TasInstanceSelectionWrapper oldAppInstances;

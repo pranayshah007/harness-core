@@ -79,7 +79,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TasRollbackStepParameters tasRollbackStepParameters = (TasRollbackStepParameters) stepParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(tasRollbackStepParameters.getTasRollbackFqn())) {
+    if (EmptyPredicate.isEmpty(tasRollbackStepParameters.getTasResizeFqn())) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
               SkipTaskRequest.newBuilder().setMessage("Tas rollback Step was not executed. Skipping .").build())
@@ -88,7 +88,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
 
     OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(
-            tasRollbackStepParameters.getTasRollbackFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+            tasRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
 
     if (!tasAppResizeDataOptional.isFound()) {
       return TaskRequest.newBuilder()

@@ -15,19 +15,18 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TypeAlias("TasRollabackBaseStepInfo")
-public class TasRollabackBaseStepInfo {
+@TypeAlias("TasRollbackBaseStepInfo")
+public class TasRollbackBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonIgnore String tasRollbackFqn;
+  @JsonIgnore String tasResizeFqn;
   @JsonIgnore String tasSetupFqn;
 }

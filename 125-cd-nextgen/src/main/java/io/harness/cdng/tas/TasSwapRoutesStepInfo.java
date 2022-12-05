@@ -5,6 +5,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.TasSwapRoutesStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -30,7 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SimpleVisitorHelper(helperClass = TasAppResizeStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = TasSwapRoutesStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
 @TypeAlias("TasSwapRoutesStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasSwapRoutesStepInfo")
@@ -60,9 +61,9 @@ public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements 
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasSwapRoutesStepParameters
-        .infoBuilder()
-        //   .downSizeOldApplication(this.downSizeOldApplication)
+    return TasSwapRoutesStepParameters.infoBuilder()
+        .downSizeOldApplication(downSizeOldApplication)
+        .tasSetupFqn(tasSetupFqn)
         .delegateSelectors(this.delegateSelectors)
         .build();
   }

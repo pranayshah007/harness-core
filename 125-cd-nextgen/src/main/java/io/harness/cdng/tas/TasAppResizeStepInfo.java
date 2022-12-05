@@ -65,7 +65,8 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
 
   @Override
   public SpecParameters getSpecParameters() {
-    return io.harness.cdng.tas.TasAppResizeStepParameters.infoBuilder()
+    return TasAppResizeStepParameters.infoBuilder()
+        .tasAppResizeFqn(tasSetupFqn)
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }
