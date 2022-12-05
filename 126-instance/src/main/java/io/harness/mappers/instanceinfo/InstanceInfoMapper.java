@@ -21,7 +21,6 @@ import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.PdcInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
-import io.harness.dtos.instanceinfo.SpotInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.TasInstanceInfoDTO;
 import io.harness.entities.instanceinfo.AwsSshWinrmInstanceInfo;
 import io.harness.entities.instanceinfo.AzureSshWinrmInstanceInfo;
@@ -36,7 +35,6 @@ import io.harness.entities.instanceinfo.PdcInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
 import io.harness.entities.instanceinfo.ServerlessAwsLambdaInstanceInfo;
 import io.harness.entities.instanceinfo.TasInstanceInfo;
-import io.harness.entities.instanceinfo.SpotInstanceInfo;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
@@ -67,8 +65,6 @@ public class InstanceInfoMapper {
       return AwsSshWinrmInstanceInfoMapper.toDTO((AwsSshWinrmInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof CustomDeploymentInstanceInfo) {
       return CustomDeploymentInstanceInfoMapper.toDTO((CustomDeploymentInstanceInfo) instanceInfo);
-    } else if (instanceInfo instanceof SpotInstanceInfo) {
-      return SpotInstanceInfoMapper.toDTO((SpotInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof TasInstanceInfo) {
       return TasInstanceInfoMapper.toDTO((TasInstanceInfo) instanceInfo);
     }
@@ -98,8 +94,6 @@ public class InstanceInfoMapper {
       return AwsSshWinrmInstanceInfoMapper.toEntity((AwsSshWinrmInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof CustomDeploymentInstanceInfoDTO) {
       return CustomDeploymentInstanceInfoMapper.toEntity((CustomDeploymentInstanceInfoDTO) instanceInfoDTO);
-    } else if (instanceInfoDTO instanceof SpotInstanceInfoDTO) {
-      return SpotInstanceInfoMapper.toEntity((SpotInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof TasInstanceInfoDTO) {
       return TasInstanceInfoMapper.toEntity((TasInstanceInfoDTO) instanceInfoDTO);
     }

@@ -158,6 +158,7 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE)
   AZURE_ROLLBACK_ARM_RESOURCE("Azure ARM Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
+
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
   ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
@@ -193,13 +194,7 @@ public enum NGStepType {
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_DESTROY),
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
-  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP)
-  ELASTIGROUP_BG_STAGE_SETUP("Elastigroup BG Stage Setup", Arrays.asList(ServiceDefinitionType.ELASTIGROUP),
-      "Elastigroup", StepSpecTypeConstants.ELASTIGROUP_BG_STAGE_SETUP),
-  @JsonProperty(StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE)
-  ELASTIGROUP_SWAP_ROUTE("Elastigroup Swap Route", Arrays.asList(ServiceDefinitionType.ELASTIGROUP), "Elastigroup",
-      StepSpecTypeConstants.ELASTIGROUP_SWAP_ROUTE);
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;
@@ -231,6 +226,7 @@ public enum NGStepType {
   public static String getDisplayName(NGStepType ngStepType) {
     return ngStepType.displayName;
   }
+
   public static String getCategory(NGStepType ngStepType) {
     return ngStepType.category;
   }

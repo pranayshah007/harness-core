@@ -1803,7 +1803,6 @@
 55504:io.harness.delegate.beans.ci.vm.steps.VmBackgroundStep
 55505:io.harness.delegate.beans.azure.response.AzureLocationsResponse
 55506:io.harness.delegate.beans.azure.response.AzureMngGroupsResponse
-55507:io.harness.delegate.beans.instancesync.info.SpotServerInstanceInfo
 55511:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateRequest
 55512:io.harness.delegate.task.artifacts.githubpackages.GithubPackagesArtifactDelegateResponse
 56335:io.harness.delegate.task.gitpolling.request.GitPollingTaskParameters
@@ -2348,13 +2347,6 @@
 573565:io.harness.delegate.task.ecs.EcsS3FetchFileConfig
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
-573600:io.harness.delegate.exception.ElastigroupNGException
-573601:io.harness.delegate.task.elastigroup.response.SpotInstConfig
-573602:io.harness.delegate.task.elastigroup.response.ElastigroupParametersFetchResponse
-573603:io.harness.delegate.task.elastigroup.request.ElastigroupParametersFetchRequest
-573604:io.harness.delegate.task.elastigroup.request.ElastigroupSwapRouteCommandRequest
-573605:io.harness.delegate.task.elastigroup.response.ElastigroupSwapRouteResponse
-573606:o.harness.delegate.beans.elastigroup.ElastigroupSwapRouteResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

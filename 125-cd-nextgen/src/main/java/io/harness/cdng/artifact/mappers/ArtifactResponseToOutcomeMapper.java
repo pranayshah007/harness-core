@@ -181,7 +181,7 @@ public class ArtifactResponseToOutcomeMapper {
         AMIArtifactConfig amiArtifactConfig = (AMIArtifactConfig) artifactConfig;
         AMIArtifactDelegateResponse amiArtifactDelegateResponse =
             (AMIArtifactDelegateResponse) artifactDelegateResponse;
-        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse, useDelegateResponse);
+        return getAMIArtifactOutcome(amiArtifactConfig, amiArtifactDelegateResponse);
       default:
         throw new UnsupportedOperationException(
             String.format("Unknown Artifact Config type: [%s]", artifactConfig.getSourceType()));
@@ -207,12 +207,16 @@ public class ArtifactResponseToOutcomeMapper {
         .build();
   }
 
-  private static AMIArtifactOutcome getAMIArtifactOutcome(AMIArtifactConfig amiArtifactConfig,
-      AMIArtifactDelegateResponse amiArtifactDelegateResponse, boolean useDelegateResponse) {
+  private static AMIArtifactOutcome getAMIArtifactOutcome(
+      AMIArtifactConfig amiArtifactConfig, AMIArtifactDelegateResponse amiArtifactDelegateResponse) {
+    if (amiArtifactDelegateResponse == null) {
+      return null;
+    }
+
     return AMIArtifactOutcome.builder()
-        .amiId(useDelegateResponse ? amiArtifactDelegateResponse.getAmiId() : "")
-        .metadata(useDelegateResponse ? amiArtifactDelegateResponse.getMetadata() : null)
-        .version(useDelegateResponse ? amiArtifactDelegateResponse.getVersion() : "")
+        .amiId(amiArtifactDelegateResponse.getAmiId())
+        .metadata(amiArtifactDelegateResponse.getMetadata())
+        .version(amiArtifactDelegateResponse.getVersion())
         .connectorRef(amiArtifactConfig.getConnectorRef().getValue())
         .type(ArtifactSourceType.AMI.getDisplayName())
         .identifier(amiArtifactConfig.getIdentifier())

@@ -16,7 +16,6 @@ import static io.harness.perpetualtask.PerpetualTaskType.K8S_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.NATIVE_HELM_INSTANCE_SYNC;
 import static io.harness.perpetualtask.PerpetualTaskType.PDC_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.SERVERLESS_AWS_LAMBDA_INSTANCE_SYNC;
-import static io.harness.perpetualtask.PerpetualTaskType.SPOT_INSTANCE_SYNC_NG;
 import static io.harness.perpetualtask.PerpetualTaskType.TAS_INSTANCE_SYNC_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -32,7 +31,6 @@ import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhan
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s.K8SInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.pdc.PdcInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.serverless.ServerlessAwsLambdaInstanceSyncPerpetualTaskHandler;
-import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.spot.SpotInstanceSyncPerpetualTaskHandler;
 import io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.tas.TasInstanceSyncPerpetualTaskHandler;
 
 import com.google.inject.Inject;
@@ -52,7 +50,6 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
   private final AzureSshWinrmInstanceSyncPerpetualTaskHandler azureSshWinrmInstanceSyncPerpetualTaskHandler;
   private final AwsSshWinrmInstanceSyncPerpetualTaskHandler awsSshWinrmInstanceSyncPerpetualTaskHandler;
   private final CustomDeploymentInstanceSyncPerpetualTaskHandler CustomDeploymentInstanceSyncPerpetualTaskHandler;
-  private final SpotInstanceSyncPerpetualTaskHandler spotInstanceSyncPerpetualTaskHandler;
   private final TasInstanceSyncPerpetualTaskHandler tasInstanceSyncPerpetualTaskHandler;
 
   public InstanceSyncPerpetualTaskHandler getInstanceSyncPerpetualService(String perpetualTaskType) {
@@ -75,8 +72,6 @@ public final class InstanceSyncPerpetualTaskServiceRegister {
         return awsSshWinrmInstanceSyncPerpetualTaskHandler;
       case CUSTOM_DEPLOYMENT_INSTANCE_SYNC_NG:
         return CustomDeploymentInstanceSyncPerpetualTaskHandler;
-      case SPOT_INSTANCE_SYNC_NG:
-        return spotInstanceSyncPerpetualTaskHandler;
       case TAS_INSTANCE_SYNC_NG:
         return tasInstanceSyncPerpetualTaskHandler;
       default:
