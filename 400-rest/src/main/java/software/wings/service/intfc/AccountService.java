@@ -241,7 +241,7 @@ public interface AccountService {
 
   boolean disableHarnessUserGroupAccess(String accountId);
 
-  boolean isRestrictedAccessEnabled(String accountId);
+  boolean isHarnessSupportAccessDisabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
 

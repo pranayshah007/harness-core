@@ -1966,7 +1966,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public boolean isRestrictedAccessEnabled(String accountId) {
+  public boolean isHarnessSupportAccessDisabled(String accountId) {
     Account account = get(accountId);
     notNullCheck("Invalid Account for the given Id: " + accountId, account);
     if (account.isHarnessSupportAccessAllowed()) {

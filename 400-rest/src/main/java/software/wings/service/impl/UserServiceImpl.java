@@ -119,7 +119,6 @@ import io.harness.ng.core.user.UserInfo;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.UuidAware;
 import io.harness.remote.client.NGRestUtils;
-import io.harness.rest.RestResponse;
 import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.KryoSerializer;
@@ -3136,7 +3135,7 @@ public class UserServiceImpl implements UserService {
 
   public boolean ifUserHasAccessToSupportAccount(String userId, String accountId) {
     if (isNotEmpty(userId) && isNotEmpty(accountId) && harnessUserGroupService.isHarnessSupportUser(userId)
-        && !accountService.isRestrictedAccessEnabled(accountId)) {
+        && !accountService.isHarnessSupportAccessDisabled(accountId)) {
       return true;
     }
     return false;

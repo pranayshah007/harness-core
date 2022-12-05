@@ -1099,7 +1099,7 @@ public class AccountServiceTest extends WingsBaseTest {
     account.setHarnessSupportAccessAllowed(false);
     Account savedAccount = accountService.save(account, false);
 
-    assertThat(accountService.isRestrictedAccessEnabled(savedAccount.getUuid())).isTrue();
+    assertThat(accountService.isHarnessSupportAccessDisabled(savedAccount.getUuid())).isTrue();
   }
 
   @Test
