@@ -10,8 +10,6 @@ package io.harness.cdng.elastigroup.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.pcf.ResizeStrategy;
-import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.spotinst.model.ElastiGroup;
@@ -25,20 +23,11 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Data
 @Builder
-@TypeAlias("elastigroupSetupDataOutcome")
-@JsonTypeName("elastigroupSetupDataOutcome")
-@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupSetupDataOutcome")
-public class ElastigroupSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
-  private Integer maxInstanceCount;
-  private boolean useCurrentRunningInstanceCount;
-  private Integer currentRunningInstanceCount;
-  private ResizeStrategy resizeStrategy;
-  private boolean isBlueGreen;
-  private ElastiGroup newElastigroupOriginalConfig;
-  private ElastiGroup oldElastigroupOriginalConfig;
+@TypeAlias("ElastigroupPreFetchOutcome")
+@JsonTypeName("ElastigroupPreFetchOutcome")
+@RecasterAlias("io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome")
+public class ElastigroupPreFetchOutcome implements Outcome, ExecutionSweepingOutput {
+  private boolean blueGreen;
   private String elastigroupNamePrefix;
-  private List<LoadBalancerDetailsForBGDeployment> loadBalancerDetailsForBGDeployments;
-  private String awsRegion;
-  private String awsConnectorRef;
-  private boolean successful;
+  private List<ElastiGroup> elastigroups;
 }
