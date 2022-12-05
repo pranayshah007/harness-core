@@ -831,6 +831,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsElbConfig;
@@ -2010,8 +2011,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(GitOpsFetchAppTaskParams.class, 573561);
     kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
+    kryo.register(TfVarS3Source.class, 573563);
 
-    kryo.register(EcsS3FetchRequest.class, 573563);
+    kryo.register(EcsS3FetchRequest.class, 573569);
     kryo.register(EcsS3FetchResponse.class, 573564);
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);

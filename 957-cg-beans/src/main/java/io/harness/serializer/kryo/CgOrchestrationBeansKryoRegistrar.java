@@ -39,6 +39,7 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.LicenseInfo;
 import software.wings.beans.Log;
 import software.wings.beans.PhaseStepType;
+import software.wings.beans.S3FileConfig;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.Tag;
 import software.wings.beans.TerraformSourceType;
@@ -148,5 +149,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(ManifestInput.class, 7462);
     kryo.register(K8sValuesLocation.class, 7463);
     kryo.register(TerraformSourceType.class, 7474);
+    kryo.register(S3FileConfig.class, 7475);
   }
 }

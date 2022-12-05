@@ -72,6 +72,8 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final Map<String, EncryptedDataDetail> encryptedVariables;
 
   private final TfVarGitSource remoteBackendConfig;
+
+  private final TfVarS3Source remoteS3BackendConfig;
   private final String backendConfigStoreType;
   private final Map<String, String> backendConfigs;
   private final Map<String, EncryptedDataDetail> encryptedBackendConfigs;
