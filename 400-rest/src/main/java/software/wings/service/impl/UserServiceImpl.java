@@ -3137,8 +3137,7 @@ public class UserServiceImpl implements UserService {
     if (isNotEmpty(userId) && isNotEmpty(accountId) && harnessUserGroupService.isHarnessSupportUser(userId)
         && !accountService.isHarnessSupportAccessDisabled(accountId)) {
       return true;
-    } else if (isNotEmpty(getRestrictedAccountsWithActiveAccessRequest(
-                   new HashSet<>(Collections.singleton(accountId)), userId))) {
+    } else if (isNotEmpty(getRestrictedAccountsWithActiveAccessRequest(Set.of(accountId), userId))) {
       return true;
     }
     return false;
