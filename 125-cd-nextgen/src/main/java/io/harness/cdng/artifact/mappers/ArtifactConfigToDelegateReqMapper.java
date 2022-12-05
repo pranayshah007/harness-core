@@ -8,6 +8,7 @@
 package io.harness.cdng.artifact.mappers;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.utils.RepositoryFormat.generic;
@@ -200,6 +201,7 @@ public class ArtifactConfigToDelegateReqMapper {
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {
+    long timeout = 600000L;
     CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
                                                             .getFetchAllArtifacts()
                                                             .getShellScriptBaseStepInfo()
@@ -213,6 +215,12 @@ public class ArtifactConfigToDelegateReqMapper {
         throw new InvalidArtifactServerException("Version Path is missing", Level.ERROR, USER);
       }
     }
+
+    if (artifactConfig.getTimeout().getValue() != null
+        && isNotEmpty(artifactConfig.getTimeout().getValue().toString())) {
+      timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
+    }
+
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
         artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
         artifactConfig.getVersionRegex().getValue(),
@@ -222,8 +230,7 @@ public class ArtifactConfigToDelegateReqMapper {
         customScriptInlineSource.getScript().fetchFinalValue().toString(),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
-        ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
-        artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : 600000L,
+        ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
         AmbianceUtils.getAccountId(ambiance));
   }
 

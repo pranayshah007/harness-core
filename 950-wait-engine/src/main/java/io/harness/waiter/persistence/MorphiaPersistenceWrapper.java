@@ -31,6 +31,7 @@ import io.harness.waiter.WaitInstance;
 import io.harness.waiter.WaitInstance.WaitInstanceKeys;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.mongodb.WriteConcern;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -50,6 +51,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class MorphiaPersistenceWrapper implements PersistenceWrapper {
   @Inject private HPersistence hPersistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   private FindAndModifyOptions findAndModifyOptions =
       new FindAndModifyOptions().writeConcern(WriteConcern.MAJORITY).upsert(false).returnNew(false);
@@ -93,7 +95,9 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
         }
         if (notifyResponse.getResponseData() != null) {
           responseMap.put(notifyResponse.getUuid(),
-              (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+              notifyResponse.isUsingKryoWithoutReference()
+                  ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData())
+                  : (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
         }
       }
     }

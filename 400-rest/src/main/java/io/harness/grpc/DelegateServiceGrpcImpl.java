@@ -402,12 +402,48 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   @Override
+  public void sendTaskStatusV2(SendTaskStatusRequest request, StreamObserver<SendTaskStatusResponse> responseObserver) {
+    try {
+      DelegateTaskResponse delegateTaskResponse =
+          DelegateTaskResponse.builder()
+              .responseCode(DelegateTaskResponse.ResponseCode.OK)
+              .accountId(request.getAccountId().getId())
+              .response((DelegateResponseData) referenceFalseKryoSerializer.asInflatedObject(
+                  request.getTaskResponseData().getKryoResultsData().toByteArray()))
+              .build();
+      delegateTaskService.processDelegateResponse(
+          request.getAccountId().getId(), null, request.getTaskId().getId(), delegateTaskResponse);
+      responseObserver.onNext(SendTaskStatusResponse.newBuilder().setSuccess(true).build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      log.error("Unexpected error occurred while processing send parked task status request.", ex);
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
+  }
+
+  @Override
   public void sendTaskProgress(
       SendTaskProgressRequest request, StreamObserver<SendTaskProgressResponse> responseObserver) {
     try {
       delegateTaskServiceClassic.publishTaskProgressResponse(request.getAccountId().getId(),
           request.getCallbackToken().getToken(), request.getTaskId().getId(),
           (DelegateProgressData) kryoSerializer.asInflatedObject(
+              request.getTaskResponseData().getKryoResultsData().toByteArray()));
+      responseObserver.onNext(SendTaskProgressResponse.newBuilder().setSuccess(true).build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      log.error("Unexpected error occurred while processing send task progress status request.", ex);
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
+  }
+
+  @Override
+  public void sendTaskProgressV2(
+      SendTaskProgressRequest request, StreamObserver<SendTaskProgressResponse> responseObserver) {
+    try {
+      delegateTaskServiceClassic.publishTaskProgressResponse(request.getAccountId().getId(),
+          request.getCallbackToken().getToken(), request.getTaskId().getId(),
+          (DelegateProgressData) referenceFalseKryoSerializer.asInflatedObject(
               request.getTaskResponseData().getKryoResultsData().toByteArray()));
       responseObserver.onNext(SendTaskProgressResponse.newBuilder().setSuccess(true).build());
       responseObserver.onCompleted();

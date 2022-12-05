@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
 import io.harness.ng.core.migration.serviceenvmigrationv2.ServiceEnvironmentV2MigrationService;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperRequestDto;
+import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationProjectWrapperResponseDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationRequestDto;
 import io.harness.ng.core.migration.serviceenvmigrationv2.dto.SvcEnvMigrationResponseDto;
 import io.harness.rule.Owner;
@@ -37,35 +39,64 @@ public class ServiceEnvironmentV2MigrationResourceTest extends CategoryTest {
   private final String INFRA_IDENTIFIER_FORMAT = "<+environment.identifier>_infra";
   private final String PIPELINE_V2_YAML = "v2 yaml";
 
-  SvcEnvMigrationRequestDto requestDto;
-  SvcEnvMigrationResponseDto expectedResponseDto;
+  SvcEnvMigrationRequestDto svcEnvMigrationRequestDto;
+  SvcEnvMigrationResponseDto expectedSvcEnvMigrationResponseDto;
+
+  SvcEnvMigrationProjectWrapperRequestDto svcEnvMigrationProjectWrapperRequestDto;
+  SvcEnvMigrationProjectWrapperResponseDto expectedSvcEnvMigrationProjectWrapperResponseDto;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    requestDto = SvcEnvMigrationRequestDto.builder()
-                     .orgIdentifier(ORG_IDENTIFIER)
-                     .projectIdentifier(PROJ_IDENTIFIER)
-                     .pipelineIdentifier(PIPLINE_IDENTIFIER)
-                     .infraIdentifierFormat(INFRA_IDENTIFIER_FORMAT)
-                     .isUpdatePipeline(true)
-                     .build();
+    svcEnvMigrationRequestDto = SvcEnvMigrationRequestDto.builder()
+                                    .orgIdentifier(ORG_IDENTIFIER)
+                                    .projectIdentifier(PROJ_IDENTIFIER)
+                                    .pipelineIdentifier(PIPLINE_IDENTIFIER)
+                                    .infraIdentifierFormat(INFRA_IDENTIFIER_FORMAT)
+                                    .isUpdatePipeline(true)
+                                    .build();
+    svcEnvMigrationProjectWrapperRequestDto = SvcEnvMigrationProjectWrapperRequestDto.builder()
+                                                  .orgIdentifier(ORG_IDENTIFIER)
+                                                  .projectIdentifier(PROJ_IDENTIFIER)
+                                                  .infraIdentifierFormat(INFRA_IDENTIFIER_FORMAT)
+                                                  .isUpdatePipeline(true)
+                                                  .build();
 
-    expectedResponseDto = SvcEnvMigrationResponseDto.builder().pipelineYaml(PIPELINE_V2_YAML).build();
+    expectedSvcEnvMigrationResponseDto = SvcEnvMigrationResponseDto.builder().pipelineYaml(PIPELINE_V2_YAML).build();
+    expectedSvcEnvMigrationProjectWrapperResponseDto = SvcEnvMigrationProjectWrapperResponseDto.builder().build();
   }
 
   @Test
   @Owner(developers = PRAGYESH)
   @Category(UnitTests.class)
-  public void testMigrateOldServiceInfraFromStage() {
+  public void testMigratePipeline() {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEnvironmentV2MigrationService.migratePipeline(requestDto, ACCOUNT_ID)).thenReturn(expectedResponseDto);
+    when(serviceEnvironmentV2MigrationService.migratePipeline(svcEnvMigrationRequestDto, ACCOUNT_ID))
+        .thenReturn(expectedSvcEnvMigrationResponseDto);
     SvcEnvMigrationResponseDto actualResponse =
-        serviceEnvironmentV2MigrationResource.migratePipelineWithServiceInfraV2(ACCOUNT_ID, requestDto).getData();
+        serviceEnvironmentV2MigrationResource.migratePipelineWithServiceInfraV2(ACCOUNT_ID, svcEnvMigrationRequestDto)
+            .getData();
     verify(orgAndProjectValidationHelper, times(1))
         .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
-    assertThat(actualResponse).isEqualTo(expectedResponseDto);
+    assertThat(actualResponse).isEqualTo(expectedSvcEnvMigrationResponseDto);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testMigrateProject() {
+    when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
+             ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
+        .thenReturn(true);
+    when(serviceEnvironmentV2MigrationService.migrateProject(svcEnvMigrationProjectWrapperRequestDto, ACCOUNT_ID))
+        .thenReturn(expectedSvcEnvMigrationProjectWrapperResponseDto);
+    SvcEnvMigrationProjectWrapperResponseDto actualResponse =
+        serviceEnvironmentV2MigrationResource.migrateProject(ACCOUNT_ID, svcEnvMigrationProjectWrapperRequestDto)
+            .getData();
+    verify(orgAndProjectValidationHelper, times(1))
+        .checkThatTheOrganizationAndProjectExists(ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID);
+    assertThat(actualResponse).isEqualTo(expectedSvcEnvMigrationProjectWrapperResponseDto);
   }
 }

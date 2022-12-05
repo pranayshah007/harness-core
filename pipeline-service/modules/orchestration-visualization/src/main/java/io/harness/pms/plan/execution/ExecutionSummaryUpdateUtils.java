@@ -39,13 +39,16 @@ public class ExecutionSummaryUpdateUtils {
     if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
       // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
       Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
+      // Updating the barrier information in the stage node.
       if (stage.isPresent()) {
         Level stageNode = stage.get();
         update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
         updateApplied = true;
       }
     }
-    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+    // Making update in graph only if the strategy is at stage level.
+    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())) {
       update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".status", status);
       update.set(
           PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",

@@ -72,7 +72,13 @@ public enum ServiceDefinitionType {
   TAS(ServiceSpecType.TAS,
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.TAS);
+      ServiceSpecType.TAS),
+
+  @JsonProperty(ServiceSpecType.ASG)
+  ASG(ServiceSpecType.ASG,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.ASG);
 
   /*
   //Unsupported for now

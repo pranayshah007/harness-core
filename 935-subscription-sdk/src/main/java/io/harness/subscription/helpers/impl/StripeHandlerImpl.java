@@ -10,7 +10,11 @@ package io.harness.subscription.helpers.impl;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.InvalidRequestException;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Customer;
 import com.stripe.model.Invoice;
@@ -36,30 +40,48 @@ import java.util.List;
 import java.util.Map;
 
 public class StripeHandlerImpl {
-  StripeHandlerImpl() {}
+  private final TelemetryReporter telemetryReporter;
+  private static final String SUBSCRIPTION = "subscription";
 
-  Subscription createSubscription(SubscriptionCreateParams subscriptionCreateParams) {
+  @Inject
+  StripeHandlerImpl(TelemetryReporter telemetryReporter) {
+    this.telemetryReporter = telemetryReporter;
+  }
+
+  Subscription createSubscription(SubscriptionCreateParams subscriptionCreateParams, String moduleType) {
     try {
-      return Subscription.create(subscriptionCreateParams);
+      Subscription subscription = Subscription.create(subscriptionCreateParams);
+      sendTelemetryEvent("Subscription Creation Succeeded", null, null, moduleType);
+      return subscription;
     } catch (StripeException e) {
+      sendTelemetryEvent("Subscription Creation Failed", null, null, moduleType);
       throw new InvalidRequestException("Unable to create subscription", e);
     }
   }
 
-  Subscription updateSubscription(String subscriptionId, SubscriptionUpdateParams subscriptionUpdateParams) {
+  Subscription updateSubscription(
+      String subscriptionId, SubscriptionUpdateParams subscriptionUpdateParams, String moduleType) {
     try {
       Subscription subscription = Subscription.retrieve(subscriptionId);
-      return subscription.update(subscriptionUpdateParams);
+
+      Subscription updatedSubscription = subscription.update(subscriptionUpdateParams);
+
+      sendTelemetryEvent("Subscription Modification Succeeded", null, null, moduleType);
+      return updatedSubscription;
     } catch (StripeException e) {
+      sendTelemetryEvent("Subscription Modification Failed", null, null, moduleType);
       throw new InvalidRequestException("Unable to update subscription", e);
     }
   }
 
-  Subscription cancelSubscription(String subscriptionId) {
+  Subscription cancelSubscription(String subscriptionId, String moduleType) {
     try {
       Subscription subscription = Subscription.retrieve(subscriptionId);
-      return subscription.cancel();
+      Subscription cancelledSubscription = subscription.cancel();
+      sendTelemetryEvent("Subscription Cancellation Succeeded", null, null, moduleType);
+      return cancelledSubscription;
     } catch (StripeException e) {
+      sendTelemetryEvent("Subscription Cancellation Failed", null, null, moduleType);
       throw new InvalidRequestException("Unable to cancel subscription", e);
     }
   }
@@ -204,5 +226,12 @@ public class StripeHandlerImpl {
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to finalize invoice", e);
     }
+  }
+
+  private void sendTelemetryEvent(String event, String email, String accountId, String module) {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("module", module);
+    telemetryReporter.sendTrackEvent(event, email, accountId, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), SUBSCRIPTION);
   }
 }

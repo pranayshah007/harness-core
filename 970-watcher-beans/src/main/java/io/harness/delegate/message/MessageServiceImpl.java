@@ -232,8 +232,8 @@ public class MessageServiceImpl implements MessageService {
   }
 
   @Override
-  public Message waitForMessage(String messageName, long timeout) {
-    return waitForMessageOnChannel(messengerType, processId, messageName, timeout);
+  public Message waitForMessage(String messageName, long timeout, boolean printIntermediateMessages) {
+    return waitForMessageOnChannel(messengerType, processId, messageName, timeout, printIntermediateMessages);
   }
 
   @Override
@@ -242,8 +242,8 @@ public class MessageServiceImpl implements MessageService {
   }
 
   @Override
-  public Message waitForMessageOnChannel(
-      MessengerType sourceType, String sourceProcessId, String messageName, long timeout) {
+  public Message waitForMessageOnChannel(MessengerType sourceType, String sourceProcessId, String messageName,
+      long timeout, boolean printIntermediateMessages) {
     try {
       BlockingQueue<Message> queue = messageQueues.get(getMessageChannel(sourceType, sourceProcessId));
       if (queue == null) {
@@ -257,6 +257,9 @@ public class MessageServiceImpl implements MessageService {
         while (message == null || !messageName.equals(message.getMessage())) {
           try {
             message = queue.take();
+            if (printIntermediateMessages && message != null) {
+              log.info("Message received: {}", message.getMessage());
+            }
           } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
           }

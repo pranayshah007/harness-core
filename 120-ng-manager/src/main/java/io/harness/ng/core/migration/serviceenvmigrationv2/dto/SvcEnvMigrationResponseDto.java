@@ -21,4 +21,5 @@ import lombok.Value;
 public class SvcEnvMigrationResponseDto {
   List<StageMigrationFailureResponse> failures;
   String pipelineYaml;
+  boolean migrated;
 }

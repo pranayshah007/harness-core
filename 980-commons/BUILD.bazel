@@ -48,6 +48,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/text/resolver:module",
         "//980-commons/src/main/java/io/harness/windows:module",
         "//980-commons/src/main/java/io/harness/yaml:module",
+        "//980-commons/src/main/java/software/wings/misc:module",
         "//980-commons/src/main/proto:980_commons_java_proto",
         "//999-annotations:module",
         "@maven//:ch_qos_logback_contrib_logback_jackson",

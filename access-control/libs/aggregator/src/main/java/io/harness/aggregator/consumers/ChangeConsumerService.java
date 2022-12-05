@@ -18,6 +18,9 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.PL)
 public interface ChangeConsumerService {
   List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignmentDBO);
+
+  List<ACL> getAClsForRoleAssignment(RoleAssignmentDBO roleAssignment, Set<String> principals);
+
   List<ACL> getImplicitACLsForRoleAssignment(
       RoleAssignmentDBO roleAssignment, Set<String> addedPrincipals, Set<String> addedPermissions);
 }

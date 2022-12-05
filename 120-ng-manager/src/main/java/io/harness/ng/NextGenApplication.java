@@ -103,6 +103,7 @@ import io.harness.migration.NGMigrationSdkModule;
 import io.harness.migration.beans.NGMigrationConfiguration;
 import io.harness.migrations.InstanceMigrationProvider;
 import io.harness.ng.core.CorrelationFilter;
+import io.harness.ng.core.DefaultUserGroupsCreationJob;
 import io.harness.ng.core.EtagFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.event.NGEventConsumerService;
@@ -323,10 +324,10 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
 
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
 
-    ExecutorModule.getInstance().setExecutorService(ThreadPool.create(appConfig.getCommonPoolConfig().getCorePoolSize(),
-        appConfig.getCommonPoolConfig().getMaxPoolSize(), appConfig.getCommonPoolConfig().getIdleTime(),
-        appConfig.getCommonPoolConfig().getTimeUnit(),
-        new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
+    ExecutorModule.getInstance().setExecutorService(
+        ThreadPool.create(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors() * 20,
+            appConfig.getCommonPoolConfig().getIdleTime(), appConfig.getCommonPoolConfig().getTimeUnit(),
+            new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     MaintenanceController.forceMaintenance(true);
     List<Module> modules = new ArrayList<>();
     modules.add(new NextGenModule(appConfig));
@@ -784,6 +785,7 @@ public class NextGenApplication extends Application<NextGenConfiguration> {
     environment.lifecycle().manage(injector.getInstance(QueueListenerController.class));
     environment.lifecycle().manage(injector.getInstance(NotifierScheduledExecutorService.class));
     environment.lifecycle().manage(injector.getInstance(OutboxEventPollService.class));
+    environment.lifecycle().manage(injector.getInstance(DefaultUserGroupsCreationJob.class));
     createConsumerThreadsToListenToEvents(environment, injector);
   }
 

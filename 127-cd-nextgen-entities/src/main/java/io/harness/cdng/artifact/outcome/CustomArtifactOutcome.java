@@ -36,6 +36,12 @@ public class CustomArtifactOutcome implements ArtifactOutcome {
   boolean primaryArtifact;
   /** Value that refers to exact artifact version. */
   String version;
+  /** Value that refers to exact artifact version tag. */
+  String image;
+  /** artifactPath */
+  String artifactPath;
+  /** display Name*/
+  String displayName;
   /** Custom Artifact metadata */
   Map<String, String> metadata;
 

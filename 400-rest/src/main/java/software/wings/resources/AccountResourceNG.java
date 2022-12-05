@@ -83,8 +83,8 @@ public class AccountResourceNG {
   @GET
   @Path("/list")
   public RestResponse<List<AccountDTO>> getAllAccounts() {
-    List<Account> accountList = accountService.listAllAccounts();
-    return new RestResponse<>(accountList.stream().map(AccountMapper::toAccountDTO).collect(Collectors.toList()));
+    List<AccountDTO> accountList = accountService.getAllAccounts();
+    return new RestResponse<>(accountList);
   }
   @GET
   @Path("{accountId}")

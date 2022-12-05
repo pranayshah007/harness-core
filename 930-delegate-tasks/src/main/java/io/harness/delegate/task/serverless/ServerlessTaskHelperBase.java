@@ -39,6 +39,7 @@ import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryNgService;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.beans.DecryptableEntity;
+import io.harness.connector.helper.DecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -54,6 +55,7 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.task.artifactory.ArtifactoryRequestMapper;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.git.GitFetchTaskHelper;
@@ -75,6 +77,8 @@ import io.harness.shell.SshSessionConfig;
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.intfc.aws.delegate.AwsLambdaHelperServiceDelegateNG;
 
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -90,6 +94,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -109,6 +115,7 @@ public class ServerlessTaskHelperBase {
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   @Inject private ServerlessInfraConfigHelper serverlessInfraConfigHelper;
   @Inject protected AwsApiHelperService awsApiHelperService;
+  @Inject private DecryptionHelper decryptionHelper;
 
   private static final String ARTIFACTORY_ARTIFACT_PATH = "artifactPath";
   private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
@@ -128,13 +135,22 @@ public class ServerlessTaskHelperBase {
   public void fetchManifestFilesAndWriteToDirectory(ServerlessAwsLambdaManifestConfig serverlessManifestConfig,
       String accountId, LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams)
       throws IOException {
-    GitStoreDelegateConfig gitStoreDelegateConfig = serverlessManifestConfig.getGitStoreDelegateConfig();
-    printFilesInExecutionLogs(gitStoreDelegateConfig, executionLogCallback);
-    downloadFilesFromGit(
-        gitStoreDelegateConfig, executionLogCallback, accountId, serverlessDelegateTaskParams.getWorkingDirectory());
-    executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
-    executionLogCallback.saveExecutionLog(
-        getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory()));
+    if (serverlessManifestConfig.getGitStoreDelegateConfig() != null) {
+      GitStoreDelegateConfig gitStoreDelegateConfig = serverlessManifestConfig.getGitStoreDelegateConfig();
+      printFilesInExecutionLogs(gitStoreDelegateConfig, executionLogCallback);
+      downloadFilesFromGit(
+          gitStoreDelegateConfig, executionLogCallback, accountId, serverlessDelegateTaskParams.getWorkingDirectory());
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(
+          getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory()));
+    } else {
+      S3StoreDelegateConfig s3StoreDelegateConfig = serverlessManifestConfig.getS3StoreDelegateConfig();
+      downloadFilesFromS3(
+          s3StoreDelegateConfig, executionLogCallback, serverlessDelegateTaskParams.getWorkingDirectory());
+      executionLogCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
+      executionLogCallback.saveExecutionLog(
+          getManifestFileNamesInLogFormat(serverlessDelegateTaskParams.getWorkingDirectory()));
+    }
   }
 
   private void downloadFilesFromGit(GitStoreDelegateConfig gitStoreDelegateConfig, LogCallback executionLogCallback,
@@ -163,6 +179,95 @@ public class ServerlessTaskHelperBase {
           format(SERVERLESS_GIT_FILES_DOWNLOAD_EXPLANATION, gitStoreDelegateConfig.getConnectorName(),
               gitStoreDelegateConfig.getManifestId()),
           new ServerlessCommandExecutionException(SERVERLESS_GIT_FILES_DOWNLOAD_FAILED, sanitizedException));
+    }
+  }
+
+  public void downloadFilesFromS3(S3StoreDelegateConfig s3StoreDelegateConfig, LogCallback executionLogCallback,
+      String workingDirectory) throws IOException {
+    decrypt(s3StoreDelegateConfig);
+    AwsInternalConfig awsInternalConfig =
+        awsNgConfigMapper.createAwsInternalConfig(s3StoreDelegateConfig.getAwsConnector());
+    try {
+      String filePath = s3StoreDelegateConfig.getPaths().get(0);
+      String bucketName = s3StoreDelegateConfig.getBucketName();
+      String region = s3StoreDelegateConfig.getRegion();
+      S3Object s3Object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
+      S3ObjectInputStream stream = s3Object.getObjectContent();
+      ZipInputStream zipInputStream = new ZipInputStream(stream);
+      unzipManifestFiles(workingDirectory, zipInputStream);
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in fetching files from s3", sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          "Failed to download manifest files from git. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
+      throw NestedExceptionUtils.hintWithExplanationException(format("Please check manifest S3 Manifest Aws connector"),
+          format("Failed while trying to download files from S3 manifest"),
+          new ServerlessCommandExecutionException(
+              "Failed while trying to download files from zip file", sanitizedException));
+    }
+  }
+
+  private File getNewFileForZipEntry(File destinationDir, ZipEntry zipEntry) throws IOException {
+    String filePath = getFilePathWithoutZipDirectory(zipEntry.getName());
+    File destFile = new File(destinationDir, filePath);
+
+    String destDirPath = destinationDir.getCanonicalPath();
+    String destFilePath = destFile.getCanonicalPath();
+
+    if (!destFilePath.startsWith(destDirPath + File.separator)) {
+      throw new IOException("Entry is outside of the target dir: " + filePath);
+    }
+    return destFile;
+  }
+
+  private String getFilePathWithoutZipDirectory(String filePath) {
+    String[] arr = filePath.split("/", 2);
+    filePath = arr[1];
+    return filePath;
+  }
+
+  public void unzipManifestFiles(String workingDirectory, ZipInputStream zipInputStream) throws IOException {
+    File destDir = new File(workingDirectory);
+    byte[] buffer = new byte[1024];
+    ZipEntry zipEntry = skipRootDirectoryZipEntry(zipInputStream);
+    while (zipEntry != null) {
+      File newFile = getNewFileForZipEntry(destDir, zipEntry);
+      if (zipEntry.isDirectory()) {
+        if (!newFile.isDirectory() && !newFile.mkdirs()) {
+          throw new IOException("Failed to create directory " + newFile);
+        }
+      } else {
+        // fix for Windows-created archives
+        File parent = newFile.getParentFile();
+        if (!parent.isDirectory() && !parent.mkdirs()) {
+          throw new IOException("Failed to create directory " + parent);
+        }
+        FileOutputStream fileOutputStream = new FileOutputStream(newFile);
+        int len;
+        while ((len = zipInputStream.read(buffer)) > 0) {
+          fileOutputStream.write(buffer, 0, len);
+        }
+        fileOutputStream.close();
+      }
+      zipEntry = zipInputStream.getNextEntry();
+    }
+    zipInputStream.closeEntry();
+    zipInputStream.close();
+  }
+
+  public ZipEntry skipRootDirectoryZipEntry(ZipInputStream zipInputStream) throws IOException {
+    zipInputStream.getNextEntry();
+    return zipInputStream.getNextEntry();
+  }
+
+  private void decrypt(S3StoreDelegateConfig s3StoreConfig) {
+    List<DecryptableEntity> s3DecryptableEntityList = s3StoreConfig.getAwsConnector().getDecryptableEntities();
+    if (isNotEmpty(s3DecryptableEntityList)) {
+      for (DecryptableEntity decryptableEntity : s3DecryptableEntityList) {
+        decryptionHelper.decrypt(decryptableEntity, s3StoreConfig.getEncryptedDataDetails());
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+            decryptableEntity, s3StoreConfig.getEncryptedDataDetails());
+      }
     }
   }
 

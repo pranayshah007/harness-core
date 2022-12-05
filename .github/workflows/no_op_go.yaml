@@ -15,7 +15,7 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: TIbootstrap-tin0
+          context: SmartPRChecks-tin0
           description: 'Mark ti0 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
@@ -24,7 +24,7 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: TIbootstrap1-tin1
+          context: SmartPRChecks-tin1
           description: 'Mark ti1 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
@@ -33,7 +33,7 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: TIbootstrap2-ti2
+          context: SmartPRChecks-ti2
           description: 'Mark ti2 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
@@ -42,25 +42,25 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: TIbootstrap3-tin3
+          context: SmartPRChecks-tin3 
           description: 'Mark ti3 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
-      - name: Complete Compile-bazelbuild
-        uses: Sibz/github-status-action@v1
-        with:
-          authToken: ${{secrets.GITHUB_TOKEN}}
-          context: Compile-bazelbuild
-          description: 'Mark Compile-bazelbuild as success'
-          state: 'success'
-          sha: ${{github.event.pull_request.head.sha || github.sha}}
+#       - name: Complete Compile-bazelbuild
+#         uses: Sibz/github-status-action@v1
+#         with:
+#           authToken: ${{secrets.GITHUB_TOKEN}}
+#           context: Compile-bazelbuild
+#           description: 'Mark Compile-bazelbuild as success'
+#           state: 'success'
+#           sha: ${{github.event.pull_request.head.sha || github.sha}}
 
       - name: Complete ti4
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: TIbootstrap4-tin4
+          context: SmartPRChecks-tin4
           description: 'Mark ti4 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
@@ -69,7 +69,7 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: FunctionalTest1-Functional_tests
+          context: SmartPRChecks-Functional_tests
           description: 'Mark functionalTests1 as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}
@@ -78,7 +78,7 @@ jobs:
         uses: Sibz/github-status-action@v1
         with:
           authToken: ${{secrets.GITHUB_TOKEN}}
-          context: FunctionalTest2-Functional_tests
+          context: SmartPRChecks-Functional_tests1
           description: 'Mark functionalTests2  as success'
           state: 'success'
           sha: ${{github.event.pull_request.head.sha || github.sha}}

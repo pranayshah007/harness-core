@@ -85,7 +85,7 @@ import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStepParameters;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepParameters;
-import io.harness.cdng.serverless.ServerlessGitFetchOutcome;
+import io.harness.cdng.serverless.ServerlessFetchFileOutcome;
 import io.harness.cdng.serverless.ServerlessStepPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
@@ -178,7 +178,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(ServerlessStepExceptionPassThroughData.class, 12580);
     kryo.register(ServerlessGitFetchFailurePassThroughData.class, 12581);
-    kryo.register(ServerlessGitFetchOutcome.class, 12582);
+    kryo.register(ServerlessFetchFileOutcome.class, 12582);
     kryo.register(ServerlessAwsLambdaRollbackDataOutcome.class, 12583);
     kryo.register(CloudformationRollbackStepInfo.class, 12584);
     kryo.register(ConfigFileStepParameters.class, 12585);

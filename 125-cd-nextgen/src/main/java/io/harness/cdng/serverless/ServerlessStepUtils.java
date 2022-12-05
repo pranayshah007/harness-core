@@ -14,11 +14,14 @@ import static java.lang.String.format;
 
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -46,6 +49,15 @@ public class ServerlessStepUtils extends CDStepHelper {
     validateManifest(gitStoreConfig.getKind(), connectorDTO, validationMessage);
     List<String> gitPaths = getFolderPathsForManifest(gitStoreConfig);
     return getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitPaths, ambiance);
+  }
+
+  public S3StoreDelegateConfig getS3StoreDelegateConfig(
+      Ambiance ambiance, S3StoreConfig s3StoreConfig, ManifestOutcome manifestOutcome) {
+    String connectorId = s3StoreConfig.getConnectorRef().getValue();
+    String validationMessage = format("Serverless manifest with Id [%s]", manifestOutcome.getIdentifier());
+    ConnectorInfoDTO connectorDTO = getConnectorDTO(connectorId, ambiance);
+    validateManifest(s3StoreConfig.getKind(), connectorDTO, validationMessage);
+    return getS3StoreDelegateConfig(s3StoreConfig, connectorDTO, ambiance);
   }
 
   private ConnectorInfoDTO getConnectorDTO(String connectorId, Ambiance ambiance) {
@@ -86,5 +98,9 @@ public class ServerlessStepUtils extends CDStepHelper {
       return Optional.of(artifactsOutcome);
     }
     return Optional.empty();
+  }
+
+  public boolean isGitManifest(ManifestOutcome manifestOutcome) {
+    return ManifestStoreType.isInGitSubset(manifestOutcome.getStore().getKind());
   }
 }

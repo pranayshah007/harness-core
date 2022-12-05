@@ -90,11 +90,13 @@ func TestDotNet_GetCmd(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		got, err := runner.GetCmd(ctx, tc.tests, tc.args, "/test/tmp/config.ini", false, !tc.runOnlySelectedTests)
-		if tc.expectedErr == (err == nil) {
-			t.Fatalf("%s: expected error: %v, got: %v", tc.name, tc.expectedErr, got)
-		}
-		assert.Equal(t, got, tc.want)
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := runner.GetCmd(ctx, tc.tests, tc.args, "/test/tmp/config.ini", false, !tc.runOnlySelectedTests)
+			if tc.expectedErr == (err == nil) {
+				t.Fatalf("%s: expected error: %v, got: %v", tc.name, tc.expectedErr, got)
+			}
+			assert.Equal(t, got, tc.want)
+		})
 	}
 }
 
@@ -116,33 +118,65 @@ func TestGetDotnetCmd_Manual(t *testing.T) {
 		name                 string // description of test
 		args                 string
 		runOnlySelectedTests bool
+		ignoreInstr          bool
 		want                 string
 		expectedErr          bool
 		tests                []types.RunnableTest
 	}{
 		{
-			name:                 "run all tests with empty test list and runOnlySelectedTests as false",
+			name:                 "RunAllTests_AgentAttached",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: false,
+			ignoreInstr:          false,
 			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{},
 		},
 		{
-			name:                 "run selected tests with a test list and runOnlySelectedTests as true",
+			name:                 "RunSelectedTests_TwoTests_AgentAttached",
 			args:                 "test Build.csproj",
 			runOnlySelectedTests: true,
-			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
+			ignoreInstr:          false,
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
 			expectedErr:          false,
 			tests:                []types.RunnableTest{t1, t2},
+		},
+		{
+			name:                 "RunAllTests_AgentNotAttached",
+			args:                 "test Build.csproj",
+			runOnlySelectedTests: false,
+			ignoreInstr:          false,
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\"",
+			expectedErr:          false,
+			tests:                []types.RunnableTest{},
+		},
+		{
+			name:                 "RunSelectedTests_TwoTests_AgentNotAttached",
+			args:                 "test Build.csproj",
+			runOnlySelectedTests: true,
+			ignoreInstr:          false,
+			want:                 "dotnet add package JUnitTestLogger --version 1.1.0\ndotnet test --no-build --logger \"junit;LogFilePath=test_results.xml\" --filter \"FullyQualifiedName~pkg1.cls1|FullyQualifiedName~pkg2.cls2\"",
+			expectedErr:          false,
+			tests:                []types.RunnableTest{t1, t2},
+		},
+		{
+			name:                 "RunSelectedTests_ZeroTests_AgentNotAttached",
+			args:                 "test Build.csproj",
+			runOnlySelectedTests: true,
+			ignoreInstr:          false,
+			want:                 "echo \"Skipping test run, received no tests to execute\"",
+			expectedErr:          false,
+			tests:                []types.RunnableTest{},
 		},
 	}
 
 	for _, tc := range tests {
-		got, err := runner.GetCmd(ctx, tc.tests, tc.args, "/test/tmp/config.ini", true, !tc.runOnlySelectedTests)
-		if tc.expectedErr == (err == nil) {
-			t.Fatalf("%s: expected error: %v, got: %v", tc.name, tc.expectedErr, got)
-		}
-		assert.Equal(t, got, tc.want)
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := runner.GetCmd(ctx, tc.tests, tc.args, "/test/tmp/config.ini", true, !tc.runOnlySelectedTests)
+			if tc.expectedErr == (err == nil) {
+				t.Fatalf("%s: expected error: %v, got: %v", tc.name, tc.expectedErr, got)
+			}
+			assert.Equal(t, tc.want, got)
+		})
 	}
 }
