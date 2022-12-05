@@ -1,5 +1,8 @@
 package io.harness.helper;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.mockito.Mockito.when;
+
 import io.harness.InstancesTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -14,17 +17,14 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-
-import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Mockito.when;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.GITOPS)
 public class GitopsRequestDTOMapperTest extends InstancesTestBase {
