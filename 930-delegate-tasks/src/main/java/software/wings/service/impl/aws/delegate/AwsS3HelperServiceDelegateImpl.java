@@ -36,6 +36,7 @@ import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.amazonaws.services.s3.model.Bucket;
 import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -162,6 +163,20 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     }
     return null;
+  }
+
+  public void downloadObjectFromS3(
+      AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String key, File file) {
+    try {
+      encryptionService.decrypt(awsConfig, encryptionDetails, false);
+      tracker.trackS3Call("Download Object");
+      getAmazonS3Client(getBucketRegion(awsConfig, encryptionDetails, bucketName), awsConfig)
+          .getObject(new GetObjectRequest(bucketName, key), file);
+    } catch (AmazonServiceException amazonServiceException) {
+      awsApiHelperService.handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      awsApiHelperService.handleAmazonClientException(amazonClientException);
+    }
   }
 
   /***

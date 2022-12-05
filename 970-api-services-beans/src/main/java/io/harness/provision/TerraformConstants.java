@@ -90,6 +90,8 @@ public final class TerraformConstants {
   public static final String LOCAL_STORE_TYPE = "Local";
   public static final String REMOTE_STORE_TYPE = "Remote";
 
+  public static final String S3_STORE_TYPE = "S3";
+
   public static final String TF_PLAN_RESOURCES_ADD = "TF_PLAN_RESOURCES_ADD";
   public static final String TF_PLAN_RESOURCES_CHANGE = "TF_PLAN_RESOURCES_CHANGE";
   public static final String TF_PLAN_RESOURCES_DESTROY = "TF_PLAN_RESOURCES_DESTROY";

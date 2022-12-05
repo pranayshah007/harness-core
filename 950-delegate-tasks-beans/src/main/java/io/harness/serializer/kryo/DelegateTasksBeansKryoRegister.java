@@ -809,6 +809,7 @@ import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.LoadBalancerConfig;
 import software.wings.api.terraform.TfVarGitSource;
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.APMValidateCollectorConfig;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsElbConfig;
@@ -1968,5 +1969,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);
     kryo.register(GitOpsFetchAppTaskParams.class, 573561);
     kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
+    kryo.register(TfVarS3Source.class, 573563);
   }
 }

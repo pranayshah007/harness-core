@@ -19,6 +19,7 @@ import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.RESOURCE_READY_WAIT_TIME_SECONDS;
+import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_BACKEND_CONFIGS_FILE_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_HUMAN_READABLE_PLAN_FILE_VAR_NAME;
@@ -240,13 +241,13 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       /**
        * Handle GIT Logic
        */
-      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
-                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
-
       sourceRepoSettingId = parameters.getSourceRepoSettingId();
+      gitConfig = parameters.getSourceRepo();
       gitOperationContext =
           GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
-      gitConfig = parameters.getSourceRepo();
+
+      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
+                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
 
       if (isNotEmpty(gitConfig.getBranch())) {
         saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
@@ -306,6 +307,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     if (REMOTE_STORE_TYPE.equals(parameters.getBackendConfigStoreType()) && parameters.getRemoteBackendConfig() != null
         && parameters.getRemoteBackendConfig().getGitFileConfig() != null) {
       fetchBackendConfigGitFiles(parameters, backendConfigsDir, logCallback);
+    } else if (S3_STORE_TYPE.equals(parameters.getBackendConfigStoreType())
+        && parameters.getRemoteS3BackendConfig() != null) {
+      fetchBackendConfigS3Files(parameters, backendConfigsDir, logCallback);
     }
 
     //    Reason for below if --
@@ -968,19 +972,57 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   public void fetchTfVarS3Source(
       TerraformProvisionParameters parameters, String tfVarDirectory, LogCallback logCallback) {
     if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
-      TfVarS3Source tfVarS3Source = (TfVarS3Source) parameters.getTfVarS3Source();
-      AmazonS3URI amazonS3URI = new AmazonS3URI(tfVarS3Source.getS3FileConfig().getS3URI());
-      saveExecutionLog(format("Fetching TfVar files from S3 bucket: [%s]", amazonS3URI.getBucket()),
-          CommandExecutionStatus.RUNNING, INFO, logCallback);
+      TfVarS3Source tfVarS3Source = (TfVarS3Source) parameters.getTfVarSource();
 
-      saveExecutionLog(
-          format("TfVar S3 directory: [%s]", tfVarDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);
-      for (String key : tfVarS3Source.getS3FileConfig().getS3URIList()) {
+      encryptionService.decrypt(tfVarS3Source.getAwsConfig(), tfVarS3Source.getEncryptedDataDetails(), false);
+
+      try {
+        FileIo.createDirectoryIfDoesNotExist(Path.of(tfVarDirectory));
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+      FileIo.waitForDirectoryToBeAccessibleOutOfProcess(tfVarDirectory, 10);
+
+      for (String s3URI : tfVarS3Source.getS3FileConfig().getS3URIList()) {
+        // #1 - We log it
+        AmazonS3URI amazonS3URI = new AmazonS3URI(s3URI);
+        saveExecutionLog(
+            format("Fetching tfVar file [%s] from S3 bucket: [%s]", amazonS3URI.getKey(), amazonS3URI.getBucket()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+
+        String fullyQualifiedFileName = tfVarDirectory + "/" + amazonS3URI.getKey();
+        File destinationFile = new File(fullyQualifiedFileName);
+
+        // #2 - We fetch them
+        awsS3HelperServiceDelegate.downloadObjectFromS3(tfVarS3Source.getAwsConfig(),
+            tfVarS3Source.getEncryptedDataDetails(), amazonS3URI.getBucket(), amazonS3URI.getKey(), destinationFile);
+      }
+    }
+  }
+
+  private void fetchBackendConfigS3Files(
+      TerraformProvisionParameters parameters, String configDirectory, LogCallback logCallback) {
+    TfVarS3Source s3RemoteFilesConfig = parameters.getRemoteS3BackendConfig();
+    if (parameters.getTfVarSource().getTfVarSourceType() == TfVarSourceType.S3) {
+      TfVarS3Source tfVarS3Source = (TfVarS3Source) parameters.getTfVarS3Source();
+
+      encryptionService.decrypt(
+          s3RemoteFilesConfig.getAwsConfig(), s3RemoteFilesConfig.getEncryptedDataDetails(), false);
+
+      for (String key : s3RemoteFilesConfig.getS3FileConfig().getS3URIList()) {
+        // #1 - We log it
+        AmazonS3URI amazonS3URI = new AmazonS3URI(tfVarS3Source.getS3FileConfig().getS3URI());
+        saveExecutionLog(format("Fetching Remote backend config files from S3 bucket: [%s]", amazonS3URI.getBucket()),
+            CommandExecutionStatus.RUNNING, INFO, logCallback);
+
+        // #2 - We fetch them
         S3Object s3Object = awsS3HelperServiceDelegate.getObjectFromS3(
             tfVarS3Source.getAwsConfig(), tfVarS3Source.getEncryptedDataDetails(), amazonS3URI.getBucket(), key);
 
+        String fullyQualifiedFileName = configDirectory + "/" + amazonS3URI.getKey();
+
         try (InputStream is = s3Object.getObjectContent()) {
-          Files.write(Path.of(tfVarDirectory), is.readAllBytes());
+          Files.write(Path.of(fullyQualifiedFileName), is.readAllBytes());
         } catch (IOException e) {
           String errorMsg =
               String.format("Failed to fetch %s from s3 bucket: %s", amazonS3URI.getKey(), amazonS3URI.getBucket());
