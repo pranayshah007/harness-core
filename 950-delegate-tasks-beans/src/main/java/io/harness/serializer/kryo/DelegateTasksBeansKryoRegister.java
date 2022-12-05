@@ -337,6 +337,7 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
+import io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -710,16 +711,19 @@ import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestType;
 import io.harness.delegate.task.serverless.ServerlessRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
 import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
+import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
 import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
+import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
 import io.harness.delegate.task.shell.CommandTaskParameters;
@@ -1978,6 +1982,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AMITag.class, 60013);
     kryo.register(AMIFilter.class, 60014);
     kryo.register(EmptyHostDelegateConfig.class, 60015);
+    kryo.register(ServerlessS3FetchFileConfig.class, 60016);
+    kryo.register(ServerlessS3FetchRequest.class, 60017);
+    kryo.register(ServerlessS3FetchFileResult.class, 60018);
+    kryo.register(ServerlessS3FetchResponse.class, 60019);
 
     // Elastigroup
     kryo.register(ElastigroupStartupScriptFetchRequest.class, 573545);

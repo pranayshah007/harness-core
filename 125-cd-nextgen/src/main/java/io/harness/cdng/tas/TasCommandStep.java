@@ -7,7 +7,10 @@
 
 package io.harness.cdng.tas;
 
-import com.google.inject.Inject;
+import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -63,19 +66,17 @@ import io.harness.shell.ScriptType;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.tuple.Pair;
+
 import software.wings.beans.TaskType;
 
+import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
@@ -96,9 +97,9 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TAS_NG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
       throw new AccessDeniedException(
-          "TAS_NG FF is not enabled for this account. Please contact harness customer care.",
+          "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
@@ -145,15 +146,15 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
 
   private List<FileData> prepareFilesForTransfer(Map<String, String> allFiles) {
     return allFiles.entrySet()
-            .stream()
-            .map(entry -> FileData.builder().filePath(entry.getKey()).fileContent(entry.getValue()).build())
-            .collect(Collectors.toList());
+        .stream()
+        .map(entry -> FileData.builder().filePath(entry.getKey()).fileContent(entry.getValue()).build())
+        .collect(Collectors.toList());
   }
 
   @Override
   public TaskChainResponse executeTasTask(ManifestOutcome tasManifestOutcome, Ambiance ambiance,
-                                                 StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
-                                                 boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
+      StepElementParameters stepParameters, TasExecutionPassThroughData executionPassThroughData,
+      boolean shouldOpenFetchFilesLogStream, UnitProgressData unitProgressData) {
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     List<FileData> fileDataList = prepareFilesForTransfer(executionPassThroughData.getAllFilesFetched());
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
@@ -163,7 +164,7 @@ public class TasCommandStep extends TaskChainExecutableWithRollbackAndRbac imple
     String accountId = AmbianceUtils.getAccountId(ambiance);
     long timeout = CDStepHelper.getTimeoutInMillis(stepParameters);
 
-    //TODO: remove this
+    // TODO: remove this
     TaskParameters taskParameters = ShellScriptTaskParametersNG.builder()
                                         .accountId(AmbianceUtils.getAccountId(ambiance))
                                         .environmentVariables(new HashMap<>())

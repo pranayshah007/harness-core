@@ -1,6 +1,14 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.tas;
 
-import com.google.inject.Inject;
+import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -48,19 +56,18 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
-import lombok.extern.slf4j.Slf4j;
 
+import com.google.inject.Inject;
 import java.util.Collections;
-
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommandResponseNG> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
-          .setType(ExecutionNodeType.SWAP_ROLLBACK.getYamlType())
-          .setStepCategory(StepCategory.STEP)
-          .build();
+                                               .setType(ExecutionNodeType.SWAP_ROLLBACK.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
 
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -72,16 +79,17 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
   public static final String COMMAND_UNIT = "SwapRollback";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TAS_NG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
       throw new AccessDeniedException(
-          "TAS_NG FF is not enabled for this account. Please contact harness customer care.",
+          "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
-    TasSwapRollbackStepParameters tasSwapRollbackStepParameters = (TasSwapRollbackStepParameters) stepParameters.getSpec();
+    TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
+        (TasSwapRollbackStepParameters) stepParameters.getSpec();
 
     if (EmptyPredicate.isEmpty(tasSwapRollbackStepParameters.getTasRollbackFqn())) {
       return TaskRequest.newBuilder()
@@ -91,8 +99,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     }
 
     OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-                tasSwapRollbackStepParameters.getTasRollbackFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+        RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasRollbackFqn() + "."
+            + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
 
     if (!tasAppResizeDataOptional.isFound()) {
       return TaskRequest.newBuilder()
@@ -103,7 +111,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
     OptionalSweepingOutput tasSetupDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(
-                tasSwapRollbackStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
+            tasSwapRollbackStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
 
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
@@ -116,10 +124,11 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
-    //TODO: From the TasSwapRoute Manager side, we need an outcome to know if swap route occured or not. Then in the request body set the boolean flag for that
+    // TODO: From the TasSwapRoute Manager side, we need an outcome to know if swap route occured or not. Then in the
+    // request body set the boolean flag for that
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
-            CfSwapRollbackCommandRequestNG.builder()
+        CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
             .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .commandName(TAS_SWAP_ROLLBACK)

@@ -36,7 +36,7 @@ public class OutcomeExpressionConstants {
   public final String HELM_DEPLOY_OUTCOME = "helmDeployOutcome";
   public final String HELM_ROLLBACK_OUTCOME = "helmRollbackOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
-  public final String SERVERLESS_GIT_FETCH_OUTCOME = "serverlessGitFetchOutcome";
+  public final String SERVERLESS_FETCH_FILE_OUTCOME = "serverlessFetchFileOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
   public final String CONFIG_FILES = "configFiles";
   public final String STARTUP_COMMAND = "startupCommand";

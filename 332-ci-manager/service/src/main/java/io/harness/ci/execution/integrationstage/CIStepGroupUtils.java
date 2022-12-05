@@ -12,26 +12,20 @@ import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment;
 import static io.harness.beans.steps.CIStepInfoType.CIStepExecEnvironment.CI_MANAGER;
 import static io.harness.beans.steps.CIStepInfoType.RESTORE_CACHE_GCS;
 import static io.harness.beans.steps.CIStepInfoType.SAVE_CACHE_GCS;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_CACHE_ACCOUNT_ID;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_AUTO_DETECT_CACHE;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND_OPERATION_TIMEOUT;
-import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_EXIT_CODE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_MOUNT;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_OVERRIDE;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_REBUILD;
 import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_RESTORE;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
-import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_CLONE_STEP_NAME;
 import static io.harness.ci.commonconstants.CIExecutionConstants.GIT_SSL_NO_VERIFY;
-import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
 import static io.harness.ci.commonconstants.CIExecutionConstants.PR_CLONE_STRATEGY_ATTRIBUTE;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_NAME;
@@ -61,7 +55,6 @@ import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
-import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -122,21 +115,21 @@ public class CIStepGroupUtils {
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
     Caching caching = integrationStageConfig.getCaching();
     boolean saveCache = caching != null && RunTimeInputHandler.resolveBooleanParameter(caching.getEnabled(), false);
-    CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
     boolean featureCacheEnabled = featureFlagService.isEnabled(CI_CACHE_INTELLIGENCE, accountId);
-    boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM);
+    boolean isHosted = infrastructure.getType().equals(Infrastructure.Type.HOSTED_VM)
+        || infrastructure.getType().equals(Infrastructure.Type.KUBERNETES_HOSTED);
     if (gitClone) {
       initializeExecutionSections.add(
           getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
     boolean enableCacheIntel = featureCacheEnabled && saveCache && isHosted;
     if (enableCacheIntel) {
-      initializeExecutionSections.add(getRestoreCacheStep(caching, accountId, cacheIntelligenceConfig));
+      initializeExecutionSections.add(getRestoreCacheStep(caching, accountId));
     }
     initializeExecutionSections.addAll(executionSections);
 
     if (enableCacheIntel) {
-      initializeExecutionSections.add(getSaveCacheStep(caching, accountId, cacheIntelligenceConfig));
+      initializeExecutionSections.add(getSaveCacheStep(caching, accountId));
     }
     if (isNotEmpty(initializeExecutionSections)) {
       ExecutionWrapperConfig liteEngineStepExecutionWrapper = fetchInitializeStepExecutionWrapper(
@@ -325,15 +318,14 @@ public class CIStepGroupUtils {
     }
   }
 
-  private ExecutionWrapperConfig getRestoreCacheStep(
-      Caching caching, String accountId, CICacheIntelligenceConfig cacheIntelligenceConfig) {
+  private ExecutionWrapperConfig getRestoreCacheStep(Caching caching, String accountId) {
     Map<String, JsonNode> settings = new HashMap<>();
     Map<String, String> envVariables = new HashMap<>();
     String uuid = generateUuid();
     String restoreCacheImage = ciExecutionConfigService.getPluginVersionForK8(RESTORE_CACHE_GCS, accountId).getImage();
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
-    setCacheEnvVariables(envVariables, cacheIntelligenceConfig, caching, accountId);
+    setCacheEnvVariables(envVariables, caching, accountId);
     envVariables.put(PLUGIN_RESTORE, STRING_TRUE);
 
     envVariables.put(PLUGIN_FAIL_RESTORE_IF_KEY_NOT_PRESENT, STRING_FALSE);
@@ -367,15 +359,14 @@ public class CIStepGroupUtils {
     }
   }
 
-  private ExecutionWrapperConfig getSaveCacheStep(
-      Caching caching, String accountId, CICacheIntelligenceConfig cacheIntelligenceConfig) {
+  private ExecutionWrapperConfig getSaveCacheStep(Caching caching, String accountId) {
     Map<String, JsonNode> settings = new HashMap<>();
     Map<String, String> envVariables = new HashMap<>();
     String uuid = generateUuid();
     String saveCacheImage = ciExecutionConfigService.getPluginVersionForK8(SAVE_CACHE_GCS, accountId).getImage();
     List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
 
-    setCacheEnvVariables(envVariables, cacheIntelligenceConfig, caching, accountId);
+    setCacheEnvVariables(envVariables, caching, accountId);
     envVariables.put(PLUGIN_OVERRIDE, STRING_FALSE);
     envVariables.put(PLUGIN_REBUILD, STRING_TRUE);
 
@@ -407,8 +398,7 @@ public class CIStepGroupUtils {
     }
   }
 
-  private void setCacheEnvVariables(Map<String, String> envVariables, CICacheIntelligenceConfig cacheIntelligenceConfig,
-      Caching caching, String accountId) {
+  private void setCacheEnvVariables(Map<String, String> envVariables, Caching caching, String accountId) {
     List<String> cacheDir = new ArrayList<>();
     if (caching != null && caching.getPaths() != null) {
       cacheDir = RunTimeInputHandler.resolveListParameter(
@@ -421,10 +411,6 @@ public class CIStepGroupUtils {
       envVariables.put(PLUGIN_MOUNT, String.join(",", cacheDir));
     }
     envVariables.put(PLUGIN_EXIT_CODE, STRING_FALSE);
-    envVariables.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
-    envVariables.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
     envVariables.put(PLUGIN_BACKEND_OPERATION_TIMEOUT, TEN_K_SECONDS);
-    envVariables.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
-    envVariables.put(PLUGIN_JSON_KEY, cacheIntelligenceConfig.getServiceKey());
   }
 }

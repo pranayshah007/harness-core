@@ -264,7 +264,7 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
   public void shouldCopyHarnessTemplates() {
     templateGalleryService.loadHarnessGallery();
 
-    when(accountService.listAllAccounts())
+    when(accountService.getAccountsWithBasicInfo(false))
         .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
 
     templateGalleryService.copyHarnessTemplates();
@@ -278,7 +278,7 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
   public void shouldDeleteByAccountId() {
     templateGalleryService.loadHarnessGallery();
 
-    when(accountService.listAllAccounts())
+    when(accountService.getAccountsWithBasicInfo(false))
         .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
 
     templateGalleryService.copyHarnessTemplates();
@@ -383,7 +383,7 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
     templateGalleryService.copyHarnessTemplatesToAccount(ACCOUNT_ID, ACCOUNT_NAME);
     templateService.loadYaml(
         TemplateType.SSH, POWER_SHELL_IIS_WEBSITE_INSTALL_PATH, GLOBAL_ACCOUNT_ID, HARNESS_GALLERY);
-    when(accountService.listAllAccounts())
+    when(accountService.getAccountsWithBasicInfo(false))
         .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
 
     templateGalleryService.copyHarnessTemplateFromGalleryToAccounts(
@@ -401,7 +401,7 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
     templateGalleryService.copyHarnessTemplatesToAccount(ACCOUNT_ID, ACCOUNT_NAME);
     templateService.loadYaml(
         TemplateType.SSH, POWER_SHELL_IIS_WEBSITE_V2_INSTALL_PATH, GLOBAL_ACCOUNT_ID, HARNESS_GALLERY);
-    when(accountService.listAllAccounts())
+    when(accountService.getAccountsWithBasicInfo(false))
         .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
 
     templateGalleryService.copyHarnessTemplateFromGalleryToAccounts(
@@ -411,7 +411,7 @@ public class TemplateGalleryServiceTest extends WingsBaseTest {
 
     // Yaml V2 of IIS Application
     templateService.loadYaml(TemplateType.SSH, POWER_SHELL_IIS_APP_V2_INSTALL_PATH, GLOBAL_ACCOUNT_ID, HARNESS_GALLERY);
-    when(accountService.listAllAccounts())
+    when(accountService.getAccountsWithBasicInfo(false))
         .thenReturn(asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).withAccountName(ACCOUNT_NAME).build()));
 
     templateGalleryService.copyHarnessTemplateFromGalleryToAccounts(

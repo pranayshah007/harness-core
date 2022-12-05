@@ -7,9 +7,12 @@
 
 package software.wings.misc;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 
 /**
  * The Class MemoryUtil.
@@ -76,8 +79,7 @@ public class MemoryHelper {
     try {
       // Read Memory limits from cgroup.
       java.io.File configFile = new java.io.File("/sys/fs/cgroup/memory/memory.limit_in_bytes");
-      java.util.List<String> memoryLines =
-          org.apache.commons.io.FileUtils.readLines(configFile, com.google.common.base.Charsets.UTF_8);
+      java.util.List<String> memoryLines = FileUtils.readLines(configFile, UTF_8);
       if (memoryLines.size() == 1) {
         Long memoryLimit = Long.valueOf(memoryLines.get(0));
         // Performing right shift by 20, is similar to division by 2^20. Prefer using shift operator,

@@ -8,6 +8,10 @@
 package io.harness.cdng.manifest.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.cdng.manifest.ManifestType.AsgConfiguration;
+import static io.harness.cdng.manifest.ManifestType.AsgLaunchTemplate;
+import static io.harness.cdng.manifest.ManifestType.AsgScalingPolicy;
+import static io.harness.cdng.manifest.ManifestType.AsgScheduledUpdateGroupAction;
 import static io.harness.cdng.manifest.ManifestType.DeploymentRepo;
 import static io.harness.cdng.manifest.ManifestType.EcsScalableTargetDefinition;
 import static io.harness.cdng.manifest.ManifestType.EcsScalingPolicyDefinition;
@@ -29,6 +33,10 @@ import static io.harness.cdng.manifest.ManifestType.VALUES;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.AsgConfigurationManifestOutcome;
+import io.harness.cdng.manifest.yaml.AsgLaunchTemplateManifestOutcome;
+import io.harness.cdng.manifest.yaml.AsgScalingPolicyManifestOutcome;
+import io.harness.cdng.manifest.yaml.AsgScheduledUpdateGroupActionManifestOutcome;
 import io.harness.cdng.manifest.yaml.AutoScalerManifestOutcome;
 import io.harness.cdng.manifest.yaml.DeploymentRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.EcsScalableTargetDefinitionManifestOutcome;
@@ -48,6 +56,10 @@ import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
+import io.harness.cdng.manifest.yaml.kinds.AsgConfigurationManifest;
+import io.harness.cdng.manifest.yaml.kinds.AsgLaunchTemplateManifest;
+import io.harness.cdng.manifest.yaml.kinds.AsgScalingPolicyManifest;
+import io.harness.cdng.manifest.yaml.kinds.AsgScheduledUpdateGroupActionManifest;
 import io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalableTargetDefinitionManifest;
 import io.harness.cdng.manifest.yaml.kinds.EcsScalingPolicyDefinitionManifest;
@@ -121,6 +133,14 @@ public class ManifestOutcomeMapper {
         return getEcsScalableTargetDefinitionOutcome(manifestAttributes, order);
       case EcsScalingPolicyDefinition:
         return getEcsScalingPolicyDefinitionOutcome(manifestAttributes, order);
+      case AsgLaunchTemplate:
+        return getAsgLaunchTemplateOutcome(manifestAttributes);
+      case AsgConfiguration:
+        return getAsgConfigurationOutcome(manifestAttributes);
+      case AsgScalingPolicy:
+        return getAsgScalingPolicyOutcome(manifestAttributes);
+      case AsgScheduledUpdateGroupAction:
+        return getAsgScheduledUpdateGroupActionOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Artifact Config type: [%s]", manifestAttributes.getKind()));
@@ -297,6 +317,39 @@ public class ManifestOutcomeMapper {
         .identifier(attributes.getIdentifier())
         .store(attributes.getStoreConfig())
         .order(order)
+        .build();
+  }
+
+  private AsgLaunchTemplateManifestOutcome getAsgLaunchTemplateOutcome(ManifestAttributes manifestAttributes) {
+    AsgLaunchTemplateManifest manifest = (AsgLaunchTemplateManifest) manifestAttributes;
+    return AsgLaunchTemplateManifestOutcome.builder()
+        .identifier(manifest.getIdentifier())
+        .store(manifest.getStoreConfig())
+        .build();
+  }
+
+  private AsgConfigurationManifestOutcome getAsgConfigurationOutcome(ManifestAttributes manifestAttributes) {
+    AsgConfigurationManifest manifest = (AsgConfigurationManifest) manifestAttributes;
+    return AsgConfigurationManifestOutcome.builder()
+        .identifier(manifest.getIdentifier())
+        .store(manifest.getStoreConfig())
+        .build();
+  }
+
+  private AsgScalingPolicyManifestOutcome getAsgScalingPolicyOutcome(ManifestAttributes manifestAttributes) {
+    AsgScalingPolicyManifest manifest = (AsgScalingPolicyManifest) manifestAttributes;
+    return AsgScalingPolicyManifestOutcome.builder()
+        .identifier(manifest.getIdentifier())
+        .store(manifest.getStoreConfig())
+        .build();
+  }
+
+  private AsgScheduledUpdateGroupActionManifestOutcome getAsgScheduledUpdateGroupActionOutcome(
+      ManifestAttributes manifestAttributes) {
+    AsgScheduledUpdateGroupActionManifest manifest = (AsgScheduledUpdateGroupActionManifest) manifestAttributes;
+    return AsgScheduledUpdateGroupActionManifestOutcome.builder()
+        .identifier(manifest.getIdentifier())
+        .store(manifest.getStoreConfig())
         .build();
   }
 }

@@ -17,7 +17,7 @@ import io.harness.gitsync.caching.beans.GitFileCacheResponse;
 public interface GitFileCacheService {
   GitFileCacheResponse fetchFromCache(GitFileCacheKey gitFileCacheKey);
 
-  void upsertCache(GitFileCacheKey gitFileCacheKey, GitFileCacheObject gitFileCacheObject);
+  GitFileCacheResponse upsertCache(GitFileCacheKey gitFileCacheKey, GitFileCacheObject gitFileCacheObject);
 
   void invalidateCache(GitFileCacheKey gitFileCacheKey);
 }

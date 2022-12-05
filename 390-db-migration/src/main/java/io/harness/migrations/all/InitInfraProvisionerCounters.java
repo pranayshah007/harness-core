@@ -13,6 +13,7 @@ import io.harness.limits.Action;
 import io.harness.limits.ActionType;
 import io.harness.limits.Counter;
 import io.harness.migrations.Migration;
+import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.beans.InfrastructureProvisioner;
@@ -21,8 +22,8 @@ import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
 
 import com.google.inject.Inject;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.Query;
 
 @Slf4j
 public class InitInfraProvisionerCounters implements Migration {
@@ -39,26 +40,27 @@ public class InitInfraProvisionerCounters implements Migration {
                                   .field("key")
                                   .endsWith(ActionType.CREATE_INFRA_PROVISIONER.toString()));
 
-      List<Account> accounts = accountService.listAllAccounts();
+      Query<Account> query = accountService.getBasicAccountQuery();
 
-      log.info("Total accounts fetched. Count: {}", accounts.size());
-      for (Account account : accounts) {
-        String accountId = account.getUuid();
-        if (GLOBAL_ACCOUNT_ID.equals(accountId)) {
-          continue;
+      try (HIterator<Account> accounts = new HIterator<>(query.fetch())) {
+        for (Account account : accounts) {
+          String accountId = account.getUuid();
+          if (GLOBAL_ACCOUNT_ID.equals(accountId)) {
+            continue;
+          }
+
+          long infraProvisionerCount = wingsPersistence.createQuery(InfrastructureProvisioner.class)
+                                           .field(InfrastructureProvisioner.ACCOUNT_ID_KEY2)
+                                           .equal(accountId)
+                                           .count();
+
+          Action action = new Action(accountId, ActionType.CREATE_INFRA_PROVISIONER);
+
+          log.info("Initializing Counter. Account Id: {} , Infrastructure Provisioner Count: {}", accountId,
+              infraProvisionerCount);
+          Counter counter = new Counter(action.key(), infraProvisionerCount);
+          wingsPersistence.save(counter);
         }
-
-        long infraProvisionerCount = wingsPersistence.createQuery(InfrastructureProvisioner.class)
-                                         .field(InfrastructureProvisioner.ACCOUNT_ID_KEY2)
-                                         .equal(accountId)
-                                         .count();
-
-        Action action = new Action(accountId, ActionType.CREATE_INFRA_PROVISIONER);
-
-        log.info("Initializing Counter. Account Id: {} , Infrastructure Provisioner Count: {}", accountId,
-            infraProvisionerCount);
-        Counter counter = new Counter(action.key(), infraProvisionerCount);
-        wingsPersistence.save(counter);
       }
     } catch (Exception e) {
       log.error("Error initializing Infrastructure Provisioner counters", e);

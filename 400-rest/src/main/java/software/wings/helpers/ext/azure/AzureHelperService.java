@@ -23,6 +23,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.beans.PageResponse;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ExceptionUtils;
@@ -120,6 +121,8 @@ public class AzureHelperService {
       AzureResourceManager.Authenticated authenticated =
           AzureResourceManager.configure()
               .withLogLevel(HttpLogDetailLevel.NONE)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
               .authenticate(clientSecretCredential,
                   new AzureProfile(
                       azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
@@ -344,6 +347,7 @@ public class AzureHelperService {
 
       return AzureResourceManager.configure()
           .withLogLevel(HttpLogDetailLevel.NONE)
+          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
           .authenticate(clientSecretCredential,
               new AzureProfile(
                   azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())))
@@ -409,6 +413,7 @@ public class AzureHelperService {
     AzureResourceManager.Authenticated authenticate =
         AzureResourceManager.configure()
             .withLogLevel(HttpLogDetailLevel.NONE)
+            .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
             .authenticate(clientSecretCredential,
                 new AzureProfile(azureVaultConfig.getTenantId(), subscriptionId,
                     getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType())));

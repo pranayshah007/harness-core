@@ -26,6 +26,7 @@ import io.harness.service.intfc.TaskProgressService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
@@ -34,12 +35,15 @@ import lombok.extern.slf4j.Slf4j;
 public class TaskProgressServiceImpl implements TaskProgressService {
   private DelegateCallbackRegistry delegateCallbackRegistry;
   private KryoSerializer kryoSerializer;
+  private KryoSerializer referenceFalseKryoSerializer;
   private DelegateTaskService delegateTaskService;
 
   @Inject
-  public TaskProgressServiceImpl(KryoSerializer kryoSerializer, DelegateCallbackRegistry delegateCallbackRegistry,
-      DelegateTaskService delegateTaskService) {
+  public TaskProgressServiceImpl(KryoSerializer kryoSerializer,
+      @Named("referenceFalseKryoSerializer") KryoSerializer referenceFalseKryoSerializer,
+      DelegateCallbackRegistry delegateCallbackRegistry, DelegateTaskService delegateTaskService) {
     this.kryoSerializer = kryoSerializer;
+    this.referenceFalseKryoSerializer = referenceFalseKryoSerializer;
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.delegateTaskService = delegateTaskService;
   }
@@ -65,11 +69,45 @@ public class TaskProgressServiceImpl implements TaskProgressService {
   }
 
   @Override
+  public SendTaskStatusResponse sendTaskStatusV2(SendTaskStatusRequest request) {
+    try {
+      DelegateTaskResponse delegateTaskResponse =
+          DelegateTaskResponse.builder()
+              .responseCode(DelegateTaskResponse.ResponseCode.OK)
+              .accountId(request.getAccountId().getId())
+              .response((DelegateResponseData) referenceFalseKryoSerializer.asInflatedObject(
+                  request.getTaskResponseData().getKryoResultsData().toByteArray()))
+              .build();
+      delegateTaskService.processDelegateResponse(
+          request.getAccountId().getId(), null, request.getTaskId().getId(), delegateTaskResponse);
+      return SendTaskStatusResponse.newBuilder().setSuccess(true).build();
+
+    } catch (Exception ex) {
+      log.error("Unexpected error occurred while processing send parked task status request.", ex);
+    }
+    return null;
+  }
+
+  @Override
   public SendTaskProgressResponse sendTaskProgress(SendTaskProgressRequest request) {
     try {
       delegateTaskService.publishTaskProgressResponse(request.getAccountId().getId(),
           request.getCallbackToken().getToken(), request.getTaskId().getId(),
           (DelegateProgressData) kryoSerializer.asInflatedObject(
+              request.getTaskResponseData().getKryoResultsData().toByteArray()));
+      return SendTaskProgressResponse.newBuilder().setSuccess(true).build();
+    } catch (Exception ex) {
+      log.error("Unexpected error occurred while processing send task progress status request.", ex);
+    }
+    return null;
+  }
+
+  @Override
+  public SendTaskProgressResponse sendTaskProgressV2(SendTaskProgressRequest request) {
+    try {
+      delegateTaskService.publishTaskProgressResponse(request.getAccountId().getId(),
+          request.getCallbackToken().getToken(), request.getTaskId().getId(),
+          (DelegateProgressData) referenceFalseKryoSerializer.asInflatedObject(
               request.getTaskResponseData().getKryoResultsData().toByteArray()));
       return SendTaskProgressResponse.newBuilder().setSuccess(true).build();
     } catch (Exception ex) {

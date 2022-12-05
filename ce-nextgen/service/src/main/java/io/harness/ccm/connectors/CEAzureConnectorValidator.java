@@ -9,6 +9,7 @@ package io.harness.ccm.connectors;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorResponseDTO;
@@ -297,10 +298,13 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
               .tenantId(profile.getTenantId())
               .build();
 
-      AzureResourceManager azureResourceManager = AzureResourceManager.configure()
-                                                      .withLogLevel(HttpLogDetailLevel.BASIC)
-                                                      .authenticate(clientSecretCredential, profile)
-                                                      .withSubscription(subscriptionId);
+      AzureResourceManager azureResourceManager =
+          AzureResourceManager.configure()
+              .withLogLevel(HttpLogDetailLevel.BASIC)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+              .authenticate(clientSecretCredential, profile)
+              .withSubscription(subscriptionId);
       ServicePrincipal servicePrincipal = azureResourceManager.accessManagement().servicePrincipals().getByName(
           configuration.getCeAzureSetupConfig().getAzureAppClientId());
       PagedIterable<RoleAssignment> roles =

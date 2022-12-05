@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static software.wings.metrics.RiskLevel.NA;
 import static software.wings.metrics.RiskLevel.getRiskLevel;
 
@@ -42,6 +43,7 @@ import software.wings.service.intfc.analysis.AnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalAnalysisService;
 import software.wings.service.intfc.analysis.ExperimentalMetricAnalysisRecordService;
 import software.wings.service.intfc.analysis.TimeSeriesMLAnalysisRecordService;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.sm.StateType;
 import software.wings.verification.CVConfiguration;
 import software.wings.verification.CVConfiguration.CVConfigurationKeys;
@@ -63,7 +65,7 @@ import org.mongodb.morphia.query.Sort;
 
 @ValidateOnExecution
 @Slf4j
-public class ExperimentalAnalysisServiceImpl implements ExperimentalAnalysisService {
+public class ExperimentalAnalysisServiceImpl implements ExperimentalAnalysisService, OwnedByAccount {
   private static final double HIGH_RISK_THRESHOLD = 50;
   private static final double MEDIUM_RISK_THRESHOLD = 25;
 
@@ -574,5 +576,11 @@ public class ExperimentalAnalysisServiceImpl implements ExperimentalAnalysisServ
       dataStoreService.save(ExperimentalMessageComparisonResult.class, resultsToSave, false);
     }
     return true;
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(ExperimentalLogMLAnalysisRecord.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 }

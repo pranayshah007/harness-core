@@ -52,7 +52,7 @@ public class DeploymentReconTask implements Runnable {
   public void run() {
     try {
       long startTime = System.currentTimeMillis();
-      List<Account> accountList = accountService.listAllAccountWithDefaultsWithLicenseInfo();
+      List<Account> accountList = accountService.getAccountsWithBasicInfo(true);
       for (Account account : accountList) {
         if (account.getLicenseInfo() == null
             || !AccountStatus.ACTIVE.equals(account.getLicenseInfo().getAccountStatus())) {
