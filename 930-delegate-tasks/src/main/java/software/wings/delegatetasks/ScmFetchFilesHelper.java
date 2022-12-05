@@ -60,6 +60,7 @@ import software.wings.beans.yaml.GitFetchFilesResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -248,7 +249,16 @@ public class ScmFetchFilesHelper {
     }
 
     createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeFile(finalPath.toString(), Base64.getDecoder().decode(fileContent.getContent()));
+    FileIo.writeFile(finalPath.toString(), getFileContentData(fileContent));
+  }
+
+  private byte[] getFileContentData(FileContent fileContent) {
+    try {
+      return Base64.getDecoder().decode(fileContent.getContent());
+    } catch (IllegalArgumentException e) {
+      log.warn("File content is not a valid base64 value, fallback to plain text. Error: {}", e.getMessage());
+      return fileContent.getContent().getBytes(StandardCharsets.UTF_8);
+    }
   }
 
   private void throwFailedToFetchFileException(GitFileConfig gitFileConfig, FileContent fileContent) {
