@@ -8,6 +8,8 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,10 +21,14 @@ import io.harness.cdng.creator.plan.service.ServiceAllInOnePlanCreatorUtils;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.helper.EnvironmentsPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.beans.MultiDeploymentStepParameters;
@@ -40,7 +46,9 @@ import io.harness.exception.ngexception.NGFreezeException;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
+import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
@@ -88,12 +96,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Stage plan graph V1 -
@@ -140,6 +151,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private ServicePlanCreatorHelper servicePlanCreatorHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
+
+  @Inject private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -385,6 +398,38 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   private void addMultiDeploymentDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       DeploymentStageNode stageNode, PlanCreationContext ctx) {
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
+    String accountIdentifier = ctx.getAccountIdentifier();
+    String orgIdentifier = ctx.getOrgIdentifier();
+    String projectIdentifier = ctx.getProjectIdentifier();
+
+    // If deploying to Environments with filters
+    if (featureFlagHelperService.isEnabled(ctx.getAccountIdentifier(), FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS)) {
+      if (stageNode.getDeploymentStageConfig().getEnvironments() != null
+          && environmentInfraFilterHelper.areFiltersPresent(stageNode.getDeploymentStageConfig().getEnvironments())) {
+        EnvironmentsYaml environmentsYaml = stageConfig.getEnvironments();
+        List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+        if (environmentInfraFilterHelper.areFiltersPresent(environmentsYaml)) {
+          finalyamlV2List = processFilteringForEnvironmentsLevelFilters(
+              accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml);
+        }
+        // Set the filtered envYamlV2 in the environments yaml so normal processing continues
+        environmentsYaml.getValues().setValue(finalyamlV2List);
+      }
+
+      // If deploying to environment group with filters
+      if (stageConfig.getEnvironmentGroup() != null
+          && (isNotEmpty(stageConfig.getEnvironmentGroup().getFilters().getValue())
+              || isNotEmpty(getEnvYamlV2WithFilters(stageConfig.getEnvironmentGroup())))) {
+        EnvironmentGroupYaml environmentGroupYaml = stageConfig.getEnvironmentGroup();
+
+        List<EnvironmentYamlV2> finalyamlV2List =
+            processFilteringForEnvironmentGroupLevelFilters(accountIdentifier, orgIdentifier, projectIdentifier,
+                environmentGroupYaml, stageConfig.getEnvironmentGroup().getFilters().getValue());
+
+        // Set the filtered envYamlV2 in the environmentGroup yaml so normal processing continues
+        environmentGroupYaml.getEnvironments().setValue(finalyamlV2List);
+      }
+    }
     MultiDeploymentSpawnerUtils.validateMultiServiceInfra(stageConfig);
     if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
         && stageConfig.getEnvironmentGroup() == null) {
@@ -419,6 +464,124 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
             .build();
 
     buildMultiDeploymentMetadata(planCreationResponseMap, stageNode, ctx, stepParameters);
+  }
+
+  @NotNull
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentsLevelFilters(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, EnvironmentsYaml environmentsYaml) {
+    List<EnvironmentYamlV2> finalyamlV2List;
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(environmentsYaml.getFilters().getValue())) {
+      List<EnvironmentYamlV2> filteredEnvList = processEnvironmentInfraFilters(
+          accountIdentifier, orgIdentifier, projectIdentifier, environmentsYaml.getFilters().getValue());
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+    }
+
+    // Process filtering at individual Environment level
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
+    if (environmentInfraFilterHelper.areFiltersSetOnIndividualEnvironments(environmentsYaml)) {
+      processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+          individualEnvironmentYamlV2, environmentInfraFilterHelper.getEnvV2YamlsWithFilters(environmentsYaml));
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    // If there are envs in the filtered list and there are
+    // specific infras specific, pick the specified infras
+    finalyamlV2List = getFinalEnvsList(environmentsYaml.getValues().getValue(), mergedFilteredEnvs);
+
+    return finalyamlV2List;
+  }
+
+  private List<EnvironmentYamlV2> processFilteringForEnvironmentGroupLevelFilters(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, EnvironmentGroupYaml environmentGroupYaml,
+      List<FilterYaml> filterYamls) {
+    Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(filterYamls)) {
+      List<EnvironmentYamlV2> filteredEnvList =
+          processEnvironmentInfraFilters(accountIdentifier, orgIdentifier, projectIdentifier, filterYamls);
+      envsLevelEnvironmentYamlV2.addAll(filteredEnvList);
+    }
+
+    Set<EnvironmentYamlV2> individualEnvironmentYamlV2 = new HashSet<>();
+    if (isNotEmpty(environmentGroupYaml.getEnvironments().getValue())) {
+      if (isNotEmpty(getEnvYamlV2WithFilters(environmentGroupYaml))) {
+        processFiltersOnIndividualEnvironmentsLevel(accountIdentifier, orgIdentifier, projectIdentifier,
+            individualEnvironmentYamlV2, getEnvYamlV2WithFilters(environmentGroupYaml));
+      }
+    }
+
+    // Merge the two lists
+    List<EnvironmentYamlV2> mergedFilteredEnvs =
+        getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(envsLevelEnvironmentYamlV2, individualEnvironmentYamlV2);
+
+    return getFinalEnvsList(environmentGroupYaml.getEnvironments().getValue(), mergedFilteredEnvs);
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getEnvYamlV2WithFilters(EnvironmentGroupYaml environmentGroupYaml) {
+    return environmentGroupYaml.getEnvironments()
+        .getValue()
+        .stream()
+        .filter(eg -> isNotEmpty(eg.getFilters().getValue()))
+        .collect(Collectors.toList());
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getFinalEnvsList(
+      List<EnvironmentYamlV2> envsFromYaml, List<EnvironmentYamlV2> mergedFilteredEnvs) {
+    List<EnvironmentYamlV2> finalyamlV2List = new ArrayList<>();
+    if (isNotEmpty(envsFromYaml)) {
+      for (EnvironmentYamlV2 e : envsFromYaml) {
+        List<EnvironmentYamlV2> list = mergedFilteredEnvs.stream()
+                                           .filter(in -> in.getEnvironmentRef().equals(e.getEnvironmentRef()))
+                                           .collect(Collectors.toList());
+        if (isNotEmpty(list) || ParameterField.isNull(e.getInfrastructureDefinitions())
+            || isEmpty(e.getInfrastructureDefinitions().getValue())) {
+          continue;
+        }
+        finalyamlV2List.add(e);
+      }
+    }
+    finalyamlV2List.addAll(mergedFilteredEnvs);
+    return finalyamlV2List;
+  }
+
+  @NotNull
+  private static List<EnvironmentYamlV2> getEnvOrEnvGrouplevelAndIndividualEnvFilteredEnvs(
+      Set<EnvironmentYamlV2> envsLevelEnvironmentYamlV2, Set<EnvironmentYamlV2> individualEnvironmentYamlV2) {
+    List<EnvironmentYamlV2> mergedFilteredEnvs = new ArrayList<>();
+    for (EnvironmentYamlV2 envYamlV2 : envsLevelEnvironmentYamlV2) {
+      List<EnvironmentYamlV2> eV2 = individualEnvironmentYamlV2.stream()
+                                        .filter(e -> e.getEnvironmentRef().equals(envYamlV2.getEnvironmentRef()))
+                                        .collect(Collectors.toList());
+      if (isNotEmpty(eV2)) {
+        continue;
+      }
+      mergedFilteredEnvs.add(envYamlV2);
+    }
+    mergedFilteredEnvs.addAll(individualEnvironmentYamlV2);
+    return mergedFilteredEnvs;
+  }
+
+  private List<EnvironmentYamlV2> processFiltersOnIndividualEnvironmentsLevel(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, Set<EnvironmentYamlV2> individualEnvironmentYamlV2,
+      List<EnvironmentYamlV2> envV2YamlsWithFilters) {
+    List<EnvironmentYamlV2> filteredInfraList = new ArrayList<>();
+    for (EnvironmentYamlV2 envYamlV2 : envV2YamlsWithFilters) {
+      // if (ParameterField.isNotNull(envYamlV2.getInfrastructureDefinitions())) {
+      Set<InfrastructureEntity> infrastructureEntitySet =
+          environmentInfraFilterHelper.getInfrastructureForEnvironmentList(
+              accountIdentifier, orgIdentifier, projectIdentifier, envYamlV2.getEnvironmentRef().getValue());
+
+      filteredInfraList = filterInfras(
+          envYamlV2.getFilters().getValue(), envYamlV2.getEnvironmentRef().getValue(), infrastructureEntitySet);
+      individualEnvironmentYamlV2.addAll(filteredInfraList);
+      //}
+    }
+    return filteredInfraList;
   }
 
   /**
@@ -674,5 +837,60 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
     return deploymentStageConfig.getGitOpsEnabled();
+  }
+
+  private List<EnvironmentYamlV2> processEnvironmentInfraFilters(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<FilterYaml> filterYamls) {
+    Set<Environment> allEnvsInProject =
+        environmentInfraFilterHelper.getAllEnvironmentsInProject(accountIdentifier, orgIdentifier, projectIdentifier);
+
+    // Apply filters on environments
+    Set<Environment> filteredEnvs = environmentInfraFilterHelper.applyFiltersOnEnvs(allEnvsInProject, filterYamls);
+
+    // Get All InfraDefinitions
+    List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
+    for (Environment env : filteredEnvs) {
+      Set<InfrastructureEntity> infrastructureEntitySet =
+          environmentInfraFilterHelper.getInfrastructureForEnvironmentList(
+              accountIdentifier, orgIdentifier, projectIdentifier, env.getIdentifier());
+
+      if (isNotEmpty(infrastructureEntitySet)) {
+        List<EnvironmentYamlV2> temp = filterInfras(filterYamls, env.getIdentifier(), infrastructureEntitySet);
+        if (isNotEmpty(temp)) {
+          environmentYamlV2List.add(temp.get(0));
+        }
+      }
+    }
+    return environmentYamlV2List;
+  }
+
+  private List<EnvironmentYamlV2> filterInfras(
+      List<FilterYaml> filterYamls, String env, Set<InfrastructureEntity> infrastructureEntitySet) {
+    List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
+    Set<InfrastructureEntity> filteredInfras =
+        environmentInfraFilterHelper.applyFilteringOnInfras(filterYamls, infrastructureEntitySet);
+
+    if (isNotEmpty(filteredInfras)) {
+      List<InfraStructureDefinitionYaml> infraDefYamlList = new ArrayList<>();
+
+      for (InfrastructureEntity in : filteredInfras) {
+        infraDefYamlList.add(createInfraDefinitionYaml(in));
+      }
+
+      EnvironmentYamlV2 environmentYamlV2 =
+          EnvironmentYamlV2.builder()
+              .environmentRef(ParameterField.createValueField(env))
+              .infrastructureDefinitions(ParameterField.createValueField(infraDefYamlList))
+              .build();
+
+      environmentYamlV2List.add(environmentYamlV2);
+    }
+    return environmentYamlV2List;
+  }
+
+  private InfraStructureDefinitionYaml createInfraDefinitionYaml(InfrastructureEntity infrastructureEntity) {
+    return InfraStructureDefinitionYaml.builder()
+        .identifier(ParameterField.createValueField(infrastructureEntity.getIdentifier()))
+        .build();
   }
 }

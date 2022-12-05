@@ -36,4 +36,5 @@ public interface SwaggerConstants {
       "io.harness.cdng.elastigroup.ElastigroupConfiguration";
   String INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
       "io.harness.cdng.elastigroup.ElastigroupInstances";
+  String FILTERS_MATCHTYPE_ENUM_CLASSPATH = "io.harness.cdng.environment.filters.MatchType";
 }

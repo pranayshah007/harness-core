@@ -262,6 +262,17 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AllowAllFilter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FilterSpec"
+        },
+        {
+          "type": "object"
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AmazonS3ArtifactConfig": {
       "allOf": [
         {
@@ -4193,6 +4204,21 @@
             }
           ]
         },
+        "filters": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FilterYaml"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "metadata": {
           "$ref": "#/definitions/EnvironmentGroupMetadata"
         }
@@ -4334,6 +4360,21 @@
     "EnvironmentsYaml": {
       "type": "object",
       "properties": {
+        "filters": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/FilterYaml"
+              }
+            },
+            {
+              "type": "string",
+              "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+              "minLength": 1
+            }
+          ]
+        },
         "metadata": {
           "readOnly": true,
           "$ref": "#/definitions/EnvironmentsMetadata"
@@ -4532,6 +4573,44 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "FilterSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "FilterYaml": {
+      "type": "object",
+      "required": [
+        "entities",
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "entities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "infrastructures",
+              "gitOpsClusters",
+              "environments"
+            ]
+          }
+        },
+        "spec": {
+          "$ref": "#/definitions/FilterSpec"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "tags",
+            "all"
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GcrArtifactConfig": {
@@ -11869,6 +11948,36 @@
             },
             "value": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TagsFilter": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/FilterSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "matchType",
+            "tags"
+          ],
+          "properties": {
+            "matchType": {
+              "type": "string",
+              "enum": [
+                "all",
+                "any"
+              ]
+            },
+            "tags": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
             }
           }
         }

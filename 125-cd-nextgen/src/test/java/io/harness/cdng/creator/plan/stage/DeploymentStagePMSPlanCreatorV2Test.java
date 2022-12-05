@@ -28,7 +28,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.environment.filters.Entity;
+import io.harness.cdng.environment.filters.FilterType;
+import io.harness.cdng.environment.filters.FilterYaml;
+import io.harness.cdng.environment.helper.EnvironmentInfraFilterHelper;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.exception.ngexception.NGFreezeException;
@@ -71,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.stream.Collectors;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -88,10 +94,14 @@ import org.mockito.MockitoAnnotations;
 @RunWith(JUnitParamsRunner.class)
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private KryoSerializer kryoSerializer;
   @Mock private FreezeEvaluateService freezeEvaluateService;
   @Mock private AccessControlClient accessControlClient;
   @InjectMocks private DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
+
+  @Mock private EnvironmentInfraFilterHelper environmentInfraFilterHelper;
+
   private AutoCloseable mocks;
   ObjectMapper mapper = new ObjectMapper();
   @Before
@@ -99,6 +109,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     mocks = MockitoAnnotations.openMocks(this);
 
     Reflect.on(deploymentStagePMSPlanCreator).set("kryoSerializer", kryoSerializer);
+    when(ngFeatureFlagHelperService.isEnabled("accountId", FeatureName.CDS_FILTER_INFRA_CLUSTERS_ON_TAGS))
+        .thenReturn(true);
   }
 
   @After
@@ -167,6 +179,39 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
                    .map(PlanNode::getIdentifier)
                    .collect(Collectors.toSet()))
         .containsExactlyInAnyOrder("service", "infrastructure", "artifacts", "manifests", "configFiles");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDeploymentStageConfigWithFilters")
+  public void testCreatePlanForChildrenNodesWithFilters_0(DeploymentStageNode node) {
+    when(environmentInfraFilterHelper.areFiltersPresent(any())).thenReturn(true);
+
+    node.setFailureStrategies(List.of(FailureStrategyConfig.builder()
+                                          .onFailure(OnFailureConfig.builder()
+                                                         .errors(List.of(NGFailureType.ALL_ERRORS))
+                                                         .action(AbortFailureActionConfig.builder().build())
+                                                         .build())
+                                          .build()));
+
+    JsonNode jsonNode = mapper.valueToTree(node);
+    PlanCreationContext ctx = PlanCreationContext.builder()
+                                  .globalContext(Map.of("metadata",
+                                      PlanCreationContextValue.newBuilder().setAccountIdentifier("accountId").build()))
+                                  .currentField(new YamlField(new YamlNode("spec", jsonNode)))
+                                  .build();
+    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap =
+        deploymentStagePMSPlanCreator.createPlanForChildrenNodes(ctx, node);
+
+    assertThat(planCreationResponseMap).hasSize(9);
+    assertThat(planCreationResponseMap.values()
+                   .stream()
+                   .map(PlanCreationResponse::getPlanNode)
+                   .filter(Objects::nonNull)
+                   .map(PlanNode::getIdentifier)
+                   .collect(Collectors.toSet()))
+        .containsAnyOf("service", "infrastructure", "artifacts", "manifests", "configFiles");
   }
 
   @Test
@@ -257,8 +302,6 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
   private Object[][] getDeploymentStageConfig() {
     String svcId = "svcId";
     String envId = "envId";
-    String envName = "envName";
-    String svcName = "svcName";
     Map<String, Object> step = Map.of("name", "teststep");
 
     final DeploymentStageNode node1 = buildNode(
@@ -304,6 +347,44 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
             .build());
 
     return new Object[][] {{node1}, {node2}};
+  }
+
+  private Object[][] getDeploymentStageConfigWithFilters() {
+    String svcId = "svcId";
+    String envId = "envId";
+    Map<String, Object> step = Map.of("name", "teststep");
+
+    final DeploymentStageNode nodeEnvsFilters = buildNode(
+        DeploymentStageConfig.builder()
+            .uuid("stageUuid")
+            .service(
+                ServiceYamlV2.builder().uuid("serviceuuid").serviceRef(ParameterField.createValueField(svcId)).build())
+            .environments(EnvironmentsYaml.builder()
+                              .uuid("environments-uuid")
+                              .values(ParameterField.createValueField(
+                                  asList(EnvironmentYamlV2.builder()
+                                             .uuid("envuuid")
+                                             .environmentRef(ParameterField.<String>builder().value(envId).build())
+                                             .deployToAll(ParameterField.createValueField(false))
+                                             .infrastructureDefinitions(ParameterField.createValueField(
+                                                 asList(InfraStructureDefinitionYaml.builder()
+                                                            .identifier(ParameterField.createValueField("infra"))
+                                                            .build())))
+                                             .build())))
+                              .filters(ParameterField.createValueField(
+                                  asList(FilterYaml.builder()
+                                             .type(FilterType.all)
+                                             .entities(Set.of(Entity.environments, Entity.infrastructures))
+                                             .build())))
+                              .build())
+            .deploymentType(KUBERNETES)
+            .execution(ExecutionElementConfig.builder()
+                           .uuid("executionuuid")
+                           .steps(List.of(ExecutionWrapperConfig.builder().step(mapper.valueToTree(step)).build()))
+                           .build())
+            .build());
+
+    return new Object[][] {{nodeEnvsFilters}};
   }
 
   private DeploymentStageNode buildNode(DeploymentStageConfig config) {
