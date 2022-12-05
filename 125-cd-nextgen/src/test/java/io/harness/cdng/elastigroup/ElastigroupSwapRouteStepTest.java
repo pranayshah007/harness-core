@@ -7,11 +7,6 @@
 
 package io.harness.cdng.elastigroup;
 
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -45,12 +40,6 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-
-import software.wings.beans.TaskType;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -58,6 +47,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import software.wings.beans.TaskType;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -150,8 +147,8 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
     ElastigroupSwapRouteCommandRequest elastigroupSwapRouteCommandRequest =
         ElastigroupSwapRouteCommandRequest.builder()
             .blueGreen(elastigroupSetupDataOutcome.isBlueGreen())
-            .awsEncryptedDetails(Collections.emptyList())
-            .connectorInfoDTO(ConnectorInfoDTO.builder().build())
+//            .awsEncryptedDetails(Collections.emptyList())
+//            .connectorInfoDTO(ConnectorInfoDTO.builder().build())
             .newElastigroup(elastigroupSetupDataOutcome.getNewElastigroupOriginalConfig())
             .oldElastigroup(elastigroupSetupDataOutcome.getOldElastigroupOriginalConfig())
             .elastigroupNamePrefix(elastigroupSetupDataOutcome.getElastigroupNamePrefix())
@@ -159,14 +156,14 @@ public class ElastigroupSwapRouteStepTest extends CDNGTestBase {
             .downsizeOldElastigroup(
                 String.valueOf(elastigroupSwapRouteStepParameters.getDownsizeOldElastigroup().getValue()))
             .resizeStrategy(elastigroupSetupDataOutcome.getResizeStrategy())
-            .awsRegion(region)
+//            .awsRegion(region)
             .spotInstConfig(spotInstConfig)
-            .connectorInfoDTO(connectorInfoDTO)
+//            .connectorInfoDTO(connectorInfoDTO)
             .commandName(ELASTIGROUP_SWAP_ROUTE_COMMAND_NAME)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(null))
             .timeoutIntervalInMin(10)
-            .awsEncryptedDetails(encryptedDataDetails)
-            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
+//            .awsEncryptedDetails(encryptedDataDetails)
+//            .lBdetailsForBGDeploymentList(elastigroupSetupDataOutcome.getLoadBalancerDetailsForBGDeployments())
             .build();
     TaskChainResponse taskChainResponse = TaskChainResponse.builder()
                                               .chainEnd(false)

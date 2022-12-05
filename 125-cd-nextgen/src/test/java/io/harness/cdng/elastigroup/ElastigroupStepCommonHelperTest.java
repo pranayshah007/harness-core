@@ -7,11 +7,6 @@
 
 package io.harness.cdng.elastigroup;
 
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doReturn;
-
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.artifact.outcome.AMIArtifactOutcome;
@@ -58,10 +53,6 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
-
-import software.wings.beans.TaskType;
-
-import java.util.Arrays;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,6 +61,13 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import software.wings.beans.TaskType;
+
+import java.util.Arrays;
+
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 
 public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -96,8 +94,7 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
                             .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                             .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                             .build();
-    int value =
-        elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
+    int value = elastigroupStepCommonHelper.renderCount(ParameterField.<Integer>builder().build(), 2, ambiance);
     assertThat(value).isEqualTo(2);
   }
 
@@ -363,6 +360,6 @@ public class ElastigroupStepCommonHelperTest extends CDNGTestBase {
 
     StepElementParameters stepElementParameters = StepElementParameters.builder().build();
 
-    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, passThroughData);
+//    elastigroupStepCommonHelper.startChainLink(ambiance, stepElementParameters, passThroughData);
   }
 }
