@@ -7,6 +7,7 @@
 
 package io.harness.subscription.helpers;
 
+import com.stripe.model.Subscription;
 import io.harness.ModuleType;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -34,10 +35,12 @@ public interface StripeHelper {
   Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
   SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO addToSubscription(SubscriptionParams subscriptionParams, Subscription subscription);
   SubscriptionDetailDTO updateSubscription(SubscriptionParams subscriptionParams);
   SubscriptionDetailDTO updateSubscriptionDefaultPayment(SubscriptionParams subscriptionParams);
   void cancelSubscription(SubscriptionParams subscriptionParams);
   SubscriptionDetailDTO retrieveSubscription(SubscriptionParams subscriptionParams);
+  Subscription getSubscription(String accountIdentifier);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams);
   void payInvoice(String invoiceId);

@@ -43,7 +43,6 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class SubscriptionDetail implements PersistentEntity, NGAccountAccess {
   @Id @org.mongodb.morphia.annotations.Id protected String id;
   @Trimmed @NotEmpty protected String accountIdentifier;
-  @NotEmpty protected ModuleType moduleType;
   @Trimmed @NotEmpty protected String subscriptionId;
   @Trimmed @NotEmpty protected String customerId;
   protected String status;

@@ -7,6 +7,7 @@
 
 package io.harness.subscription.services.impl;
 
+import com.stripe.model.Subscription;
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -141,11 +142,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     params.setItems(subscriptionDTO.getItems());
     params.setCustomerId(stripeCustomer.getCustomerId());
 
-    SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
-        accountIdentifier, subscriptionDTO.getModuleType());
-    // Only preview proration when there is an active subscription
-    if (subscriptionDetail != null && !subscriptionDetail.isIncomplete()) {
-      params.setSubscriptionId(subscriptionDetail.getSubscriptionId());
+    List<SubscriptionDetail> subscriptionDetailList = subscriptionDetailRepository.findByAccountIdentifier(
+            accountIdentifier);
+    if (!subscriptionDetailList.isEmpty()) {
+      SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
+      // Only preview proration when there is an active subscription
+      if (subscriptionDetail != null && !subscriptionDetail.isIncomplete()) {
+        params.setSubscriptionId(subscriptionDetail.getSubscriptionId());
+      }
     }
 
     return stripeHelper.previewInvoice(params);
@@ -219,12 +223,22 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionCreateParams.getCustomer());
     }
 
-    // Not allowed for creation if active subscriptionId exists
-    SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findByAccountIdentifierAndModuleType(
-        accountIdentifier, subscriptionCreateParams.getModuleType());
-    if (subscriptionDetail != null) {
+    List<SubscriptionDetail> subscriptionDetailList = subscriptionDetailRepository.findByAccountIdentifier(
+        accountIdentifier);
+    if (!subscriptionDetailList.isEmpty()) {
+      SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
       if (!subscriptionDetail.isIncomplete()) {
-        throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
+        // Do not update if a module license exists for this module
+        if(!licenseRepository.findByAccountIdentifierAndModuleType(accountIdentifier, subscriptionCreateParams.getModuleType()).isEmpty()) {
+          throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
+        }
+
+        // Add to existing subscription instead of creating a new one
+        SubscriptionParams subscriptionParams = buildSubscriptionParams(subscriptionCreateParams, stripeCustomer.getCustomerId());
+        Subscription subscription = stripeHelper.getSubscription(accountIdentifier);
+        subscriptionParams.setSubscriptionId(subscription.getId());
+
+        return stripeHelper.addToSubscription(subscriptionParams, subscription);
       }
 
       // cancel incomplete subscription
@@ -242,7 +256,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                           .subscriptionId(subscription.getSubscriptionId())
                                           .status(subscription.getStatus())
                                           .latestInvoice(subscription.getLatestInvoice())
-                                          .moduleType(subscriptionCreateParams.getModuleType())
                                           .build());
     return subscription;
   }
@@ -285,36 +298,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public void cancelAllSubscriptions(String accountIdentifier) {
     isSelfServiceEnable();
 
-    List<SubscriptionDetail> subscriptionDetails =
-        subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
-    subscriptionDetails.forEach(subscriptionDetail -> {
+    List<SubscriptionDetail> subscriptionDetailList =
+            subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
+
+    if (!subscriptionDetailList.isEmpty()) {
+      SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
       if (subscriptionDetail.isActive()) {
         cancelSubscription(accountIdentifier, subscriptionDetail.getSubscriptionId());
       }
-    });
-  }
-  @Override
-  public SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId) {
-    isSelfServiceEnable();
-
-    SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
-    if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
-      throw new InvalidRequestException("Invalid subscriptionId");
     }
-
-    return stripeHelper.retrieveSubscription(SubscriptionParams.builder().subscriptionId(subscriptionId).build());
   }
 
   private void deleteIncompleteSubscriptionIfExists(String accountIdentifier, ModuleType moduleType) {
-    SubscriptionDetail subscriptionDetail =
-        subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
-    if (subscriptionDetail != null) {
-      if (!subscriptionDetail.isIncomplete()) {
-        throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
-      }
+    List<SubscriptionDetail> subscriptionDetailList =
+        subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
+    if(!subscriptionDetailList.isEmpty()) {
+      SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
+      if (subscriptionDetail != null) {
+        if (!subscriptionDetail.isIncomplete()) {
+          throw new InvalidRequestException("Cannot create a new subscription, since there is an active one.");
+        }
 
-      // cancel incomplete subscription
-      cancelSubscription(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getSubscriptionId());
+        // cancel incomplete subscription
+        cancelSubscription(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getSubscriptionId());
+      }
     }
   }
 
@@ -325,25 +332,18 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType) {
+  public SubscriptionDetailDTO getSubscription(String accountIdentifier) {
     isSelfServiceEnable();
+    List<SubscriptionDetail> subscriptionDetailList =
+            subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
+    if(!subscriptionDetailList.isEmpty()) {
+      SubscriptionDetail subscriptionDetail = subscriptionDetailList.get(0);
 
-    List<SubscriptionDetail> subscriptions = new ArrayList<>();
-    if (moduleType == null) {
-      subscriptions = subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
-    } else {
-      SubscriptionDetail subscriptionDetail =
-          subscriptionDetailRepository.findByAccountIdentifierAndModuleType(accountIdentifier, moduleType);
-      if (subscriptionDetail != null) {
-        subscriptions.add(subscriptionDetail);
-      }
+
+      return stripeHelper.retrieveSubscription(
+              SubscriptionParams.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
     }
-
-    return subscriptions.stream()
-        .map(detail
-            -> stripeHelper.retrieveSubscription(
-                SubscriptionParams.builder().subscriptionId(detail.getSubscriptionId()).build()))
-        .collect(Collectors.toList());
+    return null;
   }
 
   @Override

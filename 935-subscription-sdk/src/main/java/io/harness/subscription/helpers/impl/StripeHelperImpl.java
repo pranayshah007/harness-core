@@ -7,6 +7,8 @@
 
 package io.harness.subscription.helpers.impl;
 
+import com.stripe.model.SubscriptionSearchResult;
+import com.stripe.param.SubscriptionSearchParams;
 import io.harness.ModuleType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.subscription.dto.AddressDto;
@@ -66,9 +68,10 @@ public class StripeHelperImpl implements StripeHelper {
   private StripeHandlerImpl stripeHandler;
   private List<String> subscriptionExpandList = Arrays.asList("latest_invoice.payment_intent");
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
-  private static final String MODULE_TYPE_KEY = "moduleType";
   private static final String CUSTOMER_EMAIL_KEY = "customer_email";
   private static final String PRICE_NOT_FOUND = "Price could not be found in Stripe.";
+  private static final String SEARCH_ACCOUNT_ID =
+          "metadata['accountIdentifier']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED_MAX =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s' AND metadata['max']:'%s'";
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
@@ -193,6 +196,23 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public Subscription getSubscription(String accountIdentifier) {
+    String searchString = String.format(
+            SEARCH_ACCOUNT_ID, accountIdentifier);
+
+    SubscriptionSearchParams params =
+            SubscriptionSearchParams.builder().setQuery(searchString).build();
+
+    Optional<Subscription> priceResult = stripeHandler.searchSubscriptions(params).getData().stream().findFirst();
+
+    if (priceResult.isPresent()) {
+      return priceResult.get();
+    } else {
+      return null;
+    }
+  }
+
+  @Override
   public Price getPrice(ModuleType moduleType, String type, String edition, String paymentFrequency, long quantity) {
     String searchString = String.format(
         SEARCH_MODULE_TYPE_EDITION_BILLED_MAX, moduleType.toString(), type, edition, paymentFrequency, quantity);
@@ -278,7 +298,6 @@ public class StripeHelperImpl implements StripeHelper {
     // Add metadata
     Map<String, String> metadata = new HashMap<>();
     metadata.put(ACCOUNT_IDENTIFIER_KEY, subscriptionParams.getAccountIdentifier());
-    metadata.put(MODULE_TYPE_KEY, subscriptionParams.getModuleType());
     metadata.put(CUSTOMER_EMAIL_KEY, subscriptionParams.getCustomerEmail());
     creationParamsBuilder.setMetadata(metadata);
 
@@ -289,6 +308,18 @@ public class StripeHelperImpl implements StripeHelper {
 
     Subscription subscription = stripeHandler.createSubscription(creationParamsBuilder.build());
     return toSubscriptionDetailDTO(subscription);
+  }
+
+  @Override
+  public SubscriptionDetailDTO addToSubscription(SubscriptionParams subscriptionParams, Subscription subscription) {
+    subscription.getItems().getData().stream().forEach(subscriptionItem -> {
+      subscriptionParams.getItems().add(ItemParams.builder()
+              .quantity(subscriptionItem.getQuantity())
+              .priceId(subscriptionItem.getPrice().getId())
+              .build());
+    });
+
+    return updateSubscription(subscriptionParams);
   }
 
   @Override
@@ -570,7 +601,7 @@ public class StripeHelperImpl implements StripeHelper {
     SubscriptionDetailDTO dto = SubscriptionDetailDTO.builder()
                                     .subscriptionId(subscription.getId())
                                     .accountIdentifier(subscription.getMetadata().get(ACCOUNT_IDENTIFIER_KEY))
-                                    .moduletype(ModuleType.valueOf(subscription.getMetadata().get(MODULE_TYPE_KEY)))
+                                    .subscriptionId(subscription.getId())
                                     .customerId(subscription.getCustomer())
                                     .status(subscription.getStatus())
                                     .latestInvoice(subscription.getLatestInvoice())

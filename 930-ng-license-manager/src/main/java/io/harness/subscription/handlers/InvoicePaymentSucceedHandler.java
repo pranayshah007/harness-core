@@ -31,7 +31,14 @@ import com.stripe.model.Event;
 import com.stripe.model.Invoice;
 import com.stripe.model.InvoiceLineItem;
 import com.stripe.model.PaymentIntent;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -46,6 +53,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   private static final String MAU_SUPPORT_TYPE = "MAU_SUPPORT";
   private static final String DEVELOPERS_SUPPORT_TYPE = "DEVELOPERS_SUPPORT";
   private static final String STRIPE_QUANTITY_KEY = "max";
+  private static final String STRIPE_MODULE_TYPE_KEY = "module";
 
   @Inject
   public InvoicePaymentSucceedHandler(LicenseService licenseService,
@@ -63,29 +71,45 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
     updatePaymentIntentForFirstPayment(invoice);
   }
 
+  private List<ModuleType> getModuleTypes(Invoice invoice) {
+    List<ModuleType> moduleTypes = new ArrayList<>();
+    invoice.getLines().getData().stream().forEach(invoiceLineItem -> {
+      String moduleType = getModuleType(invoiceLineItem);
+      if(!moduleTypes.contains(moduleType)) {
+        moduleTypes.add(ModuleType.fromString(getModuleType(invoiceLineItem)));
+      }
+    });
+    return moduleTypes;
+  }
+
   private void syncLicense(Invoice invoice) {
     String id = invoice.getSubscription();
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(id);
     String accountIdentifier = subscriptionDetail.getAccountIdentifier();
-    ModuleType moduleType = subscriptionDetail.getModuleType();
-    log.info(
-        "synchronizing invoice {} under subscription {}, going to update license under account {} and moduleType {}",
-        invoice.getId(), id, accountIdentifier, moduleType.name());
 
-    ModuleLicense existingLicense =
-        licenseService.getCurrentLicense(subscriptionDetail.getAccountIdentifier(), subscriptionDetail.getModuleType());
+    List<ModuleType> moduleTypes = getModuleTypes(invoice);
 
-    if (existingLicense == null) {
-      // new subscription, create license
-      ModuleLicense newLicense = generateLicense(invoice, moduleType, accountIdentifier);
-      licenseService.createModuleLicense(newLicense);
-    } else {
-      log.info("Updating existing license {} via strip sync", existingLicense.getId());
-      // existing subscription, update license
-      ModuleLicense updateLicense = generateLicense(invoice, moduleType, accountIdentifier);
-      updateLicense.setId(existingLicense.getId());
-      licenseService.updateModuleLicense(updateLicense);
-    }
+    moduleTypes.forEach(moduleType -> {
+      log.info(
+              "synchronizing invoice {} under subscription {}, going to update license under account {} and moduleType {}",
+              invoice.getId(), id, accountIdentifier, moduleType);
+
+      ModuleLicense existingLicense =
+              licenseService.getCurrentLicense(subscriptionDetail.getAccountIdentifier(), moduleType);
+
+      if (existingLicense == null) {
+        // new subscription, create license
+        ModuleLicense newLicense = generateLicense(invoice, moduleType, accountIdentifier);
+        licenseService.createModuleLicense(newLicense);
+      } else {
+        log.info("Updating existing license {} via strip sync", existingLicense.getId());
+        // existing subscription, update license
+        ModuleLicense updateLicense = generateLicense(invoice, moduleType, accountIdentifier);
+        updateLicense.setId(existingLicense.getId());
+        licenseService.updateModuleLicense(updateLicense);
+      }
+    });
+
     subscriptionDetail.setStatus(SubscriptionStatus.ACTIVE.toString());
     subscriptionDetailRepository.save(subscriptionDetail);
   }
@@ -225,6 +249,10 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
   private boolean isPaymentConsequence(InvoiceLineItem invoiceLineItem) {
     return !invoiceLineItem.getProration() || (invoiceLineItem.getProration() && invoiceLineItem.getAmount() > 0);
+  }
+
+  private String getModuleType(InvoiceLineItem invoiceLineItem) {
+    return invoiceLineItem.getPrice().getMetadata().get(STRIPE_MODULE_TYPE_KEY);
   }
 
   private long getQuantity(InvoiceLineItem invoiceLineItem) {

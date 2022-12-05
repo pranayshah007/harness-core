@@ -31,6 +31,7 @@ import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.params.SubscriptionCreateParams;
+import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 
@@ -188,7 +189,6 @@ public class SubscriptionResource {
   }
 
   @GET
-  @Path("/{subscriptionId}")
   @ApiOperation(value = "Retrieves a subscription", nickname = "retrieveSubscription")
   @Operation(operationId = "retrieveSubscription", summary = "Retrieves a subscription",
       responses =
@@ -199,27 +199,8 @@ public class SubscriptionResource {
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
   retrieveSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Subscription Identifier for the Entity") @NotNull @PathParam(
-          SUBSCRIPTION_ID) String subscriptionId) {
-    return ResponseDTO.newResponse(subscriptionService.getSubscription(accountIdentifier, subscriptionId));
-  }
-
-  @GET
-  @ApiOperation(value = "Lists the subscriptions", nickname = "listSubscriptions")
-  @Operation(operationId = "listSubscriptions", summary = "Lists the subscriptions",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns List of the subscription details")
-      })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
-  public ResponseDTO<List<SubscriptionDetailDTO>>
-  listSubscriptions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Module type for the Entity") @QueryParam(
-          "moduleType") ModuleType moduleType) {
-    return ResponseDTO.newResponse(subscriptionService.listSubscriptions(accountIdentifier, moduleType));
+                           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+    return ResponseDTO.newResponse(subscriptionService.getSubscription(accountIdentifier));
   }
 
   @POST

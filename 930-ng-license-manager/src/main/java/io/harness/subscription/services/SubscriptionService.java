@@ -18,6 +18,7 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.params.SubscriptionCreateParams;
+import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 
 import java.util.EnumMap;
@@ -34,9 +35,8 @@ public interface SubscriptionService {
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO);
   void cancelSubscription(String accountIdentifier, String subscriptionId);
   void cancelAllSubscriptions(String accountIdentifier);
-  SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId);
   boolean checkSubscriptionExists(String subscriptionId);
-  List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType);
+  SubscriptionDetailDTO getSubscription(String accountIdentifier);
 
   StripeCustomer getOrCreateCustomer(String accountIdentifier, CustomerDTO customer);
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);

@@ -9,6 +9,8 @@ package io.harness.subscription.helpers.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import com.stripe.model.SubscriptionSearchResult;
+import com.stripe.param.SubscriptionSearchParams;
 import io.harness.exception.InvalidRequestException;
 
 import com.stripe.exception.StripeException;
@@ -116,6 +118,14 @@ public class StripeHandlerImpl {
       return Customer.retrieve(customerId, customerRetrieveParams, null);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve customer information", e);
+    }
+  }
+
+  SubscriptionSearchResult searchSubscriptions(SubscriptionSearchParams subscriptionSearchParams) {
+    try {
+      return Subscription.search(subscriptionSearchParams);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to list subscriptions", e);
     }
   }
 
