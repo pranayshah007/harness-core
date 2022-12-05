@@ -130,11 +130,13 @@ public class ScmFetchFilesHelperNG {
         gitStoreDelegateConfig, Collections.singleton(filePath), gitStoreDelegateConfig.getGitConfigDTO());
     boolean useBranch = gitStoreDelegateConfig.getFetchType() == FetchType.BRANCH;
     boolean relativize = !ROOT_DIRECTORY_PATHS.contains(filePath);
+    boolean useBase64 = true;
     if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
       fileBatchContentResponse =
           fetchFilesByFilePaths(useBranch, gitStoreDelegateConfig.getBranch(), gitStoreDelegateConfig.getCommitId(),
               gitStoreDelegateConfig.getPaths(), gitStoreDelegateConfig.getGitConfigDTO());
       relativize = false;
+      useBase64 = false;
     }
 
     List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse()
@@ -157,15 +159,15 @@ public class ScmFetchFilesHelperNG {
 
     try {
       for (FileContent fileContent : fileContents) {
-        writeFile(directoryPath, fileContent, filePath, relativize);
+        writeFile(directoryPath, fileContent, filePath, relativize, useBase64);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);
     }
   }
 
-  private void writeFile(String directoryPath, FileContent fileContent, String basePath, boolean relativize)
-      throws IOException {
+  private void writeFile(String directoryPath, FileContent fileContent, String basePath, boolean relativize,
+      boolean useBase64) throws IOException {
     String filePath;
     if (relativize) {
       filePath = Paths.get(basePath).relativize(Paths.get(fileContent.getPath())).toString();
@@ -183,10 +185,14 @@ public class ScmFetchFilesHelperNG {
     }
 
     createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeFile(finalPath.toString(), getFileContent(fileContent));
+    FileIo.writeFile(finalPath.toString(), getFileContent(fileContent, useBase64));
   }
 
-  private byte[] getFileContent(FileContent fileContent) {
+  private byte[] getFileContent(FileContent fileContent, boolean useBase64) {
+    if (!useBase64) {
+      return fileContent.getContent().getBytes(StandardCharsets.UTF_8);
+    }
+
     try {
       return Base64.getDecoder().decode(fileContent.getContent());
     } catch (IllegalArgumentException e) {
