@@ -24,7 +24,6 @@ import io.harness.secret.SecretReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
 import java.util.List;
@@ -54,19 +53,14 @@ import org.hibernate.validator.constraints.URL;
 public class ServiceNowConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @URL @NotNull @NotBlank String serviceNowUrl;
   /** @deprecated */
-  @Hidden
-  @ApiModelProperty(hidden = true)
-  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
-  String username;
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication") String username;
   /** @deprecated */
-  @Hidden
-  @ApiModelProperty(dataType = "string", hidden = true)
+  @ApiModelProperty(dataType = "string")
   @SecretReference
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData usernameRef;
   /** @deprecated */
-  @Hidden
-  @ApiModelProperty(dataType = "string", hidden = true)
+  @ApiModelProperty(dataType = "string")
   @SecretReference
   @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication")
   SecretRefData passwordRef;
