@@ -79,9 +79,9 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.TAS_NG)) {
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.CDS_TAS_NG)) {
       throw new AccessDeniedException(
-          "TAS_NG FF is not enabled for this account. Please contact harness customer care.",
+          "CDS_TAS_NG FF is not enabled for this account. Please contact harness customer care.",
           ErrorCode.NG_ACCESS_DENIED, WingsException.USER);
     }
   }
