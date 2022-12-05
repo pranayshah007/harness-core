@@ -9,7 +9,6 @@ package io.harness.cdng.pipeline.steps;
 
 import static io.harness.steps.SdkCoreStepUtils.createStepResponseFromChildResponse;
 
-import io.harness.cdng.envgroup.yaml.EnvironmentGroupMetadata;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.environment.yaml.EnvironmentsMetadata;
@@ -173,10 +172,6 @@ public class MultiDeploymentSpawnerStep extends ChildrenExecutableWithRollbackAn
   }
 
   private boolean shouldDeployInParallel(ServicesMetadata metadata) {
-    return metadata != null && metadata.getParallel() != null && metadata.getParallel();
-  }
-
-  private boolean shouldDeployInParallel(EnvironmentGroupMetadata metadata) {
     return metadata != null && metadata.getParallel() != null && metadata.getParallel();
   }
 
