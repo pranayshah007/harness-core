@@ -102,6 +102,11 @@ public class Service extends Base
                  .field(ServiceKeys.accountId)
                  .ascSortField(ServiceKeys.name)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appContainer_createdAt")
+                 .field(ServiceKeys.appContainer)
+                 .descSortField(ServiceKeys.createdAt)
+                 .build())
         .build();
   }
   public static final String GLOBAL_SERVICE_NAME_FOR_YAML = "__all_service__";
