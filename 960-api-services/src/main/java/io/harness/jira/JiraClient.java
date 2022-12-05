@@ -354,8 +354,9 @@ public class JiraClient {
     String comment = pair.getRight();
 
     // Create issue with all non-comment fields.
-    JiraCreateIssueRequestNG createIssueRequest =
-        new JiraCreateIssueRequestNG(project, issueType, fields, checkRequiredFields);
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    JiraCreateIssueRequestNG createIssueRequest = new JiraCreateIssueRequestNG(
+        project, issueType, fields, checkRequiredFields, jiraInstanceData.getDeploymentType());
     JiraIssueNG issue = executeCall(restClient.createIssue(createIssueRequest), "creating issue");
 
     // Add comment.
@@ -403,10 +404,12 @@ public class JiraClient {
     ImmutablePair<Map<String, String>, String> pair = extractCommentField(fields);
     fields = pair.getLeft();
     String comment = pair.getRight();
+    JiraInstanceData jiraInstanceData = getInstanceData();
 
     // Update all non-comment fields.
     if (EmptyPredicate.isNotEmpty(fields)) {
-      JiraUpdateIssueRequestNG updateIssueRequest = new JiraUpdateIssueRequestNG(updateMetadata, null, fields);
+      JiraUpdateIssueRequestNG updateIssueRequest =
+          new JiraUpdateIssueRequestNG(updateMetadata, null, fields, jiraInstanceData.getDeploymentType());
       executeCall(restClient.updateIssue(issueKey, updateIssueRequest), "updating issue fields");
     }
     // Add comment field.
@@ -416,7 +419,8 @@ public class JiraClient {
     }
     // Do status transition.
     if (EmptyPredicate.isNotEmpty(transitionId)) {
-      JiraUpdateIssueRequestNG updateIssueRequest = new JiraUpdateIssueRequestNG(updateMetadata, transitionId, null);
+      JiraUpdateIssueRequestNG updateIssueRequest =
+          new JiraUpdateIssueRequestNG(updateMetadata, transitionId, null, jiraInstanceData.getDeploymentType());
       executeCall(restClient.transitionIssue(issueKey, updateIssueRequest), "updating issue status");
     }
     return getIssue(issueKey, true);
