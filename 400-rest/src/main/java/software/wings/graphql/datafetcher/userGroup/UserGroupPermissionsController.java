@@ -441,9 +441,6 @@ public class UserGroupPermissionsController {
       actionsList.add(QLActions.ROLLBACK_WORKFLOW);
       actionsList.add(QLActions.ABORT_WORKFLOW);
     }
-    if (actionsList.contains(QLActions.EXECUTE_WORKFLOW)) {
-      actionsList.add(QLActions.ABORT_WORKFLOW);
-    }
   }
 
   private AppPermission convertToAppPermissionEntity(QLAppPermission permission) {

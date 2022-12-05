@@ -192,7 +192,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
         SignupVerificationToken.builder().email(EMAIL).validUntil(Long.MAX_VALUE).build();
     when(verificationTokenRepository.findByToken(TOKEN)).thenReturn(Optional.of(verificationToken));
-    when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
+    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
     UserInfo userInfo = signupServiceImpl.completeSignupInvite(TOKEN, null, null);
 
@@ -246,7 +246,7 @@ public class SignupServiceImplTest extends CategoryTest {
     Call<RestResponse<Optional<UserInfo>>> getUserByIdCall = mock(Call.class);
     when(createUserCall.execute()).thenReturn(Response.success(new RestResponse<>(newUser)));
     when(userClient.getUserById(any())).thenReturn(getUserByIdCall);
-    when(accessControlClient.hasAccess(any(), any(), any())).thenReturn(true);
+    when(accessControlClient.hasAccess(any(), any(), any(), any())).thenReturn(true);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(true);
 
     UserInfo returnedUser = signupServiceImpl.oAuthSignup(oAuthSignupDTO);

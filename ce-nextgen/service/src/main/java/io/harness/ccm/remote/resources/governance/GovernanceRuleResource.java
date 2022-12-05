@@ -43,6 +43,7 @@ import io.harness.ccm.views.helper.GovernanceJobDetailsAWS;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
 import io.harness.ccm.views.helper.RuleCloudProviderType;
 import io.harness.ccm.views.helper.RuleExecutionStatusType;
+import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.helper.RuleStoreType;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleEnforcementService;
@@ -362,7 +363,7 @@ public class GovernanceRuleResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description = "Returns List of rules", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<List<Rule>>
+  public ResponseDTO<RuleList>
   listRule(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule object") @Valid ListDTO listDTO) {

@@ -31,4 +31,5 @@ public class UpdateGitFileRequestDTO {
   String oldCommitId;
   String oldFileSha;
   ScmConnector scmConnector;
+  boolean useGitClient;
 }

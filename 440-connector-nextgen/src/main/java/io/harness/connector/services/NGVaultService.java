@@ -19,6 +19,7 @@ import io.harness.secretmanagerclient.dto.SecretManagerMetadataDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
 
 import software.wings.beans.BaseVaultConfig;
+import software.wings.helpers.ext.vault.VaultTokenLookupResult;
 
 import java.util.List;
 
@@ -44,4 +45,15 @@ public interface NGVaultService {
    */
   void processAppRole(ConnectorDTO connectorDTO, ConnectorConfigDTO existingConnectorConfigDTO,
       String accountIdentifier, boolean create);
+
+  /**
+   * Perform a token lookup of the existing token in the vault config. The result of this will contain the details
+   * related to the current token such as the duration of token, whether it is renewable, whether it is root token.
+   * @param connectorDTO connector to perform tokenLookUp
+   * @param accountIdentifier of the account to which the connector belongs
+   */
+
+  void processTokenLookup(ConnectorDTO connectorDTO, String accountIdentifier);
+
+  VaultTokenLookupResult tokenLookup(BaseVaultConfig vaultConfig);
 }

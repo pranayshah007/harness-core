@@ -100,7 +100,9 @@ public enum QLTaskGroup implements QLEnum {
   ECS,
   SHELL_SCRIPT_PROVISION_NG,
   CUSTOM_DEPLOYMENT_NG,
-  ELASTIGROUP;
+  ELASTIGROUP,
+  TAS,
+  GITOPS;
 
   @Override
   public String getStringValue() {

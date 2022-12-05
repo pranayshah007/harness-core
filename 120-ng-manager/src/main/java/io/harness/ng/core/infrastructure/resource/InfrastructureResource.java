@@ -28,6 +28,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.mapper.InfrastructureMapper;
@@ -58,6 +59,7 @@ import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
@@ -143,6 +145,7 @@ public class InfrastructureResource {
   @Inject private final AccessControlClient accessControlClient;
   @Inject CustomDeploymentYamlHelper customDeploymentYamlHelper;
   @Inject CustomDeploymentInfrastructureHelper customDeploymentInfrastructureHelper;
+  private final NGFeatureFlagHelperService featureFlagHelperService;
 
   public static final String INFRA_PARAM_MESSAGE = "Infrastructure Identifier for the entity";
 
@@ -199,7 +202,7 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be created")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    mustBeAtProjectLevel(infrastructureRequestDTO);
+    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
 
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
@@ -236,8 +239,13 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructures to be created")
       @Valid List<InfrastructureRequestDTO> infrastructureRequestDTOS) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTOS);
+    boolean isInfraScoped = checkFeatureFlagForEnvOrgAccountLevel(accountId);
     infrastructureRequestDTOS.forEach(infrastructureRequestDTO -> {
-      mustBeAtProjectLevel(infrastructureRequestDTO);
+      if (isInfraScoped) {
+        validateProjectLevelInfraScope(infrastructureRequestDTO);
+      } else {
+        mustBeAtProjectLevel(infrastructureRequestDTO);
+      }
       orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
           infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
       environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -297,7 +305,8 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    mustBeAtProjectLevel(infrastructureRequestDTO);
+    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
+
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -333,7 +342,8 @@ public class InfrastructureResource {
       @Parameter(description = "Details of the Infrastructure to be updated")
       @Valid InfrastructureRequestDTO infrastructureRequestDTO) {
     throwExceptionForNoRequestDTO(infrastructureRequestDTO);
-    mustBeAtProjectLevel(infrastructureRequestDTO);
+    validateProjectLevelInfraScope(infrastructureRequestDTO, accountId);
+
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
         infrastructureRequestDTO.getOrgIdentifier(), infrastructureRequestDTO.getProjectIdentifier(), accountId);
     environmentValidationHelper.checkThatEnvExists(accountId, infrastructureRequestDTO.getOrgIdentifier(),
@@ -532,6 +542,35 @@ public class InfrastructureResource {
         accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier, oldInfrastructureInputsYaml));
   }
 
+  private void validateProjectLevelInfraScope(InfrastructureRequestDTO requestDTO, String accountId) {
+    try {
+      if (checkFeatureFlagForEnvOrgAccountLevel(accountId)) {
+        if (isNotEmpty(requestDTO.getProjectIdentifier())) {
+          Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+              "org identifier must be specified when project identifier is specified. Infra can be created at Project/Org/Account scope");
+        }
+      } else {
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+            "org identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+            "project identifier must be specified. Infrastructure Definitions can only be created at Project scope");
+      }
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
+  }
+
+  private void validateProjectLevelInfraScope(InfrastructureRequestDTO requestDTO) {
+    try {
+      if (isNotEmpty(requestDTO.getProjectIdentifier())) {
+        Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+            "org identifier must be specified when project identifier is specified. Infra can be created at Project/Org/Account scope");
+      }
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
+  }
+
   private void mustBeAtProjectLevel(InfrastructureRequestDTO requestDTO) {
     try {
       Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
@@ -541,5 +580,9 @@ public class InfrastructureResource {
     } catch (Exception ex) {
       throw new InvalidRequestException(ex.getMessage());
     }
+  }
+
+  private boolean checkFeatureFlagForEnvOrgAccountLevel(String accountId) {
+    return featureFlagHelperService.isEnabled(accountId, FeatureName.CDS_OrgAccountLevelServiceEnvEnvGroup);
   }
 }

@@ -63,7 +63,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -138,38 +137,6 @@ public class InfrastructurePmsPlanCreator {
   private boolean isTaskStep(Infrastructure pipelineInfrastructure) {
     return InfrastructureKind.SSH_WINRM_AZURE.equals(pipelineInfrastructure.getKind())
         || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
-  }
-
-  public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
-      String infraStepNodeUuid, InfrastructureDefinitionConfig infrastructureDefinitionConfig,
-      KryoSerializer kryoSerializer, String infraSectionUuid) {
-    InfraSectionStepParameters infraSectionStepParameters =
-        getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
-    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
-    planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
-
-    List<AdviserObtainment> adviserObtainments =
-        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode.getParentNode(), kryoSerializer);
-
-    // adding RC dependency
-    boolean allowSimultaneousDeployments = infrastructureDefinitionConfig.isAllowSimultaneousDeployments();
-
-    if (!allowSimultaneousDeployments) {
-      // Passing infra section parent node since rbac will be created parallel to environment node
-      YamlField rcYamlField = addResourceConstraintDependency(
-          infraSectionNode.getParentNode().getParentNode(), planCreationResponseMap, null);
-      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
-    }
-
-    PlanNode infraSectionPlanNode = planNodeBuilder.adviserObtainments(adviserObtainments).build();
-
-    // adding infraSection
-    planCreationResponseMap.put(infraSectionPlanNode.getUuid(),
-        PlanCreationResponse.builder().node(infraSectionNode.getUuid(), infraSectionPlanNode).build());
-
-    return planCreationResponseMap;
   }
 
   public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
@@ -249,8 +216,7 @@ public class InfrastructurePmsPlanCreator {
               .build();
       planCreationResponseMap.put(rcYamlField.getNode().getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(
-                  DependenciesUtils.toDependenciesProto(ImmutableMap.of(rcYamlField.getNode().getUuid(), rcYamlField)))
+              .dependencies(DependenciesUtils.toDependenciesProto(Map.of(rcYamlField.getNode().getUuid(), rcYamlField)))
               .yamlUpdates(yamlUpdates)
               .build());
     } catch (IOException e) {

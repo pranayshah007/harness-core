@@ -103,7 +103,8 @@ public class ApprovalStepMapperImpl implements StepMapper {
     HarnessApprovalStepNode harnessApprovalStepNode = new HarnessApprovalStepNode();
     baseSetup(state, harnessApprovalStepNode);
 
-    HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder = HarnessApprovalStepInfo.builder();
+    HarnessApprovalStepInfoBuilder harnessApprovalStepInfoBuilder =
+        HarnessApprovalStepInfo.builder().includePipelineExecutionHistory(ParameterField.createValueField(true));
 
     harnessApprovalStepInfoBuilder.approvers(
         Approvers.builder()

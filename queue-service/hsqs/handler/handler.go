@@ -6,9 +6,10 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/harness/harness-core/queue-service/hsqs/store"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 type Handler struct {

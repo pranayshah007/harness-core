@@ -223,6 +223,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.Sort;
 import ru.vyarus.guice.validator.group.annotation.ValidationGroups;
 
 /**
@@ -2665,6 +2666,7 @@ public class InfrastructureMappingServiceImpl implements InfrastructureMappingSe
           .filter(InfrastructureMappingKeys.appId, appId)
           .filter(InfrastructureMappingKeys.serviceId, serviceId)
           .filter(InfrastructureMappingKeys.infrastructureDefinitionId, infraDefinitionId)
+          .order(Sort.descending(InfrastructureMappingKeys.lastUpdatedAt))
           .project(InfrastructureMappingKeys.uuid, true)
           .project(InfrastructureMappingKeys.deploymentType, true)
           .get();

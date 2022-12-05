@@ -21,7 +21,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.data.encoding.EncodingUtils;
-import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -101,11 +100,6 @@ public class LogMLAnalysisRecord extends Base implements AccountAccess {
                 .field(LogMLAnalysisRecordKeys.logCollectionMinute)
                 .field(LogMLAnalysisRecordKeys.analysisStatus)
                 .descSortField(LAST_UPDATED_AT_KEY)
-                .build(),
-            CompoundMongoIndex.builder()
-                .name("stateExecStatusIdx")
-                .field(LogMLAnalysisRecordKeys.stateExecutionId)
-                .field(LogMLAnalysisRecordKeys.analysisStatus)
                 .build(),
             SortCompoundMongoIndex.builder()
                 .name("stateExecutionId_1_analysisStatus_1_logCollectionMinute_-1")

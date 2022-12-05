@@ -95,6 +95,9 @@ grpcClientConfigs:
   sto:
     target: localhost:14301
     authority: localhost
+  iacm:
+    target: localhost:15301
+    authority: localhost
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -119,6 +122,12 @@ yamlSchemaClientConfig:
     sto:
       serviceHttpClientConfig:
         baseUrl: http://localhost:14057/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    iacm:
+      serviceHttpClientConfig:
+        baseUrl: http://localhost:15057/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"

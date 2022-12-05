@@ -107,6 +107,7 @@ public class AzureManagementClientImplTest extends CategoryTest {
     azureMockStatic.when(AzureResourceManager::configure).thenReturn(configurable);
     when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
     when(configurable.withHttpClient(any(HttpClient.class))).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
     when(configurable.authenticate(any(), any())).thenReturn(authenticated);
     when(authenticated.withSubscription(anyString())).thenReturn(azure);
     when(authenticated.withDefaultSubscription()).thenReturn(azure);

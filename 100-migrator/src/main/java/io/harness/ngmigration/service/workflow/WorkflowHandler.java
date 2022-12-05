@@ -62,7 +62,9 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 public abstract class WorkflowHandler {
-  public TemplateEntityType getTemplateType() {
+  public static final String INPUT_EXPRESSION = "<+input>";
+
+  public TemplateEntityType getTemplateType(Workflow workflow) {
     return TemplateEntityType.STAGE_TEMPLATE;
   }
 
@@ -137,7 +139,12 @@ public abstract class WorkflowHandler {
       validator = new InputSetValidator(InputSetValidatorType.ALLOWED_VALUES, variable.getAllowedValues());
     }
 
-    return ParameterField.createFieldWithDefaultValue(true, true, "<+input>", variable.getValue(), validator, true);
+    if (StringUtils.isBlank(variable.getValue())) {
+      return ParameterField.createExpressionField(true, INPUT_EXPRESSION, validator, true);
+    }
+
+    return ParameterField.createFieldWithDefaultValue(
+        true, true, INPUT_EXPRESSION, variable.getValue(), validator, true);
   }
 
   public abstract JsonNode getTemplateSpec(Workflow workflow);
@@ -411,6 +418,31 @@ public abstract class WorkflowHandler {
         .collect(Collectors.toList());
   }
 
+  JsonNode getCustomStageTemplateSpec(Workflow workflow, StepMapperFactory stepMapperFactory) {
+    List<WorkflowPhase.Yaml> phases = getPhases(workflow);
+    List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);
+
+    // Add all the steps
+    List<ExecutionWrapperConfig> steps = getSteps(stepMapperFactory, phases);
+
+    // Add all the steps
+    List<ExecutionWrapperConfig> rollingSteps = getSteps(stepMapperFactory, rollbackPhases);
+
+    // Build Stage
+    CustomStageConfig customStageConfig =
+        CustomStageConfig.builder()
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollingSteps).build())
+            .build();
+
+    Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
+                                           .put("type", "Custom")
+                                           .put("spec", customStageConfig)
+                                           .put("failureStrategies", new ArrayList<>())
+                                           .put("variables", getVariables(workflow))
+                                           .build();
+    return JsonPipelineUtils.asTree(templateSpec);
+  }
+
   StageElementWrapperConfig buildCustomStage(StepMapperFactory stepMapperFactory, PhaseStep.Yaml phaseStep) {
     ExecutionWrapperConfig wrapper = getStepGroup(stepMapperFactory, phaseStep);
     CustomStageConfig customStageConfig =
@@ -452,8 +484,12 @@ public abstract class WorkflowHandler {
     return StageElementWrapperConfig.builder().stage(JsonPipelineUtils.asTree(stageNode)).build();
   }
 
-  JsonNode buildMultiStagePipelineTemplate(StepMapperFactory stepMapperFactory, PhaseStep.Yaml prePhase,
-      List<WorkflowPhase.Yaml> phases, PhaseStep.Yaml postPhase, List<WorkflowPhase.Yaml> rollbackPhases) {
+  JsonNode buildMultiStagePipelineTemplate(StepMapperFactory stepMapperFactory, Workflow workflow) {
+    PhaseStep.Yaml prePhase = getPreDeploymentPhase(workflow);
+    List<WorkflowPhase.Yaml> phases = getPhases(workflow);
+    PhaseStep.Yaml postPhase = getPostDeploymentPhase(workflow);
+    List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);
+
     List<StageElementWrapperConfig> stages = new ArrayList<>();
     if (EmptyPredicate.isNotEmpty(prePhase.getSteps())) {
       prePhase.setName("Pre Deployment");
@@ -480,7 +516,8 @@ public abstract class WorkflowHandler {
       stages.add(buildCustomStage(stepMapperFactory, postPhase));
     }
 
-    PipelineInfoConfig pipelineInfoConfig = PipelineInfoConfig.builder().stages(stages).build();
+    PipelineInfoConfig pipelineInfoConfig =
+        PipelineInfoConfig.builder().stages(stages).variables(getVariables(workflow)).build();
     return JsonPipelineUtils.asTree(pipelineInfoConfig);
   }
 }

@@ -747,8 +747,8 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
       checkThatTheConnectorIsNotUsedByOthers(existingConnector);
     }
     try {
-      connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-          connectorDTO.getConnector(), accountIdentifier);
+      connectorEntityReferenceHelper.deleteExistingSetupUsages(
+          accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier);
     } catch (Exception e) {
       if (forceDelete) {
         log.warn(

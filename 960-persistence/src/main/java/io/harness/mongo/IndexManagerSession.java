@@ -45,6 +45,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.Store;
 import io.harness.threading.Morpheus;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mongodb.AggregationOptions;
 import com.mongodb.BasicDBObject;
@@ -94,6 +95,10 @@ public class IndexManagerSession {
   public static final Duration SOAKING_PERIOD = ofDays(1);
   // We do not want to drop temporary index before we created the new one. Make the soaking period smaller.
   public static final Duration REBUILD_SOAKING_PERIOD = SOAKING_PERIOD.minus(ofHours(1));
+  public static final List<String> exceptionCollections =
+      ImmutableList.of("instance", "verificationServiceConfigurations", "artifactStream", "infrastructureMapping",
+          "entityVersions", "commands", "environments", "configFiles", "serviceTemplates", "pipelines", "triggers",
+          "applicationManifests", "services", "workflows", "syncStatus");
 
   private Map<String, Migrator> migrators;
   private AdvancedDatastore datastore;
@@ -193,11 +198,11 @@ public class IndexManagerSession {
         processedCollections.add(collection.getName());
 
         if (entity.noClassnameStored() && !Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error(
+          log.warn(
               "No class store collection {} with not final class {}", collection.getName(), mc.getClazz().getName());
         }
         if (!entity.noClassnameStored() && Modifier.isFinal(mc.getClazz().getModifiers())) {
-          log.error("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
+          log.warn("Class store collection {} with final class {}", collection.getName(), mc.getClazz().getName());
         }
 
         processor.process(mc, collection);
@@ -324,6 +329,10 @@ public class IndexManagerSession {
   }
 
   private static void checkWithTheOthers(Map<String, IndexCreator> creators, IndexCreator newCreator) {
+    if (exceptionCollections.contains(newCreator.getCollection().getName())
+        && newCreator.getOptions().toString().equals("{\"name\": \"appId_1\", \"background\": true}")) {
+      return;
+    }
     for (IndexCreator creator : creators.values()) {
       if (creator.sameKeysOrderAndValues(newCreator.getKeys())) {
         throw new Error(format("Index %s and %s have the same keys and values", newCreator.getOptions().toString(),

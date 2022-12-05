@@ -20,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.HintException;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;

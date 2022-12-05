@@ -21,9 +21,11 @@ import static org.mindrot.jbcrypt.BCrypt.hashpw;
 
 import io.harness.ModuleType;
 import io.harness.TelemetryConstants;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.authenticationservice.recaptcha.ReCaptchaVerifier;
@@ -88,6 +90,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.mindrot.jbcrypt.BCrypt;
@@ -318,6 +321,7 @@ public class SignupServiceImpl implements SignupService {
         }
       });
 
+      log.info("Waiting on RBAC setup for the account with id {}", userInfo.getDefaultAccountId());
       waitForRbacSetup(userInfo.getDefaultAccountId(), userInfo.getUuid(), userInfo.getEmail());
 
       if (featureFlagService.isGlobalEnabled(AUTO_FREE_MODULE_LICENSE)) {
@@ -339,10 +343,12 @@ public class SignupServiceImpl implements SignupService {
 
   private void waitForRbacSetup(String accountId, String userId, String email) {
     try {
-      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(accountId, userId, 100, 200);
+      boolean rbacSetupSuccessful = busyPollUntilAccountRBACSetupCompletes(accountId, userId, 100, 1000);
       if (FALSE.equals(rbacSetupSuccessful)) {
         log.error("User [{}] couldn't be assigned account admin role in stipulated time", email);
         throw new SignupException("Role assignment executes longer than usual, please try logging-in in few minutes");
+      } else {
+        log.info("Polling for RBAC setup is successful for the account [{}]", accountId);
       }
     } catch (Exception e) {
       log.error(String.format("Failed to check rbac setup for account [%s]", accountId), e);
@@ -363,12 +369,17 @@ public class SignupServiceImpl implements SignupService {
     Retry.EventPublisher publisher = retry.getEventPublisher();
     publisher.onRetry(
         event -> log.info("Retrying check for rbac setup for account {} {}", accountId, event.toString()));
-    return Retry
-        .decorateSupplier(retry,
-            ()
-                -> accessControlClient.hasAccess(
-                    ResourceScope.of(accountId, null, null), Resource.of("USER", userId), "core_organization_create"))
-        .get();
+    Supplier<Boolean> hasAccess = Retry.decorateSupplier(retry,
+        ()
+            -> accessControlClient.hasAccess(
+                Principal.builder().principalType(PrincipalType.USER).principalIdentifier(userId).build(),
+                ResourceScope.of(accountId, null, null), Resource.of("LICENSE", null), "core_license_view"));
+
+    if (FALSE.equals(hasAccess.get())) {
+      log.error("Could not finish setting up RBAC");
+      return false;
+    }
+    return true;
   }
 
   private AccountDTO createAccount(SignupDTO dto) {

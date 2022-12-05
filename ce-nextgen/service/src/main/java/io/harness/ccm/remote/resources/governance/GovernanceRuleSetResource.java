@@ -32,6 +32,7 @@ import io.harness.ccm.views.dto.CreateRuleSetFilterDTO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.entities.RuleSet;
 import io.harness.ccm.views.helper.RuleSetFilter;
+import io.harness.ccm.views.helper.RuleSetList;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.ccm.views.service.RuleSetService;
 import io.harness.exception.InvalidRequestException;
@@ -288,7 +289,7 @@ public class GovernanceRuleSetResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             description = "Returns List of rule packs", content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
       })
-  public ResponseDTO<List<RuleSet>>
+  public ResponseDTO<RuleSetList>
   listRuleSet(@Parameter(required = true, description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Request body containing rule pack object")

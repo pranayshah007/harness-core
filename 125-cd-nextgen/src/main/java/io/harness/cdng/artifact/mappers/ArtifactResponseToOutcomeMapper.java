@@ -470,6 +470,8 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(artifactConfig.getIdentifier())
         .primaryArtifact(artifactConfig.isPrimaryArtifact())
         .version(artifactConfig.getVersion().getValue())
+        .image(artifactConfig.getVersion().getValue())
+        .displayName(useDelegateResponse ? customArtifactDelegateResponse.getBuildDetails().getUiDisplayName() : null)
         .metadata(useDelegateResponse ? customArtifactDelegateResponse.getMetadata() : null)
         .build();
   }

@@ -766,7 +766,7 @@ public class AuthServiceImpl implements AuthService {
                                       .build();
 
     AccountPermissions accountPermissions =
-        AccountPermissions.builder().permissions(authHandler.getAllAccountPermissions()).build();
+        AccountPermissions.builder().permissions(authHandler.getDefaultEnabledAccountPermissions()).build();
     UserGroup userGroup = UserGroup.builder()
                               .accountId(accountId)
                               .accountPermissions(accountPermissions)

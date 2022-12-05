@@ -7,11 +7,10 @@
 
 package io.harness.service.instancestats;
 
-import io.harness.ng.core.entities.Project;
+import io.harness.models.InstanceStats;
 import io.harness.repositories.instancestats.InstanceStatsRepository;
 
 import com.google.inject.Inject;
-import java.sql.Timestamp;
 import java.time.Instant;
 import lombok.AllArgsConstructor;
 
@@ -20,13 +19,12 @@ public class InstanceStatsServiceImpl implements InstanceStatsService {
   private InstanceStatsRepository instanceStatsRepository;
 
   @Override
-  public Instant getLastSnapshotTime(Project project) throws Exception {
-    Timestamp lastSnapshotTime = instanceStatsRepository.getLastSnapshotTime(
-        project.getAccountIdentifier(), project.getOrgIdentifier(), project.getIdentifier());
-    if (lastSnapshotTime == null) {
+  public Instant getLastSnapshotTime(String accountId, String orgId, String projectId, String serviceId) {
+    InstanceStats record = instanceStatsRepository.getLatestRecord(accountId, orgId, projectId, serviceId);
+    if (record == null) {
       // no record found
       return null;
     }
-    return lastSnapshotTime.toInstant();
+    return record.getReportedAt().toInstant();
   }
 }

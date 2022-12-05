@@ -1,5 +1,5 @@
 subject: >-
-  ${THRESHOLD_PERCENTAGE}% of the budget ${BUDGET_NAME} has been spent so far.
+  Forecasted cost for the month/year has exceeded ${THRESHOLD_PERCENTAGE}% of the budget ${BUDGET_NAME}.
 body: >-
   <html xmlns="http://www.w3.org/1999/xhtml">
 

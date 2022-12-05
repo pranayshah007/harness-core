@@ -7,14 +7,18 @@
 
 package io.harness.cdng.environment.filters;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.common.beans.NGTag;
+import io.harness.beans.SwaggerConstants;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -28,5 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDC)
 public class TagsFilter implements FilterSpec {
   @NotNull @ApiModelProperty(required = true) private MatchType matchType;
-  @NotNull @ApiModelProperty(required = true) private List<NGTag> tags;
+
+  @NotNull
+  @ApiModelProperty(required = true, dataType = SwaggerConstants.STRING_MAP_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  private ParameterField<Map<String, String>> tags;
 }

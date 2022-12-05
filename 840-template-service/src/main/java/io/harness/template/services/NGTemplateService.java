@@ -39,7 +39,7 @@ public interface NGTemplateService {
       String comments, TemplateResponseDTO templateResponse);
 
   Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted);
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache);
 
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);

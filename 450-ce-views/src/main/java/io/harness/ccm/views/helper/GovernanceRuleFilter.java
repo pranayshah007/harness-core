@@ -32,12 +32,19 @@ public class GovernanceRuleFilter {
   @Schema(description = "cloudProvider") String cloudProvider;
   @Schema(description = "policyIds") List<String> policyIds;
   @Schema(description = "isStablePolicy") Boolean isStablePolicy;
+  @Schema(description = "search") String search;
+  @Schema(description = "limit") int limit;
+  @Schema(description = "offset") int offset;
 
   @Builder
-  public GovernanceRuleFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> policyIds) {
+  public GovernanceRuleFilter(String accountId, String cloudProvider, Boolean isOOTB, List<String> policyIds,
+      String search, int limit, int offset) {
     this.accountId = accountId;
     this.cloudProvider = cloudProvider;
     this.isOOTB = isOOTB;
     this.policyIds = policyIds;
+    this.search = search;
+    this.limit = limit;
+    this.offset = offset;
   }
 }

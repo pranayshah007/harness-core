@@ -16,6 +16,7 @@ io.harness.steps.approval.step.jira.beans.KeyValuesCriteriaSpec
 io.harness.plancreator.steps.common.StageElementParameters
 io.harness.when.beans.StageWhenCondition
 io.harness.pms.expressions.PMSExpressionEvaluatorTest$TestStepParameters
+io.harness.pms.pipelinestage.outcome.PipelineStageOutcome
 io.harness.pms.pipelinestage.output.PipelineStageOutput
 io.harness.cf.pipeline.FeatureFlagStageStepParameters
 io.harness.steps.shellscript.ShellScriptOutcome
@@ -151,6 +152,14 @@ io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
 io.harness.steps.plugin.ContainerStepNode
 io.harness.steps.plugin.ContainerStepInfo
-io.harness.steps.plugin.ContainerStepOutcome
+io.harness.steps.plugin.ContainerStepInitOutcome
 io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.steps.plugin.ContainerStepParameters
+io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext
+io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities
+io.harness.steps.plugin.infrastructure.ContainerK8sInfra
+io.harness.beans.yaml.extended.infrastrucutre.OSType
+io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration
+io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml
+io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml
+io.harness.steps.plugin.infrastructure.volumes.HostPathYaml

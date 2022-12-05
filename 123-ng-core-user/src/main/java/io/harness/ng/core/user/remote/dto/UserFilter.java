@@ -36,6 +36,7 @@ public class UserFilter {
           "This string will be used to filter the results. Details of all the users having this string in their name or email address will be filtered.")
   private String searchTerm;
   @Schema(description = "Filter by User Identifiers") private Set<String> identifiers;
+  @Schema(description = "Filter by User Emails") private Set<String> emails;
   @Builder.Default private ParentFilter parentFilter = ParentFilter.NO_PARENT_SCOPES;
 
   public ParentFilter getParentFilter() {

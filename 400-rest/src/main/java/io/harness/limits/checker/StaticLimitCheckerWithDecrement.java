@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.limits.Action;
-import io.harness.limits.lib.StaticLimitChecker;
+import io.harness.limits.checkers.StaticLimitChecker;
 
 /**
  * Limit checker which lets you decrement the count as well. Useful for handling delete operations.

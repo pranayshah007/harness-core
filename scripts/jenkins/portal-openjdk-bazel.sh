@@ -51,16 +51,16 @@ cd ../..
 mkdir -p dist/cv-nextgen ;
 cd dist/cv-nextgen
 
-cp ${HOME}/.bazel-dirs/bin/300-cv-nextgen/module_deploy.jar cv-nextgen-capsule.jar
-cp ../../300-cv-nextgen/keystore.jks .
-cp ../../300-cv-nextgen/cv-nextgen-config.yml .
-cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
-cp ../../300-cv-nextgen/src/main/resources/enterprise-redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/srm-service/modules/cv-nextgen-service/service/module_deploy.jar cv-nextgen-capsule.jar
+cp ../../srm-service/config/keystore.jks .
+cp ../../srm-service/config/cv-nextgen-config.yml .
+cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/redisson-jcache.yaml .
+cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
-cp ../../dockerization/cv-nextgen/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -R ../../dockerization/cv-nextgen/scripts/ .
+cp -R ../../srm-service/build/container/scripts/ .
 
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt

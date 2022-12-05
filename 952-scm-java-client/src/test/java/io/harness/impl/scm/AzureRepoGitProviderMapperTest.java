@@ -233,4 +233,24 @@ public class AzureRepoGitProviderMapperTest extends CategoryTest {
     // Project
     assertThat(GitClientHelper.getAzureRepoProject(orgAndProject)).isEqualTo("project");
   }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testOrgAndProjectCustomDomain() {
+    // for HTTP
+    String url = "https://mankritsingh.com/org/project/_git/repo";
+    assertThat(GitClientHelper.getAzureRepoOrgAndProjectHTTP(url)).isEqualTo("org/project");
+
+    // for SSH
+    String url2 = "git@ssh.com:v3/org/project/repo";
+    assertThat(GitClientHelper.getAzureRepoOrgAndProjectSSH(url2)).isEqualTo("org/project");
+
+    // Org
+    String orgAndProject = "org/project";
+    assertThat(GitClientHelper.getAzureRepoOrg(orgAndProject)).isEqualTo("org");
+
+    // Project
+    assertThat(GitClientHelper.getAzureRepoProject(orgAndProject)).isEqualTo("project");
+  }
 }

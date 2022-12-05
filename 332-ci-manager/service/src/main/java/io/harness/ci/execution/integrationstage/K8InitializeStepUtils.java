@@ -12,10 +12,18 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerPara
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_ARCHIVE_FORMAT;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BACKEND;
+import static io.harness.ci.buildstate.PluginSettingUtils.PLUGIN_BUCKET;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_ARCHIVE_TYPE_TAR;
+import static io.harness.ci.commonconstants.CIExecutionConstants.CACHE_GCS_BACKEND;
 import static io.harness.ci.commonconstants.CIExecutionConstants.CPU;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
 import static io.harness.ci.commonconstants.CIExecutionConstants.MEMORY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.PLUGIN_JSON_KEY;
+import static io.harness.ci.commonconstants.CIExecutionConstants.RESTORE_CACHE_STEP_ID;
+import static io.harness.ci.commonconstants.CIExecutionConstants.SAVE_CACHE_STEP_ID;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.ci.commonconstants.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -50,6 +58,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.buildstate.PluginSettingUtils;
 import io.harness.ci.buildstate.StepContainerUtils;
+import io.harness.ci.config.CICacheIntelligenceConfig;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
 import io.harness.ci.ff.CIFeatureFlagService;
@@ -81,6 +90,9 @@ import io.harness.yaml.extended.ci.container.ContainerResource;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.fabric8.utils.Strings;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -100,6 +112,7 @@ public class K8InitializeStepUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private PluginSettingUtils pluginSettingUtils;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
   private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(InitializeStepInfo initializeStepInfo,
@@ -339,7 +352,6 @@ public class K8InitializeStepUtils {
     envVarMap.putAll(pluginSettingUtils.getPluginCompatibleEnvVariables(
         stepInfo, identifier, timeout, ambiance, StageInfraDetails.Type.K8));
     setEnvVariablesForHostedBuids(stageNode, stepInfo, envVarMap);
-
     Integer runAsUser = resolveIntegerParameter(stepInfo.getRunAsUser(), null);
 
     Boolean privileged = null;
@@ -381,6 +393,31 @@ public class K8InitializeStepUtils {
         case GCR:
         case DOCKER:
           envVarMap.put("container", "docker");
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  private void setEnvVariablesForHostedCachingSteps(
+      IntegrationStageNode stageNode, String identifier, Map<String, String> envVarMap) {
+    IntegrationStageConfig stage = stageNode.getIntegrationStageConfig();
+    if (stage != null && stage.getInfrastructure() != null
+        && stage.getInfrastructure().getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+      switch (identifier) {
+        case SAVE_CACHE_STEP_ID:
+        case RESTORE_CACHE_STEP_ID:
+          CICacheIntelligenceConfig cacheIntelligenceConfig = ciExecutionServiceConfig.getCacheIntelligenceConfig();
+          try {
+            String cacheKeyString = new String(Files.readAllBytes(Paths.get(cacheIntelligenceConfig.getServiceKey())));
+            envVarMap.put(PLUGIN_JSON_KEY, cacheKeyString);
+          } catch (IOException e) {
+            log.error("Cannot read storage key file for Cache Intelligence steps");
+          }
+          envVarMap.put(PLUGIN_BUCKET, cacheIntelligenceConfig.getBucket());
+          envVarMap.put(PLUGIN_BACKEND, CACHE_GCS_BACKEND);
+          envVarMap.put(PLUGIN_ARCHIVE_FORMAT, CACHE_ARCHIVE_TYPE_TAR);
           break;
         default:
           break;
@@ -555,6 +592,7 @@ public class K8InitializeStepUtils {
       envVarMap.putAll(pluginStepInfo.getEnvVariables());
     }
 
+    setEnvVariablesForHostedCachingSteps(stageNode, identifier, envVarMap);
     Integer runAsUser = resolveIntegerParameter(pluginStepInfo.getRunAsUser(), null);
 
     return ContainerDefinitionInfo.builder()

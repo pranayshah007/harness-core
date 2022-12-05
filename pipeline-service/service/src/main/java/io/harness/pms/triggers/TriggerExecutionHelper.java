@@ -38,7 +38,7 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionConstants;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -580,7 +580,7 @@ public class TriggerExecutionHelper {
   }
 
   public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(EngineExpressionEvaluator.EXPR_START)
-        && pipelineBranch.endsWith(EngineExpressionEvaluator.EXPR_END);
+    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
+        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 }

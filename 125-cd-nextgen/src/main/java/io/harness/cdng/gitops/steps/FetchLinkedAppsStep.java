@@ -9,6 +9,7 @@ package io.harness.cdng.gitops.steps;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,19 +23,26 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.HarnessStringUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.TaskStatus;
-import io.harness.delegate.task.gitops.FetchAppTaskParams;
-import io.harness.delegate.task.gitops.FetchAppTaskResponse;
+import io.harness.delegate.task.gitops.GitOpsFetchAppTaskParams;
+import io.harness.delegate.task.gitops.GitOpsFetchAppTaskResponse;
+import io.harness.eraro.Level;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.gitops.models.Application;
 import io.harness.gitops.models.ApplicationQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
+import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
+import io.harness.logstreaming.LogLine;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.BaseUrls;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -43,6 +51,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
+import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -52,8 +61,10 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import software.wings.beans.TaskType;
@@ -61,6 +72,7 @@ import software.wings.beans.TaskType;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,12 +84,13 @@ import retrofit2.Response;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<FetchAppTaskResponse> {
+public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<GitOpsFetchAppTaskResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_FETCH_LINKED_APPS.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   public static final String GITOPS_LINKED_APPS_OUTCOME = "GITOPS_LINKED_APPS_OUTCOME";
+  public static final String LOG_KEY_SUFFIX = "EXECUTE";
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitOpsStepHelper gitOpsStepHelper;
@@ -87,6 +100,7 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
   @Inject private StepHelper stepHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private BaseUrls baseUrls;
 
   @Override
   public Class getStepParametersClass() {
@@ -98,20 +112,24 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
 
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      ThrowingSupplier<FetchAppTaskResponse> responseDataSupplier) throws Exception {
+      ThrowingSupplier<GitOpsFetchAppTaskResponse> responseDataSupplier) throws Exception {
+    log.info("Started handling delegate task result");
+    ILogStreamingStepClient logStreamingStepClient = logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
     try {
-      ILogStreamingStepClient logStreamingStepClient =
-          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.openStream("");
-      FetchAppTaskResponse fetchAppTaskResponse = responseDataSupplier.get();
+      GitOpsFetchAppTaskResponse gitOpsFetchAppTaskResponse = responseDataSupplier.get();
 
-      if (fetchAppTaskResponse.getTaskStatus() == TaskStatus.FAILURE) {
+      if (gitOpsFetchAppTaskResponse.getTaskStatus() == TaskStatus.FAILURE) {
         return StepResponse.builder()
             .status(Status.FAILED)
-            .failureInfo(
-                FailureInfo.newBuilder()
-                    .addFailureData(FailureData.newBuilder().setMessage(fetchAppTaskResponse.getErrorMessage()).build())
-                    .build())
+            .failureInfo(FailureInfo.newBuilder()
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage(HarnessStringUtils.emptyIfNull(
+                                                     gitOpsFetchAppTaskResponse.getErrorMessage()))
+                                                 .build())
+                             .build())
             .build();
       }
 
@@ -134,21 +152,59 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
                                         .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
                                         .build();
 
-      List<Application> applications = fetchLinkedApps(fetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+      List<Application> applications =
+          fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+      populateAppUrls(applications, identifierRef);
 
-      return StepResponse.builder()
-          .status(Status.SUCCEEDED)
-          .stepOutcome(StepResponse.StepOutcome.builder()
-                           .name(GITOPS_LINKED_APPS_OUTCOME)
-                           .outcome(GitOpsLinkedAppsOutcome.builder().apps(applications).build())
-                           .build())
-          .build();
+      StepResponse.StepOutcome stepOutcome = null;
+
+      if (EmptyPredicate.isEmpty(applications)) {
+        logStreamingStepClient.writeLogLine(LogLine.builder()
+                                                .message("No linked apps found in Harness System.")
+                                                .level(LogLevel.INFO)
+                                                .timestamp(Instant.now())
+                                                .build(),
+            LOG_KEY_SUFFIX);
+      } else {
+        for (Application application : applications) {
+          logStreamingStepClient.writeLogLine(LogLine.builder()
+                                                  .message(String.format("Found linked app: %s. Link - %s",
+                                                      application.getName(), application.getUrl()))
+                                                  .level(LogLevel.INFO)
+                                                  .timestamp(Instant.now())
+                                                  .build(),
+              LOG_KEY_SUFFIX);
+        }
+
+        stepOutcome = StepResponse.StepOutcome.builder()
+                          .name(GITOPS_LINKED_APPS_OUTCOME)
+                          .outcome(GitOpsLinkedAppsOutcome.builder().apps(applications).build())
+                          .build();
+      }
+
+      StepResponseBuilder stepResponse = StepResponse.builder().status(Status.SUCCEEDED);
+      if (stepOutcome != null) {
+        stepResponse.stepOutcome(stepOutcome);
+      }
+      return stepResponse.build();
+    } catch (WingsException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new InvalidRequestException("Failed to execute Fetch Linked Apps step", ex);
     } finally {
-      ILogStreamingStepClient logStreamingStepClient =
-          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.closeStream("");
+      logStreamingStepClient.closeStream(LOG_KEY_SUFFIX);
+    }
+  }
+
+  private void populateAppUrls(List<Application> applications, IdentifierRef identifierRef) {
+    if (EmptyPredicate.isEmpty(applications)) {
+      return;
+    }
+    for (Application application : applications) {
+      String url = String.format("%saccount/%s/cd/orgs/%s/projects/%s/gitops/applications/%s?agentId=%s",
+          baseUrls.getNextGenUiUrl(), identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+          identifierRef.getProjectIdentifier(), application.getName(), application.getAgentIdentifier());
+      application.setUrl(url);
     }
   }
 
@@ -156,9 +212,10 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     try {
+      log.info("Started executing Fetch Linked Apps Step");
       ILogStreamingStepClient logStreamingStepClient =
           logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
-      logStreamingStepClient.openStream("");
+      logStreamingStepClient.openStream(LOG_KEY_SUFFIX);
 
       FetchLinkedAppsStepParams gitOpsSpecParams = (FetchLinkedAppsStepParams) stepParameters.getSpec();
       DeploymentRepoManifestOutcome deploymentRepo =
@@ -167,10 +224,10 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
       List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
       gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, deploymentRepo));
 
-      FetchAppTaskParams fetchAppTaskParams = FetchAppTaskParams.builder()
-                                                  .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
-                                                  .accountId(AmbianceUtils.getAccountId(ambiance))
-                                                  .build();
+      GitOpsFetchAppTaskParams fetchAppTaskParams = GitOpsFetchAppTaskParams.builder()
+                                                        .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+                                                        .accountId(AmbianceUtils.getAccountId(ambiance))
+                                                        .build();
 
       final TaskData taskData = TaskData.builder()
                                     .async(true)
@@ -179,11 +236,14 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<Fetch
                                     .parameters(new Object[] {fetchAppTaskParams})
                                     .build();
 
-      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, Collections.emptyList(),
+      return prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+          StepUtils.generateLogKeys(ambiance, Collections.singletonList(LOG_KEY_SUFFIX)), Collections.emptyList(),
           TaskType.GITOPS_FETCH_APP_TASK.getDisplayName(),
           TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));
 
+    } catch (WingsException ex) {
+      throw ex;
     } catch (Exception e) {
       throw new InvalidRequestException("Failed to execute Fetch Linked Apps step", e);
     }

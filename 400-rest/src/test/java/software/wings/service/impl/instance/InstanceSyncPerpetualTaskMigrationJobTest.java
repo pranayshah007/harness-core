@@ -123,7 +123,7 @@ public class InstanceSyncPerpetualTaskMigrationJobTest extends WingsBaseTest {
     account2 = getAccount(AccountType.PAID);
     infrastructureMapping2 = mock(InfrastructureMapping.class);
 
-    when(accountService.listAllAccountWithDefaultsWithoutLicenseInfo()).thenReturn(Arrays.asList(account1, account2));
+    when(accountService.getAccountsWithBasicInfo(false)).thenReturn(Arrays.asList(account1, account2));
 
     when(appService.getAppIdsByAccountId(account1.getUuid())).thenReturn(Collections.singletonList("app1"));
     when(infrastructureMappingService.get("app1")).thenReturn(Collections.singletonList(infrastructureMapping1));
