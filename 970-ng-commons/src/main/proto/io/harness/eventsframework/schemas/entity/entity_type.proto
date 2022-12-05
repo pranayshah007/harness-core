@@ -173,4 +173,5 @@ enum EntityTypeProtoEnum {
   IACM_STAGE = 160;
   IACM_STEPS = 161;
   CONTAINER_STEP = 162;
+  ASG_CANARY_DEPLOY_STEP = 163;
 }
