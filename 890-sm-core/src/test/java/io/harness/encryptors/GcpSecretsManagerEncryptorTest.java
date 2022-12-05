@@ -27,8 +27,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.beans.GcpSecretsManagerConfig;

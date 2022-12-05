@@ -36,9 +36,9 @@ import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.NGSecretManagerConfigDTOConverter;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 import io.harness.validation.Update;
 
 import software.wings.ngmigration.CgBasicInfo;

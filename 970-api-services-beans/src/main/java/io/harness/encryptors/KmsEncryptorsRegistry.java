@@ -15,14 +15,14 @@ import static io.harness.encryptors.Encryptors.GLOBAL_GCP_KMS_ENCRYPTOR;
 import static io.harness.encryptors.Encryptors.LOCAL_ENCRYPTOR;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

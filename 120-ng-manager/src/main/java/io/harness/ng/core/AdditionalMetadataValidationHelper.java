@@ -17,7 +17,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;

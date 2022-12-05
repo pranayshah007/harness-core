@@ -15,7 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
 import io.harness.secretmanagerclient.dto.GcpSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.GcpSecretManagerConfigUpdateDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

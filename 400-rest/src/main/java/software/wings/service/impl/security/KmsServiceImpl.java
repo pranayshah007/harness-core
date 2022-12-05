@@ -32,7 +32,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.secretmanagerclient.NGEncryptedDataMetadata;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.KmsConfig;

@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.persistence.HPersistence;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.AwsSecretsManagerConfig;

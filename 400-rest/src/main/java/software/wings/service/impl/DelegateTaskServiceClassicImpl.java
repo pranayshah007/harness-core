@@ -121,7 +121,7 @@ import io.harness.reflection.ExpressionReflectionUtils;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;

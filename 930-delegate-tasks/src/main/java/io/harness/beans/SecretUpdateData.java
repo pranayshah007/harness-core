@@ -9,12 +9,12 @@ package io.harness.beans;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import java.util.HashSet;
 import java.util.Objects;

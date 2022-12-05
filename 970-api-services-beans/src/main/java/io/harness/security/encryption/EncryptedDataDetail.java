@@ -9,12 +9,13 @@ package io.harness.security.encryption;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import io.harness.security.encryption.common.EncryptionConfig;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -22,8 +22,8 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;

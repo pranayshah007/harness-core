@@ -33,8 +33,8 @@ import io.harness.beans.SecretText;
 import io.harness.beans.SecretUpdateData;
 import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HPersistence;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

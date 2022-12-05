@@ -11,7 +11,7 @@ import io.harness.SecretConstants;
 import io.harness.ng.core.models.SecretSpec;
 import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.secretmanagerclient.ValueType;
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

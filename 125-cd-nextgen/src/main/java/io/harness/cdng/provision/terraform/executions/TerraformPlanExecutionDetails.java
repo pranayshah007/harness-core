@@ -17,7 +17,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;

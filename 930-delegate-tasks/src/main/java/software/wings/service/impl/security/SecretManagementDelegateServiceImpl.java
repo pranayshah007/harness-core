@@ -27,7 +27,7 @@ import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.vault.SSHVaultAuthResult;
 import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 
 import software.wings.beans.BaseVaultConfig;
 import software.wings.beans.HostConnectionAttributes;

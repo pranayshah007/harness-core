@@ -8,7 +8,7 @@
 package software.wings.service.intfc.security;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;

@@ -45,7 +45,7 @@ import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.AccessType;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.GcpKmsConfig;

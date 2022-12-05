@@ -14,7 +14,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.util.List;
 

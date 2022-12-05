@@ -10,7 +10,7 @@ package io.harness.delegate.beans.azure.appservicesettings;
 import static io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSettingConstants.CONNECTION_SETTING_JSON_TYPE;
 
 import io.harness.azure.model.AzureAppServiceConnectionStringType;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;

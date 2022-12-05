@@ -18,7 +18,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.graphql.datafetcher.AbstractDataFetcherTestBase;

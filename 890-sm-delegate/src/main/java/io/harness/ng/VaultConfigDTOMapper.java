@@ -17,7 +17,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigUpdateDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

@@ -29,7 +29,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.SecretManagementTestHelper;

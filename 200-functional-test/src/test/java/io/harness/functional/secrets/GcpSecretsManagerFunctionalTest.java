@@ -20,7 +20,7 @@ import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.scm.ScmSecret;
 import io.harness.scm.SecretName;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.testframework.framework.Setup;
 
 import software.wings.beans.Account;

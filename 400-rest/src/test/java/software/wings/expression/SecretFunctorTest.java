@@ -25,7 +25,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.expression.SecretString;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ServiceVariable;

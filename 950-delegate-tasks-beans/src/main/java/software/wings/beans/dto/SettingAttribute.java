@@ -1,10 +1,17 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package software.wings.beans.dto;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
 
 import io.harness.beans.EmbeddedUser;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.security.UsageRestrictions;

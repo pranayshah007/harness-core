@@ -50,7 +50,7 @@ import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 

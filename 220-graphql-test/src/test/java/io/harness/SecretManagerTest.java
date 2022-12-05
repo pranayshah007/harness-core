@@ -24,8 +24,8 @@ import io.harness.generator.TemplateGenerator;
 import io.harness.multiline.MultilineStringMixin;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.JsonUtils;
 import io.harness.testframework.graphql.QLTestObject;
 

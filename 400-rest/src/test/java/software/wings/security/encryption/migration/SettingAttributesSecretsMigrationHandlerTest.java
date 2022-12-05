@@ -9,7 +9,7 @@ package software.wings.security.encryption.migration;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.security.encryption.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
 
 import static software.wings.service.impl.SettingServiceHelper.ATTRIBUTES_USING_REFERENCES;
 import static software.wings.settings.SettingVariableTypes.APP_DYNAMICS;

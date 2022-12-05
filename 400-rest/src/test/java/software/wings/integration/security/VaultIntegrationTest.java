@@ -16,7 +16,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.DeprecatedIntegrationTests;
 import io.harness.expression.SecretString;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.Account;
 import software.wings.beans.GcpConfig;

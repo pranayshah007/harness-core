@@ -56,7 +56,7 @@ import io.harness.rule.Owner;
 import io.harness.secrets.SecretDecryptor;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.HashMap;
 import java.util.Map;

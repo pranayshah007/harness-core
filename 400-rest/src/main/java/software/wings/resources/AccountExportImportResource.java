@@ -30,7 +30,7 @@ import io.harness.persistence.HIterator;
 import io.harness.persistence.PersistentEntity;
 import io.harness.rest.RestResponse;
 import io.harness.scheduler.PersistentScheduler;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;

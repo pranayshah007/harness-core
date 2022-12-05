@@ -18,7 +18,7 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import java.util.Collections;

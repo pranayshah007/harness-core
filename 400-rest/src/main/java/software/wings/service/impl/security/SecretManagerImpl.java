@@ -20,11 +20,11 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.persistence.HQuery.excludeCount;
 import static io.harness.secrets.SecretsDao.ID_KEY;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 import static io.harness.validation.Validator.equalCheck;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
@@ -67,8 +67,8 @@ import io.harness.secrets.setupusage.SecretSetupUsageService;
 import io.harness.secrets.yamlhandlers.SecretYamlHandler;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.annotation.EncryptableSetting;

@@ -12,8 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import software.wings.graphql.datafetcher.secrets.UsageScopeController;
 import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;

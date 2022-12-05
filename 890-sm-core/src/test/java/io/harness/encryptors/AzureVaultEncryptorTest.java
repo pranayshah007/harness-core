@@ -33,9 +33,9 @@ import io.harness.encryptors.clients.AzureVaultEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AzureVaultConfig;
 

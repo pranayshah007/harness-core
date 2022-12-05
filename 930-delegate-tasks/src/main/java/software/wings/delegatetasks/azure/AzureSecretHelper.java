@@ -34,7 +34,7 @@ import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.annotation.EncryptableSetting;

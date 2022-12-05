@@ -12,8 +12,8 @@ import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.VaultConfig;

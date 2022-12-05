@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.Set;

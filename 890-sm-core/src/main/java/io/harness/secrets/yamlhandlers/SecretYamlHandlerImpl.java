@@ -13,7 +13,7 @@ import static io.harness.eraro.ErrorCode.INVALID_FORMAT;
 import static io.harness.eraro.ErrorCode.RESOURCE_NOT_FOUND;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;

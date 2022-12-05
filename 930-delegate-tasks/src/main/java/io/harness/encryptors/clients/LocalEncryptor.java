@@ -14,9 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.LocalEncryptionConfig;
 

@@ -22,8 +22,8 @@ import static io.harness.remote.client.CGRestUtils.getResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.TaskType.NG_AZURE_VAULT_FETCH_ENGINES;
@@ -99,7 +99,7 @@ import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataReq
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataSpecDTO;
 import io.harness.security.encryption.AccessType;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.AzureVaultConfig;

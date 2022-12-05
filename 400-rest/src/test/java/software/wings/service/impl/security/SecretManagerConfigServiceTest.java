@@ -20,7 +20,7 @@ import io.harness.beans.SecretManagerConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.SecretManagementTestHelper;
 import software.wings.WingsBaseTest;

@@ -90,7 +90,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.validation.Update;
 import io.harness.yaml.BaseYaml;
 

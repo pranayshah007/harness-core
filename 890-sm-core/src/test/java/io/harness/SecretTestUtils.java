@@ -10,8 +10,8 @@ package io.harness;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataBuilder;
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.security.EnvFilter;
 import software.wings.security.GenericEntityFilter;

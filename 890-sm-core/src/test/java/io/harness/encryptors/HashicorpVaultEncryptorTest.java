@@ -36,9 +36,9 @@ import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.helpers.NGVaultTaskHelper;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.helpers.ext.vault.VaultK8sLoginResult;

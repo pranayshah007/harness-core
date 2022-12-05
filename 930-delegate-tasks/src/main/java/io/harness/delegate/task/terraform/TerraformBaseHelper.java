@@ -18,7 +18,7 @@ import io.harness.logging.LogCallback;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.provision.TerraformPlanSummary;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.terraform.TerraformStepResponse;
 import io.harness.terraform.request.TerraformExecuteStepRequest;
 

@@ -12,7 +12,7 @@ import static io.harness.delegate.beans.DelegateFile.Builder.aDelegateFile;
 import static io.harness.helpers.EncryptDecryptHelperImpl.ON_FILE_STORAGE;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.TMACARI;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
@@ -38,11 +38,11 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsSecretsManagerConfig;

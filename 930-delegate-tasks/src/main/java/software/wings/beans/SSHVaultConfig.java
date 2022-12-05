@@ -7,13 +7,13 @@
 
 package software.wings.beans;
 
-import static io.harness.security.encryption.SecretManagerType.SSH;
+import static io.harness.security.encryption.common.SecretManagerType.SSH;
 
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.secretmanagerclient.dto.SSHVaultConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.ArrayList;

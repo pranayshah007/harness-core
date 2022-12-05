@@ -39,8 +39,8 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.service.intfc.security.SecretManager;

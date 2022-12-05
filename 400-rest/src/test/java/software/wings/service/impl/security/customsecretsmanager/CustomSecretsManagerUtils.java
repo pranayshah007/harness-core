@@ -25,7 +25,7 @@ import static software.wings.utils.WingsTestConstants.PASSWORD;
 import static software.wings.utils.WingsTestConstants.USER_NAME;
 
 import io.harness.data.structure.UUIDGenerator;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.shell.AccessType;
 import io.harness.shell.ScriptType;
 

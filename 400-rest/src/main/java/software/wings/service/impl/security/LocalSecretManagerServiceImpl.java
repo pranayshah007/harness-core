@@ -22,7 +22,7 @@ import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.SecretManagementException;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.LocalEncryptionConfig;
 import software.wings.dl.WingsPersistence;

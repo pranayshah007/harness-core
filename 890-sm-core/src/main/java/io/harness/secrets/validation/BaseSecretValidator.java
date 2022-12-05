@@ -29,7 +29,7 @@ import io.harness.beans.SecretText;
 import io.harness.beans.SecretUpdateData;
 import io.harness.exception.SecretManagementException;
 import io.harness.secrets.SecretsDao;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

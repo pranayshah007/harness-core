@@ -21,7 +21,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.InfrastructureProvisioner;
 import software.wings.service.intfc.AppService;

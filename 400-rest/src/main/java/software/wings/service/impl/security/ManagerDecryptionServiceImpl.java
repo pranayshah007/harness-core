@@ -25,7 +25,7 @@ import io.harness.exception.WingsException;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SyncTaskContext;

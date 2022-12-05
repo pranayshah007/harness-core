@@ -17,7 +17,7 @@ import static software.wings.settings.SettingVariableTypes.WINRM_CONNECTION_ATTR
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.SettingAttribute;

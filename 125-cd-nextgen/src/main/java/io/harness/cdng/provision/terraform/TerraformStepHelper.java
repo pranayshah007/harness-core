@@ -105,7 +105,7 @@ import io.harness.remote.client.CGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.validation.Validator;

@@ -7,7 +7,7 @@
 
 package io.harness.beans;
 
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 
 import software.wings.security.ScopedEntity;
 import software.wings.security.UsageRestrictions;

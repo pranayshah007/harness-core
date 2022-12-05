@@ -7,16 +7,16 @@
 
 package software.wings.graphql.schema.type.secretManagers;
 
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.KMS;
-import static io.harness.security.encryption.EncryptionType.VAULT;
-import static io.harness.security.encryption.EncryptionType.VAULT_SSH;
+import static io.harness.security.encryption.common.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.VAULT_SSH;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.graphql.schema.type.QLEnum;
 

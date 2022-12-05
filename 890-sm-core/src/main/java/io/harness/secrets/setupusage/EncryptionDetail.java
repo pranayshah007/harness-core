@@ -10,7 +10,7 @@ package io.harness.secrets.setupusage;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.Builder;
 import lombok.Data;

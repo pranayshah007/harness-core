@@ -17,8 +17,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.encryption.SecretRefParsedData;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptionType;
 
 import org.junit.Before;
 import org.junit.Rule;

@@ -9,7 +9,7 @@ package software.wings.graphql.schema.type.secrets;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import java.util.Set;
 import lombok.Builder;

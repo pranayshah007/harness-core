@@ -23,7 +23,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;

@@ -23,7 +23,7 @@ import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.AwsSecretsManagerConfig;

@@ -36,7 +36,7 @@ import io.harness.helpers.ext.vault.SecretEngineSummary;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.persistence.HPersistence;
 import io.harness.security.encryption.AccessType;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.BaseVaultConfig;

@@ -29,9 +29,9 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
 import io.harness.persistence.HIterator;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.security.UsageRestrictions;
 import software.wings.settings.SettingVariableTypes;

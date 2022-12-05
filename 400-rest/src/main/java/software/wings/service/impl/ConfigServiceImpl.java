@@ -34,7 +34,7 @@ import io.harness.beans.SecretUsageLog;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.stream.BoundedInputStream;
 
 import software.wings.beans.Activity;

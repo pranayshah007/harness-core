@@ -15,7 +15,7 @@ import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.UNKNOWN;
 import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.security.encryption.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
 
 import static software.wings.security.UserThreadLocal.userGuard;
 import static software.wings.settings.SettingVariableTypes.JENKINS;

@@ -61,9 +61,9 @@ import io.harness.expression.SecretString;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.setupusage.SecretSetupUsage;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.JsonUtils;
 import io.harness.testlib.RealMongo;
 

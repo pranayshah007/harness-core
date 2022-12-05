@@ -9,9 +9,9 @@ package io.harness.delegatetasks;
 
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -28,8 +28,8 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;

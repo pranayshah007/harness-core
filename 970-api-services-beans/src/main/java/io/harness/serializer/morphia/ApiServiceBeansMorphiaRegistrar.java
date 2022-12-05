@@ -12,8 +12,8 @@ import io.harness.globalcontex.AuditGlobalContextData;
 import io.harness.globalcontex.PurgeGlobalContextData;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.shell.ShellExecutionData;
 
 import software.wings.annotation.EncryptableSetting;

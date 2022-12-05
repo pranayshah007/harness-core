@@ -7,8 +7,8 @@
 
 package io.harness.encryption;
 
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.Builder;
 import lombok.Getter;

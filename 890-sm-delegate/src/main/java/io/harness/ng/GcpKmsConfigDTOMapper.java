@@ -15,7 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigUpdateDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

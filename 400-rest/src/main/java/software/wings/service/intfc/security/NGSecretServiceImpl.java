@@ -12,9 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.FileBucket.CONFIGS;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,7 +27,7 @@ import io.harness.exception.WingsException;
 import io.harness.secretmanagerclient.NGMetadata.NGMetadataKeys;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata.NGSecretManagerMetadataKeys;
 import io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.FileService;

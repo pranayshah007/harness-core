@@ -17,7 +17,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
-import static io.harness.security.encryption.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
@@ -30,8 +30,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

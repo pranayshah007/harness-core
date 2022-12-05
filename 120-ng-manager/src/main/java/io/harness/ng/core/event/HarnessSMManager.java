@@ -37,7 +37,7 @@ import io.harness.ng.core.migration.NGSecretManagerMigration;
 import io.harness.secretmanagerclient.dto.GcpKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

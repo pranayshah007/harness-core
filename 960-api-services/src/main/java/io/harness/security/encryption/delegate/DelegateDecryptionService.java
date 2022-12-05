@@ -5,7 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.security.encryption;
+package io.harness.security.encryption.delegate;
+
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.util.List;
 import java.util.Map;

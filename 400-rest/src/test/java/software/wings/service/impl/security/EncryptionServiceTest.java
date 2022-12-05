@@ -32,9 +32,9 @@ import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import software.wings.beans.KmsConfig;
 import software.wings.beans.LocalEncryptionConfig;

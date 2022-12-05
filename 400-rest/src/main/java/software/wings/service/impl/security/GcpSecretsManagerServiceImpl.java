@@ -33,7 +33,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.GcpKmsConfig;

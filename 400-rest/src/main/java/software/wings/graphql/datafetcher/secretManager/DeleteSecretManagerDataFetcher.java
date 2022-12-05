@@ -14,7 +14,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.graphql.datafetcher.BaseMutatorDataFetcher;
 import software.wings.graphql.datafetcher.MutationContext;

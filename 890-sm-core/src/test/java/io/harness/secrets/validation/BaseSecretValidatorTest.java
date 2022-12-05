@@ -36,8 +36,8 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretsDao;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.common.collect.Sets;
 import java.util.ArrayList;

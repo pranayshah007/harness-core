@@ -18,9 +18,9 @@ import static io.harness.eraro.ErrorCode.USER_NOT_AUTHORIZED_DUE_TO_USAGE_RESTRI
 import static io.harness.exception.WingsException.USER;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
 import static software.wings.settings.SettingVariableTypes.SECRET_TEXT;
@@ -57,11 +57,11 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.secrets.setupusage.SecretSetupUsageService;
 import io.harness.secrets.validation.SecretValidatorsRegistry;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.security.UsageRestrictions;

@@ -13,7 +13,7 @@ import io.harness.delegate.beans.connector.customsecretmanager.CustomSecretManag
 import io.harness.encryption.SecretRefHelper;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO.CustomSecretManagerConfigDTOBuilder;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 public class CustomSecretManagerConfigDTOMapper {
   public static CustomSecretManagerConfigDTO getCustomSecretManagerConfigDTO(

@@ -12,10 +12,10 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -45,7 +45,7 @@ import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataReq
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataSpecDTO;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.encryption.AccessType;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.GcpKmsConfig;

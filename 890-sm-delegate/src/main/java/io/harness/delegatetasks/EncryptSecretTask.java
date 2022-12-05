@@ -17,8 +17,8 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.KmsEncryptorsRegistry;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;
 import java.util.function.BooleanSupplier;

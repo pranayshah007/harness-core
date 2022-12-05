@@ -15,7 +15,7 @@ import static software.wings.security.PermissionAttribute.ResourceType.SETTING;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.stream.BoundedInputStream;
 
 import software.wings.app.MainConfiguration;

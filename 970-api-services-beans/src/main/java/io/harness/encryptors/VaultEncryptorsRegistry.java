@@ -10,14 +10,14 @@ package io.harness.encryptors;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.GCP_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

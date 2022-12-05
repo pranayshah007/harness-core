@@ -15,10 +15,10 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.PersistentEntity;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.settings.SettingVariableTypes;
 

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._440_SECRET_MANAGEMENT_SE
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SecretManagerCapabilities.CREATE_PARAMETERIZED_SECRET;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
 
 import static software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript.ScriptType.POWERSHELL;
 import static software.wings.service.impl.security.customsecretsmanager.CustomSecretsManagerValidationUtils.buildShellScriptParameters;
@@ -25,9 +25,9 @@ import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.delegate.task.mixin.ProcessExecutorCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.delegatetasks.validation.capabilities.ShellConnectionCapability;

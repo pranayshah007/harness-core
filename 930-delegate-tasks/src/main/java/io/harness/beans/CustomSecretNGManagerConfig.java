@@ -10,7 +10,7 @@ package software.wings.beans;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.beans.SecretManagerCapabilities.CREATE_PARAMETERIZED_SECRET;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
 
 import io.harness.SecretManagerDescriptionConstants;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,8 +24,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.google.common.collect.Lists;
 import io.swagger.v3.oas.annotations.media.Schema;

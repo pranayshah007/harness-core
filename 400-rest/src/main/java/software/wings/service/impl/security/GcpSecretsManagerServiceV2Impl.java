@@ -31,7 +31,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.WingsException;
 import io.harness.helpers.ext.gcp.GcpRegion;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.GcpSecretsManagerConfig;

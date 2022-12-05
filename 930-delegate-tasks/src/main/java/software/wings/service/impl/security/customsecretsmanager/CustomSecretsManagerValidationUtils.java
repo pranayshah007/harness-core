@@ -23,8 +23,8 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG.ShellScriptTaskParametersNGBuilder;
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.shell.ScriptType;
 
 import software.wings.beans.CustomSecretNGManagerConfig;

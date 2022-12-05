@@ -28,7 +28,7 @@ import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.TaskType;
 

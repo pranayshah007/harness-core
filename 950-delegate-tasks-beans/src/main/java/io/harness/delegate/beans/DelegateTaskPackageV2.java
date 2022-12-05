@@ -10,7 +10,7 @@ package io.harness.delegate.beans;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.TaskType;
 

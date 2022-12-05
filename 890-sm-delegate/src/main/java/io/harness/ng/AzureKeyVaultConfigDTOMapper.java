@@ -15,7 +15,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigUpdateDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

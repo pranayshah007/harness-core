@@ -23,7 +23,7 @@ import io.harness.beans.SecretText;
 import io.harness.exception.SecretManagementException;
 import io.harness.secrets.SecretsDao;
 import io.harness.secrets.validation.BaseSecretValidator;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

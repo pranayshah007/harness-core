@@ -19,7 +19,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.validation.Create;
 
 import software.wings.annotation.EncryptableSetting;

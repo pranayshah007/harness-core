@@ -17,7 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretText;
 import io.harness.exception.InvalidRequestException;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import software.wings.graphql.schema.mutation.secrets.input.QLCreateSecretInput;
 import software.wings.graphql.schema.type.secrets.QLEncryptedText;

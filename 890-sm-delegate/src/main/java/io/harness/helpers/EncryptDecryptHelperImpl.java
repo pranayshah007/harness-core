@@ -13,8 +13,8 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import static java.lang.Boolean.TRUE;
 
@@ -27,10 +27,10 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.common.base.Charsets;
 import com.google.inject.Inject;

@@ -19,7 +19,7 @@ import io.harness.ngmigration.dto.SecretFilter;
 import io.harness.ngmigration.secrets.SecretFactory;
 import io.harness.ngmigration.service.DiscoveryService;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.ngmigration.DiscoveryResult;
 import software.wings.ngmigration.NGMigrationEntityType;

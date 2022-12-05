@@ -10,7 +10,7 @@ package io.harness.connector.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.VIKAS_M;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 
 import static software.wings.beans.TaskType.NG_VAULT_FETCHING_TASK;

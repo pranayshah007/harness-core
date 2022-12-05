@@ -19,7 +19,7 @@ import static io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredenti
 import static io.harness.delegate.beans.connector.awskmsconnector.AwsKmsCredentialType.MANUAL_CONFIG;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
-import static io.harness.security.encryption.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -39,8 +39,8 @@ import io.harness.secretmanagerclient.dto.awskms.AwsKmsIamCredentialConfig;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsManualCredentialConfig;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsStsCredentialConfig;
 import io.harness.secretmanagerclient.dto.awskms.BaseAwsKmsConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.amazonaws.auth.STSSessionCredentialsProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;

@@ -15,8 +15,8 @@ import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.UTKARSH;
 import static io.harness.rule.OwnerRule.VIKAS;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
@@ -50,7 +50,7 @@ import io.harness.rule.Owner;
 import io.harness.secrets.SecretsRBACService;
 import io.harness.secrets.setupusage.SecretSetupUsage;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;

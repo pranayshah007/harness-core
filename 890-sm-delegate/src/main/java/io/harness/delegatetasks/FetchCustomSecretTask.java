@@ -18,7 +18,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.CustomEncryptorsRegistry;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 
 import software.wings.beans.CustomSecretNGManagerConfig;
 

@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.security.encryption.EncryptedRecordData;
 
 import software.wings.expression.SecretFunctor;

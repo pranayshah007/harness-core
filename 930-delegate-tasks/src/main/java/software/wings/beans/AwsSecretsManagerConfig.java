@@ -16,8 +16,8 @@ import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.utils.KmsUtils.generateKmsUrl;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
@@ -27,8 +27,8 @@ import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator
 import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.amazonaws.auth.STSSessionCredentialsProvider;
 import com.fasterxml.jackson.annotation.JsonIgnore;

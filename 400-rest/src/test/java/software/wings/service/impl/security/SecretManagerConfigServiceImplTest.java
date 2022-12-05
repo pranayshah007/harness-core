@@ -24,7 +24,7 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.GcpKmsConfig;

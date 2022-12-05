@@ -17,7 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;
 import org.junit.Rule;

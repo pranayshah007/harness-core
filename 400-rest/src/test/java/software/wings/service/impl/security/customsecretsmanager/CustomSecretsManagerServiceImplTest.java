@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessModule._360_CG_MANAGER;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
@@ -47,7 +47,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.exception.UnexpectedException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.shell.ScriptType;
 
 import software.wings.WingsBaseTest;

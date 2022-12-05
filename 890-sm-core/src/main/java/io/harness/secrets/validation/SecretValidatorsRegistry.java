@@ -15,18 +15,18 @@ import static io.harness.secrets.validation.SecretValidators.AZURE_SECRET_MANAGE
 import static io.harness.secrets.validation.SecretValidators.COMMON_SECRET_MANAGER_VALIDATOR;
 import static io.harness.secrets.validation.SecretValidators.GCP_SECRET_MANAGER_VALIDATOR;
 import static io.harness.secrets.validation.SecretValidators.VAULT_SECRET_MANAGER_VALIDATOR;
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.GCP_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

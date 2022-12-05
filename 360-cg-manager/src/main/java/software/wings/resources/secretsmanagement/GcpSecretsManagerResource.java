@@ -19,7 +19,7 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.InternalApi;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.stream.BoundedInputStream;
 
 import software.wings.app.MainConfiguration;

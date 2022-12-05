@@ -103,8 +103,8 @@ import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.VaultConfig;
 

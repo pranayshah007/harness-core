@@ -447,7 +447,7 @@ import io.harness.secrets.SecretsDelegateCacheService;
 import io.harness.secrets.SecretsDelegateCacheServiceImpl;
 import io.harness.security.X509KeyManagerBuilder;
 import io.harness.security.X509TrustManagerBuilder;
-import io.harness.security.encryption.DelegateDecryptionService;
+import io.harness.security.encryption.delegate.DelegateDecryptionService;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.service.ScmServiceClient;
 import io.harness.shell.ScriptType;

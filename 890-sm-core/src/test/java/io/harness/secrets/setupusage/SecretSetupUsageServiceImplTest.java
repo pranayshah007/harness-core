@@ -31,7 +31,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretsDao;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.settings.SettingVariableTypes;
 

@@ -17,7 +17,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.security.SecureRandom;
 import org.apache.commons.lang3.reflect.FieldUtils;

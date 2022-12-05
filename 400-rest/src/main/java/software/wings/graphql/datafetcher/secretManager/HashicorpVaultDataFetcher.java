@@ -13,7 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.exception.InvalidRequestException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.VaultConfig;
 import software.wings.graphql.datafetcher.secrets.UsageScopeController;

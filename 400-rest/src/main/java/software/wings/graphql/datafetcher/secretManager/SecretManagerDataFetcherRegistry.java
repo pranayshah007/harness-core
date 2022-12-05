@@ -8,14 +8,14 @@
 package software.wings.graphql.datafetcher.secretManager;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

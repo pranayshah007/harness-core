@@ -10,7 +10,7 @@ package io.harness.ngmigration.dto;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.beans.ImportMechanism;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.v3.oas.annotations.Parameter;

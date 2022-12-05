@@ -8,7 +8,7 @@
 package software.wings.service.impl.security;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
@@ -16,9 +16,9 @@ import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;

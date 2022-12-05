@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

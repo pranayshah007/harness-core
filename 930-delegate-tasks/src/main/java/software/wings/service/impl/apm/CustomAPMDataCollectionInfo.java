@@ -14,7 +14,7 @@ import static software.wings.beans.TaskType.CUSTOM_APM_COLLECT_METRICS_V2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.APMVerificationConfig;

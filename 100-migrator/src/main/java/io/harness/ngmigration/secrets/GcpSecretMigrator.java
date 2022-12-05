@@ -29,7 +29,7 @@ import io.harness.ngmigration.dto.SecretManagerCreatedDTO;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 
 import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.ngmigration.CgEntityId;

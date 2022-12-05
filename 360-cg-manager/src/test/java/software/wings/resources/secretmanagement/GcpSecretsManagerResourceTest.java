@@ -29,7 +29,7 @@ import io.harness.eraro.ResponseMessage;
 import io.harness.exception.SecretManagementException;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.GcpKmsConfig;

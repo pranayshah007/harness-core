@@ -8,8 +8,8 @@
 package io.harness.secretmanagerclient;
 
 import io.harness.delegate.beans.DelegateFile;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.io.IOException;
 

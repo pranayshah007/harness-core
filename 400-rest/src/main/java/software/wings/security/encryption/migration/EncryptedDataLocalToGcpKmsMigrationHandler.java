@@ -10,8 +10,8 @@ package software.wings.security.encryption.migration;
 import static io.harness.beans.FeatureName.ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
-import static io.harness.security.encryption.EncryptionType.GCP_KMS;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.GCP_KMS;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import static software.wings.settings.SettingVariableTypes.APM_VERIFICATION;
 import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;

@@ -13,10 +13,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EncryptedData;
 import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
 import io.harness.encryptors.CustomEncryptor;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.intfc.security.CustomEncryptedDataDetailBuilder;

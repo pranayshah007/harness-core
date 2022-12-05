@@ -14,7 +14,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.localconnector.LocalConnectorDTO;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

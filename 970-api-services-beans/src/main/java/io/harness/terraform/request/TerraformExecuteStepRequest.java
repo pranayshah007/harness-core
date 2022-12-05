@@ -15,7 +15,7 @@ import io.harness.logging.PlanHumanReadableOutputStream;
 import io.harness.logging.PlanJsonLogOutputStream;
 import io.harness.logging.PlanLogOutputStream;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.util.List;
 import java.util.Map;

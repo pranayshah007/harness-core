@@ -27,7 +27,7 @@ import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.LocalEncryptionConfig;
 

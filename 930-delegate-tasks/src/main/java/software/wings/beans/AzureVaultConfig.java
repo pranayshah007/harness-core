@@ -17,7 +17,7 @@ import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_FROM_
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
@@ -31,8 +31,8 @@ import io.harness.expression.ExpressionEvaluator;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

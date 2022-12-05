@@ -27,7 +27,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata.NGSecretManagerMetadataKeys;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 
 import software.wings.beans.BaseVaultConfig;

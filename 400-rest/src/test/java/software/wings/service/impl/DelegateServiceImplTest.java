@@ -106,7 +106,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.dto.RetryDelegate;
 import io.harness.service.impl.DelegateSyncServiceImpl;

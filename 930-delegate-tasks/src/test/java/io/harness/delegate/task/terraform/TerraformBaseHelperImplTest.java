@@ -67,7 +67,7 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.terraform.TerraformClientImpl;

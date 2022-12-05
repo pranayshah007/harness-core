@@ -27,7 +27,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.secrets.setupusage.builders.SettingAttributeSetupUsageBuilder;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;

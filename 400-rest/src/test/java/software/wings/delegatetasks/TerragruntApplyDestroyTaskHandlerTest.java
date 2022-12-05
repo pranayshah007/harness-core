@@ -30,9 +30,9 @@ import io.harness.cli.CliResponse;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.terragrunt.TerragruntCliCommandRequestParams;
 import io.harness.terragrunt.TerragruntClient;
 

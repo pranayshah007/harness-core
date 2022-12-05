@@ -25,8 +25,8 @@ import io.harness.encryption.SecretRefParsedData.SecretRefParsedDataBuilder;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.SecretManagementException;
 import io.harness.exception.UnsupportedOperationException;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.EnumSet;
 import java.util.Map;

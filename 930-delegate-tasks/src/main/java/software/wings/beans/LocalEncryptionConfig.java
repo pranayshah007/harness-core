@@ -12,7 +12,7 @@ import static io.harness.beans.SecretManagerCapabilities.CREATE_FILE_SECRET;
 import static io.harness.beans.SecretManagerCapabilities.CREATE_INLINE_SECRET;
 import static io.harness.helpers.GlobalSecretManagerUtils.isNgHarnessSecretManager;
 import static io.harness.mappers.SecretManagerConfigMapper.updateNGSecretManagerMetadata;
-import static io.harness.security.encryption.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
 
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.beans.SecretManagerConfig;
@@ -20,8 +20,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.secretmanagerclient.dto.LocalConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.google.common.collect.Lists;
 import java.util.Collections;

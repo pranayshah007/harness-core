@@ -36,8 +36,8 @@ import io.harness.delegatetasks.ValidateSecretReferenceTaskResponse;
 import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.NGAccess;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.service.intfc.DelegateService;
 

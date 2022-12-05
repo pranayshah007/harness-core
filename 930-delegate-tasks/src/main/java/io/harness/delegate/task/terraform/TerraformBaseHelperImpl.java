@@ -85,7 +85,7 @@ import io.harness.logging.PlanLogOutputStream;
 import io.harness.provision.TerraformPlanSummary;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 import io.harness.terraform.TerraformClient;

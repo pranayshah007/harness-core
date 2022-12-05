@@ -17,7 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

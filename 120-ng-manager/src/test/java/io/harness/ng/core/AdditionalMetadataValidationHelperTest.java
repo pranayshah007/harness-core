@@ -25,7 +25,7 @@ import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.ValueType;
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 
 import java.util.HashMap;
 import java.util.Map;

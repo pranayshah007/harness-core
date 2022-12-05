@@ -13,7 +13,7 @@ import io.harness.beans.EncryptedData;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.exception.SecretManagementException;
 import io.harness.rule.GraphQLWithWingsRule;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AccountStatus;
 import software.wings.beans.AccountType;

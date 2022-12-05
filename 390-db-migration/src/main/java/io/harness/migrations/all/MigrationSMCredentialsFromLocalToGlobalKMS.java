@@ -25,7 +25,7 @@ import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.app.MainConfiguration;
 import software.wings.dl.WingsPersistence;

@@ -49,8 +49,8 @@ import io.harness.secrets.setupusage.SecretSetupUsageService;
 import io.harness.secrets.setupusage.SecretSetupUsageServiceImpl;
 import io.harness.secrets.validation.SecretValidatorsRegistry;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.KmsConfig;

@@ -22,7 +22,7 @@ import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapa
 import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.dto.SettingAttribute;

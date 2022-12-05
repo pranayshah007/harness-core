@@ -14,15 +14,15 @@ import static io.harness.beans.SecretManagerCapabilities.CREATE_INLINE_SECRET;
 import static io.harness.beans.SecretManagerCapabilities.CREATE_REFERENCE_SECRET;
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_FROM_SM;
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerCapabilities;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.Attributes;

@@ -16,7 +16,7 @@ import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretMetadata;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.security.UsageRestrictions;
 

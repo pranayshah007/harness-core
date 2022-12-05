@@ -11,7 +11,7 @@ import static io.harness.ConnectorConstants.CONNECTOR_DECORATOR_SERVICE;
 import static io.harness.NGConstants.HARNESS_SECRET_MANAGER_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
-import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM_NG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorDTO;
@@ -29,7 +29,7 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.ng.SecretManagerConfigDTOMapper;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import software.wings.beans.CustomSecretNGManagerConfig;
 import software.wings.beans.NameValuePairWithDefault;

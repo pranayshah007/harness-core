@@ -14,8 +14,8 @@ import io.harness.beans.EncryptedData;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SecretUpdateData;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.Optional;
 import java.util.Set;

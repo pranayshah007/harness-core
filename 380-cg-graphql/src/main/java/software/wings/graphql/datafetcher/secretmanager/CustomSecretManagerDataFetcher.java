@@ -13,7 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.exception.InvalidRequestException;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import software.wings.graphql.datafetcher.secretManager.SecretManagerController;
 import software.wings.graphql.datafetcher.secretManager.SecretManagerMutationDataFetcher;

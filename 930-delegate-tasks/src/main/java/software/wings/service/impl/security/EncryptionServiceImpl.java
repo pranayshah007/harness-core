@@ -16,9 +16,9 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.reflection.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
-import static io.harness.security.encryption.SecretManagerType.CUSTOM;
-import static io.harness.security.encryption.SecretManagerType.KMS;
-import static io.harness.security.encryption.SecretManagerType.VAULT;
+import static io.harness.security.encryption.common.SecretManagerType.CUSTOM;
+import static io.harness.security.encryption.common.SecretManagerType.KMS;
+import static io.harness.security.encryption.common.SecretManagerType.VAULT;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -37,8 +37,8 @@ import io.harness.exception.SecretManagementException;
 import io.harness.secrets.SecretsDelegateCacheService;
 import io.harness.security.encryption.EncryptableSettingWithEncryptionDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.service.intfc.security.EncryptionService;

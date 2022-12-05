@@ -14,7 +14,7 @@ import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.persistence.HPersistence.upToOne;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
 
 import static software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript.ScriptType.BASH;
 import static software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript.ScriptType.POWERSHELL;
@@ -29,7 +29,7 @@ import io.harness.eraro.Level;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NoResultFoundException;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerShellScript;

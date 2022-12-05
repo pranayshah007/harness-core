@@ -10,10 +10,10 @@ package io.harness.secretmanagerclient.dto;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.settings.SettingVariableTypes;
 

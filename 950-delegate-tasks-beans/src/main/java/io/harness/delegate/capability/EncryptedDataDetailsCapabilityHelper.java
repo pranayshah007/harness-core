@@ -15,8 +15,8 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.ArrayList;
 import java.util.Collection;

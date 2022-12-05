@@ -27,8 +27,8 @@ import io.harness.encryption.Encrypted;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.secretmanagerclient.dto.GcpSecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptionType;
-import io.harness.security.encryption.SecretManagerType;
+import io.harness.security.encryption.common.EncryptionType;
+import io.harness.security.encryption.common.SecretManagerType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;

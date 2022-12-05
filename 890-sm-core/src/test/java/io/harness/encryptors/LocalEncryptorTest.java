@@ -16,7 +16,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 
 import software.wings.beans.LocalEncryptionConfig;
 

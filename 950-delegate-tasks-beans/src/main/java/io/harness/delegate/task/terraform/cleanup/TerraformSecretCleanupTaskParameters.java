@@ -16,7 +16,7 @@ import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.util.List;
 import lombok.Builder;

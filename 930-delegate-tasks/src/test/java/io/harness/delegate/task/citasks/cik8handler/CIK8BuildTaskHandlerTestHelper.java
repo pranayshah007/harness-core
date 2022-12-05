@@ -41,7 +41,7 @@ import io.harness.encryption.SecretRefHelper;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -29,7 +29,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1CapabilitiesBuilder;

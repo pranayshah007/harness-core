@@ -31,7 +31,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretsDao;
 import io.harness.secrets.validation.validators.VaultSecretManagerValidator;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import java.util.Optional;
 import org.assertj.core.util.Lists;

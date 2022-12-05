@@ -74,7 +74,7 @@ import io.harness.secretmanagerclient.dto.awskms.AwsKmsManualCredentialConfig.Aw
 import io.harness.secretmanagerclient.dto.awskms.BaseAwsKmsConfigDTO.BaseAwsKmsConfigDTOKeys;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

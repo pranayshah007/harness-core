@@ -24,7 +24,7 @@ import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMCredentialSpecCo
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMManualCredentialConfig;
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMStsCredentialConfig;
 import io.harness.secretmanagerclient.dto.awssecretmanager.BaseAwsSMConfigDTO;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import lombok.experimental.UtilityClass;
 

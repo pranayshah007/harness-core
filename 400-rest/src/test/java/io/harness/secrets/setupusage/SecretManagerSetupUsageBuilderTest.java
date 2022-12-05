@@ -8,7 +8,7 @@
 package io.harness.secrets.setupusage;
 
 import static io.harness.rule.OwnerRule.UTKARSH;
-import static io.harness.security.encryption.EncryptionType.KMS;
+import static io.harness.security.encryption.common.EncryptionType.KMS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -27,7 +27,7 @@ import io.harness.reflection.ReflectionUtils;
 import io.harness.rule.Owner;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.setupusage.builders.SecretManagerSetupUsageBuilder;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.SecretManagementTestHelper;
 import software.wings.WingsBaseTest;

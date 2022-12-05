@@ -35,8 +35,8 @@ import io.harness.exception.SecretManagementException;
 import io.harness.rule.Owner;
 import io.harness.secrets.SecretsDao;
 import io.harness.secrets.validation.validators.AwsSecretManagerValidator;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.stream.BoundedInputStream;
 
 import com.google.common.collect.Sets;

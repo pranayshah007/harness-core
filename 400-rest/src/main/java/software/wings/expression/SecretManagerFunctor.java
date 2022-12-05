@@ -37,8 +37,8 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.ServiceVariable;
 import software.wings.service.intfc.security.ManagerDecryptionService;

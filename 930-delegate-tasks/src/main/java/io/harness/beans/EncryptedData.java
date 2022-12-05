@@ -12,8 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.secretmanagerclient.NGEncryptedDataMetadata.NGEncryptedDataMetadataKeys;
 import static io.harness.secretmanagerclient.NGMetadata.NGMetadataKeys;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
 
 import static software.wings.ngmigration.NGMigrationEntityType.SECRET;
 
@@ -36,10 +36,10 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UpdatedByAware;
 import io.harness.persistence.UuidAware;
 import io.harness.secretmanagerclient.NGEncryptedDataMetadata;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedDataParams;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.validation.Update;
 
 import software.wings.ngmigration.CgBasicInfo;

@@ -24,7 +24,7 @@ import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.dto.CustomSecretManagerConfigDTO;
-import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.template.remote.TemplateResourceClient;
 
 import software.wings.beans.NameValuePairWithDefault;

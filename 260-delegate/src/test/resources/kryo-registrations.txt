@@ -153,7 +153,7 @@
 1409:io.harness.deployment.InstanceDetails.InstanceType
 1411:io.harness.deployment.InstanceDetails.PHYSICAL_HOST
 1412:io.harness.deployment.InstanceDetails.K8s
-1413:io.harness.security.encryption.EncryptedDataParams
+1413:io.harness.security.encryption.common.EncryptedDataParams
 1414:io.harness.azure.model.SubscriptionData
 1415:io.harness.azure.model.VirtualMachineScaleSetData
 1416:io.harness.deployment.InstanceDetails.AZURE_VMSS
@@ -307,7 +307,7 @@
 5119:software.wings.utils.FileType
 5121:software.wings.helpers.ext.jenkins.JobDetails
 5122:io.harness.delegate.beans.RemoteMethodReturnValueData
-5123:io.harness.security.encryption.EncryptionType
+5123:io.harness.security.encryption.common.EncryptionType
 5124:io.harness.beans.EncryptedData
 5125:io.harness.security.encryption.EncryptedDataDetail
 5131:software.wings.settings.SettingVariableTypes
@@ -440,7 +440,7 @@
 5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
 5303:software.wings.helpers.ext.mail.EmailData
 5304:software.wings.helpers.ext.mail.SmtpConfig
-5305:io.harness.security.encryption.EncryptionConfig
+5305:io.harness.security.encryption.common.EncryptionConfig
 5306:software.wings.helpers.ext.external.comm.CollaborationProviderRequest
 5307:software.wings.helpers.ext.external.comm.CollaborationProviderRequest.CommunicationType
 5308:software.wings.helpers.ext.external.comm.CollaborationProviderResponse
@@ -1835,7 +1835,7 @@
 71111:software.wings.helpers.ext.helm.response.HelmCollectChartResponse
 71123:java.time.ZonedDateTime
 72100:software.wings.beans.GcpSecretsManagerConfig
-72101:io.harness.security.encryption.AdditionalMetadata
+72101:io.harness.security.encryption.common.AdditionalMetadata
 73001:io.harness.gitpolling.github.GitPollingWebhookData
 73002:javax.ws.rs.core.MultivaluedHashMap
 73982:io.harness.delegate.beans.DelegateScope

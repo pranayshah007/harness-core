@@ -11,8 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretText;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;

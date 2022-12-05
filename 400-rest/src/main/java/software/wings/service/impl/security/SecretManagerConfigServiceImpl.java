@@ -18,8 +18,8 @@ import static io.harness.eraro.ErrorCode.UNSUPPORTED_OPERATION_EXCEPTION;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.persistence.HPersistence.returnNewOptions;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
 import static software.wings.beans.LocalEncryptionConfig.HARNESS_DEFAULT_SECRET_MANAGER;
@@ -37,7 +37,7 @@ import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secretmanagers.SecretsManagerRBACService;
 import io.harness.secrets.SecretService;
 import io.harness.secrets.SecretsDao;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
 
 import software.wings.beans.Account;

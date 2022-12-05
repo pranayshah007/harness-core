@@ -24,7 +24,7 @@ import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.rule.Owner;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.GcpKmsConfig;

@@ -31,7 +31,7 @@ import io.harness.exception.SecretManagementException;
 import io.harness.expression.SecretString;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.WingsBaseTest;
 import software.wings.alerts.AlertStatus;

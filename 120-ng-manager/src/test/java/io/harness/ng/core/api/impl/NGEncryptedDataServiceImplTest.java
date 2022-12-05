@@ -15,11 +15,11 @@ import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.common.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.common.EncryptionType.GCP_SECRETS_MANAGER;
+import static io.harness.security.encryption.common.EncryptionType.LOCAL;
+import static io.harness.security.encryption.common.EncryptionType.VAULT;
 
 import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
 
@@ -74,10 +74,10 @@ import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
-import io.harness.security.encryption.AdditionalMetadata;
+import io.harness.security.encryption.common.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.AzureVaultConfig;

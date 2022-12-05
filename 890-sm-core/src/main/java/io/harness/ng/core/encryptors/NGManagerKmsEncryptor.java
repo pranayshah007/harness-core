@@ -23,8 +23,8 @@ import io.harness.delegatetasks.ValidateSecretManagerConfigurationTaskParameters
 import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.encryptors.KmsEncryptor;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;

@@ -14,7 +14,7 @@ import io.harness.cdng.manifest.yaml.FileStorageStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;

@@ -12,12 +12,12 @@ import static io.harness.encryptors.Encryptors.CUSTOM_ENCRYPTOR;
 import static io.harness.encryptors.Encryptors.CUSTOM_ENCRYPTOR_NG;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.CUSTOM;
-import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM;
+import static io.harness.security.encryption.common.EncryptionType.CUSTOM_NG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;

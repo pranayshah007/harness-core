@@ -7,8 +7,8 @@
 
 package io.harness.ng.core.remote.deserialization;
 
-import io.harness.security.encryption.EncryptionConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.AzureVaultConfig;

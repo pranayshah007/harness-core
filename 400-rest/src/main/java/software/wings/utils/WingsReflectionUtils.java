@@ -16,7 +16,7 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretParentsUpdateDetail;
 import io.harness.encryption.Encryptable;
 import io.harness.reflection.ReflectionUtils;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.annotation.EncryptableSetting;
 

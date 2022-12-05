@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.security.UsageRestrictions;
 

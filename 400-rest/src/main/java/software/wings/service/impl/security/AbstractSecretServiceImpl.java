@@ -27,7 +27,7 @@ import io.harness.secretmanagerclient.NGEncryptedDataMetadata;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.secrets.SecretService;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;

@@ -12,9 +12,9 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.security.encryption.AdditionalMetadata;
-import io.harness.security.encryption.EncryptedRecord;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.AdditionalMetadata;
+import io.harness.security.encryption.common.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import java.util.List;
 import lombok.Builder;

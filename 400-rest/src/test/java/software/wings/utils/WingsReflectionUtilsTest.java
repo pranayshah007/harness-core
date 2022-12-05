@@ -26,7 +26,7 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretParentsUpdateDetail;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptionType;
+import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.settings.SettingVariableTypes;

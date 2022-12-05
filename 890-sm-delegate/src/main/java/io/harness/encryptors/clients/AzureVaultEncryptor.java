@@ -26,9 +26,9 @@ import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.AzureParsedSecretReference;
 import io.harness.helpers.ext.azure.KeyVaultAuthenticator;
-import io.harness.security.encryption.EncryptedRecord;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
-import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.AzureVaultConfig;
 
