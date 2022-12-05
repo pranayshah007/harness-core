@@ -1,7 +1,9 @@
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BASIC_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_ROLLBACK;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -36,11 +38,15 @@ public class TasRollbackStepPlanCreator extends CDPMSStepPlanCreatorV2<TasRollba
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, TasRollbackStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
-    String tasSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
-    String tasResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
+    String tasBGSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
     TasRollbackStepParameters tasRollbackStepParameters =
         (TasRollbackStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    tasRollbackStepParameters.setTasSetupFqn(tasSetupFqn);
+    tasRollbackStepParameters.setTasBGSetupFqn(tasBGSetupFqn);
+    String tasBasicSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BASIC_APP_SETUP);
+    tasRollbackStepParameters.setTasBasicSetupFqn(tasBasicSetupFqn);
+    String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
+    tasRollbackStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
+    String tasResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
     tasRollbackStepParameters.setTasResizeFqn(tasResizeFqn);
     return stepParameters;
   }

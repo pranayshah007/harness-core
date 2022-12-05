@@ -32,5 +32,7 @@ public class TasAppResizeBaseStepInfo {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-  @JsonIgnore String tasSetupFqn;
+  @JsonIgnore String tasBGSetupFqn;
+  @JsonIgnore String tasBasicSetupFqn;
+  @JsonIgnore String tasCanarySetupFqn;
 }

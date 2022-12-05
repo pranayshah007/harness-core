@@ -1,5 +1,7 @@
 package io.harness.cdng.creator.plan.steps;
 
+import static io.harness.cdng.visitor.YamlTypes.TAS_BASIC_APP_SETUP;
+import static io.harness.cdng.visitor.YamlTypes.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
@@ -36,10 +38,16 @@ public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwap
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, TasSwapRoutesStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
-    String tasSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
+    String tasBGSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
     TasSwapRoutesStepParameters tasSwapRoutesStepParameters =
         (TasSwapRoutesStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    tasSwapRoutesStepParameters.setTasSetupFqn(tasSetupFqn);
+    tasSwapRoutesStepParameters.setTasBGSetupFqn(tasBGSetupFqn);
+
+    String tasBasicSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BASIC_APP_SETUP);
+    tasSwapRoutesStepParameters.setTasBGSetupFqn(tasBasicSetupFqn);
+
+    String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
+    tasSwapRoutesStepParameters.setTasBGSetupFqn(tasCanarySetupFqn);
     return stepParameters;
   }
 }

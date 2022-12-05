@@ -20,8 +20,8 @@ import lombok.NoArgsConstructor;
 @RecasterAlias("io.harness.cdng.tas.TasRollbackStepParameters")
 public class TasRollbackStepParameters extends TasRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollbackStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn, String tasSetupFqn) {
-    super(delegateSelectors, tasRollbackFqn, tasSetupFqn);
+  public TasRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
+      String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn) {
+    super(delegateSelectors, tasRollbackFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
   }
 }

@@ -104,10 +104,10 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .build();
     }
     TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
-    OptionalSweepingOutput tasSetupDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasRollbackStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
-
+    OptionalSweepingOutput tasSetupDataOptional =
+        tasEntityHelper.getSetupOutcome(ambiance, tasRollbackStepParameters.getTasBGSetupFqn(),
+            tasRollbackStepParameters.getTasBasicSetupFqn(), tasRollbackStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(

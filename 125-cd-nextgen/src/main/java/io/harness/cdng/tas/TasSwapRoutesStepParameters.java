@@ -21,7 +21,8 @@ import lombok.NoArgsConstructor;
 public class TasSwapRoutesStepParameters extends TasSwapRoutesBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public TasSwapRoutesStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Boolean> downSizeOldApplication, String tasSetupFqn) {
-    super(delegateSelectors, downSizeOldApplication, tasSetupFqn);
+      ParameterField<Boolean> downSizeOldApplication, String tasBGSetupFqn, String tasBasicSetupFqn,
+      String tasCanarySetupFqn) {
+    super(delegateSelectors, downSizeOldApplication, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
   }
 }

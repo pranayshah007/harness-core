@@ -7,6 +7,7 @@ import static io.harness.exception.WingsException.USER;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -26,7 +27,9 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;

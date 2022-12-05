@@ -49,9 +49,10 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
 
   @Builder(builderMethodName = "infoBuilder")
   public TasAppResizeStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper olaAppInstances,
-      String tasAppResizeFqn) {
-    super(newAppInstances, olaAppInstances, delegateSelectors, tasAppResizeFqn);
+      TasInstanceSelectionWrapper newAppInstances, TasInstanceSelectionWrapper olaAppInstances, String tasBGAppSetupFqn,
+      String tasBasicAppSetupFqn, String tasCanaryAppSetupFqn) {
+    super(newAppInstances, olaAppInstances, delegateSelectors, tasBGAppSetupFqn, tasBasicAppSetupFqn,
+        tasBasicAppSetupFqn);
   }
   @Override
   public StepType getStepType() {
@@ -66,7 +67,9 @@ public class TasAppResizeStepInfo extends TasAppResizeBaseStepInfo implements CD
   @Override
   public SpecParameters getSpecParameters() {
     return TasAppResizeStepParameters.infoBuilder()
-        .tasAppResizeFqn(tasSetupFqn)
+        .tasBGAppSetupFqn(tasBGSetupFqn)
+        .tasBasicAppSetupFqn(tasBasicSetupFqn)
+        .tasCanaryAppSetupFqn(tasCanarySetupFqn)
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }

@@ -37,5 +37,7 @@ public class TasSwapRoutesBaseStepInfo {
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> downSizeOldApplication;
-  @JsonIgnore String tasSetupFqn;
+  @JsonIgnore String tasBGSetupFqn;
+  @JsonIgnore String tasBasicSetupFqn;
+  @JsonIgnore String tasCanarySetupFqn;
 }

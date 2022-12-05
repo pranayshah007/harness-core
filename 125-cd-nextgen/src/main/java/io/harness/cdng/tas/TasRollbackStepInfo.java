@@ -43,9 +43,9 @@ public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements CDSt
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public TasRollbackStepInfo(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn, String tasSetupFqn) {
-    super(delegateSelectors, tasRollbackFqn, tasSetupFqn);
+  public TasRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
+      String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn) {
+    super(delegateSelectors, tasRollbackFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
   }
 
   @Override
@@ -60,7 +60,12 @@ public class TasRollbackStepInfo extends TasRollbackBaseStepInfo implements CDSt
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasRollbackStepParameters.infoBuilder().delegateSelectors(this.delegateSelectors).build();
+    return TasRollbackStepParameters.infoBuilder()
+        .tasBasicSetupFqn(tasBasicSetupFqn)
+        .tasBGSetupFqn(tasBGSetupFqn)
+        .tasCanarySetupFqn(tasCanarySetupFqn)
+        .delegateSelectors(this.delegateSelectors)
+        .build();
   }
 
   @Override

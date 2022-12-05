@@ -2,6 +2,8 @@ package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.visitor.YamlTypes.K8S_BG_SWAP_SERVICES;
 import static io.harness.cdng.visitor.YamlTypes.K8S_BLUE_GREEN_DEPLOY;
+import static io.harness.cdng.visitor.YamlTypes.TAS_BASIC_APP_SETUP;
+import static io.harness.cdng.visitor.YamlTypes.TAS_CANARY_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 
@@ -38,10 +40,16 @@ public class TasAppResizeStepPlanCreator extends CDPMSStepPlanCreatorV2<TasAppRe
   @Override
   protected StepParameters getStepParameters(PlanCreationContext ctx, TasAppResizeStepNode stepElement) {
     final StepParameters stepParameters = super.getStepParameters(ctx, stepElement);
-    String tasSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
+    String tasBGSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BG_APP_SETUP);
     TasAppResizeStepParameters tasAppResizeStepParameters =
         (TasAppResizeStepParameters) ((StepElementParameters) stepParameters).getSpec();
-    tasAppResizeStepParameters.setTasSetupFqn(tasSetupFqn);
+    tasAppResizeStepParameters.setTasBGSetupFqn(tasBGSetupFqn);
+
+    String tasBasicSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BASIC_APP_SETUP);
+    tasAppResizeStepParameters.setTasBasicSetupFqn(tasBasicSetupFqn);
+
+    String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
+    tasAppResizeStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
     return stepParameters;
   }
 }

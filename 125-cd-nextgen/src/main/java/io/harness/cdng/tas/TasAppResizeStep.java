@@ -9,6 +9,8 @@ package io.harness.cdng.tas;
 
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -156,16 +158,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TasAppResizeStepParameters tasAppResizeStepParameters = (TasAppResizeStepParameters) stepParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(tasAppResizeStepParameters.getTasSetupFqn())) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
-          .build();
-    }
-
-    OptionalSweepingOutput tasSetupDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasAppResizeStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
+    OptionalSweepingOutput tasSetupDataOptional =
+        tasEntityHelper.getSetupOutcome(ambiance, tasAppResizeStepParameters.tasBGSetupFqn,
+            tasAppResizeStepParameters.getTasBasicSetupFqn(), tasAppResizeStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
 
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
@@ -173,7 +169,6 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
               SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
           .build();
     }
-
     Integer upsizeInstanceCount = tasAppResizeStepParameters.getNewAppInstances().getValue();
     Integer downsizeInstanceCount = tasAppResizeStepParameters.getOldAppInstances().getValue();
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();

@@ -28,5 +28,7 @@ public class TasRollbackBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @JsonIgnore String tasResizeFqn;
-  @JsonIgnore String tasSetupFqn;
+  @JsonIgnore String tasBGSetupFqn;
+  @JsonIgnore String tasBasicSetupFqn;
+  @JsonIgnore String tasCanarySetupFqn;
 }

@@ -17,8 +17,6 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.TasAppResizeDataOutcome;
-import io.harness.cdng.tas.TasRollbackStepParameters;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;

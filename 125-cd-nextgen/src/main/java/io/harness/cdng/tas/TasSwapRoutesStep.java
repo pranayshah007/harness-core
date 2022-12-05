@@ -107,9 +107,10 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     TasSwapRoutesStepParameters tasSwapRoutesStepParameters = (TasSwapRoutesStepParameters) stepParameters.getSpec();
-    OptionalSweepingOutput tasSetupDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasSwapRoutesStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
+    OptionalSweepingOutput tasSetupDataOptional =
+        tasEntityHelper.getSetupOutcome(ambiance, tasSwapRoutesStepParameters.getTasBGSetupFqn(),
+            tasSwapRoutesStepParameters.getTasBasicSetupFqn(), tasSwapRoutesStepParameters.getTasCanarySetupFqn(),
+            OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
 
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
@@ -139,7 +140,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
             .existingInActiveApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
-            .newApplicationName(getNewAppicationName(tasSetupDataOutcome))
+            .newApplicationName(getNewApplicationName(tasSetupDataOutcome))
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROUTES)
             .tasInfraConfig(tasInfraConfig)
             .timeoutIntervalInMin(10)
@@ -157,7 +158,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
         stepHelper.getEnvironmentType(ambiance));
   }
 
-  private String getNewAppicationName(TasSetupDataOutcome tasSetupDataOutcome) {
+  private String getNewApplicationName(TasSetupDataOutcome tasSetupDataOutcome) {
     if (tasSetupDataOutcome.getNewApplicationDetails() != null) {
       return tasSetupDataOutcome.getNewApplicationDetails().getApplicationName();
     }
