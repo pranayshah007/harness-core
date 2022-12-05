@@ -145,16 +145,16 @@ public class ConnectorPreflightHandler {
       String projectIdentifier, Map<Scope, List<String>> scopeToConnectorIdentifiers) {
     List<ConnectorResponseDTO> connectorResponses = new ArrayList<>();
     if (scopeToConnectorIdentifiers.containsKey(Scope.ACCOUNT)) {
-      connectorResponses =
-          getConnectorResponsesFromNgManager(accountIdentifier, null, null, scopeToConnectorIdentifiers, Scope.ACCOUNT);
+      connectorResponses.addAll(getConnectorResponsesFromNgManager(
+          accountIdentifier, null, null, scopeToConnectorIdentifiers, Scope.ACCOUNT));
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.ORG)) {
-      connectorResponses = getConnectorResponsesFromNgManager(
-          accountIdentifier, orgIdentifier, null, scopeToConnectorIdentifiers, Scope.ORG);
+      connectorResponses.addAll(getConnectorResponsesFromNgManager(
+          accountIdentifier, orgIdentifier, null, scopeToConnectorIdentifiers, Scope.ORG));
     }
     if (scopeToConnectorIdentifiers.containsKey(Scope.PROJECT)) {
-      connectorResponses = getConnectorResponsesFromNgManager(
-          accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers, Scope.PROJECT);
+      connectorResponses.addAll(getConnectorResponsesFromNgManager(
+          accountIdentifier, orgIdentifier, projectIdentifier, scopeToConnectorIdentifiers, Scope.PROJECT));
     }
     return connectorResponses;
   }
