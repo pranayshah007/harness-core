@@ -3124,7 +3124,7 @@ public class UserServiceImpl implements UserService {
       supportAccountList.addAll(accountList);
       if (isNotEmpty(restrictedAccountsIds)) {
         Set<Account> restrictedAccountsWithActiveAccessRequest =
-            getRestrictedAccountsWithActiveAccessRequest(restrictedAccountsIds, user);
+            getRestrictedAccountsWithActiveAccessRequest(restrictedAccountsIds, user.getUuid());
         if (isNotEmpty(restrictedAccountsWithActiveAccessRequest)) {
           restrictedAccountsWithActiveAccessRequest.forEach(account -> supportAccountList.add(account));
         }
@@ -3137,11 +3137,14 @@ public class UserServiceImpl implements UserService {
     if (isNotEmpty(userId) && isNotEmpty(accountId) && harnessUserGroupService.isHarnessSupportUser(userId)
         && !accountService.isHarnessSupportAccessDisabled(accountId)) {
       return true;
+    } else if (isNotEmpty(getRestrictedAccountsWithActiveAccessRequest(
+                   new HashSet<>(Collections.singleton(accountId)), userId))) {
+      return true;
     }
     return false;
   }
 
-  private Set<Account> getRestrictedAccountsWithActiveAccessRequest(Set<String> restrictedAccountIds, User user) {
+  private Set<Account> getRestrictedAccountsWithActiveAccessRequest(Set<String> restrictedAccountIds, String userId) {
     Set<Account> accountSet = new HashSet<>();
     restrictedAccountIds.forEach(restrictedAccountId -> {
       List<AccessRequest> accessRequestList =
@@ -3149,13 +3152,13 @@ public class UserServiceImpl implements UserService {
       if (isNotEmpty(accessRequestList)) {
         accessRequestList.forEach(accessRequest -> {
           if (AccessRequest.AccessType.MEMBER_ACCESS.equals(accessRequest.getAccessType())) {
-            if (isNotEmpty(accessRequest.getMemberIds()) && accessRequest.getMemberIds().contains(user.getUuid())) {
+            if (isNotEmpty(accessRequest.getMemberIds()) && accessRequest.getMemberIds().contains(userId)) {
               accountSet.add(accountService.get(restrictedAccountId));
             }
           } else {
             HarnessUserGroup harnessUserGroup = harnessUserGroupService.get(accessRequest.getHarnessUserGroupId());
             if (harnessUserGroup != null && isNotEmpty(harnessUserGroup.getMemberIds())
-                && harnessUserGroup.getMemberIds().contains(user.getUuid())) {
+                && harnessUserGroup.getMemberIds().contains(userId)) {
               accountSet.add(accountService.get(restrictedAccountId));
             }
           }
