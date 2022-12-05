@@ -7,15 +7,7 @@
 
 package io.harness.delegate.task.winrm;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.utils.NexusUtils.getBasicAuthHeader;
-import static io.harness.delegate.utils.NexusUtils.getNexusArtifactDelegateConfig;
-import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
-import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
-import static io.harness.exception.WingsException.USER;
-
-import static java.lang.String.format;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.task.nexus.NexusMapper;
 import io.harness.delegate.task.ssh.artifact.NexusArtifactDelegateConfig;
@@ -24,10 +16,16 @@ import io.harness.delegate.utils.NexusVersion;
 import io.harness.exception.InvalidRequestException;
 import io.harness.nexus.NexusRequest;
 import io.harness.shell.ScriptType;
-
-import com.google.inject.Inject;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.utils.NexusUtils.getBasicAuthHeader;
+import static io.harness.delegate.utils.NexusUtils.getNexusArtifactDelegateConfig;
+import static io.harness.delegate.utils.NexusUtils.getNexusArtifactFileName;
+import static io.harness.delegate.utils.NexusUtils.getNexusVersion;
+import static io.harness.exception.WingsException.USER;
+import static java.lang.String.format;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j

@@ -90,7 +90,7 @@ public class WinRmExecutorHelper {
   public static List<String> splitCommandForCopyingToRemoteFile(
       String command, String encodedScriptFile, String powershell, List<WinRmCommandParameter> commandParameters) {
     command = "$ErrorActionPreference='Stop'\n" + command;
-    String base64Command = encodeBase64(command.getBytes(StandardCharsets.UTF_16LE));
+    String base64Command = encodeBase64(command.getBytes(StandardCharsets.UTF_8));
     // write commands to a file and then execute the file
     String commandParametersString = buildCommandParameters(commandParameters);
 
@@ -116,12 +116,16 @@ public class WinRmExecutorHelper {
         + psExecutableFile + "\\\", \\\""
         + "try{`n"
         + "`t`$encoded = get-content " + encodedScriptFile + "`n"
-        + "`t`$decoded = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`t`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
         + "`tSet-Content -Path " + scriptExecutionFile + " -Value `$decoded -Encoding Unicode`n"
-        + "`tInvoke-Expression -Command " + scriptExecutionFile + "`n"
+        + "`t`$result = Invoke-Expression -Command " + scriptExecutionFile + "`n"
+        + "`tif((!`$result) -and (`$LastExitCode -ne `$null)) {`n"
+        + "`t`tWrite-Error `\\\"Execution returned status code `$LastExitCode`\\\"`n"
+        + "`t`texit 1`n"
+        + "`t}`n"
         + "}`ncatch`n{`n`tWrite-Error `$_;`n`texit 1`n}`n"
         + "finally`n{`n"
-        + "`tif (Test-Path " + scriptExecutionFile + ") {Remove-Item -Force -Path " + scriptExecutionFile + "}"
+        + "`tif (Test-Path " + scriptExecutionFile + ") {Remove-Item -Force -Path " + scriptExecutionFile + "}`n"
         + "`tif (Test-Path " + encodedScriptFile + ") {Remove-Item -Force -Path " + encodedScriptFile + "}`n}"
         + "\\\" ) }";
   }

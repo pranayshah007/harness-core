@@ -75,14 +75,16 @@ public class WinRmExecutorHelperTest extends CategoryTest {
         "powershell Invoke-Command  -command {[IO.File]::AppendAllText(\\\"psScriptFile\\\", \\\""
         + "try{`n"
         + "`t`$encoded = get-content encodedScriptFilePath`n"
-        + "`t`$decoded = [System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String(`$encoded));`n"
+        + "`t`$decoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String(`$encoded));`n"
         + "`tSet-Content -Path executableFile -Value `$decoded -Encoding Unicode`n"
-        + "`tInvoke-Expression -Command executableFile`n}`n"
-        + "catch`n{`n"
-        + "`tWrite-Error `$_;`n"
-        + "`texit 1`n}`n"
+        + "`t`$result = Invoke-Expression -Command executableFile`n"
+        + "`tif((!`$result) -and (`$LastExitCode -ne `$null)) {`n"
+        + "`t`tWrite-Error `\\\"Execution returned status code `$LastExitCode`\\\"`n"
+        + "`t`texit 1`n"
+        + "`t}`n"
+        + "}`ncatch`n{`n`tWrite-Error `$_;`n`texit 1`n}`n"
         + "finally`n{`n"
-        + "`tif (Test-Path executableFile) {Remove-Item -Force -Path executableFile}"
+        + "`tif (Test-Path executableFile) {Remove-Item -Force -Path executableFile}`n"
         + "`tif (Test-Path encodedScriptFilePath) {Remove-Item -Force -Path encodedScriptFilePath}`n}\\\" ) }");
   }
 
