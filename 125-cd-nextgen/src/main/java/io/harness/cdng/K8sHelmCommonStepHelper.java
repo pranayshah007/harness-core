@@ -585,7 +585,8 @@ public class K8sHelmCommonStepHelper {
             .useCache(helmVersion != HelmVersion.V2
                 && !cdFeatureFlagHelper.isEnabled(
                     AmbianceUtils.getAccountId(ambiance), FeatureName.DISABLE_HELM_REPO_YAML_CACHE))
-            .checkIncorrectChartVersion(true)
+            .checkIncorrectChartVersion(cdFeatureFlagHelper.isEnabled(
+                AmbianceUtils.getAccountId(ambiance), FeatureName.HELM_CHART_VERSION_STRICT_MATCH))
             .useRepoFlags(helmVersion != HelmVersion.V2)
             .deleteRepoCacheDir(helmVersion != HelmVersion.V2)
             .build();
