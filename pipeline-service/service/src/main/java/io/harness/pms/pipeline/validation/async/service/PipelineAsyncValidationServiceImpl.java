@@ -10,20 +10,27 @@ package io.harness.pms.pipeline.validation.async.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
 import io.harness.pms.pipeline.validation.async.beans.ValidationResult;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
+import io.harness.pms.pipeline.validation.async.handler.PipelineAsyncValidationHandler;
+import io.harness.pms.pipeline.validation.async.helper.PipelineAsyncValidationHelper;
 import io.harness.repositories.pipeline.validation.async.PipelineValidationEventRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.model.ValidationAction;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
@@ -31,20 +38,38 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidationService {
   PipelineValidationEventRepository pipelineValidationEventRepository;
+  final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
 
   @Override
-  public PipelineValidationEvent startEvent(
-      PipelineEntity entity, String branch, ValidationAction action, ValidationParams params) {
-    return null;
+  public PipelineValidationEvent startEvent(PipelineEntity entity, String branch, Action action) {
+    String fqn = PipelineAsyncValidationHelper.buildFQN(entity, branch);
+    PipelineValidationEvent pipelineValidationEvent =
+        PipelineValidationEvent.builder()
+            .status(ValidationStatus.INITIATED)
+            .fqn(fqn)
+            .action(action)
+            .params(ValidationParams.builder().pipelineEntity(entity).build())
+            .result(ValidationResult.builder().build())
+            .build();
+    PipelineValidationEvent savedPipelineValidationEvent =
+        pipelineValidationEventRepository.save(pipelineValidationEvent);
+
+    executorService.submit(PipelineAsyncValidationHandler.builder()
+                               .validationEvent(savedPipelineValidationEvent)
+                               .validationService(this)
+                               .build());
+    return savedPipelineValidationEvent;
   }
 
   @Override
   public PipelineValidationEvent updateEvent(String uuid, ValidationStatus status, ValidationResult result) {
-    return null;
+    Criteria criteria = PipelineAsyncValidationHelper.getCriteriaForUpdate(uuid);
+    Update updateOperations = PipelineAsyncValidationHelper.getUpdateOperations(status, result);
+    return pipelineValidationEventRepository.update(criteria, updateOperations);
   }
 
   @Override
-  public Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, ValidationAction action) {
+  public Optional<PipelineValidationEvent> getLatestEventByFQNAndAction(String fqn, Action action) {
     return pipelineValidationEventRepository.findByFqnAndAction(fqn, action);
   }
 

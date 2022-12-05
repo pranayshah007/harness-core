@@ -233,7 +233,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     final GitFileDetailsBuilder gitFileDetails = getGitFileDetails(infoForPush.getAccountId(), infoForPush.getYaml(),
         infoForPush.getFilePath(), infoForPush.getFolderPath(), infoForPush.getCommitMsg(), infoForPush.getBranch(),
         SCMType.fromConnectorType(infoForPush.getScmConnector().getConnectorType()), infoForPush.getCommitId());
-    return scmClient.createFile(decryptedConnector, gitFileDetails.build());
+    return scmClient.createFile(decryptedConnector, gitFileDetails.build(), false);
   }
 
   @Override
@@ -247,7 +247,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         infoForPush.getFilePath(), infoForPush.getFolderPath(), infoForPush.getCommitMsg(), infoForPush.getBranch(),
         SCMType.fromConnectorType(infoForPush.getScmConnector().getConnectorType()), infoForPush.getCommitId());
     gitFileDetails.oldFileSha(infoForPush.getOldFileSha());
-    return scmClient.updateFile(decryptedConnector, gitFileDetails.build());
+    return scmClient.updateFile(decryptedConnector, gitFileDetails.build(), false);
   }
 
   @Override
@@ -336,7 +336,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
             scope.getProjectIdentifier(), createGitFileRequestDTO.getScmConnector());
     GitFileDetails gitFileDetails = getGitFileDetails(createGitFileRequestDTO);
-    return scmClient.createFile(decryptedConnector, gitFileDetails);
+    return scmClient.createFile(decryptedConnector, gitFileDetails, createGitFileRequestDTO.isUseGitClient());
   }
 
   @Override
@@ -346,7 +346,7 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         gitSyncConnectorHelper.getDecryptedConnectorForNewGitX(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
             scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
     GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
-    return scmClient.updateFile(decryptedConnector, gitFileDetails);
+    return scmClient.updateFile(decryptedConnector, gitFileDetails, updateGitFileRequestDTO.isUseGitClient());
   }
 
   @Override

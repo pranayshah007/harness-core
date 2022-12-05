@@ -13,6 +13,7 @@ package io.harness.timescaledb;
 import io.harness.timescaledb.tables.CeRecommendations;
 import io.harness.timescaledb.tables.NodeInfo;
 import io.harness.timescaledb.tables.NodePoolAggregated;
+import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
@@ -22,6 +23,7 @@ import io.harness.timescaledb.tables.records.NodeInfoRecord;
 import io.harness.timescaledb.tables.records.NodePoolAggregatedRecord;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCdRecord;
 import io.harness.timescaledb.tables.records.PipelineExecutionSummaryCiRecord;
+import io.harness.timescaledb.tables.records.PipelineExecutionSummaryRecord;
 import io.harness.timescaledb.tables.records.ServiceInfraInfoRecord;
 import io.harness.timescaledb.tables.records.WorkloadInfoRecord;
 
@@ -53,6 +55,13 @@ public class Keys {
           new TableField[] {NodePoolAggregated.NODE_POOL_AGGREGATED.ACCOUNTID,
               NodePoolAggregated.NODE_POOL_AGGREGATED.CLUSTERID, NodePoolAggregated.NODE_POOL_AGGREGATED.NAME,
               NodePoolAggregated.NODE_POOL_AGGREGATED.STARTTIME, NodePoolAggregated.NODE_POOL_AGGREGATED.ENDTIME},
+          true);
+
+  public static final UniqueKey<PipelineExecutionSummaryRecord> PIPELINE_EXECUTION_SUMMARY_PKEY =
+      Internal.createUniqueKey(PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY,
+          DSL.name("pipeline_execution_summary_pkey"),
+          new TableField[] {PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY.ID,
+              PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY.STARTTS},
           true);
   public static final UniqueKey<PipelineExecutionSummaryCdRecord> PIPELINE_EXECUTION_SUMMARY_CD_PKEY =
       Internal.createUniqueKey(PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,

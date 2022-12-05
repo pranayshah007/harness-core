@@ -38,8 +38,13 @@ import io.harness.delegate.beans.secrets.BaseConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
+import io.harness.exception.DelegateNotAvailableException;
+import io.harness.exception.DelegateServiceDriverException;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.WingsException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.activityhistory.NGActivityType;
 import io.harness.ng.core.api.NGSecretActivityService;
@@ -302,14 +307,25 @@ public class NGSecretServiceV2Impl implements NGSecretServiceV2 {
             .executionTimeout(Duration.ofSeconds(45));
 
     DelegateTaskRequest delegateTaskRequest = delegateTaskRequestBuilder.build();
-    DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
-    if (delegateResponseData instanceof RemoteMethodReturnValueData) {
-      return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
-    } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
-      return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
+    try {
+      DelegateResponseData delegateResponseData = this.delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
+      if (delegateResponseData instanceof RemoteMethodReturnValueData) {
+        return buildRemoteMethodResponse((RemoteMethodReturnValueData) delegateResponseData);
+      } else if (delegateResponseData instanceof SSHConfigValidationTaskResponse) {
+        return buildBaseConfigValidationTaskResponse((SSHConfigValidationTaskResponse) delegateResponseData);
+      }
+    } catch (DelegateServiceDriverException ex) {
+      log.error("Exception while validating ssh secret", ex);
+      throw buildDelegateNotAvailableHintException("Delegates are not available for performing operation.");
     }
 
     return buildFailedValidationResult();
+  }
+
+  private HintException buildDelegateNotAvailableHintException(String delegateDownErrorMessage) {
+    return new HintException(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
+        new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
   }
 
   private SecretValidationResultDTO validateSecretWinRmCredentials(String accountIdentifier, String orgIdentifier,

@@ -196,7 +196,6 @@ import software.wings.beans.Schema;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SystemCatalog;
 import software.wings.beans.TerraformInfrastructureProvisioner;
@@ -863,7 +862,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(MigratedAccountTracker.class);
     set.add(YamlGitConfig.class);
     set.add(SettingAttribute.class);
-    set.add(ServiceVariable.class);
   }
 
   @Override

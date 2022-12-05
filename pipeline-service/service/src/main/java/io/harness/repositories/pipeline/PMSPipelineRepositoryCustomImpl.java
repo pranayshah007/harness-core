@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -177,7 +178,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     Optional<PipelineMetadataV2> metadataOptional =
         pipelineMetadataService.getMetadata(savedEntity.getAccountIdentifier(), savedEntity.getOrgIdentifier(),
             savedEntity.getProjectIdentifier(), savedEntity.getIdentifier());
-    if (!metadataOptional.isPresent()) {
+    if (metadataOptional.isEmpty()) {
       PipelineMetadataV2 metadata =
           PipelineMetadataV2.builder()
               .accountIdentifier(savedEntity.getAccountIdentifier())
@@ -203,10 +204,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   public Optional<PipelineEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
-    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
-        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
-    Query query = new Query(criteria);
-    PipelineEntity savedEntity = mongoTemplate.findOne(query, PipelineEntity.class);
+    PipelineEntity savedEntity =
+        getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted, getMetadataOnly);
     if (savedEntity == null) {
       return Optional.empty();
     }
@@ -225,6 +224,19 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       }
     }
     return Optional.of(savedEntity);
+  }
+
+  private PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, boolean notDeleted, boolean metadataOnly) {
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
+    Query query = new Query(criteria);
+    if (metadataOnly) {
+      for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+        query.fields().exclude(nonMetadataField);
+      }
+    }
+    return mongoTemplate.findOne(query, PipelineEntity.class);
   }
 
   PipelineEntity fetchRemoteEntityWithFallBackBranch(String accountIdentifier, String orgIdentifier,
@@ -267,6 +279,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
             .loadFromCache(loadFromCache)
+            .entityType(EntityType.PIPELINES)
             .build(),
         Collections.emptyMap());
   }

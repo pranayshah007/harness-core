@@ -86,6 +86,14 @@ public class EcsStepHelperImpl implements EcsStepHelper {
   }
 
   @Override
+  public ManifestOutcome getEcsRunTaskRequestDefinitionManifestOutcome(Collection<ManifestOutcome> manifestOutcomes) {
+    return manifestOutcomes.stream()
+        .filter(manifestOutcome -> ManifestType.EcsRunTaskRequestDefinition.equals(manifestOutcome.getType()))
+        .collect(Collectors.toList())
+        .get(0);
+  }
+
+  @Override
   public List<ManifestOutcome> getManifestOutcomesByType(
       Collection<ManifestOutcome> manifestOutcomes, String manifestType) {
     return manifestOutcomes.stream()

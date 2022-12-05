@@ -1,3 +1,7 @@
+# Copyright 2021 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 server:
   applicationConnectors:
     - type: https
@@ -69,6 +73,7 @@ harness-mongo:
   uri: mongodb://localhost:27017/harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 50
   aliasDBName: harness
@@ -76,6 +81,7 @@ cimanager-mongo:
   uri: mongodb://localhost:27017/harnessci
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -84,6 +90,7 @@ pmsMongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -130,10 +137,20 @@ ciExecutionServiceConfig:
   defaultMemoryLimit: 500
   defaultCPULimit: 400
   defaultInternalImageConnector: ''
+  executionLimits:
+    free:
+      defaultTotalExecutionCount: 20
+      defaultMacExecutionCount: 5
+    team:
+      defaultTotalExecutionCount: 50
+      defaultMacExecutionCount: 10
+    enterprise:
+      defaultTotalExecutionCount: 100
+      defaultMacExecutionCount: 10      
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.19
-  liteEngineImage: harness/ci-lite-engine:1.14.22
+  addonImage: harness/ci-addon:1.16.0
+  liteEngineImage: harness/ci-lite-engine:1.16.0
   isLocal: false
   cacheIntelligenceConfig:
     bucket: "gcp_bucket"
@@ -142,7 +159,7 @@ ciExecutionServiceConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.2.4-rootless
+      image: harness/drone-git:1.2.5-rootless
       entrypoint:
         - /usr/local/bin/clone
       windowsEntrypoint:
@@ -202,7 +219,7 @@ ciExecutionServiceConfig:
         - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.2.4
+      gitClone: harness/drone-git:1.2.5
       buildAndPushDockerRegistry: plugins/docker:20.13.0
       buildAndPushACR: plugins/acr:20.13.0
       buildAndPushECR: plugins/ecr:20.13.0

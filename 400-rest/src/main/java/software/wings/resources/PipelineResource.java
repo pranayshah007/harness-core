@@ -17,6 +17,7 @@ import static io.harness.eraro.ErrorCode.DUPLICATE_STATE_NAMES;
 import static io.harness.exception.WingsException.ReportTarget.LOG_SYSTEM;
 
 import static software.wings.security.PermissionAttribute.PermissionType.LOGGED_IN;
+import static software.wings.security.PermissionAttribute.PermissionType.PIPELINE;
 import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,7 +31,6 @@ import software.wings.beans.EntityType;
 import software.wings.beans.FailureStrategy;
 import software.wings.beans.Pipeline;
 import software.wings.security.PermissionAttribute.Action;
-import software.wings.security.PermissionAttribute.PermissionType;
 import software.wings.security.annotations.ApiKeyAuthorized;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
@@ -66,7 +66,7 @@ import javax.ws.rs.QueryParam;
 @Path("/pipelines")
 @Produces("application/json")
 @Scope(APPLICATION)
-@AuthRule(permissionType = PermissionType.PIPELINE)
+@AuthRule(permissionType = PIPELINE)
 @OwnedBy(HarnessTeam.CDC)
 public class PipelineResource {
   private WorkflowService workflowService;
@@ -90,7 +90,7 @@ public class PipelineResource {
   @GET
   @Timed
   @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = PIPELINE, action = Action.READ)
   public RestResponse<PageResponse<Pipeline>> list(@QueryParam("appId") List<String> appIds,
       @BeanParam PageRequest<Pipeline> pageRequest,
       @QueryParam("previousExecutionsCount") Integer previousExecutionsCount,
@@ -115,7 +115,7 @@ public class PipelineResource {
   @Path("{pipelineId}")
   @Timed
   @ExceptionMetered
-  @ApiKeyAuthorized(permissionType = LOGGED_IN)
+  @ApiKeyAuthorized(permissionType = PIPELINE, action = Action.READ)
   public RestResponse<Pipeline> read(@QueryParam("appId") String appId, @PathParam("pipelineId") String pipelineId,
       @QueryParam("withServices") boolean withServices,
       @QueryParam("withVariables") @DefaultValue("false") boolean withVariables) {

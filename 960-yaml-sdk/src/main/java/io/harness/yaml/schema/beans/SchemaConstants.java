@@ -8,8 +8,8 @@
 package io.harness.yaml.schema.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START_ESC;
 
 import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(DX)

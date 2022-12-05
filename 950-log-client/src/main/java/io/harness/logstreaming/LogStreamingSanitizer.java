@@ -7,11 +7,12 @@
 
 package io.harness.logstreaming;
 
-import static io.harness.NGConstants.JWT_REGEX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 
 import static org.apache.commons.lang3.StringUtils.replaceEach;
+
+import io.harness.logging.LogSanitizerHelper;
 
 import java.util.ArrayList;
 import java.util.Set;
@@ -20,7 +21,6 @@ import lombok.Builder;
 @Builder
 public class LogStreamingSanitizer {
   private final Set<String> secrets;
-
   public void sanitizeLogMessage(LogLine logLine) {
     String sanitizedLogMessage = logLine.getMessage();
     if (!isEmpty(secrets)) {
@@ -37,13 +37,9 @@ public class LogStreamingSanitizer {
     }
 
     // JWT mask
-    sanitizedLogMessage = sanitizeRegex(sanitizedLogMessage, JWT_REGEX);
+    sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
 
     logLine.setMessage(sanitizedLogMessage);
-  }
-
-  private String sanitizeRegex(String message, String regex) {
-    return message.replaceAll(regex, SECRET_MASK);
   }
 
   private void addSecretMasksWithQuotesRemoved(

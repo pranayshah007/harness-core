@@ -15,7 +15,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -137,7 +136,7 @@ public class AuditHeader extends Base implements AccountAccess {
   @Getter @Setter private HashMap<String, Object> details;
 
   // For Audit Headers created by Git user actions
-  @Getter @Setter @FdIndex private String accountId;
+  @Getter @Setter private String accountId;
   @Getter @Setter private GitAuditDetails gitAuditDetails;
   @Getter @Setter private List<EntityAuditRecord> entityAuditRecords;
   @Getter @Setter private ApiKeyAuditDetails apiKeyAuditDetails;

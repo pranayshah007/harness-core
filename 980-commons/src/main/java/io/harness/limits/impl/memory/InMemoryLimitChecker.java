@@ -10,8 +10,8 @@ package io.harness.limits.impl.memory;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.limits.checkers.StaticLimitChecker;
 import io.harness.limits.lib.StaticLimit;
-import io.harness.limits.lib.StaticLimitChecker;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;

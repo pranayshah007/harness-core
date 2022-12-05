@@ -243,16 +243,12 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .build()));
 
     String infrastructureKind = infrastructureOutcome.getKind();
-    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-          ambiance, executionInfoKey, infrastructureKind);
-      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
-        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
-            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
-      }
-    }
+    ExecutionInfoKey executionInfoKey =
+        ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
     saveExecutionLog(
         logCallback, color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -304,6 +300,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
+
+    saveExecutionLog(logCallback,
+        "Environment Name: " + environmentOutcome.getName() + " , Identifier: " + environmentOutcome.getIdentifier());
+
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 

@@ -152,8 +152,8 @@ public class ExecutionHelper {
       return triggerInfoBuilder.setIsRerun(false).build();
     }
 
-    PlanExecution originalPlanExecution = planExecutionService.get(originalExecutionId);
-    ExecutionTriggerInfo originalTriggerInfo = originalPlanExecution.getMetadata().getTriggerInfo();
+    ExecutionMetadata metadata = planExecutionService.getExecutionMetadataFromPlanExecution(originalExecutionId);
+    ExecutionTriggerInfo originalTriggerInfo = metadata.getTriggerInfo();
     RerunInfo.Builder rerunInfoBuilder = RerunInfo.newBuilder()
                                              .setPrevExecutionId(originalExecutionId)
                                              .setPrevTriggerType(originalTriggerInfo.getTriggerType());

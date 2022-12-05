@@ -720,7 +720,7 @@ public class YamlSchemaGenerator {
     final String fieldName = fieldSubtypeData.getFieldName();
     final ObjectNode fieldNode = (ObjectNode) propertiesNodeFromDefinitionNode.get(fieldName);
     if (fieldNode == null) {
-      log.error("We can have some error in schema of node {} with {}.", fieldName, fieldSubtypeData);
+      log.warn("We can have some error in schema of node {} with {}.", fieldName, fieldSubtypeData);
       return;
     }
     if (fieldNode.get(ONE_OF_NODE) != null) {

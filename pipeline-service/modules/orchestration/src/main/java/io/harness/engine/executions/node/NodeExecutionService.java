@@ -18,6 +18,7 @@ import io.harness.pms.contracts.execution.Status;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -99,6 +100,8 @@ public interface NodeExecutionService {
   NodeExecution updateStatusWithUpdate(
       @NonNull String nodeExecutionId, @NonNull Status targetStatus, Update ops, EnumSet<Status> overrideStatusSet);
 
+  List<NodeExecution> saveAll(Collection<NodeExecution> nodeExecutions);
+
   NodeExecution save(NodeExecution nodeExecution);
 
   NodeExecution updateStatusWithUpdate(@NotNull String nodeExecutionId, @NotNull Status status, Update ops,
@@ -119,6 +122,7 @@ public interface NodeExecutionService {
   Optional<NodeExecution> getByNodeIdentifier(@NonNull String nodeIdentifier, @NonNull String planExecutionId);
 
   Optional<NodeExecution> getPipelineNodeExecution(@NonNull String planExecutionId);
+  Optional<NodeExecution> getPipelineNodeExecutionWithProjections(@NonNull String planExecutionId, Set<String> fields);
 
   long findCountByParentIdAndStatusIn(String parentId, Set<Status> flowingStatuses);
 

@@ -38,6 +38,7 @@ import io.harness.waiter.WaitInstanceTimeoutCallback;
 
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
 import java.time.Duration;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class SpringPersistenceWrapper implements PersistenceWrapper {
   @Inject private MongoTemplate mongoTemplate;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private TimeoutEngine timeoutEngine;
   @Inject private TransactionTemplate transactionTemplate;
 
@@ -115,8 +117,10 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
         isError = true;
       }
       if (notifyResponse.getResponseData() != null) {
-        responseMap.put(
-            notifyResponse.getUuid(), (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+        responseMap.put(notifyResponse.getUuid(),
+            notifyResponse.isUsingKryoWithoutReference()
+                ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(notifyResponse.getResponseData())
+                : (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
       }
     }
     return ProcessedMessageResponse.builder().isError(isError).responseDataMap(responseMap).build();

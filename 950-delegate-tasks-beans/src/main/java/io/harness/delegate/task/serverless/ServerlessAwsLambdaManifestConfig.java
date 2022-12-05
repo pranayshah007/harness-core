@@ -10,6 +10,7 @@ package io.harness.delegate.task.serverless;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 
@@ -23,6 +24,7 @@ public class ServerlessAwsLambdaManifestConfig implements ServerlessManifestConf
   @NonFinal @Expression(ALLOW_SECRETS) String manifestPath;
   @NonFinal @Expression(ALLOW_SECRETS) String configOverridePath;
   GitStoreDelegateConfig gitStoreDelegateConfig;
+  S3StoreDelegateConfig s3StoreDelegateConfig;
 
   @Override
   public ServerlessManifestType getServerlessManifestType() {

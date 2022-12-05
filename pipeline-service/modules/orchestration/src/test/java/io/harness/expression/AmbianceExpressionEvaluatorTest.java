@@ -29,6 +29,7 @@ import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
 import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.exception.UnresolvedExpressionsException;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -76,7 +77,7 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
 
   @Before
   public void setup() {
-    when(planExecutionService.get(anyString())).thenReturn(null);
+    when(planExecutionService.getPlanExecutionMetadata(anyString())).thenReturn(null);
   }
 
   @Test

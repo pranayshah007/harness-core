@@ -77,7 +77,7 @@ public class GitCommit
 
   @org.springframework.data.annotation.Id @org.mongodb.morphia.annotations.Id private String uuid;
   private String accountIdentifier;
-  @FdIndex private String commitId;
+  private String commitId;
   @FdIndex private GitCommitProcessingStatus status;
   private FailureReason failureReason;
   private GitFileProcessingSummary fileProcessingSummary;

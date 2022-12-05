@@ -39,7 +39,7 @@ public class EnvironmentsYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private String uuid;
+  String uuid;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)

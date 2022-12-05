@@ -16,7 +16,6 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -42,6 +41,7 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -90,6 +90,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock PMSPipelineService pipelineService;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock InputSetsApiUtils inputSetsApiUtils;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -122,8 +123,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetResourcePMSImpl =
-        new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper);
+    inputSetResourcePMSImpl = new InputSetResourcePMSImpl(
+        pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper, inputSetsApiUtils);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -373,9 +374,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
-    doReturn(Optional.of(pipelineEntity))
-        .when(pipelineService)
-        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), eq(false));
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
@@ -403,9 +404,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
-    doReturn(Optional.of(pipelineEntity))
-        .when(pipelineService)
-        .getAndValidatePipeline(anyString(), anyString(), anyString(), anyString(), eq(false));
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);

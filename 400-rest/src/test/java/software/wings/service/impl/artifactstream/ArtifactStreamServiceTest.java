@@ -4086,7 +4086,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
         .isEqualTo("io.harness.test");
     assertThat(savedArtifactSteam.fetchArtifactStreamAttributes(featureFlagService).getArtifactName())
         .isEqualTo("${path}");
-    assertThat(savedArtifactSteam.getCollectionStatus()).isEqualTo(UNSTABLE.name());
+    assertThat(savedArtifactSteam.getCollectionStatus()).isEqualTo(STOPPED.name());
     return savedArtifactSteam;
   }
 
@@ -4121,7 +4121,6 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
     verify(appService, times(2)).getAccountIdByAppId(APP_ID);
     verify(yamlPushService, times(2))
         .pushYamlChangeSet(any(String.class), any(), any(ArtifactStream.class), any(), anyBoolean(), anyBoolean());
-    verify(artifactService).deleteByArtifactStreamId(APP_ID, savedArtifactSteam.getUuid());
     verify(triggerService).updateByArtifactStream(savedArtifactSteam.getUuid());
   }
 
@@ -4143,7 +4142,7 @@ public class ArtifactStreamServiceTest extends WingsBaseTest {
     assertThat(updatedArtifactStream).isInstanceOf(NexusArtifactStream.class);
     assertThat(updatedArtifactStream.fetchArtifactStreamAttributes(featureFlagService).getArtifactStreamType())
         .isEqualTo(NEXUS.name());
-    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(UNSTABLE.name());
+    assertThat(updatedArtifactStream.getCollectionStatus()).isEqualTo(STOPPED.name());
     assertThat(updatedArtifactStream.isArtifactStreamParameterized()).isEqualTo(true);
     NexusArtifactStream updatedNexusArtifactStream = savedArtifactSteam;
     assertThat(updatedNexusArtifactStream.getArtifactPaths()).contains("${folder}/${path}");

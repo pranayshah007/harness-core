@@ -24,4 +24,5 @@ public interface InfrastructureKind {
   String GITOPS = "GitOps";
   String CUSTOM_DEPLOYMENT = "CustomDeployment";
   String ELASTIGROUP = "Elastigroup";
+  String TAS = "TAS";
 }

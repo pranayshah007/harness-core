@@ -210,7 +210,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     Optional<PipelineEntity> sourcePipelineEntity =
         getPipeline(accountId, clonePipelineDTO.getSourceConfig().getOrgIdentifier(),
             clonePipelineDTO.getSourceConfig().getProjectIdentifier(),
-            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false, true);
+            clonePipelineDTO.getSourceConfig().getPipelineIdentifier(), false, false);
 
     if (sourcePipelineEntity.isEmpty()) {
       log.error(String.format("Pipeline with id [%s] in org [%s] in project [%s] is not present or deleted",

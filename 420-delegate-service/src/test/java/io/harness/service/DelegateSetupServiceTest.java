@@ -13,6 +13,7 @@ import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIR
 import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.NICOLAS;
 import static io.harness.rule.OwnerRule.VLAD;
@@ -237,6 +238,38 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
                           .build());
       }
     }
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testDeleteByAccountForDelegateGroups() {
+    String accountId = generateUuid();
+    String delegateProfileId = generateUuid();
+
+    when(delegateCache.getDelegateProfile(accountId, delegateProfileId))
+        .thenReturn(DelegateProfile.builder().name("profile").selectors(ImmutableList.of("s1", "s2")).build());
+
+    DelegateSizeDetails grp1SizeDetails =
+        DelegateSizeDetails.builder().size(DelegateSize.LARGE).cpu(2.5d).label("size").ram(2048).replicas(2).build();
+
+    DelegateGroup delegateGroup1 = DelegateGroup.builder()
+                                       .name("grp1")
+                                       .accountId(accountId)
+                                       .ng(true)
+                                       .delegateType(KUBERNETES)
+                                       .description("description")
+                                       .sizeDetails(grp1SizeDetails)
+                                       .delegateConfigurationId(delegateProfileId)
+                                       .tags(ImmutableSet.of("custom-grp-tag"))
+                                       .build();
+    when(delegateCache.getDelegateGroup(accountId, delegateGroup1.getUuid())).thenReturn(delegateGroup1);
+    persistence.save(delegateGroup1);
+    DelegateGroupListing delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(1);
+    delegateSetupService.deleteByAccountId(accountId);
+    delegateGroupListing = delegateSetupService.listDelegateGroupDetails(accountId, null, null);
+    assertThat(delegateGroupListing.getDelegateGroupDetails().size()).isEqualTo(0);
   }
 
   @Test

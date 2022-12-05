@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.execution;
 
 import static io.harness.pms.contracts.execution.Status.RUNNING;
@@ -7,10 +14,11 @@ import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.repositories.CIExecutionRepository;
@@ -19,6 +27,7 @@ import com.google.inject.Inject;
 
 public class QueueExecutionUtils {
   @Inject private CIExecutionRepository ciExecutionRepository;
+  @Inject private CIExecutionServiceConfig ciExecutionServiceConfig;
 
   public void addActiveExecutionBuild(OrchestrationEvent event, String accountID, String runtimeID) {
     int count = 0;

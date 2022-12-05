@@ -141,8 +141,8 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitValidationParameters;
 import software.wings.beans.HostValidationTaskParameters;
 import software.wings.beans.SerializationFormat;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
@@ -227,11 +227,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   private static final String STREAM_DELEGATE = "/stream/delegate/";
   public static final String TASK_SELECTORS = "Task Selectors";
   public static final String TASK_CATEGORY_MAP = "Task Category Map";
-  private static final int SECRET_CACHE_TTL_MINUTES = 3;
-  private static final int SECRET_CACHE_MAXIMUM_SIZE = 1000;
-  private static final long CAPABILITIES_CHECK_TASK_TIMEOUT_IN_MINUTES = 1L;
-
-  private static final long VALIDATION_TIMEOUT = TimeUnit.MINUTES.toMillis(2);
 
   @Inject private HPersistence persistence;
   @Inject ObjectMapper objectMapper;
@@ -265,6 +260,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSyncService delegateSyncService;
   @Inject private DelegateTaskService delegateTaskService;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private DelegateCallbackRegistry delegateCallbackRegistry;
   @Inject private DelegateTaskSelectorMapService taskSelectorMapService;
   @Inject private SettingsService settingsService;
@@ -959,7 +955,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting(settingAttribute.toDTO())
+                                             .connectionSetting(settingAttribute)
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1010,7 +1006,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
           SettingAttribute settingAttribute = (SettingAttribute) params[3];
           hostValidationTaskParameters = HostValidationTaskParameters.builder()
                                              .hostNames((List<String>) params[2])
-                                             .connectionSetting(settingAttribute.toDTO())
+                                             .connectionSetting(settingAttribute)
                                              .encryptionDetails((List<EncryptedDataDetail>) params[4])
                                              .executionCredential((ExecutionCredential) params[5])
                                              .build();
@@ -1128,7 +1124,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @VisibleForTesting
   void setValidationStarted(String delegateId, DelegateTask delegateTask) {
     delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_VALIDATION);
-    log.info("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    log.debug("Delegate to validate {} task", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     UpdateOperations<DelegateTask> updateOperations = persistence.createUpdateOperations(DelegateTask.class)
                                                           .addToSet(DelegateTaskKeys.validatingDelegateIds, delegateId);
     Query<DelegateTask> updateQuery = persistence.createQuery(DelegateTask.class)
@@ -1530,7 +1526,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       String delegateId, String taskId, DelegateTask delegateTask, String delegateInstanceId) {
     // Clear pending validations. No longer need to track since we're assigning.
     clearFromValidationCache(delegateTask);
-    log.info("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
+    // QUESTION? Do we need a metric for this
+    log.debug("Assigning {} task to delegate", delegateTask.getData().isAsync() ? ASYNC : SYNC);
     Query<DelegateTask> query = persistence.createQuery(DelegateTask.class)
                                     .filter(DelegateTaskKeys.accountId, delegateTask.getAccountId())
                                     .filter(DelegateTaskKeys.uuid, taskId)

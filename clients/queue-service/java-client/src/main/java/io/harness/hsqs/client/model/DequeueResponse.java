@@ -25,7 +25,7 @@ public class DequeueResponse {
 
   DequeueItemMetadata metadata;
 
-  byte[] payload;
+  String payload;
 
   String queueKey;
 

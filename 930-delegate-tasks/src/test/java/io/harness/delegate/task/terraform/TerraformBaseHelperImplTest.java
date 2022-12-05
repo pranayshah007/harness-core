@@ -93,6 +93,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -121,6 +122,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   @Mock ArtifactoryNgService artifactoryNgService;
   @Mock ArtifactoryRequestMapper artifactoryRequestMapper;
 
+  private File tfBackendConfig;
   private final EncryptedRecordData encryptedPlanContent =
       EncryptedRecordData.builder().name("planName").encryptedValue("encryptedPlan".toCharArray()).build();
 
@@ -128,6 +130,12 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
     spyTerraformBaseHelper = spy(terraformBaseHelper);
+    tfBackendConfig = createBackendConfigFile("a1 = b1\na2 = b2\na3 = b3", "backendConfigFile.txt");
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    FileIo.deleteFileIfExists(tfBackendConfig.getAbsolutePath());
   }
 
   @Test
@@ -250,6 +258,14 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
         .destroy(TerraformDestroyCommandRequest.builder().targets(terraformExecuteStepRequest.getTargets()).build(),
             terraformExecuteStepRequest.getTimeoutInMillis(), terraformExecuteStepRequest.getEnvVars(),
             terraformExecuteStepRequest.getScriptDirectory(), terraformExecuteStepRequest.getLogCallback());
+  }
+
+  private File createBackendConfigFile(String content, String fileName) throws IOException {
+    final File file = File.createTempFile("abc", fileName);
+    try (FileWriter fileWriter = new FileWriter(file)) {
+      fileWriter.write(content);
+    }
+    return file;
   }
 
   @Test
@@ -711,7 +727,7 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
 
   private TerraformExecuteStepRequestBuilder getTerraformExecuteStepRequest() {
     return TerraformExecuteStepRequest.builder()
-        .tfBackendConfigsFile("backendConfigFile.txt")
+        .tfBackendConfigsFile(tfBackendConfig.getAbsolutePath())
         .tfOutputsFile("outputfile.txt")
         .scriptDirectory("scriptDirectory")
         .envVars(new HashMap<>())

@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dtos.InfrastructureMappingDTO;
 import io.harness.dtos.instancesyncperpetualtaskinfo.InstanceSyncPerpetualTaskInfoDTO;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.service.entity.ServiceEntity;
@@ -45,7 +45,7 @@ public class InstanceSyncHelper {
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getServiceIdentifier(), false);
     return serviceEntityOptional.orElseThrow(()
-                                                 -> new InvalidRequestException("Service not found for serviceId : {}"
+                                                 -> new EntityNotFoundException("Service not found for serviceId : {}"
                                                      + infrastructureMappingDTO.getServiceIdentifier()));
   }
 
@@ -55,7 +55,7 @@ public class InstanceSyncHelper {
         infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getEnvIdentifier(), false);
     return environmentServiceOptional.orElseThrow(
         ()
-            -> new InvalidRequestException(
+            -> new EntityNotFoundException(
                 "Environment not found for envId : {}" + infrastructureMappingDTO.getEnvIdentifier()));
   }
 }

@@ -35,6 +35,7 @@ import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParam
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
 import io.harness.connector.heartbeat.SpotValidationParamsProvider;
+import io.harness.connector.heartbeat.TasConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.VaultConnectorValidationParamsProvider;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
@@ -126,6 +127,8 @@ import io.harness.connector.mappers.spotmapper.SpotDTOToEntity;
 import io.harness.connector.mappers.spotmapper.SpotEntityToDTO;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
+import io.harness.connector.mappers.tasmapper.TasDTOToEntity;
+import io.harness.connector.mappers.tasmapper.TasEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
@@ -135,6 +138,7 @@ import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
 import io.harness.connector.task.spot.SpotValidationHandler;
+import io.harness.connector.task.tas.TasValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureArtifactsConnectorValidator;
@@ -163,6 +167,7 @@ import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
 import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
+import io.harness.connector.validator.scmValidators.TasConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -344,6 +349,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
             AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
             AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.TAS,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TasConnectorValidator.class,
+            TasConnectorValidationParamsProvider.class, TasDTOToEntity.class, TasEntityToDTO.class,
+            TasValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,

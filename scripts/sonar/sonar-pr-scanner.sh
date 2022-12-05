@@ -54,12 +54,14 @@ function get_javac_path(){
 JAVA_CLASSES_PATH="/tmp/execroot/harness_monorepo/bazel-out/k8-fastbuild/bin"
 JAVA_SRCS="src"
 JAVA_TEST_SRCS='src/test/**/*.java'
+EXCLUDE_REGISTRAR='src/**/*Registrar.java'
 JAVA_LIBS="**/*.jar"
 JAVA_SRC_CLASS="_javac"
 PR_MODULES_JAVAC_FILE="pr_javac_list.txt"
 PR_MODULES_LIB_FILE="pr_lib_list.txt"
 PR_SRCS_FILE="pr_srcs.txt"
 PR_TEST_INCLUSION_FILE="pr_test_inclusions.txt"
+PR_REGISTRAR_EXCLUSION_FILE="pr_registrar_exclusions.txt"
 SONAR_CONFIG_FILE='sonar-project.properties'
 BAZEL_COMPILE_MODULES=()
 
@@ -118,6 +120,7 @@ for module in $PR_MODULES
      && get_javac_path ${JAVA_CLASSES_PATH}/${module} >> $PR_MODULES_JAVAC_FILE \
      && echo "${JAVA_CLASSES_PATH}/${module}/${JAVA_LIBS}" >> $PR_MODULES_LIB_FILE \
      && echo "${module}/${JAVA_TEST_SRCS}" >> $PR_TEST_INCLUSION_FILE \
+     && echo "${module}/${EXCLUDE_REGISTRAR}" >> $PR_REGISTRAR_EXCLUSION_FILE \
      || echo "$module is not present in the bazel modules list"
   done
 
@@ -133,6 +136,7 @@ export SONAR_JAVAC_FILES=$(get_info_from_file $PR_MODULES_JAVAC_FILE)
 export SONAR_LIBS_FILES=$(get_info_from_file $PR_MODULES_LIB_FILE)
 export SONAR_SRCS=$(get_info_from_file $PR_SRCS_FILE)
 export SONAR_TEST_INCLUSIONS=$(get_info_from_file $PR_TEST_INCLUSION_FILE)
+export SONAR_REGISTRAR_EXCLUSIONS=$(get_info_from_file $PR_REGISTRAR_EXCLUSION_FILE)
 
 [ ! -f "${SONAR_CONFIG_FILE}" ] \
 && echo "sonar.projectKey=harness-core-sonar-pr" > ${SONAR_CONFIG_FILE} \
@@ -142,6 +146,7 @@ echo "sonar.sources=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.tests=$SONAR_SRCS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.test.inclusions=$SONAR_TEST_INCLUSIONS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.inclusions=$PR_FILES" >> ${SONAR_CONFIG_FILE}
+echo "sonar.exclusions=$SONAR_REGISTRAR_EXCLUSIONS" >> ${SONAR_CONFIG_FILE}
 echo "sonar.java.binaries=$SONAR_JAVAC_FILES" >> ${SONAR_CONFIG_FILE}
 echo "sonar.java.libraries=$SONAR_LIBS_FILES" >> ${SONAR_CONFIG_FILE}
 echo "sonar.pullrequest.key=$PR_NUMBER" >> ${SONAR_CONFIG_FILE}

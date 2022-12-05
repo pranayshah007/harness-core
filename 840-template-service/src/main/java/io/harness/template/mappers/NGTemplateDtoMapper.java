@@ -21,11 +21,13 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMetadataSummaryResponseDTO;
 import io.harness.ng.core.template.TemplateResponseDTO;
@@ -51,6 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class NGTemplateDtoMapper {
+  public static final String BOOLEAN_TRUE_VALUE = "true";
+
   public TemplateResponseDTO writeTemplateResponseDto(TemplateEntity templateEntity) {
     return TemplateResponseDTO.builder()
         .accountId(templateEntity.getAccountId())
@@ -75,6 +79,7 @@ public class NGTemplateDtoMapper {
                 : EntityValidityDetails.builder().valid(true).build())
         .storeType(templateEntity.getStoreType())
         .connectorRef(templateEntity.getConnectorRef())
+        .cacheResponseMetadata(getCacheResponse(templateEntity))
         .build();
   }
 
@@ -211,6 +216,20 @@ public class NGTemplateDtoMapper {
         .includeAllTemplatesAccessibleAtScope(includeAllTemplatesAccessibleAtScope)
         .getDistinctFromBranches(getDistinctFromBranches)
         .build();
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse(TemplateEntity templateEntity) {
+    if (templateEntity.getStoreType() == StoreType.REMOTE) {
+      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+      if (cacheResponse != null) {
+        return CacheResponseMetadataDTO.builder()
+            .cacheState(cacheResponse.getCacheState())
+            .ttlLeft(cacheResponse.getTtlLeft())
+            .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+            .build();
+      }
+    }
+    return null;
   }
 
   public PageParamsDTO preparePageParamsDTO(int page, int size, List<String> sort) {
@@ -385,5 +404,13 @@ public class NGTemplateDtoMapper {
       return Scope.ORG;
     }
     return Scope.ACCOUNT;
+  }
+
+  public boolean parseLoadFromCacheHeaderParam(String loadFromCache) {
+    if (isEmpty(loadFromCache)) {
+      return false;
+    } else {
+      return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
+    }
   }
 }

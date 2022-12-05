@@ -26,6 +26,7 @@ public class MongoBackendConfiguration extends NotificationClientBackendConfigur
   private String uri;
   @JsonProperty(defaultValue = "30000") @Builder.Default @NotEmpty private int connectTimeout = 30000;
   @JsonProperty(defaultValue = "90000") @Builder.Default @NotEmpty private int serverSelectionTimeout = 90000;
+  @JsonProperty(defaultValue = "360000") @Builder.Default @NotEmpty private int socketTimeout = 360000;
   @JsonProperty(defaultValue = "600000") @Builder.Default @NotEmpty private int maxConnectionIdleTime = 600000;
   @JsonProperty(defaultValue = "300") @Builder.Default @NotEmpty private int connectionsPerHost = 300;
 }

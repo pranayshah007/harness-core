@@ -362,7 +362,7 @@ public class AzureArtifactsRegistryServiceImpl implements AzureArtifactsRegistry
 
     AzureArtifactsPackages ngAzureArtifactsPackages = packagesResponse.body();
 
-    return ngAzureArtifactsPackages.getValue();
+    return ngAzureArtifactsPackages != null ? ngAzureArtifactsPackages.getValue() : Collections.emptyList();
   }
 
   @Override

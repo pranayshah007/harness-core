@@ -66,6 +66,7 @@ mongo:
   uri: mongodb://localhost:27017/pms-harness
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -94,6 +95,9 @@ grpcClientConfigs:
   sto:
     target: localhost:14301
     authority: localhost
+  iacm:
+    target: localhost:15301
+    authority: localhost
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -118,6 +122,12 @@ yamlSchemaClientConfig:
     sto:
       serviceHttpClientConfig:
         baseUrl: http://localhost:14057/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    iacm:
+      serviceHttpClientConfig:
+        baseUrl: http://localhost:15057/
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
@@ -158,6 +168,7 @@ notificationClient:
     uri: mongodb://localhost:27017/notification
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
@@ -422,8 +433,6 @@ orchestrationRedisEventsConfig:
 allowedParallelStages: ${ALLOWED_PARALLEL_STAGES:-25}
 
 orchestrationLogConfiguration:
-  reduceOrchestrationLog: ${REDUCE_ORCHESTRATION_EVENT_LOG:-false}
-  shouldUseBatching: ${ORCHESTRATION_LOG_SHOULD_USE_BATCHING:-false}
   orchestrationLogBatchSize: ${ORCHESTRATION_LOG_BATCH_SIZE:-5}
 
 planCreatorMergeServiceDependencyBatch: ${PLAN_CREATOR_DEPENDENCY_BATCH:-50}

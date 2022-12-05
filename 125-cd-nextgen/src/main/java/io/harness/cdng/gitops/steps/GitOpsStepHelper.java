@@ -49,4 +49,23 @@ public class GitOpsStepHelper {
     }
     return releaseRepoManifests.get(0);
   }
+
+  public ManifestOutcome getDeploymentRepoOutcome(Ambiance ambiance) {
+    ManifestsOutcome manifestsOutcomes = k8sStepHelper.resolveManifestsOutcome(ambiance);
+
+    List<ManifestOutcome> deploymentRepoManifests =
+        manifestsOutcomes.values()
+            .stream()
+            .filter(manifestOutcome -> ManifestType.DeploymentRepo.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+
+    if (isEmpty(deploymentRepoManifests)) {
+      throw new InvalidRequestException("Deployment Repo Manifests are mandatory for Fetch Linked Apps step", USER);
+    }
+
+    if (deploymentRepoManifests.size() > 1) {
+      throw new InvalidRequestException("There can be only a single Deployment Repo manifest", USER);
+    }
+    return deploymentRepoManifests.get(0);
+  }
 }

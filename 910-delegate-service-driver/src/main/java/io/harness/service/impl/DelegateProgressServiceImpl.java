@@ -38,6 +38,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateProgressServiceImpl implements DelegateProgressService {
   @Inject private HPersistence persistence;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject @Named("disableDeserialization") private boolean disableDeserialization;
   private static final int DELETE_TRESHOLD = 1000;
@@ -66,11 +67,18 @@ public class DelegateProgressServiceImpl implements DelegateProgressService {
         }
 
         log.info("Process won the task progress response {}.", lockedTaskProgressResponse.getUuid());
-        ProgressData data = disableDeserialization
-            ? BinaryResponseData.builder().data(lockedTaskProgressResponse.getProgressData()).build()
-            : (ProgressData) kryoSerializer.asInflatedObject(lockedTaskProgressResponse.getProgressData());
+        ProgressData data;
+        if (disableDeserialization) {
+          data = BinaryResponseData.builder().data(lockedTaskProgressResponse.getProgressData()).build();
+        } else {
+          data = lockedTaskProgressResponse.isUsingKryoWithoutReference()
+              ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(
+                  lockedTaskProgressResponse.getProgressData())
+              : (ProgressData) kryoSerializer.asInflatedObject(lockedTaskProgressResponse.getProgressData());
+        }
 
-        waitNotifyEngine.progressOn(lockedTaskProgressResponse.getCorrelationId(), data);
+        waitNotifyEngine.progressOn(lockedTaskProgressResponse.getCorrelationId(), data,
+            lockedTaskProgressResponse.isUsingKryoWithoutReference());
 
         responsesToBeDeleted.add(lockedTaskProgressResponse.getUuid());
         if (responsesToBeDeleted.size() >= DELETE_TRESHOLD) {

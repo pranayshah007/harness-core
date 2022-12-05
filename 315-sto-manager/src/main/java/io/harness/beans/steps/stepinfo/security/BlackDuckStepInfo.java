@@ -11,10 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
@@ -26,4 +31,10 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("blackDuckStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo")
-public class BlackDuckStepInfo extends SecurityStepInfo {}
+public class BlackDuckStepInfo extends STOGenericStepInfo {
+  @NotNull @JsonProperty protected STOYamlAuth auth;
+
+  @JsonProperty protected STOYamlImage image;
+
+  @JsonProperty("tool") protected STOYamlBlackduckToolData tool;
+}

@@ -8,6 +8,7 @@
 package io.harness.ng.core.resources.azure;
 
 import static io.harness.ng.core.Status.SUCCESS;
+import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,14 +38,17 @@ import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.cdng.k8s.resources.azure.service.AzureResourceService;
 import io.harness.delegate.beans.azure.ManagementGroupData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.utils.IdentifierRefHelper;
 
 import java.util.Arrays;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -75,6 +79,8 @@ public class AzureResourceTest extends CategoryTest {
                                                   .projectIdentifier(PROJECT_IDENTIFIER)
                                                   .build();
 
+  @Rule public ExpectedException expected = ExpectedException.none();
+
   @Before
   public void setUp() {
     MockedStatic<IdentifierRefHelper> identifierRefHelper = mockStatic(IdentifierRefHelper.class);
@@ -98,6 +104,16 @@ public class AzureResourceTest extends CategoryTest {
         CONNECTOR_REF, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ENV_ID, INFRA_DEFINITION_ID);
     assertThat(result.getStatus() == SUCCESS);
     assertThat(result.getData().getSubscriptions().get(0).getSubscriptionId().equals("subscriptionId"));
+  }
+
+  @Test
+  @Owner(developers = SRIDHAR)
+  @Category(UnitTests.class)
+  public void getAzureSubscriptionsIdTestError() {
+    expected.expect(InvalidRequestException.class);
+    expected.expectMessage("subscriptionId must be provided");
+    azureResource.getAzureSubscriptions(
+        null, ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, INFRA_DEFINITION_ID);
   }
 
   @Test

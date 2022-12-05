@@ -1,10 +1,10 @@
 environment:
   name: envtest
-  identifier: envtest
+  identifier: ENV
   tags: {}
   type: Production
-  orgIdentifier: default
-  projectIdentifier: pq
+  orgIdentifier: ORG_ID
+  projectIdentifier: PROJECT_ID
   variables:
     - name: a
       type: String

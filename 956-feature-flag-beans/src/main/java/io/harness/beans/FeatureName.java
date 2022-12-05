@@ -165,7 +165,6 @@ public enum FeatureName {
   CUSTOM_DASHBOARD_ENABLE_REALTIME_DEPLOYMENT_MIGRATION,
   CUSTOM_DASHBOARD_ENABLE_CRON_INSTANCE_DATA_MIGRATION,
   CUSTOM_DASHBOARD_ENABLE_CRON_DEPLOYMENT_DATA_MIGRATION,
-  SSH_SECRET_ENGINE,
   WHITELIST_PUBLIC_API,
   WHITELIST_GRAPHQL,
   TIMEOUT_FAILURE_SUPPORT,
@@ -280,7 +279,6 @@ public enum FeatureName {
   CUSTOM_ARTIFACT_NG,
   APPLICATION_DROPDOWN_MULTISELECT,
   NG_GIT_EXPERIENCE,
-  LDAP_SECRET_AUTH,
   WORKFLOW_EXECUTION_REFRESH_STATUS,
   TRIGGERS_PAGE_PAGINATION,
   STALE_FLAGS_FFM_1510,
@@ -319,6 +317,7 @@ public enum FeatureName {
   CVNG_LICENSE_ENFORCEMENT,
   CVNG_SLO_DISABLE_ENABLE,
   SERVICE_DASHBOARD_V2,
+  CDC_ENVIRONMENT_DASHBOARD_NG("New environment details dashboard is behind this", HarnessTeam.CDC),
   DEBEZIUM_ENABLED,
   TEMPLATE_SCHEMA_VALIDATION,
   YAML_APIS_GRANULAR_PERMISSION,
@@ -441,6 +440,7 @@ public enum FeatureName {
   CD_SERVICE_ENV_RECONCILIATION("Do reconciliation of service and env on pipeline/template save", HarnessTeam.CDC),
   CD_TRIGGER_CATALOG("Enables UI for Trigger catalog for Nexus ", HarnessTeam.CDC),
   SRM_HOST_SAMPLING_ENABLE("Enables Host Sampling feature for Learning Engine.", HarnessTeam.CV),
+  SRM_LOG_HOST_SAMPLING_ENABLE("Enables Host Sampling for log for Learning Engine.", HarnessTeam.CV),
   CDS_SHOW_CREATE_PR("Start showing CreatePR step on the plan creator if enabled", HarnessTeam.GITOPS),
   SPG_PIPELINE_ROLLBACK("Enables pipeline rollback on failure option", HarnessTeam.SPG),
   PL_FORCE_DELETE_CONNECTOR_SECRET(
@@ -472,7 +472,7 @@ public enum FeatureName {
   INSTANCE_SYNC_V2_CG("Enable Instance Sync V2 framework in CG for direct K8s cloud provider", HarnessTeam.CDP),
   CF_ROLLBACK_CUSTOM_STACK_NAME(
       "Use custom stack name and region to find lates successful couldformation rollback data", HarnessTeam.CDP),
-  IACM_MICRO_FE("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
+  IACM_ENABLED("Enable support for IACM micro front end capabilities", HarnessTeam.IACM),
   AZURE_WEB_APP_NG_NEXUS_PACKAGE("Enable support for Nexus package artifact in Azure Web App NG", HarnessTeam.CDP),
   CODE_ENABLED("Enable Harness Code", HarnessTeam.CODE),
   BOOKING_RECOMMENDATIONS("Feature flag for booking.com recommendations", HarnessTeam.CE),
@@ -489,18 +489,26 @@ public enum FeatureName {
   PL_LDAP_PARALLEL_GROUP_SYNC(
       "Enables User Group sync operation to fetch data from Ldap Server in Parallel. Enable only if Ldap Server can take the load",
       HarnessTeam.PL),
+  CDS_TAS_NG("FF for enabling TAS deployment in NG", HarnessTeam.CDP),
   CDS_OrgAccountLevelServiceEnvEnvGroup(
       "Support Creation and Use of Org and Account level Services and Environments", HarnessTeam.CDC),
   CE_NET_AMORTISED_COST_ENABLED("Enable cost calculation through Net Amortised cost", HarnessTeam.CE),
   GITOPS_DR_ENABLED("Enable disaster recovery feature", HarnessTeam.GITOPS),
   GITOPS_RECONCILER_ENABLED("Enable reconcile processing", HarnessTeam.GITOPS),
   CE_RERUN_HOURLY_JOBS("Rerunning Hourly billing jobs", HarnessTeam.CE),
+  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
   SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
+  SPG_INSTANCE_OPTIMIZE_DELETED_APPS("Optimizes the instance deleted apps fetching.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
+  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
+  LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
+  CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
+  CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
+      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE);
 
   @Deprecated

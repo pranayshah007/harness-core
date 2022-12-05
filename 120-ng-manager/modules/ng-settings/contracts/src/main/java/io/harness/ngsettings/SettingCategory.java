@@ -24,5 +24,6 @@ public enum SettingCategory {
   TEMPLATESERVICE,
   GOVERNANCE,
   CHAOS,
-  SCIM
+  SCIM,
+  GIT_EXPERIENCE
 }

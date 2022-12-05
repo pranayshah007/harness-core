@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -108,7 +109,8 @@ public class ScalyrStateTest extends APMStateVerificationTestBase {
     assertThat(customLogDataCollectionInfo.getDataUrl()).isEqualTo(ScalyrConfig.QUERY_URL);
     assertThat(customLogDataCollectionInfo.getHeaders())
         .isEqualTo(Collections.singletonMap("Accept", "application/json"));
-    assertThat(customLogDataCollectionInfo.getBody()).isEqualTo(scalyrConfig.fetchLogBodyMap(false));
+    assertThat(new JSONObject(customLogDataCollectionInfo.getJsonBody()).toMap())
+        .isEqualTo(scalyrConfig.fetchLogBodyMap(false));
     assertThat(customLogDataCollectionInfo.getHosts()).isEqualTo(Sets.newHashSet("host"));
 
     final Map<String, Map<String, CustomLogResponseMapper>> logCollectionMapping =

@@ -37,6 +37,7 @@ import io.harness.connector.ConnectorCategory;
 import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.FileUploadLimit;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.api.Producer;
@@ -47,6 +48,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.governance.GovernanceMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.SecretCrudService;
@@ -239,7 +241,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     Boolean isBuiltInSMDisabled = false;
 
-    if (featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+    if (isNgSettingsFFEnabled(accountIdentifier)) {
       isBuiltInSMDisabled = parseBoolean(
           NGRestUtils
               .getResponse(settingsClient.getSetting(
@@ -448,6 +450,14 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       boolean forceDelete) {
     try (AutoLogContext ignore1 =
              new NgAutoLogContext(projectIdentifier, orgIdentifier, accountIdentifier, OVERRIDE_ERROR)) {
+      if (forceDelete && !isForceDeleteEnabled(accountIdentifier)) {
+        throw new InvalidRequestException(
+            format(
+                "Parameter forcedDelete cannot be true. Force deletion of secret is not enabled for this account [%s]",
+                accountIdentifier),
+            USER);
+      }
+
       Optional<SecretResponseWrapper> optionalSecret =
           get(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
       if (optionalSecret.isPresent()) {
@@ -766,12 +776,38 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       return;
     }
 
-    Optional<Secret> secretOptional =
-        ngSecretService.get(accountIdentifier, orgIdentifier, projectIdentifier, secretRef.getIdentifier());
+    BaseNGAccess secretRefScopeInfo =
+        SecretRefHelper.getScopeIdentifierForSecretRef(secretRef, accountIdentifier, orgIdentifier, projectIdentifier);
+
+    Optional<Secret> secretOptional = ngSecretService.get(accountIdentifier, secretRefScopeInfo.getOrgIdentifier(),
+        secretRefScopeInfo.getProjectIdentifier(), secretRef.getIdentifier());
 
     if (!secretOptional.isPresent()) {
       throw new EntityNotFoundException(
           format("No such secret found [%s], please check identifier/scope and try again.", secretRef.getIdentifier()));
     }
+  }
+
+  private boolean isForceDeleteEnabled(String accountIdentifier) {
+    boolean isForceDeleteFFEnabled = isForceDeleteFFEnabled(accountIdentifier);
+    boolean isForceDeleteEnabledViaSettings =
+        isNgSettingsFFEnabled(accountIdentifier) && isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    return isForceDeleteFFEnabled && isForceDeleteEnabledViaSettings;
+  }
+
+  @VisibleForTesting
+  protected boolean isNgSettingsFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabled(String accountIdentifier) {
+    return featureFlagHelperService.isEnabled(accountIdentifier, FeatureName.PL_FORCE_DELETE_CONNECTOR_SECRET);
+  }
+  @VisibleForTesting
+  protected boolean isForceDeleteFFEnabledViaSettings(String accountIdentifier) {
+    return parseBoolean(NGRestUtils
+                            .getResponse(settingsClient.getSetting(
+                                SettingIdentifiers.ENABLE_FORCE_DELETE, accountIdentifier, null, null))
+                            .getValue());
   }
 }

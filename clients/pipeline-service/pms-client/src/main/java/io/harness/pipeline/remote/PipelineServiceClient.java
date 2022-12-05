@@ -9,9 +9,12 @@ package io.harness.pipeline.remote;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
+
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -25,10 +28,13 @@ import io.harness.pms.pipeline.TemplatesResolvedPipelineResponseDTO;
 
 import java.util.List;
 import javax.ws.rs.DefaultValue;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -95,4 +101,21 @@ public interface PipelineServiceClient {
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier);
+
+  @PUT(PIPELINE_ENDPOINT + "{pipelineIdentifier}")
+  Call<ResponseDTO<Object>> updatePipeline(@Header(IF_MATCH) String ifMatch,
+      @Path(NGCommonEntityConstants.PIPELINE_KEY) String pipelineId,
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgId,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectId,
+      @Query(NGCommonEntityConstants.NAME_KEY) String pipelineName,
+      @Query(NGCommonEntityConstants.DESCRIPTION_KEY) String pipelineDescription,
+      @Query(NGCommonEntityConstants.DRAFT_KEY) Boolean isDraft, @Body RequestBody yaml,
+      @Query(GitSyncApiConstants.BRANCH_KEY) String branch, @Query(GitSyncApiConstants.FOLDER_PATH) String folderPath,
+      @Query(GitSyncApiConstants.FILE_PATH_KEY) String filePath,
+      @Query(GitSyncApiConstants.COMMIT_MSG_KEY) String commitMsg,
+      @Query(GitSyncApiConstants.LAST_OBJECT_ID_KEY) String lastObjectId,
+      @Query(GitSyncApiConstants.RESOLVED_CONFLICT_COMMIT_ID) String resolvedConflictCommitId,
+      @Query(GitSyncApiConstants.STORE_TYPE) StoreType storeType,
+      @Query(GitSyncApiConstants.LAST_COMMIT_ID) String lastCommitId);
 }

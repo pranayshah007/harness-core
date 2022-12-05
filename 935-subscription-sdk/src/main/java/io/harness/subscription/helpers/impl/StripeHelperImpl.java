@@ -29,10 +29,12 @@ import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.ItemParams;
 import io.harness.subscription.params.SubscriptionParams;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Address;
 import com.stripe.model.Customer;
@@ -64,6 +66,7 @@ import java.util.stream.Collectors;
 @Singleton
 public class StripeHelperImpl implements StripeHelper {
   private StripeHandlerImpl stripeHandler;
+  private final TelemetryReporter telemetryReporter;
   private List<String> subscriptionExpandList = Arrays.asList("latest_invoice.payment_intent");
   private static final String ACCOUNT_IDENTIFIER_KEY = "accountIdentifier";
   private static final String MODULE_TYPE_KEY = "moduleType";
@@ -74,8 +77,10 @@ public class StripeHelperImpl implements StripeHelper {
   private static final String SEARCH_MODULE_TYPE_EDITION_BILLED =
       "metadata['module']:'%s' AND metadata['type']:'%s' AND metadata['edition']:'%s' AND metadata['billed']:'%s'";
 
-  public StripeHelperImpl() {
-    this.stripeHandler = new StripeHandlerImpl();
+  @Inject
+  public StripeHelperImpl(TelemetryReporter telemetryReporter) {
+    this.telemetryReporter = telemetryReporter;
+    this.stripeHandler = new StripeHandlerImpl(this.telemetryReporter);
   }
 
   @Override
@@ -280,7 +285,8 @@ public class StripeHelperImpl implements StripeHelper {
       creationParamsBuilder.setDefaultPaymentMethod(subscriptionParams.getPaymentMethodId());
     }
 
-    Subscription subscription = stripeHandler.createSubscription(creationParamsBuilder.build());
+    Subscription subscription =
+        stripeHandler.createSubscription(creationParamsBuilder.build(), subscriptionParams.getModuleType());
     return toSubscriptionDetailDTO(subscription);
   }
 
@@ -322,8 +328,8 @@ public class StripeHelperImpl implements StripeHelper {
       }
     }
 
-    return toSubscriptionDetailDTO(
-        stripeHandler.updateSubscription(subscriptionParams.getSubscriptionId(), updateParamBuilder.build()));
+    return toSubscriptionDetailDTO(stripeHandler.updateSubscription(
+        subscriptionParams.getSubscriptionId(), updateParamBuilder.build(), subscriptionParams.getModuleType()));
   }
 
   @Override
@@ -332,13 +338,13 @@ public class StripeHelperImpl implements StripeHelper {
                                                 .setDefaultPaymentMethod(subscriptionParams.getPaymentMethodId())
                                                 .addAllExpand(subscriptionExpandList)
                                                 .build();
-    return toSubscriptionDetailDTO(
-        stripeHandler.updateSubscription(subscriptionParams.getSubscriptionId(), updateParams));
+    return toSubscriptionDetailDTO(stripeHandler.updateSubscription(
+        subscriptionParams.getSubscriptionId(), updateParams, subscriptionParams.getModuleType()));
   }
 
   @Override
   public void cancelSubscription(SubscriptionParams subscriptionParams) {
-    stripeHandler.cancelSubscription(subscriptionParams.getSubscriptionId());
+    stripeHandler.cancelSubscription(subscriptionParams.getSubscriptionId(), subscriptionParams.getModuleType());
   }
 
   @Override

@@ -149,14 +149,14 @@ public class BudgetCostServiceImpl implements BudgetCostService {
             .build());
     long updatedStartTime = BudgetUtils.getStartOfMonthGivenTime(startTime);
     long endTime = updatedStartTime - BudgetUtils.ONE_DAY_MILLIS;
+    updatedStartTime = BudgetUtils.getStartOfLastPeriod(updatedStartTime, period);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
-    filters.add(
-        viewsQueryHelper.getPerspectiveTimeFilter(BudgetUtils.getStartOfLastPeriod(updatedStartTime, period), AFTER));
+    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(updatedStartTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
         viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), true);
+        viewsQueryHelper.buildQueryParams(accountId, false), true, updatedStartTime);
     return result;
   }
 
@@ -185,7 +185,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
         viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), false);
+        viewsQueryHelper.buildQueryParams(accountId, false), false, startTime);
     return result;
   }
 
@@ -239,17 +239,18 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     // Forecasting for months for which we don't have actual cost
     for (int currentYearMonth = monthDiff; currentYearMonth < BudgetUtils.MONTHS; currentYearMonth++) {
       if (daysDiff > 0 && daysDiff < days) {
-        result[currentYearMonth] += (abs(regression.predict(currentYearMonth)) / days) * (days - daysDiff);
+        result[currentYearMonth] +=
+            BudgetUtils.getRoundedValue((abs(regression.predict(currentYearMonth)) / days) * (days - daysDiff));
         daysDiff = 0;
       } else {
-        result[currentYearMonth] = abs(regression.predict(currentYearMonth));
+        result[currentYearMonth] = BudgetUtils.getRoundedValue(abs(regression.predict(currentYearMonth)));
       }
     }
     return result;
   }
 
   @Override
-  public BudgetData getBudgetTimeSeriesStats(Budget budget) {
+  public BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown) {
     if (budget == null) {
       throw new InvalidRequestException(BudgetUtils.INVALID_BUDGET_ID_EXCEPTION);
     }
@@ -259,21 +260,21 @@ public class BudgetCostServiceImpl implements BudgetCostService {
       budgetedAmount = 0.0;
     }
 
-    if (budget.getPeriod() == BudgetPeriod.YEARLY
-        && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
-      Double actualCost[] = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
+    if (budget.getPeriod() == BudgetPeriod.YEARLY && breakdown == BudgetBreakdown.MONTHLY) {
+      Double[] actualCost = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost();
       if (actualCost == null || actualCost.length != BudgetUtils.MONTHS) {
         log.error("Missing 12 entries in actualCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);
       }
 
-      Double budgetCost[] = budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount();
+      Double[] budgetCost =
+          BudgetUtils.getYearlyMonthWiseValues(budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
       if (budgetCost == null || budgetCost.length != BudgetUtils.MONTHS) {
         log.error("Missing 12 entries in budgetCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);
       }
 
-      Double forecastMonthlyCost[] = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
+      Double[] forecastMonthlyCost = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost();
       if (forecastMonthlyCost == null || forecastMonthlyCost.length != BudgetUtils.MONTHS) {
         log.error("Missing 12 entries in forecastCost of yearly budget with id:" + budget.getUuid());
         throw new InvalidRequestException(BudgetUtils.MISSING_BUDGET_DATA_EXCEPTION);

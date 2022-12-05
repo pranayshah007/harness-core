@@ -28,7 +28,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.JsonSchemaValidationException;
@@ -130,19 +129,26 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   public boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
     // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
     // remove after finding the root cause of invalid schema generation and fixing it.
-    if (pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
+    if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
       Future<Boolean> future =
           yamlSchemaExecutor.submit(() -> validateYamlSchemaInternal(accountId, orgId, projectId, yaml));
       try (AutoLogContext accountLogContext =
                new AccountLogContext(accountId, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
         return future.get(SCHEMA_TIMEOUT, TimeUnit.SECONDS);
       } catch (ExecutionException e) {
+        // If e.getCause() instance of InvalidYamlException then it means we got some legit schema-validation errors and
+        // it has error info according to the schema-error-experience.
+        if (e.getCause() != null && e.getCause() instanceof io.harness.yaml.validator.InvalidYamlException) {
+          throw(io.harness.yaml.validator.InvalidYamlException) e.getCause();
+        }
         throw new RuntimeException(e.getCause());
       } catch (TimeoutException | InterruptedException e) {
         log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
                       accountId, orgId, projectId),
             e);
-        throw new InvalidRequestException("Timed out while validating schema");
+        // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
+        // save/execute).
+        return true;
       }
     }
     return true;
@@ -162,7 +168,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
     } catch (Exception ex) {
-      if (ex instanceof NullPointerException) {
+      if (ex instanceof NullPointerException
+          || ex.getCause() != null && ex.getCause() instanceof NullPointerException) {
         log.error(format(
             "Schema validation thrown NullPointerException. Please check the generated schema for account: %s, org: %s, project: %s",
             accountIdentifier, orgId, projectId));
@@ -323,7 +330,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
                                                .collect(Collectors.toList());
 
     if (instanceModuleTypes.size() != modules.size()) {
-      log.warn(
+      log.debug(
           "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
     }
     return (List<ModuleType>) CollectionUtils.intersection(modules, instanceModuleTypes);

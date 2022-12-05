@@ -11,9 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlZapToolData;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -26,4 +29,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("zapStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.ZapStepInfo")
-public class ZapStepInfo extends SecurityStepInfo {}
+public class ZapStepInfo extends STOGenericStepInfo {
+  @JsonProperty protected STOYamlInstance instance;
+
+  @JsonProperty protected STOYamlZapToolData tool;
+}

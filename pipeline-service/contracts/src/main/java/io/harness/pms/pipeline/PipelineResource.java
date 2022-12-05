@@ -242,7 +242,7 @@ public interface PipelineResource {
               "This is a boolean value. If true, returns Templates resolved Pipeline YAML in the response else returns null.")
       @QueryParam("getTemplatesResolvedPipeline") @DefaultValue("false") boolean getTemplatesResolvedPipeline,
       @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") boolean loadFromCache);
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache);
   @PUT
   @Path("/{pipelineIdentifier}")
   @ApiOperation(value = "Update a Pipeline", nickname = "putPipeline")

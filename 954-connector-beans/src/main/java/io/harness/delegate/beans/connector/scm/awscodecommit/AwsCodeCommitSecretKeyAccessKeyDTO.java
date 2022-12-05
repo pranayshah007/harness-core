@@ -12,7 +12,7 @@ import static io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommi
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;

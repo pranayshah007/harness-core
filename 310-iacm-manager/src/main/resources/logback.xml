@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <!--        Use json layout if logs are to be sent to stackdriver else use pattern-->
+        <if condition='property("STACK_DRIVER_LOGGING_ENABLED").equals("true")'>
+            <then>
+                <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                    <layout class="io.harness.logging.CustomJsonLayout"/>
+                </encoder>
+            </then>
+            <else>
+                <withJansi>true</withJansi>
+                <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                    <pattern>%date{ISO8601} %green([%thread]) %highlight(%-5level) %cyan(%logger) - %msg %n</pattern>
+                </encoder>
+            </else>
+        </if>
+    </appender>
+
+    <logger name="software.wings" level="INFO"/>
+    <logger name="org.zeroturnaround" level="WARN"/>
+
+    <root level="${LOGGING_LEVEL:-INFO}">
+        <appender-ref ref="stdout"/>
+
+    </root>
+</configuration>

@@ -12,17 +12,15 @@ spec:
     environmentRef: env-id
     filters:
       - type: tags
-        on:
+        entities:
           - gitOpsClusters
         spec:
           matchType: all
           tags:
-            - key: foo
-              value: bar
-            - key: top
-              value: down
+            foo: bar
+            top: down
       - type: all
-        on:
+        entities:
           - infrastructures
         spec: { }
   execution:
