@@ -246,9 +246,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       gitOperationContext =
           GitOperationContext.builder().gitConfig(gitConfig).gitConnectorId(sourceRepoSettingId).build();
 
-      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
-                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
-
       if (isNotEmpty(gitConfig.getBranch())) {
         saveExecutionLog("Branch: " + gitConfig.getBranch(), CommandExecutionStatus.RUNNING, INFO, logCallback);
       }
@@ -281,6 +278,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
             .errorMessage(ExceptionUtils.getMessage(sanitizedException))
             .build();
       }
+
+      sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
+                                                             : getLatestCommitSHAFromLocalRepo(gitOperationContext);
 
     } else if (parameters.getSourceType() == TerraformSourceType.S3) {
       /**
