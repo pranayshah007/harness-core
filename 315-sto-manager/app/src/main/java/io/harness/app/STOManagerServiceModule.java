@@ -221,16 +221,16 @@ public class STOManagerServiceModule extends AbstractModule {
                 .build()));
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("async-taskPollExecutor"))
+        .annotatedWith(Names.named("stoAsync-taskPollExecutor"))
         .toInstance(new ScheduledThreadPoolExecutor(
             stoManagerConfiguration.getAsyncDelegateResponseConsumption().getCorePoolSize(),
             new ThreadFactoryBuilder()
-                .setNameFormat("async-taskPollExecutor-Thread-%d")
+                .setNameFormat("stoAsync-taskPollExecutor-Thread-%d")
                 .setPriority(Thread.NORM_PRIORITY)
                 .build()));
 
     bind(ScheduledExecutorService.class)
-        .annotatedWith(Names.named("taskPollExecutor"))
+        .annotatedWith(Names.named("stoTaskPollExecutor"))
         .toInstance(new ManagedScheduledExecutorService("TaskPoll-Thread"));
 
     install(NgLicenseHttpClientModule.getInstance(stoManagerConfiguration.getNgManagerClientConfig(),
