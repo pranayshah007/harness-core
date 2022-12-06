@@ -13,6 +13,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.elastigroup.ElastigroupInstancesSpec;
 import io.harness.cdng.elastigroup.ElastigroupInstancesType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.yaml.YamlSchemaTypes;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
@@ -34,11 +35,11 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 public class TasCommandScript {
   @NotNull @JsonProperty("store")
   @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.TAS_COMMAND_SCRIPT_STORE_YAML_CONFIGURATION_CLASSPATH)
-  TasCommandScriptStore store;
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
+  StoreConfigWrapper store;
 
   @Builder
-  public TasCommandScript(TasCommandScriptStore store) {
+  public TasCommandScript(StoreConfigWrapper store) {
     this.store = store;
   }
 }
