@@ -10,18 +10,11 @@ package io.harness.gitsync.caching.entity;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.experimental.FieldDefaults;
-
-@Getter
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-public class CacheDetails {
-  boolean isStale;
-  long cacheExpiryTTL;
-  long validUntilTTL;
-  long lastUpdatedAt;
+public enum GitProvider {
+  UNKNOWN,
+  GITHUB_SAAS,
+  BITBUCKET_SAAS,
+  BITBUCKET_ON_PREM,
+  AZURE_SAAS;
 }

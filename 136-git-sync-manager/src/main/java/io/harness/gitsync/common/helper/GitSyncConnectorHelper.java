@@ -282,7 +282,7 @@ public class GitSyncConnectorHelper {
     throw new ConnectorNotFoundException(
         String.format(
             "No connector found for accountIdentifier: [%s], orgIdentifier : [%s], projectIdentifier : [%s], connectorRef : [%s]",
-            accountIdentifier, orgIdentifier, projectIdentifier, connectorDTO),
+            accountIdentifier, orgIdentifier, projectIdentifier, connectorRef),
         USER);
   }
 

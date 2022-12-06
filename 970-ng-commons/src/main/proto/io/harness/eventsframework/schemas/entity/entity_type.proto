@@ -172,4 +172,5 @@ enum EntityTypeProtoEnum {
   IACM = 159;
   IACM_STAGE = 160;
   IACM_STEPS = 161;
+  CONTAINER_STEP = 162;
 }

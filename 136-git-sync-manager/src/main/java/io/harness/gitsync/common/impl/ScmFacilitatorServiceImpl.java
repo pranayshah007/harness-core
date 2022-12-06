@@ -30,6 +30,9 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.caching.beans.GitFileCacheKey;
+import io.harness.gitsync.caching.beans.GitFileCacheObject;
+import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.dtos.ApiResponseDTO;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
@@ -59,6 +62,7 @@ import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
+import io.harness.gitsync.util.GitProviderUtil;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
@@ -95,17 +99,19 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   ScmOrchestratorService scmOrchestratorService;
   NGFeatureFlagHelperService ngFeatureFlagHelperService;
   GitClientEnabledHelper gitClientEnabledHelper;
+  GitFileCacheService gitFileCacheService;
 
   @Inject
   public ScmFacilitatorServiceImpl(GitSyncConnectorHelper gitSyncConnectorHelper,
       @Named("connectorDecoratorService") ConnectorService connectorService,
       ScmOrchestratorService scmOrchestratorService, NGFeatureFlagHelperService ngFeatureFlagHelperService,
-      GitClientEnabledHelper gitClientEnabledHelper) {
+      GitClientEnabledHelper gitClientEnabledHelper, GitFileCacheService gitFileCacheService) {
     this.gitSyncConnectorHelper = gitSyncConnectorHelper;
     this.connectorService = connectorService;
     this.scmOrchestratorService = scmOrchestratorService;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.gitClientEnabledHelper = gitClientEnabledHelper;
+    this.gitFileCacheService = gitFileCacheService;
   }
 
   @Override
@@ -361,7 +367,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmCommitFileResponseDTO createFile(ScmCreateFileRequestDTO scmCreateFileRequestDTO) {
     Scope scope = scmCreateFileRequestDTO.getScope();
-    // TODO Put validations over request here
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmCreateFileRequestDTO.getConnectorRef(),
         scmCreateFileRequestDTO.getRepoName());
@@ -374,6 +379,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     if (useGitClient) {
       log.info("Executing using gitClient");
     }
+
     CreateFileResponse createFileResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.createFile(CreateGitFileRequestDTO.builder()
@@ -398,6 +404,21 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .build());
     }
 
+    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                          .accountIdentifier(scope.getAccountIdentifier())
+                                          .completeFilePath(scmCreateFileRequestDTO.getFilePath())
+                                          .gitProvider(GitProviderUtil.getGitProvider(scmConnector))
+                                          .repoName(scmCreateFileRequestDTO.getRepoName())
+                                          .ref(scmCreateFileRequestDTO.getBranchName())
+                                          .build(),
+          GitFileCacheObject.builder()
+              .fileContent(scmCreateFileRequestDTO.getFileContent())
+              .commitId(createFileResponse.getCommitId())
+              .objectId(createFileResponse.getBlobId())
+              .build());
+    }
+
     return ScmCommitFileResponseDTO.builder()
         .commitId(createFileResponse.getCommitId())
         .blobId(createFileResponse.getBlobId())
@@ -407,7 +428,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmCommitFileResponseDTO updateFile(ScmUpdateFileRequestDTO scmUpdateFileRequestDTO) {
     Scope scope = scmUpdateFileRequestDTO.getScope();
-    // TODO Put validations over request here
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmUpdateFileRequestDTO.getConnectorRef(),
         scmUpdateFileRequestDTO.getRepoName());
@@ -443,6 +463,21 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
               .repoName(scmUpdateFileRequestDTO.getRepoName())
               .filepath(scmUpdateFileRequestDTO.getFilePath())
               .branchName(scmUpdateFileRequestDTO.getBranchName())
+              .build());
+    }
+
+    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.PIE_NG_GITX_CACHING)) {
+      gitFileCacheService.upsertCache(GitFileCacheKey.builder()
+                                          .accountIdentifier(scope.getAccountIdentifier())
+                                          .completeFilePath(scmUpdateFileRequestDTO.getFilePath())
+                                          .gitProvider(GitProviderUtil.getGitProvider(scmConnector))
+                                          .repoName(scmUpdateFileRequestDTO.getRepoName())
+                                          .ref(scmUpdateFileRequestDTO.getBranchName())
+                                          .build(),
+          GitFileCacheObject.builder()
+              .fileContent(scmUpdateFileRequestDTO.getFileContent())
+              .commitId(updateFileResponse.getCommitId())
+              .objectId(updateFileResponse.getBlobId())
               .build());
     }
 

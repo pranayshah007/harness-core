@@ -11,10 +11,12 @@ import io.harness.plancreator.steps.internal.PmsAbstractStepNode;
 import io.harness.steps.StepSpecTypeConstants;
 import io.harness.yaml.core.StepSpecType;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -23,7 +25,9 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
 @TypeAlias("ContainerStepNode")
 @OwnedBy(PIPELINE)

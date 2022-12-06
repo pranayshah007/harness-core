@@ -5,20 +5,23 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.steps.plugin;
+package io.harness.gitsync.caching.beans;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.sdk.core.data.Outcome;
 
+import lombok.AccessLevel;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Getter;
+import lombok.experimental.FieldDefaults;
 
-@Value
+@Getter
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.PIPELINE)
-@RecasterAlias("io.harness.steps.plugin.ContainerStepInitOutcome")
-public class ContainerStepInitOutcome implements Outcome {
-  // todo(abhinav): implement
+public class CacheDetails {
+  boolean isStale;
+  long cacheExpiryTTL;
+  long validUntilTTL;
+  long lastUpdatedAt;
 }

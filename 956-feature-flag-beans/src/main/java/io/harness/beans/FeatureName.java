@@ -283,7 +283,6 @@ public enum FeatureName {
   TRIGGERS_PAGE_PAGINATION,
   STALE_FLAGS_FFM_1510,
   NG_SVC_ENV_REDESIGN,
-  NEW_PIPELINE_STUDIO,
   EARLY_ACCESS_ENABLED,
   HELP_PANEL,
   CHAOS_ENABLED,
@@ -500,15 +499,16 @@ public enum FeatureName {
   SPG_WFE_OPTIMIZE_WORKFLOW_LISTING("Optimizes the wfe fetching from wf page.", HarnessTeam.SPG),
   SPG_INSTANCE_OPTIMIZE_DELETED_APPS("Optimizes the instance deleted apps fetching.", HarnessTeam.SPG),
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
-  SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
-      "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
   CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
   CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
-      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC);
+      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC),
+  CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
+  PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+  ;
 
   @Deprecated
   FeatureName() {

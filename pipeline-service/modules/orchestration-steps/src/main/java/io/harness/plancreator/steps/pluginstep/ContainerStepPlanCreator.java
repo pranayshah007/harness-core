@@ -26,6 +26,8 @@ public class ContainerStepPlanCreator extends PMSStepPlanCreatorV2<ContainerStep
 
   @Override
   public PlanCreationResponse createPlanForField(PlanCreationContext ctx, ContainerStepNode field) {
+    field.getContainerStepInfo().setIdentifier(field.getIdentifier());
+    field.getContainerStepInfo().setName(field.getName());
     return super.createPlanForField(ctx, field);
   }
 

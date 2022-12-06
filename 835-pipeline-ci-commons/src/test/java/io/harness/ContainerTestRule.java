@@ -7,7 +7,7 @@
 
 package io.harness;
 
-import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.factory.ClosingFactory;
@@ -49,7 +49,7 @@ import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
-@OwnedBy(CDC)
+@OwnedBy(PIPELINE)
 public class ContainerTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMixin {
   ClosingFactory closingFactory;
 

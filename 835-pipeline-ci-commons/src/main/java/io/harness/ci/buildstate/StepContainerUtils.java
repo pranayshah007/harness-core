@@ -7,9 +7,9 @@
 
 package io.harness.ci.buildstate;
 
-import static io.harness.ci.commonconstants.CIExecutionConstants.PORT_PREFIX;
-import static io.harness.ci.commonconstants.CIExecutionConstants.UNIX_STEP_COMMAND;
-import static io.harness.ci.commonconstants.CIExecutionConstants.WIN_STEP_COMMAND;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.PORT_PREFIX;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.UNIX_STEP_COMMAND;
+import static io.harness.ci.commonconstants.ContainerExecutionConstants.WIN_STEP_COMMAND;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
