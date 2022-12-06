@@ -213,7 +213,7 @@ public class ArtifactResourceUtils {
   }
 
   /**
-   * Returns the environmentRef using stage identifier and fqnToObjectMap.
+   * Returns the environmentRef using stage identifier and fqnToObjectMap2.
    * Field name should be environmentRef and fqn should have stage identifier to get the value of environmentRef
    *
    * @param fqnToObjectMap fqn to object map depicting yaml tree as key value pair
@@ -471,9 +471,15 @@ public class ArtifactResourceUtils {
               nexus2RegistryArtifactConfig.getRepositoryFormat().getValue()));
       }
 
-      if (isEmpty(repositoryName) || isEmpty(repositoryFormat)) {
+      if (isEmpty(repositoryName)) {
         repositoryName = (String) nexus2RegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+
+      if (isEmpty(repositoryFormat)) {
         repositoryFormat = (String) nexus2RegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+
+      if (isEmpty(nexusConnectorIdentifier)) {
         nexusConnectorIdentifier = nexus2RegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
     }
