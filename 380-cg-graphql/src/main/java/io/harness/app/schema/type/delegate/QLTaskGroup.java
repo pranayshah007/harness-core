@@ -101,6 +101,7 @@ public enum QLTaskGroup implements QLEnum {
   SHELL_SCRIPT_PROVISION_NG,
   CUSTOM_DEPLOYMENT_NG,
   ELASTIGROUP,
+  TAS,
   GITOPS;
 
   @Override

@@ -455,8 +455,8 @@ public class VariableCreatorHelper {
 
   private String getUniqueKeyInListField(Object fieldObject) {
     Map<String, Object> fieldValues = ReflectionUtils.getFieldValues(fieldObject,
-        new HashSet<>(
-            Arrays.asList(YamlNode.IDENTIFIER_FIELD_NAME, YamlNode.KEY_FIELD_NAME, YamlNode.NAME_FIELD_NAME)));
+        new HashSet<>(Arrays.asList(YamlNode.IDENTIFIER_FIELD_NAME, YamlNode.KEY_FIELD_NAME, YamlNode.NAME_FIELD_NAME)),
+        false);
     if (fieldValues.get(YamlNode.IDENTIFIER_FIELD_NAME) != null) {
       return (String) fieldValues.get(YamlNode.IDENTIFIER_FIELD_NAME);
     } else if (fieldValues.get(YamlNode.KEY_FIELD_NAME) != null) {

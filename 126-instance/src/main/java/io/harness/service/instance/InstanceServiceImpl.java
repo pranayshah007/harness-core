@@ -18,12 +18,11 @@ import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.mappers.InstanceMapper;
 import io.harness.models.ActiveServiceInstanceInfo;
+import io.harness.models.ActiveServiceInstanceInfoV2;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
-import io.harness.ng.core.entities.Project;
 import io.harness.repositories.instance.InstanceRepository;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -144,8 +143,10 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceCountByServiceAndEnv> getActiveInstancesByServiceAndEnv(Project project, long timestamp) {
-    return instanceRepository.getActiveInstancesByServiceAndEnv(project, timestamp).getMappedResults();
+  public List<InstanceDTO> getActiveInstancesByAccountOrgProjectAndService(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String serviceIdentifier, long timestamp) {
+    return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByAccountOrgProjectAndService(
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, timestamp));
   }
 
   /*
@@ -207,10 +208,25 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String buildIdentifier) {
+    return instanceRepository.getActiveServiceInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
+  }
+
+  @Override
   public AggregationResults<ActiveServiceInstanceInfo> getActiveServiceGitOpsInstanceInfo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId) {
     return instanceRepository.getActiveServiceGitOpsInstanceInfo(
         accountIdentifier, orgIdentifier, projectIdentifier, serviceId);
+  }
+
+  public AggregationResults<ActiveServiceInstanceInfoV2> getActiveServiceGitOpsInstanceInfo(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, String serviceIdentifier,
+      String buildIdentifier) {
+    return instanceRepository.getActiveServiceGitOpsInstanceInfo(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier, buildIdentifier);
   }
 
   /*
@@ -220,10 +236,21 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit) {
-    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
+      long lastDeployedAt) {
+    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId,
+        lastDeployedAt);
   }
+
+  @Override
+  public List<Instance> getActiveInstanceDetails(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String serviceId, String envId, String infraId, String clusterIdentifier,
+      String pipelineExecutionId, String buildId, int limit) {
+    return instanceRepository.getActiveInstanceDetails(accountIdentifier, orgIdentifier, projectIdentifier, serviceId,
+        envId, infraId, clusterIdentifier, pipelineExecutionId, buildId, limit);
+  }
+
   /*
     Returns breakup of active instances by envType at a given timestamp for specified accountIdentifier,
     projectIdentifier, orgIdentifier and serviceIds

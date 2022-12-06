@@ -201,18 +201,18 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_pipelineExecutionId_startTs")
+                 .name("accountId_startTs_status_pipelineExecutionId")
                  .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.startTs)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .field(WorkflowExecutionKeys.startTs)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_pipelineExecutionId_endTs")
+                 .name("accountId_endTs_status_pipelineExecutionId")
                  .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.endTs)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .field(WorkflowExecutionKeys.endTs)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_startTs_serviceIds")
@@ -301,12 +301,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private List<String> cloudProviderIds;
   @FdIndex private List<String> serviceIds;
   @FdIndex private List<String> infraMappingIds;
-  @FdIndex private List<String> infraDefinitionIds;
+  private List<String> infraDefinitionIds;
   private String appName;
   private String envName;
   private EnvironmentType envType;
   private WorkflowType workflowType;
-  @FdIndex private ExecutionStatus status;
+  private ExecutionStatus status;
   @Transient private Graph graph;
 
   @Transient private GraphNode executionNode; // used for workflow details.
@@ -452,6 +452,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
         + "displayName";
     public static final String serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid =
         serviceExecutionSummaries + ".instanceStatusSummaries.instanceElement.uuid";
+    public static final String originalExecution_executionId = originalExecution + ".executionId";
   }
 
   @PrePersist

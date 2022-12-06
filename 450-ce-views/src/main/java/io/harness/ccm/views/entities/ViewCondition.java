@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
 @JsonSubTypes({ @JsonSubTypes.Type(value = ViewIdCondition.class, name = "VIEW_ID_CONDITION") })
 @Schema(description =
             "This object defines a filter Condition, an array of filter Conditions are combined using AND operator")

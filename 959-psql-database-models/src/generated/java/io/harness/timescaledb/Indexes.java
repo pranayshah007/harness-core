@@ -17,6 +17,7 @@ import io.harness.timescaledb.tables.Environments;
 import io.harness.timescaledb.tables.KubernetesUtilizationData;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
+import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
@@ -177,6 +178,11 @@ public class Indexes {
       DSL.name("node_info_accid_clusterid_poolname"), NodeInfo.NODE_INFO,
       new OrderField[] {NodeInfo.NODE_INFO.ACCOUNTID, NodeInfo.NODE_INFO.CLUSTERID, NodeInfo.NODE_INFO.NODEPOOLNAME},
       false);
+
+  public static final Index PIPELINE_EXECUTION_SUMMARY_STARTTS_IDX = Internal.createIndex(
+      DSL.name("pipeline_execution_summary_startts_idx"), PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY,
+      new OrderField[] {PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY.STARTTS.desc()}, false);
+
   public static final Index PIPELINE_EXECUTION_SUMMARY_CD_STARTTS_IDX = Internal.createIndex(
       DSL.name("pipeline_execution_summary_cd_startts_idx"), PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,
       new OrderField[] {PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.desc()}, false);

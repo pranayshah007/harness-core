@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -70,6 +71,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
@@ -91,6 +93,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.beans.connector.pdcconnector.HostFilterType;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.PdcWinRmInfraDelegateConfig;
@@ -854,6 +857,40 @@ public class InfrastructureStepTest extends CategoryTest {
     doNothing().when(infrastructureStepHelper).validateExpression(any());
     assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testValidateTASConnector() {
+    StoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+
+    TanzuApplicationServiceInfrastructure infrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("tanzuConnector"))
+            .organization(ParameterField.createValueField("devTest"))
+            .space(ParameterField.createValueField("devSpace"))
+            .build();
+
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
+
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                            .connectorConfig(AwsConnectorDTO.builder().build())
+                                            .connectorType(ConnectorType.TAS)
+                                            .build();
+
+    doReturn(Lists.newArrayList(connectorInfoDTO))
+        .when(infrastructureStepHelper)
+        .validateAndGetConnectors(any(), any(), any());
+
+    assertThatThrownBy(() -> infrastructureStep.validateConnector(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+
+    connectorInfoDTO.setConnectorConfig(TasConnectorDTO.builder().build());
+
+    assertThatCode(() -> infrastructureStep.validateConnector(infrastructure, ambiance)).doesNotThrowAnyException();
   }
 
   @Test

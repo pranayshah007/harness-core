@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.Long.parseLong;
@@ -60,6 +61,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class PMSPipelineDtoMapper {
+  public static final String BOOLEAN_TRUE_VALUE = "true";
   public PMSPipelineResponseDTO writePipelineDto(PipelineEntity pipelineEntity) {
     return PMSPipelineResponseDTO.builder()
         .yamlPipeline(pipelineEntity.getYaml())
@@ -181,21 +183,19 @@ public class PMSPipelineDtoMapper {
             requestInfoDTO.getIdentifier(), basicPipeline.getIdentifier()));
       }
       if (isNotEmpty(basicPipeline.getName()) && !basicPipeline.getName().equals(requestInfoDTO.getName())) {
-        throw new InvalidRequestException(
-            String.format("Expected updated Pipeline name in YAML to be [%s], but was [%s]", requestInfoDTO.getName(),
-                basicPipeline.getName()));
+        throw new InvalidRequestException(String.format("Expected Pipeline name in YAML to be [%s], but was [%s]",
+            requestInfoDTO.getName(), basicPipeline.getName()));
       }
       if (isNotEmpty(basicPipeline.getDescription()) && isNotEmpty(requestInfoDTO.getDescription())
           && !basicPipeline.getDescription().equals(requestInfoDTO.getDescription())) {
         throw new InvalidRequestException(
-            String.format("Expected updated Pipeline description in YAML to be [%s], but was [%s]",
+            String.format("Expected Pipeline description in YAML to be [%s], but was [%s]",
                 requestInfoDTO.getDescription(), basicPipeline.getDescription()));
       }
       if (isNotEmpty(basicPipeline.getTags()) && isNotEmpty(requestInfoDTO.getTags())
           && !basicPipeline.getTags().equals(requestInfoDTO.getTags())) {
-        throw new InvalidRequestException(
-            String.format("Expected updated Pipeline tags in YAML to be [%s], but was [%s]", requestInfoDTO.getTags(),
-                basicPipeline.getTags()));
+        throw new InvalidRequestException(String.format("Expected Pipeline tags in YAML to be [%s], but was [%s]",
+            requestInfoDTO.getTags(), basicPipeline.getTags()));
       }
       PipelineEntity pipelineEntity = PipelineEntity.builder()
                                           .yaml(requestInfoDTO.getYaml())
@@ -404,5 +404,13 @@ public class PMSPipelineDtoMapper {
                        .identifier(entity.getIdentifier())
                        .build())
         .build();
+  }
+
+  public boolean parseLoadFromCacheHeaderParam(String loadFromCache) {
+    if (isEmpty(loadFromCache)) {
+      return false;
+    } else {
+      return BOOLEAN_TRUE_VALUE.equalsIgnoreCase(loadFromCache);
+    }
   }
 }

@@ -27,6 +27,8 @@ public interface LogAnalysisService {
   String scheduleDeploymentLogAnalysisTask(AnalysisInput analysisInput);
   Map<String, ExecutionStatus> getTaskStatus(List<String> taskIds);
   List<LogClusterDTO> getTestData(String verificationTaskId, Instant analysisStartTime, Instant analysisEndTime);
+  List<LogClusterDTO> getTestDataForDeploymentLog(
+      String verificationTaskId, Instant analysisStartTime, Instant analysisEndTime, String commaSeparatedHosts);
   List<LogAnalysisCluster> getPreviousAnalysis(
       String verificationTaskId, Instant analysisStartTime, Instant analysisEndTime);
 

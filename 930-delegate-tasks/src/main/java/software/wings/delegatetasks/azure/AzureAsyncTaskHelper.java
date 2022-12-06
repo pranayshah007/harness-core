@@ -58,6 +58,7 @@ import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.AzureContainerRegistryException;
+import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
@@ -281,15 +282,19 @@ public class AzureAsyncTaskHelper {
         azureConfigContext.getCertificateWorkingDirectory());
 
     AzureRegistriesResponse response;
-    response =
-        AzureRegistriesResponse.builder()
-            .containerRegistries(azureContainerRegistryClient
-                                     .listContainerRegistries(azureConfig, azureConfigContext.getSubscriptionId())
-                                     .stream()
-                                     .map(Registry::name)
-                                     .collect(Collectors.toList()))
-            .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-            .build();
+    try {
+      response =
+          AzureRegistriesResponse.builder()
+              .containerRegistries(azureContainerRegistryClient
+                                       .listContainerRegistries(azureConfig, azureConfigContext.getSubscriptionId())
+                                       .stream()
+                                       .map(Registry::name)
+                                       .collect(Collectors.toList()))
+              .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+              .build();
+    } catch (Exception e) {
+      throw new HintException("No registry found with given Subscription");
+    }
 
     log.info(format("Retrieved %d container registries (listing first %d only): %s",
         response.getContainerRegistries().size(), ITEM_LOG_LIMIT,

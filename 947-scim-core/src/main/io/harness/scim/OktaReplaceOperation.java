@@ -7,6 +7,8 @@
 
 package io.harness.scim;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,13 +17,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
+@NoArgsConstructor
 @ToString(callSuper = true, includeFieldNames = true)
 @Slf4j
 public class OktaReplaceOperation extends PatchOperation {
-  @JsonProperty private final JsonNode value;
+  @JsonProperty private JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();
 
@@ -57,11 +61,14 @@ public class OktaReplaceOperation extends PatchOperation {
     log.info("Fetching Values for " + cls.getName());
     log.info("Value logging {}", value);
     if (value.isArray()) {
-      log.info("GetValues Logging" + getValues(cls).toString());
+      log.info("GetValues Logging " + getValues(cls).toString());
+      if (isEmpty(getValues(cls))) {
+        log.info("Empty array received for replace operation, returning null");
+        return null;
+      }
       if (getValues(cls).get(0) != null) {
         log.info("GetValues Inside " + getValues(cls).get(0).toString());
       }
-
       return getValues(cls).get(0);
     }
     return jsonObjectMapper.treeToValue(value, cls);

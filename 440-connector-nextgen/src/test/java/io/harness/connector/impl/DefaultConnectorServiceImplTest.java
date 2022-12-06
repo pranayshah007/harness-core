@@ -21,6 +21,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -484,9 +485,9 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
-    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-             any(ConnectorInfoDTO.class), anyString()))
-        .thenReturn(true);
+    doNothing()
+        .when(connectorEntityReferenceHelper)
+        .deleteExistingSetupUsages(accountIdentifier, null, null, identifier);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
     verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
     assertThat(deleted).isTrue();
@@ -500,9 +501,9 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
     doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
     createConnector(identifier, name);
-    when(connectorEntityReferenceHelper.deleteConnectorEntityReferenceWhenConnectorGetsDeleted(
-             any(ConnectorInfoDTO.class), anyString()))
-        .thenThrow(RuntimeException.class);
+    doThrow(RuntimeException.class)
+        .when(connectorEntityReferenceHelper)
+        .deleteExistingSetupUsages(accountIdentifier, null, null, identifier);
     boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
     assertThat(deleted).isTrue();
   }

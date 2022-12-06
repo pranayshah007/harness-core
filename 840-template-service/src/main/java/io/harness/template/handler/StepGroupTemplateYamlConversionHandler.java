@@ -9,6 +9,7 @@ package io.harness.template.handler;
 
 import static io.harness.template.beans.NGTemplateConstants.IDENTIFIER;
 import static io.harness.template.beans.NGTemplateConstants.NAME;
+import static io.harness.template.beans.NGTemplateConstants.STAGE_TYPE;
 import static io.harness.template.beans.NGTemplateConstants.TEMPLATE_INPUTS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -38,6 +39,10 @@ public class StepGroupTemplateYamlConversionHandler implements YamlConversionHan
     YamlField rootYamlField = yamlField.getNode().getField(rootYamlFieldName);
     if (rootYamlField == null) {
       throw new NGTemplateException("yamlNode provided does not have root yaml field: " + rootYamlFieldName);
+    }
+    YamlField typeYamlField = rootYamlField.getNode().getField(STAGE_TYPE);
+    if (typeYamlField == null) {
+      throw new NGTemplateException("yamlNode provided does not have type stageType field");
     }
     TemplateYamlConversionRecord conversionRecord = TemplateYamlParallelConversionRecord.builder()
                                                         .fieldsToAdd(fieldsToAdd)

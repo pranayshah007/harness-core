@@ -46,7 +46,7 @@ import org.mongodb.morphia.annotations.Id;
 public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware, CreatedAtAware, AccountAccess {
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @FdIndex private String accountId;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
 
   public static List<MongoIndex> mongoIndexes() {

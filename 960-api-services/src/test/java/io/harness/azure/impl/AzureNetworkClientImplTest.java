@@ -79,6 +79,7 @@ public class AzureNetworkClientImplTest extends CategoryTest {
 
     Mockito.when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
     Mockito.when(configurable.withHttpClient(any())).thenReturn(configurable);
+    when(configurable.withRetryPolicy(any())).thenReturn(configurable);
     Mockito.when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))
         .thenReturn(authenticated);
     Mockito.when(configurable.authenticate(any(ClientSecretCredential.class), any(AzureProfile.class)))

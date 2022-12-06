@@ -64,7 +64,7 @@ public class CVActivityLog implements PersistentEntity, UuidAware, CreatedAtAwar
   }
 
   @Id private String uuid;
-  @FdIndex private String cvConfigId;
+  private String cvConfigId;
   @FdIndex private String stateExecutionId;
   @JsonProperty(value = "timestamp") private long createdAt;
   private long lastUpdatedAt;

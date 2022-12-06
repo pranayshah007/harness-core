@@ -72,11 +72,7 @@ public class WaitStepTest extends OrchestrationStepsTestBase {
     doReturn(Optional.of(waitStepInstance)).when(waitStepService).findByNodeExecutionId(nodeExecutionId);
     Map<String, ResponseData> responseDataMap = new HashMap<>();
     StepResponse response = waitStep.handleAsyncResponse(ambiance, stepElementParameters, responseDataMap);
-    WaitStepDetailsInfo waitStepDetailsInfo =
-        WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.TIMED_OUT).build();
     assertEquals(response.getStatus(), Status.SUCCEEDED);
-    verify(sdkGraphVisualizationDataService, times(1))
-        .publishStepDetailInformation(ambiance, waitStepDetailsInfo, "waitStepActionTaken");
   }
 
   @Test

@@ -95,10 +95,12 @@ import static io.harness.ccm.views.utils.ClusterTableKeys.NAMESPACE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.PARENT_INSTANCE_ID;
 import static io.harness.ccm.views.utils.ClusterTableKeys.PRICING_SOURCE;
 import static io.harness.ccm.views.utils.ClusterTableKeys.TASK_ID;
+import static io.harness.ccm.views.utils.ClusterTableKeys.TIME_GRANULARITY;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_NAME;
 import static io.harness.ccm.views.utils.ClusterTableKeys.WORKLOAD_TYPE;
 
 import static java.lang.String.format;
+import static org.joda.time.Months.monthsBetween;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.utils.BudgetUtils;
@@ -200,6 +202,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.Nullable;
+import org.joda.time.DateTime;
 
 @Slf4j
 @Singleton
@@ -699,7 +702,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   public Double[] getActualCostGroupedByPeriod(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewGroupBy> groupBy, List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName,
-      ViewQueryParams queryParams, boolean lastPeriod) {
+      ViewQueryParams queryParams, boolean lastPeriod, long startTime) {
     boolean isClusterTableQuery = isClusterTableQuery(filters, groupBy, queryParams);
     List<QLCEViewFilter> idFilters = getModifiedIdFilters(getIdFilters(filters), isClusterTableQuery);
     List<QLCEViewTimeFilter> timeFilters = viewsQueryHelper.getTimeFilters(filters);
@@ -721,11 +724,16 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     Double[] monthlyCosts = new Double[MONTHS];
     Arrays.fill(monthlyCosts, 0.0D);
     if (lastPeriod) {
-      int startPosition = ((Long) result.getTotalRows()).intValue();
+      boolean flag = true;
+      int monthDiff = 0;
       for (FieldValueList row : result.iterateAll()) {
-        monthlyCosts[MONTHS - startPosition] =
-            BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
-        startPosition--;
+        long timestamp = row.get(TIME_GRANULARITY).getTimestampValue() / 1000;
+        if (flag) {
+          monthDiff = monthsBetween(new DateTime(startTime), new DateTime(timestamp)).getMonths();
+          flag = false;
+        }
+        monthlyCosts[monthDiff] = BudgetUtils.getRoundedValue(row.get(colName).getNumericValue().doubleValue());
+        monthDiff++;
       }
     } else {
       int startPosition = 0;

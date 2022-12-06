@@ -9,8 +9,8 @@ package io.harness.exception.ngexception.beans.templateservice;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.metadata.ErrorMetadataConstants;
-import io.harness.exception.metadata.ErrorMetadataDTO;
+import io.harness.exception.ngexception.ErrorMetadataConstants;
+import io.harness.exception.ngexception.ErrorMetadataDTO;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;

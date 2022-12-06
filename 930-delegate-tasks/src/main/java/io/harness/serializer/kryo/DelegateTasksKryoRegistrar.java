@@ -125,6 +125,7 @@ import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.ServiceNowConfig;
+import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SlackMessage;
 import software.wings.beans.SlackMessageJSON;
@@ -219,6 +220,7 @@ import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.delegatetasks.collect.artifacts.AzureArtifactsCollectionTaskParameters;
 import software.wings.delegatetasks.cv.DataCollectionException;
+import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionResponse;
@@ -615,6 +617,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformProvisionParameters.class, 5342);
     kryo.register(TerraformExecutionData.class, 5343);
     kryo.register(ScriptStateExecutionSummary.class, 5346);
+    kryo.register(ServiceVariable.class, 5359);
+    kryo.register(ServiceVariable.OverrideType.class, 5361);
     kryo.register(BambooTask.BambooExecutionResponse.class, 5374);
     kryo.register(HttpStateExecutionResponse.class, 5375);
     kryo.register(ElkLogFetchRequest.class, 5376);
@@ -1007,5 +1011,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformSecretCleanupTaskResponse.class, 40117);
     kryo.register(TerraformSecretCleanupFailureException.class, 40118);
     kryo.register(TerraformSecretCleanupFailureDetails.class, 40119);
+    kryo.register(RateLimitExceededException.class, 50027);
   }
 }

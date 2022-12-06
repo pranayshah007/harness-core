@@ -100,10 +100,8 @@ public class InstanceSyncPerpetualTaskMigrationJob implements Managed {
 
   private void handleFeatureFlag(FeatureName featureFlag) {
     log.info("Processing Feature Flag: [{}]", featureFlag.name());
-    Set<String> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo()
-                                  .stream()
-                                  .map(Account::getUuid)
-                                  .collect(Collectors.toSet());
+    Set<String> allAccounts =
+        accountService.getAccountsWithBasicInfo(false).stream().map(Account::getUuid).collect(Collectors.toSet());
 
     Set<String> featureFlagEnabledAccounts;
     Set<String> featureFlagDisabledAccounts;

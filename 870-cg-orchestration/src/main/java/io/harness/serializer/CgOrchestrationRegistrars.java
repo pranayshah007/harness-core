@@ -22,7 +22,6 @@ import io.harness.serializer.kryo.WatcherBeansKryoRegister;
 import io.harness.serializer.morphia.CgOrchestrationMorphiaRegistrar;
 import io.harness.serializer.morphia.CommonEntitiesMorphiaRegister;
 import io.harness.serializer.morphia.SweepingOutputConverter;
-import io.harness.serializer.morphia.TaskDataV2Convertor;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -69,9 +68,7 @@ public class CgOrchestrationRegistrars {
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =
-      ImmutableSet.<Class<? extends TypeConverter>>builder()
-          .add(SweepingOutputConverter.class, TaskDataV2Convertor.class)
-          .build();
+      ImmutableSet.<Class<? extends TypeConverter>>builder().add(SweepingOutputConverter.class).build();
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters = ImmutableList.of();
 }

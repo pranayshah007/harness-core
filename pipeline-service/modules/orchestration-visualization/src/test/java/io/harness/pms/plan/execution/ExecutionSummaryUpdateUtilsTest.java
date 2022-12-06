@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -19,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.utils.PmsLevelUtils;
 import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
+import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -28,6 +30,7 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
@@ -44,8 +47,22 @@ import org.junit.experimental.categories.Category;
 import org.springframework.data.mongodb.core.query.Update;
 
 public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
+  private static final String STAGE1 = "stage1";
+  private static final String STAGE = "STAGE";
+  private static final String STAGE_VALUE = "stageValue";
+  private static final String STRATEGY1 = "strategy1";
+  private static final String STRATEGY = "STRATEGY";
+  private static final String STEP_VALUE = "stepValue";
+  private static final String TESTING = "testing";
+
   PlanNode pipelinePlanNode;
   PlanNode stagePlanNode;
+  PlanNode stagesPlanNode;
+  IdentityPlanNode stageIdentityPlanNode;
+
+  PlanNode strategyPlanNode;
+  PlanNode stepPlanNode;
+  PlanNode stepStrategyPlanNode;
 
   @Before
   public void setUp() {
@@ -62,14 +79,64 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .build();
     stagePlanNode = PlanNode.builder()
                         .uuid(generateUuid())
-                        .name("stage1")
-                        .stepType(StepType.newBuilder().setType("STAGE").setStepCategory(StepCategory.STAGE).build())
-                        .identifier("stage1")
+                        .name(STAGE1)
+                        .stepType(StepType.newBuilder().setType(STAGE).setStepCategory(StepCategory.STAGE).build())
+                        .identifier(STAGE1)
                         .skipExpressionChain(false)
                         .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
-                            RecastOrchestrationUtils.toMap(TestStepParameters.builder().param("stageValue").build()))))
-                        .group("STAGE")
+                            RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STAGE_VALUE).build()))))
+                        .group(STAGE)
                         .build();
+    stagesPlanNode = PlanNode.builder()
+                         .uuid(generateUuid())
+                         .name("stages")
+                         .stepType(StepType.newBuilder().setType("STAGES").setStepCategory(StepCategory.STAGES).build())
+                         .identifier("stages")
+                         .skipExpressionChain(false)
+                         .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
+                             RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STAGE_VALUE).build()))))
+                         .group("STAGES")
+                         .build();
+    strategyPlanNode =
+        PlanNode.builder()
+            .uuid(generateUuid())
+            .name(STRATEGY1)
+            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
+            .identifier(STRATEGY1)
+            .skipExpressionChain(false)
+            .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
+                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STAGE_VALUE).build()))))
+            .group(STRATEGY)
+            .build();
+    stepPlanNode = PlanNode.builder()
+                       .uuid(generateUuid())
+                       .name("step1")
+                       .stepType(StepType.newBuilder().setType("STEP").setStepCategory(StepCategory.STEP).build())
+                       .identifier("step")
+                       .skipExpressionChain(false)
+                       .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
+                           RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STAGE_VALUE).build()))))
+                       .group("STEP")
+                       .build();
+    stepStrategyPlanNode =
+        PlanNode.builder()
+            .uuid(generateUuid())
+            .name(STRATEGY1)
+            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
+            .identifier(STRATEGY1)
+            .skipExpressionChain(false)
+            .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
+                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STEP_VALUE).build()))))
+            .group(STRATEGY)
+            .build();
+    stageIdentityPlanNode =
+        IdentityPlanNode.builder()
+            .uuid(generateUuid())
+            .name("stage1")
+            .stepType(StepType.newBuilder().setType(STAGE).setStepCategory(StepCategory.STAGE).build())
+            .identifier("stage1")
+            .group(STAGE)
+            .build();
   }
 
   @Test
@@ -87,12 +154,12 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .endTs(System.currentTimeMillis())
             .ambiance(ambiance)
             .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage("testing")
+                             .setErrorMessage(TESTING)
                              .addFailureData(FailureData.newBuilder()
                                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                  .setLevel(Level.ERROR.name())
                                                  .setCode(GENERAL_ERROR.name())
-                                                 .setMessage("testing")
+                                                 .setMessage(TESTING)
                                                  .build())
                              .build())
 
@@ -111,12 +178,12 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .endTs(System.currentTimeMillis())
             .ambiance(ambiance)
             .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage("testing")
+                             .setErrorMessage(TESTING)
                              .addFailureData(FailureData.newBuilder()
                                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                  .setLevel(Level.ERROR.name())
                                                  .setCode(GENERAL_ERROR.name())
-                                                 .setMessage("testing")
+                                                 .setMessage(TESTING)
                                                  .build())
                              .build())
             .build();
@@ -136,7 +203,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .identifier("step")
             .skipExpressionChain(false)
             .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
-                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param("stepValue").build()))))
+                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STEP_VALUE).build()))))
             .group("STEP")
             .build();
     Ambiance stepAmbiance = Ambiance.newBuilder()
@@ -162,7 +229,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .identifier("step")
             .skipExpressionChain(false)
             .stepParameters(PmsStepParameters.parse(RecastOrchestrationUtils.toJson(
-                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param("stepValue").build()))))
+                RecastOrchestrationUtils.toMap(TestStepParameters.builder().param(STEP_VALUE).build()))))
             .group("STEP")
             .build();
     Ambiance stepAmbiance = Ambiance.newBuilder()
@@ -217,12 +284,12 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
             .stepType(StepType.newBuilder().setType("test").setStepCategory(StepCategory.STEP).build())
             .ambiance(stageAmbiance)
             .failureInfo(FailureInfo.newBuilder()
-                             .setErrorMessage("testing")
+                             .setErrorMessage(TESTING)
                              .addFailureData(FailureData.newBuilder()
                                                  .addFailureTypes(FailureType.APPLICATION_FAILURE)
                                                  .setLevel(Level.ERROR.name())
                                                  .setCode(GENERAL_ERROR.name())
-                                                 .setMessage("testing")
+                                                 .setMessage(TESTING)
                                                  .build())
                              .build())
             .build();
@@ -234,6 +301,114 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
         prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
         prefixLayoutNodeMap + ".executionInputConfigured");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testStageUpdateCriteriaStrategyNode() {
+    Ambiance stageAmbiance = Ambiance.newBuilder()
+                                 .setPlanExecutionId(generateUuid())
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode))
+                                 .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .status(Status.FAILED)
+            .planNode(strategyPlanNode)
+            .endTs(System.currentTimeMillis())
+            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
+            .ambiance(stageAmbiance)
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage(TESTING)
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage(TESTING)
+                                                 .build())
+                             .build())
+            .build();
+    Update update = new Update();
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyPlanNode.getUuid();
+    Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
+    assertThat(stringSet).containsOnly(
+        prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".moduleInfo.stepParameters");
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testStageUpdateCriteriaWithStepStrategy() {
+    Ambiance stageAmbiance = Ambiance.newBuilder()
+                                 .setPlanExecutionId(generateUuid())
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagePlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode))
+                                 .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .status(Status.FAILED)
+            .planNode(strategyPlanNode)
+            .endTs(System.currentTimeMillis())
+            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
+            .ambiance(stageAmbiance)
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage(TESTING)
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage(TESTING)
+                                                 .build())
+                             .build())
+            .build();
+    Update update = new Update();
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    assertThat(update.getUpdateObject().isEmpty()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testStageUpdateStageInsideStrategy() {
+    Ambiance stageAmbiance = Ambiance.newBuilder()
+                                 .setPlanExecutionId(generateUuid())
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), pipelinePlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagesPlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), strategyPlanNode))
+                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagePlanNode))
+                                 .build();
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(AmbianceUtils.obtainCurrentRuntimeId(stageAmbiance))
+            .status(Status.FAILED)
+            .planNode(strategyPlanNode)
+            .endTs(System.currentTimeMillis())
+            .stepType(StepType.newBuilder().setType(STRATEGY).setStepCategory(StepCategory.STRATEGY).build())
+            .ambiance(stageAmbiance)
+            .failureInfo(FailureInfo.newBuilder()
+                             .setErrorMessage(TESTING)
+                             .addFailureData(FailureData.newBuilder()
+                                                 .addFailureTypes(FailureType.APPLICATION_FAILURE)
+                                                 .setLevel(Level.ERROR.name())
+                                                 .setCode(GENERAL_ERROR.name())
+                                                 .setMessage(TESTING)
+                                                 .build())
+                             .build())
+            .build();
+    Update update = new Update();
+    ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, nodeExecution);
+    String prefixLayoutNodeMap = PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid();
+    Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
+    assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
+        prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
+        prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId",
+        prefixLayoutNodeMap + ".executionInputConfigured", prefixLayoutNodeMap + ".nodeIdentifier",
+        prefixLayoutNodeMap + ".name", prefixLayoutNodeMap + ".strategyMetadata");
   }
 
   @Data

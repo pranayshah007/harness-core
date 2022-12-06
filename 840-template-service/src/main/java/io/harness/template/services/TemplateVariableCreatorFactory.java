@@ -22,6 +22,7 @@ public class TemplateVariableCreatorFactory {
       case STEP_TEMPLATE:
       case STAGE_TEMPLATE:
       case PIPELINE_TEMPLATE:
+      case STEPGROUP_TEMPLATE:
         return pipelineTemplateVariablesCreatorService;
       case CUSTOM_DEPLOYMENT_TEMPLATE:
         return customDeploymentTemplateVariablesCreatorService;

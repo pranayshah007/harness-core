@@ -57,8 +57,9 @@ public class RuleDAO {
     if (governancePolicyFilter.getIsOOTB() != null) {
       if (governancePolicyFilter.getIsOOTB()) {
         rules.field(RuleId.accountId).equal(GLOBAL_ACCOUNT_ID);
+      } else {
+        rules.field(RuleId.accountId).equal(governancePolicyFilter.getAccountId());
       }
-      rules.field(RuleId.accountId).equal(governancePolicyFilter.getAccountId());
     }
     if (governancePolicyFilter.getSearch() != null) {
       rules.field(RuleId.name).containsIgnoreCase(governancePolicyFilter.getSearch());

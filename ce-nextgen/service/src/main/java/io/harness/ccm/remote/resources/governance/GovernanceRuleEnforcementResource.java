@@ -25,7 +25,6 @@ import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.audittrails.events.RuleEnforcementCreateEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementDeleteEvent;
 import io.harness.ccm.audittrails.events.RuleEnforcementUpdateEvent;
-// import io.harness.ccm.rbac.CCMRbacHelper
 import io.harness.ccm.scheduler.SchedulerClient;
 import io.harness.ccm.scheduler.SchedulerDTO;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -242,6 +241,7 @@ public class GovernanceRuleEnforcementResource {
                                      .url(configuration.getGovernanceConfig().getCallbackApiEndpoint())
                                      .body(jsonObject.toString())
                                      .headers(headers.toString())
+                                     .tlsNoVerifyPeer("true") // Skip verifying certs
                                      .build())
                 .build();
         log.info(new Gson().toJson(schedulerDTO));

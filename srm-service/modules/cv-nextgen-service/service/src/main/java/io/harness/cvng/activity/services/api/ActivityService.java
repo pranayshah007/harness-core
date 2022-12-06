@@ -21,7 +21,7 @@ import java.util.Optional;
 @OwnedBy(HarnessTeam.CV)
 public interface ActivityService {
   Activity get(String activityId);
-  Activity getByVerificationJobInstanceId(String verificationJobInstanceId);
+  List<Activity> getByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams);
 
   void updateActivityStatus(Activity activity);
 
@@ -39,4 +39,6 @@ public interface ActivityService {
   void abort(String activityId);
 
   String upsert(Activity activity);
+
+  boolean deleteByMonitoredServiceIdentifier(MonitoredServiceParams monitoredServiceParams);
 }

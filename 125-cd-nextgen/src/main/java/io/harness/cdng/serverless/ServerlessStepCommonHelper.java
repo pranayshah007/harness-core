@@ -27,11 +27,13 @@ import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome.ServerlessAwsLambdaRollbackDataOutcomeBuilder;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
+import io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -41,6 +43,7 @@ import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
+import io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
@@ -50,12 +53,15 @@ import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
+import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
+import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
 import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
+import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
@@ -98,6 +104,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -125,8 +132,16 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     validateManifestsOutcome(ambiance, manifestsOutcome);
     ManifestOutcome serverlessManifestOutcome =
         getServerlessManifestOutcome(manifestsOutcome.values(), serverlessStepHelper);
-    return prepareServerlessManifestGitFetchTask(
-        ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
+
+    TaskChainResponse taskChainResponse = null;
+    if (isGitManifest(serverlessManifestOutcome)) {
+      taskChainResponse = prepareServerlessManifestGitFetchTask(
+          ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
+    } else { // s3 store
+      taskChainResponse = prepareServerlessManifestS3FetchTask(
+          ambiance, stepElementParameters, infrastructureOutcome, serverlessManifestOutcome, serverlessStepHelper);
+    }
+    return taskChainResponse;
   }
 
   public TaskChainResponse executeNextLink(ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance,
@@ -139,6 +154,10 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
       if (responseData instanceof ServerlessGitFetchResponse) {
         ServerlessGitFetchResponse serverlessGitFetchResponse = (ServerlessGitFetchResponse) responseData;
         return handleServerlessGitFetchFilesResponse(serverlessGitFetchResponse, serverlessStepExecutor, ambiance,
+            stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper);
+      } else if (responseData instanceof ServerlessS3FetchResponse) {
+        ServerlessS3FetchResponse serverlessS3FetchResponse = (ServerlessS3FetchResponse) responseData;
+        return handleServerlessS3FetchFilesResponse(serverlessS3FetchResponse, serverlessStepExecutor, ambiance,
             stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper);
       } else {
         ServerlessPrepareRollbackDataResponse serverlessPrepareRollbackDataResponse =
@@ -197,8 +216,28 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                                                       .serverlessManifestOutcome(manifestOutcome)
                                                                       .infrastructureOutcome(infrastructureOutcome)
                                                                       .build();
+
     return getGitFetchFileTaskResponse(
         ambiance, true, stepElementParameters, serverlessStepPassThroughData, serverlessGitFetchFileConfig);
+  }
+
+  private TaskChainResponse prepareServerlessManifestS3FetchTask(Ambiance ambiance,
+      StepElementParameters stepElementParameters, InfrastructureOutcome infrastructureOutcome,
+      ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
+    StoreConfig storeConfig = manifestOutcome.getStore();
+    if (!ManifestStoreType.S3.equals(storeConfig.getKind())) {
+      throw new InvalidRequestException("Invalid kind of storeConfig for Serverless step", USER);
+    }
+    S3StoreConfig s3StoreConfig = (S3StoreConfig) storeConfig;
+    ServerlessS3FetchFileConfig serverlessS3FetchFileConfig =
+        getS3FetchFilesConfig(ambiance, s3StoreConfig, manifestOutcome, serverlessStepHelper);
+    ServerlessStepPassThroughData serverlessStepPassThroughData = ServerlessStepPassThroughData.builder()
+                                                                      .serverlessManifestOutcome(manifestOutcome)
+                                                                      .infrastructureOutcome(infrastructureOutcome)
+                                                                      .build();
+
+    return getS3FetchFileTaskResponse(
+        ambiance, true, stepElementParameters, serverlessStepPassThroughData, serverlessS3FetchFileConfig);
   }
 
   public TaskChainResponse queueServerlessTask(StepElementParameters stepElementParameters,
@@ -246,6 +285,15 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
       throw new GeneralException("Found No Manifest Content from serverless git fetch task");
     }
 
+    return prepareServerlessPrepareRollbackTask(manifestFilePathContent, serverlessStepExecutor, ambiance,
+        stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper,
+        serverlessGitFetchResponse.getUnitProgressData());
+  }
+
+  private TaskChainResponse prepareServerlessPrepareRollbackTask(Optional<Pair<String, String>> manifestFilePathContent,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper,
+      UnitProgressData unitProgressData) {
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactsOutcome> artifactsOutcome = getArtifactsOutcome(ambiance);
     Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap = new HashMap<>();
@@ -261,15 +309,15 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         });
       }
     }
-
     String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(),
         serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
-    ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
-                                                              .manifestFilePathContent(manifestFilePathContent.get())
-                                                              .manifestFileOverrideContent(manifestFileOverrideContent)
-                                                              .build();
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME,
-        serverlessGitFetchOutcome, StepOutcomeGroup.STEP.name());
+    ServerlessFetchFileOutcome serverlessFetchFileOutcome =
+        ServerlessFetchFileOutcome.builder()
+            .manifestFilePathContent(manifestFilePathContent.get())
+            .manifestFileOverrideContent(manifestFileOverrideContent)
+            .build();
+    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME,
+        serverlessFetchFileOutcome, StepOutcomeGroup.STEP.name());
     ServerlessStepExecutorParams serverlessStepExecutorParams;
     if (serverlessStepExecutor instanceof ServerlessAwsLambdaDeployStep) {
       serverlessStepExecutorParams = ServerlessAwsLambdaStepExecutorParams.builder()
@@ -283,7 +331,32 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
     return serverlessStepExecutor.executeServerlessPrepareRollbackTask(
         serverlessStepPassThroughData.getServerlessManifestOutcome(), ambiance, stepElementParameters,
-        serverlessStepPassThroughData, serverlessGitFetchResponse.getUnitProgressData(), serverlessStepExecutorParams);
+        serverlessStepPassThroughData, unitProgressData, serverlessStepExecutorParams);
+  }
+
+  private TaskChainResponse handleServerlessS3FetchFilesResponse(ServerlessS3FetchResponse serverlessS3FetchResponse,
+      ServerlessStepExecutor serverlessStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepPassThroughData serverlessStepPassThroughData, ServerlessStepHelper serverlessStepHelper) {
+    if (serverlessS3FetchResponse.getTaskStatus() != TaskStatus.SUCCESS) {
+      ServerlessS3FetchFailurePassThroughData serverlessS3FetchFailurePassThroughData =
+          ServerlessS3FetchFailurePassThroughData.builder()
+              .errorMsg(serverlessS3FetchResponse.getErrorMessage())
+              .unitProgressData(serverlessS3FetchResponse.getUnitProgressData())
+              .build();
+      return TaskChainResponse.builder()
+          .passThroughData(serverlessS3FetchFailurePassThroughData)
+          .chainEnd(true)
+          .build();
+    }
+
+    ServerlessS3FetchFileResult serverlessS3FetchFileResult =
+        serverlessS3FetchResponse.getServerlessS3FetchFileResult();
+    Optional<Pair<String, String>> manifestFilePathContent = Optional.of(
+        ImmutablePair.of(serverlessS3FetchFileResult.getFilePath(), serverlessS3FetchFileResult.getFileContent()));
+
+    return prepareServerlessPrepareRollbackTask(manifestFilePathContent, serverlessStepExecutor, ambiance,
+        stepElementParameters, serverlessStepPassThroughData, serverlessStepHelper,
+        serverlessS3FetchResponse.getUnitProgressData());
   }
 
   private TaskChainResponse handleServerlessPrepareRollbackDataResponse(
@@ -300,13 +373,13 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
     ServerlessAwsLambdaDeployStepParameters deployStepParameters =
         (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
-    OptionalSweepingOutput serverlessGitFetchOptionalOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
-    if (!serverlessGitFetchOptionalOutput.isFound()) {
+    OptionalSweepingOutput serverlessFetchFileOptionalOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME));
+    if (!serverlessFetchFileOptionalOutput.isFound()) {
       throw new GeneralException("Found Null Manifest Content from last serverless git fetch task");
     }
-    ServerlessGitFetchOutcome serverlessGitFetchOutcome =
-        (ServerlessGitFetchOutcome) serverlessGitFetchOptionalOutput.getOutput();
+    ServerlessFetchFileOutcome serverlessFetchFileOutcome =
+        (ServerlessFetchFileOutcome) serverlessFetchFileOptionalOutput.getOutput();
     ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
         ServerlessExecutionPassThroughData.builder()
             .infrastructure(serverlessStepPassThroughData.getInfrastructureOutcome())
@@ -329,8 +402,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
       serverlessStepExecutorParams =
           ServerlessAwsLambdaStepExecutorParams.builder()
               .shouldOpenFetchFilesLogStream(false)
-              .manifestFilePathContent(serverlessGitFetchOutcome.getManifestFilePathContent())
-              .manifestFileOverrideContent(serverlessGitFetchOutcome.getManifestFileOverrideContent())
+              .manifestFilePathContent(serverlessFetchFileOutcome.getManifestFilePathContent())
+              .manifestFileOverrideContent(serverlessFetchFileOutcome.getManifestFileOverrideContent())
               .build();
     } else {
       throw new UnsupportedOperationException(
@@ -347,6 +420,15 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .unitProgressList(unitProgressData.getUnitProgresses())
         .status(Status.FAILED)
         .failureInfo(FailureInfo.newBuilder().setErrorMessage(serverlessGitFetchResponse.getErrorMsg()).build())
+        .build();
+  }
+
+  public StepResponse handleS3TaskFailure(ServerlessS3FetchFailurePassThroughData serverlessS3FetchResponse) {
+    UnitProgressData unitProgressData = serverlessS3FetchResponse.getUnitProgressData();
+    return StepResponse.builder()
+        .unitProgressList(unitProgressData.getUnitProgresses())
+        .status(Status.FAILED)
+        .failureInfo(FailureInfo.newBuilder().setErrorMessage(serverlessS3FetchResponse.getErrorMsg()).build())
         .build();
   }
 
@@ -442,10 +524,50 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .build();
   }
 
+  private TaskChainResponse getS3FetchFileTaskResponse(Ambiance ambiance, boolean shouldOpenLogStream,
+      StepElementParameters stepElementParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      ServerlessS3FetchFileConfig serverlessS3FetchFileConfig) {
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
+                                                            .accountId(accountId)
+                                                            .serverlessS3FetchFileConfig(serverlessS3FetchFileConfig)
+                                                            .shouldOpenLogStream(shouldOpenLogStream)
+                                                            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.SERVERLESS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {serverlessS3FetchRequest})
+                                  .build();
+    String taskName = TaskType.SERVERLESS_S3_FETCH_TASK_NG.getDisplayName();
+    ServerlessSpecParameters serverlessSpecParameters = (ServerlessSpecParameters) stepElementParameters.getSpec();
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, serverlessSpecParameters.getCommandUnits(), taskName,
+            TaskSelectorYaml.toTaskSelector(
+                emptyIfNull(getParameterFieldValue(serverlessSpecParameters.getDelegateSelectors()))),
+            stepHelper.getEnvironmentType(ambiance));
+    return TaskChainResponse.builder()
+        .chainEnd(false)
+        .taskRequest(taskRequest)
+        .passThroughData(serverlessStepPassThroughData)
+        .build();
+  }
+
   private ServerlessGitFetchFileConfig getGitFetchFilesConfig(Ambiance ambiance, GitStoreConfig gitStoreConfig,
       ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
     return ServerlessGitFetchFileConfig.builder()
         .gitStoreDelegateConfig(getGitStoreDelegateConfig(ambiance, gitStoreConfig, manifestOutcome))
+        .identifier(manifestOutcome.getIdentifier())
+        .manifestType(manifestOutcome.getType())
+        .configOverridePath(serverlessStepHelper.getConfigOverridePath(manifestOutcome))
+        .succeedIfFileNotFound(false)
+        .build();
+  }
+
+  private ServerlessS3FetchFileConfig getS3FetchFilesConfig(Ambiance ambiance, S3StoreConfig s3StoreConfig,
+      ManifestOutcome manifestOutcome, ServerlessStepHelper serverlessStepHelper) {
+    return ServerlessS3FetchFileConfig.builder()
+        .s3StoreDelegateConfig(getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome))
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
         .configOverridePath(serverlessStepHelper.getConfigOverridePath(manifestOutcome))

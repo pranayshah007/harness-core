@@ -9,6 +9,7 @@ package io.harness.connector.helper;
 
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.services.NGConnectorSecretManagerService;
@@ -56,13 +57,14 @@ public class CustomSecretManagerHelper {
 
   public Set<EncryptedDataParams> prepareEncryptedDataParamsSet(
       CustomSecretManagerConfigDTO customNGSecretManagerConfigDTO, String yaml) {
-    String mergedYaml = NGRestUtils
-                            .getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
-                                customNGSecretManagerConfigDTO.getAccountIdentifier(),
-                                customNGSecretManagerConfigDTO.getOrgIdentifier(),
-                                customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null, false,
-                                TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()))
-                            .getMergedPipelineYaml();
+    String mergedYaml =
+        NGRestUtils
+            .getResponse(
+                templateResourceClient.applyTemplatesOnGivenYaml(customNGSecretManagerConfigDTO.getAccountIdentifier(),
+                    customNGSecretManagerConfigDTO.getOrgIdentifier(),
+                    customNGSecretManagerConfigDTO.getProjectIdentifier(), null, null, null, BOOLEAN_FALSE_VALUE,
+                    TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()))
+            .getMergedPipelineYaml();
 
     log.info("Yaml received from template service is \n" + mergedYaml);
     int functorToken = HashGenerator.generateIntegerHash();

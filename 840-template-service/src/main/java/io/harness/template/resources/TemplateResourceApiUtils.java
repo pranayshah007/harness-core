@@ -122,7 +122,7 @@ public class TemplateResourceApiUtils {
           String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
               templateIdentifier, versionLabel, project, org, account));
       Optional<TemplateEntity> templateEntity =
-          templateService.get(account, org, project, templateIdentifier, versionLabel, deleted);
+          templateService.get(account, org, project, templateIdentifier, versionLabel, deleted, false);
 
       String version = "0";
       if (templateEntity.isPresent()) {

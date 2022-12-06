@@ -34,7 +34,7 @@ public class RemoveDuplicateUserGroupNameMigration implements Migration {
   @Override
   public void migrate() {
     try {
-      List<Account> accounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+      List<Account> accounts = accountService.getAccountsWithBasicInfo(false);
       accounts.forEach(account -> {
         try {
           PageRequest pageRequest =

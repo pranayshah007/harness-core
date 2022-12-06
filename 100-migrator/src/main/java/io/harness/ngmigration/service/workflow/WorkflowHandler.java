@@ -18,6 +18,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -64,7 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 public abstract class WorkflowHandler {
   public static final String INPUT_EXPRESSION = "<+input>";
 
-  public TemplateEntityType getTemplateType() {
+  public TemplateEntityType getTemplateType(Workflow workflow) {
     return TemplateEntityType.STAGE_TEMPLATE;
   }
 
@@ -321,6 +322,7 @@ public abstract class WorkflowHandler {
 
   AbstractStepNode getStepElementConfig(StepMapperFactory stepMapperFactory, StepYaml step, String skipCondition) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
+    MigratorExpressionUtils.render(step, new HashMap<>());
     AbstractStepNode stepNode = stepMapper.getSpec(step);
     if (stepNode == null) {
       return null;
@@ -416,6 +418,31 @@ public abstract class WorkflowHandler {
         .flatMap(phase -> getStepGroups(stepMapperFactory, phase).stream())
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
+  }
+
+  JsonNode getCustomStageTemplateSpec(Workflow workflow, StepMapperFactory stepMapperFactory) {
+    List<WorkflowPhase.Yaml> phases = getPhases(workflow);
+    List<WorkflowPhase.Yaml> rollbackPhases = getRollbackPhases(workflow);
+
+    // Add all the steps
+    List<ExecutionWrapperConfig> steps = getSteps(stepMapperFactory, phases);
+
+    // Add all the steps
+    List<ExecutionWrapperConfig> rollingSteps = getSteps(stepMapperFactory, rollbackPhases);
+
+    // Build Stage
+    CustomStageConfig customStageConfig =
+        CustomStageConfig.builder()
+            .execution(ExecutionElementConfig.builder().steps(steps).rollbackSteps(rollingSteps).build())
+            .build();
+
+    Map<String, Object> templateSpec = ImmutableMap.<String, Object>builder()
+                                           .put("type", "Custom")
+                                           .put("spec", customStageConfig)
+                                           .put("failureStrategies", new ArrayList<>())
+                                           .put("variables", getVariables(workflow))
+                                           .build();
+    return JsonPipelineUtils.asTree(templateSpec);
   }
 
   StageElementWrapperConfig buildCustomStage(StepMapperFactory stepMapperFactory, PhaseStep.Yaml phaseStep) {

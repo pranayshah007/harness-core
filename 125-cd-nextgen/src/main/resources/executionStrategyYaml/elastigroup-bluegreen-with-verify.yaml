@@ -1,0 +1,56 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: Elastigroup Blue Green Stage Setup
+          identifier: Elastigroup_BGSetup
+          type: ElastigroupBGStageSetup
+          timeout: 10m
+          spec:
+            name: <+project.identifier>_<+service.identifier>_<+env.identifier>
+            instances:
+              type: Fixed
+              spec:
+                min: 1
+                max: 1
+                desired: 1
+            connectedCloudProvider:
+              type: AWS
+              spec:
+                connectorRef: AWS_Connector
+                region: us-east-1
+            loadBalancers:
+              - type: AWSLoadBalancerConfig
+                spec:
+                  loadBalancer: "myLB"
+                  prodListenerPort: "8080"
+                  prodListenerRuleArn: "prodRuleARN"
+                  stageListenerPort: "80"
+                  stageListenerRuleArn: "stageRuleARN"
+          failureStrategies: []
+      - step:
+          type: ElastigroupSwapRoute
+          name: Elastigroup Swap Route
+          identifier: ElastigroupSwapRoute
+          spec:
+            downsizeOldElastigroup: true
+          timeout: 15m
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: Elastigroup Rollback
+          identifier: Elastigroup_Rollback
+          type: ElastigroupRollback
+          timeout: 10m
+          spec: {}

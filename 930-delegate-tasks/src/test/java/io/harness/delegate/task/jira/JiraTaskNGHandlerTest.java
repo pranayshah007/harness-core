@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -39,6 +40,7 @@ import io.harness.jira.JiraFieldNG;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
@@ -568,6 +570,8 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraClient).getInstanceData();
     PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
     when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
     JiraUserData jiraUserData = new JiraUserData("accountId", "assignee", true, "your-jira-account-id");
@@ -631,6 +635,9 @@ public class JiraTaskNGHandlerTest extends CategoryTest {
     when(jiraIssueUpdateMetadataNG.getFields()).thenReturn(fieldsMap);
 
     JiraClient jiraClient = Mockito.mock(JiraClient.class);
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraClient).getInstanceData();
+
     PowerMockito.whenNew(JiraClient.class).withAnyArguments().thenReturn(jiraClient);
     when(jiraClient.getIssueUpdateMetadata("TJI-37792")).thenReturn(jiraIssueUpdateMetadataNG);
     JiraUserData jiraUserData1 = new JiraUserData("accountId1", "assignee1", true, "your-jira-account-id-1");

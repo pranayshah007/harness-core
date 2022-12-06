@@ -20,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -78,7 +77,7 @@ public class ApplicationManifest extends Base implements AccountAccess, NGMigrat
   public static final String ID = "_id";
   public static final String CREATED_AT = "createdAt";
 
-  @FdIndex private String accountId;
+  private String accountId;
   private String serviceId;
   private String envId;
   private String name;

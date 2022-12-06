@@ -13,7 +13,6 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static java.time.Duration.ofHours;
 import static java.time.Duration.ofSeconds;
 
-import io.harness.SystemWrapper;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -27,6 +26,7 @@ import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceRequiredProvider;
+import io.harness.utils.system.SystemWrapper;
 import io.harness.workers.background.AccountStatusBasedEntityProcessController;
 
 import software.wings.beans.governance.GovernanceConfig;

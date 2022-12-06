@@ -7,13 +7,12 @@
 
 package io.harness.cvng;
 
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.cvng.beans.change.ChangeSourceType.HARNESS_CD;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,6 +22,7 @@ import io.harness.annotations.retry.RetryOnExceptionInterceptor;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityUpdatableEntity;
@@ -354,8 +354,9 @@ import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateEx
 import io.harness.cvng.statemachine.services.api.CompositeSLOMetricAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentLogClusterStateExecutor;
+import io.harness.cvng.statemachine.services.api.DeploymentLogHostSamplingStateExecutor;
+import io.harness.cvng.statemachine.services.api.DeploymentMetricHostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.DeploymentTimeSeriesAnalysisStateExecutor;
-import io.harness.cvng.statemachine.services.api.HostSamplingStateExecutor;
 import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.cvng.statemachine.services.api.PreDeploymentLogClusterStateExecutor;
 import io.harness.cvng.statemachine.services.api.SLIMetricAnalysisStateExecutor;
@@ -1103,8 +1104,11 @@ public class CVServiceModule extends AbstractModule {
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.COMPOSOITE_SLO_METRIC_ANALYSIS)
         .to(CompositeSLOMetricAnalysisStateExecutor.class)
         .in(Scopes.SINGLETON);
-    stateTypeAnalysisStateExecutorMap.addBinding(StateType.HOST_SAMPLING_STATE)
-        .to(HostSamplingStateExecutor.class)
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_METRIC_HOST_SAMPLING_STATE)
+        .to(DeploymentMetricHostSamplingStateExecutor.class)
+        .in(Scopes.SINGLETON);
+    stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_LOG_HOST_SAMPLING_STATE)
+        .to(DeploymentLogHostSamplingStateExecutor.class)
         .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.DEPLOYMENT_TIME_SERIES_ANALYSIS_STATE)
         .to(DeploymentTimeSeriesAnalysisStateExecutor.class)
