@@ -11,14 +11,17 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.SetupMetadata;
+import io.harness.pms.filter.creation.FilterCreationResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.pipeline.service.PMSPipelineServiceImpl;
@@ -29,6 +32,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 import io.harness.steps.pipelinestage.PipelineStageNode;
 
+import com.google.protobuf.StringValue;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
@@ -96,10 +100,19 @@ public class PipelineStageFilterCreatorTest extends CategoryTest {
     doReturn(Optional.of(PipelineEntity.builder().yaml(yamlField).build()))
         .when(pmsPipelineService)
         .getPipeline("acc", "org", "project", "childPipeline", false, false);
-    assertThatCode(()
-                       -> pipelineStageFilterCreator.handleNode(
-                           filterCreationContext, YamlUtils.read(yamlField, PipelineStageNode.class)))
-        .doesNotThrowAnyException();
+    FilterCreationResponse filterCreationResponse = pipelineStageFilterCreator.handleNode(
+        filterCreationContext, YamlUtils.read(yamlField, PipelineStageNode.class));
+
+    assertThat(filterCreationResponse.getReferredEntities().size()).isEqualTo(1);
+    EntityDetailProtoDTO entityDetailProtoDTO = filterCreationResponse.getReferredEntities().get(0);
+    assertThat(entityDetailProtoDTO.getType()).isEqualTo(EntityTypeProtoEnum.PIPELINES);
+    assertThat(entityDetailProtoDTO.getIdentifierRef())
+        .isEqualTo(IdentifierRefProtoDTO.newBuilder()
+                       .setAccountIdentifier(StringValue.of("acc"))
+                       .setOrgIdentifier(StringValue.of("org"))
+                       .setProjectIdentifier(StringValue.of("project"))
+                       .setIdentifier(StringValue.of("childPipeline"))
+                       .build());
 
     // case2: pipeline stage config as null
     String yamlFieldWithoutSpec = "---\n"

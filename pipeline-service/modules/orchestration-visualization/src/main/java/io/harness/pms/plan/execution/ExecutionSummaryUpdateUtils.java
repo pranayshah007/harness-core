@@ -32,65 +32,56 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class ExecutionSummaryUpdateUtils {
+  private static boolean isBarrierNode(Level level) {
+    return Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER);
+  }
+
+  private static boolean performUpdatesOnBarrierNode(Update update, NodeExecution nodeExecution) {
+    // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
+    Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
+    if (stage.isPresent()) {
+      Level stageNode = stage.get();
+      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
+      return true;
+    }
+    return false;
+  }
+
+  public static boolean isStageStrategyNode(NodeExecution nodeExecution) {
+    return nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
+        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance());
+  }
+
+  /**
+   * This function adds some information at the stage layoutNodeMap level.
+   * Performs the following operation:
+   * 1. Updates barrier related information on a stage node
+   * 2. Updates strategy node with status and step parameters
+   * 3. Updates stage node with generic updates and strategy information.
+   * @param update
+   * @param nodeExecution
+   * @return
+   */
   public static boolean addStageUpdateCriteria(Update update, NodeExecution nodeExecution) {
-    boolean updateApplied = false;
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
+    boolean updated = false;
+    if (isBarrierNode(level)) {
+      updated = performUpdatesOnBarrierNode(update, nodeExecution);
+    }
     ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
-    if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
-      // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
-      Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
-      // Updating the barrier information in the stage node.
-      if (stage.isPresent()) {
-        Level stageNode = stage.get();
-        update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageNode.getSetupId() + ".barrierFound", true);
-        updateApplied = true;
-      }
+    if (isStageStrategyNode(nodeExecution)) {
+      updated = updateStrategyNode(update, nodeExecution, status) || updated;
     }
-    // Making update in graph only if the strategy is at stage level.
-    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY
-        && AmbianceUtils.isCurrentStrategyLevelAtStage(nodeExecution.getAmbiance())) {
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".status", status);
-      update.set(
-          PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
-          nodeExecution.getResolvedStepParameters());
-      updateApplied = true;
+    if (OrchestrationUtils.isStageNode(nodeExecution)) {
+      updated = updateStageNode(update, nodeExecution, status, level) || updated;
     }
-    if (!OrchestrationUtils.isStageNode(nodeExecution)) {
-      return updateApplied;
-    }
-    // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
-    // there is a PlanNode
-    String stageUuid = nodeExecution.getNodeId();
-    if (AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()) {
-      // If nodeExecution is under strategy then we use nodeExecution.getUuid rather than the planNodeId
-      stageUuid = nodeExecution.getUuid();
-      update.set(
-          PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeIdentifier", nodeExecution.getIdentifier());
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".name", nodeExecution.getName());
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".strategyMetadata",
-          AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata());
-    }
-    if (!level.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE.toString())) {
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".status", status);
-    }
-    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".startTs", nodeExecution.getStartTs());
-    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeExecutionId", nodeExecution.getUuid());
-    update.set(
-        PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeRunInfo", nodeExecution.getNodeRunInfo());
-    if (nodeExecution.getEndTs() != null) {
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".endTs", nodeExecution.getEndTs());
-    }
-    if (nodeExecution.getFailureInfo() != null) {
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".failureInfo",
-          ExecutionErrorInfo.builder().message(nodeExecution.getFailureInfo().getErrorMessage()).build());
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".failureInfoDTO",
-          FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
-    }
-    if (nodeExecution.getSkipInfo() != null) {
-      update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".skipInfo", nodeExecution.getSkipInfo());
-    }
-    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".executionInputConfigured",
-        nodeExecution.getExecutionInputConfigured());
+    return updated;
+  }
+
+  private static boolean updateStrategyNode(Update update, NodeExecution nodeExecution, ExecutionStatus status) {
+    update.set(String.format(LayoutNodeGraphConstants.STATUS, nodeExecution.getNodeId()), status);
+    update.set(PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId() + ".moduleInfo.stepParameters",
+        nodeExecution.getResolvedStepParameters());
     return true;
   }
 
@@ -112,5 +103,50 @@ public class ExecutionSummaryUpdateUtils {
     }
 
     return false;
+  }
+
+  private boolean updateStageNode(Update update, NodeExecution nodeExecution, ExecutionStatus status, Level level) {
+    // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
+    // there is a PlanNode
+    String stageUuid = nodeExecution.getNodeId();
+    if (AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()) {
+      // If nodeExecution is under strategy then we use nodeExecution.getUuid rather than the planNodeId
+      stageUuid = nodeExecution.getUuid();
+      updateStrategyBasedData(update, nodeExecution);
+    }
+    if (!level.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE.toString())) {
+      update.set(String.format(LayoutNodeGraphConstants.STATUS, stageUuid), status);
+    }
+    updateGenericData(update, stageUuid, nodeExecution);
+    return true;
+  }
+
+  private void updateStrategyBasedData(Update update, NodeExecution nodeExecution) {
+    String stageUuid = nodeExecution.getUuid();
+
+    update.set(String.format(LayoutNodeGraphConstants.NODE_IDENTIFIER, stageUuid), nodeExecution.getIdentifier());
+    update.set(String.format(LayoutNodeGraphConstants.NAME, stageUuid), nodeExecution.getName());
+    update.set(String.format(LayoutNodeGraphConstants.STRATEGY_METADATA, stageUuid),
+        AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata());
+  }
+
+  private void updateGenericData(Update update, String stageUuid, NodeExecution nodeExecution) {
+    update.set(String.format(LayoutNodeGraphConstants.START_TS, stageUuid), nodeExecution.getStartTs());
+    update.set(String.format(LayoutNodeGraphConstants.NODE_EXECUTION_ID, stageUuid), nodeExecution.getUuid());
+    update.set(String.format(LayoutNodeGraphConstants.NODE_RUN_INFO, stageUuid), nodeExecution.getNodeRunInfo());
+    if (nodeExecution.getEndTs() != null) {
+      update.set(String.format(LayoutNodeGraphConstants.END_TS, stageUuid), nodeExecution.getEndTs());
+    }
+    if (nodeExecution.getFailureInfo() != null) {
+      update.set(String.format(LayoutNodeGraphConstants.FAILURE_INFO, stageUuid),
+          ExecutionErrorInfo.builder().message(nodeExecution.getFailureInfo().getErrorMessage()).build());
+      update.set(String.format(LayoutNodeGraphConstants.FAILURE_INFO_DTO, stageUuid),
+          FailureInfoDTOConverter.toFailureInfoDTO(nodeExecution.getFailureInfo()));
+    }
+    if (nodeExecution.getSkipInfo() != null) {
+      update.set(String.format(LayoutNodeGraphConstants.SKIP_INFO, stageUuid), nodeExecution.getSkipInfo());
+    }
+    update.set(String.format(LayoutNodeGraphConstants.EXECUTION_INPUT_CONFIGURED, stageUuid),
+        nodeExecution.getExecutionInputConfigured());
   }
 }

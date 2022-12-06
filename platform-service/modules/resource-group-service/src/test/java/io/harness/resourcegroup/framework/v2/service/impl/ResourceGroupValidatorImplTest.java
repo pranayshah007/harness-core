@@ -5,8 +5,9 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.resourcegroup.framework.v2.service;
+package io.harness.resourcegroup.framework.v2.service.impl;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.REETIKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -16,7 +17,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.resourcegroup.ResourceGroupTestBase;
 import io.harness.resourcegroup.beans.ScopeFilterType;
-import io.harness.resourcegroup.framework.v2.service.impl.ResourceGroupValidatorImpl;
 import io.harness.resourcegroup.v2.model.ResourceFilter;
 import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.model.ScopeSelector;
@@ -31,12 +31,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class ResourceGroupValidatorTest extends ResourceGroupTestBase {
+public class ResourceGroupValidatorImplTest extends ResourceGroupTestBase {
   @Inject ResourceGroupValidatorImpl resourceGroupValidator;
   private ObjectMapper objectMapper;
 
@@ -206,5 +207,50 @@ public class ResourceGroupValidatorTest extends ResourceGroupTestBase {
       assertThat(ex.getParams().get("message"))
           .isEqualTo("Cannot provide specific identifiers in resource filter for a dynamic scope");
     }
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateResourceGroupAcceptNullIncludedScopeWhenScopeIsAccount() {
+    ResourceGroupDTO dto = ResourceGroupDTO.builder().includedScopes(null).accountIdentifier("accountId-1").build();
+    Assertions
+        .assertThatCode(()
+                            -> resourceGroupValidator.validateResourceGroup(
+                                ResourceGroupRequest.builder().resourceGroup(dto).build()))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateResourceGroupAcceptNullIncludedScopeWhenScopeIsOrganization() {
+    ResourceGroupDTO dto = ResourceGroupDTO.builder()
+                               .includedScopes(null)
+                               .accountIdentifier("accountId-1")
+                               .orgIdentifier("orgId-1")
+                               .build();
+    Assertions
+        .assertThatCode(()
+                            -> resourceGroupValidator.validateResourceGroup(
+                                ResourceGroupRequest.builder().resourceGroup(dto).build()))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateResourceGroupAcceptNullIncludedScopeWhenScopeIsProject() {
+    ResourceGroupDTO dto = ResourceGroupDTO.builder()
+                               .includedScopes(null)
+                               .accountIdentifier("accountId-1")
+                               .orgIdentifier("orgId-1")
+                               .projectIdentifier("projectId-1")
+                               .build();
+    Assertions
+        .assertThatCode(()
+                            -> resourceGroupValidator.validateResourceGroup(
+                                ResourceGroupRequest.builder().resourceGroup(dto).build()))
+        .doesNotThrowAnyException();
   }
 }

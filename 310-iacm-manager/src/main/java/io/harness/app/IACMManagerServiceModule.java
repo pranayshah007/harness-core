@@ -7,7 +7,7 @@
 
 package io.harness.app;
 
-import static io.harness.AuthorizationServiceHeader.IACM_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.IACM_MANAGER;
 import static io.harness.ci.utils.HostedVmSecretResolver.SECRET_CACHE_KEY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;

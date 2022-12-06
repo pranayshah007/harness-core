@@ -2147,10 +2147,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   */
   @Override
   public InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds) {
+      String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
+      String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt) {
     List<InstanceDetailsByBuildId> instancesByBuildIdList =
-        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, getCurrentTime());
+        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+            projectIdentifier, serviceId, envId, buildIds, getCurrentTime(), infraId, clusterId, pipelineExecutionId,
+            lastDeployedAt);
     return InstancesByBuildIdList.builder().instancesByBuildIdList(instancesByBuildIdList).build();
   }
 

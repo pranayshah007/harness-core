@@ -231,7 +231,12 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
-    log.info("SCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
+    String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
+    String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
+    log.info(
+        "SCIM: Updating user: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for userId: {}, accountId {}",
+        operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), userId, accountId);
+
     patchRequest.getOperations().forEach(patchOperation -> {
       try {
         applyUserUpdateOperation(accountId, userId, patchOperation);

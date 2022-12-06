@@ -277,9 +277,14 @@ public class CDDashboardOverviewResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGCommonEntityConstants.SERVICE_KEY) String serviceId,
       @NotNull @QueryParam(NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
-      @NotNull @QueryParam(NGCommonEntityConstants.BUILDS_KEY) List<String> buildIds) {
+      @NotNull @QueryParam(NGCommonEntityConstants.BUILDS_KEY) List<String> buildIds,
+      @QueryParam(NGCommonEntityConstants.INFRA_IDENTIFIER) String infraIdentifier,
+      @QueryParam(NGCommonEntityConstants.CLUSTER_IDENTIFIER) String clusterIdentifier,
+      @QueryParam(NGCommonEntityConstants.PIPELINE_EXECUTION_ID) String pipelineExecutionId,
+      @QueryParam(NGCommonEntityConstants.LAST_DEPLOYED_AT) long lastDeployedAt) {
     return ResponseDTO.newResponse(cdOverviewDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds));
+        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, infraIdentifier,
+        clusterIdentifier, pipelineExecutionId, lastDeployedAt));
   }
 
   @GET

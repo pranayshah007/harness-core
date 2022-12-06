@@ -162,7 +162,7 @@ paths:
           name: repo_name
           description: Name of the repository (for Git Experience).
         - schema:
-            type: boolean
+            type: string
           in: header
           name: Load-From-Cache
           description: Flag to enable loading the remote pipeline from git or git cache
