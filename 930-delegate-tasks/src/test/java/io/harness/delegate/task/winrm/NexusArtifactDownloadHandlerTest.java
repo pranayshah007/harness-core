@@ -7,6 +7,15 @@
 
 package io.harness.delegate.task.winrm;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.VITALIE;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.doReturn;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -24,6 +33,10 @@ import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ScriptType;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,18 +45,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.rule.OwnerRule.IVAN;
-import static io.harness.rule.OwnerRule.VITALIE;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.doReturn;
 
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
