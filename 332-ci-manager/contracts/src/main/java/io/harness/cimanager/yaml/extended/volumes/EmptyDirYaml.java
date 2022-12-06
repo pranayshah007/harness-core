@@ -14,6 +14,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.yaml.extended.ci.validator.ResourceValidatorConstants;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,8 +35,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("emptyDirYaml")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.yaml.extended.volumes.EmptyDirYaml")
-public class EmptyDirYaml implements CIVolume {
-  @Builder.Default @NotNull private CIVolume.Type type = Type.EMPTY_DIR;
+public class EmptyDirYaml implements ContainerVolume {
+  @Builder.Default @NotNull private ContainerVolume.Type type = Type.EMPTY_DIR;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;
   @NotNull private EmptyDirYamlSpec spec;
 

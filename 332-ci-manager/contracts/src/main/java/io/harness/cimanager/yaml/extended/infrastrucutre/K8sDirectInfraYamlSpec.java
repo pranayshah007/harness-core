@@ -16,9 +16,9 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
-import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -60,8 +60,8 @@ public class K8sDirectInfraYamlSpec {
   @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;")
   private ParameterField<List<Toleration>> tolerations;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.volumes.CIVolume;")
-  ParameterField<List<CIVolume>> volumes;
+  @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.volumes.ContainerVolume;")
+  ParameterField<List<ContainerVolume>> volumes;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
   private ParameterField<Boolean> automountServiceAccountToken;

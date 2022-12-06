@@ -24,7 +24,6 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
-import io.harness.beans.yaml.extended.volumes.CIVolume;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml;
 import io.harness.beans.yaml.extended.volumes.EmptyDirYaml.EmptyDirYamlSpec;
 import io.harness.beans.yaml.extended.volumes.HostPathYaml;
@@ -43,6 +42,7 @@ import io.harness.k8s.model.ImageDetails;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -205,7 +205,7 @@ public class K8InitializeTaskUtilsHelper {
   }
 
   public static K8sDirectInfraYaml getDirectK8InfrastructureWithVolume() {
-    List<CIVolume> volumes = asList(getEmptyDirVolYaml(), getHostPathVolYaml(), getPVCYaml());
+    List<ContainerVolume> volumes = asList(getEmptyDirVolYaml(), getHostPathVolYaml(), getPVCYaml());
     return K8sDirectInfraYaml.builder()
         .type(Infrastructure.Type.KUBERNETES_DIRECT)
         .spec(K8sDirectInfraYamlSpec.builder()

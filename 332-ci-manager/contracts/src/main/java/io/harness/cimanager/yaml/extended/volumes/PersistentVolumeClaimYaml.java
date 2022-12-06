@@ -15,6 +15,7 @@ import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,8 +35,8 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("persistentVolumeClaim")
 @OwnedBy(CI)
 @RecasterAlias("io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml")
-public class PersistentVolumeClaimYaml implements CIVolume {
-  @Builder.Default @NotNull private CIVolume.Type type = Type.PERSISTENT_VOLUME_CLAIM;
+public class PersistentVolumeClaimYaml implements ContainerVolume {
+  @Builder.Default @NotNull private ContainerVolume.Type type = Type.PERSISTENT_VOLUME_CLAIM;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;
   @NotNull private PersistentVolumeClaimYamlSpec spec;
 

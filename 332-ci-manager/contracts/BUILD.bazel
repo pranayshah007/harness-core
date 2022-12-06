@@ -9,6 +9,7 @@ java_library(
     deps = [
         "//:lombok",
         "//835-pipeline-ci-commons:module",
+        "//pipeline-service/modules/orchestration-steps/contracts:module",
         "//878-ng-common-utilities:module",
         "//960-ng-license-usage-beans:module",
         "//999-annotations:module",
