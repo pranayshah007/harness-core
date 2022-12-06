@@ -14,18 +14,17 @@ message InternalChangeEventDTO {
   string accountId = 1;
   string orgIdentifier = 2;
   string projectIdentifier = 3;
-  string
-  [] serviceIdentifier = 4;
-  string
-  [] environmentIdentifier = 5;
+  repeated string serviceIdentifier = 4;
+  repeated string environmentIdentifier = 5;
   EventDetails eventDetails = 6;
   int64 executionTime = 7;
   int64 executionEndTime = 8;
+  string type = 9;
 }
 
 message EventDetails {
   string user = 1;
-  string
-  [] eventDetails = 2;
-  string
+  repeated string eventDetails = 2;
+  string internalLinkToEntity = 3;
+  string changeEventDetailsLink = 4;
 }

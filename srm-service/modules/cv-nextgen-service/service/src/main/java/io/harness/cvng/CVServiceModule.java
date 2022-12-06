@@ -238,6 +238,7 @@ import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTrans
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventMetaDataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.HarnessCDCurrentGenChangeEventTransformer;
+import io.harness.cvng.core.transformer.changeEvent.InternalChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeEvent.KubernetesClusterChangeEventMetadataTransformer;
 import io.harness.cvng.core.transformer.changeEvent.PagerDutyChangeEventTransformer;
 import io.harness.cvng.core.transformer.changeSource.ChangeSourceEntityAndDTOTransformer;
@@ -909,6 +910,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
+        .in(Scopes.SINGLETON);
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.INTERNAL_CHANGE_SOURCE)
+        .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 
     bind(StateMachineMessageProcessor.class).to(StateMachineMessageProcessorImpl.class);

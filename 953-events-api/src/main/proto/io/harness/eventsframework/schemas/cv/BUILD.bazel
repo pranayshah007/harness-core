@@ -4,7 +4,7 @@ load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 
 proto_library(
     name = "953_events_api_proto",
-    srcs = ["srm_statemachine_trigger.proto"],
+    srcs = ["srm_statemachine_trigger.proto","internal_change_event.proto"],
     visibility = ["//visibility:public"],
 )
 

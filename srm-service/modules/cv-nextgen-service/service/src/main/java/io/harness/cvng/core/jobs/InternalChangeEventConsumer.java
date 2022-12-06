@@ -7,14 +7,21 @@
 
 package io.harness.cvng.core.jobs;
 
+import io.harness.cvng.beans.change.ChangeEventDTO;
+import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.schemas.cv.EventDetails;
+import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
+import io.harness.eventsframework.schemas.deployment.DeploymentEventDTO;
 import io.harness.queue.QueueController;
 
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.InvalidProtocolBufferException;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -31,6 +38,51 @@ public class InternalChangeEventConsumer extends AbstractStreamConsumer {
 
   @Override
   protected boolean processMessage(Message message) {
-    return false;
+    InternalChangeEventDTO internalChangeEventDTO;
+    try {
+      internalChangeEventDTO = InternalChangeEventDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      log.error("Exception in unpacking DeploymentInfoDTO for key {}", message.getId(), e);
+      throw new IllegalStateException(e);
+    }
+    registerChangeEvents(internalChangeEventDTO);
+    return true;
+  }
+
+  private void registerChangeEvents(InternalChangeEventDTO internalChangeEventDTO) {
+    InternalChangeEventMetaData.InternalChangeEventMetaDataBuilder internalChangeEventMetaDataBuilder =
+        InternalChangeEventMetaData.builder()
+            .eventType(internalChangeEventDTO.getType())
+            .eventDetails(
+                InternalChangeEventMetaData.EventDetails.builder()
+                    .eventDetail(internalChangeEventDTO.getEventDetails().getEventDetailsList())
+                    .changeEventDetailsLink(
+                        InternalChangeEventMetaData.DeepLinkData.builder()
+                            .action(InternalChangeEventMetaData.Action.FETCH_DIFF_DATA)
+                            .url(internalChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
+                            .build())
+                    .internalLinkToEntity(InternalChangeEventMetaData.DeepLinkData.builder()
+                                              .action(InternalChangeEventMetaData.Action.REDIRECT_URL)
+                                              .url(internalChangeEventDTO.getEventDetails().getInternalLinkToEntity())
+                                              .build())
+                    .build())
+            .updateBy(internalChangeEventDTO.getEventDetails().getUser());
+
+    ChangeEventDTO changeEventDTO = ChangeEventDTO.builder()
+                                        .accountId(internalChangeEventDTO.getAccountId())
+                                        .orgIdentifier(internalChangeEventDTO.getOrgIdentifier())
+                                        .projectIdentifier(internalChangeEventDTO.getProjectIdentifier())
+                                        .eventTime(internalChangeEventDTO.getExecutionTime())
+                                        .type(ChangeSourceType.INTERNAL_CHANGE_SOURCE)
+                                        .metadata(internalChangeEventMetaDataBuilder.build())
+                                        .build();
+
+    for (int i = 0; i < internalChangeEventDTO.getEnvironmentIdentifierCount(); i++) {
+      for (int j = 0; j < internalChangeEventDTO.getServiceIdentifierCount(); j++) {
+        changeEventDTO.setServiceIdentifier(internalChangeEventDTO.getServiceIdentifier(j));
+        changeEventDTO.setEnvIdentifier(internalChangeEventDTO.getEnvironmentIdentifier(i));
+      }
+      changeEventService.register(changeEventDTO);
+    }
   }
 }
