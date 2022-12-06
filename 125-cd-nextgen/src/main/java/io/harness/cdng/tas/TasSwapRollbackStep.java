@@ -7,6 +7,7 @@
 
 package io.harness.cdng.tas;
 
+import static java.util.Objects.isNull;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,6 +18,7 @@ import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
+import io.harness.cdng.tas.beans.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -111,8 +113,18 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
-    // TODO: From the TasSwapRoute Manager side, we need an outcome to know if swap route occured or not. Then in the
-    // request body set the boolean flag for that
+    boolean swapRouteOccurred = false;
+    OptionalSweepingOutput tasSwapRouteDataOptional = OptionalSweepingOutput.builder().found(false).build();
+    if (!isNull(tasSwapRollbackStepParameters.getTasSwapRoutesFqn())) {
+      tasSwapRouteDataOptional = executionSweepingOutputService.resolveOptional(
+              ambiance, RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "." + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
+    }
+
+    if (tasSwapRouteDataOptional.isFound()) {
+      TasSwapRouteDataOutcome tasSwapRouteDataOutcome =
+              (io.harness.cdng.tas.beans.TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
+      swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
+    }
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
@@ -125,6 +137,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(10)
+            .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
