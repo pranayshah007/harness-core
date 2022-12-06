@@ -39,6 +39,10 @@ import static io.harness.k8s.K8sConstants.OIDC_ID_TOKEN;
 import static io.harness.k8s.K8sConstants.OIDC_ISSUER_URL;
 import static io.harness.k8s.K8sConstants.OIDC_RERESH_TOKEN;
 import static io.harness.k8s.K8sConstants.REFRESH_TOKEN;
+import static io.harness.k8s.K8sConstants.clientId;
+import static io.harness.k8s.K8sConstants.environment;
+import static io.harness.k8s.K8sConstants.serverId;
+import static io.harness.k8s.K8sConstants.tenantId;
 import static io.harness.k8s.KubernetesConvention.CompressedReleaseHistoryFlag;
 import static io.harness.k8s.KubernetesConvention.DASH;
 import static io.harness.k8s.KubernetesConvention.ReleaseHistoryKeyName;
@@ -2225,6 +2229,11 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
     String certificateAuthorityData =
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
     String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
+    String args = "";
+    args += isEmpty(config.getAzureConfig().getApiServerId()) ? "" : serverId.replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId());
+    args += isEmpty(config.getAzureConfig().getClientId()) ? "" : clientId.replace("${CLIENT_ID}", config.getAzureConfig().getClientId());
+    args += isEmpty(config.getAzureConfig().getEnvironment()) ? "" : environment.replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment());
+    args += isEmpty(config.getAzureConfig().getTenantId()) ? "" : tenantId.replace("${TENANT_ID}", config.getAzureConfig().getTenantId());
 
     return AZURE_KUBE_CONFIG_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
@@ -2233,12 +2242,7 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${CLUSTER_NAME}", config.getAzureConfig().getClusterName())
         .replace("${CLUSTER_USER}", config.getAzureConfig().getClusterUser())
         .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
-        .replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId())
-        .replace("${CLIENT_ID}", config.getAzureConfig().getClientId())
-        .replace("${CONFIG_MODE}", config.getAzureConfig().getConfigMode())
-        .replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment())
-        .replace("${TENANT_ID}", config.getAzureConfig().getTenantId())
-        .replace("${TOKEN}", config.getAzureConfig().getAadIdToken());
+        .replace("${ARGS}", args);
   }
 
   private void encodeCharsIfNeeded(KubernetesConfig config) {
