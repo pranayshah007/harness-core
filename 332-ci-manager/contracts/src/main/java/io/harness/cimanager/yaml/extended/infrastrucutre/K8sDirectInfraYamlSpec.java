@@ -60,7 +60,7 @@ public class K8sDirectInfraYamlSpec {
   @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;")
   private ParameterField<List<Toleration>> tolerations;
   @YamlSchemaTypes(value = {runtime})
-  @ApiModelProperty(dataType = "[Lio.harness.beans.yaml.extended.volumes.ContainerVolume;")
+  @ApiModelProperty(dataType = "[Lio.harness.steps.plugin.infrastructure.volumes.ContainerVolume;")
   ParameterField<List<ContainerVolume>> volumes;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
