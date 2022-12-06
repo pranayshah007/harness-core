@@ -207,10 +207,10 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public UserGroup updateDefaultUserGroup(UserGroupDTO userGroup) {
+  public UserGroup updateDefaultUserGroup(UserGroup userGroup) {
     UserGroup savedUserGroup = getOrThrow(userGroup.getAccountIdentifier(), userGroup.getOrgIdentifier(),
         userGroup.getProjectIdentifier(), userGroup.getIdentifier());
-    return updateInternal(toEntity(userGroup), toDTO(savedUserGroup));
+    return updateInternal(userGroup, toDTO(savedUserGroup));
   }
 
   @Override
