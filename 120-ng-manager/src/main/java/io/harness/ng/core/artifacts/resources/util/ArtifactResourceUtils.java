@@ -25,7 +25,13 @@ import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.GoogleArtifactRegistryConfig;
 import io.harness.cdng.artifact.bean.yaml.NexusRegistryArtifactConfig;
-import io.harness.cdng.artifact.bean.yaml.nexusartifact.*;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.Nexus2RegistryArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusConstant;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryDockerConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
+import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
 import io.harness.cdng.artifact.resources.artifactory.dtos.ArtifactoryImagePathsDTO;
 import io.harness.cdng.artifact.resources.artifactory.service.ArtifactoryResourceService;
 import io.harness.cdng.artifact.resources.googleartifactregistry.dtos.GARResponseDTO;
@@ -465,9 +471,13 @@ public class ArtifactResourceUtils {
               nexus2RegistryArtifactConfig.getRepositoryFormat().getValue()));
       }
 
-      if (isEmpty(repositoryName) || isEmpty(repositoryFormat)) {
+      if (isEmpty(repositoryName)) {
         repositoryName = (String) nexus2RegistryArtifactConfig.getRepository().fetchFinalValue();
+      }
+      if (isEmpty(repositoryFormat)) {
         repositoryFormat = (String) nexus2RegistryArtifactConfig.getRepositoryFormat().fetchFinalValue();
+      }
+      if (isEmpty(nexusConnectorIdentifier)) {
         nexusConnectorIdentifier = nexus2RegistryArtifactConfig.getConnectorRef().fetchFinalValue().toString();
       }
     }
