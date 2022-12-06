@@ -27,6 +27,7 @@ class RoleAssignmentDBOMapper {
         .principalType(object.getPrincipalType())
         .roleIdentifier(object.getRoleIdentifier())
         .managed(object.isManaged())
+        .internal(object.isInternal())
         .disabled(object.isDisabled())
         .version(object.getVersion())
         .createdAt(object.getCreatedAt())

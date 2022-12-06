@@ -167,7 +167,7 @@ public class RoleAssignmentDaoImpl implements RoleAssignmentDao {
       }
     }
 
-    criteria.and(RoleAssignmentDBOKeys.internal).is(false);
+    criteria.and(RoleAssignmentDBOKeys.internal).ne(true);
 
     Criteria[] principalCriteria = roleAssignmentFilter.getPrincipalFilter()
                                        .stream()
