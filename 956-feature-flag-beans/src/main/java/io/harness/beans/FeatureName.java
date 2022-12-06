@@ -503,7 +503,13 @@ public enum FeatureName {
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
-  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP);
+  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
+  WINRM_SCRIPT_COMMAND_SPLIT_NG(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
+      HarnessTeam.CDP),
+  DISABLE_WINRM_COMMAND_ENCODING_NG(
+      "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
