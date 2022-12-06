@@ -1477,6 +1477,12 @@ public class WingsModule extends AbstractModule implements ServersModule {
     install(new AdminLicenseHttpClientModule(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getPortal().getJwtNextGenManagerSecret(), MANAGER.getServiceId()));
 
+    // queueing service integration
+    install(new io.harness.hsqs.client.HsqsServiceClientModule(
+        configuration.getDelegateQueueClientConfig().getDelegateQueueServiceClientConfig().getQueueServiceConfig(),
+        configuration.getDelegateQueueClientConfig().getDelegateQueueServiceClientConfig().getAuthToken(),
+        "delegate-service"));
+
     install(CgOrchestrationModule.getInstance());
     // Orchestration Dependencies
 

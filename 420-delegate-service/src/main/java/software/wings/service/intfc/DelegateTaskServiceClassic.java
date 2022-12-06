@@ -85,4 +85,8 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
   void addToTaskActivityLog(DelegateTask task, String message);
 
   List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities);
+
+  void saveAndBroadcastDelegateTask(DelegateTask task);
+
+  void saveAndBroadcastDelegateTaskV2(DelegateTask task);
 }

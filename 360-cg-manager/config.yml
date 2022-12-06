@@ -668,6 +668,16 @@ eventListenersCountConfig:
   notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
   generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
+delegateQueueServiceConfig:
+  delegateQueueServiceClientConfig:
+    queueServiceConfig;:
+      baseUrl: http://localhost:9091/
+      connectTimeOutSeconds: 15
+      readTimeOutSeconds: 15
+    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+  queueServiceToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+  topic: "delegate-service"
+
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
     threadPoolSize: ${RESOURCE_CONSTRAINT_BACKUP_ITERATOR_THREAD_COUNT:-10}
@@ -702,6 +712,8 @@ executorsConfig:
     maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
     idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
     timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+
 
 
 disableDelegateMgmtInManager: false

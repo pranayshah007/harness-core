@@ -451,7 +451,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
          AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       log.info("Queueing async task {} of type {} ", task.getUuid(), task.getData().getTaskType());
       processDelegateTask(task, QUEUED);
-      broadcastHelper.broadcastNewDelegateTaskAsync(task);
     }
     return task.getUuid();
   }
@@ -469,7 +468,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       log.info("Queueing async task {} of type {} ", task.getUuid(), task.getTaskDataV2().getTaskType());
       processDelegateTaskV2(task, QUEUED);
-      broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
     }
     return task.getUuid();
   }
@@ -486,7 +484,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
          AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       log.info("Processing sync task {} of type {}", task.getUuid(), task.getData().getTaskType());
       processDelegateTask(task, QUEUED);
-      broadcastHelper.rebroadcastDelegateTask(task);
     }
   }
 
@@ -503,7 +500,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         AutoLogContext ignore2 = new AccountLogContext(task.getAccountId(), OVERRIDE_ERROR)) {
       log.info("Processing sync task {} of type {}", task.getUuid(), task.getTaskDataV2().getTaskType());
       processDelegateTaskV2(task, QUEUED);
-      broadcastHelper.rebroadcastDelegateTaskV2(task);
     }
   }
 
@@ -620,7 +616,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (task.getData().isAsync()) {
           task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
         }
-        persistence.save(task);
+        saveAndBroadcastDelegateTask(task);
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
         log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
@@ -736,7 +732,8 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
         if (task.getTaskDataV2().isAsync()) {
           task.setNextBroadcast(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(5));
         }
-        persistence.save(task);
+        // check resource available
+        saveAndBroadcastDelegateTaskV2(task);
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(task.getBroadcastToDelegateIds()), task);
         delegateMetricsService.recordDelegateTaskMetrics(task, DELEGATE_TASK_CREATION);
         log.info("Task {} marked as {} with first attempt broadcast to {}", task.getUuid(), taskStatus,
@@ -1855,6 +1852,28 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       return selectors;
     }
     return selectorCapabilities;
+  }
+
+  @Override
+  public void saveAndBroadcastDelegateTask(DelegateTask task) {
+    //if resource available
+    persistence.save(task);
+    if (task.getData().isAsync()) {
+      broadcastHelper.broadcastNewDelegateTaskAsync(task);
+    } else {
+      broadcastHelper.rebroadcastDelegateTaskV2(task);
+    }
+  }
+
+  @Override
+  public void saveAndBroadcastDelegateTaskV2(DelegateTask task) {
+    //if resource available
+    persistence.save(task);
+    if (task.getTaskDataV2().isAsync()) {
+      broadcastHelper.broadcastNewDelegateTaskAsyncV2(task);
+    } else {
+      broadcastHelper.rebroadcastDelegateTaskV2(task);
+    }
   }
 
   private void printErrorMessageOnTaskFailure(DelegateTask task) {
