@@ -114,6 +114,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     Set<String> clusterIds = new HashSet<>();
     boolean isClusterQueryEnabled = isClusterIdFilterQueryEnabled(accountId);
+    log.info("Feature flag enabled: {}", isClusterQueryEnabled);
     if (isClusterQueryEnabled) {
       clusterIds = getClusterIdsFromClusterRecords(accountId, startTime);
     }
@@ -131,7 +132,13 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     Map<String, MutableInt> pvcClaimCount =
         getPvcClaimCount(accountId, startTime, endTime, clusterIds, isClusterQueryEnabled);
+    log.info("Feature flag enabled: {} for accountId: {}, pvcClaimCount: {}", isClusterQueryEnabled, accountId,
+        pvcClaimCount);
+
     if (isClusterQueryEnabled) {
+      log.info(
+          "isClusterQueryEnabled: {} for accountId: {}, clusterIds: {}", isClusterQueryEnabled, accountId, clusterIds);
+
       for (String clusterId : clusterIds) {
         billAllInstances(
             accountId, startTime, endTime, batchJobType, claimRefToPVInstanceBillingData, pvcClaimCount, clusterId);
@@ -169,6 +176,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
   @NotNull
   private Set<String> getClusterIdsFromClusterRecords(String accountId, Instant startTime) {
+    log.info("getting clusterId records. accountId: {}", accountId);
     List<ClusterRecord> clusterRecords = cloudToHarnessMappingService.listCeEnabledClusters(accountId);
     List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
         eventsClusterRecordService.getByAccountId(accountId);
@@ -201,6 +209,8 @@ public class InstanceBillingDataTasklet implements Tasklet {
       fetchPvcClaimCount(accountId, startTime, endTime, result, null);
     }
 
+    log.info("PvcClaimCount Feature flag enabled: {} for accountId: {} and result: {}", isClusterQueryEnabled,
+        accountId, result);
     return result;
   }
 
@@ -228,6 +238,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
       Instant endTime, Set<String> clusterIds, boolean isClusterQueryEnabled) {
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
     if (isClusterQueryEnabled) {
+      log.info("isClusterQueryEnabled: {} accountId: {}", isClusterQueryEnabled, accountId);
       for (String clusterId : clusterIds) {
         getPvInstanceBillingData(batchJobType, accountId, startTime, endTime, instanceBillingDataList, clusterId);
       }

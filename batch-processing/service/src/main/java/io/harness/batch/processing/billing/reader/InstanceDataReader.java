@@ -38,12 +38,15 @@ public class InstanceDataReader {
 
   public List<InstanceData> getNext() {
     List<InstanceData> instanceDataLists;
+    log.info("clusterId: {} accountId: {}", clusterId, accountId);
     if (clusterId == null) {
       instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
           accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+      log.info("instancedataList with clusterId: {} accountId: {}", instanceDataLists, accountId);
     } else {
       instanceDataLists = instanceDataDao.getInstanceDataListsOfTypesAndClusterId(
           accountId, batchSize, activeInstanceIterator, endTime, instanceTypes, clusterId);
+      log.info("instancedataList without clusterId: {} accountId: {}", instanceDataLists, accountId);
     }
 
     if (!instanceDataLists.isEmpty()) {
