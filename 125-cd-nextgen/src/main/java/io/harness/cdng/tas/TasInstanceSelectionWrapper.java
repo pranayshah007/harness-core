@@ -8,14 +8,17 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.NGInstanceUnitType;
+import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.lang.reflect.Parameter;
 import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 @Data
 @RecasterAlias("io.harness.cdng.tas.TasInstanceSelectionWrapper")
 public class TasInstanceSelectionWrapper {
-  TasInstanceUnitType type;
-  Integer value;
+  @NotNull TasInstanceUnitType type;
+  @NotNull ParameterField<String> value;
 }

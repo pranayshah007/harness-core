@@ -62,6 +62,7 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -159,7 +160,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     TasAppResizeStepParameters tasAppResizeStepParameters = (TasAppResizeStepParameters) stepParameters.getSpec();
 
     OptionalSweepingOutput tasSetupDataOptional =
-        tasEntityHelper.getSetupOutcome(ambiance, tasAppResizeStepParameters.tasBGSetupFqn,
+        tasEntityHelper.getSetupOutcome(ambiance, tasAppResizeStepParameters.getTasBGSetupFqn(),
             tasAppResizeStepParameters.getTasBasicSetupFqn(), tasAppResizeStepParameters.getTasCanarySetupFqn(),
             OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
 
@@ -169,8 +170,10 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
               SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
           .build();
     }
-    Integer upsizeInstanceCount = tasAppResizeStepParameters.getNewAppInstances().getValue();
-    Integer downsizeInstanceCount = tasAppResizeStepParameters.getOldAppInstances().getValue();
+    Integer upsizeInstanceCount =
+        new BigDecimal(tasAppResizeStepParameters.getNewAppInstances().getValue().getValue()).intValueExact();
+    Integer downsizeInstanceCount =
+        new BigDecimal(tasAppResizeStepParameters.getOldAppInstances().getValue().getValue()).intValueExact();
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
     TasInstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();

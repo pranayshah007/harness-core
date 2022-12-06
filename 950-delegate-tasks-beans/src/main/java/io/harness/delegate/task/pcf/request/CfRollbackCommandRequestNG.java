@@ -40,7 +40,6 @@ public class CfRollbackCommandRequestNG implements CfCommandRequestNG{
     boolean enforceSslValidation;
     boolean useAppAutoscalar;
     boolean swapRouteOccured;
-    boolean limitPcfThreads;
     String existingAppNamingStrategy;
     boolean upsizeInActiveApp;
     boolean downsizeOldApps;

@@ -88,19 +88,20 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler{
         Exception exception;
         CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder().build();
         try {
-            boolean downSize = DOWNSIZE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy();
-            String commandUnitType = downSize ? Downsize : Upsize;
-            executionLogCallback = tasTaskHelperBase.getLogCallback(
-                    iLogStreamingTaskClient, commandUnitType, true, commandUnitsProgress);
-            executionLogCallback.saveExecutionLog(color("\n---------- Starting CF Resize Command\n", White, Bold));
+          String commandUnitType =
+              (DOWNSIZE_OLD_FIRST == cfDeployCommandRequestNG.getResizeStrategy()) ? Downsize : Upsize;
+          executionLogCallback =
+              tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, commandUnitType, true, commandUnitsProgress);
+          executionLogCallback.saveExecutionLog(color("\n---------- Starting CF Resize Command\n", White, Bold));
 
-            TasInfraConfig tasInfraConfig = cfCommandRequestNG.getTasInfraConfig();
-            CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
-            CfRequestConfig cfRequestConfig = getCfRequestConfig(cfDeployCommandRequestNG, cfConfig);
-            // This will be CF_HOME for any cli related operations
-            workingDirectory = cfCommandTaskHelperNG.generateWorkingDirectoryForDeployment();
-            if (workingDirectory == null) {
-                throw new PivotalClientApiException("Failed to create working CF directory");
+          TasInfraConfig tasInfraConfig = cfCommandRequestNG.getTasInfraConfig();
+          CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(
+              tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
+          CfRequestConfig cfRequestConfig = getCfRequestConfig(cfDeployCommandRequestNG, cfConfig);
+          // This will be CF_HOME for any cli related operations
+          workingDirectory = cfCommandTaskHelperNG.generateWorkingDirectoryForDeployment();
+          if (workingDirectory == null) {
+            throw new PivotalClientApiException("Failed to create working CF directory");
             }
             cfRequestConfig.setCfHomeDirPath(workingDirectory.getAbsolutePath());
 
@@ -174,18 +175,16 @@ public class CfDeployCommandTaskHandlerNG extends CfCommandTaskNGHandler{
 
     private CfRequestConfig getCfRequestConfig(
             CfDeployCommandRequestNG cfDeployCommandRequestNG, CloudFoundryConfig cfConfig) {
-        return CfRequestConfig.builder()
-                .userName(String.valueOf(cfConfig.getUserName()))
-                .password(String.valueOf(cfConfig.getPassword()))
-                .endpointUrl(cfConfig.getEndpointUrl())
-                .orgName(cfDeployCommandRequestNG.getTasInfraConfig().getOrganization())
-                .spaceName(cfDeployCommandRequestNG.getTasInfraConfig().getSpace())
-                .timeOutIntervalInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin())
-                .useCFCLI(cfDeployCommandRequestNG.isUseCfCLI())
-                .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                        cfDeployCommandRequestNG.isUseCfCLI(), cfDeployCommandRequestNG.getCfCliVersion()))
-                .cfCliVersion(cfDeployCommandRequestNG.getCfCliVersion())
-                .build();
+      return CfRequestConfig.builder()
+          .userName(String.valueOf(cfConfig.getUserName()))
+          .password(String.valueOf(cfConfig.getPassword()))
+          .endpointUrl(cfConfig.getEndpointUrl())
+          .orgName(cfDeployCommandRequestNG.getTasInfraConfig().getOrganization())
+          .spaceName(cfDeployCommandRequestNG.getTasInfraConfig().getSpace())
+          .timeOutIntervalInMins(cfDeployCommandRequestNG.getTimeoutIntervalInMin())
+          .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(true, cfDeployCommandRequestNG.getCfCliVersion()))
+          .cfCliVersion(cfDeployCommandRequestNG.getCfCliVersion())
+          .build();
     }
 
     private void logException(

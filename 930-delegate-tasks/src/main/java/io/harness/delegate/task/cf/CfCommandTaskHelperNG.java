@@ -2,15 +2,24 @@ package io.harness.delegate.task.cf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.WARN;
+import static io.harness.pcf.PcfUtils.encodeColor;
+import static io.harness.pcf.model.CfConstants.CF_ARTIFACT_DOWNLOAD_DIR_PATH;
+import static io.harness.pcf.model.CfConstants.REPOSITORY_DIR_PATH;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
+import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.delegate.beans.pcf.CfAppRenameInfo;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
@@ -19,7 +28,6 @@ import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator;
-import io.harness.delegate.task.pcf.request.CfCommandDeployRequest;
 import io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.utils.CFLogCallbackFormatter;
@@ -39,16 +47,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
-
 @OwnedBy(CDP)
 @Singleton
 @Slf4j
@@ -67,7 +65,12 @@ public class CfCommandTaskHelperNG {
 
 
     public File generateWorkingDirectoryForDeployment() throws IOException {
-        return pcfCommandTaskBaseHelper.generateWorkingDirectoryForDeployment();
+      String workingDirecotry = UUIDGenerator.generateUuid();
+      createDirectoryIfDoesNotExist(REPOSITORY_DIR_PATH);
+      createDirectoryIfDoesNotExist(CF_ARTIFACT_DOWNLOAD_DIR_PATH);
+      String workingDir = CF_ARTIFACT_DOWNLOAD_DIR_PATH + "/" + workingDirecotry;
+      createDirectoryIfDoesNotExist(workingDir);
+      return new File(workingDir);
     }
 
     public ApplicationDetail getNewlyCreatedApplication(CfRequestConfig cfRequestConfig,
@@ -215,41 +218,52 @@ public class CfCommandTaskHelperNG {
         return pcfCommandTaskBaseHelper.getCfCliPathOnDelegate(useCfCLI, cfCliVersion);
     }
 
-    public void upsizeListOfInstances(LogCallback executionLogCallback, CfDeploymentManager cfDeploymentManager,
-                                      List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig,
-                                      List<CfServiceData> upsizeList, List<CfInternalInstanceElement> cfInstanceElements) throws PivotalClientApiException {
-        pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager,
-                cfServiceDataUpdated, cfRequestConfig, upsizeList, cfInstanceElements);
+    public void upsizeListOfInstancesAndRestoreRoutes(LogCallback executionLogCallback,
+        CfDeploymentManager cfDeploymentManager, List<CfServiceData> cfServiceDataUpdated,
+        CfRequestConfig cfRequestConfig, List<CfServiceData> upsizeList,
+        List<CfInternalInstanceElement> cfInstanceElements, CfRollbackCommandRequestNG cfRollbackCommandRequestNG)
+        throws PivotalClientApiException {
+      pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
+          cfRequestConfig, upsizeList, cfInstanceElements);
+      restoreRoutesForOldApplication(cfRollbackCommandRequestNG, cfRequestConfig, executionLogCallback);
     }
 
-    public void downSizeListOfInstances(LogCallback executionLogCallback, List<CfServiceData> cfServiceDataUpdated,
-                                        CfRequestConfig cfRequestConfig, List<CfServiceData> downSizeList,
-                                        CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData) throws PivotalClientApiException {
-        executionLogCallback.saveExecutionLog("\n");
-        for (CfServiceData cfServiceData : downSizeList) {
-            executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
-            executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
-                    cfServiceData.getName(), cfServiceData.getPreviousCount(), cfServiceData.getDesiredCount()));
+    public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
+        throws PivotalClientApiException {
+      List<ApplicationSummary> previousReleases =
+          cfDeploymentManager.getPreviousReleasesBasicAndCanaryNG(cfRequestConfig, cfAppNamePrefix);
+      return previousReleases.stream()
+          .filter(app -> app.getId().equalsIgnoreCase(appGuid))
+          .map(ApplicationSummary::getName)
+          .collect(toList());
+    }
 
-            cfRequestConfig.setApplicationName(cfServiceData.getName());
-            cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
+    public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback,
+        List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, List<CfServiceData> downSizeList,
+        CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
+        throws PivotalClientApiException {
+      executionLogCallback.saveExecutionLog("\n");
+      for (CfServiceData cfServiceData : downSizeList) {
+        executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
+        executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
+            cfServiceData.getName(), cfServiceData.getPreviousCount(), cfServiceData.getDesiredCount()));
 
-            if (cfRollbackCommandRequestNG.isUseAppAutoscalar()) {
-                ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
-                autoscalarRequestData.setApplicationName(applicationDetail.getName());
-                autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
-                autoscalarRequestData.setExpectedEnabled(true);
-                pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
-            }
+        cfRequestConfig.setApplicationName(cfServiceData.getName());
+        cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
 
-            downSize(cfServiceData, executionLogCallback, cfRequestConfig, cfDeploymentManager);
-
-            cfServiceDataUpdated.add(cfServiceData);
+        if (cfRollbackCommandRequestNG.isUseAppAutoscalar()) {
+          ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+          autoscalarRequestData.setApplicationName(applicationDetail.getName());
+          autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+          autoscalarRequestData.setExpectedEnabled(true);
+          pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
         }
-    }
 
-    public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String id) throws PivotalClientApiException {
-        return pcfCommandTaskBaseHelper.getAppNameBasedOnGuid(cfRequestConfig, cfAppNamePrefix, id);
+        downSize(cfServiceData, executionLogCallback, cfRequestConfig, cfDeploymentManager);
+
+        cfServiceDataUpdated.add(cfServiceData);
+      }
+      unmapRoutesFromNewAppAfterDownsize(executionLogCallback, cfRollbackCommandRequestNG, cfRequestConfig);
     }
 
     public ApplicationSummary findActiveApplication(LogCallback logCallback,
@@ -265,10 +279,6 @@ public class CfCommandTaskHelperNG {
 
     public void unmapRouteMaps(String applicationName, List<String> urls, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
         pcfCommandTaskBaseHelper.unmapRouteMaps(applicationName, urls, cfRequestConfig, executionLogCallback);
-    }
-
-    public void unmapExistingRouteMaps(ApplicationDetail appDetail, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
-        pcfCommandTaskBaseHelper.unmapExistingRouteMaps(appDetail, cfRequestConfig, executionLogCallback);
     }
 
     public ApplicationSummary getMostRecentInactiveApplication(LogCallback logCallback, boolean standardBlueGreenWorkflow, ApplicationSummary activeApplication,
@@ -314,5 +324,98 @@ public class CfCommandTaskHelperNG {
         AppRenamingOperator renamingOperator = AppRenamingOperator.of(transition);
         return renamingOperator.renameApp(
                 cfRouteUpdateConfigData, cfRequestConfig, executionLogCallback, cfDeploymentManager, pcfCommandTaskBaseHelper);
+    }
+
+    public List<CfServiceData> getUpsizeListForRollback(CfRollbackCommandRequestNG cfRollbackCommandRequestNG) {
+      return cfRollbackCommandRequestNG.getInstanceData()
+          .stream()
+          .filter(cfServiceData -> {
+            if (cfServiceData.getDesiredCount() > cfServiceData.getPreviousCount()) {
+              return true;
+            } else if (cfServiceData.getDesiredCount() == cfServiceData.getPreviousCount()) {
+              String newApplicationName = null;
+              if (!isNull(cfRollbackCommandRequestNG.getNewApplicationDetails())) {
+                newApplicationName = cfRollbackCommandRequestNG.getNewApplicationDetails().getApplicationName();
+              }
+              return cfServiceData.getDesiredCount() == 0 && (!cfServiceData.getName().equals(newApplicationName));
+            }
+            return false;
+          })
+          .collect(toList());
+    }
+
+    public void restoreRoutesForOldApplication(CfRollbackCommandRequestNG commandRollbackRequest,
+        CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+      if (isNull(commandRollbackRequest.getOldApplicationDetails())) {
+        return;
+      }
+
+      CfAppSetupTimeDetails cfAppSetupTimeDetails = commandRollbackRequest.getOldApplicationDetails();
+      cfRequestConfig.setApplicationName(cfAppSetupTimeDetails.getApplicationName());
+      ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+
+      if (EmptyPredicate.isEmpty(cfAppSetupTimeDetails.getUrls())) {
+        return;
+      }
+
+      if (EmptyPredicate.isEmpty(applicationDetail.getUrls())
+          || !cfAppSetupTimeDetails.getUrls().containsAll(applicationDetail.getUrls())) {
+        mapRouteMaps(cfAppSetupTimeDetails.getApplicationName(), cfAppSetupTimeDetails.getUrls(), cfRequestConfig,
+            executionLogCallback);
+      }
+    }
+    void unmapRoutesFromNewAppAfterDownsize(LogCallback executionLogCallback,
+        CfRollbackCommandRequestNG commandRollbackRequest, CfRequestConfig cfRequestConfig)
+        throws PivotalClientApiException {
+      if (commandRollbackRequest.getNewApplicationDetails() == null
+          || isBlank(commandRollbackRequest.getNewApplicationDetails().getApplicationName())) {
+        return;
+      }
+
+      cfRequestConfig.setApplicationName(commandRollbackRequest.getNewApplicationDetails().getApplicationName());
+      ApplicationDetail appDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+
+      if (appDetail.getInstances() == 0) {
+        pcfCommandTaskBaseHelper.unmapExistingRouteMaps(appDetail, cfRequestConfig, executionLogCallback);
+      }
+    }
+    public void enableAutoscalerIfNeeded(List<CfServiceData> upsizeList,
+        CfAppAutoscalarRequestData autoscalarRequestData, LogCallback logCallback) throws PivotalClientApiException {
+      for (CfServiceData cfServiceData : upsizeList) {
+        if (!cfServiceData.isDisableAutoscalarPerformed()) {
+          continue;
+        }
+
+        autoscalarRequestData.setApplicationName(cfServiceData.getName());
+        autoscalarRequestData.setApplicationGuid(cfServiceData.getId());
+        autoscalarRequestData.setExpectedEnabled(false);
+        cfDeploymentManager.changeAutoscalarState(autoscalarRequestData, logCallback, true);
+      }
+    }
+
+    public void deleteNewApp(CfRequestConfig cfRequestConfig, CfRollbackCommandRequestNG commandRollbackRequest,
+        LogCallback logCallback) throws PivotalClientApiException {
+      // app downsized - to be deleted
+      String cfAppNamePrefix = commandRollbackRequest.getCfAppNamePrefix();
+      CfAppSetupTimeDetails newApp = commandRollbackRequest.getNewApplicationDetails();
+      String newAppGuid = newApp.getApplicationGuid();
+      String newAppName = newApp.getApplicationName();
+      List<String> newApps = getAppNameBasedOnGuid(cfRequestConfig, cfAppNamePrefix, newAppGuid);
+
+      if (newApps.isEmpty()) {
+        logCallback.saveExecutionLog(
+            String.format("No new app found to delete with id - [%s] and name - [%s]", newAppGuid, newAppName));
+      } else if (newApps.size() == 1) {
+        String newAppToDelete = newApps.get(0);
+        cfRequestConfig.setApplicationName(newAppToDelete);
+        logCallback.saveExecutionLog("Deleting application " + encodeColor(newAppToDelete));
+        cfDeploymentManager.deleteApplication(cfRequestConfig);
+      } else {
+        String newAppToDelete = newApps.get(0);
+        String message = String.format(
+            "Found [%d] applications with with id - [%s] and name - [%s]. Skipping new app deletion. Kindly delete the invalid app manually",
+            newApps.size(), newAppGuid, newAppToDelete);
+        logCallback.saveExecutionLog(message, WARN);
+      }
     }
 }

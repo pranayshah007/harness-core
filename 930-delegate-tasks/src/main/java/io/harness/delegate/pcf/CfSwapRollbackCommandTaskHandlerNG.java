@@ -112,7 +112,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
                   true, cfRollbackCommandRequestNG.getCfCliVersion()))
               .cfCliVersion(cfRollbackCommandRequestNG.getCfCliVersion())
-              .limitPcfThreads(cfRollbackCommandRequestNG.isLimitPcfThreads()) // Not sure if this should be kept
               .build();
 
 
