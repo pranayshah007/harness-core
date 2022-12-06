@@ -7,6 +7,7 @@
 
 package io.harness.cdng.tas;
 
+import static java.util.Objects.isNull;
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -15,9 +16,9 @@ import io.harness.beans.FeatureName;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
-import io.harness.cdng.pcf.TasEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
+import io.harness.cdng.tas.beans.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -96,20 +97,10 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
           .build();
     }
 
-    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasRollbackFqn() + "."
-            + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
-
-    if (!tasAppResizeDataOptional.isFound()) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
-          .build();
-    }
-    TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
-    OptionalSweepingOutput tasSetupDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasSwapRollbackStepParameters.getTasSetupFqn() + "." + OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME));
+    OptionalSweepingOutput tasSetupDataOptional =
+            tasEntityHelper.getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
+                    tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
+                    OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME, executionSweepingOutputService);
 
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
@@ -122,8 +113,18 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
-    // TODO: From the TasSwapRoute Manager side, we need an outcome to know if swap route occured or not. Then in the
-    // request body set the boolean flag for that
+    boolean swapRouteOccurred = false;
+    OptionalSweepingOutput tasSwapRouteDataOptional = OptionalSweepingOutput.builder().found(false).build();
+    if (!isNull(tasSwapRollbackStepParameters.getTasSwapRoutesFqn())) {
+      tasSwapRouteDataOptional = executionSweepingOutputService.resolveOptional(
+              ambiance, RefObjectUtils.getSweepingOutputRefObject(tasSwapRollbackStepParameters.getTasSwapRoutesFqn() + "." + OutcomeExpressionConstants.TAS_SWAP_ROUTES_OUTCOME));
+    }
+
+    if (tasSwapRouteDataOptional.isFound()) {
+      TasSwapRouteDataOutcome tasSwapRouteDataOutcome =
+              (io.harness.cdng.tas.beans.TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
+      swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
+    }
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
@@ -133,10 +134,10 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .instanceData(tasAppResizeDataOutcome.getInstanceData())
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(10)
+            .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
@@ -167,7 +168,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
     BaseNGAccess baseNGAccess = tasEntityHelper.getBaseNGAccess(accountId, orgId, projectId);
     ConnectorInfoDTO connectorInfoDTO =
-        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), baseNGAccess);
+        tasEntityHelper.getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), accountId, orgId, projectId);
     return TasInfraConfig.builder()
         .organization(infrastructureOutcome.getOrganization())
         .space(infrastructureOutcome.getSpace())

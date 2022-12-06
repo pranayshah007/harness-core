@@ -38,6 +38,4 @@ public interface SwaggerConstants {
       "io.harness.cdng.elastigroup.ElastigroupInstances";
   String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH =
           "io.harness.cdng.tas.TasCommandScript";
-  String TAS_COMMAND_SCRIPT_STORE_YAML_CONFIGURATION_CLASSPATH =
-          "io.harness.cdng.tas.TasCommandScriptStore";
 }

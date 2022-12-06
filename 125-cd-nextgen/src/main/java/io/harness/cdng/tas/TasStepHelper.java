@@ -881,6 +881,11 @@ public class TasStepHelper {
         }
       }
     }
+    if(tasStepPassThroughData.getCustomFetchContent() != null && tasStepPassThroughData.getCustomFetchContent().values() != null) {
+      for (Collection<CustomSourceFile> customSourceFileCollection : tasStepPassThroughData.getCustomFetchContent().values()) {
+        customSourceFileCollection.stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+      }
+    }
 
     List<UnitProgress> unitProgressList = new ArrayList<>();
     if(tasStepPassThroughData.getRawScript() != null) {
