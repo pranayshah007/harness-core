@@ -70,7 +70,6 @@ public class TasValidationHandler implements ConnectorValidationHandler {
 
   private ConnectorValidationResult handleValidateTask(CloudFoundryConfig cfConfig) {
     try {
-      // todo: ask about limit pcf threads FF
       cfDeploymentManager.getOrganizations(CfRequestConfig.builder()
                                                .userName(String.valueOf(cfConfig.getUserName()))
                                                .password(String.valueOf(cfConfig.getPassword()))
