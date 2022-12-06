@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.GitCloneStep;
 import io.harness.ci.states.InitializeTaskStep;
-import io.harness.ci.states.RunStep;
 import io.harness.ci.states.STOSpecStep;
 import io.harness.ci.states.SecurityStageStepPMS;
 import io.harness.ci.states.SecurityStep;
@@ -42,7 +41,6 @@ public class STOExecutionRegistrar {
     engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
-    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.putAll(addSTOEngineSteps());
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
     engineSteps.put(STOSpecStep.STEP_TYPE, STOSpecStep.class);
