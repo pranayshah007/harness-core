@@ -187,24 +187,30 @@ public class ServerlessTaskHelperBase {
     decrypt(s3StoreDelegateConfig);
     AwsInternalConfig awsInternalConfig =
         awsNgConfigMapper.createAwsInternalConfig(s3StoreDelegateConfig.getAwsConnector());
+    String filePath = s3StoreDelegateConfig.getPaths().get(0);
+    String bucketName = s3StoreDelegateConfig.getBucketName();
+    String region = s3StoreDelegateConfig.getRegion();
+    S3Object s3Object = null;
     try {
-      String filePath = s3StoreDelegateConfig.getPaths().get(0);
-      String bucketName = s3StoreDelegateConfig.getBucketName();
-      String region = s3StoreDelegateConfig.getRegion();
-      S3Object s3Object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
-      S3ObjectInputStream stream = s3Object.getObjectContent();
-      ZipInputStream zipInputStream = new ZipInputStream(stream);
-      unzipManifestFiles(workingDirectory, zipInputStream);
+      s3Object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, filePath);
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Failure in fetching files from s3", sanitizedException);
+      log.error("Failure in fetching files from S3", sanitizedException);
       executionLogCallback.saveExecutionLog(
-          "Failed to download manifest files from git. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
-      throw NestedExceptionUtils.hintWithExplanationException(format("Please check manifest S3 Manifest Aws connector"),
-          format("Failed while trying to download files from S3 manifest"),
+          "Failed to download manifest files from S3. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format("Please check the following Harness S3 Manifest Inputs\n"
+              + "Aws Credentials\n"
+              + " S3 Bucket Name\n"
+              + " Region\n"
+              + " FilePath"),
+          format("Failed while fetching the zip file [%s] from S3 bucket [%s] in region [%s]", filePath, bucketName,
+              region),
           new ServerlessCommandExecutionException(
               "Failed while trying to download files from zip file", sanitizedException));
     }
+    ZipInputStream zipInputStream = new ZipInputStream(s3Object.getObjectContent());
+    unzipManifestFiles(workingDirectory, zipInputStream);
   }
 
   private File getNewFileForZipEntry(File destinationDir, ZipEntry zipEntry) throws IOException {

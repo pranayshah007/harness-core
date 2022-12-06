@@ -37,12 +37,14 @@ import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.serverless.ServerlessS3FetchFileResult;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessS3FetchResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
@@ -86,7 +88,7 @@ public class ServerlessS3FetchTask extends AbstractDelegateRunnableTask {
   }
 
   @Override
-  public DelegateResponseData run(TaskParameters parameters) {
+  public DelegateResponseData run(TaskParameters parameters) throws IOException {
     ServerlessS3FetchRequest serverlessS3FetchRequest = (ServerlessS3FetchRequest) parameters;
     log.info("Running Serverless S3FetchFilesTask for activityId {}", serverlessS3FetchRequest.getActivityId());
     String workingDirectory = Paths.get(WORKING_DIR_BASE, convertBase64UuidToCanonicalForm(generateUuid()))
@@ -98,7 +100,7 @@ public class ServerlessS3FetchTask extends AbstractDelegateRunnableTask {
   }
 
   public ServerlessS3FetchResponse getS3FetchResponse(
-      ServerlessS3FetchRequest serverlessS3FetchRequest, String workingDirectory) {
+      ServerlessS3FetchRequest serverlessS3FetchRequest, String workingDirectory) throws IOException {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     LogCallback executionLogCallback =
         new NGDelegateLogCallback(getLogStreamingTaskClient(), ServerlessCommandUnitConstants.fetchFiles.toString(),
@@ -136,11 +138,16 @@ public class ServerlessS3FetchTask extends AbstractDelegateRunnableTask {
           color(format("%n File fetch failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
               LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      return ServerlessS3FetchResponse.builder()
-          .taskStatus(TaskStatus.FAILURE)
-          .errorMessage(ExceptionUtils.getMessage(sanitizedException))
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      if (e instanceof HintException) {
+        throw new TaskNGDataException(
+            UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+      } else {
+        return ServerlessS3FetchResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      }
     }
   }
 
@@ -198,12 +205,13 @@ public class ServerlessS3FetchTask extends AbstractDelegateRunnableTask {
       throw new InvalidRequestException(format("file [%s] doest exists in S3 zip file", fileName));
     }
     executionLogCallback.saveExecutionLog(
-        color(format("Successfully fetched [%s] manifest file in S3 zip file ", fileName), Yellow));
+        color(format("Successfully fetched [%s] manifest file in S3 zip file ", fileName), White, Bold));
     return ServerlessS3FetchFileResult.builder()
         .fileContent(FileUtils.readFileToString(file))
         .filePath(fileName)
         .build();
   }
+
   private Optional<ServerlessS3FetchFileResult> fetchServerlessS3ManifestFileFromDirectory(
       String workingDirectory, String fileName, LogCallback executionLogCallback) {
     try {
@@ -211,5 +219,10 @@ public class ServerlessS3FetchTask extends AbstractDelegateRunnableTask {
     } catch (Exception ex) {
       return Optional.empty();
     }
+  }
+
+  @Override
+  public boolean isSupportingErrorFramework() {
+    return true;
   }
 }
