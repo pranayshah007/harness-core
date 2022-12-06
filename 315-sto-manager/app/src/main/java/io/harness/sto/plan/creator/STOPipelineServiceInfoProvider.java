@@ -9,11 +9,13 @@ package io.harness.sto.plan.creator;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.steps.StepSpecTypeConstants;
+import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
 import io.harness.ci.creator.variables.RunStepVariableCreator;
 import io.harness.ci.creator.variables.STOCommonStepVariableCreator;
 import io.harness.ci.creator.variables.STOStageVariableCreator;
@@ -37,6 +39,7 @@ import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider;
 import io.harness.pms.sdk.core.variables.EmptyAnyVariableCreator;
 import io.harness.pms.sdk.core.variables.EmptyVariableCreator;
+import io.harness.pms.sdk.core.variables.StrategyVariableCreator;
 import io.harness.pms.sdk.core.variables.VariableCreator;
 import io.harness.pms.utils.InjectorUtils;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -60,11 +63,7 @@ import java.util.stream.Collectors;
 @Singleton
 @OwnedBy(HarnessTeam.STO)
 public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvider {
-  private static final String TEST = "Test";
-  private static final String PUBLISH_ARTIFACTS = "PublishArtifacts";
   private static final String LITE_ENGINE_TASK = "liteEngineTask";
-  private static final String SAVE_CACHE = "SaveCache";
-  private static final String CLEANUP = "Cleanup";
 
   @Inject InjectorUtils injectorUtils;
 
@@ -97,7 +96,7 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     filterJsonCreators.add(new STOStepFilterJsonCreatorV2());
     filterJsonCreators.add(new ExecutionPMSFilterJsonCreator());
     filterJsonCreators.add(new ParallelGenericFilterJsonCreator());
-    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STEPS)));
+    filterJsonCreators.add(new EmptyAnyFilterJsonCreator(Set.of(STRATEGY, STEPS)));
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;
@@ -109,13 +108,13 @@ public class STOPipelineServiceInfoProvider implements PipelineServiceInfoProvid
     variableCreators.add(new STOStageVariableCreator());
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new STOStepVariableCreator());
-
+    variableCreators.add(new GitCloneStepVariableCreator());
+    variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new STOCommonStepVariableCreator());
     variableCreators.add(new RunStepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(Set.of(YAMLFieldNameConstants.PARALLEL, STEPS)));
-    variableCreators.add(
-        new EmptyVariableCreator(STEP, Set.of(TEST, PUBLISH_ARTIFACTS, LITE_ENGINE_TASK, SAVE_CACHE, CLEANUP)));
+    variableCreators.add(new EmptyVariableCreator(STEP, Set.of(LITE_ENGINE_TASK)));
 
     return variableCreators;
   }
