@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.GitCloneStep;
 import io.harness.ci.states.InitializeTaskStep;
+import io.harness.ci.states.RunStep;
 import io.harness.ci.states.STOSpecStep;
 import io.harness.ci.states.SecurityStageStepPMS;
 import io.harness.ci.states.SecurityStep;
@@ -20,6 +21,7 @@ import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
+import io.harness.registrar.NGCommonUtilStepsRegistrar;
 import io.harness.sto.STOStepType;
 
 import java.util.Arrays;
@@ -40,6 +42,7 @@ public class STOExecutionRegistrar {
 
     engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
+    engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
     engineSteps.putAll(addSTOEngineSteps());
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
@@ -47,6 +50,7 @@ public class STOExecutionRegistrar {
     engineSteps.put(SecurityStageStepPMS.STEP_TYPE, SecurityStageStepPMS.class);
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
+    engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;
   }
 }
