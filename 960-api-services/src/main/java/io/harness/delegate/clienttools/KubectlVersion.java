@@ -15,7 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public enum KubectlVersion implements ClientToolVersion {
-  V1_19("v1.24.3");
+  V1_13("v1.13.2"),
+  V1_19("v1.19.2");
 
   private final String version;
 }
