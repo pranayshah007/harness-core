@@ -194,7 +194,10 @@ public enum NGStepType {
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_DESTROY),
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+  TAS_SWAP_ROUTES(
+      "Tas Swap Routes", Arrays.asList(ServiceDefinitionType.values()), "TAS", StepSpecTypeConstants.TAS_SWAP_ROUTES);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

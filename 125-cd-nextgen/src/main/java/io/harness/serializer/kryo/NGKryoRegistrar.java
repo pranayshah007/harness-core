@@ -94,6 +94,8 @@ import io.harness.cdng.service.steps.ServiceStepParameters;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepParameters;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchOutcome;
 import io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters;
 import io.harness.serializer.KryoRegistrar;
@@ -209,5 +211,8 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntApplyStepInfo.class, 12623);
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
+
+    kryo.register(TasSwapRoutesStepInfo.class, 12634);
+    kryo.register(TasSwapRoutesStepParameters.class, 12635);
   }
 }

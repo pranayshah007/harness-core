@@ -447,9 +447,30 @@ public enum EntityType {
   IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
   IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
-  @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
-  CONTAINER_STEP(
-      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP);
+  @JsonProperty(EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP)
+  TAS_CANARY_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_CANARY_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_CANARY_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BG_APP_SETUP_STEP)
+  TAS_BG_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BG_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BG_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP)
+  TAS_BASIC_APP_SETUP_STEP(ModuleType.CD, EntityTypeConstants.TAS_BASIC_APP_SETUP_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_BASIC_APP_SETUP_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_APP_RESIZE_STEP)
+  TAS_APP_RESIZE_STEP(ModuleType.CD, EntityTypeConstants.TAS_APP_RESIZE_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_APP_RESIZE_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_ROLLBACK_STEP)
+  TAS_ROLLBACK_STEP(
+      ModuleType.CD, EntityTypeConstants.TAS_ROLLBACK_STEP, IdentifierRef.class, EntityYamlRootNames.TAS_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROUTES_STEP)
+  TAS_SWAP_ROUTES_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROUTES_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROUTES_STEP),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP)
+  TAS_SWAP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
+  TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TANZU_COMMAND_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -61,6 +61,13 @@ public interface EntityTypeConstants {
   String K8S_DELETE = "K8sDelete";
   String K8S_BG_SWAP_SERVICES = "K8sBGSwapServices";
   String K8S_CANARY_DELETE = "K8sCanaryDelete";
+
+  String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
+  String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
+  String TAS_BASIC_APP_SETUP_STEP = "TasBasicAppSetupStep";
+  String TAS_APP_RESIZE_STEP = "TasAppResizeStep";
+  String TAS_ROLLBACK_STEP = "TasRollbackStep";
+  String TAS_SWAP_ROUTES_STEP = "TasSwapRoutesStep";
   String RUN_STEP = "Run";
   String BACKGROUND_STEP = "Background";
   String RUN_TEST = "RunTests";
@@ -178,5 +185,6 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_APPLY = "TerragruntApply";
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
-  String CONTAINER_STEP = "Container";
+  String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  String TANZU_COMMAND_STEP = "TanzuCommand";
 }
