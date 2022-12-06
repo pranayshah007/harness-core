@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDP)
 public class CfRunPluginCommandRequestNG implements CfCommandRequestNG {
   String accountId;
-  CfCommandTypeNG cfCommandType;
+  CfCommandTypeNG cfCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
   Integer timeoutIntervalInMin;
