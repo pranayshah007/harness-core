@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
+import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
@@ -29,8 +30,11 @@ public class TasSwapRollbackBaseStepInfo {
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   @JsonIgnore String tasRollbackFqn;
-  @JsonIgnore String tasSetupFqn;
+  @JsonIgnore String tasBGSetupFqn;
+  @JsonIgnore String tasBasicSetupFqn;
+  @JsonIgnore String tasCanarySetupFqn;
 
+  @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @YamlSchemaTypes({string})
   ParameterField<Boolean> upsizeInActiveApp;
