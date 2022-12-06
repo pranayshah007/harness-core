@@ -145,8 +145,6 @@ public interface K8sConstants {
       + "           - ${APISERVER_ID}\n"
       + "           - --client-id\n"
       + "           - ${CLIENT_ID}\n"
-      + "           - --environment:\n"
-      + "           - ${ENVIRONMENT}\n"
       + "           - --tenant-id:\n"
       + "           - ${TENANT_ID}\n"
       + "           - --login\n"
