@@ -389,16 +389,16 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     injector.getInstance(NotifierScheduledExecutorService.class)
         .scheduleWithFixedDelay(
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("stoTaskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateSyncServiceImpl.class), 0L, 2L, TimeUnit.SECONDS);
 
     for (int i = 0; i < config.getAsyncDelegateResponseConsumption().getCorePoolSize(); i++) {
-      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("async-taskPollExecutor")))
+      injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("stoAsync-taskPollExecutor")))
           .scheduleWithFixedDelay(injector.getInstance(DelegateAsyncServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
     }
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("stoTaskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(DelegateProgressServiceImpl.class), 0L, 5L, TimeUnit.SECONDS);
-    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("taskPollExecutor")))
+    injector.getInstance(Key.get(ScheduledExecutorService.class, Names.named("stoTaskPollExecutor")))
         .scheduleWithFixedDelay(injector.getInstance(ProgressUpdateService.class), 0L, 5L, TimeUnit.SECONDS);
   }
 
