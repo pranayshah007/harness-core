@@ -12,10 +12,12 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.MetricRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
+import io.harness.cvng.core.beans.params.ProjectParams;
+
 /**
  * The HealthSourceRawRecordService fetches metric data and log records from different health sources using delegates.
  */
-public interface HealthSourceRawRecordService {
+public interface HealthSourceOnboardingService {
   /**
    * Fetch Sample records from the third party providers, for the purpose of displaying them.
    * @param healthSourceRecordsRequest details to fetch records from health sources.
@@ -25,7 +27,7 @@ public interface HealthSourceRawRecordService {
    * @return raw healthSource records
    */
   HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
-      HealthSourceRecordsRequest healthSourceRecordsRequest, String account, String org, String project);
+      HealthSourceRecordsRequest healthSourceRecordsRequest, ProjectParams projectParams);
 
   /**
    * Fetch sample time-series data, from which charts can be plotted.One or more time-series can be returned.
@@ -35,8 +37,7 @@ public interface HealthSourceRawRecordService {
    * @param project projectId
    * @return list of time-series metrics.
    */
-  MetricRecordsResponse fetchMetricData(
-      QueryRecordsRequest queryRecordsRequest, String account, String org, String project);
+  MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams);
 
   /**
    * Fetch sample log table data, the data is tagged with the hostname.
@@ -46,5 +47,5 @@ public interface HealthSourceRawRecordService {
    * @param project projectId
    * @return list of log records
    */
-  LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, String account, String org, String project);
+  LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams);
 }

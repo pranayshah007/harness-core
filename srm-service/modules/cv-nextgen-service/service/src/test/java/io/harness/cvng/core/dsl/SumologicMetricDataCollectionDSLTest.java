@@ -37,13 +37,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class SumologicMetricDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
-  public static final int THREADS = 10;
-  public static final long FROM_EPOCH_TIME = 1668431100000L;
-  public static final long TO_EPOCH_TIME = 1668431400000L;
-  public static final int FIVE_MINUTES = 5;
-  public static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
+  private static final int THREADS = 10;
+  private static final long FROM_EPOCH_TIME = 1668431100000L;
+  private static final long TO_EPOCH_TIME = 1668431400000L;
+  private static final int FIVE_MINUTES = 5;
+  private static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
   BuilderFactory builderFactory;
-  @Inject private MetricPackService metricPackService;
+  @Inject MetricPackService metricPackService;
   DataCollectionDSLService dataCollectionDSLService;
 
   @Before

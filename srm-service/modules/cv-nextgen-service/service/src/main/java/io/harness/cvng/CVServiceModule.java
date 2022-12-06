@@ -134,7 +134,7 @@ import io.harness.cvng.core.services.api.ELKService;
 import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
-import io.harness.cvng.core.services.api.HealthSourceRawRecordService;
+import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.LogRecordService;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -190,7 +190,7 @@ import io.harness.cvng.core.services.impl.EntityDisabledTimeServiceImpl;
 import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
-import io.harness.cvng.core.services.impl.HealthSourceRawRecordServiceImpl;
+import io.harness.cvng.core.services.impl.HealthSourceOnboardingServiceImpl;
 import io.harness.cvng.core.services.impl.HostRecordServiceImpl;
 import io.harness.cvng.core.services.impl.KubernetesChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.LogRecordServiceImpl;
@@ -1036,7 +1036,7 @@ public class CVServiceModule extends AbstractModule {
         .to(DeploymentStateMachineServiceImpl.class);
     taskTypeAnalysisStateMachineServiceMapBinder.addBinding(VerificationTask.TaskType.COMPOSITE_SLO)
         .to(CompositeSLOAnalysisStateMachineServiceImpl.class);
-    bind(HealthSourceRawRecordService.class).to(HealthSourceRawRecordServiceImpl.class);
+    bind(HealthSourceOnboardingService.class).to(HealthSourceOnboardingServiceImpl.class);
   }
 
   private void bindChangeSourceUpdatedEntity() {

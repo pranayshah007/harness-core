@@ -12,8 +12,9 @@ import io.harness.cvng.core.beans.healthsource.HealthSourceRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.MetricRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.CVNextGenConstants;
-import io.harness.cvng.core.services.api.HealthSourceRawRecordService;
+import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 
@@ -36,8 +37,8 @@ import retrofit2.http.Body;
 @Path(CVNextGenConstants.PROJECT_PATH)
 @Produces(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
-public class HealthSourceRawRecordResource {
-  @Inject private HealthSourceRawRecordService healthSourceService;
+public class HealthSourceOnboardingResource {
+  @Inject private HealthSourceOnboardingService healthSourceService;
 
   @POST
   @Path("/healthSourceRecords")
@@ -50,8 +51,13 @@ public class HealthSourceRawRecordResource {
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
       @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
       @NotNull @Valid @Body HealthSourceRecordsRequest healthSourceRecordsRequest) {
-    return new RestResponse<>(healthSourceService.fetchSampleRawRecordsForHealthSource(
-        healthSourceRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier));
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(
+        healthSourceService.fetchSampleRawRecordsForHealthSource(healthSourceRecordsRequest, projectParams));
   }
 
   @POST
@@ -65,8 +71,12 @@ public class HealthSourceRawRecordResource {
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
       @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
       @NotNull @Valid @Body QueryRecordsRequest queryRecordsRequest) {
-    return new RestResponse<>(
-        healthSourceService.fetchMetricData(queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier));
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(healthSourceService.fetchMetricData(queryRecordsRequest, projectParams));
   }
 
   @POST
@@ -80,7 +90,11 @@ public class HealthSourceRawRecordResource {
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
       @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
       @NotNull @Valid @Body QueryRecordsRequest queryRecordsRequest) {
-    return new RestResponse<>(
-        healthSourceService.fetchLogData(queryRecordsRequest, accountIdentifier, orgIdentifier, projectIdentifier));
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(healthSourceService.fetchLogData(queryRecordsRequest, projectParams));
   }
 }

@@ -19,7 +19,8 @@ import io.harness.cvng.core.beans.healthsource.LogRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.MetricRecordsResponse;
 import io.harness.cvng.core.beans.healthsource.QueryRecordsRequest;
 import io.harness.cvng.core.beans.healthsource.TimeSeries;
-import io.harness.cvng.core.services.api.HealthSourceRawRecordService;
+import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
 import io.harness.ng.core.Status;
@@ -30,14 +31,15 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordService {
+public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboardingService {
   @Inject private OnboardingService onboardingService;
 
   @Override
   public HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
-      HealthSourceRecordsRequest healthSourceRecordsRequest, String account, String org, String project) {
-    Object result = getResponseFromHealthSourceProvider(
-        healthSourceRecordsRequest, account, org, project, MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL);
+      HealthSourceRecordsRequest healthSourceRecordsRequest, ProjectParams projectParams) {
+    Object result = getResponseFromHealthSourceProvider(healthSourceRecordsRequest,
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
+        MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL);
     // TODO set properly for error
 
     HealthSourceRecordsResponse healthSourceRecordsResponse =
@@ -110,11 +112,10 @@ public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordSe
   }
 
   @Override
-  public MetricRecordsResponse fetchMetricData(
-      QueryRecordsRequest queryRecordsRequest, String account, String org, String project) {
+  public MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     // TODO use actual DSL instead of onboard with the option for hostwise.
-    Object result = getResponseFromHealthSourceProvider(
-        queryRecordsRequest, account, org, project, MetricPackServiceImpl.SUMOLOGIC_DSL);
+    Object result = getResponseFromHealthSourceProvider(queryRecordsRequest, projectParams.getAccountIdentifier(),
+        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), MetricPackServiceImpl.SUMOLOGIC_DSL);
     TimeSeries timeSeries =
         TimeSeries.builder().timeseriesName("sampleTimeseries").build(); // TODO Understand multiple Timeseries
     MetricRecordsResponse metricRecordsResponse = MetricRecordsResponse.builder().status(Status.SUCCESS).build();
@@ -123,8 +124,7 @@ public class HealthSourceRawRecordServiceImpl implements HealthSourceRawRecordSe
   }
 
   @Override
-  public LogRecordsResponse fetchLogData(
-      QueryRecordsRequest queryRecordsRequest, String account, String org, String project) {
+  public LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
     // TODO use actual DSL instead of onboard with the option for hostwise.
     return LogRecordsResponse.builder().status(Status.SUCCESS).build();
   }

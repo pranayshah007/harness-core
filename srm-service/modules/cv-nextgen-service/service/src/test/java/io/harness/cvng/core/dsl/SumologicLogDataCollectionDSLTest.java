@@ -34,9 +34,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class SumologicLogDataCollectionDSLTest extends HoverflyTestBase {
-  public static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
-  public static final int THREADS = 10;
-  public static final int LOG_RECORDS_COUNT = 50;
+  private static final String SECRET_REF_DATA = "Dummy_Secret_Ref";
+  private static final int THREADS = 10;
+  private static final int LOG_RECORDS_COUNT = 50;
 
   DataCollectionDSLService dataCollectionDSLService;
   @Before
