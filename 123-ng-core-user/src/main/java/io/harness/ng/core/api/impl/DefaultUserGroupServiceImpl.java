@@ -201,8 +201,8 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     boolean isAccountBasicFeatureFlagEnabled =
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
     if (!isAccountBasicFeatureFlagEnabled && createAccountViewerRoleBinding) {
-      createRoleAssignment(
-          principalIdentifier, scope, false, false,  ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+      createRoleAssignment(principalIdentifier, scope, false, false, ACCOUNT_VIEWER_ROLE,
+          DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     }
   }
 
