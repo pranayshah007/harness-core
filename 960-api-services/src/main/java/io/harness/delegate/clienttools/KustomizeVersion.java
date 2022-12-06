@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public enum KustomizeVersion implements ClientToolVersion {
-  V3("v3.5.4"),
   V4("v4.5.4");
 
   private final String version;

@@ -15,8 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public enum HelmVersion implements ClientToolVersion {
-  V2("v2.13.1"),
-  V3("v3.1.2"),
   V3_8("v3.9.2");
 
   private final String version;
