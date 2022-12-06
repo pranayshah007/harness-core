@@ -15,11 +15,14 @@ import static java.lang.System.currentTimeMillis;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
+import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.mongo.iterator.filter.SpringFilterExpander;
 
+import com.google.common.collect.ImmutableList;
 import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.NotImplementedException;
 import org.mongodb.morphia.query.FilterOperator;
 import org.springframework.data.domain.Sort;
@@ -68,6 +71,12 @@ public class SpringPersistenceProvider<T extends PersistentIterable>
     Update update = new Update();
     update.set(fieldName, nextIterations);
     persistence.updateFirst(new Query(Criteria.where("_id").is(entity.getUuid())), update, clazz);
+  }
+
+  @Override
+  public ImmutableList<T> obtainNextBatch(
+      Class<T> clazz, Optional<String> prevId, int batchLimit, SpringFilterExpander filterExpander) {
+    return null;
   }
 
   @Override

@@ -67,21 +67,42 @@ public class ArtifactCollectionHandler extends IteratorPumpModeHandler implement
   @Override
   public void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
-    iterator = (MongoPersistenceIterator<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>)
-                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
-                       ArtifactCollectionHandler.class,
-                       MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
-                           .clazz(ArtifactStream.class)
-                           .fieldName(ArtifactStreamKeys.nextIteration)
-                           .targetInterval(targetInterval)
-                           .acceptableNoAlertDelay(ofSeconds(30))
-                           .handler(this)
-                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-                           .schedulingType(REGULAR)
-                           .persistenceProvider(persistenceProvider)
-                           .filterExpander(
-                               query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
-                           .redistribute(true));
+    if (executorOptions.isFindOnly()) {
+      iterator =
+          (MongoPersistenceIterator<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>)
+              persistenceIteratorFactory.createFindOnlyIteratorWithDedicatedThreadPool(executorOptions,
+                  ArtifactCollectionHandler.class,
+                  MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
+                      .clazz(ArtifactStream.class)
+                      .fieldName(ArtifactStreamKeys.nextIteration)
+                      .targetInterval(targetInterval)
+                      .acceptableNoAlertDelay(ofSeconds(30))
+                      .handler(this)
+                      .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                      .schedulingType(REGULAR)
+                      .persistenceProvider(persistenceProvider)
+                      .filterExpander(
+                          query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
+                      .redistribute(true)
+                      .batchSize(executorOptions.getBatchSize()));
+    } else {
+      iterator =
+          (MongoPersistenceIterator<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>)
+              persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                  ArtifactCollectionHandler.class,
+                  MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
+                      .clazz(ArtifactStream.class)
+                      .fieldName(ArtifactStreamKeys.nextIteration)
+                      .targetInterval(targetInterval)
+                      .acceptableNoAlertDelay(ofSeconds(30))
+                      .handler(this)
+                      .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                      .schedulingType(REGULAR)
+                      .persistenceProvider(persistenceProvider)
+                      .filterExpander(
+                          query -> query.field(ArtifactStreamKeys.collectionEnabled).in(Arrays.asList(true, null)))
+                      .redistribute(true));
+    }
   }
 
   @Override
@@ -102,6 +123,7 @@ public class ArtifactCollectionHandler extends IteratorPumpModeHandler implement
   }
 
   private void executeInternal(ArtifactStream artifactStream) {
+    System.out.println("Processing artifact stream: " + artifactStream.getUuid());
     String artifactStreamId = artifactStream.getUuid();
     try {
       if (artifactCollectionUtils.skipArtifactStreamIteration(artifactStream, true)) {

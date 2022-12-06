@@ -9,6 +9,7 @@ package io.harness.mongo.iterator;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.govern.Switch.unhandled;
+import static io.harness.iterator.PersistenceIterator.ProcessMode.BATCH;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.metrics.impl.PersistenceMetricsServiceImpl.ITERATOR_DELAY;
@@ -41,9 +42,11 @@ import io.harness.mongo.iterator.provider.PersistenceProvider;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
@@ -85,6 +88,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
   private boolean unsorted;
+  private int batchSize;
 
   private long movingAvg(long current, long sample) {
     return (15 * current + sample) / 16;
@@ -114,6 +118,8 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   public void process() {
     long movingAverage = 0;
     long previous = 0;
+
+    Optional<String> prevId = Optional.empty();
     while (true) {
       if (!shouldProcess()) {
         if (mode == PUMP) {
@@ -136,6 +142,26 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         previous = base;
 
+        // Read all mode.
+        if (mode == BATCH) {
+          ImmutableList<T> entities = null;
+          try {
+            entities = persistenceProvider.obtainNextBatch(clazz, prevId, batchSize, filterExpander);
+            System.out.println("Entities fetched: " + entities);
+            if (entities.isEmpty()) {
+              break;
+            }
+            prevId = Optional.of(entities.get(entities.size() - 1).getUuid());
+          } finally {
+            semaphore.release();
+          }
+          for (T entity : entities) {
+            scheduleEntityForExecution(entity);
+          }
+          continue;
+        }
+
+        // Find and Modify - PUMP and LOOP mode.
         T entity = null;
         try {
           entity = persistenceProvider.obtainNextInstance(
@@ -165,17 +191,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
             continue;
           }
 
-          T finalEntity = entity;
-          synchronized (finalEntity) {
-            try {
-              executorService.submit(() -> processEntity(finalEntity));
-              // it might take some time until the submitted task is actually triggered.
-              // lets wait for awhile until for this to happen
-              finalEntity.wait(10000);
-            } catch (RejectedExecutionException e) {
-              log.info("The executor service has been shutdown for entity {}", finalEntity);
-            }
-          }
+          scheduleEntityForExecution(entity);
           continue;
         }
 
@@ -291,6 +307,19 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
           log.error("Exception while recording the processing of entity", exception);
           iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         }
+      }
+    }
+  }
+
+  private void scheduleEntityForExecution(T entity) throws InterruptedException {
+    synchronized (entity) {
+      try {
+        executorService.submit(() -> processEntity(entity));
+        // it might take some time until the submitted task is actually triggered.
+        // Let's wait for a little, for this to happen.
+        entity.wait(10000);
+      } catch (RejectedExecutionException e) {
+        log.info("The executor service has been shutdown for entity {}", entity);
       }
     }
   }

@@ -8,6 +8,7 @@
 package io.harness.iterator;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.iterator.PersistenceIterator.ProcessMode.BATCH;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.LOOP;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR;
@@ -65,6 +66,8 @@ public final class PersistenceIteratorFactory {
     private String name;
     private int poolSize;
     private Duration interval;
+    private boolean findOnly;
+    private int batchSize;
   }
 
   private <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
@@ -112,5 +115,11 @@ public final class PersistenceIteratorFactory {
   createPumpIteratorWithDedicatedThreadPool(
       PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
     return createIteratorWithDedicatedThreadPool(PUMP, options, cls, builder);
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createFindOnlyIteratorWithDedicatedThreadPool(
+      PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    return createIteratorWithDedicatedThreadPool(BATCH, options, cls, builder);
   }
 }

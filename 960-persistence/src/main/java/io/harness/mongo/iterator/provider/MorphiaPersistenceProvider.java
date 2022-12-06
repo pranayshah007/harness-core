@@ -17,13 +17,17 @@ import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 import io.harness.persistence.HPersistence;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FilterOperator;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -65,6 +69,18 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
   }
 
   @Override
+  public ImmutableList<T> obtainNextBatch(
+      Class<T> clazz, Optional<String> prevId, int batchLimit, MorphiaFilterExpander<T> filterExpander) {
+    Query<T> batchQuery = createBatchQuery(clazz, prevId, filterExpander);
+
+    List<T> batchResults = new ArrayList<>();
+    for (T entity : batchQuery.fetch(new FindOptions().batchSize(batchLimit))) {
+      batchResults.add(entity);
+    }
+    return ImmutableList.copyOf(batchResults);
+  }
+
+  @Override
   public T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName,
       SchedulingType schedulingType, Duration targetInterval, MorphiaFilterExpander<T> filterExpander,
       boolean unsorted) {
@@ -99,5 +115,19 @@ public class MorphiaPersistenceProvider<T extends PersistentIterable>
         persistence.createUpdateOperations(clazz).unset(fieldName));
     persistence.update(persistence.createQuery(clazz).field(fieldName).sizeEq(0),
         persistence.createUpdateOperations(clazz).unset(fieldName));
+  }
+
+  private Query<T> createBatchQuery(Class<T> clazz, Optional<String> prevId, MorphiaFilterExpander<T> filterExpander) {
+    Query<T> query = persistence.createQuery(clazz);
+
+    if (prevId.isPresent()) {
+      query.filter("_id >", prevId.get());
+    }
+
+    if (filterExpander != null) {
+      filterExpander.filter(query);
+    }
+
+    return query;
   }
 }

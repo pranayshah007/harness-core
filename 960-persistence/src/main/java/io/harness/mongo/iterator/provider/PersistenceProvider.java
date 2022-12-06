@@ -11,12 +11,16 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType;
 
 import io.harness.iterator.PersistentIterable;
 import io.harness.mongo.iterator.filter.FilterExpander;
+import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
 
+import com.google.common.collect.ImmutableList;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 public interface PersistenceProvider<T extends PersistentIterable, F extends FilterExpander> {
   void updateEntityField(T entity, List<Long> nextIterations, Class<T> clazz, String fieldName);
+  ImmutableList<T> obtainNextBatch(Class<T> clazz, Optional<String> prevId, int batchLimit, F filterExpander);
   T obtainNextInstance(long base, long throttled, Class<T> clazz, String fieldName, SchedulingType schedulingType,
       Duration targetInterval, F filterExpander, boolean unsorted);
   T findInstance(Class<T> clazz, String fieldName, F filterExpander);
