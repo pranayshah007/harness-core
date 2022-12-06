@@ -67,6 +67,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -90,6 +91,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -707,6 +709,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
       throw new InvalidRequestException(String.format(
           "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
           serviceLevelObjectiveDTO.getIdentifier()));
+    }
+
+    Set<String> scopedReferencedSimpleSLOs =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                    serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
+            .collect(Collectors.toSet());
+    if (scopedReferencedSimpleSLOs.size()
+        != compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
+      throw new InvalidRequestException(String.format("An SLO can't be referenced more than once"));
     }
   }
 

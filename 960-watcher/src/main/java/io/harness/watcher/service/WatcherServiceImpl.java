@@ -251,12 +251,12 @@ public class WatcherServiceImpl implements WatcherService {
       } else {
         log.info("Delegate is NG. Watcher will run NG delegates.");
       }
-      messageService.writeMessage(WATCHER_STARTED);
       startInputCheck();
+      messageService.writeMessage(WATCHER_STARTED);
 
       generateEcsDelegateSequenceConfigFile();
       if (upgrade) {
-        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5), true);
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
@@ -292,8 +292,7 @@ public class WatcherServiceImpl implements WatcherService {
         waiter.wait();
       }
 
-      messageService.closeChannel(WATCHER, getProcessId());
-
+      log.info("Got stop message, shutting down now");
     } catch (InterruptedException e) {
       log.error("Interrupted while running watcher", e);
     }
@@ -1216,7 +1215,8 @@ public class WatcherServiceImpl implements WatcherService {
         String newDelegateProcess = null;
 
         if (newDelegate.getProcess().isAlive()) {
-          Message message = messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4));
+          Message message =
+              messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4), false);
           if (message != null) {
             newDelegateProcess = message.getParams().get(0);
             log.info("Got process ID from new delegate: {}", newDelegateProcess);
@@ -1461,7 +1461,7 @@ public class WatcherServiceImpl implements WatcherService {
       boolean success = false;
 
       if (process.getProcess().isAlive()) {
-        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
+        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3), true);
         if (message != null) {
           String newWatcherProcess = message.getParams().get(0);
           log.info("[Old] Got process ID from new watcher: " + newWatcherProcess);
@@ -1471,9 +1471,10 @@ public class WatcherServiceImpl implements WatcherService {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
-            log.info("[Old] Watcher upgraded. Stopping");
+            log.info("[Old] Watcher upgraded. Cleaning up watcher dirs");
             removeWatcherVersionFromCapsule(version, newVersion);
             cleanupOldWatcherVersionFromBackup(version, newVersion);
+            log.info("[Old] Stopping");
             success = true;
             stop();
           }
@@ -1523,7 +1524,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void cleanupOldWatcherVersionFromBackup(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Backup", ex);
     }
@@ -1531,7 +1534,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeWatcherVersionFromCapsule(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(
+            new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Capsule", ex);
     }
@@ -1539,8 +1545,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void cleanupOldDelegateVersions(Set<String> keepVersions) {
     try {
-      cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
-      cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
+        cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Backup", ex);
     }
@@ -1548,7 +1556,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeDelegateVersionsFromCapsule(Set<String> keepVersions) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Capsule", ex);
     }

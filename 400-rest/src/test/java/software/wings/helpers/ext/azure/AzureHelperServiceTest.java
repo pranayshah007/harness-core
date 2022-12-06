@@ -65,6 +65,7 @@ import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.azure.core.http.HttpPipeline;
 import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.http.policy.RetryPolicy;
 import com.azure.core.http.rest.PagedFlux;
 import com.azure.core.http.rest.PagedIterable;
 import com.azure.core.http.rest.SimpleResponse;
@@ -303,6 +304,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
       PowerMockito.mockStatic(AzureResourceManager.class);
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withDefaultSubscription()).thenReturn(azure);
 
@@ -364,6 +366,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
       VirtualMachines mockVirtualMachines = mock(VirtualMachines.class);
@@ -387,6 +390,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription(any())).thenReturn(azure);
 
@@ -474,6 +478,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription(any())).thenReturn(azure);
       when(azure.subscriptions())
@@ -493,6 +498,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
@@ -516,6 +522,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
@@ -541,6 +548,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class))).thenReturn(authenticated);
       when(authenticated.withSubscription(anyString())).thenReturn(azure);
 
@@ -566,6 +574,7 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     try (MockedStatic<AzureResourceManager> azureMockedStatic = Mockito.mockStatic(AzureResourceManager.class)) {
       when(AzureResourceManager.configure()).thenReturn(configurable);
       when(configurable.withLogLevel(any(HttpLogDetailLevel.class))).thenReturn(configurable);
+      when(configurable.withRetryPolicy(any(RetryPolicy.class))).thenReturn(configurable);
       when(configurable.authenticate(any(TokenCredential.class), any(AzureProfile.class)))
           .thenThrow(new MsalException("Failed to authenticate", "AADXXXXXXX"));
       AzureConfig azureConfig =

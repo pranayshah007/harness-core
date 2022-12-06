@@ -10,6 +10,9 @@ package io.harness.pms.pipelinestage;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pms.yaml.ParameterField.isNotNull;
 
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filters.FilterCreatorHelper;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
@@ -27,6 +30,7 @@ import io.harness.steps.pipelinestage.PipelineStageNode;
 import io.harness.strategy.StrategyValidationUtils;
 
 import com.google.inject.Inject;
+import com.google.protobuf.StringValue;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -75,7 +79,22 @@ public class PipelineStageFilterCreator extends GenericStageFilterJsonCreatorV2<
     }
     pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
 
-    return FilterCreationResponse.builder().build();
+    EntityDetailProtoDTO entityDetailProtoDTO =
+        getEntityDetailOfChildPipeline(filterCreationContext.getSetupMetadata().getAccountId(), pipelineStageConfig);
+    return FilterCreationResponse.builder().referredEntities(Collections.singletonList(entityDetailProtoDTO)).build();
+  }
+
+  private EntityDetailProtoDTO getEntityDetailOfChildPipeline(
+      String accountId, PipelineStageConfig pipelineStageConfig) {
+    return EntityDetailProtoDTO.newBuilder()
+        .setIdentifierRef(IdentifierRefProtoDTO.newBuilder()
+                              .setAccountIdentifier(StringValue.of(accountId))
+                              .setOrgIdentifier(StringValue.of(pipelineStageConfig.getOrg()))
+                              .setProjectIdentifier(StringValue.of(pipelineStageConfig.getProject()))
+                              .setIdentifier(StringValue.of(pipelineStageConfig.getPipeline()))
+                              .build())
+        .setType(EntityTypeProtoEnum.PIPELINES)
+        .build();
   }
 
   @Override

@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -68,7 +69,8 @@ public class PipelineStageHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   public void validateNestedChainedPipeline(PipelineEntity entity) {
-    TemplateMergeResponseDTO templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity);
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
 
     containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
   }

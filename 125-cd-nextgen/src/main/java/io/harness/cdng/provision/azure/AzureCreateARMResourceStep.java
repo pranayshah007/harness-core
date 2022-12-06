@@ -149,7 +149,6 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
       entityDetailList.add(entityDetail);
     } else if (ManifestStoreType.HARNESS.equals(azureTemplateFile.getStore().getSpec().getKind())) {
       HarnessStore harnessStore = (HarnessStore) azureTemplateFile.getStore().getSpec();
-      cdExpressionResolver.updateExpressions(ambiance, harnessStore);
 
       if (ParameterField.isNull(harnessStore.getFiles())) {
         if (ParameterField.isNull(harnessStore.getSecretFiles())
@@ -409,6 +408,11 @@ public class AzureCreateARMResourceStep extends TaskChainExecutableWithRollbackA
     AzureCreateARMResourceStepConfigurationParameters stepConfigurationParameters =
         azureCreateStepParameters.getConfigurationParameters();
     AzureARMTaskNGParametersBuilder builder = AzureARMTaskNGParameters.builder();
+    azureCreatePassThroughData.getTemplateBody().setFileContent(
+        cdExpressionResolver.renderExpression(ambiance, azureCreatePassThroughData.getTemplateBody().getFileContent()));
+    azureCreatePassThroughData.getParametersBody().setFileContent(cdExpressionResolver.renderExpression(
+        ambiance, azureCreatePassThroughData.getParametersBody().getFileContent()));
+
     builder.accountId(AmbianceUtils.getAccountId(ambiance))
         .taskType(ARM_DEPLOYMENT)
         .templateBody(azureCreatePassThroughData.getTemplateBody())

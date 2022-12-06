@@ -29,7 +29,6 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
@@ -47,8 +46,7 @@ public class EnvironmentGroupYaml implements Visitable {
   @YamlSchemaTypes(runtime)
   ParameterField<List<EnvironmentYamlV2>> environments;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 

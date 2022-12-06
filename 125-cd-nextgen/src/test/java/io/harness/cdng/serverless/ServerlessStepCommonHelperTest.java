@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -21,6 +22,7 @@ import static org.mockito.Mockito.times;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
@@ -31,6 +33,7 @@ import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
@@ -40,6 +43,7 @@ import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.instancesync.info.ServerlessAwsLambdaServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -47,13 +51,16 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessS3ArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessS3FetchFileConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
+import io.harness.delegate.task.serverless.request.ServerlessS3FetchRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
@@ -68,6 +75,7 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -82,6 +90,8 @@ import io.harness.rule.Owner;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
+
+import software.wings.beans.TaskType;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -190,6 +200,82 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
     assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier()).isEqualTo("sadf");
     assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore()).isEqualTo(gitStoreConfig);
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType()).isEqualTo("ServerlessAwsLambda");
+  }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void startChainLinkS3FetchTaskTest() {
+    String folderPath = "asdf/";
+    S3StoreConfig s3StoreConfig = S3StoreConfig.builder()
+                                      .connectorRef(ParameterField.createValueField("sfad"))
+                                      .folderPath(ParameterField.createValueField(folderPath))
+                                      .build();
+    ParameterField<String> configOverridePath = ParameterField.<String>builder().value("serverlessConfig.yaml").build();
+    ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder()
+                                          .identifier("sadf")
+                                          .store(s3StoreConfig)
+                                          .configOverridePath(configOverridePath)
+                                          .build();
+
+    Map<String, ManifestOutcome> manifestOutcomeMap = new HashMap<>();
+    manifestOutcomeMap.put("safdsd", manifestOutcome);
+    ManifestsOutcome manifestsOutcome = new ManifestsOutcome(manifestOutcomeMap);
+    doReturn(manifestsOutcome).when(serverlessStepCommonHelper).resolveServerlessManifestsOutcome(ambiance);
+    InfrastructureOutcome infrastructureOutcome = ServerlessAwsLambdaInfrastructureOutcome.builder().build();
+    OptionalOutcome optionalOutcome = OptionalOutcome.builder().found(true).outcome(manifestsOutcome).build();
+    doNothing().when(serverlessStepCommonHelper).validateManifestsOutcome(ambiance, manifestsOutcome);
+    doReturn(optionalOutcome).when(outcomeService).resolveOptional(any(), any());
+    doReturn(infrastructureOutcome).when(outcomeService).resolve(any(), any());
+
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    S3StoreDelegateConfig s3StoreDelegateConfig = S3StoreDelegateConfig.builder().build();
+    doNothing().when(serverlessStepCommonHelper).validateManifest(any(), any(), any());
+    doReturn("dfs").when(serverlessStepHelper).getConfigOverridePath(manifestOutcome);
+    doReturn(connectorInfoDTO).when(serverlessEntityHelper).getConnectorInfoDTO(any(), any());
+    doReturn(s3StoreDelegateConfig)
+        .when(serverlessStepCommonHelper)
+        .getS3StoreDelegateConfig(ambiance, s3StoreConfig, manifestOutcome);
+
+    Mockito.mockStatic(StepUtils.class);
+    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
+    ServerlessStepHelper serverlessStepHelper = new ServerlessAwsLambdaStepHelper();
+    TaskChainResponse taskChainResponse =
+        serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
+
+    ServerlessS3FetchFileConfig serverlessS3FetchFileConfig = ServerlessS3FetchFileConfig.builder()
+                                                                  .s3StoreDelegateConfig(s3StoreDelegateConfig)
+                                                                  .identifier(manifestOutcome.getIdentifier())
+                                                                  .manifestType(manifestOutcome.getType())
+                                                                  .configOverridePath(configOverridePath.getValue())
+                                                                  .succeedIfFileNotFound(false)
+                                                                  .build();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    ServerlessS3FetchRequest serverlessS3FetchRequest = ServerlessS3FetchRequest.builder()
+                                                            .accountId(accountId)
+                                                            .serverlessS3FetchFileConfig(serverlessS3FetchFileConfig)
+                                                            .shouldOpenLogStream(true)
+                                                            .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepElementParameters))
+                                  .taskType(TaskType.SERVERLESS_S3_FETCH_TASK_NG.name())
+                                  .parameters(new Object[] {serverlessS3FetchRequest})
+                                  .build();
+
+    PowerMockito.verifyStatic(StepUtils.class, times(1));
+    StepUtils.prepareCDTaskRequest(any(), eq(taskData), any(), any(), any(), any(), any());
+
+    ServerlessStepPassThroughData serverlessStepPassThroughData =
+        (ServerlessStepPassThroughData) taskChainResponse.getPassThroughData();
+
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getIdentifier())
+        .isEqualTo(manifestOutcome.getIdentifier());
+    assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getStore())
+        .isEqualTo(manifestOutcome.getStore());
     assertThat(serverlessStepPassThroughData.getServerlessManifestOutcome().getType()).isEqualTo("ServerlessAwsLambda");
   }
 
@@ -372,6 +458,52 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ALLU_VAMSI)
+  @SneakyThrows
+  @Category(UnitTests.class)
+  public void executeNextLinkS3FetchResponseTest() {
+    StoreConfig storeConfig = S3StoreConfig.builder().build();
+    ManifestOutcome manifestOutcome =
+        ServerlessAwsLambdaManifestOutcome.builder().identifier("adsf").store(storeConfig).build();
+    InfrastructureOutcome infrastructureOutcome = ServerlessAwsLambdaInfrastructureOutcome.builder().build();
+    StepElementParameters stepElementParameters = StepElementParameters.builder().build();
+    PassThroughData passThroughData = ServerlessStepPassThroughData.builder()
+                                          .serverlessManifestOutcome(manifestOutcome)
+                                          .infrastructureOutcome(infrastructureOutcome)
+                                          .build();
+    Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<>();
+    fetchFilesResultMap.put("adsf",
+        FetchFilesResult.builder()
+            .files(Arrays.asList(GitFile.builder().fileContent("safddsaf").filePath("sdafsda/").build()))
+            .build());
+    ResponseData responseData =
+        ServerlessGitFetchResponse.builder()
+            .taskStatus(TaskStatus.SUCCESS)
+            .filesFromMultipleRepo(fetchFilesResultMap)
+            .unitProgressData(UnitProgressData.builder().unitProgresses(Arrays.asList()).build())
+            .build();
+    ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
+        ServerlessExecutionPassThroughData.builder().build();
+    TaskChainResponse expectedTaskChainResponse = TaskChainResponse.builder()
+                                                      .chainEnd(false)
+                                                      .passThroughData(serverlessExecutionPassThroughData)
+                                                      .taskRequest(TaskRequest.newBuilder().build())
+                                                      .build();
+    Optional<Pair<String, String>> manifestFilePathContent = Optional.of(Pair.of("a", "b"));
+    doReturn(OptionalOutcome.builder().found(false).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    doReturn(manifestFilePathContent).when(serverlessStepHelper).getManifestFileContent(any(), any());
+    doReturn(expectedTaskChainResponse)
+        .when(serverlessAwsLambdaDeployStep)
+        .executeServerlessPrepareRollbackTask(any(), any(), any(), any(), any(), any());
+    TaskChainResponse taskChainResponse = serverlessStepCommonHelper.executeNextLink(serverlessAwsLambdaDeployStep,
+        ambiance, stepElementParameters, passThroughData, () -> responseData, serverlessStepHelper);
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
+    assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
+  }
+
+  @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void handleGitTaskFailureTest() {
@@ -504,16 +636,16 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
             .unitProgressData(UnitProgressData.builder().build())
             .build();
 
-    ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
-                                                              .manifestFileOverrideContent("manifestFileOverride")
-                                                              .manifestFilePathContent(Pair.of("a", "b"))
-                                                              .build();
-    OptionalSweepingOutput serverlessGitFetchOptionalOutput =
-        OptionalSweepingOutput.builder().output(serverlessGitFetchOutcome).found(true).build();
-    doReturn(serverlessGitFetchOptionalOutput)
+    ServerlessFetchFileOutcome serverlessFetchFileOutcome = ServerlessFetchFileOutcome.builder()
+                                                                .manifestFileOverrideContent("manifestFileOverride")
+                                                                .manifestFilePathContent(Pair.of("a", "b"))
+                                                                .build();
+    OptionalSweepingOutput serverlessFetchFileOptionalOutput =
+        OptionalSweepingOutput.builder().output(serverlessFetchFileOutcome).found(true).build();
+    doReturn(serverlessFetchFileOptionalOutput)
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
-            RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
+            RefObjectUtils.getSweepingOutputRefObject(OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME));
 
     ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
         ServerlessExecutionPassThroughData.builder()
@@ -523,8 +655,8 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     ServerlessStepExecutorParams serverlessStepExecutorParams =
         ServerlessAwsLambdaStepExecutorParams.builder()
             .shouldOpenFetchFilesLogStream(false)
-            .manifestFilePathContent(serverlessGitFetchOutcome.getManifestFilePathContent())
-            .manifestFileOverrideContent(serverlessGitFetchOutcome.getManifestFileOverrideContent())
+            .manifestFilePathContent(serverlessFetchFileOutcome.getManifestFilePathContent())
+            .manifestFileOverrideContent(serverlessFetchFileOutcome.getManifestFileOverrideContent())
             .build();
     TaskChainResponse taskChainRes =
         TaskChainResponse.builder().chainEnd(false).taskRequest(TaskRequest.newBuilder().build()).build();

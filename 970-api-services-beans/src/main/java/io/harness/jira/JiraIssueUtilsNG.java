@@ -14,6 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.JiraClientException;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 
 import com.google.common.base.Splitter;
 import java.net.MalformedURLException;
@@ -66,7 +67,7 @@ public class JiraIssueUtilsNG {
   }
 
   public void updateFieldValues(Map<String, Object> currFieldValues, Map<String, JiraFieldNG> issueTypeFields,
-      Map<String, String> fields, boolean checkRequiredFields) {
+      Map<String, String> fields, boolean checkRequiredFields, JiraDeploymentType jiraDeploymentType) {
     if (issueTypeFields == null) {
       issueTypeFields = new HashMap<>();
     }
@@ -111,7 +112,8 @@ public class JiraIssueUtilsNG {
     fieldKeys.remove(JiraConstantsNG.REMAINING_ESTIMATE_NAME);
     addTimeTrackingField(currFieldValues, fields);
 
-    fieldKeys.forEach(key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key)));
+    fieldKeys.forEach(
+        key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key), jiraDeploymentType));
   }
 
   private Map<String, String> parseFieldsForCGCalls(
@@ -137,13 +139,14 @@ public class JiraIssueUtilsNG {
         JiraConstantsNG.TIME_TRACKING_KEY, new JiraTimeTrackingFieldNG(originalEstimate, remainingEstimate));
   }
 
-  private void addKey(Map<String, Object> currFieldValues, String key, JiraFieldNG field, String value) {
+  private void addKey(Map<String, Object> currFieldValues, String key, JiraFieldNG field, String value,
+      JiraDeploymentType jiraDeploymentType) {
     if (key == null || field == null || EmptyPredicate.isEmpty(value)) {
       return;
     }
 
     if (!field.getSchema().isArray()) {
-      Object finalValue = convertToFinalValue(field, key, value);
+      Object finalValue = convertToFinalValue(field, key, value, jiraDeploymentType);
       if (finalValue != null) {
         currFieldValues.put(field.getKey(), finalValue);
       }
@@ -153,15 +156,16 @@ public class JiraIssueUtilsNG {
     List<String> values = splitByComma(value);
     currFieldValues.put(field.getKey(),
         values.stream()
-            .map(v -> convertToFinalValue(field, key, v))
+            .map(v -> convertToFinalValue(field, key, v, jiraDeploymentType))
             .filter(Objects::nonNull)
             .collect(Collectors.toList()));
   }
 
-  private Object convertToFinalValue(JiraFieldNG field, String name, String value) {
+  private Object convertToFinalValue(
+      JiraFieldNG field, String name, String value, JiraDeploymentType jiraDeploymentType) {
     switch (field.getSchema().getType()) {
       case USER:
-        return new JiraFieldUserPickerNG(value);
+        return new JiraFieldUserPickerNG(value, jiraDeploymentType);
       case STRING:
         return value;
       case NUMBER:

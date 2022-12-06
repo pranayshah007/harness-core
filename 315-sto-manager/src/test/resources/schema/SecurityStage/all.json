@@ -7068,6 +7068,9 @@
             "testAnnotations": {
               "type": "string"
             },
+            "testGlobs": {
+              "type": "string"
+            },
             "testSplitStrategy": {
               "oneOf": [
                 {

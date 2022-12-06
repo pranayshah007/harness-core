@@ -24,6 +24,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.observer.Subject;
+import io.harness.persistence.HIterator;
 
 import software.wings.app.MainConfiguration;
 import software.wings.beans.Account;
@@ -72,6 +73,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.mongodb.morphia.query.CountOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -493,31 +495,33 @@ public class LicenseServiceImpl implements LicenseService {
         throw new InvalidRequestException(msg);
       }
 
-      List<Account> accountList = accountService.listAllAccounts();
-      if (accountList == null) {
+      Query<Account> query = accountService.getBasicAccountWithLicenseInfoQuery();
+      if (query.count(new CountOptions().limit(1)) == 0) {
         String msg = "Couldn't find any accounts in DB";
         throw new InvalidRequestException(msg);
       }
 
-      accountList.forEach(account -> {
-        if (!account.getAccountName().equalsIgnoreCase("Global")) {
-          byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
-          byte[] encryptedLicenseInfoFromDB = account.getEncryptedLicenseInfo();
+      try (HIterator<Account> accountList = new HIterator<>(query.fetch())) {
+        accountList.forEach(account -> {
+          if (!account.getAccountName().equalsIgnoreCase("Global")) {
+            byte[] encryptedLicenseInfo = Base64.getDecoder().decode(encryptedLicenseInfoBase64String.getBytes());
+            byte[] encryptedLicenseInfoFromDB = account.getEncryptedLicenseInfo();
 
-          boolean noLicenseInfoInDB = isEmpty(encryptedLicenseInfoFromDB);
+            boolean noLicenseInfoInDB = isEmpty(encryptedLicenseInfoFromDB);
 
-          if (noLicenseInfoInDB || !Arrays.equals(encryptedLicenseInfo, encryptedLicenseInfoFromDB)) {
-            account.setEncryptedLicenseInfo(encryptedLicenseInfo);
-            LicenseUtils.decryptLicenseInfo(account, true);
-            LicenseInfo licenseInfo = account.getLicenseInfo();
-            if (licenseInfo != null) {
-              updateAccountLicense(account.getUuid(), licenseInfo);
-            } else {
-              throw new InvalidRequestException("No license info could be extracted from the encrypted license info");
+            if (noLicenseInfoInDB || !Arrays.equals(encryptedLicenseInfo, encryptedLicenseInfoFromDB)) {
+              account.setEncryptedLicenseInfo(encryptedLicenseInfo);
+              LicenseUtils.decryptLicenseInfo(account, true);
+              LicenseInfo licenseInfo = account.getLicenseInfo();
+              if (licenseInfo != null) {
+                updateAccountLicense(account.getUuid(), licenseInfo);
+              } else {
+                throw new InvalidRequestException("No license info could be extracted from the encrypted license info");
+              }
             }
           }
-        }
-      });
+        });
+      }
     } catch (Exception ex) {
       if (DeployVariant.isCommunity(mainConfiguration.getDeployVariant().name())) {
         log.info("Skip for updating on-prem license with community edition");

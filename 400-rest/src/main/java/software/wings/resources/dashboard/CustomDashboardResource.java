@@ -304,7 +304,7 @@ public class CustomDashboardResource {
             .build();
       }
 
-      List<Account> accountList = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+      List<Account> accountList = accountService.getAccountsWithBasicInfo(false);
       Map<String, String> accountReconStatusMap = new HashMap<>();
       for (Account account : accountList) {
         ReconciliationStatus status = deploymentReconService.performReconciliation(

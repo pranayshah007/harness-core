@@ -111,7 +111,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     final LogCallback logger = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, true);
 
-    log.info("Starting execution for GitopsClustersStep [{}]", stepParameters);
+    log.info("Starting execution for GitOpsClustersStep [{}]", stepParameters);
 
     // Get Service Variables from sweeping output
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
@@ -398,10 +398,9 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         }
         if (resolvedValue != null) {
           if (!parameterFieldValue.isTypeString()) {
-            parameterFieldValue.setValue(Double.valueOf(resolvedValue));
-
+            parameterFieldValue.updateWithValue(Double.valueOf(resolvedValue));
           } else {
-            parameterFieldValue.setValue(resolvedValue);
+            parameterFieldValue.updateWithValue(resolvedValue);
           }
         }
       }

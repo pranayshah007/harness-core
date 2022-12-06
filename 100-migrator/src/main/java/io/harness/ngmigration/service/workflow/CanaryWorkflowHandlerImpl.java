@@ -9,7 +9,7 @@ package io.harness.ngmigration.service.workflow;
 
 import static io.harness.beans.OrchestrationWorkflowType.BASIC;
 import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
-import static io.harness.beans.OrchestrationWorkflowType.CUSTOM;
+import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
 import static io.harness.ng.core.template.TemplateEntityType.PIPELINE_TEMPLATE;
 import static io.harness.ng.core.template.TemplateEntityType.STAGE_TEMPLATE;
@@ -56,7 +56,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
   @Override
   public TemplateEntityType getTemplateType(Workflow workflow) {
     OrchestrationWorkflowType workflowType = workflow.getOrchestration().getOrchestrationWorkflowType();
-    if (ROLLING_WORKFLOW_TYPES.contains(workflowType) || CUSTOM == workflowType) {
+    if (ROLLING_WORKFLOW_TYPES.contains(workflowType) || BUILD == workflowType) {
       return STAGE_TEMPLATE;
     }
     return PIPELINE_TEMPLATE;
@@ -93,7 +93,7 @@ public class CanaryWorkflowHandlerImpl extends WorkflowHandler {
     if (ROLLING_WORKFLOW_TYPES.contains(workflowType)) {
       return getDeploymentStageTemplateSpec(workflow, stepMapperFactory);
     }
-    if (workflowType == CUSTOM) {
+    if (workflowType == BUILD) {
       return getCustomStageTemplateSpec(workflow, stepMapperFactory);
     }
     return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);

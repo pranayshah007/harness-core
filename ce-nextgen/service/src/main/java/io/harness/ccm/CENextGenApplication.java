@@ -7,14 +7,14 @@
 
 package io.harness.ccm;
 
-import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.authorization.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.ccm.eventframework.CENGEventConsumerService;
 import io.harness.ccm.migration.CENGCoreMigrationProvider;
 import io.harness.ccm.service.impl.PerspectivesRestrictionUsageImpl;

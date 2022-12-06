@@ -868,6 +868,35 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_SimpleSLO_AssociatedWith_CompositeSLO_Failure_BecauseOf_Duplicates() {
+    ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) compositeSLODTO1.getSpec();
+    compositeSLODTO1.setIdentifier("newCompositeSLO1");
+    compositeSLODTO1.setName("newCompositeSLO1");
+    compositeServiceLevelObjectiveSpec.setServiceLevelObjectivesDetails(
+        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                          .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                          .weightagePercentage(50.0)
+                          .accountId(simpleServiceLevelObjective1.getAccountId())
+                          .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                          .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                          .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                .weightagePercentage(50.0)
+                .accountId(simpleServiceLevelObjective1.getAccountId())
+                .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                .build()));
+    compositeSLODTO1.setSpec(compositeServiceLevelObjectiveSpec);
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("An SLO can't be referenced more than once"));
+  }
+  @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testUpdate_AddCompositeSLOSuccess() {
@@ -1127,10 +1156,9 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
     ServiceLevelObjectiveV2DTO sloDTO = simpleServiceLevelObjectiveDTO1;
     ServiceLevelIndicatorDTO responseSLIDTO =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
-    String sliIndicator =
-        serviceLevelIndicatorService
-            .getServiceLevelIndicator(builderFactory.getProjectParams(), responseSLIDTO.getIdentifier())
-            .getUuid();
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), responseSLIDTO.getIdentifier());
+    String sliIndicator = serviceLevelIndicator.getUuid();
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 =
         ((SimpleServiceLevelObjectiveSpec) sloDTO.getSpec()).getServiceLevelIndicators().get(0);
     serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
@@ -1138,16 +1166,20 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
         .setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
     ServiceLevelObjectiveV2Response updateServiceLevelObjectiveResponse =
         serviceLevelObjectiveV2Service.update(projectParams, sloDTO.getIdentifier(), sloDTO);
-    String updatedSliIndicator =
-        serviceLevelIndicatorService
-            .getServiceLevelIndicator(builderFactory.getProjectParams(),
-                ((SimpleServiceLevelObjectiveSpec) updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()
-                        .getSpec())
-                    .getServiceLevelIndicators()
-                    .get(0)
-                    .getIdentifier())
-            .getUuid();
+    ServiceLevelIndicator updatedServiceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            ((SimpleServiceLevelObjectiveSpec) updateServiceLevelObjectiveResponse.getServiceLevelObjectiveV2DTO()
+                    .getSpec())
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    String updatedSliIndicator = updatedServiceLevelIndicator.getUuid();
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isNotEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
+    serviceLevelIndicator.setSliMissingDataType(SLIMissingDataType.BAD);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
     verify(compositeSLOService, times(0)).reset(any());
     verify(compositeSLOService, times(1)).recalculate(any());
   }

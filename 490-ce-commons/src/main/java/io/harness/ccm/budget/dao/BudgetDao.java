@@ -25,6 +25,8 @@ public class BudgetDao {
   private static final String SCOPE_VIEW_NAME = "scope.viewName";
   private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT =
       BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetBreakdown;
 
   public String save(Budget budget) {
     return persistence.save(budget);
@@ -104,6 +106,10 @@ public class BudgetDao {
     }
     if (null != budget.getUserGroupIds()) {
       updateOperations.set(BudgetKeys.userGroupIds, budget.getUserGroupIds());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown() && null != budget.getBudgetMonthlyBreakdown().getBudgetBreakdown()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN, budget.getBudgetMonthlyBreakdown().getBudgetBreakdown());
     }
     if (null != budget.getBudgetMonthlyBreakdown()
         && null != budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {

@@ -20,11 +20,11 @@ import io.harness.artifacts.comparator.BuildDetailsInternalComparatorAscending;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.context.MdcGlobalContextData;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
-import io.harness.expression.RegexFunctor;
 import io.harness.manage.GlobalContextManager;
 
 import software.wings.service.impl.AwsApiHelperService;
@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -122,15 +123,26 @@ public class EcrServiceImpl implements EcrService {
       AwsInternalConfig awsInternalConfig, String imageUrl, String region, String imageName, String tagRegex) {
     List<BuildDetailsInternal> builds =
         getBuilds(awsInternalConfig, imageUrl, region, imageName, MAX_NO_OF_TAGS_PER_IMAGE);
-    builds = builds.stream()
-                 .filter(build -> new RegexFunctor().match(tagRegex, build.getNumber()))
-                 .sorted(new BuildDetailsInternalComparatorDescending())
-                 .collect(toList());
-    if (builds.isEmpty()) {
+
+    Pattern pattern = Pattern.compile(tagRegex.replace(".", "\\.").replace("?", ".?").replace("*", ".*?"));
+
+    if (EmptyPredicate.isEmpty(builds)) {
       throw new InvalidArtifactServerException(
           "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
     }
-    return builds.get(0);
+
+    List<BuildDetailsInternal> buildsResponse =
+        builds.stream()
+            .filter(build -> !build.getNumber().endsWith("/") && pattern.matcher(build.getNumber()).find())
+            .sorted(new BuildDetailsInternalComparatorDescending())
+            .collect(Collectors.toList());
+
+    if (buildsResponse.isEmpty()) {
+      throw new InvalidArtifactServerException(
+          "There are no builds for this image: " + imageName + " and tagRegex: " + tagRegex, USER);
+    }
+
+    return buildsResponse.get(0);
   }
 
   @Override

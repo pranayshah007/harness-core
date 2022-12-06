@@ -9,7 +9,6 @@ package io.harness.gitsync.caching.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.caching.entity.CacheDetails;
 
 import lombok.AccessLevel;
 import lombok.Builder;

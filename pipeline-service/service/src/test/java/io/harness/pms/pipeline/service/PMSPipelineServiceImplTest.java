@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
@@ -22,6 +23,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
@@ -29,10 +31,13 @@ import io.harness.PipelineSettingsService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ReferencedEntityException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.governance.GovernanceMetadata;
+import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -72,6 +77,8 @@ import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(PIPELINE)
 public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
@@ -80,6 +87,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Mock private PMSPipelineServiceHelper pmsPipelineServiceHelper;
   @Mock private OutboxServiceImpl outboxService;
   @Mock private GitSyncSdkService gitSyncSdkService;
+  @Mock private EntitySetupUsageClient entitySetupUsageClient;
   @Inject private PipelineMetadataService pipelineMetadataService;
   @Mock private PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
 
@@ -296,6 +304,7 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testDelete() throws IOException {
+    doReturn(getResponseDTOCall(false)).when(entitySetupUsageClient).isEntityReferenced(any(), any(), any());
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
@@ -437,5 +446,31 @@ public class PMSPipelineServiceImplTest extends PipelineServiceTestBase {
     pmsPipelineService.validateAndCreatePipeline(pipelineEntity, true);
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelper).updatePipelineInfo(any(), eq(PipelineVersion.V0));
     pmsPipelineService.validateAndUpdatePipeline(pipelineEntity, ChangeType.ADD, true);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testValidateSetupUsage() {
+    Call<ResponseDTO<Boolean>> request = getResponseDTOCall(true);
+    doReturn(request).when(entitySetupUsageClient).isEntityReferenced(any(), any(), any());
+    assertThatThrownBy(
+        () -> pmsPipelineService.validateSetupUsage(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER))
+        .isInstanceOf(ReferencedEntityException.class);
+
+    request = getResponseDTOCall(false);
+    doReturn(request).when(entitySetupUsageClient).isEntityReferenced(any(), any(), any());
+    assertThatCode(
+        () -> pmsPipelineService.validateSetupUsage(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER))
+        .doesNotThrowAnyException();
+  }
+
+  private Call<ResponseDTO<Boolean>> getResponseDTOCall(boolean setValue) {
+    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    try {
+      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(setValue)));
+    } catch (IOException ex) {
+    }
+    return request;
   }
 }

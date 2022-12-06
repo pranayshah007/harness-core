@@ -13,11 +13,11 @@ import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCH
 
 import static java.util.Collections.singletonList;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.SCMGrpcClientModule;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.ci.execution.OrchestrationExecutionEventHandlerRegistrar;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;

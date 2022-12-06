@@ -216,6 +216,7 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
       task.setControlDataUrl(
           getControlDataUrlForDeploymentLog(input, verificationJobInstance, verificationJobInstance.getResolvedJob()));
       task.setAnalysisType(LearningEngineTaskType.LOG_ANALYSIS);
+    } else {
       TestVerificationJob testVerificationJob = (TestVerificationJob) verificationJobInstance.getResolvedJob();
       String baselineVerificationJobInstanceId = testVerificationJob.getBaselineVerificationJobInstanceId();
       task = TestLogAnalysisLearningEngineTask.builder().build();

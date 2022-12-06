@@ -18,6 +18,8 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.jira.JiraClient;
 import io.harness.jira.JiraFieldTypeNG;
+import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraIssueTypeNG;
@@ -35,7 +37,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
 
 @OwnedBy(CDC)
 @Singleton
@@ -162,8 +163,12 @@ public class JiraTaskNGHandler {
             return;
           }
 
-          if (ObjectId.isValid(value)) {
+          JiraInstanceData jiraInstanceData = jiraClient.getInstanceData();
+          if (jiraInstanceData.getDeploymentType() == JiraDeploymentType.CLOUD) {
             userDataList = jiraClient.getUsers(null, value, null);
+            if (userDataList.isEmpty()) {
+              userDataList = jiraClient.getUsers(value, null, null);
+            }
           } else {
             userDataList = jiraClient.getUsers(value, null, null);
           }

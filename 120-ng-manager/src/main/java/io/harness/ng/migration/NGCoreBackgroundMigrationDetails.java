@@ -13,6 +13,7 @@ import io.harness.migration.beans.MigrationType;
 import io.harness.ng.core.migration.CopyTemplatesPermissionRoleUpdate;
 import io.harness.ng.core.migration.PopulateYamlFieldInNGEnvironmentMigration;
 import io.harness.ng.core.migration.background.AddDeploymentTypeToInfrastructureEntityMigration;
+import io.harness.ng.core.migration.background.PopulateYamlAuthFieldInNGServiceNowConnectorMigration;
 import io.harness.ng.core.migration.background.PopulateYamlFieldInNGServiceEntityMigration;
 
 import com.google.common.collect.ImmutableList;
@@ -37,6 +38,7 @@ public class NGCoreBackgroundMigrationDetails implements MigrationDetails {
         .add(Pair.of(2, PopulateYamlFieldInNGEnvironmentMigration.class))
         .add(Pair.of(3, PopulateYamlFieldInNGServiceEntityMigration.class))
         .add(Pair.of(4, CopyTemplatesPermissionRoleUpdate.class))
+        .add(Pair.of(5, PopulateYamlAuthFieldInNGServiceNowConnectorMigration.class))
         .build();
   }
 }

@@ -34,6 +34,7 @@ import software.wings.beans.AwsSecretsManagerConfig;
 import software.wings.beans.GcpKmsConfig;
 import software.wings.beans.GcpSecretsManagerConfig;
 import software.wings.beans.LocalEncryptionConfig;
+import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.VaultConfig;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
@@ -50,6 +51,7 @@ public class SecretFactory {
   @Inject private HarnessSecretMigrator harnessSecretMigrator;
   @Inject private AwsSecretMigrator awsSecretMigrator;
   @Inject private GcpSecretMigrator gcpSecretMigrator;
+  @Inject private VaultSshSecretMigrator vaultSshSecretMigrator;
 
   public static ConnectorType getConnectorType(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof GcpSecretsManagerConfig) {
@@ -64,6 +66,9 @@ public class SecretFactory {
     if (secretManagerConfig instanceof VaultConfig) {
       return ConnectorType.VAULT;
     }
+    if (secretManagerConfig instanceof SSHVaultConfig) {
+      return ConnectorType.VAULT;
+    }
     if (secretManagerConfig instanceof AwsSecretsManagerConfig) {
       return ConnectorType.AWS_SECRET_MANAGER;
     }
@@ -73,6 +78,9 @@ public class SecretFactory {
   public SecretMigrator getSecretMigrator(SecretManagerConfig secretManagerConfig) {
     if (secretManagerConfig instanceof VaultConfig) {
       return vaultSecretMigrator;
+    }
+    if (secretManagerConfig instanceof SSHVaultConfig) {
+      return vaultSshSecretMigrator;
     }
     if (secretManagerConfig instanceof LocalEncryptionConfig) {
       return harnessSecretMigrator;

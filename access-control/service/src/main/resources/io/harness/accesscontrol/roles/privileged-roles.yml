@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: supportRolesConfiguration
-version: 10
+version: 11
 roles:
   - identifier: _super_account_viewer
     name: Super Account Viewer
@@ -52,3 +52,5 @@ roles:
       - ccm_autoStoppingRule_view
       - ccm_loadBalancer_view
       - ccm_folder_view
+      - core_variable_view
+      - core_setting_view

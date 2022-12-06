@@ -41,8 +41,7 @@ public class EnvironmentsYaml implements Visitable {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 

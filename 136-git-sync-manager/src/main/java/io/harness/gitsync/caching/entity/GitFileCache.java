@@ -48,7 +48,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @OwnedBy(PIPELINE)
 public class GitFileCache implements PersistentEntity, CreatedAtAware, UpdatedAtAware {
   String accountIdentifier;
-  String gitProvider;
+  GitProvider gitProvider;
   String repoName;
   String ref;
   String completeFilepath;

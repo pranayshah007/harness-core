@@ -1486,7 +1486,7 @@ public class UserServiceImpl implements UserService {
       addUserToUserGroups(accountId, user, userGroups, false, true);
       userGroups = userGroupService.getUserGroupsFromUserInvite(userInvite);
     }
-    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired;
+    boolean isAutoInviteAcceptanceEnabled = !isInviteAcceptanceRequired && accountService.isSSOEnabled(account);
 
     if (!(isPLNoEmailForSamlAccountInvitesEnabled && !user.isTwoFactorAuthenticationEnabled())) {
       if (isAutoInviteAcceptanceEnabled
