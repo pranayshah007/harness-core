@@ -345,7 +345,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForAccountScope() {
     return RoleAssignmentFilterDTO.builder()
         .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
-        .roleFilter(Collections.singleton((ACCOUNT_BASIC_ROLE)))
+        .roleFilter(Collections.singleton(ACCOUNT_BASIC_ROLE))
         .principalFilter(Collections.singleton(PrincipalDTO.builder()
                                                    .identifier(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
                                                    .scopeLevel("account")
