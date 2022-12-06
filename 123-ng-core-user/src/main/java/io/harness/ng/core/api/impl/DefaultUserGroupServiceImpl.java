@@ -151,7 +151,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   }
 
   private void createRoleAssignmentsForOrganization(String userGroupIdentifier, Scope scope) {
-    createRoleAssignment(userGroupIdentifier, scope, true, true, ORGANIZATION_VIEWER_ROLE,
+    createRoleAssignment(userGroupIdentifier, scope, true, false, ORGANIZATION_VIEWER_ROLE,
         DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER);
   }
 
