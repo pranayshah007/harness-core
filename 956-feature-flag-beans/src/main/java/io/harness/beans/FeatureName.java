@@ -498,7 +498,13 @@ public enum FeatureName {
   SPG_NG_CUSTOM_WEBHOOK_AUTHORIZATION(
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   HELM_STEADY_STATE_CHECK_1_16,
-  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE);
+  CCM_MONTHLY_BUDGET_BREAKDOWN("Use monthly breakdown feature in Yearly Period Budget", HarnessTeam.CE),
+  WINRM_SCRIPT_COMMAND_SPLIT_NG(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
+      HarnessTeam.CDP),
+  DISABLE_WINRM_COMMAND_ENCODING_NG(
+      "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
