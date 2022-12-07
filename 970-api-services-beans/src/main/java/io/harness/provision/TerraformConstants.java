@@ -95,4 +95,7 @@ public final class TerraformConstants {
   public static final String TF_PLAN_RESOURCES_ADD = "TF_PLAN_RESOURCES_ADD";
   public static final String TF_PLAN_RESOURCES_CHANGE = "TF_PLAN_RESOURCES_CHANGE";
   public static final String TF_PLAN_RESOURCES_DESTROY = "TF_PLAN_RESOURCES_DESTROY";
+
+  public static final String TF_S3_FILE_DIR_FOR_VARIABLES_AND_TARGETS =
+      "./s3_bucket/${REPO_TYPE}/${ACCOUNT_ID}/${BUCKET_NAME}";
 }

@@ -7,6 +7,8 @@
 
 package software.wings.utils;
 
+import static io.harness.provision.TerraformConstants.TF_S3_FILE_DIR_FOR_VARIABLES_AND_TARGETS;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -14,9 +16,11 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.FileReadException;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GitOperationContext;
+import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
@@ -66,9 +70,16 @@ public class GitUtilsDelegate {
         .toString();
   }
 
-  public String resolveS3BucketAbsoluteFilePath(AmazonS3URI s3URI) {
+  public String resolveS3BucketAbsoluteFilePath(String downloadDir, AmazonS3URI s3URI) {
+    return Paths.get(downloadDir, s3URI.getKey()).toString();
+  }
+
+  public String buildS3FilePath(String accountId, AmazonS3URI s3URI) {
     return Paths
-        .get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(), s3URI.getBucket(), s3URI.getKey(), s3URI.getKey())
+        .get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(),
+            TF_S3_FILE_DIR_FOR_VARIABLES_AND_TARGETS.replace("${ACCOUNT_ID}", accountId)
+                .replace("${REPO_TYPE}", "terraform")
+                .replace("${BUCKET_NAME}", s3URI.getBucket()))
         .toString();
   }
 

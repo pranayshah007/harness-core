@@ -9,6 +9,7 @@ package software.wings.delegatetasks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.provision.TerraformConstants.USER_DIR_KEY;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,6 +43,7 @@ import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,12 +84,15 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
       String absoluteModulePath = null;
       if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
         try {
+          AmazonS3URI s3URI = new AmazonS3URI(parameters.getS3URI());
           encryptionService.decrypt(
               parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
-          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(new AmazonS3URI(parameters.getS3URI()));
+          String downloadDir =
+              gitUtilsDelegate.buildS3FilePath(parameters.getAwsS3SourceBucketConfig().getAccountId(), s3URI);
+          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(downloadDir, s3URI);
 
           awsS3HelperServiceDelegate.downloadS3Directory(
-              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(absoluteModulePath));
+              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(downloadDir));
         } catch (Exception e) {
           return TerraformExecutionData.builder()
               .executionStatus(ExecutionStatus.FAILED)

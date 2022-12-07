@@ -92,13 +92,15 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
 
       if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
         try {
-          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(new AmazonS3URI(parameters.getS3URI()));
+          AmazonS3URI s3URI = new AmazonS3URI(parameters.getS3URI());
           encryptionService.decrypt(
               parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
+          String downloadDir =
+              gitUtilsDelegate.buildS3FilePath(parameters.getAwsS3SourceBucketConfig().getAccountId(), s3URI);
+          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(downloadDir, s3URI);
 
-          awsS3HelperServiceDelegate.downloadS3Directory(parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(),
-              new File(Paths.get(System.getProperty(USER_DIR_KEY)).toString()));
-
+          awsS3HelperServiceDelegate.downloadS3Directory(
+              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(downloadDir));
         } catch (Exception ex) {
           return TerraformInputVariablesTaskResponse.builder()
               .terraformExecutionData(TerraformExecutionData.builder()
