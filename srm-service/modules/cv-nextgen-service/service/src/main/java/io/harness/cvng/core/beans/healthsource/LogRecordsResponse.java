@@ -17,6 +17,5 @@ import lombok.Value;
 @Value
 @Builder
 public class LogRecordsResponse {
-  Status status;
   List<LogRecord> logRecords = new ArrayList<>();
 }

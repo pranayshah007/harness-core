@@ -7,13 +7,13 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import lombok.EqualsAndHashCode;
 
-@SuperBuilder
 @Data
-@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@EqualsAndHashCode(callSuper = true)
 public class QueryRecordsRequest extends HealthSourceRecordsRequest {
-  QueryJSONPath queryJSONPath;
+  QueryJsonPath queryJSONPath;
 }

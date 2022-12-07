@@ -20,14 +20,17 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Value
 @Builder
+@EqualsAndHashCode(callSuper = true)
 public class SumologicMetricDataCollectionInfo extends TimeSeriesDataCollectionInfo<SumoLogicConnectorDTO> {
   private static final String GROUPING_CLAUSE = "avg by ";
-  private String groupName;
-  private List<MetricCollectionInfo> metricDefinitions;
+  String groupName;
+  List<MetricCollectionInfo> metricDefinitions;
   public List<MetricCollectionInfo> getMetricDefinitions() {
     if (metricDefinitions == null) {
       return new ArrayList<>();

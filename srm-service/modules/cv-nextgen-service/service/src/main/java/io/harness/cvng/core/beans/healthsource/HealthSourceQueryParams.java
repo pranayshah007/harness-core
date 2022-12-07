@@ -5,6 +5,14 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.beans.monitoredService;
+package io.harness.cvng.core.beans.healthsource;
 
-public class HealthSourceParams {}
+import lombok.Builder;
+import lombok.Data;
+
+@Data
+@Builder
+public class HealthSourceQueryParams {
+  String serviceInstanceField;
+  // Add provider specific fields here.
+}

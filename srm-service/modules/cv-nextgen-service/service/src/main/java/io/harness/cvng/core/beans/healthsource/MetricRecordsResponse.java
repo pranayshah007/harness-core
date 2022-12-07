@@ -17,6 +17,5 @@ import lombok.Value;
 @Value
 @Builder
 public class MetricRecordsResponse {
-  Status status;
   List<TimeSeries> timeSeriesData = new ArrayList<>();
 }

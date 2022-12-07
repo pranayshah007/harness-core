@@ -38,7 +38,7 @@ import retrofit2.http.Body;
 @Produces(MediaType.APPLICATION_JSON)
 @NextGenManagerAuth
 public class HealthSourceOnboardingResource {
-  @Inject private HealthSourceOnboardingService healthSourceService;
+  @Inject private HealthSourceOnboardingService healthSourceOnboardingService;
 
   @POST
   @Path("/healthSourceRecords")
@@ -57,7 +57,7 @@ public class HealthSourceOnboardingResource {
                                       .projectIdentifier(projectIdentifier)
                                       .build();
     return new RestResponse<>(
-        healthSourceService.fetchSampleRawRecordsForHealthSource(healthSourceRecordsRequest, projectParams));
+        healthSourceOnboardingService.fetchSampleRawRecordsForHealthSource(healthSourceRecordsRequest, projectParams));
   }
 
   @POST
@@ -76,7 +76,7 @@ public class HealthSourceOnboardingResource {
                                       .orgIdentifier(orgIdentifier)
                                       .projectIdentifier(projectIdentifier)
                                       .build();
-    return new RestResponse<>(healthSourceService.fetchMetricData(queryRecordsRequest, projectParams));
+    return new RestResponse<>(healthSourceOnboardingService.fetchMetricData(queryRecordsRequest, projectParams));
   }
 
   @POST
@@ -95,6 +95,6 @@ public class HealthSourceOnboardingResource {
                                       .orgIdentifier(orgIdentifier)
                                       .projectIdentifier(projectIdentifier)
                                       .build();
-    return new RestResponse<>(healthSourceService.fetchLogData(queryRecordsRequest, projectParams));
+    return new RestResponse<>(healthSourceOnboardingService.fetchLogData(queryRecordsRequest, projectParams));
   }
 }

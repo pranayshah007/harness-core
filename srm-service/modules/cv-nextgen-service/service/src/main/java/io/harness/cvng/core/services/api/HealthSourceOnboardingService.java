@@ -21,9 +21,7 @@ public interface HealthSourceOnboardingService {
   /**
    * Fetch Sample records from the third party providers, for the purpose of displaying them.
    * @param healthSourceRecordsRequest details to fetch records from health sources.
-   * @param account accountId
-   * @param org organisationId
-   * @param project projectId
+   * @param projectParams org, account and project details.
    * @return raw healthSource records
    */
   HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
@@ -32,9 +30,7 @@ public interface HealthSourceOnboardingService {
   /**
    * Fetch sample time-series data, from which charts can be plotted.One or more time-series can be returned.
    * @param queryRecordsRequest details required to fetch metric data from health sources.
-   * @param account accountId
-   * @param org organisationId
-   * @param project projectId
+   * @param projectParams org, account and project details.
    * @return list of time-series metrics.
    */
   MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams);
@@ -42,9 +38,7 @@ public interface HealthSourceOnboardingService {
   /**
    * Fetch sample log table data, the data is tagged with the hostname.
    * @param queryRecordsRequest details required to fetch log table data from health sources.
-   * @param account accountId
-   * @param org organisationId
-   * @param project projectId
+   * @param projectParams org, account and project details.
    * @return list of log records
    */
   LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams);

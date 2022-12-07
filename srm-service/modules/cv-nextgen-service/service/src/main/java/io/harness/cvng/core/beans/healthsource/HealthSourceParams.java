@@ -7,12 +7,7 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
-public class ProviderParams {
-  String serviceInstanceField;
-  // Add provider specific fields here.
-}
+public class HealthSourceParams {}

@@ -9,19 +9,18 @@ package io.harness.cvng.core.beans.healthsource;
 
 import io.harness.cvng.beans.DataSourceType;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.SuperBuilder;
 
-@SuperBuilder
 @Data
-@NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class HealthSourceRecordsRequest {
   @NotNull String connectorIdentifier;
   @NotNull String query;
   @NotNull Long startTime;
   @NotNull Long endTime;
   @NotNull DataSourceType providerType;
-  ProviderParams providerParams;
+  HealthSourceQueryParams healthSourceQueryParams;
+  HealthSourceParams healthSourceParams;
 }

@@ -7,13 +7,9 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
-import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
-@Builder
-public class QueryJSONPath {
-  String queryValueJSONPath;
-  String timestampJSONPath;
-  String timestampFormat;
+@Data
+public class QueryParams {
+  String serviceInstanceField;
 }

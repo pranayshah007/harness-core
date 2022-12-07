@@ -18,8 +18,6 @@ import lombok.Value;
 @Value
 @Builder
 public class HealthSourceRecordsResponse {
-  Status status;
-
   DataSourceType providerType;
 
   List<Object> rawRecords = new ArrayList<>();

@@ -11,21 +11,21 @@ import io.harness.cvng.beans.DataCollectionRequestType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
-@Data
+@Value
 @JsonTypeName("SUMOLOGIC_METRIC_SAMPLE_DATA")
 @SuperBuilder
-@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "SumologicSampleDataRequestKeys")
 public class SumologicMetricSampleDataRequest extends AbstractSumologicDataRequest {
-  private String query;
-  private long from;
-  private long to;
-  private String dsl;
+  String query;
+  long from;
+  long to;
+  String dsl;
   @Override
   public String getDSL() {
     return dsl;

@@ -38,58 +38,25 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
   public HealthSourceRecordsResponse fetchSampleRawRecordsForHealthSource(
       HealthSourceRecordsRequest healthSourceRecordsRequest, ProjectParams projectParams) {
     Object result = getResponseFromHealthSourceProvider(healthSourceRecordsRequest,
-        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(),
-        MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL);
-    // TODO set properly for error
-
+        projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier());
     HealthSourceRecordsResponse healthSourceRecordsResponse =
-        HealthSourceRecordsResponse.builder()
-            .status(Status.SUCCESS)
-            .providerType(healthSourceRecordsRequest.getProviderType())
-            .build();
+        HealthSourceRecordsResponse.builder().providerType(healthSourceRecordsRequest.getProviderType()).build();
     healthSourceRecordsResponse.getRawRecords().add(result);
     return healthSourceRecordsResponse;
   }
 
-  private Object getResponseFromHealthSourceProvider(HealthSourceRecordsRequest healthSourceRecordsRequest,
-      String accountId, String orgId, String projectId, String dsl) {
-    // we need to have tracing id as well TODO
-    //  TODO which data collection info to use Metric or Log ?
-    //  how to form the data collection Info
-
-    // TODO the idea is we should get the corrector provider data collection info, we cant have it sumologic specific.
-
-    DataCollectionRequest<SumoLogicConnectorDTO> request = null; // TODO fix
+  private Object getResponseFromHealthSourceProvider(
+      HealthSourceRecordsRequest healthSourceRecordsRequest, String accountId, String orgId, String projectId) {
+    DataCollectionRequest<SumoLogicConnectorDTO> request = null;
 
     switch (healthSourceRecordsRequest.getProviderType()) {
       case SUMOLOGIC_METRICS:
-        request = SumologicMetricSampleDataRequest.builder()
-                      .from(healthSourceRecordsRequest.getStartTime())
-                      .to(healthSourceRecordsRequest.getEndTime())
-                      .dsl(dsl)
-                      .query(healthSourceRecordsRequest.getQuery())
-                      .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
-                      .build();
+        request = getSumologicMetricDataCollectionRequest(healthSourceRecordsRequest);
         break;
       case SUMOLOGIC_LOG:
-        LocalDateTime startTime = Instant.ofEpochMilli(healthSourceRecordsRequest.getStartTime())
-                                      .atZone(ZoneId.systemDefault())
-                                      .toLocalDateTime();
-        LocalDateTime endTime = Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime())
-                                    .atZone(ZoneId.systemDefault())
-                                    .toLocalDateTime();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-
-        request = SumologicLogSampleDataRequest.builder()
-                      .from(startTime.format(formatter))
-                      .to(endTime.format(formatter))
-                      .dsl(MetricPackServiceImpl.SUMOLOGIC_LOG_SAMPLE_DSL)
-                      .query(healthSourceRecordsRequest.getQuery())
-                      .type(DataCollectionRequestType.SUMOLOGIC_LOG_SAMPLE_DATA)
-                      .build();
+        request = getSumoLogicLogDataCollectionRequest(healthSourceRecordsRequest);
         break;
       default:
-        // TODO throw exception
         break;
     }
 
@@ -102,30 +69,53 @@ public class HealthSourceOnboardingServiceImpl implements HealthSourceOnboarding
             .projectIdentifier(projectId)
             .tracingId("tracingId")
             .build();
-
-    // TODO DIfferent DSL no service name filed.
-    // TODO Option to override sourceHost
-
     OnboardingResponseDTO onboardingResponseDTO =
         onboardingService.getOnboardingResponse(accountId, onboardingRequestDTO);
     return onboardingResponseDTO.getResult();
   }
-
   @Override
   public MetricRecordsResponse fetchMetricData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
-    // TODO use actual DSL instead of onboard with the option for hostwise.
-    Object result = getResponseFromHealthSourceProvider(queryRecordsRequest, projectParams.getAccountIdentifier(),
-        projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), MetricPackServiceImpl.SUMOLOGIC_DSL);
-    TimeSeries timeSeries =
-        TimeSeries.builder().timeseriesName("sampleTimeseries").build(); // TODO Understand multiple Timeseries
-    MetricRecordsResponse metricRecordsResponse = MetricRecordsResponse.builder().status(Status.SUCCESS).build();
-    metricRecordsResponse.getTimeSeriesData().add(timeSeries); // TODO Add actual data.
+    TimeSeries timeSeries = TimeSeries.builder().timeseriesName("sampleTimeseries").build();
+    MetricRecordsResponse metricRecordsResponse = MetricRecordsResponse.builder().build();
+    metricRecordsResponse.getTimeSeriesData().add(timeSeries);
     return metricRecordsResponse;
   }
 
   @Override
   public LogRecordsResponse fetchLogData(QueryRecordsRequest queryRecordsRequest, ProjectParams projectParams) {
-    // TODO use actual DSL instead of onboard with the option for hostwise.
-    return LogRecordsResponse.builder().status(Status.SUCCESS).build();
+    return LogRecordsResponse.builder().build();
+  }
+
+  private static DataCollectionRequest<SumoLogicConnectorDTO> getSumologicMetricDataCollectionRequest(
+      HealthSourceRecordsRequest healthSourceRecordsRequest) {
+    DataCollectionRequest<SumoLogicConnectorDTO> request;
+    request = SumologicMetricSampleDataRequest.builder()
+                  .from(healthSourceRecordsRequest.getStartTime())
+                  .to(healthSourceRecordsRequest.getEndTime())
+                  .dsl(MetricPackServiceImpl.SUMOLOGIC_METRIC_SAMPLE_DSL)
+                  .query(healthSourceRecordsRequest.getQuery())
+                  .type(DataCollectionRequestType.SUMOLOGIC_METRIC_SAMPLE_DATA)
+                  .build();
+    return request;
+  }
+
+  private static DataCollectionRequest<SumoLogicConnectorDTO> getSumoLogicLogDataCollectionRequest(
+      HealthSourceRecordsRequest healthSourceRecordsRequest) {
+    DataCollectionRequest<SumoLogicConnectorDTO> request;
+    LocalDateTime startTime = Instant.ofEpochMilli(healthSourceRecordsRequest.getStartTime())
+                                  .atZone(ZoneId.systemDefault())
+                                  .toLocalDateTime();
+    LocalDateTime endTime =
+        Instant.ofEpochMilli(healthSourceRecordsRequest.getEndTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+    request = SumologicLogSampleDataRequest.builder()
+                  .from(startTime.format(formatter))
+                  .to(endTime.format(formatter))
+                  .dsl(MetricPackServiceImpl.SUMOLOGIC_LOG_SAMPLE_DSL)
+                  .query(healthSourceRecordsRequest.getQuery())
+                  .type(DataCollectionRequestType.SUMOLOGIC_LOG_SAMPLE_DATA)
+                  .build();
+    return request;
   }
 }

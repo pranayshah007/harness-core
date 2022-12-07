@@ -16,14 +16,12 @@ import io.harness.delegate.beans.cvng.sumologic.SumoLogicUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
-@Data
+@OwnedBy(CV)
 @SuperBuilder
 @NoArgsConstructor
-@OwnedBy(CV)
 public abstract class AbstractSumologicDataRequest extends DataCollectionRequest<SumoLogicConnectorDTO> {
   @Override
   public String getBaseUrl() {
