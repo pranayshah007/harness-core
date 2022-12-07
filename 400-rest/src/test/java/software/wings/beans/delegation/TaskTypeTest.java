@@ -410,6 +410,7 @@ public class TaskTypeTest extends CategoryTest {
     taskTypeOrdinalMapping.put(370, "CF_COMMAND_TASK_NG");
     taskTypeOrdinalMapping.put(371, "ECS_S3_FETCH_TASK_NG");
     taskTypeOrdinalMapping.put(372, "SERVERLESS_S3_FETCH_TASK_NG");
+    taskTypeOrdinalMapping.put(373, "CONTAINER_INITIALIZATION");
 
     taskTypeConstantMapping =
         taskTypeOrdinalMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));

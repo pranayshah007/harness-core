@@ -42,6 +42,7 @@ import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.jira.create.JiraCreateStepNode;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.pipelinestage.PipelineStageNode;
+import io.harness.steps.plugin.ContainerStepNode;
 import io.harness.steps.policy.PolicyStepNode;
 import io.harness.steps.servicenow.create.ServiceNowCreateStepNode;
 import io.harness.steps.servicenow.importset.ServiceNowImportSetStepNode;
@@ -417,5 +418,17 @@ public class OrchestrationStepsModuleRegistrars {
                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                           .build())
                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CONTAINER_STEP)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(ContainerStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.PMS)
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
+                   .build())
           .build();
 }

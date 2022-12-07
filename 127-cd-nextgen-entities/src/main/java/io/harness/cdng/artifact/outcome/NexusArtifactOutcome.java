@@ -57,6 +57,8 @@ public class NexusArtifactOutcome implements ArtifactOutcome {
 
   String registryHostname;
 
+  String displayName;
+
   /** Artifact Metadata. */
   Map<String, String> metadata;
 

@@ -61,6 +61,10 @@ public class InstanceMetaDataUtilsTest extends BatchProcessingTestBase {
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.AKS_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.KOPS_NODE_POOL_KEY, NODE_POOL_NAME)));
     assertTrue(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.EKSCTL_NODE_POOL_KEY, NODE_POOL_NAME)));
+    assertTrue(isNodePoolNameCorrect(ImmutableMap.of("lafourchette~io/node-pool-name", NODE_POOL_NAME)));
+    assertTrue(isNodePoolNameCorrect(ImmutableMap.of("lafourchette~io/node-pool-name", NODE_POOL_NAME, "", "")));
+    assertTrue(isNodePoolNameCorrect(ImmutableMap.of("", "", "node-pool-names", NODE_POOL_NAME)));
+    assertFalse(isNodePoolNameCorrect(ImmutableMap.of("", NODE_POOL_NAME)));
     assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "spot")));
     assertFalse(isNodePoolNameCorrect(ImmutableMap.of(K8sCCMConstants.SPOT_INSTANCE_NODE_LIFECYCLE, "od")));
     assertNull(getNodePoolName(ImmutableMap.of(

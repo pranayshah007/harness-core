@@ -12,7 +12,6 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public enum WaitStepStatus {
-  TIMED_OUT,
   MARKED_AS_SUCCESS,
   MARKED_AS_FAIL;
 }

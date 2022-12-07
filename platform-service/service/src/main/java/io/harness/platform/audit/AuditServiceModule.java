@@ -7,8 +7,8 @@
 
 package io.harness.platform.audit;
 
-import static io.harness.AuthorizationServiceHeader.AUDIT_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.AUDIT_SERVICE;
 
 import io.harness.AccessControlClientModule;
 import io.harness.annotations.dev.OwnedBy;

@@ -143,8 +143,8 @@ public class PipelineDashboardQueryService {
                                                       .sub(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)))
                                               .div(1000),
                            DSL.percentileDisc(0.5)
-                               .withinGroupOrderBy((Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
-                                                       .sub(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS))
+                               .withinGroupOrderBy(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ENDTS)
+                                                       .sub(table.field(Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)))
                                .div(1000)})
                 .from(table)
                 .fetch()

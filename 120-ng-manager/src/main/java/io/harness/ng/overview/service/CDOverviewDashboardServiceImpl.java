@@ -1165,7 +1165,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, ";
     totalBuildSqlBuilder.append(selectQuery)
         .append(String.format(
-            "time_bucket_gapfill(%s, service_startts, %s, %s) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where ",
+            "time_bucket_gapfill(%s, service_startts, %s, %s) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where sii.service_id is not null and ",
             bucketSizeInMS, startTime, endTime));
     if (accountIdentifier != null) {
       totalBuildSqlBuilder.append(String.format("pesi.accountid='%s'", accountIdentifier));
@@ -1180,7 +1180,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     }
 
     if (serviceIdentifier != null) {
-      totalBuildSqlBuilder.append(String.format(" and service_id='%s'", serviceIdentifier));
+      totalBuildSqlBuilder.append(String.format(" and sii.service_id='%s'", serviceIdentifier));
     }
 
     totalBuildSqlBuilder.append(String.format(
@@ -2147,10 +2147,12 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   */
   @Override
   public InstancesByBuildIdList getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
-      String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds) {
+      String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
+      String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt) {
     List<InstanceDetailsByBuildId> instancesByBuildIdList =
-        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-            accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, getCurrentTime());
+        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+            projectIdentifier, serviceId, envId, buildIds, getCurrentTime(), infraId, clusterId, pipelineExecutionId,
+            lastDeployedAt);
     return InstancesByBuildIdList.builder().instancesByBuildIdList(instancesByBuildIdList).build();
   }
 

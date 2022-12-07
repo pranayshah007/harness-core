@@ -84,9 +84,13 @@ aeriform("//310-iacm-manager:module")
 
 aeriform("//311-iacm-utilities:module")
 
-aeriform("//315-sto-manager:module")
+aeriform("//315-sto-manager/app:module")
 
-aeriform("//315-sto-manager:tests")
+aeriform("//315-sto-manager/app:tests")
+
+aeriform("//315-sto-manager/contracts:module")
+
+aeriform("//315-sto-manager/contracts:tests")
 
 aeriform("//323-sto-utilities:module")
 

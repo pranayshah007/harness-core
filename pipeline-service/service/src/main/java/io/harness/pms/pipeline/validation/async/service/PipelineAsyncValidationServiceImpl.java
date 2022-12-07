@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
@@ -38,6 +39,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidationService {
   PipelineValidationEventRepository pipelineValidationEventRepository;
+  PMSPipelineTemplateHelper pipelineTemplateHelper;
   final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
 
   @Override
@@ -57,6 +59,7 @@ public class PipelineAsyncValidationServiceImpl implements PipelineAsyncValidati
     executorService.submit(PipelineAsyncValidationHandler.builder()
                                .validationEvent(savedPipelineValidationEvent)
                                .validationService(this)
+                               .pipelineTemplateHelper(pipelineTemplateHelper)
                                .build());
     return savedPipelineValidationEvent;
   }

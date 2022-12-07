@@ -344,6 +344,10 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByServiceIdEnvIdAndBuildIdsTest() {
+    String infraId = "infraId";
+    String clusterId = "clusterId";
+    String pipelineExecutionId = "pipelineExecutionId";
+    long lastDeployedAt = System.currentTimeMillis();
     Instance instance = Instance.builder()
                             .accountIdentifier(ACCOUNT_IDENTIFIER)
                             .projectIdentifier(PROJECT_IDENTIFIER)
@@ -371,13 +375,15 @@ public class InstanceDashboardServiceImplTest extends InstancesTestBase {
     InstancesByBuildId instanceDetailsByBuildId = new InstancesByBuildId("build1", Arrays.asList(instance));
     AggregationResults<InstancesByBuildId> instanceDetailsByBuildIdAggregationResults =
         new AggregationResults<>(Arrays.asList(instanceDetailsByBuildId), new Document());
+
     when(instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
              PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, BUILD_IDS, 10,
-             InstanceSyncConstants.INSTANCE_LIMIT))
+             InstanceSyncConstants.INSTANCE_LIMIT, infraId, clusterId, pipelineExecutionId, lastDeployedAt))
         .thenReturn(instanceDetailsByBuildIdAggregationResults);
     List<InstanceDetailsByBuildId> instanceDetailsByBuildIdList =
-        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-            ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, BUILD_IDS, 10);
+        instanceDashboardService.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER,
+            PROJECT_IDENTIFIER, SERVICE_IDENTIFIER, ENV_IDENTIFIER, BUILD_IDS, 10, infraId, clusterId,
+            pipelineExecutionId, lastDeployedAt);
     assertThat(instanceDetailsByBuildIdList.size()).isEqualTo(1);
     assertThat(instanceDetailsByBuildIdList.get(0).getBuildId()).isEqualTo("build1");
     assertThat(instanceDetailsByBuildIdList.get(0).getInstances().size()).isEqualTo(0);

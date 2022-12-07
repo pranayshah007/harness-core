@@ -345,13 +345,27 @@ public class InstanceRepositoryCustomImpl implements InstanceRepositoryCustom {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit) {
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
+      long lastDeployedAt) {
     Criteria criteria =
         getCriteriaForActiveInstances(accountIdentifier, orgIdentifier, projectIdentifier, timestampInMs)
             .and(InstanceKeys.envIdentifier)
             .is(envId)
             .and(InstanceKeys.serviceIdentifier)
             .is(serviceId);
+
+    if (infraId != null) {
+      criteria.and(InstanceKeys.infraIdentifier).is(infraId);
+    }
+    if (clusterId != null) {
+      criteria.and(InstanceKeysAdditional.instanceInfoClusterIdentifier).is(clusterId);
+    }
+    if (pipelineExecutionId != null) {
+      criteria.and(InstanceKeys.lastPipelineExecutionId).is(pipelineExecutionId);
+    }
+    if (lastDeployedAt > 0) {
+      criteria.and(InstanceKeys.lastDeployedAt).is(lastDeployedAt);
+    }
 
     // in case artifact tag is missing
     if (EmptyPredicate.isNotEmpty(buildIds)) {

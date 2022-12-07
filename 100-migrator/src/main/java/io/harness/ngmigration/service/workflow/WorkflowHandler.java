@@ -18,6 +18,7 @@ import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ngmigration.expressions.MigratorExpressionUtils;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.step.StepMapper;
 import io.harness.ngmigration.service.step.StepMapperFactory;
@@ -321,6 +322,7 @@ public abstract class WorkflowHandler {
 
   AbstractStepNode getStepElementConfig(StepMapperFactory stepMapperFactory, StepYaml step, String skipCondition) {
     StepMapper stepMapper = stepMapperFactory.getStepMapper(step.getType());
+    MigratorExpressionUtils.render(step, new HashMap<>());
     AbstractStepNode stepNode = stepMapper.getSpec(step);
     if (stepNode == null) {
       return null;

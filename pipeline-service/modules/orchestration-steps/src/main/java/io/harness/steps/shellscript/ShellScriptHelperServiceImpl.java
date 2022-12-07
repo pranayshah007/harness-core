@@ -7,8 +7,8 @@
 
 package io.harness.steps.shellscript;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 
 import static java.util.Collections.emptyList;
 

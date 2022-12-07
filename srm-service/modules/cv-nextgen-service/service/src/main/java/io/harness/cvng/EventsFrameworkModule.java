@@ -7,7 +7,7 @@
 
 package io.harness.cvng;
 
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.cvng.CVConstants.STATEMACHINE_PUBLISHER;
 
 import io.harness.eventsframework.EventsFrameworkConfiguration;

@@ -7,15 +7,16 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.TemplateServiceConfiguration.getResourceClasses;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.collect.ImmutableMap.of;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.exception.GeneralException;

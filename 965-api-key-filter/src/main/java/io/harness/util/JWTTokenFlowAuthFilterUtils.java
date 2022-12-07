@@ -19,8 +19,10 @@ import static io.harness.exception.WingsException.USER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ngsettings.SettingCategory;
 import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.dto.SettingDTO;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.serviceaccount.ServiceAccountDTO;
@@ -30,6 +32,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.net.ssl.SSLHandshakeException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -40,11 +44,11 @@ import okhttp3.ResponseBody;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
-import org.jose4j.jwt.NumericDate;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.jwt.consumer.JwtContext;
+import org.jose4j.jwx.HeaderParameterNames;
 import org.jose4j.keys.resolvers.JwksVerificationKeyResolver;
 import org.jose4j.keys.resolvers.VerificationKeyResolver;
 import org.jose4j.lang.JoseException;
@@ -56,6 +60,11 @@ import org.json.JSONObject;
 @OwnedBy(PL)
 public class JWTTokenFlowAuthFilterUtils {
   private final String ISSUER_HARNESS_STRING_CONSTANT = "Harness Inc";
+  private final OkHttpClient client;
+
+  static {
+    client = new OkHttpClient();
+  }
 
   public ServiceAccountDTO getServiceAccountByIdAndAccountId(
       final String identifier, final String accountIdentifier, TokenClient serviceAccountClient) {
@@ -92,75 +101,74 @@ public class JWTTokenFlowAuthFilterUtils {
           INVALID_TOKEN, jse);
     }
 
-    JwtConsumer jwtConsumer = new JwtConsumerBuilder()
-                                  .setSkipAllValidators()
-                                  .setDisableRequireSignature()
-                                  .setSkipSignatureVerification()
-                                  .build();
-
-    try {
-      JwtContext jwtContext = jwtConsumer.process(jwtToken);
-      JwtClaims jwtTokenClaims = jwtContext.getJwtClaims();
-
-      // validate expiry
-      if (jwtTokenClaims.getExpirationTime() != null
-          && (NumericDate.now().getValue() - clockSkewAllowedInSeconds)
-              >= jwtTokenClaims.getExpirationTime().getValue()) {
-        logAndThrowJwtTokenExceptionWithCause(
-            String.format(
-                "NG_SCIM_JWT: JWT token used for SCIM APIs requests on account: %s, has expired", accountIdentifier),
-            EXPIRED_TOKEN, null);
-      }
-
-      if (jsonWebKeySet != null) {
+    if (jsonWebKeySet != null) {
+      try {
         VerificationKeyResolver verificationKeyResolver =
             new JwksVerificationKeyResolver(jsonWebKeySet.getJsonWebKeys());
-        jwtConsumer = new JwtConsumerBuilder()
-                          .setSkipDefaultAudienceValidation() // skip audience check
-                          .setVerificationKeyResolver(verificationKeyResolver)
-                          .build();
+
+        JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                                      .setRequireExpirationTime()
+                                      .setAllowedClockSkewInSeconds(clockSkewAllowedInSeconds)
+                                      .setSkipDefaultAudienceValidation() // skip audience check
+                                      .setVerificationKeyResolver(verificationKeyResolver)
+                                      .build();
 
         // validates 'authenticity' through signature verification and get jwtTokenClaims
-        jwtConsumer.processContext(jwtContext);
-        jwtTokenClaims = jwtContext.getJwtClaims();
-        String jwtTokenIssuer = jwtTokenClaims.getIssuer();
+        JwtContext jwtContext = jwtConsumer.process(jwtToken);
+        JwtClaims jwtTokenClaims = jwtContext.getJwtClaims();
+        String jwtTokenIssuer = null;
+        String actualClaimValueInJwt = null;
+        try {
+          jwtTokenIssuer = jwtTokenClaims.getIssuer();
+          actualClaimValueInJwt = jwtTokenClaims.getStringClaimValue(toMatchClaimKey);
+        } catch (MalformedClaimException mce) {
+          logAndThrowJwtTokenExceptionWithCause(
+              String.format(
+                  "NG_SCIM_JWT: JWT tokens payload segment is malformed as it does not contain an required claims 'iss' or '%s' in account: %s",
+                  toMatchClaimKey, accountIdentifier),
+              INVALID_TOKEN, mce);
+        }
 
         if (ISSUER_HARNESS_STRING_CONSTANT.equals(jwtTokenIssuer)) {
           logAndThrowJwtTokenExceptionWithCause(
               "NG_SCIM_JWT: Invalid API call: Only externally issued OAuth JWT token can be used for SCIM APIs, 'Harness Inc' issued JWT token cannot be used",
               UNEXPECTED, null);
         }
-
-        String actualClaimValueInJwt = jwtTokenClaims.getStringClaimValue(toMatchClaimKey);
-
         if (!(isNotEmpty(actualClaimValueInJwt) && actualClaimValueInJwt.trim().equals(toMatchClaimValue.trim()))) {
-          final String errorMessage = String.format(
-              "NG_SCIM_JWT: JWT token validated correctly, but the claims value did not match configured setting value in account: %s",
-              accountIdentifier);
-          log.error(errorMessage);
-          throw new InvalidRequestException(errorMessage, INVALID_INPUT_SET, USER);
+          logAndThrowJwtTokenExceptionWithCause(
+              String.format(
+                  "NG_SCIM_JWT: JWT token validated correctly, but the claims value did not match configured setting value in account: %s",
+                  accountIdentifier),
+              INVALID_INPUT_SET, null);
         }
 
         log.info(String.format(
             "NG_SCIM_JWT: JWT token validated correctly, and the claims value also matched with configured account setting values in account: %s. Allowing SCIM request using externally issued JWT token",
             accountIdentifier));
+      } catch (InvalidJwtException exc) {
+        if (exc.getMessage() != null && exc.getMessage().contains("The JWT is no longer valid - the evaluation time")) {
+          logAndThrowJwtTokenExceptionWithCause(
+              String.format(
+                  "NG_SCIM_JWT: JWT token used for SCIM APIs requests on account: %s, has expired", accountIdentifier),
+              EXPIRED_TOKEN, null);
+        }
+        logAndThrowJwtTokenExceptionWithCause(
+            String.format(
+                "NG_SCIM_JWT: JWT token's signature could not be verified or required claims are malformed for SCIM API requests on account: %s",
+                accountIdentifier),
+            INVALID_TOKEN, exc);
       }
-    } catch (InvalidJwtException | MalformedClaimException exc) {
-      logAndThrowJwtTokenExceptionWithCause(
-          String.format(
-              "NG_SCIM_JWT: JWT token's signature could not be verified or required claims are malformed for SCIM API requests on account: %s",
-              accountIdentifier),
-          INVALID_TOKEN, exc);
     }
   }
 
   public boolean isJWTTokenType(String[] splitToken, String accountIdentifier) {
     if (splitToken.length == 3) {
-      if (!("pat".equalsIgnoreCase(splitToken[0]) || "sat".equalsIgnoreCase(splitToken[0]))) {
+      if (!(ApiKeyType.USER.getValue().equalsIgnoreCase(splitToken[0])
+              || ApiKeyType.SERVICE_ACCOUNT.getValue().equalsIgnoreCase(splitToken[0]))) {
         try {
           JSONObject header =
               new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[0]), StandardCharsets.UTF_8));
-          String tokenType = header.getString("typ");
+          String tokenType = header.getString(HeaderParameterNames.TYPE);
           return isNotEmpty(tokenType) && tokenType.toLowerCase().contains("jwt");
         } catch (JSONException jExc) {
           logAndThrowJwtTokenExceptionWithCause(
@@ -176,7 +184,6 @@ public class JWTTokenFlowAuthFilterUtils {
 
   public String getPublicKeysJsonStringFromUrl(String accountIdentifier, String publicKeysUrlSettingStr) {
     Request httpGetRequest = new Request.Builder().url(publicKeysUrlSettingStr).method("GET", null).build();
-    OkHttpClient client = new OkHttpClient();
     String publicKeyDetailsJsonString = null;
 
     try (Response response = client.newCall(httpGetRequest).execute()) {
@@ -231,30 +238,16 @@ public class JWTTokenFlowAuthFilterUtils {
     return settingsResponse;
   }
 
-  public String[] getSettingsStringValuesArrayFromListDTO(
+  public Map<String, String> getScimJwtTokenSettingConfigurationValuesFromDTOList(
       List<SettingResponseDTO> settingsResponse, final String accountIdentifier) {
-    String[] settingStringVals = new String[4];
+    List<SettingDTO> dtos = settingsResponse.stream().map(SettingResponseDTO::getSetting).collect(Collectors.toList());
+    Map<String, String> settingsMap =
+        dtos.stream().collect(Collectors.toMap(SettingDTO::getIdentifier, SettingDTO::getValue));
 
-    for (SettingResponseDTO settingResponseDto : settingsResponse) {
-      if (settingResponseDto != null && settingResponseDto.getSetting() != null) {
-        if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER.equals(
-                settingResponseDto.getSetting().getIdentifier())) {
-          settingStringVals[0] = settingResponseDto.getSetting().getValue();
-        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER.equals(
-                       settingResponseDto.getSetting().getIdentifier())) {
-          settingStringVals[1] = settingResponseDto.getSetting().getValue();
-        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_IDENTIFIER.equals(
-                       settingResponseDto.getSetting().getIdentifier())) {
-          settingStringVals[2] = settingResponseDto.getSetting().getValue();
-        } else if (SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER.equals(
-                       settingResponseDto.getSetting().getIdentifier())) {
-          settingStringVals[3] = settingResponseDto.getSetting().getValue();
-        }
-      }
-    }
-
-    if (isEmpty(settingStringVals[0]) || isEmpty(settingStringVals[1]) || isEmpty(settingStringVals[2])
-        || isEmpty(settingStringVals[3])) {
+    if (!(settingsMap.containsKey(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER)
+            && settingsMap.containsKey(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER)
+            && settingsMap.containsKey(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_URL_IDENTIFIER)
+            && settingsMap.containsKey(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER))) {
       logAndThrowJwtTokenExceptionWithCause(
           String.format(
               "NG_SCIM_JWT: Some or all values for SCIM JWT token configuration at NG account settings are not populated in account [%s]",
@@ -262,6 +255,6 @@ public class JWTTokenFlowAuthFilterUtils {
           UNEXPECTED, null);
     }
 
-    return settingStringVals;
+    return settingsMap;
   }
 }
