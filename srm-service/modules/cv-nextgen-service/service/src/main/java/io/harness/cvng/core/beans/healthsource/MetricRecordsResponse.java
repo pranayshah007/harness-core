@@ -7,8 +7,6 @@
 
 package io.harness.cvng.core.beans.healthsource;
 
-import io.harness.ng.core.Status;
-
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Builder;

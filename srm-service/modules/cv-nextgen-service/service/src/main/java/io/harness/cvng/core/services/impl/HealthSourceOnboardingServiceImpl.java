@@ -23,7 +23,6 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.HealthSourceOnboardingService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
-import io.harness.ng.core.Status;
 
 import com.google.inject.Inject;
 import java.time.Instant;
