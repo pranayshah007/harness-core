@@ -149,6 +149,8 @@ import io.harness.delegate.message.MessageServiceImpl;
 import io.harness.delegate.message.MessengerType;
 import io.harness.delegate.pcf.CfCommandTaskNGHandler;
 import io.harness.delegate.pcf.CfDataFetchCommandTaskHandlerNG;
+import io.harness.delegate.pcf.CfSwapRollbackCommandTaskHandlerNG;
+import io.harness.delegate.pcf.TasRunPluginCommandTaskHandler;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
@@ -1931,10 +1933,11 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.HELM_FETCH_CHART_VERSIONS_TASK_NG).toInstance(HelmFetchChartVersionTaskNG.class);
 
     // TAS NG
-    MapBinder<String, CfCommandTaskNGHandler> CfTaskTypeToTaskHandlerMap =
+    MapBinder<String, CfCommandTaskNGHandler> cfTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
-    CfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
-
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.SWAP_ROLLBACK.name()).to(CfSwapRollbackCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TANZU_COMMAND.name()).to(TasRunPluginCommandTaskHandler.class);
     mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
 
     // ECS NG

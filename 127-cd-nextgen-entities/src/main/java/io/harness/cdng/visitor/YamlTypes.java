@@ -170,4 +170,7 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
+
+  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 }

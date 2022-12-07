@@ -446,7 +446,13 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.IACM_STEPS)
   IACM_STEPS(ModuleType.IACM, EntityTypeConstants.IACM_STEPS, IdentifierRef.class, EntityYamlRootNames.IACM_STEP),
   @JsonProperty(EntityTypeConstants.IACM)
-  IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM);
+  IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
+  @JsonProperty(EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP)
+  TAS_SWAP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.TAS_SWAP_ROLLBACK_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TAS_SWAP_ROLLBACK_STEP),
+  @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
+  TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
+      EntityYamlRootNames.TANZU_COMMAND_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

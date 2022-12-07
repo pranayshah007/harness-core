@@ -188,4 +188,6 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
+  public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
+  public static final String TANZU_COMMAND_STEP = "TanzuCommand";
 }

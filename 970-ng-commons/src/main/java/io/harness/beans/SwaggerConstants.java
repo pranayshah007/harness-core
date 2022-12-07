@@ -36,4 +36,5 @@ public interface SwaggerConstants {
       "io.harness.cdng.elastigroup.ElastigroupConfiguration";
   String INSTANCES_DEFINITION_YAML_ELASTIGROUP_CONFIGURATION_CLASSPATH =
       "io.harness.cdng.elastigroup.ElastigroupInstances";
+  String TAS_COMMAND_SCRIPT_YAML_CONFIGURATION_CLASSPATH = "io.harness.cdng.tas.TasCommandScript";
 }
