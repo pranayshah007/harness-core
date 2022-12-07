@@ -27,7 +27,7 @@ public class TasResourceServiceImpl implements TasResourceService {
   @Inject TasEntityHelper tasEntityHelper;
 
   @Override
-  public List<String> listOrganizationsForTas(
+  public List<String> listOrganizations(
       String connectorRef, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     ConnectorInfoDTO connectorInfoDTO =
         tasEntityHelper.getConnectorInfoDTO(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
@@ -50,7 +50,7 @@ public class TasResourceServiceImpl implements TasResourceService {
   }
 
   @Override
-  public List<String> listSpacesForTas(String connectorRef, String accountIdentifier, String orgIdentifier,
+  public List<String> listSpaces(String connectorRef, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String organization) {
     ConnectorInfoDTO connectorInfoDTO =
         tasEntityHelper.getConnectorInfoDTO(connectorRef, accountIdentifier, orgIdentifier, projectIdentifier);

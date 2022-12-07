@@ -49,7 +49,6 @@ public class K8sDeleteStepMapperImpl implements StepMapper {
     baseSetup(stepYaml, k8sDeleteStepNode);
     K8sDeleteStepInfo k8sDeleteStepInfo =
         K8sDeleteStepInfo.infoBuilder()
-            .skipDryRun(ParameterField.createValueField(false))
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build();
 

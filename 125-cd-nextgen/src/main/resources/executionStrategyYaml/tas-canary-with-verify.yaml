@@ -1,0 +1,43 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Canary Setup Step"
+          identifier: canarySetupStep
+          type: TasCanaryAppSetup
+          timeout: 10m
+          spec:
+            instanceCount: FromManifest
+            resizeStrategy: DownScaleOldFirst
+            existingVersionToKepp: 3
+            additionalRoutes: ""
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: {}
+      - step:
+          name: "Deploy Step"
+          identifier: deployStep
+          type: TasAppResize
+          timeout: 10m
+            newAppInstances:
+              type: Count
+              value: 2
+            oldAppInstances:
+              type: Percentage
+              value: 10
+    rollbackSteps:
+      - step:
+          name: "App Rollback"
+          identifier: appRollback
+          type: TasRollback
+          timeout: 10m
+          spec: {}

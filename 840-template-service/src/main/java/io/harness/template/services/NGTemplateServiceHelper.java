@@ -79,23 +79,24 @@ public class NGTemplateServiceHelper {
   private TemplateGitXService templateGitXService;
 
   public Optional<TemplateEntity> getTemplateOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
+      String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
+      boolean loadFromCache) {
     return getOrThrowExceptionIfInvalid(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false, loadFromCache);
   }
 
   public Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted) {
     return getOrThrowExceptionIfInvalid(
-        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true);
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, true, false);
   }
 
   public Optional<TemplateEntity> getOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly) {
+      boolean getMetadataOnly, boolean loadFromCache) {
     try {
       Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
-          templateIdentifier, versionLabel, deleted, getMetadataOnly, false);
+          templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");

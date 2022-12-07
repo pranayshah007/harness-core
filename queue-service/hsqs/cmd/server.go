@@ -68,9 +68,11 @@ var serverCmd = &cobra.Command{
 
 func startServer(c *config.Config) {
 
-	err := profiler.Start(c)
-	if err != nil {
-		log.Warn(err.Error())
+	if c.EnableProfiler {
+		err := profiler.Start(c)
+		if err != nil {
+			log.Warn(err.Error())
+		}
 	}
 
 	r := router.New(c)
@@ -85,7 +87,7 @@ func startServer(c *config.Config) {
 	h := handler.NewHandler(store)
 	h.Register(g)
 
-	err = r.Start(fmt.Sprintf("%s:%s", c.Server.Host, c.Server.PORT))
+	err := r.Start(fmt.Sprintf("%s:%s", c.Server.Host, c.Server.PORT))
 	if err != nil {
 		r.Logger.Fatalf(err.Error())
 	}

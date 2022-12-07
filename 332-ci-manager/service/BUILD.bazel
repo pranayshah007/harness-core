@@ -7,6 +7,7 @@ load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 
 shared_dependencies = [
+    "//315-sto-manager/contracts:module",
     "//323-sto-utilities:module",
     "//332-ci-manager/contracts:module",
     "//440-connector-nextgen:module",
@@ -397,7 +398,7 @@ java_library(
     ],
     visibility = [
         "//310-iacm-manager:__subpackages__",
-        "//315-sto-manager:__subpackages__",
+        "//315-sto-manager/app:__subpackages__",
         "//332-ci-manager/app:__subpackages__",
     ],
     deps = shared_dependencies + [

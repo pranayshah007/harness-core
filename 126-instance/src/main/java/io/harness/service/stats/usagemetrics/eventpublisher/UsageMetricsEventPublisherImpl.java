@@ -98,9 +98,11 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     data.put(TimescaleConstants.ENV_ID.getKey(), instance.getEnvIdentifier());
     data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instance.getInstanceType().name());
     data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(size));
-    if (instance.getConnectorRef() != null) {
-      data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), instance.getConnectorRef());
+    String connectorRef = instance.getConnectorRef();
+    if (connectorRef == null) {
+      connectorRef = "";
     }
+    data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), connectorRef);
     return data;
   }
 }

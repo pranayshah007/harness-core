@@ -220,14 +220,19 @@ public class NGTemplateDtoMapper {
 
   public CacheResponseMetadataDTO getCacheResponse(TemplateEntity templateEntity) {
     if (templateEntity.getStoreType() == StoreType.REMOTE) {
-      CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
-      if (cacheResponse != null) {
-        return CacheResponseMetadataDTO.builder()
-            .cacheState(cacheResponse.getCacheState())
-            .ttlLeft(cacheResponse.getTtlLeft())
-            .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
-            .build();
-      }
+      return getCacheResponse();
+    }
+    return null;
+  }
+
+  public CacheResponseMetadataDTO getCacheResponse() {
+    CacheResponse cacheResponse = GitAwareContextHelper.getCacheResponseFromScmGitMetadata();
+    if (cacheResponse != null) {
+      return CacheResponseMetadataDTO.builder()
+          .cacheState(cacheResponse.getCacheState())
+          .ttlLeft(cacheResponse.getTtlLeft())
+          .lastUpdatedAt(cacheResponse.getLastUpdatedAt())
+          .build();
     }
     return null;
   }

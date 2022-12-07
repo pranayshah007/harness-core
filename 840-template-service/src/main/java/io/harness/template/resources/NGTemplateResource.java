@@ -677,9 +677,10 @@ public class NGTemplateResource {
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info("Applying templates to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYaml(accountId, orgId,
-        projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
-        templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId,
+            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplates took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);
@@ -704,9 +705,10 @@ public class NGTemplateResource {
       @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
     log.info("Applying templates V2 to pipeline yaml in project {}, org {}, account {}", projectId, orgId, accountId);
     long start = System.currentTimeMillis();
-    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(accountId, orgId,
-        projectId, templateApplyRequestDTO.getOriginalEntityYaml(),
-        templateApplyRequestDTO.isGetMergedYamlWithTemplateField());
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        templateMergeService.applyTemplatesToYamlV2(accountId, orgId, projectId,
+            templateApplyRequestDTO.getOriginalEntityYaml(), templateApplyRequestDTO.isGetMergedYamlWithTemplateField(),
+            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     checkLinkedTemplateAccess(accountId, orgId, projectId, templateApplyRequestDTO, templateMergeResponseDTO);
     log.info("[TemplateService] applyTemplatesV2 took {}ms ", System.currentTimeMillis() - start);
     return ResponseDTO.newResponse(templateMergeResponseDTO);
@@ -749,7 +751,8 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false)
+            .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
@@ -792,7 +795,8 @@ public class NGTemplateResource {
       @RequestBody(required = true, description = "Template YAML") @NotNull @ApiParam(hidden = true) String yaml) {
     log.info("Creating variables for template.");
     String appliedTemplateYaml =
-        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false).getMergedPipelineYaml();
+        templateMergeService.applyTemplatesToYaml(accountId, orgId, projectId, yaml, false, false)
+            .getMergedPipelineYaml();
     TemplateEntity templateEntity =
         NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, appliedTemplateYaml);
     String entityYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);

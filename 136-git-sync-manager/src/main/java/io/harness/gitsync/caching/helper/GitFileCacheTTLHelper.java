@@ -13,6 +13,8 @@ import io.harness.gitsync.caching.GitFileCacheTTL;
 import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.CacheDetails.CacheDetailsBuilder;
 
+import java.time.Instant;
+import java.util.Date;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -36,8 +38,8 @@ public class GitFileCacheTTLHelper {
     return cacheDetailsBuilder.build();
   }
 
-  public long getValidUntilTime(long currentTime) {
-    return currentTime + GitFileCacheTTL.VALID_CACHE_DURATION.getDurationInMs();
+  public Date getValidUntilTime(long currentTime) {
+    return Date.from(Instant.ofEpochMilli(currentTime + GitFileCacheTTL.VALID_CACHE_DURATION.getDurationInMs()));
   }
 
   private boolean isExpiredCache(long validUntil, long currentTime) {
