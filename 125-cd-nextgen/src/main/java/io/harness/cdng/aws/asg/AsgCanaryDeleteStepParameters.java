@@ -7,5 +7,35 @@
 
 package io.harness.cdng.aws.asg;
 
-public class AsgCanaryDeleteStepParameters {
+import io.harness.annotation.RecasterAlias;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.asg.AsgCommandUnitConstants;
+import io.harness.plancreator.steps.TaskSelectorYaml;
+import io.harness.pms.yaml.ParameterField;
+
+import java.util.Arrays;
+import java.util.List;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
+
+@OwnedBy(HarnessTeam.CDP)
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@TypeAlias("asgCanaryDeleteStepParameters")
+@RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters")
+public class AsgCanaryDeleteStepParameters extends AsgCanaryDeleteStepInfo implements AsgSpecParameters {
+  @Builder(builderMethodName = "infoBuilder")
+  public AsgCanaryDeleteStepParameters(
+          ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFnq, String asgCanaryDeleteFnq) {
+    super(delegateSelectors, asgCanaryDeployFnq, asgCanaryDeleteFnq);
+  }
+
+  public List<String> getCommandUnits() {
+    return Arrays.asList(AsgCommandUnitConstants.deleteService.toString());
+  }
 }
