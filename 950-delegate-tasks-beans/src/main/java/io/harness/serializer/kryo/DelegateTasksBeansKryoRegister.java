@@ -416,6 +416,8 @@ import io.harness.delegate.task.aws.LoadBalancerType;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployRequest;
 import io.harness.delegate.task.aws.asg.AsgCanaryDeployResponse;
 import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
+import io.harness.delegate.task.aws.asg.request.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.response.AsgCanaryDeleteResponse;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -1915,6 +1917,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskResponse.class, 573543);
     kryo.register(EcsRunTaskResult.class, 573544);
 
+    kryo.register(AsgCanaryDeleteRequest.class, 573568);
+    kryo.register(AsgCanaryDeleteResponse.class, 573569);
     kryo.register(AsgCommandTypeNG.class, 573570);
     kryo.register(AsgCanaryDeployRequest.class, 573571);
     kryo.register(AsgCanaryDeployResponse.class, 573572);

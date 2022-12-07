@@ -1969,12 +1969,16 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
 
+
     // ASG NG
     MapBinder<String, AsgCommandTaskNGHandler> asgTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, AsgCommandTaskNGHandler.class);
     asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DEPLOY.name())
         .to(AsgCanaryDeployCommandTaskHandler.class);
     mapBinder.addBinding(TaskType.AWS_ASG_COMMAND_TASK_NG).toInstance(AsgCommandTaskNG.class);
+      asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DELETE.name())
+              .to(AsgCanaryDeleteCommandTaskHandler.class);
+
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);
