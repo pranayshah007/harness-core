@@ -54,7 +54,7 @@ public class NotificationRuleResource {
   @ApiOperation(value = "saves notificationRule data", nickname = "saveNotificationRuleData")
   public RestResponse<NotificationRuleResponse> saveNotificationRuleData(
       @ApiParam(required = true) @NotNull @QueryParam("accountId") String accountId,
-      @NotNull @Valid @Body NotificationRuleDTO notificationRuleDTO) {
+      @Valid @Body NotificationRuleDTO notificationRuleDTO) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(accountId)
                                       .orgIdentifier(notificationRuleDTO.getOrgIdentifier())
@@ -70,7 +70,7 @@ public class NotificationRuleResource {
   @ApiOperation(value = "update notificationRule data", nickname = "updateNotificationRuleData")
   public RestResponse<NotificationRuleResponse> updateNotificationRuleData(@BeanParam ProjectParams projectParams,
       @ApiParam(required = true) @NotNull @PathParam("identifier") String identifier,
-      @NotNull @Valid @Body NotificationRuleDTO notificationRuleDTO) {
+      @Valid @Body NotificationRuleDTO notificationRuleDTO) {
     return new RestResponse<>(notificationRuleService.update(projectParams, identifier, notificationRuleDTO));
   }
 

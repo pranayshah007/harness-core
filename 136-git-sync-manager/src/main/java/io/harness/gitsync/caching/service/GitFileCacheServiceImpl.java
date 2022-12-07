@@ -9,14 +9,15 @@ package io.harness.gitsync.caching.service;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.caching.beans.CacheDetails;
 import io.harness.gitsync.caching.beans.GitFileCacheKey;
 import io.harness.gitsync.caching.beans.GitFileCacheObject;
 import io.harness.gitsync.caching.beans.GitFileCacheResponse;
-import io.harness.gitsync.caching.entity.CacheDetails;
 import io.harness.gitsync.caching.entity.GitFileCache;
 import io.harness.gitsync.caching.entity.GitFileCache.GitFileCacheKeys;
 import io.harness.gitsync.caching.helper.GitFileCacheTTLHelper;
 import io.harness.gitsync.caching.mapper.GitFileCacheObjectMapper;
+import io.harness.gitsync.caching.mapper.GitProviderMapper;
 import io.harness.repositories.gitfilecache.GitFileCacheRepository;
 
 import com.google.inject.Inject;
@@ -31,8 +32,8 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
   public GitFileCacheResponse fetchFromCache(GitFileCacheKey gitFileCacheKey) {
     GitFileCache gitFileCache =
         gitFileCacheRepository.findByAccountIdentifierAndGitProviderAndRepoNameAndRefAndCompleteFilepath(
-            gitFileCacheKey.getAccountIdentifier(), gitFileCacheKey.getGitProvider(), gitFileCacheKey.getRepoName(),
-            gitFileCacheKey.getRef(), gitFileCacheKey.getCompleteFilePath());
+            gitFileCacheKey.getAccountIdentifier(), GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()),
+            gitFileCacheKey.getRepoName(), gitFileCacheKey.getRef(), gitFileCacheKey.getCompleteFilePath());
     if (gitFileCache == null) {
       return null;
     }
@@ -70,7 +71,7 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     long currentTime = System.currentTimeMillis();
     Update update = new Update();
     update.setOnInsert(GitFileCacheKeys.accountIdentifier, gitFileCacheKey.getAccountIdentifier());
-    update.setOnInsert(GitFileCacheKeys.gitProvider, gitFileCacheKey.getGitProvider());
+    update.setOnInsert(GitFileCacheKeys.gitProvider, GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()));
     update.setOnInsert(GitFileCacheKeys.repoName, gitFileCacheKey.getRepoName());
     update.setOnInsert(GitFileCacheKeys.ref, gitFileCacheKey.getRef());
     update.setOnInsert(GitFileCacheKeys.completeFilepath, gitFileCacheKey.getCompleteFilePath());
@@ -85,7 +86,7 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     return Criteria.where(GitFileCacheKeys.accountIdentifier)
         .is(gitFileCacheKey.getAccountIdentifier())
         .and(GitFileCacheKeys.gitProvider)
-        .is(gitFileCacheKey.getGitProvider())
+        .is(GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()))
         .and(GitFileCacheKeys.repoName)
         .is(gitFileCacheKey.getRepoName())
         .and(GitFileCacheKeys.ref)

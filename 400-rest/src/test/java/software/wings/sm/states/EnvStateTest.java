@@ -13,6 +13,7 @@ import static io.harness.beans.ExecutionStatus.REJECTED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.YUVRAJ;
@@ -90,6 +91,7 @@ import software.wings.service.intfc.WorkflowService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -458,7 +460,7 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${secrets.getValue('value')}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(0)).renderExpression(any());
+    verify(context, times(0)).renderExpression(any(String.class), any(StateExecutionContext.class));
   }
 
   @Test
@@ -471,6 +473,25 @@ public class EnvStateTest extends WingsBaseTest {
     variableMap.put("var1", "${workflow.variable.var1}");
     ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
     envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
-    verify(context, times(1)).renderExpression(any());
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void testRenderWorkflowExpression3() {
+    List<String> workflowVariableWithExpressionValue = new ArrayList<>();
+    workflowVariableWithExpressionValue.add("var1");
+    Map<String, String> variableMap = new HashMap<>();
+    variableMap.put("var1", "${workflow.variable.var1}");
+    when(context.renderExpression(any(String.class), any(StateExecutionContext.class)))
+        .thenReturn("${secretManager.obtain(\"test\", 1234)}");
+    ExecutionArgs executionArgs = ExecutionArgs.builder().workflowVariables(variableMap).build();
+    envState.renderWorkflowExpression(context, executionArgs, workflowVariableWithExpressionValue);
+    verify(context, times(1)).renderExpression(any(String.class), any(StateExecutionContext.class));
+    assertThat(executionArgs.getWorkflowVariables()).isNotEmpty().hasSize(1);
+    assertThat(executionArgs.getWorkflowVariables().get("var1")).isEqualTo("${workflow.variable.var1}");
   }
 }

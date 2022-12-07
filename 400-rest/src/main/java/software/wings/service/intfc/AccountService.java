@@ -110,7 +110,7 @@ public interface AccountService {
    */
   List<Account> list(@NotNull PageRequest<Account> request);
 
-  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds);
+  List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded);
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
@@ -243,7 +243,7 @@ public interface AccountService {
 
   boolean disableHarnessUserGroupAccess(String accountId);
 
-  boolean isRestrictedAccessEnabled(String accountId);
+  boolean isHarnessSupportAccessDisabled(String accountId);
 
   boolean isAutoInviteAcceptanceEnabled(String accountId);
 

@@ -234,7 +234,7 @@ public class EnvironmentInfraFilterHelper {
     }
 
     if (!filterOnClusterExists) {
-      setOfFilteredCls.addAll(setOfFilteredCls);
+      setOfFilteredCls.addAll(clsToCluster.values());
     }
 
     if (isEmpty(setOfFilteredCls) && filterOnClusterExists) {

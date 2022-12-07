@@ -182,6 +182,10 @@ public class TemplateResourceApiMapper {
     if (gitDetails == null) {
       return GitEntityInfo.builder().build();
     }
+    StoreType storeType = StoreType.INLINE;
+    if (gitDetails.getStoreType() != null) {
+      storeType = StoreType.getFromStringOrNull(gitDetails.getStoreType().toString());
+    }
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
         .filePath(gitDetails.getFilePath())
@@ -189,7 +193,7 @@ public class TemplateResourceApiMapper {
         .isNewBranch(isNotEmpty(gitDetails.getBranchName()) && isNotEmpty(gitDetails.getBaseBranch()))
         .baseBranch(gitDetails.getBaseBranch())
         .connectorRef(gitDetails.getConnectorRef())
-        .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
+        .storeType(storeType)
         .repoName(gitDetails.getRepoName())
         .build();
   }
@@ -197,6 +201,10 @@ public class TemplateResourceApiMapper {
   public GitEntityInfo populateGitUpdateDetails(GitUpdateDetails gitDetails) {
     if (gitDetails == null) {
       return GitEntityInfo.builder().build();
+    }
+    StoreType storeType = StoreType.INLINE;
+    if (gitDetails.getStoreType() != null) {
+      storeType = StoreType.getFromStringOrNull(gitDetails.getStoreType().toString());
     }
     return GitEntityInfo.builder()
         .branch(gitDetails.getBranchName())
@@ -208,7 +216,7 @@ public class TemplateResourceApiMapper {
         .connectorRef(gitDetails.getConnectorRef())
         .filePath(gitDetails.getFilePath())
         .repoName(gitDetails.getRepoName())
-        .storeType(StoreType.getFromStringOrNull(gitDetails.getStoreType().toString()))
+        .storeType(storeType)
         .build();
   }
   public GitEntityInfo populateGitFindDetails(GitFindDetails gitDetails) {

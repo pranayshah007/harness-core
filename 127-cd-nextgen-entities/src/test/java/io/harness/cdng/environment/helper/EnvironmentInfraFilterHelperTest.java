@@ -9,7 +9,9 @@ package io.harness.cdng.environment.helper;
 
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
+import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -20,9 +22,12 @@ import io.harness.cdng.environment.filters.FilterType;
 import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.filters.MatchType;
 import io.harness.cdng.environment.filters.TagsFilter;
+import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsYaml;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -167,6 +172,85 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     assertThat(filteredClusters.size()).isEqualTo(1);
   }
 
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testApplyFiltersOnClustersNoFilterExists() {
+    Set<io.harness.gitops.models.Cluster> listOfClusters = getClusterListForAllTagMatch();
+
+    Map<String, io.harness.cdng.gitops.entity.Cluster> clsToCluster =
+        Map.of("cl1", Cluster.builder().clusterRef("cl1").build(), "cl2", Cluster.builder().clusterRef("cl2").build());
+
+    Set<Cluster> filteredClusters =
+        getEnvironmentInfraFilterHelper().applyFilteringOnClusters(emptyList(), clsToCluster, listOfClusters);
+    assertThat(filteredClusters.size()).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessTagsFilterYamlForInfraForMatchAny() {
+    Set<InfrastructureEntity> listOfInfra = getInfrastructureListForAnyTagMatch();
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAny();
+
+    Set<InfrastructureEntity> filteredEnv =
+        getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
+    assertThat(listOfInfra.size()).isEqualTo(filteredEnv.size());
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testProcessTagsFilterYamlForInfraForMatchAll() {
+    Set<InfrastructureEntity> listOfInfra = getInfrastructureListForAllTagMatch();
+
+    final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
+    Set<InfrastructureEntity> filteredEnv =
+        getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
+    assertThat(filteredEnv.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testAreFiltersPresent() {
+    assertThat(getEnvironmentInfraFilterHelper().areFiltersPresent(
+                   EnvironmentsYaml.builder()
+                       .uuid("envId")
+                       .values(ParameterField.createValueField(anyList()))
+                       .filters(ParameterField.createValueField(Arrays.asList(FilterYaml.builder().build())))
+                       .build()))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testAreFiltersSetOnIndividualEnvironments() {
+    assertThat(getEnvironmentInfraFilterHelper().areFiltersSetOnIndividualEnvironments(
+                   EnvironmentsYaml.builder()
+                       .uuid("envId")
+                       .values(ParameterField.createValueField(Arrays.asList(
+                           EnvironmentYamlV2.builder().filters(ParameterField.createValueField(anyList())).build())))
+                       .filters(ParameterField.createValueField(anyList()))
+                       .build()))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testgetEnvV2YamlsWithFilters() {
+    EnvironmentsYaml envId =
+        EnvironmentsYaml.builder()
+            .uuid("envId")
+            .values(ParameterField.createValueField(
+                Arrays.asList(EnvironmentYamlV2.builder().filters(ParameterField.createValueField(anyList())).build())))
+            .filters(ParameterField.createValueField(anyList()))
+            .build();
+    assertThat(envId).isNotNull();
+  }
+
   @NotNull
   private static EnvironmentInfraFilterHelper getEnvironmentInfraFilterHelper() {
     return new EnvironmentInfraFilterHelper();
@@ -185,11 +269,12 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
   private static FilterYaml getTagFilterYamlMatchTypeAny() {
     return FilterYaml.builder()
-        .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
+        .entities(Set.of(Entity.environments, Entity.gitOpsClusters, Entity.infrastructures))
         .type(FilterType.tags)
         .spec(TagsFilter.builder()
                   .matchType(ParameterField.createValueField(MatchType.any))
-                  .tags(ParameterField.createValueField(Map.of("env", "dev", "env1", "dev1")))
+                  .tags(ParameterField.createValueField(
+                      Map.of("env", "dev", "env1", "dev1", "infra", "dev", "infra1", "dev1")))
                   .build())
         .build();
   }
@@ -246,5 +331,27 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     final Set<io.harness.gitops.models.Cluster> listOfClusters = new HashSet<>(Arrays.asList(cl1, cl2));
     return listOfClusters;
+  }
+
+  @NotNull
+  private static Set<InfrastructureEntity> getInfrastructureListForAnyTagMatch() {
+    List<NGTag> infra1Tags = Arrays.asList(NGTag.builder().key("infra").value("dev").build());
+    List<NGTag> infra2Tags = Arrays.asList(
+        NGTag.builder().key("infra").value("dev").build(), NGTag.builder().key("infra1").value("dev2").build());
+    final Set<InfrastructureEntity> listOfInfra =
+        new HashSet<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
+            InfrastructureEntity.builder().tags(infra2Tags).build()));
+    return listOfInfra;
+  }
+
+  @NotNull
+  private static Set<InfrastructureEntity> getInfrastructureListForAllTagMatch() {
+    List<NGTag> infra1Tags = Arrays.asList(NGTag.builder().key("env").value("dev").build());
+    List<NGTag> infra2Tags = Arrays.asList(
+        NGTag.builder().key("env").value("dev").build(), NGTag.builder().key("env1").value("dev2").build());
+    final Set<InfrastructureEntity> listOfInfra =
+        new HashSet<>(Arrays.asList(InfrastructureEntity.builder().tags(infra1Tags).build(),
+            InfrastructureEntity.builder().tags(infra2Tags).build()));
+    return listOfInfra;
   }
 }

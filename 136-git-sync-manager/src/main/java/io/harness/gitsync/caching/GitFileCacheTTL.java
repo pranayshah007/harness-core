@@ -15,7 +15,7 @@ import lombok.Getter;
 @Getter
 @OwnedBy(HarnessTeam.PIPELINE)
 public enum GitFileCacheTTL {
-  VALID_CACHE_DURATION(10 * 60 * 1000L),
+  VALID_CACHE_DURATION(5 * 60 * 1000L),
   MAX_CACHE_DURATION(60 * 60 * 1000L),
   ;
 

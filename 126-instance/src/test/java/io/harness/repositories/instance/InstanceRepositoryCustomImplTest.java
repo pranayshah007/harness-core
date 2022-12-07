@@ -7,6 +7,7 @@
 
 package io.harness.repositories.instance;
 
+import static io.harness.rule.OwnerRule.MEENA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -21,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.Instance.InstanceKeysAdditional;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
@@ -61,6 +63,10 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   private final long TIMESTAMP = 123L;
   private final long START_TIMESTAMP = 124L;
   private final long END_TIMESTAMP = 125L;
+  private final String CLUSTER_ID = "cluster11";
+  private final String AGENT_ID = "gitops-test-agent";
+  private final String PIPELINE_ID = "pipelineID";
+  private final String INSTANCE_NG_COLLECTION = "instanceNG";
   @Mock MongoTemplate mongoTemplate;
   @Mock MongoTemplate secondaryMongoTemplate;
   @Mock SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
@@ -293,6 +299,23 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
         .thenReturn(aggregationResults);
     assertThat(instanceRepositoryCustom.getEnvBuildInstanceCountByServiceId(
                    ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))
+        .isEqualTo(aggregationResults);
+  }
+
+  @Test
+  @Owner(developers = MEENA)
+  @Category(UnitTests.class)
+  public void getActiveServiceGitOpsInstanceInfoTest() {
+    ActiveServiceInstanceInfo instances =
+        new ActiveServiceInstanceInfo(null, null, CLUSTER_ID, AGENT_ID, PIPELINE_ID, PIPELINE_ID,
+            String.valueOf(System.currentTimeMillis()), ENVIRONMENT_ID, ENVIRONMENT_NAME, "image:1.1", null, 1);
+    AggregationResults<ActiveServiceInstanceInfo> aggregationResults =
+        new AggregationResults<>(Arrays.asList(instances), new Document());
+    when(mongoTemplate.aggregate(
+             any(Aggregation.class), eq(INSTANCE_NG_COLLECTION), eq(ActiveServiceInstanceInfo.class)))
+        .thenReturn(aggregationResults);
+    assertThat(instanceRepositoryCustom.getActiveServiceGitOpsInstanceInfo(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID))
         .isEqualTo(aggregationResults);
   }
 

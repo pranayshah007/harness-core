@@ -161,6 +161,7 @@ public class NGTemplateRepositoryCustomImplTest {
     TemplateEntity templateToSaveWithStoreType = templateToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
+                                                     .withFallBackBranch(branch)
                                                      .withFilePath(filePath);
 
     TemplateEntity templateToSaveWithStoreTypeWithExtraFields =
@@ -261,7 +262,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -286,7 +287,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -321,7 +322,8 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false, false,
+                false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -346,7 +348,8 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true, false,
+                false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());

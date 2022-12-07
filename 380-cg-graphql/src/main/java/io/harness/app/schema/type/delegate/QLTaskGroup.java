@@ -102,7 +102,8 @@ public enum QLTaskGroup implements QLEnum {
   CUSTOM_DEPLOYMENT_NG,
   ELASTIGROUP,
   TAS,
-  GITOPS;
+  GITOPS,
+  CONTAINER_PMS;
 
   @Override
   public String getStringValue() {
