@@ -374,6 +374,10 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ECS_CANARY_DEPLOY)
   ASG_CANARY_DEPLOY_STEP(
       ModuleType.CD, EntityTypeConstants.ASG_CANARY_DEPLOY, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DEPLOY),
+
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
+  ASG_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE),
   @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
   AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
       EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),

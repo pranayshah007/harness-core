@@ -16,6 +16,7 @@ import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.artifact.steps.SidecarsStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
@@ -191,6 +192,7 @@ public class NgStepRegistrar {
 
     // ASG
     engineSteps.put(AsgCanaryDeployStep.STEP_TYPE, AsgCanaryDeployStep.class);
+    engineSteps.put(AsgCanaryDeleteStep.STEP_TYPE, AsgCanaryDeleteStep.class);
 
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);

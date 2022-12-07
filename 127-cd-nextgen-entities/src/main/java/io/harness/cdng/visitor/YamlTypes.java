@@ -68,6 +68,7 @@ public interface YamlTypes {
   String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
 
   String ASG_CANARY_DEPLOY = StepSpecTypeConstants.ASG_CANARY_DEPLOY;
+  String ASG_CANARY_DELETE = StepSpecTypeConstants.ASG_CANARY_DELETE;
 
   String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
   String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;

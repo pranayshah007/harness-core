@@ -140,9 +140,13 @@ public enum NGStepType {
       "Ecs Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
   @JsonProperty(StepSpecTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK("Ecs Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
-  // ecs steps
+
+  // asg steps
   ASG_CANARY_DEPLOY(
       "Asg Canary Deploy", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DEPLOY),
+  ASG_CANARY_DELETE(
+          "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
+
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",

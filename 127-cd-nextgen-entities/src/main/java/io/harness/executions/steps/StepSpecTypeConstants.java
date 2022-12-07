@@ -75,6 +75,7 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
   String ASG_CANARY_DEPLOY = "AsgCanaryDeploy";
+  String ASG_CANARY_DELETE = "AsgCanaryDelete";
 
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
