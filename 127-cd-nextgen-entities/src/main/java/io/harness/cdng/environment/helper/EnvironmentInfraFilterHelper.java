@@ -33,6 +33,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.RetryUtils;
 
@@ -77,17 +78,19 @@ public class EnvironmentInfraFilterHelper {
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
   public boolean areAllTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
-    // Safety check, the list is
+    // Safety check, if list is empty
     if (isEmpty(entityTags)) {
       return false;
     }
 
     int count = 0;
-    for (NGTag tag : entityTags) {
-      if (tagsInFilter.contains(tag)) {
+    for (NGTag tag : tagsInFilter) {
+      if (entityTags.contains(tag)) {
         count++;
       }
     }
+
+    // Not counting the uuid tag
     return count != 0 && count == entityTags.size();
   }
 
@@ -142,8 +145,11 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private boolean applyMatchAllFilter(List<NGTag> entityTags, TagsFilter tagsFilter) {
+    Map<String, String> tagsMap = tagsFilter.getTags().getValue();
+    // Remove UUID from tags
+    TagUtils.removeUuidFromTags(tagsMap);
     return tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ALL)
-        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags().getValue()));
+        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsMap));
   }
 
   /**
