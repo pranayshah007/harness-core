@@ -171,7 +171,7 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
     CIStagePlanCreationUtils.validateFreeAccountStageExecutionLimit(
         accountExecutionMetadataRepository, ciLicenseService, AmbianceUtils.getAccountId(ambiance));
 
-    populateStrategyExpansion(initializeStepInfo, ambiance);
+    // populateStrategyExpansion(initializeStepInfo, ambiance);
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     boolean executeOnHarnessHostedDelegates = false;
