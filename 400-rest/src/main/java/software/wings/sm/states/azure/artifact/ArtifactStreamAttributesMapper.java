@@ -8,6 +8,8 @@
 package software.wings.sm.states.azure.artifact;
 
 import static io.harness.azure.model.AzureConstants.ARTIFACT_PATH_PREFIX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
@@ -45,6 +47,8 @@ public class ArtifactStreamAttributesMapper extends ArtifactConnectorMapper {
         return getArtifactoryArtifactFileName();
       case NEXUS:
         return getNexusArtifactFileName();
+      case JENKINS:
+        return getJenkinsArtifactFileName();
       default:
         return artifact.getDisplayName();
     }
@@ -60,6 +64,11 @@ public class ArtifactStreamAttributesMapper extends ArtifactConnectorMapper {
 
   private String getNexusArtifactFileName() {
     return artifact.getDisplayName().substring(artifact.getArtifactSourceName().length());
+  }
+
+  private String getJenkinsArtifactFileName() {
+    return isNotEmpty(artifact.getArtifactFileMetadata()) ? artifact.getArtifactFileMetadata().get(0).getFileName()
+                                                          : artifact.getDisplayName();
   }
 
   private String artifactPath() {
@@ -95,7 +104,7 @@ public class ArtifactStreamAttributesMapper extends ArtifactConnectorMapper {
 
   public String getArtifactPath() {
     List<String> artifactPaths = artifactStreamAttributes.getArtifactPaths();
-    if (artifactPaths.isEmpty()) {
+    if (isEmpty(artifactPaths)) {
       throw new InvalidRequestException("ArtifactPath is missing!");
     }
     return artifactPaths.get(0);

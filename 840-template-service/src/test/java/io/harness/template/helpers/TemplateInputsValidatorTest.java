@@ -148,7 +148,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
                                         .yaml(yaml)
                                         .build();
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             anyString(), anyString(), anyString(), any(), any(), eq(false)))
+             anyString(), anyString(), anyString(), any(), any(), eq(false), eq(false)))
         .thenReturn(Optional.of(templateEntity));
     assertThatThrownBy(
         ()
@@ -167,7 +167,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
 
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(stepTemplate));
 
     ValidateTemplateInputsResponseDTO response =
@@ -187,7 +187,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
 
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(stepTemplate));
 
     TemplateEntity stageTemplate = convertYamlToTemplateEntity(stageTemplateWithInCorrectInputs);
@@ -229,16 +229,16 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplateWithCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithCorrectInputsYaml);
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(stepTemplate));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false, false))
         .thenReturn(Optional.of(stageTemplateWithInCorrectInputs));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false, false))
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "pipelineTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "pipelineTemplate", "1", false, false))
         .thenReturn(Optional.of(pipelineTemplateWithIncorrectInputs));
 
     ValidateTemplateInputsResponseDTO response =
@@ -290,13 +290,13 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
     TemplateEntity stageTemplateWithCorrectInputs = convertYamlToTemplateEntity(stageTemplateWithCorrectInputsYaml);
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(stepTemplate));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "1", false, false))
         .thenReturn(Optional.of(stageTemplateWithInCorrectInputs));
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "stageTemplate", "2", false, false))
         .thenReturn(Optional.of(stageTemplateWithCorrectInputs));
 
     ValidateTemplateInputsResponseDTO response = templateInputsValidator.validateNestedTemplateInputsForGivenYaml(
@@ -358,7 +358,7 @@ public class TemplateInputsValidatorTest extends TemplateServiceTestBase {
 
     TemplateEntity stepTemplate = convertYamlToTemplateEntity(stepTemplateYaml);
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "httpTemplate", "1", false, false))
         .thenReturn(Optional.of(stepTemplate));
 
     ValidateTemplateInputsResponseDTO response =

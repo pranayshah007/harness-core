@@ -33,9 +33,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sRollingRollbackStepParameters")
 public class K8sRollingRollbackStepParameters extends K8sRollingRollbackBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sRollingRollbackStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> pruningEnabled,
+  public K8sRollingRollbackStepParameters(ParameterField<Boolean> pruningEnabled,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String rollingStepFqn) {
-    super(skipDryRun, pruningEnabled, delegateSelectors, rollingStepFqn);
+    super(pruningEnabled, delegateSelectors, rollingStepFqn);
   }
 
   @Nonnull

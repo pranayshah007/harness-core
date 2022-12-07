@@ -32,8 +32,14 @@ import io.harness.customDeployment.remote.CustomDeploymentResourceClient;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitImportInfoDTO;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.CacheResponse;
+import io.harness.gitsync.sdk.CacheState;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.CacheResponseMetadataDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.ng.core.template.TemplateListType;
@@ -385,7 +391,7 @@ public class NGTemplateResourceTest extends CategoryTest {
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(templateMergeService)
-        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false);
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, false);
 
     ResponseDTO<TemplateMergeResponseDTO> responseDTO =
         templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
@@ -427,5 +433,46 @@ public class NGTemplateResourceTest extends CategoryTest {
     ResponseDTO<TemplateListRepoResponse> uniqueListRepos =
         templateResource.listRepos(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, false);
     assertEquals(uniqueListRepos.getData().getRepositories(), repos);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetTemplateWithCaching() {
+    CacheResponse cacheResponse =
+        CacheResponse.builder().cacheState(CacheState.VALID_CACHE).lastUpdatedAt(987654L).build();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").cacheResponse(cacheResponse).build());
+    entityWithMongoVersion = entityWithMongoVersion.withStoreType(StoreType.REMOTE);
+    doReturn(Optional.of(entityWithMongoVersion))
+        .when(templateService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, true);
+    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, "true");
+    assertThat(responseDTO.getData()).isNotNull();
+    assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
+    assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testApplyTemplatesV2WithCaching() {
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        TemplateMergeResponseDTO.builder()
+            .mergedPipelineYaml(yaml)
+            .cacheResponseMetadata(CacheResponseMetadataDTO.builder().cacheState(CacheState.VALID_CACHE).build())
+            .build();
+    doReturn(templateMergeResponseDTO)
+        .when(templateMergeService)
+        .applyTemplatesToYamlV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml, false, true);
+
+    ResponseDTO<TemplateMergeResponseDTO> responseDTO =
+        templateResource.applyTemplatesV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(true).build(), "true");
+    assertThat(responseDTO.getData()).isNotNull();
+    assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
+    assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());
   }
 }

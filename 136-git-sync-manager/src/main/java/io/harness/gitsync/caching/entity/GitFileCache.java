@@ -18,6 +18,7 @@ import io.harness.ng.DbAliases;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UuidAccess;
 
 import com.google.common.collect.ImmutableList;
 import java.util.Date;
@@ -30,7 +31,9 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.FieldNameConstants;
+import lombok.experimental.Wither;
 import org.mongodb.morphia.annotations.Entity;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -46,7 +49,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @TypeAlias("io.harness.gitsync.caching.entity.gitFileCache")
 @FieldNameConstants(innerTypeName = "GitFileCacheKeys")
 @OwnedBy(PIPELINE)
-public class GitFileCache implements PersistentEntity, CreatedAtAware, UpdatedAtAware {
+public class GitFileCache implements PersistentEntity, CreatedAtAware, UuidAccess, UpdatedAtAware {
+  @Wither @Id @org.mongodb.morphia.annotations.Id String uuid;
   String accountIdentifier;
   GitProvider gitProvider;
   String repoName;
