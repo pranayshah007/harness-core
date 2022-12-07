@@ -1096,7 +1096,6 @@ public abstract class TerraformProvisionState extends State {
       }
       gitConfigHelperService.convertToRepoGitConfig(
           gitConfig, context.renderExpression(terraformProvisioner.getRepoName()));
-    } else if (terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
     }
 
     SecretManagerConfig secretManagerConfig = isSecretManagerRequired()
