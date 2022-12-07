@@ -95,7 +95,7 @@ public class CgInstanceSyncServiceV2 {
     log.info("DeploymentEvent of New Deployment: [{}]", event);
 
     event.getDeploymentSummaries()
-        .parallelStream()
+        .stream()
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
         .filter(this::hasDeploymentKey)
         .forEach(deploymentSummary -> {
