@@ -21,6 +21,7 @@ public class CfRollbackCommandResponseNG implements CfCommandResponseNG {
     CommandExecutionStatus commandExecutionStatus;
     String errorMessage;
     CfRollbackCommandResult cfRollbackCommandResult;
+
     @Override
     public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {
         this.delegateMetaInfo = metaInfo;
