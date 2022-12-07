@@ -43,8 +43,8 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
   @Override
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     K8sCanaryDeploy state = (K8sCanaryDeploy) getState(stepYaml);
-    K8sCanaryStepNode k8sRollingStepNode = new K8sCanaryStepNode();
-    baseSetup(stepYaml, k8sRollingStepNode);
+    K8sCanaryStepNode k8sCanaryStepNode = new K8sCanaryStepNode();
+    baseSetup(state, k8sCanaryStepNode);
     InstanceSelectionBase spec;
     if (state.getInstanceUnitType().equals(InstanceUnitType.COUNT)) {
       spec = new CountInstanceSelection();
@@ -54,7 +54,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
       ((PercentageInstanceSelection) spec).setPercentage(ParameterField.createValueField(state.getInstances()));
     }
 
-    k8sRollingStepNode.setK8sCanaryStepInfo(
+    k8sCanaryStepNode.setK8sCanaryStepInfo(
         K8sCanaryStepInfo.infoBuilder()
             .skipDryRun(ParameterField.createValueField(state.isSkipDryRun()))
             .instanceSelection(
@@ -65,7 +65,7 @@ public class K8sCanaryDeployStepMapperImpl implements StepMapper {
                     .build())
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build());
-    return k8sRollingStepNode;
+    return k8sCanaryStepNode;
   }
 
   @Override

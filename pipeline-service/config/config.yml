@@ -95,6 +95,9 @@ grpcClientConfigs:
   sto:
     target: localhost:14301
     authority: localhost
+  iacm:
+    target: localhost:15301
+    authority: localhost
 
 yamlSchemaClientConfig:
   yamlSchemaHttpClientMap:
@@ -122,6 +125,12 @@ yamlSchemaClientConfig:
         connectTimeOutSeconds: 15
         readTimeOutSeconds: 15
       secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
+    iacm:
+      serviceHttpClientConfig:
+        baseUrl: http://localhost:15057/
+        connectTimeOutSeconds: 15
+        readTimeOutSeconds: 15
+      secret: "IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM"
 
 
 managerTarget: localhost:9880
@@ -146,6 +155,11 @@ eventsFramework:
       enabled: false
       CATrustStorePath: "/tmp/ca_trust_store"
       CATrustStorePassword: ""
+
+debeziumConsumerConfigs:
+  - debeziumTopicName: ${DEBEZIUM_CONSUMER_TOPIC_NAME:-DEBEZIUM_pmsMongo.pms-harness.planExecutionsSummary}
+    debeziumNumberOfThreads: ${DEBEZIUM_CONSUMER_THREADS:-2}
+    debeziumBatchSize: ${DEBEZIUM_CONSUMER_BATCH_SIZE:-100}
 
 managerClientConfig:
   baseUrl: http://localhost:3457/api/
@@ -258,6 +272,17 @@ orchestrationStepConfig:
   ffServerBaseUrl: http://127.0.0.1:3000/api/1.0
   ffServerApiKey: secret
   ffServerSSLVerify: false
+  containerStepConfig:
+    addonImageTag: releaseBuild-30
+    liteEngineImageTag: releaseBuild-29
+    defaultMemoryLimit: 500
+    defaultCPULimit: 400
+    defaultInternalImageConnector: ''
+    pvcDefaultStorageSize: 25600
+    delegateServiceEndpointVariableValue: "delegate-service:8080"
+    addonImage: harness/ci-addon:1.14.19
+    liteEngineImage: harness/ci-lite-engine:1.14.22
+    isLocal: false
 
 shouldDeployWithGitSync: true
 
@@ -338,6 +363,8 @@ pipelineEventConsumersConfig:
   sdkResponse:
     threads: 1
   graphUpdate:
+    threads: 1
+  pipelineExecutionEvent:
     threads: 1
   partialPlanResponse:
     threads: 1

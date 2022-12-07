@@ -23,6 +23,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.steps.plugin.infrastructure.ContainerStepInfra;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
@@ -37,23 +38,29 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.validation.Valid;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.CONTAINER_STEP)
 @SimpleVisitorHelper(helperClass = ContainerStepInfoVisitorHelper.class)
 @TypeAlias("containerStepInfo")
 @OwnedBy(HarnessTeam.PIPELINE)
 @RecasterAlias("io.harness.steps.plugin.ContainerStepInfo")
-public class ContainerStepInfo
-    extends ContainerBaseStepInfo implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef {
+public class ContainerStepInfo extends ContainerBaseStepInfo
+    implements PMSStepInfo, Visitable, WithDelegateSelector, WithConnectorRef, SpecParameters {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
@@ -70,11 +77,13 @@ public class ContainerStepInfo
   private ParameterField<Map<String, JsonNode>> settings;
 
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> uses;
-  private ContainerResource resources;
+  @NotNull @Valid private ContainerResource resources;
+
+  @NotNull @Valid private ContainerStepInfra infrastructure;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private Map<String, String> envVariables;
+  private ParameterField<Map<String, String>> envVariables;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH)
@@ -86,8 +95,8 @@ public class ContainerStepInfo
   public ContainerStepInfo(String uuid, String identifier, String name, int retry,
       ParameterField<Map<String, JsonNode>> settings, ParameterField<String> image, ParameterField<String> connectorRef,
       ParameterField<String> uses, ContainerResource resources, ParameterField<List<String>> entrypoint,
-      Map<String, String> envVariables, ParameterField<Boolean> privileged, ParameterField<Integer> runAsUser,
-      ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
     this.uuid = uuid;
     this.identifier = identifier;
     this.name = name;
@@ -118,12 +127,7 @@ public class ContainerStepInfo
 
   @Override
   public SpecParameters getSpecParameters() {
-    return ContainerStepParameters.infoBuilder()
-        .image(image)
-        .connectorRef(connectorRef)
-        .entrypoint(entrypoint)
-        .imagePullPolicy(imagePullPolicy)
-        .build();
+    return this;
   }
 
   @Override

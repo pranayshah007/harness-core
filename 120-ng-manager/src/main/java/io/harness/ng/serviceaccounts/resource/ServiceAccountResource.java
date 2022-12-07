@@ -275,7 +275,7 @@ public class ServiceAccountResource {
   @Path("internal/{identifier}")
   @Hidden
   @InternalApi
-  @ApiOperation(value = "Get service account", nickname = "getServiceAccountInternal")
+  @ApiOperation(value = "Get service account by id", nickname = "getServiceAccountInternal")
   public ResponseDTO<ServiceAccountDTO> getServiceAccountInternal(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @PathParam(IDENTIFIER) @NotNull String identifier) {

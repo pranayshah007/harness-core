@@ -217,8 +217,18 @@ public class NgUserServiceImpl implements NgUserService {
         userMetadataCriteria.orOperator(Criteria.where(UserMetadataKeys.name).regex(userFilter.getSearchTerm(), "i"),
             Criteria.where(UserMetadataKeys.email).regex(userFilter.getSearchTerm(), "i"));
       }
-      if (userFilter.getIdentifiers() != null) {
-        userMembershipCriteria.and(UserMembershipKeys.userId).in(userFilter.getIdentifiers());
+      if (userFilter.getIdentifiers() != null || userFilter.getEmails() != null) {
+        List<String> userIds = new ArrayList<>();
+        if (userFilter.getIdentifiers() != null) {
+          userIds.addAll(userFilter.getIdentifiers());
+        }
+        if (userFilter.getEmails() != null) {
+          userIds.addAll(getUserMetadataByEmails(new ArrayList<>(userFilter.getEmails()))
+                             .stream()
+                             .map(UserMetadataDTO::getUuid)
+                             .collect(toList()));
+        }
+        userMembershipCriteria.and(UserMembershipKeys.userId).in(userIds);
       }
     }
     Page<String> userMembershipPage =

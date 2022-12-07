@@ -21,6 +21,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.gitsync.caching.service.GitFileCacheService;
+import io.harness.gitsync.caching.service.GitFileCacheServiceImpl;
 import io.harness.gitsync.client.GitSyncSdkGrpcClientModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
 import io.harness.gitsync.common.impl.FullSyncTriggerServiceImpl;
@@ -161,6 +163,7 @@ public class GitSyncModule extends AbstractModule {
     bind(ScmFacilitatorService.class).to(ScmFacilitatorServiceImpl.class);
     bind(FullSyncTriggerService.class).to(FullSyncTriggerServiceImpl.class);
     bind(GitFullSyncConfigService.class).to(GitFullSyncConfigServiceImpl.class);
+    bind(GitFileCacheService.class).to(GitFileCacheServiceImpl.class);
     registerRequiredBindings();
 
     bindFullSyncMessageListeners();

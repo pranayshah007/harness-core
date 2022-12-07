@@ -416,6 +416,10 @@ if [[ "" != "$LOG_STREAMING_SERVICE_BASEURL" ]]; then
   export LOG_STREAMING_SERVICE_BASEURL; yq -i '.logStreamingServiceConfig.baseUrl=env(LOG_STREAMING_SERVICE_BASEURL)' $CONFIG_FILE
 fi
 
+if [[ "" != "$LOG_STREAMING_SERVICE_EXTERNAL_URL" ]]; then
+  export LOG_STREAMING_SERVICE_EXTERNAL_URL; yq -i '.logStreamingServiceConfig.externalUrl=env(LOG_STREAMING_SERVICE_EXTERNAL_URL)' $CONFIG_FILE
+fi
+
 if [[ "" != "$LOG_STREAMING_SERVICE_TOKEN" ]]; then
   export LOG_STREAMING_SERVICE_TOKEN; yq -i '.logStreamingServiceConfig.serviceToken=env(LOG_STREAMING_SERVICE_TOKEN)' $CONFIG_FILE
 fi

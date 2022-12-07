@@ -121,6 +121,7 @@ public class ClusterPlanCreatorUtils {
     checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),
         "list of environments must be provided when not deploying to all clusters");
 
+    // Deploy to filtered list
     final List<EnvClusterRefs> clusterRefs =
         config.getEnvironmentPlanCreatorConfigs()
             .stream()

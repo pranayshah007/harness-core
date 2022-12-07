@@ -10,6 +10,7 @@ package io.harness.cdng.infra;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
@@ -37,6 +38,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
@@ -51,6 +53,7 @@ import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.manifest.yaml.InlineStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -409,6 +412,38 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testTanzuApplicationServiceInfraMapper() {
+    String pcfConnector = "connectorId";
+    String org = "devtest";
+    String space = "devspace";
+
+    TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(pcfConnector))
+            .organization(ParameterField.createValueField(org))
+            .space(ParameterField.createValueField(space))
+            .build();
+
+    TanzuApplicationServiceInfrastructureOutcome expectedOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder()
+            .connectorRef(pcfConnector)
+            .organization(org)
+            .space(space)
+            .environment(environment)
+            .infrastructureKey("8d27ebf01280cd9d93840db85e22bc910b604418")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        tanzuApplicationServiceInfrastructure, environment, serviceOutcome, "accountId", "orgId", "projectId");
+
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
   @Test

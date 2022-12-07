@@ -105,7 +105,7 @@ public class TemplateEntityGitSyncHandlerTest extends CategoryTest {
     String objectId = "objectId";
     doReturn(Optional.of(TemplateEntity.builder().objectIdOfYaml(objectId).build()))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
 
     EntityGitDetails lastEntityDetails = templateEntityGitSyncHandler.getEntityDetailsIfExists(ACCOUNT_ID, yaml).get();
     assertThat(lastEntityDetails.getObjectId()).isEqualTo(objectId);

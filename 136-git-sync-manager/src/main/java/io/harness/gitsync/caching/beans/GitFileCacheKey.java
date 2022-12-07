@@ -21,7 +21,7 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class GitFileCacheKey {
   String accountIdentifier;
-  String gitProvider;
+  GitProvider gitProvider;
   String repoName;
   String ref;
   String completeFilePath;

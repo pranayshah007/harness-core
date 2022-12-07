@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec.KubernetesServiceSpecBuilder;
@@ -34,7 +35,7 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
-      List<ManifestConfigWrapper> manifests) {
+      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     KubernetesServiceSpecBuilder kubernetesServiceSpec = KubernetesServiceSpec.builder();
     List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
@@ -42,6 +43,7 @@ public class K8sServiceV2Mapper implements ServiceV2Mapper {
       kubernetesServiceSpec.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     kubernetesServiceSpec.manifests(manifests);
+    kubernetesServiceSpec.configFiles(configFiles);
     kubernetesServiceSpec.variables(variables);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.KUBERNETES)

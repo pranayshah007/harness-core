@@ -14,13 +14,22 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDC)
-public class CgEntityId {
+public class CgEntityId implements Comparable<CgEntityId> {
   private String id;
   private NGMigrationEntityType type;
+
+  @Override
+  public int compareTo(CgEntityId o) {
+    if (StringUtils.equals(o.getId(), getId()) && o.getType() == getType()) {
+      return 0;
+    }
+    return 1;
+  }
 }

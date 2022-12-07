@@ -232,4 +232,14 @@ public interface DelegateAgentManagerClient {
   @PUT("agent/delegates/task-progress/status")
   Call<SendTaskStatusResponse> sendTaskStatus(
       @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/progress-update/v2")
+  Call<SendTaskProgressResponse> sendTaskProgressUpdateV2(
+      @Body SendTaskProgressRequest sendTaskProgressRequest, @Query("accountId") String accountId);
+
+  @Consumes({"application/x-protobuf"})
+  @PUT("agent/delegates/task-progress/status/v2")
+  Call<SendTaskStatusResponse> sendTaskStatusV2(
+      @Body SendTaskStatusRequest sendTaskStatusRequest, @Query("accountId") String accountId);
 }

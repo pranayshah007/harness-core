@@ -26,7 +26,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
       @JsonSubTypes.Type(value = AzureSshWinrmInstanceInfoDTO.class, name = "AzureSshWinrm"),
       @JsonSubTypes.Type(value = AwsSshWinrmInstanceInfoDTO.class, name = "AwsSshWinrm"),
       @JsonSubTypes.Type(value = CustomDeploymentInstanceInfoDTO.class, name = "CustomDeployment"),
-      @JsonSubTypes.Type(value = EcsInstanceInfoDTO.class, name = "ECS")
+      @JsonSubTypes.Type(value = EcsInstanceInfoDTO.class, name = "ECS"),
+      @JsonSubTypes.Type(value = TasInstanceInfoDTO.class, name = "TAS")
 })
 public abstract class InstanceInfoDTO {
   // Create combination of fields that identifies any related instance uniquely

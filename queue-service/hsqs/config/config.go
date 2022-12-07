@@ -13,6 +13,10 @@ import (
 type Config struct {
 	Debug bool `envconfig:"HSQS_DEBUG"`
 
+	Version string `envconfig:"HSQS_VERSION" default:"1.0.0"`
+
+	ServiceName string `envconfig:"HSQS_SERVICE_NAME" default:"queue_service"`
+
 	Server struct {
 		PORT string `envconfig:"HSQS_PORT" default:":9092"`
 		Host string `envconfig:"HSQS_HOST"`

@@ -7,9 +7,9 @@
 
 package io.harness.plancreator.strategy;
 
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START_ESC;
 import static io.harness.plancreator.strategy.StrategyConstants.ITEM;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATION;
 import static io.harness.plancreator.strategy.StrategyConstants.ITERATIONS;

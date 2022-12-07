@@ -17,6 +17,7 @@
 - name: Pipelines
   tags:
     - Pipelines
+    - Input Sets
 - name: Templates
   tags:
     - Account Template

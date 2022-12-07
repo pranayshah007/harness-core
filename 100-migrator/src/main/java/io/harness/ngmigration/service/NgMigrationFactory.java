@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngmigration.service.entity.AccountMigrationService;
 import io.harness.ngmigration.service.entity.AppMigrationService;
 import io.harness.ngmigration.service.entity.ArtifactStreamMigrationService;
+import io.harness.ngmigration.service.entity.ConfigFileMigrationService;
 import io.harness.ngmigration.service.entity.ConnectorMigrationService;
 import io.harness.ngmigration.service.entity.DummyMigrationService;
 import io.harness.ngmigration.service.entity.EnvironmentMigrationService;
@@ -46,6 +47,7 @@ public class NgMigrationFactory {
   @Inject AccountMigrationService accountMigrationService;
   @Inject TemplateMigrationService templateMigrationService;
   @Inject ServiceVariableMigrationService serviceVariableMigrationService;
+  @Inject ConfigFileMigrationService configFileMigrationService;
 
   public NgMigrationService getMethod(NGMigrationEntityType type) {
     switch (type) {
@@ -79,6 +81,8 @@ public class NgMigrationFactory {
         return manifestMigrationService;
       case SERVICE_VARIABLE:
         return serviceVariableMigrationService;
+      case CONFIG_FILE:
+        return configFileMigrationService;
       default:
         throw new IllegalStateException();
     }

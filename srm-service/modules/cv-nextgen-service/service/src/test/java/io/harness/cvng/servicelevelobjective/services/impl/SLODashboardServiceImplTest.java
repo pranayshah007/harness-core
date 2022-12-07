@@ -814,14 +814,19 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                       .build())
             .build();
     serviceLevelObjectiveV2Service.create(builderFactory.getProjectParams(), compositeSLO);
-
+    AbstractServiceLevelObjective compositeServiceLevelObjective =
+        serviceLevelObjectiveV2Service.getEntity(builderFactory.getProjectParams(), compositeSLO.getIdentifier());
+    serviceLevelObjectiveV2Service.delete(builderFactory.getProjectParams(), compositeSLO.getIdentifier());
+    compositeServiceLevelObjective.setCreatedAt(startTime.toEpochMilli());
+    compositeServiceLevelObjective.setStartedAt(startTime.toEpochMilli());
+    hPersistence.save(compositeServiceLevelObjective);
     ServiceLevelIndicator serviceLevelIndicator1 =
         serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
             ((SimpleServiceLevelObjectiveSpec) serviceLevelObjectiveV2DTO1.getSpec())
                 .getServiceLevelIndicators()
                 .get(0)
                 .getIdentifier());
-    createData(clock.instant().minus(Duration.ofMinutes(10)), Arrays.asList(GOOD, BAD, BAD, GOOD),
+    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(GOOD, BAD, BAD, GOOD),
         serviceLevelIndicator1.getUuid());
     SLODashboardWidget.SLOGraphData sloGraphData1 =
         graphDataService.getGraphData(serviceLevelObjective1, clock.instant().minus(Duration.ofDays(1)),
@@ -833,15 +838,15 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
                 .getServiceLevelIndicators()
                 .get(0)
                 .getIdentifier());
-    createData(clock.instant().minus(Duration.ofMinutes(10)), Arrays.asList(BAD, BAD, BAD, BAD),
+    createData(clock.instant().minus(Duration.ofMinutes(12)), Arrays.asList(BAD, BAD, BAD, BAD),
         serviceLevelIndicator2.getUuid());
     SLODashboardWidget.SLOGraphData sloGraphData2 =
         graphDataService.getGraphData(serviceLevelObjective2, clock.instant().minus(Duration.ofDays(1)),
             clock.instant(), 8640, TimeRangeParams.builder().startTime(startTime).endTime(endTime).build());
 
-    PageResponse<SLOConsumptionBreakdown> pageResponse =
-        sloDashboardService.getSLOConsumptionBreakdownView(builderFactory.getProjectParams(),
-            compositeSLO.getIdentifier(), startTime.toEpochMilli(), endTime.toEpochMilli());
+    PageResponse<SLOConsumptionBreakdown> pageResponse = sloDashboardService.getSLOConsumptionBreakdownView(
+        builderFactory.getProjectParams(), compositeSLO.getIdentifier(),
+        startTime.minus(2, ChronoUnit.MINUTES).toEpochMilli(), endTime.toEpochMilli());
     assertThat(pageResponse.getPageItemCount()).isEqualTo(2);
     assertThat(pageResponse.getTotalItems()).isEqualTo(2);
     List<SLOConsumptionBreakdown> sloConsumptionBreakdownList = pageResponse.getContent();
@@ -857,6 +862,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(serviceLevelObjectiveV2DTO1.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData1.getErrorBudgetBurned());
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData1.getSliStatusPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(1);
 
     sloBreakdown = sloConsumptionBreakdownList.get(1);
     assertThat(sloBreakdown.getSloIdentifier()).isEqualTo(serviceLevelObjectiveV2DTO2.getIdentifier());
@@ -868,6 +874,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(serviceLevelObjectiveV2DTO2.getSloTarget().getSloTargetPercentage());
     assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(sloGraphData2.getErrorBudgetBurned());
     assertThat(sloBreakdown.getSliStatusPercentage()).isEqualTo(sloGraphData2.getSliStatusPercentage());
+    assertThat(sloBreakdown.getErrorBudgetBurned()).isEqualTo(2);
   }
 
   @Test
@@ -901,14 +908,21 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
   private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {
     int index = 0;
     List<SLIRecord> sliRecords = new ArrayList<>();
+    int runningBadCount = 0, runningGoodCount = 0;
     for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+      if (states.get(index) == BAD) {
+        runningBadCount++;
+      }
+      if (states.get(index) == GOOD) {
+        runningGoodCount++;
+      }
       SLIRecord sliRecord = SLIRecord.builder()
                                 .verificationTaskId(verificationTaskId)
                                 .sliId(sliId)
                                 .version(0)
                                 .sliState(states.get(index))
-                                .runningBadCount(0)
-                                .runningGoodCount(1)
+                                .runningBadCount(runningBadCount)
+                                .runningGoodCount(runningGoodCount)
                                 .sliVersion(0)
                                 .timestamp(instant)
                                 .build();

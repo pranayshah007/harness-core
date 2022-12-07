@@ -42,6 +42,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogLine;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.BaseUrls;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -99,6 +100,7 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<GitOp
   @Inject private StepHelper stepHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private BaseUrls baseUrls;
 
   @Override
   public Class getStepParametersClass() {
@@ -152,17 +154,22 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<GitOp
 
       List<Application> applications =
           fetchLinkedApps(gitOpsFetchAppTaskResponse.getAppName(), clusterIds, identifierRef);
+      populateAppUrls(applications, identifierRef);
 
       StepResponse.StepOutcome stepOutcome = null;
 
       if (EmptyPredicate.isEmpty(applications)) {
-        logStreamingStepClient.writeLogLine(
-            LogLine.builder().message("No linked apps found.").level(LogLevel.INFO).timestamp(Instant.now()).build(),
+        logStreamingStepClient.writeLogLine(LogLine.builder()
+                                                .message("No linked apps found in Harness System.")
+                                                .level(LogLevel.INFO)
+                                                .timestamp(Instant.now())
+                                                .build(),
             LOG_KEY_SUFFIX);
       } else {
         for (Application application : applications) {
           logStreamingStepClient.writeLogLine(LogLine.builder()
-                                                  .message(String.format("Found linked app: %s", application.getName()))
+                                                  .message(String.format("Found linked app: %s. Link - %s",
+                                                      application.getName(), application.getUrl()))
                                                   .level(LogLevel.INFO)
                                                   .timestamp(Instant.now())
                                                   .build(),
@@ -186,6 +193,18 @@ public class FetchLinkedAppsStep extends TaskExecutableWithRollbackAndRbac<GitOp
       throw new InvalidRequestException("Failed to execute Fetch Linked Apps step", ex);
     } finally {
       logStreamingStepClient.closeStream(LOG_KEY_SUFFIX);
+    }
+  }
+
+  private void populateAppUrls(List<Application> applications, IdentifierRef identifierRef) {
+    if (EmptyPredicate.isEmpty(applications)) {
+      return;
+    }
+    for (Application application : applications) {
+      String url = String.format("%saccount/%s/cd/orgs/%s/projects/%s/gitops/applications/%s?agentId=%s",
+          baseUrls.getNextGenUiUrl(), identifierRef.getAccountIdentifier(), identifierRef.getOrgIdentifier(),
+          identifierRef.getProjectIdentifier(), application.getName(), application.getAgentIdentifier());
+      application.setUrl(url);
     }
   }
 

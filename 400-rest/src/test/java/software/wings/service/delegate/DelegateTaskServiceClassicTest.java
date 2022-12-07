@@ -1159,7 +1159,7 @@ public class DelegateTaskServiceClassicTest extends WingsBaseTest {
       final DelegateTaskResponse response =
           DelegateTaskResponse.builder()
               .response(ErrorNotifyResponseData.builder()
-                            .errorMessage("No eligible delegate(s) in account to execute task. ")
+                            .errorMessage("Delegates are not available")
                             .exception(new NoEligibleDelegatesInAccountException(
                                 "No eligible delegate(s) in account to execute task. "))
                             .build())

@@ -7,8 +7,8 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.TriggerConfiguration;

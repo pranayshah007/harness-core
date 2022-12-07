@@ -27,7 +27,7 @@ import static java.util.stream.Collectors.toList;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.environment.K8BuildJobEnvInfo;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.stages.IntegrationStageNode;
@@ -274,7 +274,7 @@ public class K8InitializeTaskParamsBuilder {
     List<ContainerDefinitionInfo> stageCtrDefinitions =
         getStageContainerDefinitions(initializeStepInfo, infrastructure, ambiance);
     consumePortDetails(ambiance, stageCtrDefinitions);
-    Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> stepConnectors =
+    Map<String, List<ConnectorConversionInfo>> stepConnectors =
         k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
@@ -297,7 +297,7 @@ public class K8InitializeTaskParamsBuilder {
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
       Map<String, String> commonEnvVars, Map<String, String> stoEnvVars,
-      Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
+      Map<String, List<ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, ContainerSecurityContext ctrSecurityContext, String logPrefix,
       List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
       OSType os) {
@@ -307,10 +307,10 @@ public class K8InitializeTaskParamsBuilder {
     }
     Map<String, ConnectorDetails> stepConnectorDetails = new HashMap<>();
     if (isNotEmpty(containerDefinitionInfo.getStepIdentifier()) && isNotEmpty(connectorRefs)) {
-      List<K8BuildJobEnvInfo.ConnectorConversionInfo> connectorConversionInfos =
+      List<ConnectorConversionInfo> connectorConversionInfos =
           connectorRefs.get(containerDefinitionInfo.getStepIdentifier());
       if (connectorConversionInfos != null && connectorConversionInfos.size() > 0) {
-        for (K8BuildJobEnvInfo.ConnectorConversionInfo connectorConversionInfo : connectorConversionInfos) {
+        for (ConnectorConversionInfo connectorConversionInfo : connectorConversionInfos) {
           ConnectorDetails connectorDetails =
               connectorUtils.getConnectorDetailsWithConversionInfo(ngAccess, connectorConversionInfo);
           IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(connectorConversionInfo.getConnectorRef(),

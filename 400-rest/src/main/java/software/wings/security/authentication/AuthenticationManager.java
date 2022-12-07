@@ -172,8 +172,7 @@ public class AuthenticationManager {
     if (mainConfiguration.getDeployMode() != null && !DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
       throw new InvalidRequestException("This API should only be called for on-prem deployments.");
     }
-    List<Account> accounts = accountService.listAllAccounts();
-    if (accounts.size() > 1) {
+    if (accountService.doMultipleAccountsExist()) {
       log.warn(
           "On-prem deployments are expected to have exactly 1 account. Returning response for the primary account");
     }

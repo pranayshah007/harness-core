@@ -7,6 +7,7 @@
 
 package io.harness.encryption;
 
+import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptionType;
 
 import lombok.Builder;
@@ -21,4 +22,5 @@ public class SecretRefParsedData {
   private String secretManagerIdentifier;
   private String relativePath;
   private EncryptionType encryptionType;
+  private AdditionalMetadata additionalMetadata;
 }

@@ -59,12 +59,13 @@ public abstract class AsyncTaskHandler {
       final String trackerId = reqId;
       service.submit(() -> process(accountId, trackerId));
     } catch (Exception e) {
-      log.error("There was an error queuing the similar workflows", e);
+      log.error(String.format("There was an error queuing the %s", getTaskType()), e);
       if (StringUtils.isNotBlank(reqId)) {
         hPersistence.delete(MigrationAsyncTracker.class, reqId);
         cache.invalidate(reqId);
       }
-      throw new InternalServerErrorException("Could not queue the similar workflows. Please try after sometime", e);
+      throw new InternalServerErrorException(
+          String.format("Could not queue the %s. Please try after sometime", getTaskType()), e);
     }
     return reqId;
   }

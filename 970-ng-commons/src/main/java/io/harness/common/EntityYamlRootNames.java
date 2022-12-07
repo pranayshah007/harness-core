@@ -146,6 +146,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String ACTION_STEP = "Action";
   public static final String BITRISE_STEP = "Bitrise";
+  public static final String CONTAINER_STEP = "Container";
 
   public static final String NG_FILE = "NgFile";
   public static final String QUEUE = "Lock";
@@ -180,6 +181,9 @@ public class EntityYamlRootNames {
   public static final String CHAOS_STEP = "Chaos";
   public static final String ELASTIGROUP_DEPLOY_STEP = "ElastigroupDeploy";
   public static final String ELASTIGROUP_ROLLBACK_STEP = "ElastigroupRollback";
+  public static final String IACM_STAGE = "IACMStage";
+  public static final String IACM_STEP = "IACMStep";
+  public static final String IACM = "IACM";
   public static final String ELASTIGROUP_SETUP = "ElastigroupSetup";
   public static final String TERRAGRUNT_PLAN = "TerragruntPlan";
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";

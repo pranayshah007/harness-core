@@ -9,11 +9,11 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
 import static io.harness.expression.EngineExpressionEvaluator.hasExpressions;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END_ESC;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START_ESC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;

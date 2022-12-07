@@ -324,8 +324,12 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         hPersistence.createUpdateOperations(ServiceLevelIndicator.class);
     ServiceLevelIndicator updatableServiceLevelIndicator = convertDTOToEntity(projectParams, serviceLevelIndicatorDTO,
         monitoredServiceIndicator, healthSourceIndicator, serviceLevelIndicator.isEnabled());
+    updatableEntity.setUpdateOperations(updateOperations, updatableServiceLevelIndicator);
     if (shouldReAnalysis(serviceLevelIndicator, updatableServiceLevelIndicator, timePeriod, currentTimePeriod)) {
-      updatableEntity.setUpdateOperations(updateOperations, updatableServiceLevelIndicator);
+      // We are doing this inside if else because we want to update the SLI version as well in this case.
+      // And we need to update SLI before queuing analysis so that queued analysis when executed takes the updated SLI.
+      updateOperations.inc(ServiceLevelIndicatorKeys.version);
+      hPersistence.update(serviceLevelIndicator, updateOperations);
       Instant startTime = timePeriod.getStartTime(ZoneOffset.UTC).minus(INTERVAL_HOURS, ChronoUnit.HOURS);
       Instant endTime = DateTimeUtils.roundDownTo5MinBoundary(clock.instant());
       for (Instant intervalStartTime = startTime; intervalStartTime.isBefore(endTime);) {
@@ -338,6 +342,7 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
             intervalStartTime, intervalEndTime);
         intervalStartTime = intervalEndTime;
       }
+    } else {
       hPersistence.update(serviceLevelIndicator, updateOperations);
     }
     if (serviceLevelIndicator.shouldRecalculateReferencedCompositeSLOs(updatableServiceLevelIndicator)) {

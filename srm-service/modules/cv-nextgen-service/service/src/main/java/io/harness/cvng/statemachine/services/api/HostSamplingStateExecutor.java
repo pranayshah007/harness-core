@@ -7,16 +7,13 @@
 
 package io.harness.cvng.statemachine.services.api;
 
-import io.harness.cvng.analysis.beans.TimeSeriesRecordDTO;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
 import io.harness.cvng.analysis.services.api.TimeSeriesAnalysisService;
-import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.services.api.TimeSeriesRecordService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
 import io.harness.cvng.statemachine.beans.AnalysisInput.AnalysisInputBuilder;
 import io.harness.cvng.statemachine.beans.AnalysisState;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
-import io.harness.cvng.statemachine.entities.DeploymentTimeSeriesAnalysisState;
 import io.harness.cvng.statemachine.entities.HostSamplingState;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
@@ -24,38 +21,34 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 
 import com.google.inject.Inject;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplingState> {
+public abstract class HostSamplingStateExecutor<T extends HostSamplingState> extends AnalysisStateExecutor<T> {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private TimeSeriesRecordService timeSeriesRecordService;
   @Inject private TimeSeriesAnalysisService timeSeriesAnalysisService;
 
+  protected abstract Set<String> getPostDeploymentHosts(
+      VerificationJobInstance verificationJobInstance, AnalysisInput analysisInput);
+
+  protected abstract Set<String> getPreDeploymentHosts(
+      VerificationJobInstance verificationJobInstance, String verificationTaskId);
+
+  protected abstract LearningEngineTaskType getBeforeAfterTaskType();
+
+  protected abstract LearningEngineTaskType getCanaryTaskType();
+
   @Override
   public AnalysisState execute(HostSamplingState analysisState) {
-    VerificationJobInstance verificationJobInstance =
-        verificationJobInstanceService.getVerificationJobInstance(analysisState.getVerificationJobInstanceId());
+    VerificationJobInstance verificationJobInstance = verificationJobInstanceService.getVerificationJobInstance(
+        analysisState.getInputs().getVerificationJobInstanceId());
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
-    Optional<TimeRange> preDeploymentTimeRange =
-        verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
-    List<TimeSeriesRecordDTO> preDeploymentTimeSeriesRecords =
-        timeSeriesRecordService.getTimeSeriesRecordDTOs(analysisState.getInputs().getVerificationTaskId(),
-            preDeploymentTimeRange.get().getStartTime(), preDeploymentTimeRange.get().getEndTime());
-
-    List<TimeSeriesRecordDTO> postDeploymentTimeSeriesRecords =
-        timeSeriesRecordService.getTimeSeriesRecordDTOs(analysisState.getInputs().getVerificationTaskId(),
-            analysisState.getInputs().getStartTime(), analysisState.getInputs().getEndTime());
 
     Set<String> preDeploymentHosts =
-        preDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
-    Set<String> postDeploymentHosts =
-        postDeploymentTimeSeriesRecords.stream().map(TimeSeriesRecordDTO::getHost).collect(Collectors.toSet());
-
+        getPreDeploymentHosts(verificationJobInstance, analysisState.getInputs().getVerificationTaskId());
+    Set<String> postDeploymentHosts = getPostDeploymentHosts(verificationJobInstance, analysisState.getInputs());
     Set<String> newHosts = new HashSet<>(postDeploymentHosts);
     Set<String> commonHosts = new HashSet<>(preDeploymentHosts);
     commonHosts.retainAll(postDeploymentHosts);
@@ -67,7 +60,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     analysisState.setStatus(AnalysisStatus.RUNNING);
     switch (verificationJob.getType()) {
       case CANARY:
-        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+        analysisInputBuilder.learningEngineTaskType(getCanaryTaskType());
         if (newHosts.isEmpty()) {
           /*
            For example:
@@ -111,8 +104,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
       case BLUE_GREEN:
         Set<String> controlHosts = new HashSet<>(preDeploymentHosts);
         Set<String> testHosts = new HashSet<>(postDeploymentHosts);
-        analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
-        analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+        analysisState.setLearningEngineTaskType(getBeforeAfterTaskType());
+        analysisInputBuilder.learningEngineTaskType(getBeforeAfterTaskType());
         analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts).testHosts(testHosts);
         analysisState.setInputs(analysisInputBuilder.build());
         analysisState.setControlHosts(controlHosts);
@@ -126,12 +119,11 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
           */
           controlHosts = new HashSet<>(preDeploymentHosts);
           testHosts = new HashSet<>(postDeploymentHosts);
-          analysisInputBuilder =
-              analysisInputBuilder.controlHosts(controlHosts)
-                  .testHosts(testHosts)
-                  .learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+          analysisInputBuilder = analysisInputBuilder.controlHosts(controlHosts)
+                                     .testHosts(testHosts)
+                                     .learningEngineTaskType(getBeforeAfterTaskType());
           analysisState.setInputs(analysisInputBuilder.build());
-          analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+          analysisState.setLearningEngineTaskType(getBeforeAfterTaskType());
           analysisState.setControlHosts(controlHosts);
           analysisState.setTestHosts(testHosts);
         } else {
@@ -146,8 +138,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
               Pre deployment hosts are n1, n2
               Post deployment hosts are n3, n4
              */
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
-            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.BEFORE_AFTER_DEPLOYMENT_TIME_SERIES);
+            analysisState.setLearningEngineTaskType(getBeforeAfterTaskType());
+            analysisInputBuilder.learningEngineTaskType(getBeforeAfterTaskType());
             analysisState.setInputs(analysisInputBuilder.build());
           } else {
             /*
@@ -155,8 +147,8 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
               Pre deployment hosts are n1, n2
               Post deployment hosts are n1, n2, n3
              */
-            analysisState.setLearningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
-            analysisInputBuilder.learningEngineTaskType(LearningEngineTaskType.CANARY_DEPLOYMENT_TIME_SERIES);
+            analysisState.setLearningEngineTaskType(getCanaryTaskType());
+            analysisInputBuilder.learningEngineTaskType(getCanaryTaskType());
             analysisState.setInputs(analysisInputBuilder.build());
           }
         }
@@ -195,15 +187,7 @@ public class HostSamplingStateExecutor extends AnalysisStateExecutor<HostSamplin
     return analysisState;
   }
 
-  @Override
-  public AnalysisState handleTransition(HostSamplingState analysisState) {
-    analysisState.setStatus(AnalysisStatus.SUCCESS);
-    DeploymentTimeSeriesAnalysisState deploymentTimeSeriesAnalysisState = new DeploymentTimeSeriesAnalysisState();
-    deploymentTimeSeriesAnalysisState.setInputs(analysisState.getInputs());
-    deploymentTimeSeriesAnalysisState.setStatus(AnalysisStatus.CREATED);
-    deploymentTimeSeriesAnalysisState.setVerificationJobInstanceId(analysisState.getVerificationJobInstanceId());
-    return deploymentTimeSeriesAnalysisState;
-  }
+  public abstract AnalysisState handleTransition(HostSamplingState analysisState);
 
   @Override
   public AnalysisState handleRetry(HostSamplingState analysisState) {
