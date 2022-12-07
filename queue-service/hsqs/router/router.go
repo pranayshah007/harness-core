@@ -42,8 +42,11 @@ func New(config *config.Config) *echo.Echo {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.PATCH, echo.POST, echo.DELETE},
 	}))
-	e.Use(middleware.JWTWithConfig(jwtConfig))
 
+	// Disable auth when flag enabled
+	if !envConfig.DisableAuth {
+		e.Use(middleware.JWTWithConfig(jwtConfig))
+	}
 	p := prometheus.NewPrometheus("echo", urlSkipperFunc)
 	p.Use(e)
 

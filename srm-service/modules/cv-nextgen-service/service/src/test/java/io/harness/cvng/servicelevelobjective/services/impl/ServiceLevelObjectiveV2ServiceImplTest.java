@@ -868,6 +868,35 @@ public class ServiceLevelObjectiveV2ServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreate_SimpleSLO_AssociatedWith_CompositeSLO_Failure_BecauseOf_Duplicates() {
+    ServiceLevelObjectiveV2DTO compositeSLODTO1 = compositeSLODTO;
+    CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec =
+        (CompositeServiceLevelObjectiveSpec) compositeSLODTO1.getSpec();
+    compositeSLODTO1.setIdentifier("newCompositeSLO1");
+    compositeSLODTO1.setName("newCompositeSLO1");
+    compositeServiceLevelObjectiveSpec.setServiceLevelObjectivesDetails(
+        Arrays.asList(ServiceLevelObjectiveDetailsDTO.builder()
+                          .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                          .weightagePercentage(50.0)
+                          .accountId(simpleServiceLevelObjective1.getAccountId())
+                          .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                          .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                          .build(),
+            ServiceLevelObjectiveDetailsDTO.builder()
+                .serviceLevelObjectiveRef(simpleServiceLevelObjective1.getIdentifier())
+                .weightagePercentage(50.0)
+                .accountId(simpleServiceLevelObjective1.getAccountId())
+                .orgIdentifier(simpleServiceLevelObjective1.getOrgIdentifier())
+                .projectIdentifier(simpleServiceLevelObjective1.getProjectIdentifier())
+                .build()));
+    compositeSLODTO1.setSpec(compositeServiceLevelObjectiveSpec);
+    assertThatThrownBy(() -> serviceLevelObjectiveV2Service.create(projectParams, compositeSLODTO1))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage(String.format("An SLO can't be referenced more than once"));
+  }
+  @Test
   @Owner(developers = KARAN_SARASWAT)
   @Category(UnitTests.class)
   public void testUpdate_AddCompositeSLOSuccess() {

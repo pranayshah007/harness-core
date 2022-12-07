@@ -7,13 +7,15 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.eventsframework.EventsFrameworkConstants.PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER;
 import static io.harness.eventsframework.EventsFrameworkConstants.PLAN_NOTIFY_EVENT_TOPIC;
 import static io.harness.eventsframework.EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_REQUEST_PAYLOAD_DETAILS;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
@@ -23,11 +25,20 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.GitAwareRedisProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
+import io.harness.pms.event.overviewLandingPage.DebeziumConsumerConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
+import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import java.util.List;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import lombok.AllArgsConstructor;
 import org.redisson.api.RedissonClient;
 
@@ -36,6 +47,16 @@ import org.redisson.api.RedissonClient;
 public class PipelineServiceEventsFrameworkModule extends AbstractModule {
   private final EventsFrameworkConfiguration eventsFrameworkConfiguration;
   private final PipelineRedisEventsConfig pipelineRedisEventsConfig;
+  private final List<DebeziumConsumerConfig> debeziumConsumerConfigs;
+
+  @Provides
+  @Singleton
+  @Named("debeziumEventsCache")
+  public Cache<String, Long> debeziumEventsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache("debeziumEventsCache", String.class, Long.class,
+        AccessedExpiryPolicy.factoryOf(Duration.ONE_HOUR), versionInfoManager.getVersionInfo().getBuildNo());
+  }
 
   @Override
   protected void configure() {
@@ -110,6 +131,11 @@ public class PipelineServiceEventsFrameworkModule extends AbstractModule {
           .toInstance(RedisConsumer.of(PMS_ORCHESTRATION_NOTIFY_EVENT, PIPELINE_SERVICE.getServiceId(), redissonClient,
               EventsFrameworkConstants.PLAN_NOTIFY_EVENT_MAX_PROCESSING_TIME,
               EventsFrameworkConstants.PMS_ORCHESTRATION_NOTIFY_EVENT_BATCH_SIZE, redisConfig.getEnvNamespace()));
+      bind(Consumer.class)
+          .annotatedWith(Names.named(PIPELINE_EXECUTION_SUMMARY_REDIS_EVENT_CONSUMER))
+          .toInstance(RedisConsumer.of(debeziumConsumerConfigs.get(0).getTopicName(), PIPELINE_SERVICE.getServiceId(),
+              redissonClient, EventsFrameworkConstants.DEFAULT_MAX_PROCESSING_TIME,
+              debeziumConsumerConfigs.get(0).getBatchSize(), redisConfig.getEnvNamespace()));
     }
   }
 }

@@ -328,15 +328,22 @@ public class PMSPipelineServiceHelper {
 
   GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
       PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
-    boolean getMergedTemplateWithTemplateReferences =
-        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
-    // Apply all the templateRefs(if any) then check for schema validation.
-    TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, getMergedTemplateWithTemplateReferences);
-    // Add Template Module Info temporarily to Pipeline Entity
-    pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
-    return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
-        .getGovernanceMetadata();
+    switch (pipelineEntity.getHarnessVersion()) {
+      case PipelineVersion.V1:
+        return GovernanceMetadata.newBuilder().setDeny(false).build();
+      case PipelineVersion.V0:
+        boolean getMergedTemplateWithTemplateReferences =
+            pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+        // Apply all the templateRefs(if any) then check for schema validation.
+        TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
+            pipelineEntity, getMergedTemplateWithTemplateReferences);
+        // Add Template Module Info temporarily to Pipeline Entity
+        pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
+        return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)
+            .getGovernanceMetadata();
+      default:
+        throw new IllegalStateException("version not supported");
+    }
   }
 
   PipelineValidationResponse validateYaml(PipelineEntity pipelineEntity,

@@ -470,7 +470,10 @@ public enum EntityType {
           EntityYamlRootNames.TAS_SWAP_ROLLBACK_STEP),
   @JsonProperty(EntityTypeConstants.TANZU_COMMAND_STEP)
   TANZU_COMMAND_STEP(ModuleType.CD, EntityTypeConstants.TANZU_COMMAND_STEP, IdentifierRef.class,
-          EntityYamlRootNames.TANZU_COMMAND_STEP);
+          EntityYamlRootNames.TANZU_COMMAND_STEP),
+  @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
+  CONTAINER_STEP(
+      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

@@ -10,6 +10,7 @@ package io.harness.pms.pipeline.service;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 import static io.harness.rule.OwnerRule.VIVEK_DIXIT;
@@ -269,6 +270,23 @@ public class PMSPipelineServiceHelperTest extends PipelineServiceTestBase {
         .thenReturn(PipelineValidationResponse.builder()
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
+    GovernanceMetadata governanceMetadata =
+        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+    assertThat(governanceMetadata.getDeny()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testValidatePipelineYamlInternalForV1Pipeline() {
+    String yaml = "yaml";
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .yaml(yaml)
+                                        .harnessVersion(PipelineVersion.V1)
+                                        .build();
     GovernanceMetadata governanceMetadata =
         pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
     assertThat(governanceMetadata.getDeny()).isFalse();

@@ -444,5 +444,13 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                       EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
                   .setData(entityReferenceDTO.toByteString())
                   .build());
+
+    verify(eventProducer)
+        .send(Message.newBuilder()
+                  .putAllMetadata(ImmutableMap.of("accountId", pipelineEntity.getAccountIdentifier(),
+                      EventsFrameworkMetadataConstants.REFERRED_ENTITY_TYPE, EntityTypeProtoEnum.PIPELINES.name(),
+                      EventsFrameworkMetadataConstants.ACTION, EventsFrameworkMetadataConstants.FLUSH_CREATE_ACTION))
+                  .setData(entityReferenceDTO.toByteString())
+                  .build());
   }
 }

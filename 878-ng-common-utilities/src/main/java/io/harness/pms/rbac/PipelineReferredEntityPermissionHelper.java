@@ -21,15 +21,17 @@ public class PipelineReferredEntityPermissionHelper {
   private final String PERMISSION_PLACE_HOLDER = "core_%s_%s";
 
   // Have created two set deliberately since environment group permission name does not contains underscore [_]
-  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName = Maps.of(EntityType.CONNECTORS,
-      NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS, EntityType.SERVICE, NGResourceType.SERVICE,
-      EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT, EntityType.FILES, NGResourceType.FILE,
-      EntityType.ENVIRONMENT_GROUP, "environmentgroup", EntityType.TEMPLATE, "template");
+  public final Map<EntityType, String> coreEntityTypeToPermissionEntityName =
+      Maps.of(EntityType.CONNECTORS, NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS,
+          EntityType.SERVICE, NGResourceType.SERVICE, EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,
+          EntityType.FILES, NGResourceType.FILE, EntityType.ENVIRONMENT_GROUP, "environmentgroup", EntityType.TEMPLATE,
+          "template", EntityType.PIPELINES, NGResourceType.PIPELINE);
 
-  public final Map<EntityType, String> coreEntityTypeToResourceTypeName = Maps.of(EntityType.CONNECTORS,
-      NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS, EntityType.SERVICE, NGResourceType.SERVICE,
-      EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT, EntityType.FILES, NGResourceType.FILE,
-      EntityType.ENVIRONMENT_GROUP, NGResourceType.ENVIRONMENT_GROUP, EntityType.TEMPLATE, "TEMPLATE");
+  public final Map<EntityType, String> coreEntityTypeToResourceTypeName =
+      Maps.of(EntityType.CONNECTORS, NGResourceType.CONNECTOR, EntityType.SECRETS, NGResourceType.SECRETS,
+          EntityType.SERVICE, NGResourceType.SERVICE, EntityType.ENVIRONMENT, NGResourceType.ENVIRONMENT,
+          EntityType.FILES, NGResourceType.FILE, EntityType.ENVIRONMENT_GROUP, NGResourceType.ENVIRONMENT_GROUP,
+          EntityType.TEMPLATE, "TEMPLATE", EntityType.PIPELINES, NGResourceType.PIPELINE);
 
   public String getPermissionForGivenType(EntityType entityType, boolean isNew) {
     String permission = "access";

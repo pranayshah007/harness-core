@@ -7,8 +7,8 @@
 
 package io.harness.resourcegroup;
 
-import static io.harness.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.RESOUCE_GROUP_SERVICE;
 import static io.harness.lock.DistributedLockImplementation.NOOP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 

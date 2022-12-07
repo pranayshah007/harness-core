@@ -490,7 +490,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         messageService.writeMessage(DELEGATE_STARTED);
         startInputCheck();
         log.info("[New] Waiting for go ahead from watcher");
-        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(DELEGATE_GO_AHEAD, TimeUnit.MINUTES.toMillis(5), false);
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
         messageService.removeData(DELEGATE_DASH + getProcessId(), DELEGATE_IS_NEW);

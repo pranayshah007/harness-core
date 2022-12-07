@@ -34,7 +34,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collection;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -87,7 +86,7 @@ public interface NGLdapResource {
                                      NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @POST
   @Path("settings/test/user")
@@ -105,7 +104,7 @@ public interface NGLdapResource {
                                NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @POST
   @Path("settings/test/group")
@@ -123,7 +122,7 @@ public interface NGLdapResource {
                                 NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @Valid LdapSettings settings);
+      String projectIdentifier, LdapSettings settings);
 
   @GET
   @Path("/{ldapId}/search/group")

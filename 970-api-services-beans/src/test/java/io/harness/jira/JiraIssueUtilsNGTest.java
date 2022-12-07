@@ -21,6 +21,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.JiraClientException;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
@@ -70,20 +71,20 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
 
     Map<String, Object> currFieldsTmp = new HashMap<>();
     assertThatThrownBy(()
-                           -> JiraIssueUtilsNG.updateFieldValues(
-                               currFieldsTmp, issueType.getFields(), ImmutableMap.of("Component/s", "ds"), true))
+                           -> JiraIssueUtilsNG.updateFieldValues(currFieldsTmp, issueType.getFields(),
+                               ImmutableMap.of("Component/s", "ds"), true, JiraDeploymentType.CLOUD))
         .isNotNull();
     assertThatThrownBy(()
-                           -> JiraIssueUtilsNG.updateFieldValues(
-                               currFieldsTmp, issueType.getFields(), ImmutableMap.of("number", "ds"), true))
+                           -> JiraIssueUtilsNG.updateFieldValues(currFieldsTmp, issueType.getFields(),
+                               ImmutableMap.of("number", "ds"), true, JiraDeploymentType.CLOUD))
         .isNotNull();
     assertThatThrownBy(()
-                           -> JiraIssueUtilsNG.updateFieldValues(
-                               currFieldsTmp, issueType.getFields(), ImmutableMap.of("Custom Date", "ds"), true))
+                           -> JiraIssueUtilsNG.updateFieldValues(currFieldsTmp, issueType.getFields(),
+                               ImmutableMap.of("Custom Date", "ds"), true, JiraDeploymentType.SERVER))
         .isNotNull();
     assertThatThrownBy(()
-                           -> JiraIssueUtilsNG.updateFieldValues(
-                               currFieldsTmp, issueType.getFields(), ImmutableMap.of("customtime", "ds"), true))
+                           -> JiraIssueUtilsNG.updateFieldValues(currFieldsTmp, issueType.getFields(),
+                               ImmutableMap.of("customtime", "ds"), true, JiraDeploymentType.CLOUD))
         .isNotNull();
 
     Map<String, String> fields = new HashMap<>();
@@ -106,7 +107,7 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     fields.put("Reporter", "userid");
 
     Map<String, Object> currFields = new HashMap<>();
-    JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true);
+    JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true, JiraDeploymentType.SERVER);
     assertThat(currFields.size()).isEqualTo(16);
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");
@@ -146,9 +147,11 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateFieldValuesEmptyCheck() {
     Map<String, Object> fields = new HashMap<>();
-    assertThatCode(() -> JiraIssueUtilsNG.updateFieldValues(fields, null, null, true)).doesNotThrowAnyException();
-    assertThatCode(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, Collections.emptyMap(), Collections.emptyMap(), true))
+    assertThatCode(() -> JiraIssueUtilsNG.updateFieldValues(fields, null, null, true, JiraDeploymentType.CLOUD))
+        .doesNotThrowAnyException();
+    assertThatCode(()
+                       -> JiraIssueUtilsNG.updateFieldValues(
+                           fields, Collections.emptyMap(), Collections.emptyMap(), true, JiraDeploymentType.SERVER))
         .doesNotThrowAnyException();
   }
 
@@ -159,37 +162,41 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     Map<String, Object> fields = new HashMap<>();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
-                           ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)), null, true))
+                           ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)), null, true,
+                           JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
                            ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)),
-                           ImmutableMap.of("n1", "abc"), true))
+                           ImmutableMap.of("n1", "abc"), true, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
                            ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)),
-                           ImmutableMap.of("n2", "abc"), true))
+                           ImmutableMap.of("n2", "abc"), true, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
                            ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)),
-                           ImmutableMap.of("n1", "abc", "n2", "abc"), true))
+                           ImmutableMap.of("n1", "abc", "n2", "abc"), true, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatThrownBy(()
                            -> JiraIssueUtilsNG.updateFieldValues(fields,
                                ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)),
-                               ImmutableMap.of("n1", "abc", "n3", "abc"), true))
+                               ImmutableMap.of("n1", "abc", "n3", "abc"), true, JiraDeploymentType.CLOUD))
         .isInstanceOf(JiraClientException.class);
     assertThatThrownBy(()
                            -> JiraIssueUtilsNG.updateFieldValues(fields,
                                ImmutableMap.of("n1", createOptionalField(1), "n2", createOptionalField(2)),
-                               ImmutableMap.of("n3", "abc"), true))
+                               ImmutableMap.of("n3", "abc"), true, JiraDeploymentType.CLOUD))
         .isInstanceOf(JiraClientException.class);
-    assertThatThrownBy(() -> JiraIssueUtilsNG.updateFieldValues(fields, null, ImmutableMap.of("n3", "abc"), true))
+    assertThatThrownBy(()
+                           -> JiraIssueUtilsNG.updateFieldValues(
+                               fields, null, ImmutableMap.of("n3", "abc"), true, JiraDeploymentType.CLOUD))
         .isInstanceOf(JiraClientException.class);
-    assertThatThrownBy(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, Collections.emptyMap(), ImmutableMap.of("n3", "abc"), true))
+    assertThatThrownBy(()
+                           -> JiraIssueUtilsNG.updateFieldValues(fields, Collections.emptyMap(),
+                               ImmutableMap.of("n3", "abc"), true, JiraDeploymentType.CLOUD))
         .isInstanceOf(JiraClientException.class);
   }
 
@@ -198,36 +205,40 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdateFieldValuesRequiredFieldsCheck() {
     Map<String, Object> fields = new HashMap<>();
-    assertThatCode(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createOptionalField(1)), null, true))
-        .doesNotThrowAnyException();
-    assertThatCode(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createOptionalField(1)), null, false))
-        .doesNotThrowAnyException();
-    assertThatThrownBy(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createRequiredField(1)), null, true))
-        .isInstanceOf(JiraClientException.class);
-    assertThatCode(
-        () -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createRequiredField(1)), null, false))
-        .doesNotThrowAnyException();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(
-                           fields, ImmutableMap.of("n1", createRequiredField(1)), ImmutableMap.of("n1", "abc"), true))
+                           fields, ImmutableMap.of("n1", createOptionalField(1)), null, true, JiraDeploymentType.CLOUD))
+        .doesNotThrowAnyException();
+    assertThatCode(()
+                       -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createOptionalField(1)),
+                           null, false, JiraDeploymentType.CLOUD))
+        .doesNotThrowAnyException();
+    assertThatThrownBy(()
+                           -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createRequiredField(1)),
+                               null, true, JiraDeploymentType.CLOUD))
+        .isInstanceOf(JiraClientException.class);
+    assertThatCode(()
+                       -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createRequiredField(1)),
+                           null, false, JiraDeploymentType.CLOUD))
+        .doesNotThrowAnyException();
+    assertThatCode(()
+                       -> JiraIssueUtilsNG.updateFieldValues(fields, ImmutableMap.of("n1", createRequiredField(1)),
+                           ImmutableMap.of("n1", "abc"), true, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
                            ImmutableMap.of("n1", createRequiredField(1), "n2", createOptionalField(2)),
-                           ImmutableMap.of("n1", "abc"), true))
+                           ImmutableMap.of("n1", "abc"), true, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
     assertThatThrownBy(()
                            -> JiraIssueUtilsNG.updateFieldValues(fields,
                                ImmutableMap.of("n1", createRequiredField(1), "n2", createOptionalField(2)),
-                               ImmutableMap.of("n2", "abc"), true))
+                               ImmutableMap.of("n2", "abc"), true, JiraDeploymentType.CLOUD))
         .isInstanceOf(JiraClientException.class);
     assertThatCode(()
                        -> JiraIssueUtilsNG.updateFieldValues(fields,
                            ImmutableMap.of("n1", createRequiredField(1), "n2", createOptionalField(2)),
-                           ImmutableMap.of("n2", "abc"), false))
+                           ImmutableMap.of("n2", "abc"), false, JiraDeploymentType.CLOUD))
         .doesNotThrowAnyException();
   }
 
@@ -280,7 +291,7 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     fields.put("customtime", "1664537411000");
 
     Map<String, Object> currFields = new HashMap<>();
-    JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true);
+    JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true, JiraDeploymentType.CLOUD);
     assertThat(currFields.size()).isEqualTo(3);
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");

@@ -146,6 +146,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String ACTION_STEP = "Action";
   public static final String BITRISE_STEP = "Bitrise";
+  public static final String CONTAINER_STEP = "Container";
 
   public static final String NG_FILE = "NgFile";
   public static final String QUEUE = "Lock";

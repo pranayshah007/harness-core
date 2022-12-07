@@ -3234,12 +3234,14 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private boolean alreadyRolledBack(WorkflowExecution workflowExecution) {
-    WorkflowExecution execution = wingsPersistence.createQuery(WorkflowExecution.class)
-                                      .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
-                                      .filter(WorkflowExecutionKeys.status, SUCCESS)
-                                      .filter(WorkflowExecutionKeys.onDemandRollback, true)
-                                      .filter("originalExecution.executionId", workflowExecution.getUuid())
-                                      .get();
+    WorkflowExecution execution =
+        wingsPersistence.createQuery(WorkflowExecution.class)
+            .filter(WorkflowExecutionKeys.accountId, workflowExecution.getAccountId())
+            .filter(WorkflowExecutionKeys.appId, workflowExecution.getAppId())
+            .filter(WorkflowExecutionKeys.status, SUCCESS)
+            .filter(WorkflowExecutionKeys.onDemandRollback, true)
+            .filter(WorkflowExecutionKeys.originalExecution_executionId, workflowExecution.getUuid())
+            .get();
     return execution != null;
   }
 

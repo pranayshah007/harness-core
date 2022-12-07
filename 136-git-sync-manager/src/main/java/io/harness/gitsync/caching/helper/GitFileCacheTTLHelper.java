@@ -10,8 +10,8 @@ package io.harness.gitsync.caching.helper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.caching.GitFileCacheTTL;
-import io.harness.gitsync.caching.entity.CacheDetails;
-import io.harness.gitsync.caching.entity.CacheDetails.CacheDetailsBuilder;
+import io.harness.gitsync.caching.beans.CacheDetails;
+import io.harness.gitsync.caching.beans.CacheDetails.CacheDetailsBuilder;
 
 import lombok.experimental.UtilityClass;
 

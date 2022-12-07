@@ -244,7 +244,7 @@ func TestEnqueue(t *testing.T) {
 				if tt.wantSAddErr {
 					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetErr(tt.mockErr)
 				} else if tt.wantErr {
-					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+					mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(int64(1))
 					mock.ExpectXAdd(&redis.XAddArgs{
 						Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 						ID:     "*",
@@ -252,12 +252,15 @@ func TestEnqueue(t *testing.T) {
 					}).SetErr(tt.mockErr)
 				}
 			} else {
-				mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(1)
+				mock.ExpectSAdd(utils.GetAllSubTopicsFromTopicKey(tt.args.req.Topic), tt.args.req.SubTopic).SetVal(int64(1))
 				mock.ExpectXAdd(&redis.XAddArgs{
 					Stream: utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
 					ID:     "*",
 					Values: []interface{}{"payload", tt.args.req.Payload, "producer", tt.args.req.ProducerName},
 				}).SetVal("item1")
+				mock.ExpectXGroupCreate(utils.GetSubTopicStreamQueueKey(tt.args.req.Topic, tt.args.req.SubTopic),
+					utils.GetConsumerGroupKeyForTopic(tt.args.req.ProducerName),
+					"0").SetVal("OK")
 			}
 			response, err := r.Enqueue(tt.args.ctx, tt.args.req)
 			if tt.wantSAddErr || tt.wantErr {

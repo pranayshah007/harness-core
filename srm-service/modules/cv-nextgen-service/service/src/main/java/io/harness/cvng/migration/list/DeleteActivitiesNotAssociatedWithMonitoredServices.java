@@ -11,6 +11,7 @@ import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.Activity.ActivityKeys;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.migration.beans.ChecklistItem;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
 
@@ -33,8 +34,9 @@ public class DeleteActivitiesNotAssociatedWithMonitoredServices extends CVNGBase
     Set<String> monitoredServiceSet =
         monitoredServiceList.stream()
             .map(monitoredService
-                -> getScopedInformation(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
-                    monitoredService.getProjectIdentifier(), monitoredService.getIdentifier()))
+                -> ScopedInformation.getScopedInformation(monitoredService.getAccountId(),
+                    monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier(),
+                    monitoredService.getIdentifier()))
             .collect(Collectors.toSet());
 
     Query<Activity> activityQuery = hPersistence.createQuery(Activity.class);
@@ -46,8 +48,9 @@ public class DeleteActivitiesNotAssociatedWithMonitoredServices extends CVNGBase
       while (iterator.hasNext()) {
         try {
           Activity activity = iterator.next();
-          if (!monitoredServiceSet.contains(getScopedInformation(activity.getAccountId(), activity.getOrgIdentifier(),
-                  activity.getProjectIdentifier(), activity.getMonitoredServiceIdentifier()))) {
+          if (!monitoredServiceSet.contains(
+                  ScopedInformation.getScopedInformation(activity.getAccountId(), activity.getOrgIdentifier(),
+                      activity.getProjectIdentifier(), activity.getMonitoredServiceIdentifier()))) {
             toBeDeletedActivitesUuid.add(activity.getUuid());
           }
           if (toBeDeletedActivitesUuid.size() >= limit) {
@@ -62,11 +65,6 @@ public class DeleteActivitiesNotAssociatedWithMonitoredServices extends CVNGBase
       hPersistence.deleteOnServer(
           hPersistence.createQuery(Activity.class).field(ActivityKeys.uuid).in(toBeDeletedActivitesUuid));
     }
-  }
-
-  private String getScopedInformation(
-      String accountId, String orgIdentifier, String projectIdentifier, String identifier) {
-    return accountId + '.' + orgIdentifier + '.' + projectIdentifier + '.' + identifier;
   }
 
   @Override

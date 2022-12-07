@@ -273,6 +273,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
           event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
+        GitopsClustersOutcome clustersOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         final Map<String, List<GitopsClustersOutcome.ClusterData>> clusterData = groupGitOpsClusters(optionalOutcome);
 
         final GitOpsExecutionSummary gitOpsExecutionSummary = new GitOpsExecutionSummary();
@@ -285,6 +286,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
             gitOpsExecutionSummary.addSingleEnvironment(data.getEnvId(), data.getEnvName());
           }
         });
+        populateGitOpsClusters(clustersOutcome, gitOpsExecutionSummary);
         cdStageModuleInfoBuilder.gitopsExecutionSummary(gitOpsExecutionSummary);
 
         // to maintain backward compatibility, will be removed in future
@@ -308,6 +310,23 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
       }
     }
     return cdStageModuleInfoBuilder.build();
+  }
+
+  private void populateGitOpsClusters(
+      GitopsClustersOutcome clustersOutcome, GitOpsExecutionSummary gitOpsExecutionSummary) {
+    List<GitOpsExecutionSummary.Cluster> clusters = clustersOutcome.getClustersData()
+                                                        .stream()
+                                                        .map(clustersDatum
+                                                            -> GitOpsExecutionSummary.Cluster.builder()
+                                                                   .clusterId(clustersDatum.getClusterId())
+                                                                   .clusterName(clustersDatum.getClusterName())
+                                                                   .envName(clustersDatum.getEnvName())
+                                                                   .envGroupName(clustersDatum.getEnvGroupName())
+                                                                   .envGroupId(clustersDatum.getEnvGroupId())
+                                                                   .envId(clustersDatum.getEnvId())
+                                                                   .build())
+                                                        .collect(Collectors.toList());
+    gitOpsExecutionSummary.setClusters(clusters);
   }
 
   private boolean isFetchLinkedAppsNodeAndCompleted(StepType stepType, Status status) {

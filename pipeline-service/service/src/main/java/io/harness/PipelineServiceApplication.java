@@ -7,10 +7,10 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.PipelineServiceConfiguration.HARNESS_RESOURCE_CLASSES;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
@@ -22,6 +22,7 @@ import static com.google.common.collect.ImmutableMap.of;
 
 import io.harness.accesscontrol.NGAccessDeniedExceptionMapper;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.cache.CacheModule;
 import io.harness.configuration.DeployVariant;
 import io.harness.consumers.GraphUpdateRedisConsumer;
@@ -97,6 +98,7 @@ import io.harness.pms.approval.ApprovalInstanceHandler;
 import io.harness.pms.async.plan.PlanNotifyEventPublisher;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.event.PMSEventConsumerService;
+import io.harness.pms.event.overviewLandingPage.PipelineExecutionSummaryRedisEventConsumer;
 import io.harness.pms.event.pollingevent.PollingEventStreamConsumer;
 import io.harness.pms.event.webhookevent.WebhookEventStreamConsumer;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -696,6 +698,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
         pipelineServiceConsumersConfig.getSdkResponse().getThreads());
     pipelineEventConsumerController.register(injector.getInstance(GraphUpdateRedisConsumer.class),
         pipelineServiceConsumersConfig.getGraphUpdate().getThreads());
+    pipelineEventConsumerController.register(injector.getInstance(PipelineExecutionSummaryRedisEventConsumer.class),
+        pipelineServiceConsumersConfig.getPipelineExecutionEvent().getThreads());
     //    pipelineEventConsumerController.register(injector.getInstance(PartialPlanResponseRedisConsumer.class),
     //        pipelineServiceConsumersConfig.getPartialPlanResponse().getThreads());
     //    pipelineEventConsumerController.register(injector.getInstance(CreatePartialPlanRedisConsumer.class),

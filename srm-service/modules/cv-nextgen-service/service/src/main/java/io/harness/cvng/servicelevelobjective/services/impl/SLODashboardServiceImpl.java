@@ -198,16 +198,15 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                                                 .build());
 
     TimeRangeParams filter = null;
-    if (Objects.nonNull(startTime) && Objects.nonNull(endTime)) {
-      filter = TimeRangeParams.builder()
-                   .startTime(Instant.ofEpochMilli(startTime))
-                   .endTime(Instant.ofEpochMilli(endTime))
-                   .build();
+    Instant compositeSloStartedAtTime = Instant.ofEpochMilli(compositeServiceLevelObjective.getStartedAt());
+    Instant startTimeForCurrentRange = Instant.ofEpochMilli(startTime);
+    Instant endTimeForCurrentRange = Instant.ofEpochMilli(endTime);
+    startTimeForCurrentRange = (startTimeForCurrentRange.isAfter(compositeSloStartedAtTime))
+        ? startTimeForCurrentRange
+        : compositeSloStartedAtTime;
+    if (Objects.nonNull(startTimeForCurrentRange) && Objects.nonNull(endTimeForCurrentRange)) {
+      filter = TimeRangeParams.builder().startTime(startTimeForCurrentRange).endTime(endTimeForCurrentRange).build();
     }
-    LocalDateTime currentLocalDate =
-        LocalDateTime.ofInstant(clock.instant(), compositeServiceLevelObjective.getZoneOffset());
-    TimePeriod timePeriod = compositeServiceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
 
     AbstractServiceLevelObjective serviceLevelObjective =
         serviceLevelObjectiveV2Service.getEntity(ProjectParams.builder()
@@ -217,7 +216,7 @@ public class SLODashboardServiceImpl implements SLODashboardService {
                                                      .build(),
             sloDetail.getSloIdentifier());
     SLODashboardWidget.SLOGraphData sloGraphData = graphDataService.getGraphData(serviceLevelObjective,
-        Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime), sloDetail.getTotalErrorBudget(), filter);
+        startTimeForCurrentRange, endTimeForCurrentRange, sloDetail.getTotalErrorBudget(), filter);
 
     return SLOConsumptionBreakdown.builder()
         .sloIdentifier(sloDetail.getSloIdentifier())

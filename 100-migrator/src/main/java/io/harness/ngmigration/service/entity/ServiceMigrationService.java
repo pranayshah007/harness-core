@@ -259,7 +259,7 @@ public class ServiceMigrationService extends NgMigrationService {
             .filter(configFile -> configFile.getEntityType() == EntityType.SERVICE)
             .filter(ConfigFile::isTargetToAllEnv)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), service.getUuid()))
-            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getEntityId()).build())
+            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
     List<ManifestConfigWrapper> manifestConfigWrapperList =
         manifestMigrationService.getManifests(manifests, inputDTO, entities, migratedEntities);

@@ -7,15 +7,15 @@
 
 package io.harness.ng;
 
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInterMsvcRequests;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassInternalApi;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPaths;
 import static io.harness.accesscontrol.filter.NGScopeAccessCheckFilter.bypassPublicApi;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.ng.NextGenConfiguration.HARNESS_RESOURCE_CLASSES;
