@@ -956,7 +956,21 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         + "users:\n"
         + "- name: CLUSTER_USER\n"
         + "  user:\n"
-        + "    token: TOKEN\n";
+        + "    token: TOKEN\n"
+        + "    exec:\n"
+        + "         apiVersion: client.authentication.k8s.io/v1beta1\n"
+        + "         args:\n"
+        + "           - --server-id\n"
+        + "           - APISERVER_ID\n"
+        + "           - --client-id\n"
+        + "           - CLIENT_ID\n"
+        + "           - --environment\n"
+        + "           - ENVIRONMENT\n"
+        + "           - --tenant-id\n"
+        + "           - TENANT_ID\n"
+        + "         command: true\n"
+        + "         env: null\n"
+        + "         provideClusterInfo: false\n";
 
     KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()
                                                       .clusterName("CLUSTER_NAME")

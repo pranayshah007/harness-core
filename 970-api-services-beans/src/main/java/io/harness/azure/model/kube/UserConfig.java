@@ -10,6 +10,7 @@ package io.harness.azure.model.kube;
 import static io.harness.azure.model.AzureConstants.KUBECFG_AUTH_PROVIDER;
 import static io.harness.azure.model.AzureConstants.KUBECFG_CLIENT_CERTIFICATE_DATA;
 import static io.harness.azure.model.AzureConstants.KUBECFG_CLIENT_KEY_DATA;
+import static io.harness.azure.model.AzureConstants.KUBECFG_EXEC;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,4 +28,5 @@ public class UserConfig {
   @JsonProperty(KUBECFG_CLIENT_CERTIFICATE_DATA) private String clientCertificateData;
   @JsonProperty(KUBECFG_CLIENT_KEY_DATA) private String clientKeyData;
   @JsonProperty(KUBECFG_AUTH_PROVIDER) private AuthProvider authProvider;
+  @JsonProperty(KUBECFG_EXEC) private Exec exec;
 }

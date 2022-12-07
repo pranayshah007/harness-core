@@ -10,6 +10,10 @@ package software.wings.delegatetasks.azure;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
+import static io.harness.azure.model.AzureConstants.ENV;
+import static io.harness.azure.model.AzureConstants.KUBECFG_CLIENT_ID;
+import static io.harness.azure.model.AzureConstants.KUBECFG_TENANT_ID;
+import static io.harness.azure.model.AzureConstants.SERVER_ID;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -544,9 +548,10 @@ public class AzureAsyncTaskHelper {
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
 
+      extractConfigFromArgs(azureKubeConfig);
       verifyAzureKubeConfig(azureKubeConfig);
 
-      if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+      if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
         azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, azureKubeConfig));
       }
 
@@ -559,8 +564,7 @@ public class AzureAsyncTaskHelper {
   }
 
   private String fetchAksAADToken(AzureConfig azureConfig, AzureKubeConfig azureKubeConfig) {
-    StringBuilder scope =
-        new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId());
+    StringBuilder scope = new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId());
 
     if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
         || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
@@ -605,7 +609,7 @@ public class AzureAsyncTaskHelper {
       throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
     }
 
-    if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+    if (azureKubeConfig.getUsers().get(0).getUser().getExec() != null) {
       if (isEmpty(azureKubeConfig.getClusters().get(0).getName())) {
         throw new AzureAKSException("Cluster name was not found in the kube config content!!!");
       }
@@ -614,28 +618,40 @@ public class AzureAsyncTaskHelper {
         throw new AzureAKSException("Current context was not found in the kube config content!!!");
       }
 
-      if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig() == null) {
-        throw new AzureAKSException("AuthProvider was not found in the kube config content!!!");
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getApiVersion())) {
+        throw new AzureAKSException("API Version was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())) {
-        throw new AzureAKSException("ApiServerId was not found in the kube config content!!!");
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getCommand())) {
+        throw new AzureAKSException("Command was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())) {
-        throw new AzureAKSException("ClientId was not found in the kube config content!!!");
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs())) {
+        throw new AzureAKSException("Args was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())) {
-        throw new AzureAKSException("ConfigMode was not found in the kube config content!!!");
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getInteractiveMode())) {
+        throw new AzureAKSException("Interactive Mode was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())) {
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getProvideClusterInfo())) {
+        throw new AzureAKSException("Provide Cluster Info was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getTenantId())) {
         throw new AzureAKSException("TenantId was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment())) {
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getEnvironment())) {
         throw new AzureAKSException("Environment was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getClientId())) {
+        throw new AzureAKSException("Client Id was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId())) {
+        throw new AzureAKSException("Server Id was not found in the kube config content!!!");
       }
     } else {
       if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData())) {
@@ -657,11 +673,10 @@ public class AzureAsyncTaskHelper {
               .clusterName(azureKubeConfig.getClusters().get(0).getName())
               .clusterUser(azureKubeConfig.getUsers().get(0).getName())
               .currentContext(azureKubeConfig.getCurrentContext())
-              .apiServerId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())
-              .clientId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())
-              .configMode(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())
-              .tenantId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())
-              .environment(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment())
+              .apiServerId(azureKubeConfig.getUsers().get(0).getUser().getExec().getServerId())
+              .clientId(azureKubeConfig.getUsers().get(0).getUser().getExec().getClientId())
+              .tenantId(azureKubeConfig.getUsers().get(0).getUser().getExec().getTenantId())
+              .environment(azureKubeConfig.getUsers().get(0).getUser().getExec().getEnvironment())
               .aadIdToken(azureKubeConfig.getAadToken())
               .build();
       return KubernetesConfig.builder()
@@ -773,5 +788,33 @@ public class AzureAsyncTaskHelper {
             .build();
     log.info(format("Retrieved %d locations", azureLocationsResponse.getLocations().size()));
     return azureLocationsResponse;
+  }
+
+  private void extractConfigFromArgs(AzureKubeConfig azureKubeConfig) {
+    if (azureKubeConfig.getUsers().get(0).getUser() != null
+        && isNotEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs())) {
+      String args = azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs();
+      if (args.indexOf(SERVER_ID) >= 0) {
+        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(extractTheFieldValue(args, SERVER_ID));
+      }
+      if (args.indexOf(KUBECFG_CLIENT_ID) >= 0) {
+        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(
+            extractTheFieldValue(args, KUBECFG_CLIENT_ID));
+      }
+      if (args.indexOf(ENV) >= 0) {
+        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(extractTheFieldValue(args, ENV));
+      }
+      if (args.indexOf(KUBECFG_TENANT_ID) >= 0) {
+        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(
+            extractTheFieldValue(args, KUBECFG_TENANT_ID));
+      }
+    }
+  }
+
+  private String extractTheFieldValue(String args, String target) {
+    int index = args.indexOf(target) + target.length();
+    int startIndex = args.indexOf("-", index) + 2;
+    int endIndex = args.indexOf("\n", startIndex) + 1;
+    return args.substring(startIndex, endIndex);
   }
 }
