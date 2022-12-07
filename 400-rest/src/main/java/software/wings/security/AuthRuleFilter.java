@@ -497,6 +497,8 @@ public class AuthRuleFilter implements ContainerRequestFilter {
                 fieldName = "workflowId";
               } else if (permissionType == PermissionType.APP_TEMPLATE) {
                 fieldName = "templateId";
+              } else if (permissionType == PermissionType.APP) {
+                fieldName = "appId";
               }
 
               return fieldName;

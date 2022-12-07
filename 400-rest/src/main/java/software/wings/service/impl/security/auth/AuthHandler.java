@@ -25,6 +25,7 @@ import static software.wings.security.EnvFilter.FilterType.PROD;
 import static software.wings.security.GenericEntityFilter.FilterType.SELECTED;
 import static software.wings.security.PermissionAttribute.PermissionType.ACCOUNT_MANAGEMENT;
 import static software.wings.security.PermissionAttribute.PermissionType.ALL_APP_ENTITIES;
+import static software.wings.security.PermissionAttribute.PermissionType.APP;
 import static software.wings.security.PermissionAttribute.PermissionType.APP_TEMPLATE;
 import static software.wings.security.PermissionAttribute.PermissionType.AUDIT_VIEWER;
 import static software.wings.security.PermissionAttribute.PermissionType.CE_ADMIN;
@@ -77,6 +78,7 @@ import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Account;
 import software.wings.beans.ApiKeyEntry;
+import software.wings.beans.Application;
 import software.wings.beans.Base;
 import software.wings.beans.Environment;
 import software.wings.beans.HttpMethod;
@@ -1210,6 +1212,8 @@ public class AuthHandler {
                 className = WorkflowExecution.class.getName();
               } else if (permissionType == APP_TEMPLATE) {
                 className = Template.class.getName();
+              } else if (permissionType == APP) {
+                className = Application.class.getName();
               } else {
                 throw new InvalidRequestException("Invalid permission type: " + permissionType);
               }

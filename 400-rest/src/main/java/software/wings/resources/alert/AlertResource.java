@@ -8,6 +8,9 @@
 package software.wings.resources.alert;
 
 import static software.wings.beans.alert.AlertType.CONTINUOUS_VERIFICATION_ALERT;
+import static software.wings.security.PermissionAttribute.PermissionType.APP;
+import static software.wings.security.PermissionAttribute.PermissionType.WORKFLOW;
+import static software.wings.security.PermissionAttribute.ResourceType.APPLICATION;
 import static software.wings.security.PermissionAttribute.ResourceType.ROLE;
 
 import static java.util.stream.Collectors.toList;
@@ -22,6 +25,7 @@ import io.harness.security.annotations.LearningEngineAuth;
 import software.wings.beans.alert.Alert;
 import software.wings.beans.alert.Alert.AlertKeys;
 import software.wings.beans.alert.cv.ContinuousVerificationAlertData;
+import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
 import software.wings.service.impl.analysis.ContinuousVerificationService;
 import software.wings.service.intfc.AlertService;
@@ -47,7 +51,7 @@ import retrofit2.http.Body;
 @Api("alerts")
 @Path("/alerts")
 @Produces("application/json")
-@Scope(ROLE)
+@Scope(APPLICATION)
 public class AlertResource {
   @Inject private AlertService alertService;
   @Inject private AlertVisibilityChecker alertVisibilityChecker;
