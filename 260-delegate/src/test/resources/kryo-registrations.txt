@@ -2352,6 +2352,9 @@
 573565:io.harness.delegate.task.ecs.EcsS3FetchFileConfig
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
+573568:io.harness.delegate.task.ecs.request.AsgCanaryDeleteRequest
+573569:io.harness.delegate.task.ecs.response.AsgCanaryDeleteResponse
+573570:io.harness.delegate.beans.ecs.AsgCanaryDeleteResult
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
