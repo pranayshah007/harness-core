@@ -140,7 +140,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     Set<Environment> environments =
         getEnvironmentInfraFilterHelper().applyFiltersOnEnvs(listOfEnvironment, Arrays.asList(filterYaml));
-    assertThat(environments.size()).isEqualTo(1);
+    assertThat(environments.size()).isEqualTo(2);
   }
 
   @Test
@@ -208,7 +208,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
     Set<InfrastructureEntity> filteredEnv =
         getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
-    assertThat(filteredEnv.size()).isEqualTo(1);
+    assertThat(filteredEnv.size()).isEqualTo(2);
   }
 
   @Test

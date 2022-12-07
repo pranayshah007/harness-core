@@ -89,9 +89,7 @@ public class EnvironmentInfraFilterHelper {
         count++;
       }
     }
-
-    // Not counting the uuid tag
-    return count != 0 && count == entityTags.size();
+    return count != 0 && count == tagsInFilter.size();
   }
 
   public boolean areAnyTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
