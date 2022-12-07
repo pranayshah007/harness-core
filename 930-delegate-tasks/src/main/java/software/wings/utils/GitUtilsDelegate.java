@@ -67,7 +67,8 @@ public class GitUtilsDelegate {
   }
 
   public String resolveS3BucketAbsoluteFilePath(AmazonS3URI s3URI) {
-    return Paths.get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(), s3URI.getBucket(), s3URI.getKey())
+    return Paths
+        .get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(), s3URI.getBucket(), s3URI.getKey(), s3URI.getKey())
         .toString();
   }
 

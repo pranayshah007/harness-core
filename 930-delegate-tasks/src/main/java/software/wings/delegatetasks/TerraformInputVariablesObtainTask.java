@@ -9,6 +9,7 @@ package software.wings.delegatetasks;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.provision.TerraformConstants.USER_DIR_KEY;
 
 import static java.lang.String.format;
 
@@ -46,6 +47,7 @@ import software.wings.utils.GitUtilsDelegate;
 import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.inject.Inject;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -94,8 +96,8 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
           encryptionService.decrypt(
               parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
 
-          awsS3HelperServiceDelegate.downloadS3Directory(
-              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(absoluteModulePath));
+          awsS3HelperServiceDelegate.downloadS3Directory(parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(),
+              new File(Paths.get(System.getProperty(USER_DIR_KEY)).toString()));
 
         } catch (Exception ex) {
           return TerraformInputVariablesTaskResponse.builder()
