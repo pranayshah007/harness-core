@@ -228,6 +228,15 @@ public class CfCommandTaskHelperNG {
       restoreRoutesForOldApplication(cfRollbackCommandRequestNG, cfRequestConfig, executionLogCallback);
     }
 
+    public void upsizeListOfInstances(LogCallback executionLogCallback,
+                                                      CfDeploymentManager cfDeploymentManager, List<CfServiceData> cfServiceDataUpdated,
+                                                      CfRequestConfig cfRequestConfig, List<CfServiceData> upsizeList,
+                                                      List<CfInternalInstanceElement> cfInstanceElements, CfRollbackCommandRequestNG cfRollbackCommandRequestNG)
+            throws PivotalClientApiException {
+        pcfCommandTaskBaseHelper.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
+                cfRequestConfig, upsizeList, cfInstanceElements);
+    }
+
     public List<String> getAppNameBasedOnGuid(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
         throws PivotalClientApiException {
       List<ApplicationSummary> previousReleases =
@@ -236,6 +245,43 @@ public class CfCommandTaskHelperNG {
           .filter(app -> app.getId().equalsIgnoreCase(appGuid))
           .map(ApplicationSummary::getName)
           .collect(toList());
+    }
+
+    public List<String> getAppNameBasedOnGuidForBlueGreenDeployment(CfRequestConfig cfRequestConfig, String cfAppNamePrefix, String appGuid)
+            throws PivotalClientApiException {
+        List<ApplicationSummary> previousReleases =
+                cfDeploymentManager.getPreviousReleases(cfRequestConfig, cfAppNamePrefix);
+        return previousReleases.stream()
+                .filter(app -> app.getId().equalsIgnoreCase(appGuid))
+                .map(ApplicationSummary::getName)
+                .collect(toList());
+    }
+
+    public void downSizeListOfInstances(LogCallback executionLogCallback,
+                                                      List<CfServiceData> cfServiceDataUpdated, CfRequestConfig cfRequestConfig, List<CfServiceData> downSizeList,
+                                                      CfRollbackCommandRequestNG cfRollbackCommandRequestNG, CfAppAutoscalarRequestData autoscalarRequestData)
+            throws PivotalClientApiException {
+        executionLogCallback.saveExecutionLog("\n");
+        for (CfServiceData cfServiceData : downSizeList) {
+            executionLogCallback.saveExecutionLog(color("# Downsizing application:", White, Bold));
+            executionLogCallback.saveExecutionLog(CFLogCallbackFormatter.formatAppInstancesState(
+                    cfServiceData.getName(), cfServiceData.getPreviousCount(), cfServiceData.getDesiredCount()));
+
+            cfRequestConfig.setApplicationName(cfServiceData.getName());
+            cfRequestConfig.setDesiredCount(cfServiceData.getDesiredCount());
+
+            if (cfRollbackCommandRequestNG.isUseAppAutoscalar()) {
+                ApplicationDetail applicationDetail = cfDeploymentManager.getApplicationByName(cfRequestConfig);
+                autoscalarRequestData.setApplicationName(applicationDetail.getName());
+                autoscalarRequestData.setApplicationGuid(applicationDetail.getId());
+                autoscalarRequestData.setExpectedEnabled(true);
+                pcfCommandTaskBaseHelper.disableAutoscalarSafe(autoscalarRequestData, executionLogCallback);
+            }
+
+            downSize(cfServiceData, executionLogCallback, cfRequestConfig, cfDeploymentManager);
+
+            cfServiceDataUpdated.add(cfServiceData);
+        }
     }
 
     public void downSizeListOfInstancesAndUnmapRoutes(LogCallback executionLogCallback,
