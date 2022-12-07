@@ -16,7 +16,7 @@ ARG TARGETARCH
 
 RUN ./client_tools.sh false $TARGETARCH && chmod -R 755 /opt/harness-delegate
 
-ENV PATH="/opt/harness-delegate/client-tools/kubectl/:${PATH}"
+ENV PATH="/opt/harness-delegate/client-tools/kubectl/v1.19.2/:${PATH}"
 
 COPY --from=adoptopenjdk/openjdk11:jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
 
