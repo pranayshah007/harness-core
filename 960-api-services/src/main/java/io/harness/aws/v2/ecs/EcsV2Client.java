@@ -29,9 +29,15 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.ListServicesRequest;
 import software.amazon.awssdk.services.ecs.model.ListServicesResponse;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionFamiliesRequest;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionFamiliesResponse;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionsRequest;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionsResponse;
 import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
@@ -57,6 +63,15 @@ public interface EcsV2Client {
 
   RegisterTaskDefinitionResponse createTask(
       AwsInternalConfig awsConfig, RegisterTaskDefinitionRequest registerTaskDefinitionRequest, String region);
+
+  ListTaskDefinitionFamiliesResponse listTaskDefinitionFamilies(
+      AwsInternalConfig awsConfig, ListTaskDefinitionFamiliesRequest listTaskDefinitionFamiliesRequest, String region);
+
+  ListTaskDefinitionsResponse listTaskDefinitions(
+      AwsInternalConfig awsConfig, ListTaskDefinitionsRequest listTaskDefinitionsRequest, String region);
+
+  DescribeTaskDefinitionResponse describeTaskDefinition(
+      AwsInternalConfig awsConfig, DescribeTaskDefinitionRequest describeTaskDefinitionRequest, String region);
 
   WaiterResponse<DescribeServicesResponse> ecsServiceInactiveStateCheck(AwsInternalConfig awsConfig,
       DescribeServicesRequest describeServicesRequest, String region, int serviceInactiveStateTimeout);

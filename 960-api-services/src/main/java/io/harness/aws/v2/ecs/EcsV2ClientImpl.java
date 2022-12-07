@@ -56,11 +56,17 @@ import software.amazon.awssdk.services.ecs.model.DeleteServiceRequest;
 import software.amazon.awssdk.services.ecs.model.DeleteServiceResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeServicesResponse;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionRequest;
+import software.amazon.awssdk.services.ecs.model.DescribeTaskDefinitionResponse;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksRequest;
 import software.amazon.awssdk.services.ecs.model.DescribeTasksResponse;
 import software.amazon.awssdk.services.ecs.model.EcsException;
 import software.amazon.awssdk.services.ecs.model.ListServicesRequest;
 import software.amazon.awssdk.services.ecs.model.ListServicesResponse;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionFamiliesRequest;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionFamiliesResponse;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionsRequest;
+import software.amazon.awssdk.services.ecs.model.ListTaskDefinitionsResponse;
 import software.amazon.awssdk.services.ecs.model.ListTasksRequest;
 import software.amazon.awssdk.services.ecs.model.ListTasksResponse;
 import software.amazon.awssdk.services.ecs.model.RegisterTaskDefinitionRequest;
@@ -131,6 +137,45 @@ public class EcsV2ClientImpl extends AwsClientHelper implements EcsV2Client {
       super.handleException(exception);
     }
     return RegisterTaskDefinitionResponse.builder().build();
+  }
+
+  @Override
+  public ListTaskDefinitionFamiliesResponse listTaskDefinitionFamilies(
+      AwsInternalConfig awsConfig, ListTaskDefinitionFamiliesRequest listTaskDefinitionFamiliesRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.listTaskDefinitionFamilies(listTaskDefinitionFamiliesRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return ListTaskDefinitionFamiliesResponse.builder().build();
+  }
+
+  @Override
+  public ListTaskDefinitionsResponse listTaskDefinitions(
+      AwsInternalConfig awsConfig, ListTaskDefinitionsRequest listTaskDefinitionsRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.listTaskDefinitions(listTaskDefinitionsRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return ListTaskDefinitionsResponse.builder().build();
+  }
+
+  @Override
+  public DescribeTaskDefinitionResponse describeTaskDefinition(
+      AwsInternalConfig awsConfig, DescribeTaskDefinitionRequest describeTaskDefinitionRequest, String region) {
+    try (EcsClient ecsClient = (EcsClient) getClient(awsConfig, region)) {
+      super.logCall(client(), Thread.currentThread().getStackTrace()[1].getMethodName());
+      return ecsClient.describeTaskDefinition(describeTaskDefinitionRequest);
+    } catch (Exception exception) {
+      super.logError(client(), Thread.currentThread().getStackTrace()[1].getMethodName(), exception.getMessage());
+      super.handleException(exception);
+    }
+    return DescribeTaskDefinitionResponse.builder().build();
   }
 
   @Override
