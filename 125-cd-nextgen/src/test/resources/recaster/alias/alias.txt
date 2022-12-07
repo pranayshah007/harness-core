@@ -616,3 +616,6 @@ io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
 io.harness.cdng.infra.beans.AsgInfraMapping
 io.harness.cdng.infra.beans.AsgInfrastructureOutcome
 io.harness.cdng.infra.yaml.AsgInfrastructure
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode
