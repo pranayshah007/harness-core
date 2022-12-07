@@ -2004,7 +2004,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(TerragruntPlanTaskParameters.class, 573555);
     kryo.register(AbstractTerragruntTaskResponse.class, 573556);
     kryo.register(TerragruntPlanTaskResponse.class, 573557);
-    kryo.register(TerraformSourceType.class, 573558);
 
     kryo.register(TerragruntDestroyTaskResponse.class, 573559);
     kryo.register(TerragruntRollbackTaskResponse.class, 573560);

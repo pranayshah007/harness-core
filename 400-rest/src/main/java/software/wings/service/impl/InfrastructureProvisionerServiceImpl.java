@@ -868,11 +868,8 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
           ErrorCode.INVALID_TERRAFORM_TARGETS_REQUEST, USER);
     }
 
-    SettingAttribute settingAttribute = settingService.get(terraformInfrastructureProvisioner.getSourceRepoSettingId());
-    if (settingAttribute == null || !(settingAttribute.getValue() instanceof GitConfig)) {
-      throw new InvalidRequestException("Invalid Git Repo");
-    }
     GitConfig gitConfig = null;
+    SettingAttribute settingAttribute = null;
 
     AwsConfig awsS3SourceBucketConfig = null;
     List<EncryptedDataDetail> awsS3EncryptionDetails = null;
@@ -881,6 +878,10 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       awsS3SourceBucketConfig = getAWSS3SourceConfig(terraformInfrastructureProvisioner.getAwsConfigId());
       awsS3EncryptionDetails = getAwsS3EncryptionDetails(awsS3SourceBucketConfig, appId);
     } else {
+      settingAttribute = settingService.get(terraformInfrastructureProvisioner.getSourceRepoSettingId());
+      if (settingAttribute == null || !(settingAttribute.getValue() instanceof GitConfig)) {
+        throw new InvalidRequestException("Invalid Git Repo");
+      }
       gitConfig = (GitConfig) settingAttribute.getValue();
       gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
       gitConfigHelperService.convertToRepoGitConfig(gitConfig, terraformInfrastructureProvisioner.getRepoName());
@@ -896,14 +897,17 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
                     .taskType(TaskType.TERRAFORM_FETCH_TARGETS_TASK.name())
                     .parameters(new Object[] {
                         TerraformProvisionParameters.builder()
-                            .sourceRepoSettingId(settingAttribute.getUuid())
+                            .sourceRepoSettingId(settingAttribute != null ? settingAttribute.getUuid() : null)
                             .useTfConfigInspectLatestVersion(
                                 featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
                             .sourceRepo(gitConfig)
                             .sourceRepoBranch(terraformInfrastructureProvisioner.getSourceRepoBranch())
                             .commitId(terraformInfrastructureProvisioner.getCommitId())
-                            .scriptPath(normalizeScriptPath(terraformInfrastructureProvisioner.getPath()))
-                            .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
+                            .scriptPath(terraformInfrastructureProvisioner.getPath() != null
+                                    ? normalizeScriptPath(terraformInfrastructureProvisioner.getPath())
+                                    : null)
+                            .sourceRepoEncryptionDetails(
+                                gitConfig != null ? secretManager.getEncryptionDetails(gitConfig, appId, null) : null)
                             .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
                             .sourceType(terraformInfrastructureProvisioner.getSourceType())
                             .s3URI(terraformInfrastructureProvisioner.getS3URI())
