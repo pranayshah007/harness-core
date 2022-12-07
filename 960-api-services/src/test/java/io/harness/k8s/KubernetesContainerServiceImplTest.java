@@ -938,59 +938,59 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetConfigFileForAzure() {
     String expected = "apiVersion: v1\n"
-            + "clusters:\n"
-            + "- cluster:\n"
-            + "    server: masterUrl\n"
-            + "    \n"
-            + "    certificate-authority-data: caCert\n"
-            + "  name: CLUSTER_NAME\n"
-            + "contexts:\n"
-            + "- context:\n"
-            + "    cluster: CLUSTER_NAME\n"
-            + "    user: CLUSTER_USER\n"
-            + "    namespace: namespace\n"
-            + "  name: CURRENT_CONTEXT\n"
-            + "current-context: CURRENT_CONTEXT\n"
-            + "kind: Config\n"
-            + "preferences: {}\n"
-            + "users:\n"
-            + "- name: CLUSTER_USER\n"
-            + "  user:\n"
-            + "     exec:\n"
-            + "         apiVersion: client.authentication.k8s.io/v1\n"
-            + "         args:\n"
-            + "           - get-token\n"
-            + "           - --server-id\n"
-            + "           - APISERVER_ID\n"
-            + "           - --client-id\n"
-            + "           - CLIENT_ID\n"
-            + "           - --environment\n"
-            + "           - ENVIRONMENT\n"
-            + "           - --tenant-id\n"
-            + "           - TENANT_ID\n"
-            + "           - --login\n"
-            + "           - azurecli\n"
-            + "         command: kubelogin\n"
-            + "         env: null\n"
-            + "         provideClusterInfo: true\n";
+        + "clusters:\n"
+        + "- cluster:\n"
+        + "    server: masterUrl\n"
+        + "    \n"
+        + "    certificate-authority-data: caCert\n"
+        + "  name: CLUSTER_NAME\n"
+        + "contexts:\n"
+        + "- context:\n"
+        + "    cluster: CLUSTER_NAME\n"
+        + "    user: CLUSTER_USER\n"
+        + "    namespace: namespace\n"
+        + "  name: CURRENT_CONTEXT\n"
+        + "current-context: CURRENT_CONTEXT\n"
+        + "kind: Config\n"
+        + "preferences: {}\n"
+        + "users:\n"
+        + "- name: CLUSTER_USER\n"
+        + "  user:\n"
+        + "     exec:\n"
+        + "         apiVersion: client.authentication.k8s.io/v1\n"
+        + "         args:\n"
+        + "           - get-token\n"
+        + "           - --server-id\n"
+        + "           - APISERVER_ID\n"
+        + "           - --client-id\n"
+        + "           - CLIENT_ID\n"
+        + "           - --environment\n"
+        + "           - ENVIRONMENT\n"
+        + "           - --tenant-id\n"
+        + "           - TENANT_ID\n"
+        + "           - --login\n"
+        + "           - azurecli\n"
+        + "         command: kubelogin\n"
+        + "         env: null\n"
+        + "         provideClusterInfo: true\n";
 
     KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()
-                                                                       .clusterName("CLUSTER_NAME")
-                                                                       .currentContext("CURRENT_CONTEXT")
-                                                                       .clusterUser("CLUSTER_USER")
-                                                                       .environment("ENVIRONMENT")
-                                                                       .tenantId("TENANT_ID")
-                                                                       .apiServerId("APISERVER_ID")
-                                                                       .clientId("CLIENT_ID")
-                                                                       .build();
+                                                      .clusterName("CLUSTER_NAME")
+                                                      .currentContext("CURRENT_CONTEXT")
+                                                      .clusterUser("CLUSTER_USER")
+                                                      .environment("ENVIRONMENT")
+                                                      .tenantId("TENANT_ID")
+                                                      .apiServerId("APISERVER_ID")
+                                                      .clientId("CLIENT_ID")
+                                                      .build();
 
     KubernetesConfig kubeConfig = KubernetesConfig.builder()
-            .authType(AZURE_OAUTH)
-            .namespace("namespace")
-            .masterUrl("masterUrl")
-            .caCert("caCert".toCharArray())
-            .azureConfig(kubernetesAzureConfig)
-            .build();
+                                      .authType(AZURE_OAUTH)
+                                      .namespace("namespace")
+                                      .masterUrl("masterUrl")
+                                      .caCert("caCert".toCharArray())
+                                      .azureConfig(kubernetesAzureConfig)
+                                      .build();
     String configFileContent = kubernetesContainerService.getConfigFileContent(kubeConfig);
     assertThat(expected).isEqualTo(configFileContent);
   }

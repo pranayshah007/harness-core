@@ -2230,10 +2230,18 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         isNotEmpty(config.getCaCert()) ? "certificate-authority-data: " + new String(config.getCaCert()) : "";
     String namespace = isNotEmpty(config.getNamespace()) ? "namespace: " + config.getNamespace() : "";
     String args = "";
-    args += isEmpty(config.getAzureConfig().getApiServerId()) ? "" : serverId.replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId());
-    args += isEmpty(config.getAzureConfig().getClientId()) ? "" : clientId.replace("${CLIENT_ID}", config.getAzureConfig().getClientId());
-    args += isEmpty(config.getAzureConfig().getEnvironment()) ? "" : environment.replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment());
-    args += isEmpty(config.getAzureConfig().getTenantId()) ? "" : tenantId.replace("${TENANT_ID}", config.getAzureConfig().getTenantId());
+    args += isEmpty(config.getAzureConfig().getApiServerId())
+        ? ""
+        : serverId.replace("${APISERVER_ID}", config.getAzureConfig().getApiServerId());
+    args += isEmpty(config.getAzureConfig().getClientId())
+        ? ""
+        : clientId.replace("${CLIENT_ID}", config.getAzureConfig().getClientId());
+    args += isEmpty(config.getAzureConfig().getEnvironment())
+        ? ""
+        : environment.replace("${ENVIRONMENT}", config.getAzureConfig().getEnvironment());
+    args += isEmpty(config.getAzureConfig().getTenantId())
+        ? ""
+        : tenantId.replace("${TENANT_ID}", config.getAzureConfig().getTenantId());
 
     return AZURE_KUBE_CONFIG_TEMPLATE.replace("${MASTER_URL}", config.getMasterUrl())
         .replace("${INSECURE_SKIP_TLS_VERIFY}", insecureSkipTlsVerify)
