@@ -130,15 +130,7 @@ public interface K8sConstants {
       + "users:\n"
       + "- name: ${CLUSTER_USER}\n"
       + "  user:\n"
-      + "    token: ${TOKEN}\n"
-      + "    auth-provider:\n"
-      + "      name: azure\n"
-      + "      config:\n"
-      + "        apiserver-id: ${APISERVER_ID}\n"
-      + "        client-id: ${CLIENT_ID}\n"
-      + "        config-mode: \"${CONFIG_MODE}\"\n"
-      + "        environment: ${ENVIRONMENT}\n"
-      + "        tenant-id: ${TENANT_ID}\n";
+      + "    token: ${TOKEN}\n";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
