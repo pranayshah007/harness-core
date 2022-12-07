@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CDP)
-public class CfBasicSetupRequestNG implements CfCommandRequestNG {
+public class CfBlueGreenSetupRequestNG implements CfCommandRequestNG {
   String accountId;
   CfCommandTypeNG cfCommandTypeNG;
   String commandName;
@@ -29,12 +29,13 @@ public class CfBasicSetupRequestNG implements CfCommandRequestNG {
   @NotNull TasInfraConfig tasInfraConfig;
   boolean useCfCLI;
   @NotNull CfCliVersion cfCliVersion;
-  String manifestYaml;
+  @Expression(ALLOW_SECRETS) String manifestYaml;
   Integer timeoutIntervalInMin;
   Integer olderActiveVersionCountToKeep;
   Integer maxCount;
   Integer currentRunningCount;
   boolean useCurrentCount;
+  @Expression(ALLOW_SECRETS) List<String> tempRoutes;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoscalar;
   PcfManifestsPackage pcfManifestsPackage;

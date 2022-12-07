@@ -33,7 +33,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
-import io.harness.delegate.beans.pcf.CfProdAppInfo;
+import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
 import io.harness.delegate.cf.retry.RetryPolicy;
@@ -66,7 +66,6 @@ import software.wings.delegatetasks.pcf.PcfCommandTaskHelper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,31 +80,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.representer.Representer;
 
-@Singleton
 @NoArgsConstructor
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
-  private static Yaml yaml = null;
   @Inject PcfCommandTaskBaseHelper pcfCommandTaskBaseHelper;
   @Inject TasNgConfigMapper tasNgConfigMapper;
   @Inject protected CfCommandTaskHelperNG cfCommandTaskHelperNG;
   @Inject CfDeploymentManager cfDeploymentManager;
   @Inject protected PcfCommandTaskHelper pcfCommandTaskHelper;
-
-  private static final int MAX_RELEASE_VERSIONS_TO_KEEP = 3;
-
-  static {
-    DumperOptions options = new DumperOptions();
-    options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-    options.setExplicitStart(true);
-    yaml = new Yaml(new SafeConstructor(), new Representer(), options);
-  }
 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
@@ -128,7 +112,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     List<ApplicationSummary> previousReleases =
         cfDeploymentManager.getPreviousReleases(cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix());
 
-    CfProdAppInfo currentProdInfo = getCurrentProdInfo(previousReleases);
+    TasApplicationInfo currentProdInfo = getCurrentProdInfo(previousReleases);
 
     try {
       workingDirectory = generateWorkingDirectoryOnDelegate(basicSetupRequestNG);
@@ -145,18 +129,12 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       // Print Existing applications information
       printExistingApplicationsDetails(logCallback, previousReleases);
 
-      // saveDetailAboutProdAppForRollback() - DONE
-      // downloadArtifactFile()
-      // deleteOlderApplications();
-      // renameProdApp() --> getNew name using something like getReleaseRevisionForNewApplication()
-      // createNewApp() --> generateManifestAndVars()
-
       artifactFile = downloadArtifactFile(basicSetupRequestNG);
 
       deleteOlderApplications(previousReleases, cfRequestConfig, basicSetupRequestNG, cfAppAutoscalarRequestData,
           logCallback, currentProdInfo);
 
-      renameProductionApplication(previousReleases, basicSetupRequestNG, cfRequestConfig, logCallback);
+      renameProductionApplication(previousReleases, basicSetupRequestNG, cfRequestConfig, logCallback, currentProdInfo);
 
       boolean varsYmlPresent = checkIfVarsFilePresent(basicSetupRequestNG);
       CfCreateApplicationRequestData requestData =
@@ -181,10 +159,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
         prepareVarsYamlFile(requestData, basicSetupRequestNG);
       }
 
-      // Create new Application
       logCallback.saveExecutionLog(color("\n# Creating new Application", White, Bold));
-      // Update pcfRequestConfig with details to create application
 
+      // Update pcfRequestConfig with details to create application
       // TODO - instead of updating create new object of CfRequestConfig
       //      updatePcfRequestConfig(cfCommandSetupRequest, cfRequestConfig, newReleaseName);
 
@@ -193,13 +170,13 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       CfBasicSetupResponseNG cfSetupCommandResponse =
           CfBasicSetupResponseNG.builder()
               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-              .newApplicationDetails(CfAppSetupTimeDetails.builder()
-                                         .applicationGuid(newApplication.getId())
-                                         .applicationName(newApplication.getName())
-                                         .oldName(newApplication.getName())
-                                         .urls(new ArrayList<>(newApplication.getUrls()))
-                                         .initialInstanceCount(0)
-                                         .build())
+              .newApplicationInfo(TasApplicationInfo.builder()
+                                      .applicationGuid(newApplication.getId())
+                                      .applicationName(newApplication.getName())
+                                      .oldName(newApplication.getName())
+                                      .attachedRoutes(new ArrayList<>(newApplication.getUrls()))
+                                      .runningCount(0)
+                                      .build())
               .currentProdInfo(currentProdInfo)
               .build();
 
@@ -260,8 +237,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     return newApplication;
   }
   private void renameProductionApplication(List<ApplicationSummary> previousReleases,
-      CfBasicSetupRequestNG basicSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback)
-      throws PivotalClientApiException {
+      CfBasicSetupRequestNG basicSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
+      TasApplicationInfo currentProdInfo) throws PivotalClientApiException {
     ApplicationSummary currentProdApplicationSummary = getCurrentProdApplicationSummary(previousReleases);
 
     if (EmptyPredicate.isEmpty(previousReleases) || currentProdApplicationSummary == null) {
@@ -280,6 +257,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     String newName = appNamePrefix + revision;
 
     pcfCommandTaskBaseHelper.renameApp(currentProdApplicationSummary, cfRequestConfig, logCallback, newName);
+    currentProdInfo.setApplicationName(newName);
   }
 
   private File downloadArtifactFile(CfBasicSetupRequestNG basicSetupRequestNG) {
@@ -308,14 +286,15 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
     return currentActiveApplication;
   }
-  private CfProdAppInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases) {
+  private TasApplicationInfo getCurrentProdInfo(List<ApplicationSummary> previousReleases) {
     ApplicationSummary currentActiveApplication = getCurrentProdApplicationSummary(previousReleases);
     if (currentActiveApplication == null) {
-      return CfProdAppInfo.builder().build();
+      return TasApplicationInfo.builder().build();
     }
 
-    return CfProdAppInfo.builder()
+    return TasApplicationInfo.builder()
         .applicationName(currentActiveApplication.getName())
+        .oldName(currentActiveApplication.getName())
         .applicationGuid(currentActiveApplication.getId())
         .attachedRoutes(currentActiveApplication.getUrls())
         .runningCount(currentActiveApplication.getRunningInstances())
@@ -347,21 +326,9 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     return workingDirectory;
   }
 
-  private void printExistingApplicationsDetails(
-      LogCallback executionLogCallback, List<ApplicationSummary> previousReleases) {
-    if (EmptyPredicate.isEmpty(previousReleases)) {
-      executionLogCallback.saveExecutionLog("# No Existing applications found");
-    } else {
-      StringBuilder appNames = new StringBuilder(color("# Existing applications: ", White, Bold));
-      previousReleases.forEach(
-          applicationSummary -> appNames.append("\n").append(encodeColor(applicationSummary.getName())));
-      executionLogCallback.saveExecutionLog(appNames.toString());
-    }
-  }
-
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfBasicSetupRequestNG cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback logCallback, CfProdAppInfo currentProdInfo) {
+      LogCallback logCallback, TasApplicationInfo currentProdInfo) {
     if (EmptyPredicate.isEmpty(previousReleases) || previousReleases.size() == 1) {
       return;
     }
