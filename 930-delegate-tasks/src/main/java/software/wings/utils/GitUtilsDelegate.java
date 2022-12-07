@@ -21,6 +21,7 @@ import software.wings.service.impl.yaml.GitClientHelper;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -62,6 +63,11 @@ public class GitUtilsDelegate {
     return Paths
         .get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(),
             gitClientHelper.getRepoDirectory(gitOperationContext), scriptPath)
+        .toString();
+  }
+
+  public String resolveS3BucketAbsoluteFilePath(AmazonS3URI s3URI) {
+    return Paths.get(Paths.get(System.getProperty(USER_DIR_KEY)).toString(), s3URI.getBucket(), s3URI.getKey())
         .toString();
   }
 

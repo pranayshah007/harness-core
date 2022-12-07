@@ -54,8 +54,6 @@ import lombok.Value;
 public class TerraformProvisionParameters implements TaskParameters, ActivityAccess, ExecutionCapabilityDemander {
   public static final long TIMEOUT_IN_MINUTES = 100;
   public static final String TERRAFORM = "terraform";
-  private TerraformSourceType sourceType;
-  private final String s3URI;
   private String accountId;
   private final String activityId;
   private final String appId;
@@ -72,8 +70,6 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final Map<String, EncryptedDataDetail> encryptedVariables;
 
   private final TfVarGitSource remoteBackendConfig;
-
-  private final TfVarS3Source remoteS3BackendConfig;
   private final String backendConfigStoreType;
   private final Map<String, String> backendConfigs;
   private final Map<String, EncryptedDataDetail> encryptedBackendConfigs;
@@ -103,6 +99,9 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
 
   private final TfVarSource tfVarSource;
   private final TfVarS3Source tfVarS3Source;
+  private TerraformSourceType sourceType;
+  private final String s3URI;
+  private final TfVarS3Source remoteS3BackendConfig;
 
   private final boolean useTfClient; // FF: USE_TF_CLIENT
   private final boolean useActivityIdBasedTfBaseDir;

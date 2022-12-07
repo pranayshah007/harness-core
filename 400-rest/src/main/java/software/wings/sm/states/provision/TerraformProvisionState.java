@@ -255,8 +255,6 @@ public abstract class TerraformProvisionState extends State {
 
   @Getter @Setter private List<String> tfVarFiles;
 
-  @Getter @Setter private TerraformSourceType tfVarSourceType;
-
   @Attributes(title = "tfVarAWSConfigId") @Getter @Setter private String tfVarAWSConfigId;
 
   @Getter @Setter private S3FileConfig tfVarS3FileConfig;
@@ -1060,8 +1058,7 @@ public abstract class TerraformProvisionState extends State {
   // ToDo:   Unit Test - AKHIL_PANDEY
   protected String getTaskType(TerraformProvisionParameters parameters, ExecutionContext context) {
     if (featureFlagService.isEnabled(FeatureName.CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())) {
-      if (parameters.getSourceType().equals(TerraformSourceType.S3)
-          || (tfVarSourceType != null && tfVarSourceType.equals(TfVarSourceType.S3))) {
+      if (parameters.getSourceType().equals(TerraformSourceType.S3) || tfVarS3FileConfig != null) {
         return TERRAFORM_PROVISION_TASK_V2.name();
       }
     }

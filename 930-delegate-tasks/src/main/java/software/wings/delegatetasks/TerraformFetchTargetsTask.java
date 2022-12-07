@@ -28,16 +28,20 @@ import software.wings.api.TerraformExecutionData;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GitOperationContext;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.delegatetasks.terraform.TerraformConfigInspectClient.BLOCK_TYPE;
 import software.wings.delegatetasks.validation.terraform.TerraformTaskUtils;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.TerraformConfigInspectService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.GitUtilsDelegate;
 
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +58,7 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
   @Inject private EncryptionService encryptionService;
   @Inject private GitUtilsDelegate gitUtilsDelegate;
   @Inject private TerraformConfigInspectService terraformConfigInspectService;
+  @Inject private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   public TerraformFetchTargetsTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
@@ -74,28 +79,46 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
   private TerraformExecutionData run(TerraformProvisionParameters parameters) {
     try {
       GitConfig gitConfig = parameters.getSourceRepo();
+      String absoluteModulePath = null;
+      if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+        try {
+          encryptionService.decrypt(
+              parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
+          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(new AmazonS3URI(parameters.getS3URI()));
 
-      if (isNotEmpty(parameters.getSourceRepoBranch())) {
-        gitConfig.setBranch(parameters.getSourceRepoBranch());
-      }
-      if (isNotEmpty(parameters.getCommitId())) {
-        gitConfig.setReference(parameters.getCommitId());
-      }
-      GitOperationContext gitOperationContext = null;
-      try {
-        gitOperationContext = gitUtilsDelegate.cloneRepo(gitConfig,
-            GitFileConfig.builder().connectorId(parameters.getSourceRepoSettingId()).build(),
-            parameters.getSourceRepoEncryptionDetails());
-      } catch (Exception e) {
-        return TerraformExecutionData.builder()
-            .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(
-                TerraformTaskUtils.getGitExceptionMessageIfExists(ExceptionMessageSanitizer.sanitizeException(e)))
-            .build();
+          awsS3HelperServiceDelegate.downloadS3Directory(
+              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(absoluteModulePath));
+        } catch (Exception e) {
+          return TerraformExecutionData.builder()
+              .executionStatus(ExecutionStatus.FAILED)
+              .errorMessage(
+                  TerraformTaskUtils.getGitExceptionMessageIfExists(ExceptionMessageSanitizer.sanitizeException(e)))
+              .build();
+        }
+      } else {
+        if (isNotEmpty(parameters.getSourceRepoBranch())) {
+          gitConfig.setBranch(parameters.getSourceRepoBranch());
+        }
+        if (isNotEmpty(parameters.getCommitId())) {
+          gitConfig.setReference(parameters.getCommitId());
+        }
+        GitOperationContext gitOperationContext = null;
+        try {
+          gitOperationContext = gitUtilsDelegate.cloneRepo(gitConfig,
+              GitFileConfig.builder().connectorId(parameters.getSourceRepoSettingId()).build(),
+              parameters.getSourceRepoEncryptionDetails());
+
+          absoluteModulePath =
+              gitUtilsDelegate.resolveAbsoluteFilePath(gitOperationContext, parameters.getScriptPath());
+        } catch (Exception e) {
+          return TerraformExecutionData.builder()
+              .executionStatus(ExecutionStatus.FAILED)
+              .errorMessage(
+                  TerraformTaskUtils.getGitExceptionMessageIfExists(ExceptionMessageSanitizer.sanitizeException(e)))
+              .build();
+        }
       }
 
-      String absoluteModulePath =
-          gitUtilsDelegate.resolveAbsoluteFilePath(gitOperationContext, parameters.getScriptPath());
       List<String> targets = terraformConfigInspectService.parseFieldsUnderCategory(absoluteModulePath,
           BLOCK_TYPE.MANAGED_RESOURCES.name().toLowerCase(), parameters.isUseTfConfigInspectLatestVersion());
       return TerraformExecutionData.builder().targets(targets).build();

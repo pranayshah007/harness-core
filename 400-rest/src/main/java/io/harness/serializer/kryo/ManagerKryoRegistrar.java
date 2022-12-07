@@ -148,6 +148,7 @@ import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.ServiceInstance;
+import software.wings.beans.ServiceVariable;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;

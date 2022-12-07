@@ -33,14 +33,17 @@ import software.wings.beans.GitOperationContext;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.TerraformInputVariablesTaskResponse;
+import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.delegatetasks.terraform.TerraformConfigInspectClient.BLOCK_TYPE;
 import software.wings.delegatetasks.validation.terraform.TerraformTaskUtils;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.intfc.GitService;
 import software.wings.service.intfc.TerraformConfigInspectService;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.utils.GitUtilsDelegate;
 
+import com.amazonaws.services.s3.AmazonS3URI;
 import com.google.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
@@ -61,6 +64,8 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
   @Inject private GitUtilsDelegate gitUtilsDelegate;
   @Inject private TerraformConfigInspectService terraformConfigInspectService;
 
+  @Inject AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
+
   public TerraformInputVariablesObtainTask(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
@@ -79,30 +84,51 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
 
   private TerraformInputVariablesTaskResponse run(TerraformProvisionParameters parameters) {
     try {
-      GitConfig gitConfig = parameters.getSourceRepo();
-      if (isNotEmpty(parameters.getSourceRepoBranch())) {
-        gitConfig.setBranch(parameters.getSourceRepoBranch());
-      }
-      if (isNotEmpty(parameters.getCommitId())) {
-        gitConfig.setReference(parameters.getCommitId());
-      }
-
+      String absoluteModulePath = null;
       GitOperationContext gitOperationContext = null;
-      try {
-        gitOperationContext = gitUtilsDelegate.cloneRepo(gitConfig,
-            GitFileConfig.builder().connectorId(parameters.getSourceRepoSettingId()).build(),
-            parameters.getSourceRepoEncryptionDetails());
-      } catch (Exception ex) {
-        return TerraformInputVariablesTaskResponse.builder()
-            .terraformExecutionData(TerraformExecutionData.builder()
-                                        .executionStatus(ExecutionStatus.FAILED)
-                                        .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
-                                        .build())
-            .build();
+      GitConfig gitConfig = parameters.getSourceRepo();
+
+      if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+        try {
+          absoluteModulePath = gitUtilsDelegate.resolveS3BucketAbsoluteFilePath(new AmazonS3URI(parameters.getS3URI()));
+          encryptionService.decrypt(
+              parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
+
+          awsS3HelperServiceDelegate.downloadS3Directory(
+              parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(absoluteModulePath));
+
+        } catch (Exception ex) {
+          return TerraformInputVariablesTaskResponse.builder()
+              .terraformExecutionData(TerraformExecutionData.builder()
+                                          .executionStatus(ExecutionStatus.FAILED)
+                                          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
+                                          .build())
+              .build();
+        }
+      } else {
+        if (isNotEmpty(parameters.getSourceRepoBranch())) {
+          gitConfig.setBranch(parameters.getSourceRepoBranch());
+        }
+        if (isNotEmpty(parameters.getCommitId())) {
+          gitConfig.setReference(parameters.getCommitId());
+        }
+
+        try {
+          gitOperationContext = gitUtilsDelegate.cloneRepo(gitConfig,
+              GitFileConfig.builder().connectorId(parameters.getSourceRepoSettingId()).build(),
+              parameters.getSourceRepoEncryptionDetails());
+          absoluteModulePath =
+              gitUtilsDelegate.resolveAbsoluteFilePath(gitOperationContext, parameters.getScriptPath());
+        } catch (Exception ex) {
+          return TerraformInputVariablesTaskResponse.builder()
+              .terraformExecutionData(TerraformExecutionData.builder()
+                                          .executionStatus(ExecutionStatus.FAILED)
+                                          .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
+                                          .build())
+              .build();
+        }
       }
 
-      String absoluteModulePath =
-          gitUtilsDelegate.resolveAbsoluteFilePath(gitOperationContext, parameters.getScriptPath());
       List<NameValuePair> variablesList = new ArrayList<>();
 
       if (noTfFiles(absoluteModulePath)) {

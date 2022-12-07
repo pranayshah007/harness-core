@@ -69,6 +69,7 @@ import software.wings.api.PhaseElement;
 import software.wings.api.TerraformExecutionData;
 import software.wings.beans.ARMInfrastructureProvisioner;
 import software.wings.beans.ARMSourceType;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.BlueprintProperty;
 import software.wings.beans.CloudFormationInfrastructureProvisioner;
 import software.wings.beans.CloudFormationSourceType;
@@ -185,6 +186,8 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
   @Inject private GitUtilsManager gitUtilsManager;
   @Inject private GitFileConfigHelperService gitFileConfigHelperService;
   @Inject private UserGroupService userGroupService;
+
+  @Inject private transient SettingsService settingsService;
 
   static final String DUPLICATE_VAR_MSG_PREFIX = "variable names should be unique, duplicate variable(s) found: ";
 
@@ -760,69 +763,83 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
   public List<NameValuePair> getTerraformVariables(String appId, String scmSettingId, String terraformDirectory,
       String accountId, String sourceRepoBranch, String commitId, String repoName,
       TerraformSourceType terraformSourceType, String s3URI, String awsConfigId) {
-    SettingAttribute gitSettingAttribute = settingService.get(scmSettingId);
-    notNullCheck("Source repo provided is not Valid", gitSettingAttribute);
-    if (terraformSourceType.equals(terraformSourceType.GIT)) {
+    //    Initialize Git variables
+
+    GitConfig gitConfig = null;
+
+    AwsConfig awsS3SourceBucketConfig = null;
+    List<EncryptedDataDetail> awsS3EncryptionDetails = null;
+    SettingAttribute gitSettingAttribute = null;
+
+    if (terraformSourceType.equals(TerraformSourceType.S3)) {
+      awsS3SourceBucketConfig = getAWSS3SourceConfig(awsConfigId);
+      awsS3EncryptionDetails = getAwsS3EncryptionDetails(awsS3SourceBucketConfig, appId);
+    } else {
+      gitSettingAttribute = settingService.get(scmSettingId);
+      notNullCheck("Source repo provided is not Valid", gitSettingAttribute);
       validateBranchCommitId(sourceRepoBranch, commitId);
       if (!(gitSettingAttribute.getValue() instanceof GitConfig)) {
         throw new InvalidRequestException("Source repo provided is not Valid");
       }
 
       terraformDirectory = normalizeScriptPath(terraformDirectory);
-      GitConfig gitConfig = (GitConfig) gitSettingAttribute.getValue();
+      gitConfig = (GitConfig) gitSettingAttribute.getValue();
       gitConfigHelperService.setSshKeySettingAttributeIfNeeded(gitConfig);
       gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
       gitConfigHelperService.convertToRepoGitConfig(gitConfig, repoName);
-      DelegateTask delegateTask =
-          DelegateTask.builder()
-              .accountId(accountId)
-              .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
-              .data(TaskData.builder()
-                        .async(false)
-                        .taskType(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK.name())
-                        .parameters(new Object[] {
-                            TerraformProvisionParameters.builder()
-                                .scriptPath(terraformDirectory)
-                                .useTfConfigInspectLatestVersion(
-                                    featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
-                                .sourceRepoSettingId(gitSettingAttribute.getUuid())
-                                .sourceRepo(gitConfig)
-                                .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
-                                .sourceRepoBranch(sourceRepoBranch)
-                                .commitId(commitId)
-                                .isGitHostConnectivityCheck(
-                                    featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
-                                .build()})
-                        .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
-                        .build())
-              .build();
-
-      DelegateResponseData notifyResponseData;
-      try {
-        notifyResponseData = delegateService.executeTask(delegateTask);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new InvalidRequestException("Thread was interrupted. Please try again.");
-      }
-      if (notifyResponseData instanceof ErrorNotifyResponseData) {
-        throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
-      } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
-          && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
-        throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
-      } else if (!(notifyResponseData instanceof TerraformInputVariablesTaskResponse)) {
-        throw new WingsException(ErrorCode.GENERAL_ERROR)
-            .addParam("message", "Unknown Response from delegate")
-            .addContext(DelegateResponseData.class, notifyResponseData);
-      }
-
-      TerraformInputVariablesTaskResponse taskResponse = (TerraformInputVariablesTaskResponse) notifyResponseData;
-      if (taskResponse.getTerraformExecutionData().getExecutionStatus() == ExecutionStatus.SUCCESS) {
-        return taskResponse.getVariablesList();
-      } else {
-        throw new GeneralException(taskResponse.getTerraformExecutionData().getErrorMessage());
-      }
     }
-    return null;
+
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, appId)
+            .data(
+                TaskData.builder()
+                    .async(false)
+                    .taskType(TaskType.TERRAFORM_INPUT_VARIABLES_OBTAIN_TASK.name())
+                    .parameters(new Object[] {
+                        TerraformProvisionParameters.builder()
+                            .scriptPath(terraformDirectory)
+                            .useTfConfigInspectLatestVersion(
+                                featureFlagService.isEnabled(TERRAFORM_CONFIG_INSPECT_VERSION_SELECTOR, accountId))
+                            .sourceRepoSettingId(gitSettingAttribute.getUuid())
+                            .sourceRepo(gitConfig)
+                            .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
+                            .sourceRepoBranch(sourceRepoBranch)
+                            .commitId(commitId)
+                            .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
+                            .s3URI(s3URI)
+                            .awsS3SourceBucketConfig(awsS3SourceBucketConfig)
+                            .awsS3EncryptionDetails(awsS3EncryptionDetails)
+                            .build()})
+                    .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
+                    .build())
+            .build();
+
+    DelegateResponseData notifyResponseData;
+    try {
+      notifyResponseData = delegateService.executeTask(delegateTask);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new InvalidRequestException("Thread was interrupted. Please try again.");
+    }
+    if (notifyResponseData instanceof ErrorNotifyResponseData) {
+      throw new WingsException(((ErrorNotifyResponseData) notifyResponseData).getErrorMessage());
+    } else if ((notifyResponseData instanceof RemoteMethodReturnValueData)
+        && (((RemoteMethodReturnValueData) notifyResponseData).getException() instanceof InvalidRequestException)) {
+      throw(InvalidRequestException)((RemoteMethodReturnValueData) notifyResponseData).getException();
+    } else if (!(notifyResponseData instanceof TerraformInputVariablesTaskResponse)) {
+      throw new WingsException(ErrorCode.GENERAL_ERROR)
+          .addParam("message", "Unknown Response from delegate")
+          .addContext(DelegateResponseData.class, notifyResponseData);
+    }
+
+    TerraformInputVariablesTaskResponse taskResponse = (TerraformInputVariablesTaskResponse) notifyResponseData;
+    if (taskResponse.getTerraformExecutionData().getExecutionStatus() == ExecutionStatus.SUCCESS) {
+      return taskResponse.getVariablesList();
+    } else {
+      throw new GeneralException(taskResponse.getTerraformExecutionData().getErrorMessage());
+    }
   }
 
   private void validateBranchCommitId(String sourceRepoBranch, String commitId) {
@@ -850,13 +867,24 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       throw new InvalidRequestException("Cannot Fetch Targets Since Terraform Provisioner is templatized",
           ErrorCode.INVALID_TERRAFORM_TARGETS_REQUEST, USER);
     }
+
     SettingAttribute settingAttribute = settingService.get(terraformInfrastructureProvisioner.getSourceRepoSettingId());
     if (settingAttribute == null || !(settingAttribute.getValue() instanceof GitConfig)) {
       throw new InvalidRequestException("Invalid Git Repo");
     }
-    GitConfig gitConfig = (GitConfig) settingAttribute.getValue();
-    gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
-    gitConfigHelperService.convertToRepoGitConfig(gitConfig, terraformInfrastructureProvisioner.getRepoName());
+    GitConfig gitConfig = null;
+
+    AwsConfig awsS3SourceBucketConfig = null;
+    List<EncryptedDataDetail> awsS3EncryptionDetails = null;
+
+    if (terraformInfrastructureProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
+      awsS3SourceBucketConfig = getAWSS3SourceConfig(terraformInfrastructureProvisioner.getAwsConfigId());
+      awsS3EncryptionDetails = getAwsS3EncryptionDetails(awsS3SourceBucketConfig, appId);
+    } else {
+      gitConfig = (GitConfig) settingAttribute.getValue();
+      gitConfig.setGitRepoType(GitRepositoryType.TERRAFORM);
+      gitConfigHelperService.convertToRepoGitConfig(gitConfig, terraformInfrastructureProvisioner.getRepoName());
+    }
 
     DelegateTask delegateTask =
         DelegateTask.builder()
@@ -877,6 +905,10 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
                             .scriptPath(normalizeScriptPath(terraformInfrastructureProvisioner.getPath()))
                             .sourceRepoEncryptionDetails(secretManager.getEncryptionDetails(gitConfig, appId, null))
                             .isGitHostConnectivityCheck(featureFlagService.isEnabled(GIT_HOST_CONNECTIVITY, accountId))
+                            .sourceType(terraformInfrastructureProvisioner.getSourceType())
+                            .s3URI(terraformInfrastructureProvisioner.getS3URI())
+                            .awsS3SourceBucketConfig(awsS3SourceBucketConfig)
+                            .awsS3EncryptionDetails(awsS3EncryptionDetails)
                             .build()})
                     .timeout(TaskData.DEFAULT_SYNC_CALL_TIMEOUT)
                     .build())
@@ -897,6 +929,20 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       throw new WingsException("Unknown response from delegate.").addContext(DelegateResponseData.class, responseData);
     }
     return ((TerraformExecutionData) responseData).getTargets();
+  }
+
+  private List<EncryptedDataDetail> getAwsS3EncryptionDetails(AwsConfig awsS3SourceBucketConfig, String appId) {
+    return secretManager.getEncryptionDetails(awsS3SourceBucketConfig, appId, null);
+  }
+  private AwsConfig getAWSS3SourceConfig(String awsConfigId) {
+    return (AwsConfig) getAwsConfigSettingAttribute(awsConfigId).getValue();
+  }
+  protected SettingAttribute getAwsConfigSettingAttribute(String awsConfigId) {
+    SettingAttribute awsSettingAttribute = settingsService.get(awsConfigId);
+    if (!(awsSettingAttribute.getValue() instanceof AwsConfig)) {
+      throw new InvalidRequestException("Setting attribute is not of type AwsConfig");
+    }
+    return awsSettingAttribute;
   }
 
   @Override
