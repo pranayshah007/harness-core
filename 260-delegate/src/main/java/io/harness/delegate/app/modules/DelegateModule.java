@@ -323,6 +323,7 @@ import io.harness.delegate.task.scm.ScmPushTask;
 import io.harness.delegate.task.serverless.ServerlessCommandTask;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessGitFetchTask;
+import io.harness.delegate.task.serverless.ServerlessS3FetchTask;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNG;
 import io.harness.delegate.task.servicenow.ServiceNowValidationHandler;
 import io.harness.delegate.task.servicenow.connection.ServiceNowTestConnectionTaskNG;
@@ -1921,6 +1922,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.FETCH_S3_FILE_TASK_NG).toInstance(S3FetchFilesTaskNG.class);
     mapBinder.addBinding(TaskType.SERVERLESS_GIT_FETCH_TASK_NG).toInstance(ServerlessGitFetchTask.class);
     mapBinder.addBinding(TaskType.SERVERLESS_COMMAND_TASK).toInstance(ServerlessCommandTask.class);
+    mapBinder.addBinding(TaskType.SERVERLESS_S3_FETCH_TASK_NG).toInstance(ServerlessS3FetchTask.class);
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG_V2).toInstance(AzureWebAppTaskNG.class);
     mapBinder.addBinding(TaskType.FETCH_INSTANCE_SCRIPT_TASK_NG).toInstance(FetchInstanceScriptTaskNG.class);

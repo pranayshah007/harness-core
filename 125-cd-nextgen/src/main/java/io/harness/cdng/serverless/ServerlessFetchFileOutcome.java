@@ -22,10 +22,10 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CDP)
 @Value
 @Builder
-@TypeAlias("serverlessGitFetchOutcome")
-@JsonTypeName("serverlessGitFetchOutcome")
-@RecasterAlias("io.harness.cdng.serverless.ServerlessGitFetchOutcome")
-public class ServerlessGitFetchOutcome implements Outcome, ExecutionSweepingOutput {
+@TypeAlias("serverlessFetchFileOutcome")
+@JsonTypeName("serverlessFetchFileOutcome")
+@RecasterAlias("io.harness.cdng.serverless.ServerlessFetchFileOutcome")
+public class ServerlessFetchFileOutcome implements Outcome, ExecutionSweepingOutput {
   Pair<String, String> manifestFilePathContent;
   String manifestFileOverrideContent;
 }

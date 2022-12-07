@@ -12,11 +12,11 @@ RUN GRPC_HEALTH_PROBE_VERSION=v0.4.14 && \
 
 # Second stage
 FROM us.gcr.io/platform-205701/ubi/ubi-go:latest
-COPY --from=0 /bin/grpc_health_probe ./grpc_health_probe
+COPY --from=0 /bin/grpc_health_probe /grpc_health_probe
 # Copy ci-scm binary
 COPY scm_/scm /usr/local/bin/scm
 USER root
-RUN chown -R 65534:65534 /usr/local/bin ./grpc_health_probe
+RUN chown -R 65534:65534 /usr/local/bin /grpc_health_probe
 USER 65534:65534
 WORKDIR /usr/local/bin
 CMD ["/usr/local/bin/scm"]

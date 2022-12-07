@@ -36,6 +36,7 @@ import io.harness.gitops.models.Application;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.ng.BaseUrls;
 import io.harness.ng.beans.PageResponse;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -84,6 +85,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Mock StepHelper stepHelper;
   @Mock ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock GitopsResourceClient gitopsResourceClient;
+  @Mock BaseUrls baseUrls;
   @InjectMocks FetchLinkedAppsStep fetchLinkedAppsStep;
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -209,7 +211,7 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void shouldSetOutcome() throws Exception {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance = getAmbiance();
     FetchLinkedAppsStepParams stepParams = FetchLinkedAppsStepParams.infoBuilder().build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(stepParams).build();
     doReturn(logStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
@@ -222,17 +224,22 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         .when(executionSweepingOutputService)
         .resolveOptional(any(), any());
     Call call = mock(Call.class);
-    PageResponse pageResponse = PageResponse.builder()
-                                    .content(Collections.singletonList(Application.builder().identifier("id").build()))
-                                    .build();
+    PageResponse pageResponse =
+        PageResponse.builder()
+            .content(Collections.singletonList(Application.builder().name("APP1").agentIdentifier("AGENT_ID").build()))
+            .build();
     doReturn(call).when(gitopsResourceClient).listApps(any());
     doReturn(Response.success(pageResponse)).when(call).execute();
+    doReturn("https://app.harness.io/ng#/").when(baseUrls).getNextGenUiUrl();
 
     StepResponse stepResponse =
         fetchLinkedAppsStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, throwingSupplier);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     StepResponse.StepOutcome stepOutcome = (StepResponse.StepOutcome) ((List) stepResponse.getStepOutcomes()).get(0);
     assertThat(((GitOpsLinkedAppsOutcome) stepOutcome.getOutcome()).getApps()).hasSize(1);
+    assertThat(((GitOpsLinkedAppsOutcome) stepOutcome.getOutcome()).getApps().get(0).getUrl())
+        .isEqualTo(
+            "https://app.harness.io/ng#/account/ACC_ID/cd/orgs/ORG_ID/projects/PROJ_ID/gitops/applications/APP1?agentId=AGENT_ID");
   }
 
   @Test
@@ -260,5 +267,13 @@ public class FetchLinkedAppsStepTest extends CategoryTest {
         fetchLinkedAppsStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, throwingSupplier);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isEmpty();
+  }
+
+  private Ambiance getAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions("accountId", "ACC_ID")
+        .putSetupAbstractions("orgIdentifier", "ORG_ID")
+        .putSetupAbstractions("projectIdentifier", "PROJ_ID")
+        .build();
   }
 }

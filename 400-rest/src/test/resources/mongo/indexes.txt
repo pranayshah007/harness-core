@@ -443,7 +443,6 @@ learningEngineAnalysisTask {"name": "validUntil_1", "background": true, "expireA
 learningEngineExperimentalAnalysisTask {"name": "appId_1", "background": true} {"appId": 1}
 learningEngineExperimentalAnalysisTask {"name": "createdAt_1", "background": true} {"createdAt": 1}
 learningEngineExperimentalAnalysisTask {"name": "cvConfigStatusIdx", "background": true} {"cvConfigId": 1, "executionStatus": 1, "analysis_minute": -1}
-learningEngineExperimentalAnalysisTask {"name": "executionStatus_1", "background": true} {"executionStatus": 1}
 learningEngineExperimentalAnalysisTask {"name": "taskFetchIdx", "background": true} {"experiment_name": 1, "executionStatus": 1, "retry": 1, "createdAt": -1}
 learningEngineExperimentalAnalysisTask {"name": "taskQueueIdx", "background": true} {"state_execution_id": 1, "executionStatus": 1, "ml_analysis_type": 1, "cluster_level": 1, "group_name": 1, "version": 1, "analysis_minute": -1, "createdAt": -1}
 learningEngineExperimentalAnalysisTask {"name": "usageMetricsIndex", "background": true} {"executionStatus": 1, "ml_analysis_type": 1, "is24x7Task": 1, "createdAt": -1}
@@ -637,7 +636,6 @@ serviceTemplates {"name": "app_env_createdAt", "background": true} {"appId": 1, 
 serviceTemplates {"name": "createdAt_1", "background": true} {"createdAt": 1}
 serviceTemplates {"name": "yaml", "unique": true} {"appId": 1, "envId": 1, "name": 1}
 serviceVariables {"name": "appEntityIdx", "background": true} {"appId": 1, "entityId": 1, "createdAt": -1}
-serviceVariables {"name": "appId_1", "background": true} {"appId": 1}
 serviceVariables {"name": "app_env_templateId", "background": true} {"appId": 1, "envId": 1, "templateId": 1}
 serviceVariables {"name": "createdAt_1", "background": true} {"createdAt": 1}
 serviceVariables {"name": "encryptedValue_1", "background": true} {"encryptedValue": 1}
