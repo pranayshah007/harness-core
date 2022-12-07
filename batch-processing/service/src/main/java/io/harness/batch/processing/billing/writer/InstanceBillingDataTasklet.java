@@ -164,7 +164,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
   }
 
   private boolean isClusterIdFilterQueryEnabled(String accountId) {
-    return featureFlagService.isEnabled(FeatureName.CCM_INSTANCE_DATA_CLUSTERID_FILTER, accountId);
+    return true;
   }
 
   @NotNull
