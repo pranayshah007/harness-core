@@ -49,4 +49,20 @@ public class EmailData extends Queuable {
   private boolean system;
   private String appId;
   private String workflowExecutionId;
+
+  public software.wings.helpers.ext.mail.EmailData toDTO() {
+    return software.wings.helpers.ext.mail.EmailData.builder()
+        .to(to)
+        .cc(cc)
+        .bcc(bcc)
+        .subject(subject)
+        .body(body)
+        .templateName(templateName)
+        .templateModel(templateModel)
+        .hasHtml(hasHtml)
+        .system(system)
+        .appId(appId)
+        .workflowExecutionId(workflowExecutionId)
+        .build();
+  }
 }
