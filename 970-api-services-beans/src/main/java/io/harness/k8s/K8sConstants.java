@@ -134,8 +134,11 @@ public interface K8sConstants {
       + "    exec:\n"
       + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
       + "      args:\n"
+      + "      - get-token\n"
       + "${ARGS}"
-      + "      command: true\n"
+      + "      - --login\n"
+      + "      - azurecli\n"
+      + "      command: kubelogin\n"
       + "      env: null\n"
       + "      interactiveMode: Never\n"
       + "      provideClusterInfo: false\n";

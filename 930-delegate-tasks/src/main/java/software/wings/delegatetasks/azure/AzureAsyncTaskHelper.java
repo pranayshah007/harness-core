@@ -630,10 +630,6 @@ public class AzureAsyncTaskHelper {
         throw new AzureAKSException("Args was not found in the kube config content!!!");
       }
 
-      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getInteractiveMode())) {
-        throw new AzureAKSException("Interactive Mode was not found in the kube config content!!!");
-      }
-
       if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getProvideClusterInfo())) {
         throw new AzureAKSException("Provide Cluster Info was not found in the kube config content!!!");
       }
