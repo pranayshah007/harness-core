@@ -11,18 +11,14 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
+import io.harness.delegate.beans.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.ecs.EcsCommandTaskNGHelper;
-import io.harness.delegate.task.ecs.EcsInfraConfig;
-import io.harness.delegate.task.ecs.EcsInfraConfigHelper;
-import io.harness.delegate.task.ecs.EcsTaskHelperBase;
-import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
-import io.harness.delegate.task.ecs.request.EcsCommandRequest;
-import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
-import io.harness.ecs.EcsCommandUnitConstants;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
+import io.harness.delegate.task.aws.asg.request.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.request.AsgCommandRequest;
+import io.harness.delegate.task.aws.asg.response.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.response.AsgCommandResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -65,7 +61,7 @@ public class AsgCanaryDeleteCommandTaskHandler extends AsgCommandTaskNGHandler {
         String asgServiceDefinitionManifestContent = asgCanaryDeleteRequest.getAsgServiceDefinitionManifestContent();
 
         CreateServiceRequest.Builder createServiceRequestBuilder = asgCommandTaskHelper.parseYamlAsObject(
-                ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
+                asgServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass());
 
         CreateServiceRequest createServiceRequest = createServiceRequestBuilder.build();
 
@@ -74,7 +70,7 @@ public class AsgCanaryDeleteCommandTaskHandler extends AsgCommandTaskNGHandler {
         Optional<Service> optionalService = asgCommandTaskHelper.describeService(
                 canaryServiceName, asgInfraConfig.getRegion(), asgInfraConfig.getAwsConnectorDTO());
 
-        EcsCanaryDeleteResult ecsCanaryDeleteResult = null;
+        AsgCanaryDeleteResult asgCanaryDeleteResult = null;
 
         if (optionalService.isPresent() && asgCommandTaskHelper.isServiceActive(optionalService.get())) {
             canaryDeleteLogCallback.saveExecutionLog(format("Deleting service %s..", canaryServiceName), LogLevel.INFO);

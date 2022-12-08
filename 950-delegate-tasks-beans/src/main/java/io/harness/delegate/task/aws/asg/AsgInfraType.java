@@ -7,6 +7,4 @@
 
 package io.harness.delegate.task.aws.asg;
 
-public enum AsgCommandTypeNG {
-    ASG_CANARY_DELETE
-}
+public enum AsgInfraType { Asg }
