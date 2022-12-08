@@ -98,6 +98,7 @@ import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
 import io.harness.delegate.asg.AsgCanaryDeployCommandTaskHandler;
 import io.harness.delegate.asg.AsgCommandTaskNGHandler;
+import io.harness.delegate.aws.asg.AsgCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;

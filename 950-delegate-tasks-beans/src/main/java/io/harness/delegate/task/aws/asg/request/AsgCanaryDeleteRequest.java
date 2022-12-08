@@ -13,10 +13,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
-import io.harness.delegate.task.aws.asg.AwsInfraConfig;
+import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.expression.Expression;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
-
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.NonFinal;
@@ -25,14 +24,14 @@ import lombok.experimental.NonFinal;
 @Builder
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCanaryDeleteRequest implements AsgCommandRequest, NestedAnnotationResolver {
-    String accountId;
-    AsgCommandTypeNG asgCommandType;
-    String commandName;
-    CommandUnitsProgress commandUnitsProgress;
-    Integer timeoutIntervalInMin;
+  String accountId;
+  AsgCommandTypeNG asgCommandType;
+  String commandName;
+  CommandUnitsProgress commandUnitsProgress;
+  Integer timeoutIntervalInMin;
 
-    @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 
-    @Expression(ALLOW_SECRETS) String asgServiceDefinitionManifestContent;
-    String asgServiceNameSuffix;
+  @Expression(ALLOW_SECRETS) String asgServiceDefinitionManifestContent;
+  String asgServiceNameSuffix;
 }
