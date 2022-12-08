@@ -110,17 +110,13 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
-              .isRollback(true)
               .existingApplicationDetails(cfSwapRoutesRequestNG.getExistingApplicationDetails())
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
               .tempRoutes(cfSwapRoutesRequestNG.getTempRoutes())
-              .skipRollback(false)
               .isStandardBlueGreen(true)
               .newApplicationDetails(cfSwapRoutesRequestNG.getNewApplicationDetails())
-              .versioningChanged(false)
-              .nonVersioning(true)
               .newApplicationName(cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationName())
               .finalRoutes(cfSwapRoutesRequestNG.getFinalRoutes())
               .isMapRoutesOperation(false)

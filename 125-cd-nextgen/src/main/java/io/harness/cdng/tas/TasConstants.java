@@ -8,10 +8,10 @@
 package io.harness.cdng.tas;
 
 public class TasConstants {
-  public final static String FROM_MANIFEST = "FromManifest";
-  public final static String MATCH_RUNNING_INSTANCES = "MatchRunningInstances";
-  public final static String UPSCALE_NEW_FIRST = "UpScaleNewFirst";
-  public final static String DOWNSCALE_OLD_FIRST = "DownScaleOldFirst";
-  public final static String PERCENTAGE = "Percentage";
-  public final static String COUNT = "Count";
+  public static final String FROM_MANIFEST = "FromManifest";
+  public static final String MATCH_RUNNING_INSTANCES = "MatchRunningInstances";
+  public static final String UPSCALE_NEW_FIRST = "UpScaleNewFirst";
+  public static final String DOWNSCALE_OLD_FIRST = "DownScaleOldFirst";
+  public static final String PERCENTAGE = "Percentage";
+  public static final String COUNT = "Count";
 }
