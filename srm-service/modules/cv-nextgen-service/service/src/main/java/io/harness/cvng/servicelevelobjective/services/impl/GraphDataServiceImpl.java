@@ -249,6 +249,9 @@ public class GraphDataServiceImpl implements GraphDataService {
         if (getBadCountTillRangeStartTime
             && !sliRecord.getTimestamp().isBefore(DateTimeUtils.roundDownTo1MinBoundary(filter.getStartTime()))) {
           badCountTillRangeStartTime = sliValue.getBadCount();
+          if (sliRecord.getSliState().equals(SLIRecord.SLIState.BAD)) {
+            badCountTillRangeStartTime--;
+          }
           getBadCountTillRangeStartTime = false;
         }
         if (!sliRecord.getTimestamp().isAfter(DateTimeUtils.roundDownTo1MinBoundary(filter.getEndTime()))) {

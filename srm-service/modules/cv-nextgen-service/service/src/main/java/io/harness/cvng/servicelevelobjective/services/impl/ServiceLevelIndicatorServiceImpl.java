@@ -326,6 +326,8 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
         monitoredServiceIndicator, healthSourceIndicator, serviceLevelIndicator.isEnabled());
     updatableEntity.setUpdateOperations(updateOperations, updatableServiceLevelIndicator);
     if (shouldReAnalysis(serviceLevelIndicator, updatableServiceLevelIndicator, timePeriod, currentTimePeriod)) {
+      // We are doing this inside if else because we want to update the SLI version as well in this case.
+      // And we need to update SLI before queuing analysis so that queued analysis when executed takes the updated SLI.
       updateOperations.inc(ServiceLevelIndicatorKeys.version);
       hPersistence.update(serviceLevelIndicator, updateOperations);
       Instant startTime = timePeriod.getStartTime(ZoneOffset.UTC).minus(INTERVAL_HOURS, ChronoUnit.HOURS);

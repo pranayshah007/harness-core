@@ -8,6 +8,7 @@
 package io.harness.ng.core.tas.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -18,6 +19,7 @@ import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.tas.service.TasResourceService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -95,14 +97,23 @@ public class TasResource {
         ApiResponse(responseCode = "default", description = "Return the Tas organizations")
       })
   public ResponseDTO<List<String>>
-  getTasOrganizations(@Parameter(description = "Identifier for tas connector") @NotNull @QueryParam(
+  getTasOrganizations(@Parameter(description = "Identifier for tas connector") @QueryParam(
                           "connectorRef") String tasConnectorIdentifier,
       @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+      @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    if (isEmpty(tasConnectorIdentifier)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig =
+          getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      tasConnectorIdentifier = infrastructureDefinitionConfig.getSpec().getConnectorReference().getValue();
+    }
     log.info("retrieving organization for tas");
-    return ResponseDTO.newResponse(tasResourceService.listOrganizationsForTas(
-        tasConnectorIdentifier, accountId, orgIdentifier, projectIdentifier));
+    return ResponseDTO.newResponse(
+        tasResourceService.listOrganizations(tasConnectorIdentifier, accountId, orgIdentifier, projectIdentifier));
   }
 
   @GET
@@ -122,7 +133,7 @@ public class TasResource {
       @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
     log.info("retrieving spaces for tas");
-    return ResponseDTO.newResponse(tasResourceService.listSpacesForTas(
+    return ResponseDTO.newResponse(tasResourceService.listSpaces(
         tasConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, organization));
   }
 
@@ -136,11 +147,10 @@ public class TasResource {
         ApiResponse(responseCode = "default", description = "Return the Tas spaces")
       })
   public ResponseDTO<List<String>>
-  getTasSpacesV2(@Parameter(description = "Identifier for tas connector") @NotNull @QueryParam(
-                     "connectorRef") String tasConnectorIdentifier,
-      @AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+  getTasSpacesV2(@AccountIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
       @OrgIdentifier @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @ProjectIdentifier @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("organization") String organization,
       @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
       @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -149,12 +159,17 @@ public class TasResource {
         getInfrastructureDefinitionConfig(accountId, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
     TanzuApplicationServiceInfrastructure infrastructure =
         (TanzuApplicationServiceInfrastructure) infrastructureDefinitionConfig.getSpec();
-    String organization = infrastructure.getOrganization().getValue();
+    String tasConnectorIdentifier = infrastructure.getConnectorRef().getValue();
+    if (tasConnectorIdentifier == null) {
+      throw new InvalidRequestException("Connector ref is null in Infrastructure for Infra Id");
+    }
+    if (organization == null) {
+      organization = infrastructure.getOrganization().getValue();
+    }
     log.info("retrieving spaces for tas");
-    return ResponseDTO.newResponse(tasResourceService.listSpacesForTas(
+    return ResponseDTO.newResponse(tasResourceService.listSpaces(
         tasConnectorIdentifier, accountId, orgIdentifier, projectIdentifier, organization));
   }
-
   private InfrastructureDefinitionConfig getInfrastructureDefinitionConfig(
       String accountId, String orgIdentifier, String projectIdentifier, String envId, String infraDefinitionId) {
     InfrastructureEntity infrastructureEntity =

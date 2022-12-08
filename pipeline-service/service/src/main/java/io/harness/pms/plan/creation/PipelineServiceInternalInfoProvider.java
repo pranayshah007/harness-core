@@ -19,7 +19,6 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STRATEGY;
 import static io.harness.steps.StepSpecTypeConstants.BARRIER;
 import static io.harness.steps.StepSpecTypeConstants.FLAG_CONFIGURATION;
 import static io.harness.steps.StepSpecTypeConstants.RESOURCE_CONSTRAINT;
-import static io.harness.steps.StepSpecTypeConstants.WAIT_STEP;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -109,6 +108,7 @@ import io.harness.steps.shellscript.ShellScriptStepPlanCreator;
 import io.harness.steps.shellscript.ShellScriptStepVariableCreator;
 import io.harness.steps.shellscript.v1.ShellScriptStepPlanCreatorV1;
 import io.harness.steps.wait.WaitStepPlanCreator;
+import io.harness.steps.wait.WaitStepVariableCreator;
 import io.harness.variables.ExecutionVariableCreator;
 
 import com.google.common.collect.ImmutableSet;
@@ -215,10 +215,11 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new CustomApprovalStepVariableCreator());
     variableCreators.add(new StrategyVariableCreator());
     variableCreators.add(new PipelineStageVariableCreator());
+    variableCreators.add(new WaitStepVariableCreator());
     variableCreators.add(new EmptyAnyVariableCreator(ImmutableSet.of(GROUP, PARALLEL, STEPS, SPEC, STAGES)));
     variableCreators.add(new EmptyVariableCreator(STAGE, ImmutableSet.of(FEATURE_FLAG_SUPPORTED_TYPE)));
     variableCreators.add(
-        new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT, WAIT_STEP)));
+        new EmptyVariableCreator(STEP, ImmutableSet.of(FLAG_CONFIGURATION, BARRIER, RESOURCE_CONSTRAINT)));
     variableCreators.add(new ContainerStepVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;

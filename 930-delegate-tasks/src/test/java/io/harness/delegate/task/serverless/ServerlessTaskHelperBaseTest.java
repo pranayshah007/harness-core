@@ -59,6 +59,7 @@ import io.harness.delegate.task.git.ScmFetchFilesHelperNG;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.HintException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientV2;
@@ -423,6 +424,29 @@ public class ServerlessTaskHelperBaseTest extends CategoryTest {
     doReturn(s3Object)
         .when(awsApiHelperService)
         .getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+    String workingDir = "serverless/worDir";
+    serverlessTaskHelperBase.downloadFilesFromS3(s3StoreDelegateConfig, logCallback, workingDir);
+
+    verify(awsApiHelperService).getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
+  }
+
+  @Test(expected = HintException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void downloadFilesFromS3ExceptionTest() throws IOException {
+    AwsCredentialDTO awsCredentialDTO =
+        AwsCredentialDTO.builder().awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS).build();
+    AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
+    S3StoreDelegateConfig s3StoreDelegateConfig = S3StoreDelegateConfig.builder()
+                                                      .awsConnector(awsConnectorDTO)
+                                                      .region("region")
+                                                      .bucketName("bucketName")
+                                                      .path("zipFilePath")
+                                                      .build();
+    S3Object s3Object = new S3Object();
+    s3Object.setObjectContent(new ByteArrayInputStream("content".getBytes()));
+    Exception e = new InvalidRequestException("error");
+    doThrow(e).when(awsApiHelperService).getObjectFromS3(any(), eq("region"), eq("bucketName"), eq("zipFilePath"));
     String workingDir = "serverless/worDir";
     serverlessTaskHelperBase.downloadFilesFromS3(s3StoreDelegateConfig, logCallback, workingDir);
 

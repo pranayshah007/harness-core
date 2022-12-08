@@ -136,7 +136,7 @@ ciManagerClientConfig:
   readTimeOutSeconds: 15
 
 cvngClientConfig:
-  baseUrl: http://localhost:6060/cv/api/
+  baseUrl: http://localhost:6457/cv/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 

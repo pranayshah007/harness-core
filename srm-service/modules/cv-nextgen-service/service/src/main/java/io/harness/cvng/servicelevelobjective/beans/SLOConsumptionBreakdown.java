@@ -7,6 +7,8 @@
 
 package io.harness.cvng.servicelevelobjective.beans;
 
+import io.harness.cvng.core.beans.params.ProjectParams;
+
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Value;
@@ -25,4 +27,5 @@ public class SLOConsumptionBreakdown {
   @NotNull double sliStatusPercentage;
   @NotNull int errorBudgetBurned;
   @NotNull int contributedErrorBudgetBurned;
+  @NotNull ProjectParams projectParams;
 }

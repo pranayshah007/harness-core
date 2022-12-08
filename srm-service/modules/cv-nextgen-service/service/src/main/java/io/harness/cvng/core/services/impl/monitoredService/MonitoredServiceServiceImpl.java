@@ -541,6 +541,28 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
+  public List<MonitoredServiceResponse> get(String accountId, Set<String> identifierSet) {
+    List<MonitoredService> monitoredServices = hPersistence.createQuery(MonitoredService.class)
+                                                   .filter(MonitoredServiceKeys.accountId, accountId)
+                                                   .field(MonitoredServiceKeys.identifier)
+                                                   .in(identifierSet)
+                                                   .asList();
+    List<MonitoredServiceResponse> monitoredServiceResponseList = new ArrayList<>();
+    monitoredServices.forEach(monitoredService -> {
+      ServiceEnvironmentParams environmentParams =
+          builderWithProjectParams(ProjectParams.builder()
+                                       .accountIdentifier(monitoredService.getAccountId())
+                                       .orgIdentifier(monitoredService.getOrgIdentifier())
+                                       .projectIdentifier(monitoredService.getProjectIdentifier())
+                                       .build())
+              .serviceIdentifier(monitoredService.getServiceIdentifier())
+              .environmentIdentifier(monitoredService.getEnvironmentIdentifier())
+              .build();
+      monitoredServiceResponseList.add(createMonitoredServiceDTOFromEntity(monitoredService, environmentParams));
+    });
+    return monitoredServiceResponseList;
+  }
+  @Override
   public MonitoredServiceResponse get(ProjectParams projectParams, String identifier) {
     MonitoredService monitoredServiceEntity = getMonitoredService(projectParams, identifier);
     if (monitoredServiceEntity == null) {

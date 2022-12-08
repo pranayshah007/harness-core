@@ -7,7 +7,7 @@
 
 package io.harness.queue.consumers;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;

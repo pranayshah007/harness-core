@@ -15,6 +15,7 @@ import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.ApprovalInstanceServiceImpl;
 import io.harness.steps.barriers.service.BarrierService;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceServiceImpl;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintRegistry;
@@ -68,5 +69,11 @@ public class OrchestrationStepsModule extends AbstractModule {
   @Singleton
   public OrchestrationStepConfig orchestrationStepsConfig() {
     return configuration;
+  }
+
+  @Provides
+  @Singleton
+  public ContainerExecutionConfig getContainerStepExecutionConfig() {
+    return configuration.getContainerStepConfig();
   }
 }

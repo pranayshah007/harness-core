@@ -408,6 +408,18 @@ public class DelegateServiceGrpcClient {
     }
   }
 
+  public TaskExecutionStage cancelTaskV2(AccountId accountId, TaskId taskId) {
+    try {
+      CancelTaskResponse response =
+          delegateServiceBlockingStub.withDeadlineAfter(30, TimeUnit.SECONDS)
+              .cancelTaskV2(CancelTaskRequest.newBuilder().setAccountId(accountId).setTaskId(taskId).build());
+
+      return response.getCanceledAtStage();
+    } catch (StatusRuntimeException ex) {
+      throw new DelegateServiceDriverException("Unexpected error occurred while cancelling task.", ex);
+    }
+  }
+
   public TaskExecutionStage taskProgress(AccountId accountId, TaskId taskId) {
     try {
       TaskProgressResponse response =

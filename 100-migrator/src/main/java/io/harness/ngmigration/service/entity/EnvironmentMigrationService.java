@@ -236,7 +236,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
             .map(entry -> (ConfigFile) entry.getEntity())
             .filter(configFile -> configFile.getEntityType() == EntityType.ENVIRONMENT)
             .filter(configFile -> StringUtils.equals(configFile.getEntityId(), environment.getUuid()))
-            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getEntityId()).build())
+            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
             .collect(Collectors.toSet());
 
     List<ManifestConfigWrapper> manifests =

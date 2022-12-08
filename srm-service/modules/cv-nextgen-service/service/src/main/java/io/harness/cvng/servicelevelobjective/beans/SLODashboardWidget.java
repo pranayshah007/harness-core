@@ -70,19 +70,6 @@ public class SLODashboardWidget {
 
   @Value
   @Builder
-  public static class MonitoredServiceDetail {
-    String monitoredServiceIdentifier;
-    String monitoredServiceName;
-    String healthSourceIdentifier;
-    String healthSourceName;
-    String serviceIdentifier;
-    String serviceName;
-    String environmentIdentifier;
-    String environmentName;
-  }
-
-  @Value
-  @Builder
   public static class SLOGraphData {
     double errorBudgetRemainingPercentage;
     int errorBudgetRemaining;

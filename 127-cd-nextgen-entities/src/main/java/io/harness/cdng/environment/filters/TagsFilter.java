@@ -31,7 +31,10 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.environment.filters.TagsFilter")
 @OwnedBy(HarnessTeam.CDC)
 public class TagsFilter implements FilterSpec {
-  @NotNull @ApiModelProperty(required = true) private MatchType matchType;
+  @NotNull
+  @ApiModelProperty(required = true, dataType = SwaggerConstants.FILTERS_MATCHTYPE_ENUM_CLASSPATH)
+  @YamlSchemaTypes(runtime)
+  private ParameterField<MatchType> matchType;
 
   @NotNull
   @ApiModelProperty(required = true, dataType = SwaggerConstants.STRING_MAP_CLASSPATH)

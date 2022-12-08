@@ -236,9 +236,11 @@ public class InstanceServiceImpl implements InstanceService {
   @Override
   public AggregationResults<InstancesByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs, int limit) {
-    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit);
+      long timestampInMs, int limit, String infraId, String clusterId, String pipelineExecutionId,
+      long lastDeployedAt) {
+    return instanceRepository.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
+        projectIdentifier, serviceId, envId, buildIds, timestampInMs, limit, infraId, clusterId, pipelineExecutionId,
+        lastDeployedAt);
   }
 
   @Override

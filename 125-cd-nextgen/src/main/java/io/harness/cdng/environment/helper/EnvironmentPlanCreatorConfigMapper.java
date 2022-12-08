@@ -50,7 +50,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .build();
   }
 
-  private static NGEnvironmentInfoConfig fetchEnvironmentConfig(@NotNull String envYaml) {
+  public static NGEnvironmentInfoConfig fetchEnvironmentConfig(@NotNull String envYaml) {
     NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(envYaml);
     if (ngEnvironmentConfig == null || ngEnvironmentConfig.getNgEnvironmentInfoConfig() == null) {
       throw new InvalidRequestException("Environment used is not valid");
@@ -76,6 +76,26 @@ public class EnvironmentPlanCreatorConfigMapper {
         .environmentGlobalOverride(config.getNgEnvironmentGlobalOverride())
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.getDeployToAll().getValue())
+        .build();
+  }
+
+  public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitopsFromEnv(String mergedEnvYaml,
+      String envIdentifier, NGServiceOverrideConfig serviceOverrideConfig, List<String> clusterRefs) {
+    NGEnvironmentInfoConfig config = fetchEnvironmentConfig(mergedEnvYaml);
+    return EnvironmentPlanCreatorConfig.builder()
+        .environmentRef(ParameterField.createValueField(envIdentifier))
+        .identifier(config.getIdentifier())
+        .projectIdentifier(config.getProjectIdentifier())
+        .orgIdentifier(config.getOrgIdentifier())
+        .description(config.getDescription())
+        .name(config.getName())
+        .tags(config.getTags())
+        .type(config.getType())
+        .variables(config.getVariables())
+        .serviceOverrideConfig(serviceOverrideConfig)
+        .environmentGlobalOverride(config.getNgEnvironmentGlobalOverride())
+        .gitOpsClusterRefs(clusterRefs)
+        .deployToAll(false)
         .build();
   }
 

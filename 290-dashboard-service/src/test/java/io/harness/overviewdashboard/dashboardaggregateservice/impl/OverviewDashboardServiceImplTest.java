@@ -118,11 +118,13 @@ public class OverviewDashboardServiceImplTest {
   Map<String, String> mapOfOrganizationIdentifierAndOrganizationName = new HashMap<>();
   List<RestCallResponse> deploymentStatsOverviewRestCallResponseList1 = new ArrayList<>();
   List<RestCallResponse> deploymentStatsOverviewRestCallResponseList2 = new ArrayList<>();
+  List<RestCallResponse> deploymentStatsOverviewRestCallResponseList3 = new ArrayList<>();
   List<RestCallResponse> restCallResponseListForCountOverview1 = new ArrayList<>();
   List<RestCallResponse> restCallResponseListForCountOverview2 = new ArrayList<>();
 
   DeploymentsStatsOverview expectedDeploymentsStatsOverview1;
   DeploymentsStatsOverview expectedDeploymentsStatsOverview2;
+  DeploymentsStatsOverview expectedDeploymentsStatsOverview3;
   CountOverview expectedCountOverview1;
 
   CountOverview expectedCountOverview2;
@@ -181,6 +183,8 @@ public class OverviewDashboardServiceImplTest {
     deploymentStatsOverviewRestCallResponseList2.add(deploymentStatsSummaryRestCallResponse1);
     deploymentStatsOverviewRestCallResponseList2.add(mostActivesServices1);
 
+    deploymentStatsOverviewRestCallResponseList3.add(activeDeploymentsStatsInfo1);
+
     List<TimeBasedStats> timeBasedStatsList1 = new ArrayList<>();
     timeBasedStatsList1.add(getTimeBasedStats(10L, 10L, 10L, 10L));
     DeploymentsStatsSummary expectedDeploymentsStatsSummary1 =
@@ -210,6 +214,8 @@ public class OverviewDashboardServiceImplTest {
         expectedDeploymentsStatsSummary1, expectedMostActiveServicesList, expectedDeploymentsOverview1);
     expectedDeploymentsStatsOverview2 = getExpectedResponseForDeploymentStatsOverview(
         expectedDeploymentsStatsSummary1, expectedMostActiveServicesList, null);
+    expectedDeploymentsStatsOverview3 =
+        getExpectedResponseForDeploymentStatsOverview(null, null, expectedDeploymentsOverview1);
 
     restCallResponseListForCountOverview1.add(getServicesCount(10L, 12L));
     restCallResponseListForCountOverview1.add(getEnvCount(10L, 12L));
@@ -274,6 +280,38 @@ public class OverviewDashboardServiceImplTest {
     ExecutionResponse<DeploymentsStatsOverview> actualFailureResponse =
         overviewDashboardService.getDeploymentStatsOverview(
             accountIdentifier1, null, null, userId1, anyLong(), anyLong(), groupBy, sortBy);
+    assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testActiveDeploymentOverview() throws Exception {
+    Call<ResponseDTO<DeploymentStatsSummary>> requestDeploymentStatsSummary = Mockito.mock(Call.class);
+    Call<ResponseDTO<ServicesDashboardInfo>> requestServicesDashboardInfo = Mockito.mock(Call.class);
+    Call<ResponseDTO<PipelinesExecutionDashboardInfo>> requestActiveDeploymentStats = Mockito.mock(Call.class);
+
+    when(dashboardRBACService.listAccessibleProject(anyString(), anyString())).thenReturn(listOfAccessibleProjects);
+    when(dashboardRBACService.getMapOfOrganizationIdentifierAndOrganizationName(anyString(), anyList()))
+        .thenReturn(mapOfOrganizationIdentifierAndOrganizationName);
+    doReturn(requestActiveDeploymentStats)
+        .when(cdLandingDashboardResourceClient)
+        .getActiveDeploymentStats(anyString(), any());
+    when(cdLandingDashboardResourceClient.getDeploymentStatsSummary(
+             anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestDeploymentStatsSummary);
+    when(cdLandingDashboardResourceClient.get(anyString(), eq(startTime1), eq(endTime1), any(), any()))
+        .thenReturn(requestServicesDashboardInfo);
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList3);
+
+    ExecutionResponse<DeploymentsStatsOverview> actualSuccessResponse =
+        overviewDashboardService.getActiveDeploymentsOverview(accountIdentifier1, null, null, userId1);
+    assertThat(actualSuccessResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    assertThat(actualSuccessResponse.getResponse()).isEqualTo(expectedDeploymentsStatsOverview3);
+
+    when(parallelRestCallExecutor.executeRestCalls(anyList())).thenReturn(deploymentStatsOverviewRestCallResponseList2);
+    ExecutionResponse<DeploymentsStatsOverview> actualFailureResponse =
+        overviewDashboardService.getActiveDeploymentsOverview(accountIdentifier1, null, null, userId1);
     assertThat(actualFailureResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILURE);
   }
 

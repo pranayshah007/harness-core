@@ -50,6 +50,7 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
@@ -135,6 +136,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
   @Test
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void shouldListWorkflow() {
     PageRequest<Workflow> pageRequest = aPageRequest().build();
     PageResponse<Workflow> pageResponse = aPageResponse().withResponse(Lists.newArrayList(WORKFLOW)).build();

@@ -13,6 +13,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
+import io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.apiexamples.PipelineAPIConstants;
@@ -75,7 +76,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 @ApiResponses(value =
     {
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
-      , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
+      , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error"),
+          @ApiResponse(code = 403, response = AccessDeniedErrorDTO.class, message = "Unauthorized")
     })
 @OwnedBy(HarnessTeam.PIPELINE)
 @Api("/pipeline/execute")

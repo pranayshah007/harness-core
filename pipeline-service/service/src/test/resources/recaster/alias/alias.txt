@@ -152,8 +152,6 @@ io.harness.steps.wait.WaitStepDetailsInfo
 io.harness.steps.common.pipeline.PipelineStepParameterV1
 io.harness.steps.plugin.ContainerStepNode
 io.harness.steps.plugin.ContainerStepInfo
-io.harness.steps.plugin.ContainerStepInitOutcome
-io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.steps.plugin.ContainerStepParameters
 io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext
 io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities
@@ -163,3 +161,17 @@ io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration
 io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml
 io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml
 io.harness.steps.plugin.infrastructure.volumes.HostPathYaml
+io.harness.beans.quantity.unit.DecimalQuantityUnit
+io.harness.beans.environment.pod.container.ContainerType
+io.harness.beans.sweepingoutputs.ContainerPortDetails
+io.harness.steps.plugin.ContainerStepPassThroughData
+io.harness.beans.environment.pod.container.ContainerImageDetails
+io.harness.beans.environment.pod.container.ContainerSource
+io.harness.beans.quantity.unit.StorageQuantityUnit
+io.harness.steps.container.execution.ContainerExecutionConfig
+io.harness.steps.plugin.infrastructure.ContainerCleanupDetails
+io.harness.steps.container.execution.ContainerDetailsSweepingOutput
+io.harness.beans.environment.pod.container.ContainerDefinitionInfo
+io.harness.beans.quantity.CpuQuantity
+io.harness.beans.quantity.StorageQuantity
+io.harness.beans.yaml.extended.ImagePullPolicy
