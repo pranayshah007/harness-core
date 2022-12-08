@@ -9,18 +9,24 @@ package io.harness.ci.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.beans.config.STOImageConfig;
+import io.harness.beans.config.STOStepsExecutionConfig;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
+import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.execution.CIExecutionConfigService;
+import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.OutputNGVariable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class CIStepInfoUtils {
@@ -76,13 +82,60 @@ public class CIStepInfoUtils {
     return stepImageConfig.getEntrypoint();
   }
 
+  private static StepImageConfig getSecurityStepImageConfig(PluginCompatibleStep step,
+      CIExecutionConfigService ciExecutionConfigService, String accountId, StepImageConfig defaultImageConfig) {
+    if (step instanceof STOGenericStepInfo) {
+      STOStepsExecutionConfig stoStepsConfig =
+          ciExecutionConfigService.getCiExecutionServiceConfig().getStoStepsExecutionConfig();
+      STOGenericStepInfo genericStep = (STOGenericStepInfo) step;
+      String stepTypeName = step.getStepType().getType().toLowerCase();
+      String stepConfigName = genericStep.getConfig().toString();
+      String stepProductName = String.join("_", stepTypeName, stepConfigName);
+
+      List<STOImageConfig> stoStepImages = stoStepsConfig.getImages();
+      String defaultTag = stoStepsConfig.getDefaultTag();
+      List<String> defaultEntryPoint = stoStepsConfig.getDefaultEntrypoint();
+      Optional<STOImageConfig> optionalSTOImageConfig =
+          stoStepImages.stream().filter(el -> el.getProduct() == stepProductName).findFirst();
+
+      if (optionalSTOImageConfig.isPresent()) {
+        STOImageConfig stepImageConfig = optionalSTOImageConfig.get();
+        String tag = stepImageConfig.getTag() == null ? defaultTag : stepImageConfig.getTag();
+        List<String> entrypoint =
+            stepImageConfig.getEntrypoint() == null ? defaultEntryPoint : stepImageConfig.getEntrypoint();
+        return StepImageConfig.builder()
+            .image(String.join(":", stepImageConfig.getImage(), tag))
+            .entrypoint(entrypoint)
+            .build();
+      }
+    }
+
+    return defaultImageConfig;
+  }
+
   private static StepImageConfig getK8PluginCustomStepImageConfig(
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
-    return ciExecutionConfigService.getPluginVersionForK8(step.getNonYamlInfo().getStepInfoType(), accountId);
+    CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
+    StepImageConfig defaultImageConfig = ciExecutionConfigService.getPluginVersionForK8(stepInfoType, accountId);
+    switch (stepInfoType) {
+      case SECURITY:
+        return getSecurityStepImageConfig(step, ciExecutionConfigService, accountId, defaultImageConfig);
+      default:
+        return defaultImageConfig;
+    }
   }
 
   private static String getVmPluginCustomStepImageConfig(
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
-    return ciExecutionConfigService.getPluginVersionForVM(step.getNonYamlInfo().getStepInfoType(), accountId);
+    CIStepInfoType stepInfoType = step.getNonYamlInfo().getStepInfoType();
+    String defaultImage = ciExecutionConfigService.getPluginVersionForVM(stepInfoType, accountId);
+    StepImageConfig defaultImageConfig = StepImageConfig.builder().image(defaultImage).build();
+
+    switch (stepInfoType) {
+      case SECURITY:
+        return getSecurityStepImageConfig(step, ciExecutionConfigService, accountId, defaultImageConfig).getImage();
+      default:
+        return defaultImage;
+    }
   }
 }

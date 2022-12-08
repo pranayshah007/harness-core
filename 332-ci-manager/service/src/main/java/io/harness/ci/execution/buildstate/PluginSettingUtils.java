@@ -122,6 +122,7 @@ import io.harness.yaml.sto.variables.STOYamlTargetType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -893,6 +894,7 @@ public class PluginSettingUtils {
       STOYamlGenericConfig config = stepData.getConfig();
       STOYamlScanMode scanMode = stepData.getMode();
 
+      map.put(getSTOKey("product_name"), stepData.getProductName());
       map.put(getSTOKey("product_config_name"),
           config != null ? config.getYamlName() : STOYamlGenericConfig.DEFAULT.getYamlName());
       map.put(getSTOKey("policy_type"),
@@ -930,6 +932,8 @@ public class PluginSettingUtils {
     }
 
     setMandatoryEnvironmentVariable(map, PLUGIN_STEP_ID, identifier);
+    map.values().removeAll(Collections.singleton(null));
+
     return map;
   }
 

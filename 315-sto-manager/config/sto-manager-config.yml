@@ -96,6 +96,15 @@ ciExecutionServiceConfig:
       connectTimeOutSeconds: 15
       readTimeOutSeconds: 15
     authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0eXBlIjoiU0VSVklDRSIsIm5hbWUiOiJIU1FTIiwiZW1haWwiOiIiLCJ1c2VybmFtZSI6IiIsImlzcyI6Ikhhcm5lc3MgSW5jIiwiZXhwIjoxNjY5MjE5ODUxLCJuYmYiOjE2NjkyMTI2NTEsImlhdCI6MTY2OTIxMjY1MX0.TpxXD9jNv0tBywmgDQj1alDrXJGz-PTgerLkkBJDlAE
+  stoStepsExecutionConfig:
+    defaultTag: dev
+    defaultEntrypoint:
+      - /bin/start.sh
+      - "--run-strategy"
+      - single-container
+    images:
+      - product: bandit_default
+        image: harness/bandit-job-runner
   addonImageTag: releaseBuild-30
   liteEngineImageTag: releaseBuild-29
   defaultMemoryLimit: 500

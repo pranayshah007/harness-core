@@ -30,6 +30,8 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.STOGenericStepInfo")
 public class STOGenericStepInfo extends SecurityStepInfo {
+  @ApiModelProperty(hidden = true) String productName = "default";
+
   @NotNull @ApiModelProperty(dataType = "io.harness.yaml.sto.variables.STOYamlScanMode") protected STOYamlScanMode mode;
 
   @NotNull

@@ -15,6 +15,7 @@ import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.data.annotation.TypeAlias;
@@ -26,4 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("banditStepInfo")
 @OwnedBy(STO)
 @RecasterAlias("io.harness.beans.steps.stepinfo.security.BanditStepInfo")
-public class BanditStepInfo extends STOGenericStepInfo {}
+public class BanditStepInfo extends STOGenericStepInfo {
+  @ApiModelProperty(hidden = true) String productName = "bandit";
+}
