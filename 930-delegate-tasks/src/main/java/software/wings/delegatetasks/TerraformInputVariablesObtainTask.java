@@ -99,7 +99,7 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
 
           awsS3HelperServiceDelegate.downloadS3Directory(
               parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(downloadDir));
-        } catch (Exception ex) {
+        } catch (InterruptedException ex) {
           return TerraformInputVariablesTaskResponse.builder()
               .terraformExecutionData(TerraformExecutionData.builder()
                                           .executionStatus(ExecutionStatus.FAILED)

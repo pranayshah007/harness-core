@@ -2015,7 +2015,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
-    kryo.register(TerragruntApplyTaskResponse.class, 573568);
+    kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TfVarS3Source.class, 573570);
   }
 }
