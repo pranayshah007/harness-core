@@ -9,6 +9,7 @@ package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.eraro.ErrorCode.TIMEOUT_ENGINE_EXCEPTION;
+import static io.harness.springdata.SpringDataMongoUtils.setUnset;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.OrchestrationEngine;
@@ -16,6 +17,7 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.advise.NodeAdviseHelper;
 import io.harness.eraro.Level;
 import io.harness.execution.NodeExecution;
+import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -43,7 +45,6 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private OrchestrationEngine engine;
-  @Inject private NodeAdviseHelper nodeAdviseHelper;
 
   @Inject @Named("EngineExecutorService") private ExecutorService executorService;
   @Inject NodeAdviseHelper adviseHelper;
@@ -73,14 +74,17 @@ public class WaitForExecutionInputCallback implements OldNotifyCallback {
                                                       .setMessage("ExecutionInputExpired")
                                                       .build())
                                   .build();
+
+    log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+    NodeExecution updatedNodeExecution = nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED,
+        ops -> setUnset(ops, NodeExecutionKeys.failureInfo, failureInfo), EnumSet.noneOf(Status.class));
+    // End nodeExecution if advisers are empty.
     if (CollectionUtils.isEmpty(node.getAdviserObtainments())) {
-      nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.EXPIRED, null, EnumSet.noneOf(Status.class));
       engine.endNodeExecution(nodeExecution.getAmbiance());
       return;
     }
-    // End nodeExecution if advisers are empty.
-    adviseHelper.queueAdvisingEvent(nodeExecution, failureInfo, node, Status.INPUT_WAITING);
-    log.warn("Execution input timed out for nodeExecutionId {}", nodeExecutionId);
+    // Queue advising event so that failure-strategies will be honored.
+    adviseHelper.queueAdvisingEvent(updatedNodeExecution, failureInfo, node, Status.EXPIRED);
   }
 
   @Override

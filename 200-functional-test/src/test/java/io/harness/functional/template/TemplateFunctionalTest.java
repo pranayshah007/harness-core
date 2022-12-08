@@ -42,11 +42,11 @@ import software.wings.beans.Account;
 import software.wings.beans.Application;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.template.Template;
 import software.wings.beans.template.TemplateFolder;
 import software.wings.beans.template.TemplateType;
 import software.wings.beans.template.command.ShellScriptTemplate;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.template.TemplateFolderService;
 
 import com.google.inject.Inject;

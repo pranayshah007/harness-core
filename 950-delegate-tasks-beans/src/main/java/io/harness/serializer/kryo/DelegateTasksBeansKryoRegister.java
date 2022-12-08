@@ -10,6 +10,9 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.dtos.AuditBatchDTO;
+import io.harness.audit.streaming.dtos.AuditRecordDTO;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -182,6 +185,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTask
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -1519,6 +1524,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(K8sClusterInfo.class, 543361);
     kryo.register(K8sServiceAccountInfoResponse.class, 543362);
+    kryo.register(AwsPutAuditBatchToBucketTaskResponse.class, 543363);
+    kryo.register(AwsPutAuditBatchToBucketTaskParamsRequest.class, 543364);
+    kryo.register(AuditBatchDTO.class, 543365);
+    kryo.register(AuditRecordDTO.class, 543366);
+    kryo.register(AuditBatchDTO.BatchStatus.class, 543367);
+    kryo.register(AuditBatchDTO.BatchState.class, 543368);
+    kryo.register(PutObjectResultResponse.class, 543369);
 
     kryo.register(CfDeployCommandResponse.class, 543401);
     kryo.register(CfInfraMappingDataResponse.class, 543402);

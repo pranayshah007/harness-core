@@ -27,8 +27,8 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.ArtifactCollectLoopParams;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.sm.ContextElement;
 import software.wings.sm.ExecutionContextImpl;

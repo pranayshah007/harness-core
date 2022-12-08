@@ -2118,6 +2118,13 @@
 543360:io.harness.delegate.task.gcp.response.GcpBucketDetails
 543361:io.harness.delegate.beans.ccm.K8sClusterInfo
 543362:io.harness.delegate.beans.connector.k8Connector.K8sServiceAccountInfoResponse
+543363:io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse
+543364:io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest
+543365:io.harness.audit.streaming.dtos.AuditBatchDTO
+543366:io.harness.audit.streaming.dtos.AuditRecordDTO
+543367:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchStatus
+543368:io.harness.audit.streaming.dtos.AuditBatchDTO.BatchState
+543369:io.harness.audit.streaming.dtos.PutObjectResultResponse
 543401:io.harness.delegate.task.pcf.response.CfDeployCommandResponse
 543402:io.harness.delegate.task.pcf.response.CfInfraMappingDataResponse
 543403:io.harness.delegate.task.pcf.response.CfInstanceSyncResponse
@@ -2481,6 +2488,7 @@
 10000113:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType
 10000114:io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO
 10000115:io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO
+
 10000201:io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO
 10000202:io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO
 10000203:io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO

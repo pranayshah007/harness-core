@@ -22,9 +22,9 @@ import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.InvalidRequestException;
 import io.harness.scheduler.PersistentScheduler;
 
-import software.wings.beans.AppContainer;
 import software.wings.beans.Service;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
 import software.wings.scheduler.PruneFileJob;
 import software.wings.service.intfc.AppContainerService;
 import software.wings.service.intfc.AppService;

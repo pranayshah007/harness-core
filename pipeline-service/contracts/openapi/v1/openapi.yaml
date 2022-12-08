@@ -316,16 +316,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       requestBody:
         $ref: '#/components/requestBodies/InputSetCreateRequestBody'
     get:
@@ -366,17 +356,17 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
         - $ref: '#/components/parameters/Branch'
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_connector_ref
+          description: Connector reference for Parent Entity (Pipeline).
+        - schema:
+            type: string
+          in: query
+          name: parent_entity_repo_name
+          description: Repository name for Parent Entity (Pipeline).
     put:
       summary: Update an Input Set
       operationId: update-input-set
@@ -389,16 +379,6 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountHeader'
         - $ref: '#/components/parameters/PipelineInputSetParam'
-        - schema:
-            type: string
-          in: query
-          name: pipeline_branch
-          description: Git branch of the Pipeline for which the Input Set is to be created.
-        - schema:
-            type: string
-          in: query
-          name: pipeline_repo
-          description: Git repository identifier of the Pipeline for which the Input Set is to be created.
       tags:
         - Input Sets
       requestBody:
@@ -1619,6 +1599,8 @@ components:
             last_object_id: abcdXYZ
             base_branch: old_branch
             last_commit_id: abcdXYZ
+            parent_entity_connector_ref: git_connector
+            parent_entity_repo_name: example_repository
       properties:
         input_set_yaml:
           type: string
@@ -1664,6 +1646,8 @@ components:
           last_object_id: abcdXYZ
           base_branch: old_branch
           last_commit_id: abcdXYZ
+          parent_entity_connector_ref: git_connector
+          parent_entity_repo_name: example_repository
       properties:
         branch_name:
           type: string
@@ -1680,6 +1664,12 @@ components:
         last_commit_id:
           type: string
           description: Last commit identifier.
+        parent_entity_connector_ref:
+          type: string
+          description: Connector reference for Parent Entity (Pipeline).
+        parent_entity_repo_name:
+          type: string
+          description: Repository name for Parent Entity (Pipeline).
   securitySchemes:
     x-api-key:
       name: x-api-key
@@ -2626,6 +2616,8 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
         application/yaml:
           schema:
             $ref: '#/components/schemas/InputSetUpdateRequestBody'
@@ -2681,5 +2673,7 @@ components:
                   last_object_id: abcdXYZ
                   base_branch: old_branch
                   last_commit_id: abcdXYZ
+                  parent_entity_connector_ref: git_connector
+                  parent_entity_repo_name: example_repository
       description: Input Set update request body
       required: true
