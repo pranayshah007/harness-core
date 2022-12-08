@@ -138,7 +138,7 @@ public interface K8sConstants {
       + "${ARGS}"
       + "      - --login\n"
       + "      - azurecli\n"
-      + "      command: kubelogin\n"
+      + "      command: /opt/harness-delegate/bin/linux_amd64/kubelogin\n"
       + "      env: null\n"
       + "      interactiveMode: Never\n"
       + "      provideClusterInfo: false\n";
