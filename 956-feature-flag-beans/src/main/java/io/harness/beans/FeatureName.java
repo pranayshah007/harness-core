@@ -508,7 +508,13 @@ public enum FeatureName {
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
   CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
   CDS_FILTER_INFRA_CLUSTERS_ON_TAGS(
-      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC);
+      "For supporting filtering of infras and gitOps clusters based on tags", HarnessTeam.CDC),
+  WINRM_SCRIPT_COMMAND_SPLIT_NG(
+      "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
+      HarnessTeam.CDP),
+  DISABLE_WINRM_COMMAND_ENCODING_NG(
+      "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
+      HarnessTeam.CDP);
 
   @Deprecated
   FeatureName() {
