@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -69,7 +70,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                 -> DelegateTaskDequeue.builder()
                        .payload(dequeueResponse.getPayload())
                        .itemId(dequeueResponse.getItemId())
-                       .delegateTask(convertToDelegateTask(dequeueResponse.getPayload(), objectMapper))
+                       .delegateTask(convertToDelegateTask(dequeueResponse.getPayload(), objectMapper).orElse(null))
                        .build())
             .filter(this::isResourceAvailableToAssignTask)
             .collect(toList());
@@ -99,16 +100,16 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
         acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
       }
     } catch (Exception e) {
-      log.error("", e);
+      log.error("Unable to acknowledge queue service on dequeue delegate task", e);
     }
   }
 
-  public DelegateTask convertToDelegateTask(String payload, ObjectMapper objectMapper) {
+  public Optional<DelegateTask> convertToDelegateTask(String payload, ObjectMapper objectMapper) {
     try {
-      return objectMapper.readValue(Base64.getDecoder().decode(payload), DelegateTask.class);
+      return Optional.ofNullable(objectMapper.readValue(Base64.getDecoder().decode(payload), DelegateTask.class));
     } catch (Exception e) {
       log.error("Error while decoding delegate task from queue. ", e);
     }
-    return null;
+    return Optional.empty();
   }
 }
