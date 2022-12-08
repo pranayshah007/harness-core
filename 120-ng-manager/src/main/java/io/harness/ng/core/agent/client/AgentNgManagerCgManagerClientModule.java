@@ -17,7 +17,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(DEL)
 public class AgentNgManagerCgManagerClientModule extends AbstractModule {
@@ -33,7 +32,6 @@ public class AgentNgManagerCgManagerClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private AgentNgManagerCgManagerClientFactory agentNgManagerCgManagerClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AgentNgManagerCgManagerClientFactory(

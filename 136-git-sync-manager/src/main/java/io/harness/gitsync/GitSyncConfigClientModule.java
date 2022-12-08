@@ -17,7 +17,6 @@ import io.harness.security.ServiceTokenGenerator;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.PL)
 public class GitSyncConfigClientModule extends AbstractModule {
@@ -37,7 +36,6 @@ public class GitSyncConfigClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private YamlGitConfigHttpFactory yamlGitConfigHttpFactory() {
     return new YamlGitConfigHttpFactory(
         secretManagerConfig, serviceSecret, new ServiceTokenGenerator(), null, clientId);

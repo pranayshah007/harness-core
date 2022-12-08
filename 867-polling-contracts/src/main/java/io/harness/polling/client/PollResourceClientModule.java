@@ -18,7 +18,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(HarnessTeam.CDC)
 public class PollResourceClientModule extends AbstractModule {
@@ -35,7 +34,6 @@ public class PollResourceClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private PollResourceHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new PollResourceHttpClientFactory(this.ngManagerClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId, ClientMode.PRIVILEGED);

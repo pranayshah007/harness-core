@@ -16,7 +16,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 public class LightwingClientModule extends AbstractModule {
   private final ServiceHttpClientConfig lightwingAutoCUDClientConfig;
@@ -34,7 +33,6 @@ public class LightwingClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private LightwingHttpClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new LightwingHttpClientFactory(this.lightwingAutoCUDClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);

@@ -14,7 +14,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 public class NgLicenseHttpClientModule extends AbstractModule {
   private final ServiceHttpClientConfig ngManagerClientConfig;
@@ -38,7 +37,6 @@ public class NgLicenseHttpClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private NgLicenseHttpClientFactory ngLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgLicenseHttpClientFactory(
         this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

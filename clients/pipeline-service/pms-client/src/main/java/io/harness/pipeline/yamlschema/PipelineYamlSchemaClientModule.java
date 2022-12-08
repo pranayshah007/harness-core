@@ -14,7 +14,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 public class PipelineYamlSchemaClientModule extends AbstractModule {
   private final ServiceHttpClientConfig serviceHttpClientConfig;
@@ -30,7 +29,6 @@ public class PipelineYamlSchemaClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private PipelineYamlSchemaServiceHttpClientFactory secretNGManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new PipelineYamlSchemaServiceHttpClientFactory(

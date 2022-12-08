@@ -16,7 +16,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 public class NotificationResourceClientModule extends AbstractModule {
   private final ServiceHttpClientConfig ngManagerClientConfig;
@@ -43,7 +42,6 @@ public class NotificationResourceClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private NotificationResourceClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NotificationResourceClientFactory(this.ngManagerClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);

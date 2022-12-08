@@ -22,7 +22,6 @@ import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -41,7 +40,6 @@ public class NgInviteClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
-  @Singleton
   private NgInviteHttpClientFactory privilegedNgInviteHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgInviteHttpClientFactory(this.ngManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.PRIVILEGED);
@@ -49,7 +47,6 @@ public class NgInviteClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
-  @Singleton
   private NgInviteHttpClientFactory nonPrivilegedNgInviteHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new NgInviteHttpClientFactory(this.ngManagerClientConfig, serviceSecret, new ServiceTokenGenerator(),
         kryoConverterFactory, clientId, ClientMode.NON_PRIVILEGED);

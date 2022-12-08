@@ -21,7 +21,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(PIPELINE)
 public class EnvironmentResourceClientModule extends AbstractModule {
@@ -49,7 +48,6 @@ public class EnvironmentResourceClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private EnvironmentResourceClientHttpFactory secretManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new EnvironmentResourceClientHttpFactory(this.ngManagerClientConfig, this.serviceSecret,

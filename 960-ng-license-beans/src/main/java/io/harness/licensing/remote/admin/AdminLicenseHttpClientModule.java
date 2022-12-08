@@ -15,7 +15,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -25,7 +24,6 @@ public class AdminLicenseHttpClientModule extends AbstractModule {
   private final String clientId;
 
   @Provides
-  @Singleton
   private AdminLicenseHttpClientFactory adminLicenseHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new AdminLicenseHttpClientFactory(this.adminLicenseHttpClientConfig, this.serviceSecret,
         new ServiceTokenGenerator(), kryoConverterFactory, clientId);

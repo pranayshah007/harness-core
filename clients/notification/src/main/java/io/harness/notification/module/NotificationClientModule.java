@@ -64,7 +64,6 @@ public class NotificationClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private NotificationHTTPFactory notificationHTTPFactory(KryoConverterFactory kryoConverterFactory) {
     ServiceHttpClientConfig serviceHttpClientConfig = this.notificationClientConfiguration.getServiceHttpClientConfig();
     return new NotificationHTTPFactory(serviceHttpClientConfig,

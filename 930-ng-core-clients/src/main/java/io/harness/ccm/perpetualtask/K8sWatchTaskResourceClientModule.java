@@ -18,7 +18,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(CE)
 public class K8sWatchTaskResourceClientModule extends AbstractModule {
@@ -35,7 +34,6 @@ public class K8sWatchTaskResourceClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private K8sWatchTaskResourceHttpClientFactory secretManagerHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new K8sWatchTaskResourceHttpClientFactory(

@@ -21,7 +21,6 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 
 @OwnedBy(PL)
 public class AuthenticationSettingsModule extends AbstractModule {
@@ -40,7 +39,6 @@ public class AuthenticationSettingsModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private AuthSettingsManagerClientFactory getAuthSettingsManagerClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AuthSettingsManagerClientFactory(

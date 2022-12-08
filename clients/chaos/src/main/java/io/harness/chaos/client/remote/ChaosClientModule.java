@@ -31,7 +31,6 @@ public class ChaosClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private ChaosHttpClientFactory chaosHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ChaosHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

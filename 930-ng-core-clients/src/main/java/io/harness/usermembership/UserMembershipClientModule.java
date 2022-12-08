@@ -21,7 +21,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -40,7 +39,6 @@ public class UserMembershipClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
-  @Singleton
   private UserMembershipHttpClientFactory privilegedUserMembershipHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new UserMembershipHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),
@@ -49,7 +47,6 @@ public class UserMembershipClientModule extends AbstractModule {
 
   @Provides
   @Named("NON_PRIVILEGED")
-  @Singleton
   private UserMembershipHttpClientFactory nonPrivilegedUserMembershipHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new UserMembershipHttpClientFactory(serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(),

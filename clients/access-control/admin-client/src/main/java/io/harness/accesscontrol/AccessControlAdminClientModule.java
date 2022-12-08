@@ -20,7 +20,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -45,7 +44,6 @@ public class AccessControlAdminClientModule extends AbstractModule {
   }
 
   @Provides
-  @Singleton
   private AccessControlAdminHttpClientFactory accessControlHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AccessControlAdminHttpClientFactory(
@@ -56,7 +54,6 @@ public class AccessControlAdminClientModule extends AbstractModule {
 
   @Provides
   @Named("PRIVILEGED")
-  @Singleton
   private AccessControlAdminHttpClientFactory accessControlAdminHttpClientFactory(
       KryoConverterFactory kryoConverterFactory) {
     return new AccessControlAdminHttpClientFactory(
