@@ -22,12 +22,9 @@ import lombok.Value;
 public class EnqueueRequest {
   String payload;
 
-  //topic name -delegate-task
   String producerName;
 
-  //account id
   String subTopic;
 
-  //topic name -delegate-task
   String topic;
 }

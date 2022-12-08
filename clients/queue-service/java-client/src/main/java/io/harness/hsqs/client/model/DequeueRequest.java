@@ -21,15 +21,11 @@ import lombok.Value;
 @Value
 @Builder
 public class DequeueRequest {
-  //100
   Integer batchSize;
 
-  ////topic name -delegate-task
   String consumerName;
 
-  //
   Integer maxWaitDuration;
 
-  //topic name -delegate-task
   String topic;
 }
