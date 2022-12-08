@@ -27,6 +27,7 @@ import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.sdk.CacheResponse;
 import io.harness.gitsync.sdk.CacheState;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -34,6 +35,9 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
 import io.harness.rule.Owner;
+import io.harness.spec.server.commons.model.GovernanceMetadata;
+import io.harness.spec.server.commons.model.GovernanceStatus;
+import io.harness.spec.server.commons.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.GitDetails;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
@@ -213,5 +217,25 @@ public class PipelinesApiUtilsTest extends CategoryTest {
     assertEquals(
         CacheResponseMetadataDTO.CacheStateEnum.VALID_CACHE, responseBody.getCacheResponseMetadata().getCacheState());
     assertEquals(lastUpdatedAt, responseBody.getCacheResponseMetadata().getLastUpdatedAt());
+  }
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildGovernanceMetadata() {
+    io.harness.governance.GovernanceMetadata proto =
+        io.harness.governance.GovernanceMetadata.newBuilder()
+            .setDeny(false)
+            .setStatus("pass")
+            .addDetails(
+                PolicySetMetadata.newBuilder().setIdentifier("id").setPolicySetName("name").setStatus("pass").build())
+            .build();
+    GovernanceMetadata governanceMetadata = PipelinesApiUtils.buildGovernanceMetadataFromProto(proto);
+    assertThat(governanceMetadata.getStatus()).isEqualTo(GovernanceStatus.PASS);
+    assertThat(governanceMetadata.isDeny()).isFalse();
+    assertThat(governanceMetadata.getMessage()).isNullOrEmpty();
+    List<PolicySet> policySets = governanceMetadata.getPolicySets();
+    assertThat(policySets).hasSize(1);
+    PolicySet policySet = policySets.get(0);
+    assertThat(policySet.getStatus()).isEqualTo(GovernanceStatus.PASS);
   }
 }

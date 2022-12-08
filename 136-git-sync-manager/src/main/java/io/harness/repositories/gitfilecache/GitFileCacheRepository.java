@@ -20,4 +20,8 @@ import org.springframework.data.repository.CrudRepository;
 public interface GitFileCacheRepository extends CrudRepository<GitFileCache, String>, GitFileCacheRepositoryCustom {
   GitFileCache findByAccountIdentifierAndGitProviderAndRepoNameAndRefAndCompleteFilepath(
       String accountIdentifier, GitProvider gitProvider, String repoName, String ref, String completeFilepath);
+
+  GitFileCache findByAccountIdentifierAndGitProviderAndRepoNameAndCompleteFilepathAndIsDefaultBranch(
+      String accountIdentifier, GitProvider gitProvider, String repoName, String completeFilepath,
+      boolean isDefaultBranch);
 }

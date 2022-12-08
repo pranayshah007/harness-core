@@ -30,10 +30,17 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
 
   @Override
   public GitFileCacheResponse fetchFromCache(GitFileCacheKey gitFileCacheKey) {
-    GitFileCache gitFileCache =
-        gitFileCacheRepository.findByAccountIdentifierAndGitProviderAndRepoNameAndRefAndCompleteFilepath(
-            gitFileCacheKey.getAccountIdentifier(), GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()),
-            gitFileCacheKey.getRepoName(), gitFileCacheKey.getRef(), gitFileCacheKey.getCompleteFilePath());
+    GitFileCache gitFileCache;
+    if (gitFileCacheKey.isDefaultBranch()) {
+      gitFileCache =
+          gitFileCacheRepository.findByAccountIdentifierAndGitProviderAndRepoNameAndCompleteFilepathAndIsDefaultBranch(
+              gitFileCacheKey.getAccountIdentifier(), GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()),
+              gitFileCacheKey.getRepoName(), gitFileCacheKey.getCompleteFilePath(), true);
+    } else {
+      gitFileCache = gitFileCacheRepository.findByAccountIdentifierAndGitProviderAndRepoNameAndRefAndCompleteFilepath(
+          gitFileCacheKey.getAccountIdentifier(), GitProviderMapper.toEntity(gitFileCacheKey.getGitProvider()),
+          gitFileCacheKey.getRepoName(), gitFileCacheKey.getRef(), gitFileCacheKey.getCompleteFilePath());
+    }
     if (gitFileCache == null) {
       return null;
     }
@@ -79,6 +86,10 @@ public class GitFileCacheServiceImpl implements GitFileCacheService {
     update.setOnInsert(GitFileCacheKeys.createdAt, currentTime);
     update.set(GitFileCacheKeys.validUntil, GitFileCacheTTLHelper.getValidUntilTime(currentTime));
     update.set(GitFileCacheKeys.lastUpdatedAt, currentTime);
+    if (gitFileCacheKey.isDefaultBranch()) {
+      update.set(GitFileCacheKeys.isDefaultBranch, true);
+    }
+
     return update;
   }
 

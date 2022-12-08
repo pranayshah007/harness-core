@@ -177,6 +177,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
   @Override
   public void handleResponse(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response) {
+    copyTaskDataV2ToTaskData(delegateTask);
+
     if (delegateTask.getDriverId() == null) {
       handleInprocResponse(delegateTask, response);
     } else {

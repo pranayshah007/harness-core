@@ -4127,8 +4127,18 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
+  public DelegateTask abortTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.abortTaskV2(accountId, delegateTaskId);
+  }
+
+  @Override
   public String expireTask(String accountId, String delegateTaskId) {
     return delegateTaskServiceClassic.expireTask(accountId, delegateTaskId);
+  }
+
+  @Override
+  public String expireTaskV2(String accountId, String delegateTaskId) {
+    return delegateTaskServiceClassic.expireTaskV2(accountId, delegateTaskId);
   }
 
   public DelegateSizeDetails fetchDefaultDockerDelegateSize() {

@@ -54,7 +54,7 @@ gitCommitNG {"name": "accountIdentifier_repoURL_branchName_gitsyncdirection_crea
 gitCommitNG {"name": "status_1", "background": true} {"status": 1}
 gitCommitNG {"name": "unique_commitId_repoURL_gitSyncDirection_idx", "unique": true} {"commitId": 1, "repoURL": 1, "gitSyncDirection": 1}
 gitFileActivityNG {"name": "lastUpdatedAt_1", "background": true} {"lastUpdatedAt": 1}
-gitFileCache {"name": "accountIdentifier_gitProvider_repoName_ref_completeFilepath_unique_idx", "unique": true} {"accountIdentifier": 1, "gitProvider": 1, "repoName": 1, "ref": 1, "completeFilepath": 1}
+gitFileCache {"name": "accountIdentifier_gitProvider_repoName_ref_completeFilepath_isDefaultBranch_unique_idx", "unique": true} {"accountIdentifier": 1, "gitProvider": 1, "repoName": 1, "ref": 1, "completeFilepath": 1, "isDefaultBranch": 1}
 gitFileCache {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 gitFileLocation {"name": "account_org_project__idx", "background": true} {"accountId": 1, "organizationId": 1, "projectId": 1}
 gitFullSyncConfig {"name": "unique_accountIdentifier_organizationIdentifier_projectIdentifier", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1}
