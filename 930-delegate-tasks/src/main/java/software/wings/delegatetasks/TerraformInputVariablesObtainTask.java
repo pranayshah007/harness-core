@@ -88,7 +88,7 @@ public class TerraformInputVariablesObtainTask extends AbstractDelegateRunnableT
       GitOperationContext gitOperationContext = null;
       GitConfig gitConfig = parameters.getSourceRepo();
 
-      if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
         try {
           AmazonS3URI s3URI = new AmazonS3URI(parameters.getS3URI());
           encryptionService.decrypt(

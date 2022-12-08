@@ -80,7 +80,7 @@ public class TerraformFetchTargetsTask extends AbstractDelegateRunnableTask {
     try {
       GitConfig gitConfig = parameters.getSourceRepo();
       String absoluteModulePath = null;
-      if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
         try {
           AmazonS3URI s3URI = new AmazonS3URI(parameters.getS3URI());
           encryptionService.decrypt(
