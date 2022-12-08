@@ -19,7 +19,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.helpers.ext.mail.EmailData;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
