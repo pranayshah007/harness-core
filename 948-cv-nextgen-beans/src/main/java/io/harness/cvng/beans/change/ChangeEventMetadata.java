@@ -24,7 +24,7 @@ import lombok.experimental.SuperBuilder;
   , @JsonSubTypes.Type(value = HarnessCDEventMetadata.class, name = "HarnessCDNextGen"),
       @JsonSubTypes.Type(value = PagerDutyEventMetaData.class, name = "PagerDuty"),
       @JsonSubTypes.Type(value = HarnessCDCurrentGenEventMetadata.class, name = "HarnessCD"),
-      @JsonSubTypes.Type(value = InternalChangeEventMetaData.class, name = "FF")
+      @JsonSubTypes.Type(value = InternalChangeEventMetaData.class, name = "InternalChangeEventFF")
 })
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
