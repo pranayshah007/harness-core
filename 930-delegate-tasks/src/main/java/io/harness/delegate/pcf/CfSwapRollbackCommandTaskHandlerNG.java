@@ -27,7 +27,6 @@ import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
-import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
 import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
@@ -37,7 +36,6 @@ import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
-import io.harness.delegate.task.pcf.request.CfCommandRollbackRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -48,7 +46,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
@@ -61,12 +58,10 @@ import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
@@ -204,7 +199,11 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfRollbackCommandResult.setUpdatedValues(updateValues);
       cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
-      cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
+      if (cfRollbackCommandResult.getCfInstanceElements() != null) {
+        cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
+      } else {
+        cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
+      }
 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
