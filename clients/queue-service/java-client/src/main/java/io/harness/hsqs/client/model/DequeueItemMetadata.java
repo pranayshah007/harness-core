@@ -21,7 +21,6 @@ import lombok.Value;
 @Value
 @Builder
 public class DequeueItemMetadata {
-
   Integer currentRetryCount;
 
   Long maxProcessingTime;
