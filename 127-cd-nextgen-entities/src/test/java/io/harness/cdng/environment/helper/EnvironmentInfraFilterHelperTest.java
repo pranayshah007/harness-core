@@ -33,6 +33,7 @@ import io.harness.rule.Owner;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +140,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
 
     Set<Environment> environments =
         getEnvironmentInfraFilterHelper().applyFiltersOnEnvs(listOfEnvironment, Arrays.asList(filterYaml));
-    assertThat(environments.size()).isEqualTo(1);
+    assertThat(environments.size()).isEqualTo(2);
   }
 
   @Test
@@ -207,7 +208,7 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
     final FilterYaml filterYaml = getTagFilterYamlMatchTypeAll();
     Set<InfrastructureEntity> filteredEnv =
         getEnvironmentInfraFilterHelper().processTagsFilterYamlForInfraStructures(filterYaml, listOfInfra);
-    assertThat(filteredEnv.size()).isEqualTo(1);
+    assertThat(filteredEnv.size()).isEqualTo(2);
   }
 
   @Test
@@ -221,6 +222,14 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
                        .filters(ParameterField.createValueField(Arrays.asList(FilterYaml.builder().build())))
                        .build()))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = ROHITKARELIA)
+  @Category(UnitTests.class)
+  public void testAreFiltersPresentReturnsFalseIfNotEnvironmentsExists() {
+    assertThat(getEnvironmentInfraFilterHelper().areFiltersPresent(EnvironmentsYaml.builder().uuid("envId").build()))
+        .isFalse();
   }
 
   @Test
@@ -257,24 +266,31 @@ public class EnvironmentInfraFilterHelperTest extends CategoryTest {
   }
 
   private static FilterYaml getTagFilterYamlMatchTypeAll() {
+    Map<String, String> tagMap = new HashMap<>();
+    tagMap.put("env", "dev");
     return FilterYaml.builder()
-        .entities(Set.of(Entity.environments, Entity.gitOpsClusters))
+        .entities(Set.of(Entity.environments, Entity.gitOpsClusters, Entity.infrastructures))
         .type(FilterType.tags)
         .spec(TagsFilter.builder()
                   .matchType(ParameterField.createValueField(MatchType.all))
-                  .tags(ParameterField.createValueField(Map.of("env", "dev")))
+                  .tags(ParameterField.createValueField(tagMap))
                   .build())
         .build();
   }
 
   private static FilterYaml getTagFilterYamlMatchTypeAny() {
+    Map<String, String> tagMap = new HashMap<>();
+    tagMap.put("env", "dev");
+    tagMap.put("env1", "dev1");
+    tagMap.put("infra", "dev");
+    tagMap.put("infra1", "dev1");
+
     return FilterYaml.builder()
         .entities(Set.of(Entity.environments, Entity.gitOpsClusters, Entity.infrastructures))
         .type(FilterType.tags)
         .spec(TagsFilter.builder()
                   .matchType(ParameterField.createValueField(MatchType.any))
-                  .tags(ParameterField.createValueField(
-                      Map.of("env", "dev", "env1", "dev1", "infra", "dev", "infra1", "dev1")))
+                  .tags(ParameterField.createValueField(tagMap))
                   .build())
         .build();
   }

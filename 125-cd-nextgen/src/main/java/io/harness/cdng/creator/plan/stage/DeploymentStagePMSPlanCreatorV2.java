@@ -572,7 +572,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       List<EnvironmentYamlV2> envV2YamlsWithFilters) {
     List<EnvironmentYamlV2> filteredInfraList = new ArrayList<>();
     for (EnvironmentYamlV2 envYamlV2 : envV2YamlsWithFilters) {
-      // if (ParameterField.isNotNull(envYamlV2.getInfrastructureDefinitions())) {
       Set<InfrastructureEntity> infrastructureEntitySet =
           environmentInfraFilterHelper.getInfrastructureForEnvironmentList(
               accountIdentifier, orgIdentifier, projectIdentifier, envYamlV2.getEnvironmentRef().getValue());
@@ -580,7 +579,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       filteredInfraList = filterInfras(
           envYamlV2.getFilters().getValue(), envYamlV2.getEnvironmentRef().getValue(), infrastructureEntitySet);
       individualEnvironmentYamlV2.addAll(filteredInfraList);
-      //}
     }
     return filteredInfraList;
   }
