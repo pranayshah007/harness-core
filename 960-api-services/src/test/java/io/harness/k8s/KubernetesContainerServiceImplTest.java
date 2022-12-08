@@ -970,6 +970,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
         + "           - TENANT_ID\n"
         + "         command: true\n"
         + "         env: null\n"
+        + "         interactiveMode: Never\n"
         + "         provideClusterInfo: false\n";
 
     KubernetesAzureConfig kubernetesAzureConfig = KubernetesAzureConfig.builder()

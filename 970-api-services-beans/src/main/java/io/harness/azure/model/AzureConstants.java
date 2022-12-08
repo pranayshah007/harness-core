@@ -391,8 +391,10 @@ public interface AzureConstants {
   String KUBECFG_COMMAND = "command";
   String KUBECFG_INTERACTIVE_MODE = "interactiveMode";
   String KUBECFG_CLUSTER_INFO = "provideClusterInfo";
-  String SERVER_ID = "server-id";
-  String ENV = "environment";
+  String SERVER_ID_FLAG = "--server-id";
+  String ENVIRONMENT_FLAG = "--environment";
+  String CLIENT_ID_FLAG = "--client-id";
+  String TENANT_ID_FLAG = "--tenant-id";
   String ACR_DEFAULT_DOCKER_USERNAME = "00000000-0000-0000-0000-000000000000";
   String AZURE_ARM_ROLLBACK_PATTERN = "rollback_";
   String ERROR_CODE_LOCATION_NOT_FOUND = "LocationNotAvailableForDeployment";

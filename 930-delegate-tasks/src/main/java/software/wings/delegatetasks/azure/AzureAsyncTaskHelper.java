@@ -7,13 +7,13 @@
 
 package software.wings.delegatetasks.azure;
 
+import static io.harness.azure.model.AzureConstants.CLIENT_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
-import static io.harness.azure.model.AzureConstants.ENV;
-import static io.harness.azure.model.AzureConstants.KUBECFG_CLIENT_ID;
-import static io.harness.azure.model.AzureConstants.KUBECFG_TENANT_ID;
-import static io.harness.azure.model.AzureConstants.SERVER_ID;
+import static io.harness.azure.model.AzureConstants.ENVIRONMENT_FLAG;
+import static io.harness.azure.model.AzureConstants.SERVER_ID_FLAG;
+import static io.harness.azure.model.AzureConstants.TENANT_ID_FLAG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -792,29 +792,28 @@ public class AzureAsyncTaskHelper {
 
   private void extractConfigFromArgs(AzureKubeConfig azureKubeConfig) {
     if (azureKubeConfig.getUsers().get(0).getUser() != null
+        && azureKubeConfig.getUsers().get(0).getUser().getExec() != null
         && isNotEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs())) {
-      String args = azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs();
-      if (args.indexOf(SERVER_ID) >= 0) {
-        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(extractTheFieldValue(args, SERVER_ID));
-      }
-      if (args.indexOf(KUBECFG_CLIENT_ID) >= 0) {
-        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(
-            extractTheFieldValue(args, KUBECFG_CLIENT_ID));
-      }
-      if (args.indexOf(ENV) >= 0) {
-        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(extractTheFieldValue(args, ENV));
-      }
-      if (args.indexOf(KUBECFG_TENANT_ID) >= 0) {
-        azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(
-            extractTheFieldValue(args, KUBECFG_TENANT_ID));
+      List<String> args = azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs();
+      for (int index = 0; index < args.size(); index += 2) {
+        switch (args.get(index)) {
+          case SERVER_ID_FLAG:
+            azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(args.get(index + 1));
+            break;
+
+          case CLIENT_ID_FLAG:
+            azureKubeConfig.getUsers().get(0).getUser().getExec().setClientId(args.get(index + 1));
+            break;
+
+          case ENVIRONMENT_FLAG:
+            azureKubeConfig.getUsers().get(0).getUser().getExec().setEnvironment(args.get(index + 1));
+            break;
+
+          case TENANT_ID_FLAG:
+            azureKubeConfig.getUsers().get(0).getUser().getExec().setTenantId(args.get(index + 1));
+            break;
+        }
       }
     }
-  }
-
-  private String extractTheFieldValue(String args, String target) {
-    int index = args.indexOf(target) + target.length();
-    int startIndex = args.indexOf("-", index) + 2;
-    int endIndex = args.indexOf("\n", startIndex) + 1;
-    return args.substring(startIndex, endIndex);
   }
 }

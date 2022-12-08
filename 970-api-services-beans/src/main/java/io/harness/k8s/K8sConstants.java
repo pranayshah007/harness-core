@@ -137,6 +137,7 @@ public interface K8sConstants {
       + "${ARGS}"
       + "         command: true\n"
       + "         env: null\n"
+      + "         interactiveMode: Never\n"
       + "         provideClusterInfo: false\n";
 
   String serverId = "           - --server-id\n"

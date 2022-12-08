@@ -10,6 +10,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,7 +20,7 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 public class Exec {
   @JsonProperty(KUBECFG_API_VERSION) private String apiVersion;
-  private String args;
+  private List<String> args;
   @JsonProperty(KUBECFG_COMMAND) private String command;
   private String env;
   @JsonProperty(KUBECFG_INTERACTIVE_MODE) private String interactiveMode;
