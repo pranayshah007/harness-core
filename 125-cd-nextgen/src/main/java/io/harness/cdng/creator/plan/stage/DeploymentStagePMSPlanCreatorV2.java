@@ -425,8 +425,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       }
     }
     MultiDeploymentSpawnerUtils.validateMultiServiceInfra(stageConfig);
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
+    if (!MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageConfig)) {
       return;
     }
 
@@ -584,14 +583,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, DeploymentStageNode stageNode,
       PlanCreationContext ctx) {
     DeploymentStageConfig stageConfig = stageNode.getDeploymentStageConfig();
-    if (stageConfig.getServices() == null && stageConfig.getEnvironments() == null
-        && stageConfig.getEnvironmentGroup() == null) {
-      return;
-    }
-
-    String subType;
-    if (stageConfig.getServices() != null) {
-      subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
+    if (MultiDeploymentSpawnerUtils.hasMultiDeploymentConfigured(stageConfig)) {
+      String subType = MultiDeploymentSpawnerUtils.MULTI_SERVICE_DEPLOYMENT;
 
       // Environment and EnvironmentGroup is not set for GitOps since we do not want to fork for gitops.
       // The GitOps cluster step takes care of deploying to multi infra
