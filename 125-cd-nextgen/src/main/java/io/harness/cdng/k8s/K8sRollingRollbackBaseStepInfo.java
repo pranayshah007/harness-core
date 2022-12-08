@@ -34,7 +34,6 @@ import org.springframework.data.annotation.TypeAlias;
 @FieldNameConstants(innerTypeName = "K8sRollingRollbackBaseStepInfoKeys")
 @TypeAlias("K8sRollingRollbackBaseStepInfo")
 public class K8sRollingRollbackBaseStepInfo {
-  @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> skipDryRun;
   @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) @YamlSchemaTypes({string}) ParameterField<Boolean> pruningEnabled;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)

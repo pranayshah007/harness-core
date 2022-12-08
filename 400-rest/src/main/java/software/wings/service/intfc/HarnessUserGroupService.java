@@ -47,7 +47,7 @@ public interface HarnessUserGroupService {
    */
   PageResponse<HarnessUserGroup> list(PageRequest<HarnessUserGroup> req);
 
-  List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds);
+  List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds, Set<String> fieldsToBeIncluded);
 
   /**
    * Find by uuid.

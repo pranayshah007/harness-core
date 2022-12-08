@@ -101,6 +101,11 @@ public class GcrApiServiceImpl implements GcrApiService {
   private void checkValidImage(String imageName, Response<GcrImageTagResponse> response) throws IOException {
     if (response.code() >= 400) {
       if (response.code() == 404) {
+        if (response.body() == null) {
+          throw new InvalidRequestException(
+              "Image name [" + imageName + "] does not exist in Google Container Registry.");
+        }
+
         ErrorHandlingGlobalContextData globalContextData =
             GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()

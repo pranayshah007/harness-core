@@ -163,11 +163,13 @@ paths:
           description: Name of the repository (for Git Experience).
         - schema:
             type: string
+            default: 'false'
           in: header
           name: Load-From-Cache
           description: Flag to enable loading the remote pipeline from git or git cache
         - schema:
             type: boolean
+            default: false
           in: query
           name: load_from_fallback_branch
           description: Flag to load the pipeline from the created non default branch

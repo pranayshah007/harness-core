@@ -8,6 +8,7 @@
 package io.harness.pms.pipelinestage.helper;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -68,7 +69,8 @@ public class PipelineStageHelper {
   @Inject private PmsEngineExpressionService pmsEngineExpressionService;
 
   public void validateNestedChainedPipeline(PipelineEntity entity) {
-    TemplateMergeResponseDTO templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity);
+    TemplateMergeResponseDTO templateMergeResponseDTO =
+        pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
 
     containsPipelineStage(templateMergeResponseDTO.getMergedPipelineYaml());
   }
@@ -136,10 +138,10 @@ public class PipelineStageHelper {
       PipelineExecutionSummaryEntity executionSummaryEntity, EntityGitDetails entityGitDetails,
       NodeExecution nodeExecution) {
     String childExecutionId = nodeExecution.getExecutableResponses().get(0).getAsync().getCallbackIds(0);
-    PmsStepParameters parameters = nodeExecution.getNode().getStepParameters();
+    PmsStepParameters parameters = nodeExecution.getResolvedParams();
 
-    String orgId = parameters.getValue(PipelineStageStepParametersKeys.org);
-    String projectId = parameters.getValue(PipelineStageStepParametersKeys.project);
+    String orgId = parameters.get(PipelineStageStepParametersKeys.org).toString();
+    String projectId = parameters.get(PipelineStageStepParametersKeys.project).toString();
     return getExecutionDetailDTO(
         accountId, childStageNodeId, executionSummaryEntity, entityGitDetails, childExecutionId, orgId, projectId);
   }

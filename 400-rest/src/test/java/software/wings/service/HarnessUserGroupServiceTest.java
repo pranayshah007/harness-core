@@ -188,8 +188,8 @@ public class HarnessUserGroupServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testListAllowedSupportAccounts() {
     Account account1 = Builder.anAccount().withUuid(accountId1).withHarnessGroupAccessAllowed(true).build();
-    when(accountService.listHarnessSupportAccounts(any())).thenReturn(Lists.newArrayList(account1));
-    List<Account> result = harnessUserGroupService.listAllowedSupportAccounts(Sets.newHashSet(accountId2));
+    when(accountService.listHarnessSupportAccounts(any(), any())).thenReturn(Lists.newArrayList(account1));
+    List<Account> result = harnessUserGroupService.listAllowedSupportAccounts(Sets.newHashSet(accountId2), null);
 
     assertThat(result).isNotNull();
     assertThat(result).size().isEqualTo(1);

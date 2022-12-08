@@ -9,6 +9,7 @@ package io.harness;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.steps.container.execution.ContainerExecutionConfig;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -21,4 +22,5 @@ public class OrchestrationStepConfig {
   @JsonProperty("ffServerBaseUrl") private String ffServerBaseUrl;
   @JsonProperty("ffServerApiKey") private String ffServerApiKey;
   @JsonProperty("ffServerSSLVerify") private Boolean ffServerSSLVerify;
+  @JsonProperty("containerStepConfig") private ContainerExecutionConfig containerStepConfig;
 }

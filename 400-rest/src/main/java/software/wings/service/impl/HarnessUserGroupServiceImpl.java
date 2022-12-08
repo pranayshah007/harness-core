@@ -14,6 +14,8 @@ import static io.harness.mongo.MongoUtils.setUnset;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.validation.Validator.notNullCheck;
 
+import static software.wings.beans.Account.AccountKeys;
+
 import static com.google.common.collect.Sets.newHashSet;
 import static com.google.common.collect.Sets.symmetricDifference;
 
@@ -88,8 +90,8 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
   }
 
   @Override
-  public List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds) {
-    List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds);
+  public List<Account> listAllowedSupportAccounts(Set<String> excludeAccountIds, Set<String> fieldsToBeIncluded) {
+    List<Account> supportedAccounts = accountService.listHarnessSupportAccounts(excludeAccountIds, fieldsToBeIncluded);
     supportedAccounts.sort(new AccountComparator());
     return supportedAccounts;
   }
@@ -124,8 +126,10 @@ public class HarnessUserGroupServiceImpl implements HarnessUserGroupService {
 
     SetView<String> membersAffected = symmetricDifference(updatedUserGroup.getMemberIds(), oldMemberIds);
 
-    Set<String> accountsAffected =
-        listAllowedSupportAccounts(Collections.emptySet()).stream().map(Account::getUuid).collect(Collectors.toSet());
+    Set<String> accountsAffected = listAllowedSupportAccounts(Collections.emptySet(), Set.of(AccountKeys.uuid))
+                                       .stream()
+                                       .map(Account::getUuid)
+                                       .collect(Collectors.toSet());
 
     authService.evictUserPermissionAndRestrictionCacheForAccounts(
         accountsAffected, Lists.newArrayList(membersAffected));

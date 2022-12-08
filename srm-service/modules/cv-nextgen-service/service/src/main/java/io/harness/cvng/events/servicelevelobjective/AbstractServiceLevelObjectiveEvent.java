@@ -44,8 +44,6 @@ public abstract class AbstractServiceLevelObjectiveEvent implements Event {
   @Override
   public ResourceScope getResourceScope() {
     Preconditions.checkNotNull(accountIdentifier);
-    Preconditions.checkNotNull(orgIdentifier);
-    Preconditions.checkNotNull(projectIdentifier);
     return new ProjectScope(accountIdentifier, orgIdentifier, projectIdentifier);
   }
 }

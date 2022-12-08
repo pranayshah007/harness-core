@@ -7,6 +7,8 @@
 
 package io.harness.pms.pipeline.api;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -123,7 +125,8 @@ public class PipelinesApiImpl implements PipelinesApi {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     try {
       pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
-          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+          Boolean.TRUE.equals(loadFromFallbackBranch),
+          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
@@ -154,7 +157,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       try {
         String templateResolvedPipelineYaml = "";
         TemplateMergeResponseDTO templateMergeResponseDTO =
-            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get());
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
         templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         pipelineGetResponseBody.setTemplateAppliedPipelineYaml(templateResolvedPipelineYaml);
       } catch (Exception e) {

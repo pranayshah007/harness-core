@@ -87,6 +87,7 @@ import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -525,7 +526,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return environmentGroupYaml.getEnvironments()
         .getValue()
         .stream()
-        .filter(eg -> isNotEmpty(eg.getFilters().getValue()))
+        .filter(eg -> ParameterField.isNotNull(eg.getFilters()))
         .collect(Collectors.toList());
   }
 
@@ -864,7 +865,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return environmentYamlV2List;
   }
 
-  private List<EnvironmentYamlV2> filterInfras(
+  public List<EnvironmentYamlV2> filterInfras(
       List<FilterYaml> filterYamls, String env, Set<InfrastructureEntity> infrastructureEntitySet) {
     List<EnvironmentYamlV2> environmentYamlV2List = new ArrayList<>();
     Set<InfrastructureEntity> filteredInfras =
@@ -888,7 +889,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     return environmentYamlV2List;
   }
 
-  private InfraStructureDefinitionYaml createInfraDefinitionYaml(InfrastructureEntity infrastructureEntity) {
+  @VisibleForTesting
+  protected InfraStructureDefinitionYaml createInfraDefinitionYaml(InfrastructureEntity infrastructureEntity) {
     return InfraStructureDefinitionYaml.builder()
         .identifier(ParameterField.createValueField(infrastructureEntity.getIdentifier()))
         .build();

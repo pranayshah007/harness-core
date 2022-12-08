@@ -86,6 +86,14 @@ public class SLOHealthIndicatorServiceImpl implements SLOHealthIndicatorService 
   }
 
   @Override
+  public List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers) {
+    return hPersistence.createQuery(SLOHealthIndicator.class)
+        .filter(SLOHealthIndicatorKeys.accountId, accountId)
+        .field(SLOHealthIndicatorKeys.serviceLevelObjectiveIdentifier)
+        .in(serviceLevelObjectiveIdentifiers)
+        .asList();
+  }
+  @Override
   public void upsert(ServiceLevelIndicator serviceLevelIndicator) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(serviceLevelIndicator.getAccountId())

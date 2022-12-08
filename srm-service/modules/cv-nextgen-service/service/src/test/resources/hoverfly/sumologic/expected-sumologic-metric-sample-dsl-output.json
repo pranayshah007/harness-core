@@ -1,0 +1,58 @@
+[ {
+  "txnName" : "default",
+  "metricName" : "sample",
+  "metricValue" : 13.271550535090656,
+  "timestamp" : 1668431100000
+},
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.290952290081464,
+    "timestamp" : 1668431160000
+  }, {
+  "txnName" : "default",
+  "metricName" : "sample",
+  "metricValue" : 13.271006880347823,
+  "timestamp" : 1668431220000
+},
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.281812781921635,
+    "timestamp" : 1668431280000
+  }, {
+  "txnName" : "default",
+  "metricName" : "sample",
+  "metricValue" : 13.288262115376487,
+  "timestamp" : 1668431340000
+},
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.271550535090656,
+    "timestamp" : 1668431100000
+  }, {
+  "txnName" : "default",
+  "metricName" : "sample",
+  "metricValue" : 13.290952290081464,
+  "timestamp" : 1668431160000
+},
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.271064300062234,
+    "timestamp" : 1668431220000
+  },
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.281812781921635,
+    "timestamp" : 1668431280000
+  },
+  {
+    "txnName" : "default",
+    "metricName" : "sample",
+    "metricValue" : 13.288262115376487,
+    "timestamp" : 1668431340000
+  }
+]

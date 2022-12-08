@@ -25,6 +25,8 @@ public class SLOHealthListView {
   @NotNull String name;
   @JsonIgnore String orgIdentifier;
   @JsonIgnore String projectIdentifier;
+  String orgName;
+  String projectName;
   String monitoredServiceIdentifier;
   String monitoredServiceName;
   String healthSourceIdentifier;
