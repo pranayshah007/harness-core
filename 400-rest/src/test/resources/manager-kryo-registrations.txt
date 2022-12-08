@@ -1167,6 +1167,8 @@
 7471:software.wings.api.customdeployment.InstanceFetchStateExecutionData
 7472:software.wings.api.InstanceFetchStateExecutionSummary
 7473:io.harness.exception.ShellExecutionException
+7474:software.wings.beans.TerraformSourceType
+7475:software.wings.beans.S3FileConfig
 7490:io.harness.k8s.model.response.CEK8sDelegatePrerequisite
 7491:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.MetricsServerCheck
 7492:io.harness.k8s.model.response.CEK8sDelegatePrerequisite.Rule
