@@ -35,7 +35,7 @@ public class TasCanaryAppSetupStepParameters extends TasAppSetupBaseStepInfo imp
   @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepParameters(TasInstanceCountType instanceCount,
-      ParameterField<Integer> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
+      ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, TasResizeStrategyType resizeStrategy) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;

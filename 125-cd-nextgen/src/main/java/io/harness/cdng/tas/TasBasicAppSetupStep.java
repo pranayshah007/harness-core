@@ -10,7 +10,6 @@ package io.harness.cdng.tas;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -65,6 +64,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -182,6 +182,9 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
         tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
             getParameterFieldValue(tasBasicAppSetupStepParameters.getAdditionalRoutes()));
 
+    Integer olderActiveVersionCountToKeep =
+        new BigDecimal(getParameterFieldValue(tasBasicAppSetupStepParameters.getExistingVersionToKeep()))
+            .intValueExact();
     TaskParameters taskParameters =
         CfBasicSetupRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -197,8 +200,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
             .manifestYaml(executionPassThroughData.getPcfManifestsPackage().getManifestYml())
             .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .olderActiveVersionCountToKeep(
-                getParameterFieldValue(tasBasicAppSetupStepParameters.getExistingVersionToKeep()))
+            .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
             .maxCount(maxCount)
             .routeMaps(routeMaps)
             .useAppAutoscalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))

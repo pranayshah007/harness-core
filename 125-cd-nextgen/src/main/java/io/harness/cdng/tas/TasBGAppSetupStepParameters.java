@@ -17,6 +17,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,9 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasBGAppSetupStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasBGAppSetupStepParameters")
 public class TasBGAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
-  ParameterField<List<String>> tempRoutes;
+  @NotNull ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")
-  public TasBGAppSetupStepParameters(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
+  public TasBGAppSetupStepParameters(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<List<String>> tempRoutes) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);

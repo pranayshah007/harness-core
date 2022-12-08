@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppSetupStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = TasAppSetupStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = TasCanaryAppSetupStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
 @TypeAlias("tasCanaryAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasCanaryAppSetupStepInfo")
@@ -53,7 +53,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
+  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       TasResizeStrategyType resizeStrategy) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);

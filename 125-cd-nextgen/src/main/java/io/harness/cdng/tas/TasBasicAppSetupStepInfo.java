@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppSetupStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.TasBasicAppSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = TasAppSetupStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = TasBasicAppSetupStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
 @TypeAlias("TasBasicAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasBasicAppSetupStepInfo")
@@ -51,7 +51,7 @@ public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @Builder(builderMethodName = "infoBuilder")
-  public TasBasicAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
+  public TasBasicAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
   }

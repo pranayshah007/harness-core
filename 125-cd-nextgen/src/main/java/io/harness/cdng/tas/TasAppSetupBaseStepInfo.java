@@ -8,7 +8,7 @@
 package io.harness.cdng.tas;
 
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.integer;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
@@ -37,8 +37,8 @@ public class TasAppSetupBaseStepInfo {
   @NotNull TasInstanceCountType instanceCount;
   @NotNull
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
-  @YamlSchemaTypes({integer})
-  ParameterField<Integer> existingVersionToKeep;
+  @YamlSchemaTypes(value = {expression})
+  ParameterField<String> existingVersionToKeep;
   @YamlSchemaTypes({string, list})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> additionalRoutes;

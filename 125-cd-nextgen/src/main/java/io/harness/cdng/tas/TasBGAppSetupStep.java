@@ -68,6 +68,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -184,6 +185,8 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
         tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
             getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
         executionPassThroughData.getPcfManifestsPackage());
+    Integer olderActiveVersionCountToKeep =
+        new BigDecimal(getParameterFieldValue(tasBGAppSetupStepParameters.getExistingVersionToKeep())).intValueExact();
     TaskParameters taskParameters =
         CfBlueGreenSetupRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
@@ -199,8 +202,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
             .manifestYaml(executionPassThroughData.getPcfManifestsPackage().getManifestYml())
             .pcfManifestsPackage(executionPassThroughData.getPcfManifestsPackage())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
-            .olderActiveVersionCountToKeep(
-                getParameterFieldValue(tasBGAppSetupStepParameters.getExistingVersionToKeep()))
+            .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
             .maxCount(maxCount)
             .routeMaps(routeMaps)
             .useAppAutoscalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))

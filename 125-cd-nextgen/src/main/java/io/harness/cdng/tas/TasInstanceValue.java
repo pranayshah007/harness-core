@@ -8,14 +8,15 @@
 package io.harness.cdng.tas;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.number;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,5 +24,8 @@ import org.jetbrains.annotations.NotNull;
 @Data
 @RecasterAlias("io.harness.cdng.tas.TasInstanceValue")
 public class TasInstanceValue {
-  @YamlSchemaTypes({string, number}) @NotNull ParameterField<String> value;
+  @NotNull
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
+  ParameterField<String> value;
 }

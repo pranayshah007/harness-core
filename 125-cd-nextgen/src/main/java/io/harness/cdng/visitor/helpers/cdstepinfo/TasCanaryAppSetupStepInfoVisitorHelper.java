@@ -11,7 +11,7 @@ import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class TasAppSetupStepInfoVisitorHelper implements ConfigValidator {
+public class TasCanaryAppSetupStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
     return TasCanaryAppSetupStepInfo.infoBuilder().build();
