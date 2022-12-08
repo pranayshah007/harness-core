@@ -202,6 +202,7 @@ public class InstanceStatServiceImpl implements InstanceStatService {
                                                  .field("timestamp")
                                                  .lessThan(to)
                                                  .project("total", true)
+                                                 .project("_id", false)
                                                  .asList(persistence.analyticNodePreferenceOptions())
                                                  .stream()
                                                  .sorted(Comparator.comparingInt(InstanceStatsSnapshot::getTotal))

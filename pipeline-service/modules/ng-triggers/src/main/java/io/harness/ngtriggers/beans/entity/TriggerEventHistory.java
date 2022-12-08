@@ -81,7 +81,7 @@ public class TriggerEventHistory implements PersistentEntity {
   String planExecutionId;
   boolean exceptionOccurred;
   String triggerIdentifier;
-  @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(3).toInstant());
+  @FdTtlIndex @Default Date validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());
   TargetExecutionSummary targetExecutionSummary;
 
   @CreatedDate Long createdAt;

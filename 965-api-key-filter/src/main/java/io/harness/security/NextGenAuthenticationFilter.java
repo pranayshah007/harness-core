@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ngsettings.SettingIdentifiers;
 import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.ScimAPI;
@@ -253,16 +254,20 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private void handleSCIMJwtTokenFlow(String accountIdentifier, String jwtToken) {
     List<SettingResponseDTO> settingsResponse =
         JWTTokenFlowAuthFilterUtils.getSettingListResponseByAccountForSCIMAndJWT(accountIdentifier, tokenClient);
-    final String[] settingsStringValues =
-        JWTTokenFlowAuthFilterUtils.getSettingsStringValuesArrayFromListDTO(settingsResponse, accountIdentifier);
+    final Map<String, String> settingValuesMap =
+        JWTTokenFlowAuthFilterUtils.getScimJwtTokenSettingConfigurationValuesFromDTOList(
+            settingsResponse, accountIdentifier);
 
-    String publicKeysJsonString =
-        JWTTokenFlowAuthFilterUtils.getPublicKeysJsonStringFromUrl(accountIdentifier, settingsStringValues[2]);
-    JWTTokenFlowAuthFilterUtils.validateJwtTokenAndMatchClaimKeyValue(
-        jwtToken, settingsStringValues[0], settingsStringValues[1], publicKeysJsonString, accountIdentifier);
+    String publicKeysJsonString = JWTTokenFlowAuthFilterUtils.getPublicKeysJsonStringFromUrl(accountIdentifier,
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_URL_IDENTIFIER));
+    JWTTokenFlowAuthFilterUtils.validateJwtTokenAndMatchClaimKeyValue(jwtToken,
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER),
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER), publicKeysJsonString,
+        accountIdentifier);
 
     ServiceAccountDTO serviceAccountDTO = JWTTokenFlowAuthFilterUtils.getServiceAccountByIdAndAccountId(
-        settingsStringValues[3], accountIdentifier, tokenClient);
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER),
+        accountIdentifier, tokenClient);
 
     if (null != serviceAccountDTO) {
       log.info(String.format(

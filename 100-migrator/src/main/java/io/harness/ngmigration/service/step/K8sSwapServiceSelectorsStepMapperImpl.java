@@ -42,7 +42,6 @@ public class K8sSwapServiceSelectorsStepMapperImpl implements StepMapper {
     baseSetup(stepYaml, k8sBGSwapServicesStepNode);
     K8sBGSwapServicesStepInfo stepInfo = new K8sBGSwapServicesStepInfo();
 
-    stepInfo.setSkipDryRun(ParameterField.createValueField(false));
     stepInfo.setBlueGreenSwapServicesStepFqn(state.getService2());
     stepInfo.setDelegateSelectors(ParameterField.createValueField(Collections.emptyList()));
     stepInfo.setBlueGreenStepFqn(state.getService1());

@@ -71,12 +71,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -829,7 +827,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalog() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.ECR);
     catalogTypes.add(TriggerCatalogType.ACR);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
@@ -849,7 +847,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalogScheduled() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.CRON);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(
         TriggerCatalogItem.builder().category(TriggerCategory.SCHEDULED).triggerCatalogType(catalogTypes).build());
@@ -868,7 +866,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
   public void testGetTriggerCatalogWebhook() {
-    Set<TriggerCatalogType> catalogTypes = new HashSet<>();
+    List<TriggerCatalogType> catalogTypes = new ArrayList<>();
     catalogTypes.add(TriggerCatalogType.GITHUB);
     catalogTypes.add(TriggerCatalogType.GITLAB);
     List<TriggerCatalogItem> triggerCatalogItems = Arrays.asList(

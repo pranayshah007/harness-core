@@ -417,6 +417,7 @@ instanceChangeQueue {"name": "earliestGet_1", "background": true, "expireAfterSe
 instanceChangeQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 instanceEventQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 instanceEventQueue {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
+instanceStats {"name": "account_timestamp_total", "unique": true} {"accountId": 1, "timestamp": 1, "total": 1}
 instanceStats {"name": "appId_1", "background": true} {"appId": 1}
 instanceStats {"name": "createdAt_1", "background": true} {"createdAt": 1}
 instanceStats {"name": "timestamp_1", "background": true} {"timestamp": 1}

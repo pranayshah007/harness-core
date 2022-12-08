@@ -549,6 +549,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     ? sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
                           .getSLOTarget(filter.getSloTargetFilterDTO().getSpec())
                     : null)
+            .childResource(filter.isChildResource())
             .build());
   }
 
@@ -811,11 +812,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .disableValidation()
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId,
                 projectParams.getAccountIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
-                projectParams.getOrgIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
-                projectParams.getProjectIdentifier())
             .order(Sort.descending(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastUpdatedAt));
+    if (!filter.isChildResource()) {
+      sloQuery = sloQuery
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
+                         projectParams.getOrgIdentifier())
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
+                         projectParams.getProjectIdentifier());
+    }
     if (isNotEmpty(filter.getUserJourneys())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers).hasAnyOf(filter.getUserJourneys());
     }
@@ -935,5 +939,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String searchFilter;
     ServiceLevelObjective.SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
+    boolean childResource;
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.cvng.servicelevelobjective;
 
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,6 +32,8 @@ public class UserJourneyServiceImplTest extends CvNextGenTestBase {
   String identifier;
   String name;
   ProjectParams projectParams;
+
+  ProjectParams projectParamsAccountScoped;
   private BuilderFactory builderFactory;
 
   @Before
@@ -44,6 +47,8 @@ public class UserJourneyServiceImplTest extends CvNextGenTestBase {
                         .orgIdentifier(builderFactory.getContext().getOrgIdentifier())
                         .projectIdentifier(builderFactory.getContext().getProjectIdentifier())
                         .build();
+    projectParamsAccountScoped =
+        ProjectParams.builder().accountIdentifier(builderFactory.getContext().getAccountId()).build();
   }
 
   @Test
@@ -56,6 +61,14 @@ public class UserJourneyServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testCreateAccountScoped_Success() {
+    UserJourneyDTO userJourneyDTO = createUserJourneyBuilder();
+    UserJourneyResponse userJourneyResponse = userJourneyService.create(projectParamsAccountScoped, userJourneyDTO);
+    assertThat(userJourneyResponse.getUserJourneyDTO()).isEqualTo(userJourneyDTO);
+  }
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testGetAll_Success() {
@@ -67,6 +80,36 @@ public class UserJourneyServiceImplTest extends CvNextGenTestBase {
     assertThat(userJourneyPageResponse.getContent().get(0).getUserJourneyDTO()).isEqualTo(userJourneyDTO);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAllAccountScoped_Success() {
+    UserJourneyDTO userJourneyDTO = createUserJourneyBuilder();
+    userJourneyService.create(projectParamsAccountScoped, userJourneyDTO);
+    PageResponse<UserJourneyResponse> userJourneyPageResponse =
+        userJourneyService.getUserJourneys(projectParamsAccountScoped, 0, 10);
+    assertThat(userJourneyPageResponse.getContent().size()).isEqualTo(1);
+    assertThat(userJourneyPageResponse.getContent().get(0).getUserJourneyDTO()).isEqualTo(userJourneyDTO);
+  }
+
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testGetAllScoped_Success() {
+    UserJourneyDTO userJourneyDTO = createUserJourneyBuilder();
+    userJourneyService.create(projectParams, userJourneyDTO);
+    userJourneyService.create(projectParamsAccountScoped, userJourneyDTO);
+
+    PageResponse<UserJourneyResponse> userJourneyPageResponseProjectScoped =
+        userJourneyService.getUserJourneys(projectParams, 0, 10);
+    assertThat(userJourneyPageResponseProjectScoped.getContent().size()).isEqualTo(1);
+    assertThat(userJourneyPageResponseProjectScoped.getContent().get(0).getUserJourneyDTO()).isEqualTo(userJourneyDTO);
+
+    PageResponse<UserJourneyResponse> userJourneyPageResponseAccScoped =
+        userJourneyService.getUserJourneys(projectParamsAccountScoped, 0, 10);
+    assertThat(userJourneyPageResponseAccScoped.getContent().size()).isEqualTo(1);
+    assertThat(userJourneyPageResponseAccScoped.getContent().get(0).getUserJourneyDTO()).isEqualTo(userJourneyDTO);
+  }
   private UserJourneyDTO createUserJourneyBuilder() {
     return builderFactory.getUserJourneyDTOBuilder();
   }

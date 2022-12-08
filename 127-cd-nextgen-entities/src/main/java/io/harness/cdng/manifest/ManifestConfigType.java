@@ -34,8 +34,8 @@ public enum ManifestConfigType {
   @JsonProperty(ManifestType.EcsScalingPolicyDefinition)
   ECS_SCALING_POLICY_DEFINITION(ManifestType.EcsScalingPolicyDefinition),
   @JsonProperty(ManifestType.TAS_MANIFEST) TAS_MANIFEST(ManifestType.TAS_MANIFEST),
-  @JsonProperty(ManifestType.TAS_VARS) VARS(ManifestType.TAS_VARS),
-  @JsonProperty(ManifestType.TAS_AUTOSCALER) AUTOSCALER(ManifestType.TAS_AUTOSCALER),
+  @JsonProperty(ManifestType.TAS_VARS) TAS_VARS(ManifestType.TAS_VARS),
+  @JsonProperty(ManifestType.TAS_AUTOSCALER) TAS_AUTOSCALER(ManifestType.TAS_AUTOSCALER),
   @JsonProperty(ManifestType.AsgLaunchTemplate) ASG_LAUNCH_TEMPLATE(ManifestType.AsgLaunchTemplate),
   @JsonProperty(ManifestType.AsgConfiguration) ASG_CONFIGURATION(ManifestType.AsgConfiguration),
   @JsonProperty(ManifestType.AsgScalingPolicy) ASG_SCALING_POLICY(ManifestType.AsgScalingPolicy),

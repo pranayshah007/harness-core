@@ -35,10 +35,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sScaleStepParameter")
 public class K8sScaleStepParameter extends K8sScaleBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public K8sScaleStepParameter(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
-      InstanceSelectionWrapper instanceSelection, ParameterField<String> workload,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceSelection, workload, skipDryRun, skipSteadyStateCheck, delegateSelectors);
+  public K8sScaleStepParameter(ParameterField<Boolean> skipSteadyStateCheck, InstanceSelectionWrapper instanceSelection,
+      ParameterField<String> workload, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(instanceSelection, workload, skipSteadyStateCheck, delegateSelectors);
   }
 
   @Nonnull

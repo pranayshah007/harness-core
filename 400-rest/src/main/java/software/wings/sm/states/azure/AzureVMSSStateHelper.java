@@ -79,6 +79,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.VMSSAuthType;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
@@ -687,13 +688,23 @@ public class AzureVMSSStateHelper {
         artifactStream.fetchArtifactStreamAttributes(featureFlagService);
     Service service = getServiceByAppId(context, context.getAppId());
     artifactStreamAttributes.setMetadata(artifact.getMetadata());
-    artifactStreamAttributes.setArtifactName(artifact.getDisplayName());
+    artifactStreamAttributes.setArtifactName(artifactFileName(artifact));
     artifactStreamAttributes.setArtifactStreamId(artifactStream.getUuid());
     artifactStreamAttributes.setServerSetting(settingsService.get(artifact.getSettingId()).toDTO());
     artifactStreamAttributes.setMetadataOnly(onlyMetaForArtifactType(artifactStream));
     artifactStreamAttributes.setArtifactStreamType(artifactStream.getArtifactStreamType());
     artifactStreamAttributes.setArtifactType(service.getArtifactType());
     return ArtifactConnectorMapper.getArtifactConnectorMapper(artifact, artifactStreamAttributes);
+  }
+
+  private String artifactFileName(Artifact artifact) {
+    if (ArtifactStreamType.JENKINS.name().equals(artifact.getArtifactStreamType())
+        && isNotEmpty(artifact.getArtifactFileMetadata())) {
+      String buildNo = artifact.getMetadata() != null ? artifact.getMetadata().get(ArtifactMetadataKeys.buildNo) : null;
+      return buildNo != null ? artifact.getArtifactFileMetadata().get(0).getFileName() + "_" + buildNo
+                             : artifact.getArtifactFileMetadata().get(0).getFileName();
+    }
+    return artifact.getDisplayName();
   }
 
   private boolean onlyMetaForArtifactType(ArtifactStream artifactStream) {

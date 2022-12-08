@@ -95,7 +95,7 @@ public class CgInstanceSyncV2TaskExecutor implements PerpetualTaskExecutor {
         publishInstanceSyncResult(trackedDeploymentDetails.getAccountId(), taskId.getId(), responseBuilder.build());
         responseBuilder.clearInstanceData();
         batchInstanceCount.set(0);
-        batchInstanceCount.set(0);
+        batchReleaseDetailsCount.set(0);
       }
     });
 

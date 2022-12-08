@@ -86,6 +86,11 @@ public class EcsBlueGreenPrepareRollbackCommandTaskHandler extends EcsCommandTas
               .parseYamlAsObject(ecsServiceDefinitionManifestContent, CreateServiceRequest.serializableBuilderClass())
               .build();
 
+      // update EcsLoadBalancerConfig with default listener rules if listener rules provided are empty
+      ecsCommandTaskHelper.updateECSLoadbalancerConfigWithDefaultListenerRulesIfEmpty(
+          ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig(), awsInternalConfig, ecsInfraConfig,
+          prepareRollbackDataLogCallback);
+
       prepareRollbackDataLogCallback.saveExecutionLog(
           format("Fetching Target group for ELB Prod Listener: %s ",
               ecsBlueGreenPrepareRollbackRequest.getEcsLoadBalancerConfig().getProdListenerArn()),

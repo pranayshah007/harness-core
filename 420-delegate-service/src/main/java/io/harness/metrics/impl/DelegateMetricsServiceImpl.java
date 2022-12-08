@@ -45,6 +45,9 @@ public class DelegateMetricsServiceImpl implements DelegateMetricsService {
   public static final String DELEGATE_RESTARTED = "delegate_restarted";
   public static final String DELEGATE_DISCONNECTED = "delegate_disconnected";
   public static final String DELEGATE_DESTROYED = "destroy_delegate";
+  public static final String DELEGATE_UPGRADE = "delegate_upgrade";
+  public static final String UPGRADER_UPGRADE = "upgrader_upgrade";
+  public static final String DELEGATE_LEGACY_UPGRADE = "delegate_legacy_upgrade";
 
   public static final String PERPETUAL_TASK_CREATE = "perpetual_task_create";
   public static final String PERPETUAL_TASK_RESET = "perpetual_task_reset";

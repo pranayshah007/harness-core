@@ -612,7 +612,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;
       List<FreezeSummaryResponseDTO> manualFreezeConfigs;
       globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
-      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
+      manualFreezeConfigs = freezeEvaluateService.getActiveManualFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
         log.info("Deployment Freeze is Active for the given service.");
         sweepingOutputService.consume(ambiance, FREEZE_SWEEPING_OUTPUT,
