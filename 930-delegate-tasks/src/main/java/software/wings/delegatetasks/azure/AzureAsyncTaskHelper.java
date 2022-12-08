@@ -799,22 +799,22 @@ public class AzureAsyncTaskHelper {
         switch (args.get(index)) {
           case SERVER_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(args.get(index + 1));
-            index+=1;
+            index += 1;
             break;
 
           case CLIENT_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setClientId(args.get(index + 1));
-            index+=1;
+            index += 1;
             break;
 
           case ENVIRONMENT_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setEnvironment(args.get(index + 1));
-            index+=1;
+            index += 1;
             break;
 
           case TENANT_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setTenantId(args.get(index + 1));
-            index+=1;
+            index += 1;
             break;
 
           default:
