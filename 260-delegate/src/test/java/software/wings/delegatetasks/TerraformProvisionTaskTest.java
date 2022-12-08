@@ -69,26 +69,21 @@ import io.harness.terraform.beans.TerraformVersion;
 
 import software.wings.WingsBaseTest;
 import software.wings.api.TerraformExecutionData;
-import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.KmsConfig;
-import software.wings.beans.S3FileConfig;
-import software.wings.beans.TerraformSourceType;
 import software.wings.beans.delegation.TerraformProvisionParameters;
 import software.wings.beans.delegation.TerraformProvisionParameters.TerraformProvisionParametersBuilder;
 import software.wings.service.impl.AwsHelperService;
+import software.wings.service.impl.aws.delegate.AwsS3HelperServiceDelegateImpl;
 import software.wings.service.impl.yaml.GitClientHelper;
-import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.utils.WingsTestConstants;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.s3.AmazonS3URI;
-import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
 import com.amazonaws.services.securitytoken.model.AssumeRoleResult;
 import com.amazonaws.services.securitytoken.model.Credentials;
@@ -133,7 +128,7 @@ public class TerraformProvisionTaskTest extends WingsBaseTest {
   @Mock private TerraformClient terraformClient;
   @InjectMocks private TerraformBaseHelperImpl terraformBaseHelper;
 
-  @InjectMocks private AwsS3HelperServiceDelegate awsS3HelperServiceDelegate;
+  @InjectMocks private AwsS3HelperServiceDelegateImpl awsS3HelperServiceDelegate;
 
   private static final String GIT_BRANCH = "test/git_branch";
   private static final String GIT_REPO_DIRECTORY = "repository/terraformTest";

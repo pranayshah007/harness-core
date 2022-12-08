@@ -237,7 +237,19 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     String backendConfigsDir = Paths.get(baseDir, TF_BACKEND_CONFIG_DIR).toString();
     String sourceRepoReference = null;
 
-    if (parameters.getSourceType() == TerraformSourceType.GIT) {
+    if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
+      /**
+       * Handle S3 Logic
+       */
+      try {
+        encryptionService.decrypt(
+            parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
+        awsS3HelperServiceDelegate.downloadS3Directory(
+            parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(workingDir));
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
       /**
        * Handle GIT Logic
        */
@@ -281,19 +293,6 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
 
       sourceRepoReference = parameters.getCommitId() != null ? parameters.getCommitId()
                                                              : getLatestCommitSHAFromLocalRepo(gitOperationContext);
-
-    } else if (parameters.getSourceType() == TerraformSourceType.S3) {
-      /**
-       * Handle S3 Logic
-       */
-      try {
-        encryptionService.decrypt(
-            parameters.getAwsS3SourceBucketConfig(), parameters.getAwsS3EncryptionDetails(), false);
-        awsS3HelperServiceDelegate.downloadS3Directory(
-            parameters.getAwsS3SourceBucketConfig(), parameters.getS3URI(), new File(workingDir));
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
     }
 
     if (null != parameters.getTfVarSource()) {
@@ -330,7 +329,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
     //            examplebucket, specify the resource as /examplebucket/photos/2006/February/sample.jpg. For more
     //            information about request types, see HTTP Host Header Bucket Specification.
 
-    if (parameters.getSourceType().equals(TerraformSourceType.S3)) {
+    if (parameters.getSourceType() != null && parameters.getSourceType().equals(TerraformSourceType.S3)) {
       workingDir = workingDir + "/" + new AmazonS3URI(parameters.getS3URI()).getKey();
     }
     String scriptDirectory = terraformBaseHelper.resolveScriptDirectory(workingDir, parameters.getScriptPath());
