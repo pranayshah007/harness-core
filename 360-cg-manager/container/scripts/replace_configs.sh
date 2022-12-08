@@ -979,15 +979,7 @@ if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
 fi
 
 if [[ "" != "$QUEUE_SERVICE_BASE_URL" ]]; then
-  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.delegateQueueServiceClientConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
-fi
-
-if [[ "" != "$QUEUE_SERVICE_CLIENT_TOKEN" ]]; then
-  export QUEUE_SERVICE_CLIENT_TOKEN; yq -i '.delegateQueueServiceConfig.delegateQueueServiceClientConfig.authToken=env(QUEUE_SERVICE_CLIENT_TOKEN)' $CONFIG_FILE
-fi
-
-if [[ "" != "$QUEUE_SERVICE_TOKEN" ]]; then
-  export QUEUE_SERVICE_TOKEN; yq -i '.delegateQueueServiceConfig.queueServiceToken=env(QUEUE_SERVICE_TOKEN)' $CONFIG_FILE
+  export QUEUE_SERVICE_BASE_URL; yq -i '.delegateQueueServiceConfig.queueServiceConfig.baseUrl=env(QUEUE_SERVICE_BASE_URL)' $CONFIG_FILE
 fi
 
 

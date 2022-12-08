@@ -1,14 +1,19 @@
-package io.harness.queueservice;
+package io.harness.delegate.queueservice;
 
 import static java.util.stream.Collectors.toList;
 
 import io.harness.beans.DelegateTask;
 import io.harness.hsqs.client.HsqsServiceClient;
+import io.harness.hsqs.client.model.AckRequest;
+import io.harness.hsqs.client.model.AckResponse;
 import io.harness.hsqs.client.model.DequeueRequest;
 import io.harness.hsqs.client.model.DequeueResponse;
 import io.harness.hsqs.client.model.EnqueueRequest;
+import io.harness.queueservice.DelegateTaskDequeue;
 import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.queueservice.infc.DelegateServiceQueue;
+
+import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
@@ -21,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTask> {
   @Inject private HsqsServiceClient hsqsServiceClient;
   @Inject private DelegateQueueServiceConfig delegateQueueServiceConfig;
+  @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   private ObjectMapper objectMapper;
 
   public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient,
@@ -31,21 +37,17 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   }
 
   @Override
-  public void enqueue(DelegateTask delegateTask) {
+  public void enqueue(DelegateTask delegateTask) throws IOException {
     String topic = delegateQueueServiceConfig.getTopic();
-    try {
-      String task =
-          java.util.Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(delegateTask).getBytes());
-      EnqueueRequest enqueueRequest = EnqueueRequest.builder()
-                                          .topic(topic)
-                                          .payload(task)
-                                          .subTopic(delegateTask.getAccountId())
-                                          .producerName(topic)
-                                          .build();
-      hsqsServiceClient.enqueue(enqueueRequest, "sampleToken");
-    } catch (Exception e) {
-      log.error("Error while enqueue delegate task ", e);
-    }
+    String task =
+        java.util.Base64.getEncoder().encodeToString(objectMapper.writeValueAsString(delegateTask).getBytes());
+    EnqueueRequest enqueueRequest = EnqueueRequest.builder()
+                                        .topic(topic)
+                                        .payload(task)
+                                        .subTopic(delegateTask.getAccountId())
+                                        .producerName(topic)
+                                        .build();
+    hsqsServiceClient.enqueue(enqueueRequest, "sampleToken");
   }
 
   @Override
@@ -55,7 +57,12 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                         .consumerName(delegateQueueServiceConfig.getTopic())
                                         .topic(delegateQueueServiceConfig.getTopic())
                                         .build();
-    List<DequeueResponse> dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
+    List<DequeueResponse> dequeueResponses = null;
+    try {
+      dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
     List<DelegateTaskDequeue> delegateTasksDequeueList =
         dequeueResponses.stream()
             .map(dequeueResponse
@@ -66,23 +73,42 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                        .build())
             .filter(this::isResourceAvailableToAssignTask)
             .collect(toList());
-   delegateTasksDequeueList.forEach(this::AcknowledgeAndProcessDelegateTask);
+    delegateTasksDequeueList.forEach(this::acknowledgeAndProcessDelegateTask);
     return true;
+  }
+
+  @Override
+  public String acknowledge(String itemId, String accountId) throws IOException {
+    AckResponse response =
+        hsqsServiceClient
+            .ack(AckRequest.builder().consumerName(delegateQueueServiceConfig.getTopic()).subTopic(accountId).build(),
+                "sampleToken")
+            .execute()
+            .body();
+    return response != null ? response.getItemID() : "";
   }
 
   private boolean isResourceAvailableToAssignTask(DelegateTaskDequeue delegateTaskDequeue) {
     return true;
   }
 
-  private void AcknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
-
+  private void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
+    try {
+      if (delegateTaskDequeue.getDelegateTask() != null
+          && delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask())) {
+        acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
+      }
+    } catch (Exception e) {
+      log.error("", e);
+    }
   }
 
   public DelegateTask convertToDelegateTask(String payload, ObjectMapper objectMapper) {
     try {
       return objectMapper.readValue(Base64.getDecoder().decode(payload), DelegateTask.class);
     } catch (Exception e) {
-      return null;
+      log.error("Error while decoding delegate task from queue. ", e);
     }
+    return null;
   }
 }
