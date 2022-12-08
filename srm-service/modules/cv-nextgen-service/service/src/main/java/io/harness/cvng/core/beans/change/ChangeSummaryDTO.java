@@ -23,5 +23,6 @@ public class ChangeSummaryDTO {
   public static class CategoryCountDetails {
     long count;
     long countInPrecedingWindow;
+    long percentageChange;
   }
 }

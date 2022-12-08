@@ -36,7 +36,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -140,6 +143,33 @@ public class ChangeEventResource {
   @GET
   @Timed
   @NextGenManagerAuth
+  @Path(CHANGE_EVENT_PATH + "/monitored-service-summary")
+  @ExceptionMetered
+  @ApiOperation(
+      value = "get ChangeEvent summary for monitored service", nickname = "getMonitoredServiceChangeEventSummary")
+  public RestResponse<ChangeSummaryDTO>
+  getSummary(@PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
+      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
+      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
+      @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
+      @QueryParam("monitoredServiceIdentifiers") List<String> monitoredServiceIdentifiers,
+      @QueryParam("changeCategories") List<ChangeCategory> changeCategories,
+      @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
+      @ApiParam(required = true) @NotNull @QueryParam("startTime") long startTime,
+      @ApiParam(required = true) @NotNull @QueryParam("endTime") long endTime) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(
+        changeEventService.getChangeSummary(projectParams, monitoredServiceIdentifier, monitoredServiceIdentifiers,
+            changeCategories, changeSourceTypes, Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime)));
+  }
+
+  @GET
+  @Timed
+  @NextGenManagerAuth
   @Path("change-event/monitored-service-summary")
   @ExceptionMetered
   @ApiOperation(
@@ -222,5 +252,68 @@ public class ChangeEventResource {
 
     return new RestResponse<>(changeEventService.getMonitoredServiceChangeTimeline(
         monitoredServiceParams, searchText, changeSourceTypes, durationDTO, Instant.ofEpochMilli(endTime)));
+  }
+
+  @GET
+  @Timed
+  @NextGenManagerAuth
+  @Path(CHANGE_EVENT_PATH + "/monitored-service-timeline")
+  @ExceptionMetered
+  @ApiOperation(
+      value = "get monitored service timeline with durationDTO", nickname = "getMonitoredServiceChangeTimeline")
+  public RestResponse<ChangeTimeline>
+  getMonitoredServiceChangeTimeline(
+      @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
+      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
+      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier,
+      @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
+      @QueryParam("changeSourceTypes") List<ChangeSourceType> changeSourceTypes,
+      @QueryParam("searchText") String searchText, @NotNull @QueryParam("duration") DurationDTO durationDTO,
+      @NotNull @QueryParam("endTime") Long endTime) {
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
+                                                        .accountIdentifier(accountIdentifier)
+                                                        .orgIdentifier(orgIdentifier)
+                                                        .projectIdentifier(projectIdentifier)
+                                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                                        .build();
+
+    return new RestResponse<>(changeEventService.getMonitoredServiceChangeTimeline(
+        monitoredServiceParams, searchText, changeSourceTypes, durationDTO, Instant.ofEpochMilli(endTime)));
+  }
+
+  @GET
+  @Timed
+  @NextGenManagerAuth
+  @Path(CHANGE_EVENT_PATH + "/change-categories")
+  @ExceptionMetered
+  @ApiOperation(value = "get change categories", nickname = "getChangeCategories")
+  public RestResponse<Map<ChangeCategory, String>> getChangeCategoryTypes(
+      @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
+      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
+      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(changeEventService.getChangeCategories(projectParams));
+  }
+
+  @GET
+  @Timed
+  @NextGenManagerAuth
+  @Path("change-event/change-sources")
+  @ExceptionMetered
+  @ApiOperation(value = "get change categories", nickname = "getChangeSources")
+  public RestResponse<Map<ChangeSourceType, String>> getChangeSourceTypes(
+      @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
+      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
+      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier) {
+    ProjectParams projectParams = ProjectParams.builder()
+                                      .accountIdentifier(accountIdentifier)
+                                      .orgIdentifier(orgIdentifier)
+                                      .projectIdentifier(projectIdentifier)
+                                      .build();
+    return new RestResponse<>(changeEventService.getChangeSourceTypes(projectParams));
   }
 }

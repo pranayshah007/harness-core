@@ -252,7 +252,7 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
         Instant.ofEpochSecond(100), Instant.ofEpochSecond(400), null, "searchText", null, null);
     assertThat(activityQuery.toString())
         .isEqualTo(
-            "{ query: {\"$and\": [{\"accountId\": \"accountId\"}, {\"orgIdentifier\": \"orgIdentifier\"}, {\"projectIdentifier\": \"projectIdentifier\"}, {\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\"]}}, {\"$or\": [{\"monitoredServiceIdentifier\": {\"$in\": []}}, {\"relatedAppServices.monitoredServiceIdentifier\": {\"$in\": []}}]}]}  }");
+            "{ query: {\"$and\": [{\"accountId\": \"accountId\"}, {\"orgIdentifier\": \"orgIdentifier\"}, {\"projectIdentifier\": \"projectIdentifier\"}, {\"$text\": {\"$search\": \"searchText\"}}, {\"eventTime\": {\"$lt\": {\"$date\": 400000}}}, {\"eventTime\": {\"$gte\": {\"$date\": 100000}}}, {\"type\": {\"$in\": [\"DEPLOYMENT\", \"PAGER_DUTY\", \"KUBERNETES\", \"HARNESS_CD_CURRENT_GEN\", \"FEATURE_FLAG\"]}}, {\"$or\": [{\"monitoredServiceIdentifier\": {\"$in\": []}}, {\"relatedAppServices.monitoredServiceIdentifier\": {\"$in\": []}}]}]}  }");
   }
 
   @Test
@@ -482,9 +482,9 @@ public class ChangeEventServiceImplTest extends CvNextGenTestBase {
     assertThat(deploymentChanges.get(1).getEndTime()).isEqualTo(500000);
     List<TimeRangeDetail> infrastructureChanges =
         changeTimeline.getCategoryTimeline().get(ChangeCategory.INFRASTRUCTURE);
-    assertThat(infrastructureChanges).isNull();
+    assertThat(infrastructureChanges).isEmpty();
     List<TimeRangeDetail> alertChanges = changeTimeline.getCategoryTimeline().get(ChangeCategory.ALERTS);
-    assertThat(alertChanges).isNull();
+    assertThat(alertChanges).isEmpty();
   }
 
   @Test

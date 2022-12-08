@@ -23,12 +23,16 @@ import org.apache.commons.collections4.MapUtils;
 @AllArgsConstructor
 public enum ChangeSourceType {
   //@JsonProperty added for swagger as it doesnt understand @JsonValue
-  @JsonProperty("HarnessCDNextGen") HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT),
-  @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY),
-  @JsonProperty("K8sCluster") KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES),
+  @JsonProperty("HarnessCDNextGen")
+  HARNESS_CD("HarnessCDNextGen", ChangeCategory.DEPLOYMENT, ActivityType.DEPLOYMENT, "Harness CD Nextgen"),
+  @JsonProperty("PagerDuty") PAGER_DUTY("PagerDuty", ChangeCategory.ALERTS, ActivityType.PAGER_DUTY, "PagerDuty"),
+  @JsonProperty("K8sCluster")
+  KUBERNETES("K8sCluster", ChangeCategory.INFRASTRUCTURE, ActivityType.KUBERNETES, "K8s Cluster"),
   @JsonProperty("HarnessCD")
-  HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN),
-  @JsonProperty INTERNAL_CHANGE_SOURCE("InternalChangeSource", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG);
+  HARNESS_CD_CURRENT_GEN("HarnessCD", ChangeCategory.DEPLOYMENT, ActivityType.HARNESS_CD_CURRENT_GEN, "Harness CD"),
+  @JsonProperty
+  INTERNAL_CHANGE_SOURCE_FF(
+      "InternalChangeSourceFF", ChangeCategory.FEATURE_FLAG, ActivityType.FEATURE_FLAG, "Feature Flag");
 
   private static Map<ActivityType, ChangeSourceType> ACTIVITY_TO_CHANGE_SOURCE_TYPE_MAP;
   private static Map<String, ChangeSourceType> STRING_TO_CHANGE_SOURCE_TYPE_MAP;
@@ -37,6 +41,7 @@ public enum ChangeSourceType {
   private String value;
   @Getter private ChangeCategory changeCategory;
   @Getter private ActivityType activityType;
+  @Getter private String displayName;
 
   @JsonValue
   public String getValue() {

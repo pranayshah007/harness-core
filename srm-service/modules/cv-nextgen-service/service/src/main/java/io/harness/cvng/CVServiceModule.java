@@ -911,7 +911,7 @@ public class CVServiceModule extends AbstractModule {
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
-    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.INTERNAL_CHANGE_SOURCE)
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.INTERNAL_CHANGE_SOURCE_FF)
         .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 

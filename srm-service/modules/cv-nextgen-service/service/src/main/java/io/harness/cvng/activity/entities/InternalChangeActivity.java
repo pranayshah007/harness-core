@@ -9,8 +9,9 @@ package io.harness.cvng.activity.entities;
 
 import io.harness.cvng.beans.activity.ActivityDTO;
 import io.harness.cvng.beans.activity.ActivityType;
-import io.harness.cvng.beans.change.InternalChangeEventMetaData;
+import io.harness.cvng.beans.change.EventDetails;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
+import io.harness.mongo.index.FdIndex;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.mongodb.morphia.query.UpdateOperations;
 
 @JsonTypeName("INTERNAL_CHANGE")
 @FieldNameConstants(innerTypeName = "InternalChangeActivityKeys")
@@ -26,11 +28,10 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class InternalChangeActivity extends Activity {
-  ActivityType type;
+  @FdIndex ActivityType type;
   String updatedBy;
-  InternalChangeEventMetaData.EventDetails eventDetails;
+  EventDetails eventDetails;
 
-  @Override
   public ActivityType getType() {
     return type;
   }
@@ -48,5 +49,27 @@ public class InternalChangeActivity extends Activity {
   @Override
   public boolean deduplicateEvents() {
     return false;
+  }
+
+  public static class InternalChangeUpdatableEntity
+      extends ActivityUpdatableEntity<InternalChangeActivity, InternalChangeActivity> {
+    @Override
+    public Class getEntityClass() {
+      return InternalChangeActivity.class;
+    }
+
+    @Override
+    public String getEntityKeyLongString(InternalChangeActivity activity) {
+      return null;
+    }
+
+    @Override
+    public void setUpdateOperations(
+        UpdateOperations<InternalChangeActivity> updateOperations, InternalChangeActivity activity) {
+      setCommonUpdateOperations(updateOperations, activity);
+      updateOperations.set(InternalChangeActivityKeys.type, activity.getType());
+      updateOperations.set(InternalChangeActivityKeys.updatedBy, activity.getUpdatedBy());
+      updateOperations.set(InternalChangeActivityKeys.eventDetails, activity.getEventDetails());
+    }
   }
 }

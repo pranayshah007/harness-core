@@ -8,13 +8,10 @@
 package io.harness.cvng.beans.change;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
 
@@ -32,22 +29,5 @@ public class InternalChangeEventMetaData extends ChangeEventMetadata {
   @Override
   public ChangeSourceType getType() {
     return null;
-  }
-
-  @Value
-  @Builder
-  public class EventDetails {
-    List<String> eventDetail;
-    DeepLinkData internalLinkToEntity;
-    DeepLinkData changeEventDetailsLink;
-  }
-
-  public enum Action { FETCH_DIFF_DATA, REDIRECT_URL }
-
-  @Value
-  @Builder
-  public class DeepLinkData {
-    Action action;
-    String url;
   }
 }

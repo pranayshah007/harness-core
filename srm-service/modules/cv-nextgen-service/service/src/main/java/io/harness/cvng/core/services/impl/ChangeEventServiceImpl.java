@@ -186,7 +186,9 @@ public class ChangeEventServiceImpl implements ChangeEventService {
   private ChangeTimeline getTimeline(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,
       String searchText, List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes,
       Instant startTime, Instant endTime, Integer pointCount) {
-    Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap = new HashMap<>();
+    Map<ChangeCategory, Map<Integer, TimeRangeDetail>> categoryMilliSecondFromStartDetailMap //= new HashMap<>();
+        = Arrays.stream(ChangeCategory.values()).collect(Collectors.toMap(Function.identity(), c -> new HashMap<>()));
+
     Duration timeRangeDuration = Duration.between(startTime, endTime).dividedBy(pointCount);
 
     getTimelineObject(projectParams, monitoredServiceIdentifiers, searchText, changeCategories, changeSourceTypes,
@@ -212,6 +214,7 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         (key, value) -> changeTimelineBuilder.categoryTimeline(key, new ArrayList<>(value.values())));
     return changeTimelineBuilder.build();
   }
+
   @Override
   public ChangeTimeline getTimeline(ProjectParams projectParams, List<String> serviceIdentifiers,
       List<String> environmentIdentifiers, List<String> monitoredServiceIdentifiers, String searchText,
@@ -291,6 +294,19 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         projectParams, monitoredServiceIdentifiers, changeCategories, changeSourceTypes, startTime, endTime);
   }
 
+  @Override
+  public Map<ChangeCategory, String> getChangeCategories(ProjectParams projectParams) {
+    return Arrays.stream(ChangeCategory.values())
+        .collect(Collectors.toMap(changeCategory -> changeCategory, changeCategory -> changeCategory.getDisplayName()));
+  }
+
+  @Override
+  public Map<ChangeSourceType, String> getChangeSourceTypes(ProjectParams projectParams) {
+    return Arrays.stream(ChangeSourceType.values())
+        .collect(Collectors.toMap(
+            changeSourceType -> changeSourceType, changeSourceType -> changeSourceType.getDisplayName()));
+  }
+
   private ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime) {
@@ -313,8 +329,17 @@ public class ChangeEventServiceImpl implements ChangeEventService {
             -> CategoryCountDetails.builder()
                    .count(entry.getValue().getOrDefault(1, 0))
                    .countInPrecedingWindow(entry.getValue().getOrDefault(0, 0))
+                   .percentageChange(
+                       getPercentageChange(entry.getValue().getOrDefault(1, 0), entry.getValue().getOrDefault(0, 0)))
                    .build())))
         .build();
+  }
+
+  private long getPercentageChange(long current, long previous) {
+    if (previous == 0) {
+      return 0;
+    }
+    return ((current - previous) * 100) / previous;
   }
 
   private List<Criteria> getCriterias(Query<Activity> q, ProjectParams projectParams,

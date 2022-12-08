@@ -20,6 +20,7 @@ import io.harness.ng.beans.PageResponse;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 
 public interface ChangeEventService {
   Boolean register(ChangeEventDTO changeEventDTO);
@@ -50,4 +51,8 @@ public interface ChangeEventService {
   ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, String monitoredServiceIdentifier,
       List<String> monitoredServiceIdentifiers, List<ChangeCategory> changeCategories,
       List<ChangeSourceType> changeSourceTypes, Instant startTime, Instant endTime);
+
+  Map<ChangeCategory, String> getChangeCategories(ProjectParams projectParams);
+
+  Map<ChangeSourceType, String> getChangeSourceTypes(ProjectParams projectParams);
 }

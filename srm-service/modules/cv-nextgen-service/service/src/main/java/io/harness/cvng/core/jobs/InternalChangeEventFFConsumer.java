@@ -9,16 +9,17 @@ package io.harness.cvng.core.jobs;
 
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.DeepLinkData;
+import io.harness.cvng.beans.change.EventDetails;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.core.services.api.ChangeEventService;
 import io.harness.eventsframework.EventsFrameworkConstants;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.eventsframework.schemas.cv.EventDetails;
 import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
-import io.harness.eventsframework.schemas.deployment.DeploymentEventDTO;
 import io.harness.queue.QueueController;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -26,11 +27,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Singleton
-public class InternalChangeEventConsumer extends AbstractStreamConsumer {
+public class InternalChangeEventFFConsumer extends AbstractStreamConsumer {
   private static final int MAX_WAIT_TIME_SEC = 10;
   ChangeEventService changeEventService;
 
-  public InternalChangeEventConsumer(@Named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF) Consumer consumer,
+  @Inject
+  public InternalChangeEventFFConsumer(@Named(EventsFrameworkConstants.INTERNAL_CHANGE_EVENT_FF) Consumer consumer,
       QueueController queueController, ChangeEventService changeEventService) {
     super(MAX_WAIT_TIME_SEC, consumer, queueController);
     this.changeEventService = changeEventService;
@@ -54,15 +56,15 @@ public class InternalChangeEventConsumer extends AbstractStreamConsumer {
         InternalChangeEventMetaData.builder()
             .eventType(internalChangeEventDTO.getType())
             .eventDetails(
-                InternalChangeEventMetaData.EventDetails.builder()
+                EventDetails.builder()
                     .eventDetail(internalChangeEventDTO.getEventDetails().getEventDetailsList())
                     .changeEventDetailsLink(
-                        InternalChangeEventMetaData.DeepLinkData.builder()
-                            .action(InternalChangeEventMetaData.Action.FETCH_DIFF_DATA)
+                        DeepLinkData.builder()
+                            .action(DeepLinkData.Action.FETCH_DIFF_DATA)
                             .url(internalChangeEventDTO.getEventDetails().getChangeEventDetailsLink())
                             .build())
-                    .internalLinkToEntity(InternalChangeEventMetaData.DeepLinkData.builder()
-                                              .action(InternalChangeEventMetaData.Action.REDIRECT_URL)
+                    .internalLinkToEntity(DeepLinkData.builder()
+                                              .action(DeepLinkData.Action.REDIRECT_URL)
                                               .url(internalChangeEventDTO.getEventDetails().getInternalLinkToEntity())
                                               .build())
                     .build())
@@ -73,7 +75,7 @@ public class InternalChangeEventConsumer extends AbstractStreamConsumer {
                                         .orgIdentifier(internalChangeEventDTO.getOrgIdentifier())
                                         .projectIdentifier(internalChangeEventDTO.getProjectIdentifier())
                                         .eventTime(internalChangeEventDTO.getExecutionTime())
-                                        .type(ChangeSourceType.INTERNAL_CHANGE_SOURCE)
+                                        .type(ChangeSourceType.INTERNAL_CHANGE_SOURCE_FF)
                                         .metadata(internalChangeEventMetaDataBuilder.build())
                                         .build();
 
