@@ -62,4 +62,5 @@ public class TemplateResponseDTO {
   StoreType storeType;
   String connectorRef;
   String icon;
+  CacheResponseMetadataDTO cacheResponseMetadata;
 }

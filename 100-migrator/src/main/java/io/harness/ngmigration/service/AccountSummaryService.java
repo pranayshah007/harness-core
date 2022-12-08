@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequest;
 import io.harness.beans.SearchFilter.Operator;
+import io.harness.beans.SortOrder.OrderType;
 import io.harness.beans.WorkflowType;
 import io.harness.ngmigration.beans.summary.BaseSummary;
 import io.harness.ngmigration.beans.summary.EntityExecutionSummary;
@@ -22,10 +23,10 @@ import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.service.intfc.WorkflowExecutionService;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
 public class AccountSummaryService {
@@ -39,6 +40,7 @@ public class AccountSummaryService {
     PageRequest<WorkflowExecution> pageRequest = new PageRequest<>();
     pageRequest.addFilter(WorkflowExecution.ACCOUNT_ID_KEY, Operator.EQ, accountId);
     pageRequest.addFilter(WorkflowExecutionKeys.cdPageCandidate, Operator.EQ, true);
+    pageRequest.addOrder(WorkflowExecutionKeys.createdAt, OrderType.DESC);
     pageRequest.setLimit(PageRequest.UNLIMITED);
     List<WorkflowExecution> executions = workflowExecutionService.listExecutions(pageRequest, false).getResponse();
 
@@ -61,7 +63,10 @@ public class AccountSummaryService {
             .count(executions.size())
             .typeSummary(typeSummary)
             .popularApps(popularApps)
-            .popular(new ArrayList<>(popular.values()))
+            .popular(popular.values()
+                         .stream()
+                         .sorted((p1, p2) -> (int) (p1.getCount() - p2.getCount()))
+                         .collect(Collectors.toList()))
             .build());
 
     return summary;

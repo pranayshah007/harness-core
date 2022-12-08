@@ -346,6 +346,7 @@ message FileModifyRequest {
   string blob_id = 7;
   Signature signature = 8;
   Provider provider = 9;
+  bool useGitClient = 10;
 }
 
 message FileContent {

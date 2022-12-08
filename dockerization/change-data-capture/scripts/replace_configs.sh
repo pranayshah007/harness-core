@@ -32,6 +32,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.harness-mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.harness-mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MONGO_TAG_NAME" ]]; then
   export MONGO_TAG_NAME; yq -i '.mongotags.tagKey=env(MONGO_TAG_NAME)' $CONFIG_FILE
 fi

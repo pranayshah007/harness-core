@@ -7,6 +7,7 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
 import static io.harness.pms.utils.PmsConstants.PIPELINE;
 
@@ -283,7 +284,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
     String yaml = pipelineEntity.getYaml();
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       yaml = pipelineTemplateHelper
-                 .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
+                 .resolveTemplateRefsInPipeline(
+                     accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), BOOLEAN_FALSE_VALUE)
                  .getMergedPipelineYaml();
     }
     boolean shouldAllowStageExecutions;

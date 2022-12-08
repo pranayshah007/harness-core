@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.expression.NotExpression;
@@ -46,6 +47,10 @@ public class ParameterField<T> {
 
   public T getValue() {
     return value != null ? value : defaultValue;
+  }
+
+  public T obtainValue() {
+    return value;
   }
 
   public static <T> ParameterField<T> createExpressionField(
@@ -189,16 +194,20 @@ public class ParameterField<T> {
         && StringUtils.isBlank(actualField.getExpressionValue());
   }
 
-  public static boolean containsInputSetValidator(String value) {
+  public static boolean containsInputSetValidator(String value, String fqnForNode) {
     try {
       ParameterField<?> parameterField = YamlPipelineUtils.read(value, ParameterField.class);
       return parameterField.getInputSetValidator() != null;
     } catch (IOException e) {
-      throw new InvalidRequestException(value + " is not a valid value for runtime input");
+      if (EmptyPredicate.isEmpty(value)) {
+        throw new InvalidRequestException("Value for the field at path [" + fqnForNode + "] is not provided!");
+      } else {
+        throw new InvalidRequestException(value + " is not a valid value for runtime input");
+      }
     }
   }
 
-  public static String getValueFromParameterFieldWithInputSetValidator(String value) {
+  public static String getValueFromParameterFieldWithInputSetValidator(String value, String fqnForNode) {
     try {
       ParameterField<?> parameterField = YamlPipelineUtils.read(value, ParameterField.class);
       if (parameterField.getInputSetValidator() != null) {
@@ -208,7 +217,11 @@ public class ParameterField<T> {
           + "] that does not have an input set validator");
       return null;
     } catch (IOException e) {
-      throw new InvalidRequestException(value + " is not a valid value for runtime input");
+      if (EmptyPredicate.isEmpty(value)) {
+        throw new InvalidRequestException("Value for the field at path [" + fqnForNode + "] is not provided!");
+      } else {
+        throw new InvalidRequestException(value + " is not a valid value for runtime input");
+      }
     }
   }
 }

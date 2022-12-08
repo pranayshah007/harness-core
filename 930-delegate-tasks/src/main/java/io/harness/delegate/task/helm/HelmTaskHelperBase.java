@@ -630,6 +630,10 @@ public class HelmTaskHelperBase {
     if (isEmpty(chartVersion)) {
       return true;
     }
+    if (chartVersion.indexOf('+') == -1) {
+      // this means the version doesn't contain any metadata
+      return true;
+    }
     String chart = "";
     try {
       chart = new String(Files.readAllBytes(Paths.get(chartDirectory, chartName, "Chart.yaml")));

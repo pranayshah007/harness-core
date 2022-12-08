@@ -35,7 +35,7 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
   }
 
   @Override
-  public TemplateEntityType getTemplateType() {
+  public TemplateEntityType getTemplateType(Workflow workflow) {
     return TemplateEntityType.PIPELINE_TEMPLATE;
   }
 
@@ -74,11 +74,7 @@ public class MultiServiceWorkflowHandlerImpl extends WorkflowHandler {
 
   @Override
   public JsonNode getTemplateSpec(Workflow workflow) {
-    MultiServiceWorkflowYaml workflowYaml = multiServiceWorkflowYamlHandler.toYaml(workflow, workflow.getAppId());
-    PhaseStep.Yaml prePhase = getPreDeploymentPhase(workflow);
-    PhaseStep.Yaml postPhase = getPostDeploymentPhase(workflow);
-    return buildMultiStagePipelineTemplate(
-        stepMapperFactory, prePhase, workflowYaml.getPhases(), postPhase, workflowYaml.getRollbackPhases());
+    return buildMultiStagePipelineTemplate(stepMapperFactory, workflow);
   }
 
   @Override

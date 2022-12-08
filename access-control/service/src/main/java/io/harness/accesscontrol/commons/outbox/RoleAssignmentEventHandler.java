@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol.commons.outbox;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentCreateEvent.ROLE_ASSIGNMENT_CREATE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentDeleteEvent.ROLE_ASSIGNMENT_DELETE_EVENT;
 import static io.harness.accesscontrol.roleassignments.events.RoleAssignmentUpdateEvent.ROLE_ASSIGNMENT_UPDATE_EVENT;
@@ -16,6 +15,7 @@ import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toDTO;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParams;
 import static io.harness.accesscontrol.scopes.harness.ScopeMapper.toParentScopeParams;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 import static io.harness.remote.client.NGRestUtils.getResponse;

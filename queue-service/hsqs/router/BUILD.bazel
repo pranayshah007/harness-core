@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//queue-service/hsqs/config",
         "@com_github_golang_jwt_jwt//:jwt",
+        "@com_github_labstack_echo_contrib//prometheus",
         "@com_github_labstack_echo_v4//:echo",
         "@com_github_labstack_echo_v4//middleware",
         "@com_github_labstack_gommon//log",

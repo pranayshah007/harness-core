@@ -16,10 +16,9 @@ spec:
         spec:
           matchType: all
           tags:
-            - key: foo
-              value: bar
-            - key: top
-              value: down
+            foo: bar
+            top: down
+            zee: ""
       - type: all
         entities:
           - infrastructures

@@ -17,4 +17,6 @@ public class GitSyncConstants {
   public static final String DEFAULT_USER_NAME = "Harness_user";
   public static final String DEFAULT_USER_EMAIL_ID = "user@harness.io";
   public static final String FOLDER_PATH = ".harness/";
+  public static final String TRUE_VALUE = "true";
+  public static final String GIT_CLIENT_ENABLED_SETTING = "enable_git_commands";
 }

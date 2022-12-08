@@ -24,8 +24,8 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
-import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.authorization.AuthorizationServiceHeader;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.beans.FeatureName;
 import io.harness.beans.HeaderConfig;

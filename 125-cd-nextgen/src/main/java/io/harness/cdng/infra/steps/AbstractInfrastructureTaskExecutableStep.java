@@ -36,6 +36,7 @@ import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
+import io.harness.cdng.infra.yaml.InfrastructureDetailsAbstract;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
@@ -43,6 +44,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
@@ -656,6 +658,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
     if (infrastructure == null) {
       throw new InvalidRequestException("Infrastructure definition can't be null or empty");
     }
+    if (infrastructure instanceof InfrastructureDetailsAbstract) {
+      saveExecutionLog(logCallback,
+          "Infrastructure Name: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraName()
+              + " , Identifier: " + ((InfrastructureDetailsAbstract) infrastructure).getInfraIdentifier());
+    }
+
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8sDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -741,6 +749,12 @@ abstract class AbstractInfrastructureTaskExecutableStep {
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getRegion(), ecsInfrastructure.getCluster());
+        break;
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tasInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(
+            tasInfrastructure.getConnectorRef(), tasInfrastructure.getOrganization(), tasInfrastructure.getSpace());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

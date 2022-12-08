@@ -36,7 +36,6 @@ public enum ResourceType {
   DELEGATE_TOKEN(ResourceTypeConstants.DELEGATE_TOKEN),
   GOVERNANCE_POLICY(ResourceTypeConstants.GOVERNANCE_POLICY),
   GOVERNANCE_POLICY_SET(ResourceTypeConstants.GOVERNANCE_POLICY_SET),
-  GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.GOVERNANCE_RULE_ENFORCEMENT),
   VARIABLE(ResourceTypeConstants.VARIABLE),
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
@@ -56,7 +55,10 @@ public enum ResourceType {
   AUTOSTOPPING_LB(ResourceTypeConstants.AUTOSTOPPING_LB),
   AUTOSTOPPING_STARTSTOP(ResourceTypeConstants.AUTOSTOPPING_STARTSTOP),
   SETTING(ResourceTypeConstants.SETTING),
-  NG_LOGIN_SETTINGS(ResourceTypeConstants.NG_LOGIN_SETTINGS);
+  NG_LOGIN_SETTINGS(ResourceTypeConstants.NG_LOGIN_SETTINGS),
+  CLOUD_ASSET_GOVERNANCE_RULE(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE),
+  CLOUD_ASSET_GOVERNANCE_RULE_SET(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_SET),
+  CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT(ResourceTypeConstants.CLOUD_ASSET_GOVERNANCE_RULE_ENFORCEMENT);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

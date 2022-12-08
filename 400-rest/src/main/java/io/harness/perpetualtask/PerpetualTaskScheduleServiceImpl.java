@@ -20,6 +20,8 @@ import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 
+import software.wings.service.intfc.ownership.OwnedByAccount;
+
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.FindAndModifyOptions;
@@ -29,7 +31,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
-public class PerpetualTaskScheduleServiceImpl implements PerpetualTaskScheduleService {
+public class PerpetualTaskScheduleServiceImpl implements PerpetualTaskScheduleService, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private PerpetualTaskService perpetualTaskService;
 
@@ -111,5 +113,11 @@ public class PerpetualTaskScheduleServiceImpl implements PerpetualTaskScheduleSe
         .equal(accountId)
         .field(PerpetualTaskScheduleConfigKeys.perpetualTaskType)
         .equal(perpetualTaskType);
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    persistence.delete(persistence.createQuery(PerpetualTaskScheduleConfig.class)
+                           .filter(PerpetualTaskScheduleConfigKeys.accountId, accountId));
   }
 }

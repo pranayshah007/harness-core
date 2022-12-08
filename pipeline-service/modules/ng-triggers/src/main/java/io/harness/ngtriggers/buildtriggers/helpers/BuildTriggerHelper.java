@@ -80,6 +80,13 @@ import org.apache.logging.log4j.util.Strings;
 @OwnedBy(PIPELINE)
 public class BuildTriggerHelper {
   private PipelineServiceClient pipelineServiceClient;
+  public static final String REPOSITORY_NAME = "repository";
+  public static final String REPOSITORY_FORMAT = "repositoryFormat";
+  public static final String RAW = "raw";
+  public static final String DOCKER = "docker";
+  public static final String MAVEN = "maven";
+  public static final String NPM = "npm";
+  public static final String NUGET = "nuget";
 
   public Optional<String> fetchPipelineForTrigger(TriggerDetails triggerDetails) {
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -352,22 +359,6 @@ public class BuildTriggerHelper {
     }
   }
 
-  private void validatePollingItemForNexus3Registry(PollingItem pollingItem) {
-    Nexus3RegistryPayload nexus3RegistryPayload = pollingItem.getPollingPayloadData().getNexus3RegistryPayload();
-    String error = checkFiledValueError("Repository", nexus3RegistryPayload.getRepository());
-    if (isNotBlank(error)) {
-      throw new InvalidRequestException(error);
-    }
-  }
-
-  private void validatePollingItemForNexus2Registry(PollingItem pollingItem) {
-    Nexus2RegistryPayload nexus2RegistryPayload = pollingItem.getPollingPayloadData().getNexus2RegistryPayload();
-    String error = checkFiledValueError("Repository", nexus2RegistryPayload.getRepository());
-    if (isNotBlank(error)) {
-      throw new InvalidRequestException(error);
-    }
-  }
-
   private void validatePollingItemForGoogleArtifactRegistry(PollingItem pollingItem) {
     GARPayload garPayload = pollingItem.getPollingPayloadData().getGarPayload();
 
@@ -411,12 +402,12 @@ public class BuildTriggerHelper {
   private void validatePollingItemForArtifactory(PollingItem pollingItem) {
     ArtifactoryRegistryPayload artifactoryRegistryPayload =
         pollingItem.getPollingPayloadData().getArtifactoryRegistryPayload();
-    String error = checkFiledValueError("repository", artifactoryRegistryPayload.getRepository());
+    String error = checkFiledValueError(REPOSITORY_NAME, artifactoryRegistryPayload.getRepository());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
 
-    error = checkFiledValueError("repositoryFormat", artifactoryRegistryPayload.getRepositoryFormat());
+    error = checkFiledValueError(REPOSITORY_FORMAT, artifactoryRegistryPayload.getRepositoryFormat());
     if (isNotBlank(error)) {
       throw new InvalidRequestException(error);
     }
@@ -433,6 +424,61 @@ public class BuildTriggerHelper {
         throw new InvalidRequestException(error);
       }
     }
+  }
+
+  private void validatePollingItemForNexus3Registry(PollingItem pollingItem) {
+    Map<String, String> fieldMaps = new HashMap<>();
+    Nexus3RegistryPayload nexus3RegistryPayload = pollingItem.getPollingPayloadData().getNexus3RegistryPayload();
+    String error;
+    fieldMaps.put(REPOSITORY_NAME, nexus3RegistryPayload.getRepository());
+    fieldMaps.put(REPOSITORY_FORMAT, nexus3RegistryPayload.getRepositoryFormat());
+    String repositoryFormat = nexus3RegistryPayload.getRepositoryFormat();
+    switch (repositoryFormat) {
+      case DOCKER:
+        fieldMaps.put("artifactPath", nexus3RegistryPayload.getArtifactPath());
+        error = checkFiledValueError("repositoryUrl", nexus3RegistryPayload.getRepositoryUrl());
+        String errorForPort = checkFiledValueError("repositoryPort", nexus3RegistryPayload.getRepositoryPort());
+        if (isNotBlank(error) && isNotBlank(errorForPort)) {
+          throw new InvalidRequestException(error + " \n " + errorForPort);
+        }
+        break;
+      case MAVEN:
+        fieldMaps.put("groupId", nexus3RegistryPayload.getGroupId());
+        fieldMaps.put("artifactId", nexus3RegistryPayload.getArtifactId());
+        break;
+      case NPM:
+      case NUGET:
+        fieldMaps.put("packageName", nexus3RegistryPayload.getPackageName());
+        break;
+      case RAW:
+        fieldMaps.put("group", nexus3RegistryPayload.getGroup());
+        break;
+      default:
+        throw new InvalidRequestException("repositoryFormat not supported");
+    }
+    checkAndThrowException(fieldMaps);
+  }
+
+  private void validatePollingItemForNexus2Registry(PollingItem pollingItem) {
+    Nexus2RegistryPayload nexus2RegistryPayload = pollingItem.getPollingPayloadData().getNexus2RegistryPayload();
+    Map<String, String> fieldMaps = new HashMap<>();
+    fieldMaps.put(REPOSITORY_NAME, nexus2RegistryPayload.getRepository());
+    fieldMaps.put(REPOSITORY_FORMAT, nexus2RegistryPayload.getRepositoryFormat());
+    String repositoryFormat = nexus2RegistryPayload.getRepositoryFormat();
+
+    switch (repositoryFormat) {
+      case MAVEN:
+        fieldMaps.put("groupId", nexus2RegistryPayload.getGroupId());
+        fieldMaps.put("artifactId", nexus2RegistryPayload.getArtifactId());
+        break;
+      case NPM:
+      case NUGET:
+        fieldMaps.put("packageName", nexus2RegistryPayload.getPackageName());
+        break;
+      default:
+        throw new InvalidRequestException("repositoryFormat not supported");
+    }
+    checkAndThrowException(fieldMaps);
   }
 
   private void validatePollingItemForEcr(PollingItem pollingItem) {
@@ -663,5 +709,14 @@ public class BuildTriggerHelper {
       errorMap.put(entry.getKey(), innerMap);
     }
     return errorMap;
+  }
+
+  private void checkAndThrowException(Map<String, String> fieldMaps) {
+    fieldMaps.entrySet().stream().forEach(fieldMap -> {
+      String error = checkFiledValueError(fieldMap.getKey(), fieldMap.getValue());
+      if (isNotBlank(error)) {
+        throw new InvalidRequestException(error);
+      }
+    });
   }
 }

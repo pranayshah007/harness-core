@@ -7,6 +7,7 @@
 
 package io.harness.repositories.instance;
 
+import static io.harness.rule.OwnerRule.MEENA;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 import static io.harness.rule.OwnerRule.VIKYATH_HAREKAL;
 
@@ -21,14 +22,14 @@ import io.harness.category.element.UnitTests;
 import io.harness.entities.Instance;
 import io.harness.entities.Instance.InstanceKeys;
 import io.harness.entities.Instance.InstanceKeysAdditional;
+import io.harness.models.ActiveServiceInstanceInfo;
 import io.harness.models.CountByServiceIdAndEnvType;
 import io.harness.models.EnvBuildInstanceCount;
 import io.harness.models.InstancesByBuildId;
+import io.harness.mongo.helper.AnalyticsMongoTemplateHolder;
 import io.harness.mongo.helper.SecondaryMongoTemplateHolder;
-import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.rule.Owner;
-import io.harness.service.stats.model.InstanceCountByServiceAndEnv;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,15 +63,23 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   private final long TIMESTAMP = 123L;
   private final long START_TIMESTAMP = 124L;
   private final long END_TIMESTAMP = 125L;
+  private final String CLUSTER_ID = "cluster11";
+  private final String AGENT_ID = "gitops-test-agent";
+  private final String PIPELINE_ID = "pipelineID";
+  private final String INSTANCE_NG_COLLECTION = "instanceNG";
   @Mock MongoTemplate mongoTemplate;
   @Mock MongoTemplate secondaryMongoTemplate;
   @Mock SecondaryMongoTemplateHolder secondaryMongoTemplateHolder;
+  @Mock MongoTemplate analyticsMongoTemplate;
+  @Mock AnalyticsMongoTemplateHolder analyticsMongoTemplateHolder;
   InstanceRepositoryCustomImpl instanceRepositoryCustom;
 
   @Before
   public void setup() {
     when(secondaryMongoTemplateHolder.getSecondaryMongoTemplate()).thenReturn(secondaryMongoTemplate);
-    instanceRepositoryCustom = new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder);
+    when(analyticsMongoTemplateHolder.getAnalyticsMongoTemplate()).thenReturn(analyticsMongoTemplate);
+    instanceRepositoryCustom =
+        new InstanceRepositoryCustomImpl(mongoTemplate, secondaryMongoTemplateHolder, analyticsMongoTemplateHolder);
   }
 
   @Test
@@ -97,39 +106,69 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   }
 
   @Test
-  @Owner(developers = VIKYATH_HAREKAL)
+  @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getActiveInstancesByEnvWithoutTimestamp() {
-    Project project = mockProject();
+  public void getActiveInstancesByAccountTestWithoutTimestamp() {
     Instance instance = Instance.builder().instanceKey("abc").build();
-    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv = mockInstanceCountByServiceAndEnv(instance);
-    AggregationResults<InstanceCountByServiceAndEnv> results =
-        new AggregationResults<>(Collections.singletonList(instanceCountByServiceAndEnv), new Document());
-    when(secondaryMongoTemplate.aggregate(
-             any(Aggregation.class), eq(Instance.class), eq(InstanceCountByServiceAndEnv.class)))
-        .thenReturn(results);
+    Criteria criteria = Criteria.where(InstanceKeys.accountIdentifier)
+                            .is(ACCOUNT_ID)
+                            .and(InstanceKeys.orgIdentifier)
+                            .is(ORGANIZATION_ID)
+                            .and(InstanceKeys.projectIdentifier)
+                            .is(PROJECT_ID)
+                            .and(InstanceKeys.serviceIdentifier)
+                            .is(SERVICE_ID)
+                            .and(InstanceKeys.isDeleted)
+                            .is(false);
+    Query query = new Query().addCriteria(criteria);
+    when(analyticsMongoTemplate.find(query, Instance.class)).thenReturn(Collections.singletonList(instance));
 
-    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceAndEnv(project, -1))
-        .containsExactlyInAnyOrderElementsOf(results);
+    assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, -1))
+        .containsExactlyInAnyOrderElementsOf(Collections.singletonList(instance));
   }
 
   @Test
-  @Owner(developers = VIKYATH_HAREKAL)
+  @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void getActiveInstancesByEnv() {
-    Project project = mockProject();
+  public void getActiveInstancesByAccountTest() {
     Instance instance1 = Instance.builder().instanceKey("abc").build();
-    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv1 = mockInstanceCountByServiceAndEnv(instance1);
-    Instance instance2 = Instance.builder().instanceKey("def").build();
-    InstanceCountByServiceAndEnv instanceCountByServiceAndEnv2 = mockInstanceCountByServiceAndEnv(instance2);
-    AggregationResults<InstanceCountByServiceAndEnv> results = new AggregationResults<>(
-        Arrays.asList(instanceCountByServiceAndEnv1, instanceCountByServiceAndEnv2), new Document());
-    when(secondaryMongoTemplate.aggregate(
-             any(Aggregation.class), eq(Instance.class), eq(InstanceCountByServiceAndEnv.class)))
-        .thenReturn(results);
+    Criteria criteria1 = Criteria.where(InstanceKeys.accountIdentifier)
+                             .is(ACCOUNT_ID)
+                             .and(InstanceKeys.orgIdentifier)
+                             .is(ORGANIZATION_ID)
+                             .and(InstanceKeys.projectIdentifier)
+                             .is(PROJECT_ID)
+                             .and(InstanceKeys.serviceIdentifier)
+                             .is(SERVICE_ID)
+                             .and(InstanceKeys.isDeleted)
+                             .is(false)
+                             .and(InstanceKeys.createdAt)
+                             .lte(TIMESTAMP);
+    Query query1 = new Query().addCriteria(criteria1);
+    when(analyticsMongoTemplate.find(query1, Instance.class)).thenReturn(Collections.singletonList(instance1));
 
-    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceAndEnv(project, TIMESTAMP))
-        .containsExactlyInAnyOrderElementsOf(results);
+    Instance instance2 = Instance.builder().instanceKey("def").build();
+    Criteria criteria2 = Criteria.where(InstanceKeys.accountIdentifier)
+                             .is(ACCOUNT_ID)
+                             .and(InstanceKeys.orgIdentifier)
+                             .is(ORGANIZATION_ID)
+                             .and(InstanceKeys.projectIdentifier)
+                             .is(PROJECT_ID)
+                             .and(InstanceKeys.serviceIdentifier)
+                             .is(SERVICE_ID)
+                             .and(InstanceKeys.isDeleted)
+                             .is(true)
+                             .and(InstanceKeys.createdAt)
+                             .lte(TIMESTAMP)
+                             .and(InstanceKeys.deletedAt)
+                             .gte(TIMESTAMP);
+    Query query2 = new Query().addCriteria(criteria2);
+    when(analyticsMongoTemplate.find(query2, Instance.class)).thenReturn(Collections.singletonList(instance2));
+
+    assertThat(instanceRepositoryCustom.getActiveInstancesByAccountOrgProjectAndService(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, TIMESTAMP))
+        .containsExactlyInAnyOrderElementsOf(Arrays.asList(instance1, instance2));
   }
 
   @Test
@@ -264,19 +303,39 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
   }
 
   @Test
+  @Owner(developers = MEENA)
+  @Category(UnitTests.class)
+  public void getActiveServiceGitOpsInstanceInfoTest() {
+    ActiveServiceInstanceInfo instances =
+        new ActiveServiceInstanceInfo(null, null, CLUSTER_ID, AGENT_ID, PIPELINE_ID, PIPELINE_ID,
+            String.valueOf(System.currentTimeMillis()), ENVIRONMENT_ID, ENVIRONMENT_NAME, "image:1.1", null, 1);
+    AggregationResults<ActiveServiceInstanceInfo> aggregationResults =
+        new AggregationResults<>(Arrays.asList(instances), new Document());
+    when(mongoTemplate.aggregate(
+             any(Aggregation.class), eq(INSTANCE_NG_COLLECTION), eq(ActiveServiceInstanceInfo.class)))
+        .thenReturn(aggregationResults);
+    assertThat(instanceRepositoryCustom.getActiveServiceGitOpsInstanceInfo(
+                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID))
+        .isEqualTo(aggregationResults);
+  }
+
+  @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void getActiveInstancesByServiceIdEnvIdAndBuildIdsTest() {
     List<String> buildIds = Arrays.asList("build1", "build2");
     int limit = 5;
+    String pipelineExecutionId = "pipelineExecutionId";
+    String clusterId = "clusterId";
     Instance instance = Instance.builder().build();
     InstancesByBuildId instancesByBuildId = new InstancesByBuildId("buildId", Arrays.asList(instance));
     AggregationResults<InstancesByBuildId> aggregationResults =
         new AggregationResults<>(Arrays.asList(instancesByBuildId), new Document());
     when(secondaryMongoTemplate.aggregate(any(Aggregation.class), eq(Instance.class), eq(InstancesByBuildId.class)))
         .thenReturn(aggregationResults);
-    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(
-                   ACCOUNT_ID, ORGANIZATION_ID, PROJECT_ID, SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit))
+    assertThat(instanceRepositoryCustom.getActiveInstancesByServiceIdEnvIdAndBuildIds(ACCOUNT_ID, ORGANIZATION_ID,
+                   PROJECT_ID, SERVICE_ID, ENVIRONMENT_ID, buildIds, TIMESTAMP, limit, null, clusterId,
+                   pipelineExecutionId, System.currentTimeMillis()))
         .isEqualTo(aggregationResults);
   }
 
@@ -309,22 +368,5 @@ public class InstanceRepositoryCustomImplTest extends InstancesTestBase {
 
     instanceRepositoryCustom.updateInfrastructureMapping(instanceId, infraMappingId);
     verify(mongoTemplate).findAndModify(query, update, Instance.class);
-  }
-
-  private Project mockProject() {
-    return Project.builder()
-        .accountIdentifier(ACCOUNT_ID)
-        .orgIdentifier(ORGANIZATION_ID)
-        .identifier(PROJECT_ID)
-        .build();
-  }
-
-  private InstanceCountByServiceAndEnv mockInstanceCountByServiceAndEnv(Instance instance) {
-    return InstanceCountByServiceAndEnv.builder()
-        .serviceIdentifier(SERVICE_ID)
-        .envIdentifier(ENVIRONMENT_ID)
-        .firstDocument(instance)
-        .count(2)
-        .build();
   }
 }

@@ -7,7 +7,7 @@
 
 package io.harness.notification.eventbackbone;
 
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
 
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.entities.MongoNotificationRequest;

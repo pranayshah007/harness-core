@@ -9,6 +9,7 @@ package io.harness.gitsync.common.dtos;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.common.beans.ScmCacheDetails;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,4 +25,5 @@ public class ScmGetFileResponseDTO {
   String commitId;
   String blobId;
   String branchName;
+  ScmCacheDetails cacheDetails;
 }

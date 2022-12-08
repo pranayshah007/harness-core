@@ -95,7 +95,7 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 	subTopicQueueKey := utils.GetSubTopicStreamQueueKey(request.Topic, request.SubTopic)
 
 	// add subtopic in subtopics set
-	_, err = s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
+	sAddResult, err := s.Client.SAdd(ctx, allSubTopicsKey, request.SubTopic).Result()
 	if err != nil {
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
 	}
@@ -110,6 +110,14 @@ func (s *Store) Enqueue(ctx context.Context, request store.EnqueueRequest) (*sto
 
 	if err != nil {
 		return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
+	}
+
+	// if subtopic does not exist, new queue has been created and consumer group needs to be registered
+	if sAddResult == int64(1) {
+		err = s.RegisterQueue(ctx, request.Topic, request.SubTopic, request.ProducerName)
+		if err != nil {
+			return nil, &store.EnqueueErrorResponse{ErrorMessage: err.Error()}
+		}
 	}
 
 	return &store.EnqueueResponse{ItemID: val}, nil
@@ -330,11 +338,12 @@ func MapXMessageToResponse(queueKey string, msgs []redis.XMessage) []*store.Dequ
 
 	messages := make([]*store.DequeueResponse, 0)
 	for _, m := range msgs {
+
 		cm := store.DequeueResponse{
 			ItemID:    m.ID,
 			Timestamp: time.Now().Unix(),
 			QueueKey:  queueKey,
-			Payload:   []byte(m.Values["payload"].(string)),
+			Payload:   m.Values["payload"].(string),
 			ItemMetadata: store.DequeueItemMetadata{
 				CurrentRetryCount: 0,
 				MaxProcessingTime: 0,
@@ -465,8 +474,8 @@ func ValidateEnqueueRequest(request *store.EnqueueRequest) error {
 		return fmt.Errorf("EnqueueRequest ProducerName cannot be empty")
 	}
 
-	if request.Payload == nil {
-		return fmt.Errorf("DequeueRequest BatchSize should be greater than 0")
+	if len(request.Payload) == 0 {
+		return fmt.Errorf("EnqueueRequest Payload cannot be empty")
 	}
 	return nil
 
@@ -494,8 +503,25 @@ func (s *Store) Register(ctx context.Context, request store.RegisterTopicMetadat
 			utils.GetConsumerGroupKeyForTopic(request.Topic),
 			"0",
 		).Result()
-		fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
-			request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+		if err != nil {
+			return fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
+				request.Topic, utils.GetSubTopicStreamQueueKey(request.Topic, subtopic))
+		}
+	}
+	return nil
+}
+
+// RegisterQueue method to add consumer group to the queue
+func (s *Store) RegisterQueue(ctx context.Context, topic, subtopic, producer string) error {
+	_, err := s.Client.XGroupCreate(
+		ctx,
+		utils.GetSubTopicStreamQueueKey(topic, subtopic),
+		utils.GetConsumerGroupKeyForTopic(producer),
+		"0",
+	).Result()
+	if err != nil {
+		return fmt.Errorf("failed to add consumer group for topic %s in the stream %s",
+			topic, utils.GetSubTopicStreamQueueKey(topic, subtopic))
 	}
 	return nil
 }

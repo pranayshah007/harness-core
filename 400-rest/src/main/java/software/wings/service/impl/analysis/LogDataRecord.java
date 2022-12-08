@@ -96,12 +96,6 @@ public class LogDataRecord extends Base implements GoogleDataStoreAware, Account
                 .field(LogDataRecordKeys.logCollectionMinute)
                 .field(LogDataRecordKeys.clusterLevel)
                 .build(),
-            CompoundMongoIndex.builder()
-                .name("cv_raw_record_index")
-                .field(LogDataRecordKeys.cvConfigId)
-                .field(LogDataRecordKeys.clusterLevel)
-                .field(LogDataRecordKeys.logCollectionMinute)
-                .build(),
             SortCompoundMongoIndex.builder()
                 .name("cv_config_created_at_idx")
                 .field(LogDataRecordKeys.cvConfigId)

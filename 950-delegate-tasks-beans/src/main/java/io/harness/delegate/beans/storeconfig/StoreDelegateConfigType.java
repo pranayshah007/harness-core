@@ -16,5 +16,6 @@ public enum StoreDelegateConfigType {
   OCI_HELM,
   HARNESS,
   CUSTOM_REMOTE,
-  INLINE
+  INLINE,
+  AMAZON_S3
 }

@@ -32,7 +32,6 @@ import io.harness.TemplateServiceTestBase;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
@@ -133,7 +132,6 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
   @Mock TemplateMergeServiceHelper templateMergeServiceHelper;
   @Inject TemplateMergeServiceHelper injectedTemplateMergeServiceHelper;
 
-  @Mock AccountClient accountClient;
   @Mock TemplateGitXService templateGitXService;
   @Mock NGTemplateFeatureFlagHelperService featureFlagHelperService;
   @Mock NgManagerReconcileClient ngManagerReconcileClient;
@@ -240,7 +238,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
     Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
@@ -656,8 +654,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
-    Optional<TemplateEntity> optionalTemplateEntity =
-        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
@@ -982,8 +980,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     doReturn(Optional.of(templateEntity))
         .when(templateServiceHelper)
-        .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false);
-    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml, null)).thenReturn(templateInputs);
+        .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, false);
+    when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml)).thenReturn(templateInputs);
 
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
         templateService.getTemplateWithInputs(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as");

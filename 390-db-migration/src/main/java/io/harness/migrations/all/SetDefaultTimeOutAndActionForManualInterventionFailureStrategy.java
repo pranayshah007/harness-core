@@ -75,7 +75,7 @@ public class SetDefaultTimeOutAndActionForManualInterventionFailureStrategy impl
 
   @Override
   public void migrate() {
-    List<Account> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+    List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : allAccounts) {
       migrateForAccount(account);
     }

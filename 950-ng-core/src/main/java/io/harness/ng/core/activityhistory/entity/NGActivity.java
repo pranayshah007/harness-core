@@ -47,7 +47,7 @@ public class NGActivity implements PersistentEntity, NGAccountAccess {
   @Id @org.mongodb.morphia.annotations.Id String id;
   @FdIndex @NotBlank String accountIdentifier;
   @NotNull EntityDetail referredEntity;
-  @FdIndex String referredEntityFQN;
+  String referredEntityFQN;
   @NotNull String referredEntityType;
   @NotNull String type;
   String activityStatus;

@@ -44,6 +44,114 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AsgConfigurationManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgLaunchTemplateManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgScalingPolicyManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AsgScheduledUpdateGroupActionManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "AutoScalerManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "skipResourceVersioning": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldBoolean"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureARMRollbackStepInfo": {
       "allOf": [
         {
@@ -3074,6 +3182,38 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "InlineTerragruntBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineTerragruntVarFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntVarFileSpec"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "InputSetValidator": {
       "type": "object",
       "properties": {
@@ -3323,9 +3463,6 @@
                   "minLength": 1
                 }
               ]
-            },
-            "skipDryRun": {
-              "type": "boolean"
             }
           }
         }
@@ -3393,9 +3530,6 @@
               "items": {
                 "type": "string"
               }
-            },
-            "skipDryRun": {
-              "type": "boolean"
             }
           }
         }
@@ -3474,16 +3608,6 @@
             },
             "deleteResources": {
               "$ref": "#/definitions/DeleteResourcesWrapper"
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             }
           }
         }
@@ -3561,16 +3685,6 @@
               ]
             },
             "pruningEnabled": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
-            },
-            "skipDryRun": {
               "oneOf": [
                 {
                   "type": "boolean"
@@ -3662,16 +3776,6 @@
             },
             "instanceSelection": {
               "$ref": "#/definitions/InstanceSelectionWrapper"
-            },
-            "skipDryRun": {
-              "oneOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string"
-                }
-              ]
             },
             "skipSteadyStateCheck": {
               "oneOf": [
@@ -3796,12 +3900,83 @@
             "EcsTaskDefinition",
             "EcsServiceDefinition",
             "EcsScalableTargetDefinition",
-            "EcsScalingPolicyDefinition"
+            "EcsScalingPolicyDefinition",
+            "TasManifest",
+            "TasVars",
+            "TasAutoScaler",
+            "AsgLaunchTemplate",
+            "AsgConfiguration",
+            "AsgScalingPolicy",
+            "AsgScheduledUpdateGroupAction"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgConfiguration"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgConfigurationManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgLaunchTemplate"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgLaunchTemplateManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgScalingPolicy"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgScalingPolicyManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AsgScheduledUpdateGroupAction"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AsgScheduledUpdateGroupActionManifest"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -4006,6 +4181,54 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/ServerlessAwsLambdaManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasAutoScaler"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AutoScalerManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasManifest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasManifest"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "TasVars"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/VarsManifest"
               }
             }
           }
@@ -4640,6 +4863,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "RemoteTerragruntBackendConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntBackendConfigSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RemoteTerragruntVarFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TerragruntVarFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "S3StoreConfig": {
       "allOf": [
         {
@@ -4659,6 +4920,21 @@
             },
             "metadata": {
               "type": "string"
+            },
+            "paths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "region": {
               "type": "string"
@@ -5339,6 +5615,61 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "TasManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "autoScalerPath": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "cfCliVersion": {
+              "type": "string",
+              "enum": [
+                "V7"
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "varsPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "TerraformApplyStepInfo": {
       "allOf": [
         {
@@ -5831,17 +6162,49 @@
     "TerragruntBackendConfig": {
       "type": "object",
       "properties": {
-        "spec": {
-          "$ref": "#/definitions/TerragruntBackendConfigSpec"
-        },
         "type": {
           "type": "string"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineTerragruntBackendConfigSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerragruntBackendConfigSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "TerragruntBackendConfigSpec": {
       "type": "object",
+      "discriminator": "type",
       "properties": {
         "type": {
           "type": "string"
@@ -6163,17 +6526,49 @@
         "identifier": {
           "type": "string"
         },
-        "spec": {
-          "$ref": "#/definitions/TerragruntVarFileSpec"
-        },
         "type": {
           "type": "string"
         }
       },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineTerragruntVarFileSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteTerragruntVarFileSpec"
+              }
+            }
+          }
+        }
+      ]
     },
     "TerragruntVarFileSpec": {
       "type": "object",
+      "discriminator": "type",
       "properties": {
         "type": {
           "type": "string"
@@ -6241,6 +6636,25 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ValuesManifest": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ManifestAttributes"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "metadata": {
+              "type": "string"
+            },
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "VarsManifest": {
       "allOf": [
         {
           "$ref": "#/definitions/ManifestAttributes"

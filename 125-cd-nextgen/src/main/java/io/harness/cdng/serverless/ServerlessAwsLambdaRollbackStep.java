@@ -94,10 +94,10 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
         executionSweepingOutputService.resolveOptional(ambiance,
             RefObjectUtils.getSweepingOutputRefObject(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq() + "."
                 + OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME));
-    OptionalSweepingOutput serverlessGitFetchOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
+    OptionalSweepingOutput serverlessFetchFileOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
         RefObjectUtils.getSweepingOutputRefObject(rollbackStepParameters.getServerlessAwsLambdaRollbackFnq() + "."
-            + OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME));
-    if (!serverlessRollbackDataOptionalOutput.isFound() || !serverlessGitFetchOptionalOutput.isFound()) {
+            + OutcomeExpressionConstants.SERVERLESS_FETCH_FILE_OUTCOME));
+    if (!serverlessRollbackDataOptionalOutput.isFound() || !serverlessFetchFileOptionalOutput.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(SkipTaskRequest.newBuilder()
                                   .setMessage("Serverless Aws Lambda Deploy step was not executed. Skipping rollback.")
@@ -106,8 +106,8 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
     }
     ServerlessAwsLambdaRollbackDataOutcome rollbackDataOutcome =
         (ServerlessAwsLambdaRollbackDataOutcome) serverlessRollbackDataOptionalOutput.getOutput();
-    ServerlessGitFetchOutcome serverlessGitFetchOutcome =
-        (ServerlessGitFetchOutcome) serverlessGitFetchOptionalOutput.getOutput();
+    ServerlessFetchFileOutcome serverlessFetchFileOutcome =
+        (ServerlessFetchFileOutcome) serverlessFetchFileOptionalOutput.getOutput();
     if (!rollbackDataOutcome.isFirstDeployment()
         && EmptyPredicate.isEmpty(rollbackDataOutcome.getPreviousVersionTimeStamp())) {
       return TaskRequest.newBuilder()
@@ -121,8 +121,8 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
     ManifestOutcome serverlessManifestOutcome = serverlessStepCommonHelper.getServerlessManifestOutcome(
         manifestsOutcome.values(), serverlessAwsLambdaStepHelper);
     Map<String, Object> manifestParams = new HashMap<>();
-    manifestParams.put("manifestFileOverrideContent", serverlessGitFetchOutcome.getManifestFileOverrideContent());
-    manifestParams.put("manifestFilePathContent", serverlessGitFetchOutcome.getManifestFilePathContent());
+    manifestParams.put("manifestFileOverrideContent", serverlessFetchFileOutcome.getManifestFileOverrideContent());
+    manifestParams.put("manifestFilePathContent", serverlessFetchFileOutcome.getManifestFilePathContent());
     ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
         manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
@@ -141,7 +141,7 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
             .commandName(SERVERLESS_AWS_LAMBDA_ROLLBACK_COMMAND_NAME)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .manifestContent(serverlessGitFetchOutcome.getManifestFileOverrideContent())
+            .manifestContent(serverlessFetchFileOutcome.getManifestFileOverrideContent())
             .build();
     return serverlessStepCommonHelper
         .queueServerlessTask(stepElementParameters, serverlessRollbackRequest, ambiance,

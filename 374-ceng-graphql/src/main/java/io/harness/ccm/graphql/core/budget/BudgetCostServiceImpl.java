@@ -149,14 +149,14 @@ public class BudgetCostServiceImpl implements BudgetCostService {
             .build());
     long updatedStartTime = BudgetUtils.getStartOfMonthGivenTime(startTime);
     long endTime = updatedStartTime - BudgetUtils.ONE_DAY_MILLIS;
+    updatedStartTime = BudgetUtils.getStartOfLastPeriod(updatedStartTime, period);
     List<QLCEViewFilterWrapper> filters = new ArrayList<>();
     filters.add(viewsQueryHelper.getViewMetadataFilter(perspectiveId));
-    filters.add(
-        viewsQueryHelper.getPerspectiveTimeFilter(BudgetUtils.getStartOfLastPeriod(updatedStartTime, period), AFTER));
+    filters.add(viewsQueryHelper.getPerspectiveTimeFilter(updatedStartTime, AFTER));
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
         viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), true);
+        viewsQueryHelper.buildQueryParams(accountId, false), true, updatedStartTime);
     return result;
   }
 
@@ -185,7 +185,7 @@ public class BudgetCostServiceImpl implements BudgetCostService {
     filters.add(viewsQueryHelper.getPerspectiveTimeFilter(endTime, BEFORE));
     result = viewsBillingService.getActualCostGroupedByPeriod(bigQueryService.get(), filters, groupBy,
         viewsQueryHelper.getPerspectiveTotalCostAggregation(), cloudProviderTableName,
-        viewsQueryHelper.buildQueryParams(accountId, false), false);
+        viewsQueryHelper.buildQueryParams(accountId, false), false, startTime);
     return result;
   }
 

@@ -257,8 +257,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   private void applyTemplatesToYamlAndValidateSchema(TemplateEntity templateEntity) {
     try {
       TemplateMergeResponseDTO templateMergeResponseDTO = null;
-      templateMergeResponseDTO = templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(),
-          templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false);
+      templateMergeResponseDTO =
+          templateMergeService.applyTemplatesToYamlV2(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
+              templateEntity.getProjectIdentifier(), templateEntity.getYaml(), false, false);
       populateLinkedTemplatesModules(templateEntity, templateMergeResponseDTO);
       checkLinkedTemplateAccess(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
           templateEntity.getProjectIdentifier(), templateMergeResponseDTO);
@@ -415,11 +416,19 @@ public class NGTemplateServiceImpl implements NGTemplateService {
 
   @Override
   public Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache) {
+    return get(
+        accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, loadFromCache, false);
+  }
+
+  @Override
+  public Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountId);
     try {
-      return templateServiceHelper.getTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, deleted, false);
+      return templateServiceHelper.getTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier,
+          versionLabel, deleted, false, loadFromCache, loadFromFallbackBranch);
     } catch (Exception e) {
       String errorMessage = getErrorMessage(templateIdentifier, versionLabel);
       log.error(errorMessage, e);
@@ -679,7 +688,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String templateIdentifier, String versionLabel, String invalidYaml) {
     enforcementClientService.checkAvailability(FeatureRestrictionName.TEMPLATE_SERVICE, accountIdentifier);
     Optional<TemplateEntity> optionalTemplateEntity =
-        get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
+        get(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
     if (!optionalTemplateEntity.isPresent()) {
       log.warn(String.format("Marking template [%s-%s] as invalid failed as it does not exist or has been deleted",
           templateIdentifier, versionLabel));
@@ -895,6 +904,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     templateEntity.setConnectorRef(gitEntityInfo.getConnectorRef());
     templateEntity.setRepo(gitEntityInfo.getRepoName());
     templateEntity.setFilePath(gitEntityInfo.getFilePath());
+    templateEntity.setFallBackBranch(gitEntityInfo.getBranch());
     List<TemplateEntity> templates =
         getAllTemplatesForGivenIdentifier(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
             templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), false);
@@ -1043,7 +1053,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       String templateIdentifier, String updatedStableTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);
     Optional<TemplateEntity> optionalTemplateEntity = templateServiceHelper.getStableTemplate(
-        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, false, true);
+        accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, false, true, false, false);
     if (optionalTemplateEntity.isPresent()) {
       // make previous stable template as false.
       TemplateEntity oldTemplate = optionalTemplateEntity.get();
@@ -1146,7 +1156,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try (TemplateGitSyncBranchContextGuard ignored =
              templateServiceHelper.getTemplateGitContextForGivenTemplate(null, null, "")) {
       Optional<TemplateEntity> optionalTemplate = templateServiceHelper.getTemplateWithVersionLabel(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
+          accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false, false, false);
       if (!optionalTemplate.isPresent()) {
         throw new InvalidRequestException(format(
             "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s] doesn't exist.",
@@ -1168,9 +1178,9 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       TemplateEntity templateEntity, String oldOrgIdentifier, String oldProjectIdentifier) {
     TemplateUtils.setupGitParentEntityDetails(
         templateEntity.getAccountIdentifier(), oldOrgIdentifier, oldProjectIdentifier, null, null);
-    Optional<TemplateEntity> optionalTemplate =
-        templateServiceHelper.getTemplateWithVersionLabel(templateEntity.getAccountId(), oldOrgIdentifier,
-            oldProjectIdentifier, templateEntity.getIdentifier(), templateEntity.getVersionLabel(), false, false);
+    Optional<TemplateEntity> optionalTemplate = templateServiceHelper.getTemplateWithVersionLabel(
+        templateEntity.getAccountId(), oldOrgIdentifier, oldProjectIdentifier, templateEntity.getIdentifier(),
+        templateEntity.getVersionLabel(), false, false, false, false);
 
     if (!optionalTemplate.isPresent()) {
       throw new InvalidRequestException(format(
@@ -1208,7 +1218,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   public TemplateWithInputsResponseDTO getTemplateWithInputs(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel) {
     Optional<TemplateEntity> templateEntity =
-        get(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false);
+        get(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, false, false);
     TemplateResponseDTO templateResponseDTO = NGTemplateDtoMapper.writeTemplateResponseDto(templateEntity.orElseThrow(
         ()
             -> new InvalidRequestException(String.format(

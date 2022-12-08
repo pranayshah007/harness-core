@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.NativeHelmServiceSpec.NativeHelmServiceSpecBuilder;
@@ -34,7 +35,7 @@ public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
   @Override
   public ServiceDefinition getServiceDefinition(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
       Map<CgEntityId, Set<CgEntityId>> graph, Service service, Map<CgEntityId, NGYamlFile> migratedEntities,
-      List<ManifestConfigWrapper> manifests) {
+      List<ManifestConfigWrapper> manifests, List<ConfigFileWrapper> configFiles) {
     PrimaryArtifact primaryArtifact = getPrimaryArtifactStream(inputDTO, entities, graph, service, migratedEntities);
     NativeHelmServiceSpecBuilder helmServiceSpecBuilder = NativeHelmServiceSpec.builder();
     List<NGVariable> variables = MigratorUtility.getVariables(service.getServiceVariables(), migratedEntities);
@@ -42,6 +43,7 @@ public class NativeHelmServiceV2Mapper implements ServiceV2Mapper {
       helmServiceSpecBuilder.artifacts(ArtifactListConfig.builder().primary(primaryArtifact).build());
     }
     helmServiceSpecBuilder.manifests(manifests);
+    helmServiceSpecBuilder.configFiles(configFiles);
     helmServiceSpecBuilder.variables(variables);
     return ServiceDefinition.builder()
         .type(ServiceDefinitionType.NATIVE_HELM)

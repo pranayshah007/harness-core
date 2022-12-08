@@ -7,11 +7,21 @@
 
 package io.harness.repositories.gitfilecache;
 
+import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.caching.entity.GitFileCache;
+import io.harness.gitsync.caching.entity.GitProvider;
 
 import org.springframework.data.repository.CrudRepository;
 
-public interface GitFileCacheRepository extends CrudRepository<GitFileCache, String> {
+@HarnessRepo
+@OwnedBy(HarnessTeam.PIPELINE)
+public interface GitFileCacheRepository extends CrudRepository<GitFileCache, String>, GitFileCacheRepositoryCustom {
   GitFileCache findByAccountIdentifierAndGitProviderAndRepoNameAndRefAndCompleteFilepath(
-      String accountIdentifier, String gitProvider, String repoName, String ref, String completeFilepath);
+      String accountIdentifier, GitProvider gitProvider, String repoName, String ref, String completeFilepath);
+
+  GitFileCache findByAccountIdentifierAndGitProviderAndRepoNameAndCompleteFilepathAndIsDefaultBranch(
+      String accountIdentifier, GitProvider gitProvider, String repoName, String completeFilepath,
+      boolean isDefaultBranch);
 }

@@ -14,6 +14,7 @@ import io.harness.ccm.views.dao.RuleDAO;
 import io.harness.ccm.views.dao.RuleEnforcementDAO;
 import io.harness.ccm.views.entities.Rule;
 import io.harness.ccm.views.helper.GovernanceRuleFilter;
+import io.harness.ccm.views.helper.RuleList;
 import io.harness.ccm.views.service.GovernanceRuleService;
 import io.harness.exception.InvalidRequestException;
 
@@ -45,7 +46,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
   }
 
   @Override
-  public List<Rule> list(GovernanceRuleFilter governancePolicyFilter) {
+  public RuleList list(GovernanceRuleFilter governancePolicyFilter) {
     return ruleDAO.list(governancePolicyFilter);
   }
 
@@ -83,7 +84,7 @@ public class GovernanceRuleServiceImpl implements GovernanceRuleService {
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
     governancePolicyFilter.setAccountId(accountId);
     governancePolicyFilter.setIsOOTB(false);
-    if (list(governancePolicyFilter).size() >= 300) {
+    if (list(governancePolicyFilter).getRule().size() >= 300) {
       throw new InvalidRequestException("You have exceeded the limit for rules creation");
     }
   }

@@ -47,8 +47,6 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
-
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> skipDryRun;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
@@ -72,7 +70,6 @@ public class K8sBGSwapServicesStepInfo implements CDStepInfo, Visitable {
   @Override
   public SpecParameters getSpecParameters() {
     return K8sBGSwapServicesStepParameters.infoBuilder()
-        .skipDryRun(skipDryRun)
         .delegateSelectors(delegateSelectors)
         .blueGreenStepFqn(blueGreenStepFqn)
         .blueGreenSwapServicesFqn(blueGreenSwapServicesStepFqn)

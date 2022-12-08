@@ -43,6 +43,7 @@ import io.harness.exception.WingsException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.caching.service.GitFileCacheService;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
 import io.harness.gitsync.common.dtos.GitRepositoryResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
@@ -53,6 +54,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.helper.GitClientEnabledHelper;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.ng.beans.PageRequest;
@@ -82,7 +84,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
   @Mock ScmOrchestratorService scmOrchestratorService;
   @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
-
+  @Mock GitClientEnabledHelper gitClientEnabledHelper;
   @Mock ConnectorService connectorService;
   ScmFacilitatorServiceImpl scmFacilitatorService;
   FileContent fileContent = FileContent.newBuilder().build();
@@ -104,12 +106,13 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   PageRequest pageRequest;
   Scope scope;
   ScmConnector scmConnector;
+  @Mock GitFileCacheService gitFileCacheService;
 
   @Before
   public void setup() throws Exception {
     MockitoAnnotations.initMocks(this);
-    scmFacilitatorService = new ScmFacilitatorServiceImpl(
-        gitSyncConnectorHelper, connectorService, scmOrchestratorService, ngFeatureFlagHelperService);
+    scmFacilitatorService = new ScmFacilitatorServiceImpl(gitSyncConnectorHelper, connectorService,
+        scmOrchestratorService, ngFeatureFlagHelperService, gitClientEnabledHelper, gitFileCacheService);
     pageRequest = PageRequest.builder().build();
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder()
                                              .connectionType(GitConnectionType.ACCOUNT)
@@ -214,6 +217,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     CreateFileResponse createFileResponse =
         CreateFileResponse.newBuilder().setBlobId(blobId).setCommitId(commitId).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(createFileResponse);
+    when(gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier())).thenReturn(false);
     ScmCommitFileResponseDTO scmCommitFileResponseDTO =
         scmFacilitatorService.createFile(ScmCreateFileRequestDTO.builder().scope(Scope.builder().build()).build());
     assertThat(scmCommitFileResponseDTO.getCommitId()).isEqualTo(commitId);
@@ -226,6 +230,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testCreateFileWhenSCMAPIfails() {
     CreateFileResponse createFileResponse = CreateFileResponse.newBuilder().setStatus(400).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(createFileResponse);
+    when(gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier())).thenReturn(false);
     assertThatThrownBy(()
                            -> scmFacilitatorService.createFile(
                                ScmCreateFileRequestDTO.builder().scope(Scope.builder().build()).build()))
@@ -239,6 +244,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     UpdateFileResponse updateFileResponse =
         UpdateFileResponse.newBuilder().setBlobId(blobId).setCommitId(commitId).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(updateFileResponse);
+    when(gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier())).thenReturn(false);
     ScmCommitFileResponseDTO scmCommitFileResponseDTO =
         scmFacilitatorService.updateFile(ScmUpdateFileRequestDTO.builder().scope(getDefaultScope()).build());
     assertThat(scmCommitFileResponseDTO.getCommitId()).isEqualTo(commitId);
@@ -251,6 +257,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
   public void testUpdateFileWhenSCMAPIfails() {
     UpdateFileResponse updateFileResponse = UpdateFileResponse.newBuilder().setStatus(400).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(updateFileResponse);
+    when(gitClientEnabledHelper.isGitClientEnabledInSettings(scope.getAccountIdentifier())).thenReturn(false);
     assertThatThrownBy(
         () -> scmFacilitatorService.updateFile(ScmUpdateFileRequestDTO.builder().scope(getDefaultScope()).build()))
         .isInstanceOf(WingsException.class);

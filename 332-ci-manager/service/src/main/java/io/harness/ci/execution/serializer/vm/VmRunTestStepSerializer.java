@@ -125,6 +125,8 @@ public class VmRunTestStepSerializer {
     if (StringUtils.isNotEmpty(testSplitStrategy)) {
       runTestStepBuilder.testSplitStrategy(SerializerUtils.getTestSplitStrategy(testSplitStrategy));
     }
+    runTestStepBuilder.testGlobs(RunTimeInputHandler.resolveStringParameter(
+        "testGlobs", stepName, identifier, runTestsStepInfo.getTestGlobs(), false));
 
     if (runTestsStepInfo.getReports().getValue() != null) {
       if (runTestsStepInfo.getReports().getValue().getType() == UnitTestReportType.JUNIT) {

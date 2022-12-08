@@ -38,7 +38,7 @@ public class HsqsServiceClientModule extends AbstractModule {
 
   @Provides
   @Singleton
-  private HsqsServiceHttpClientFactory chaosHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
+  private HsqsServiceHttpClientFactory hsqsHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new HsqsServiceHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }

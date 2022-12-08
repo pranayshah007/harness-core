@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
@@ -11,6 +16,10 @@ go_library(
         "//product/ci/scm/gitclient",
         "//product/ci/scm/proto",
         "@com_github_drone_go_scm//scm",
+        "@com_github_go_git_go_git_v5//:go-git",
+        "@com_github_go_git_go_git_v5//plumbing",
+        "@com_github_go_git_go_git_v5//plumbing/object",
+        "@com_github_go_git_go_git_v5//plumbing/transport/http",
         "@org_uber_go_zap//:zap",
     ],
 )

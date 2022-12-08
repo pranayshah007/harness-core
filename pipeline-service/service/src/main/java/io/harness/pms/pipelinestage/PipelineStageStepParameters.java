@@ -11,8 +11,11 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.SkipAutoEvaluation;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +34,8 @@ public class PipelineStageStepParameters implements StepParameters {
   @NotNull String org;
 
   private String pipelineInputs;
+  String stageNodeId;
 
+  @SkipAutoEvaluation private ParameterField<Map<String, ParameterField<String>>> outputs;
   private List<String> inputSetReferences;
 }

@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.HARI;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -276,7 +277,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testCreateFile() {
-    when(scmClient.createFile(any(), any()))
+    when(scmClient.createFile(any(), any(), anyBoolean()))
         .thenReturn(CreateFileResponse.newBuilder().setStatus(200).setCommitId(commitId).build());
     CreateGitFileRequestDTO createGitFileRequestDTO =
         CreateGitFileRequestDTO.builder()
@@ -284,6 +285,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
             .branchName(branch)
             .filePath(filePath)
             .fileContent("content")
+            .useGitClient(false)
             .scmConnector((ScmConnector) connectorInfo.getConnectorConfig())
             .build();
     final CreateFileResponse createFileResponse = scmManagerFacilitatorService.createFile(createGitFileRequestDTO);
@@ -295,7 +297,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testUpdateFile() {
-    when(scmClient.updateFile(any(), any()))
+    when(scmClient.updateFile(any(), any(), anyBoolean()))
         .thenReturn(UpdateFileResponse.newBuilder().setStatus(200).setCommitId(commitId).build());
     UpdateGitFileRequestDTO updateGitFileRequestDTO =
         UpdateGitFileRequestDTO.builder()
@@ -304,6 +306,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
             .filePath(filePath)
             .fileContent("content")
             .oldCommitId("commit1")
+            .useGitClient(false)
             .scmConnector((ScmConnector) connectorInfo.getConnectorConfig())
             .build();
     final UpdateFileResponse updateFileResponse = scmManagerFacilitatorService.updateFile(updateGitFileRequestDTO);

@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 

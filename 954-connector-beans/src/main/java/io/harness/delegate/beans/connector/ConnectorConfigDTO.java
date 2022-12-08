@@ -54,6 +54,7 @@ import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -108,7 +109,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = CustomSecretManagerConnectorDTO.class, name = "CustomSecretManager"),
       @JsonSubTypes.Type(value = ELKConnectorDTO.class, name = "ElasticSearch"),
       @JsonSubTypes.Type(value = GcpSecretManagerConnectorDTO.class, name = "GcpSecretManager"),
-      @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts")
+      @JsonSubTypes.Type(value = AzureArtifactsConnectorDTO.class, name = "AzureArtifacts"),
+      @JsonSubTypes.Type(value = TasConnectorDTO.class, name = "Tas")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

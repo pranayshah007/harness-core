@@ -7,8 +7,8 @@
 
 package io.harness.ccm.migration;
 
-import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
+import static io.harness.authorization.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 

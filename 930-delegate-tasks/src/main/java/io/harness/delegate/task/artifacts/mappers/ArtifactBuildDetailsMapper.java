@@ -28,6 +28,21 @@ public class ArtifactBuildDetailsMapper {
     metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getBuildUrl());
     metadata.put(ArtifactMetadataKeys.artifactName, buildDetailsInternal.getBuildFullDisplayName());
     metadata.put(ArtifactMetadataKeys.artifactPath, buildDetailsInternal.getArtifactPath());
+    if (buildDetailsInternal.getArtifactFileMetadataList() != null
+        && EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList())
+        && buildDetailsInternal.getArtifactFileMetadataList().get(0) != null) {
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName())) {
+        metadata.put(
+            ArtifactMetadataKeys.FILE_NAME, buildDetailsInternal.getArtifactFileMetadataList().get(0).getFileName());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath())) {
+        metadata.put(
+            ArtifactMetadataKeys.IMAGE_PATH, buildDetailsInternal.getArtifactFileMetadataList().get(0).getImagePath());
+      }
+      if (EmptyPredicate.isNotEmpty(buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl())) {
+        metadata.put(ArtifactMetadataKeys.url, buildDetailsInternal.getArtifactFileMetadataList().get(0).getUrl());
+      }
+    }
 
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetailsInternal.getBuildUrl())
@@ -38,6 +53,10 @@ public class ArtifactBuildDetailsMapper {
   }
 
   public ArtifactBuildDetailsNG toBuildDetailsNG(BuildDetails buildDetails) {
+    if (buildDetails == null) {
+      return ArtifactBuildDetailsNG.builder().build();
+    }
+
     return ArtifactBuildDetailsNG.builder()
         .buildUrl(buildDetails.getBuildUrl())
         .metadata(buildDetails.getMetadata())

@@ -7,6 +7,8 @@
 
 package io.harness.pms.pipeline.api;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.accesscontrol.OrgIdentifier;
@@ -35,6 +37,7 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
@@ -44,6 +47,7 @@ import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
 import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.utils.PageUtils;
 import io.harness.yaml.validator.InvalidYamlException;
 
@@ -104,10 +108,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       @ResourceIdentifier String pipeline, @AccountIdentifier String account) {
     log.info(String.format(
         "Deleting Pipeline with identifier %s in project %s, org %s, account %s", pipeline, project, org, account));
-    boolean deleted = pmsPipelineService.delete(account, org, project, pipeline, null);
-    if (!deleted) {
-      throw new InvalidRequestException(String.format("Pipeline with identifier %s cannot be deleted.", pipeline));
-    }
+    pmsPipelineService.delete(account, org, project, pipeline, null);
     return Response.status(204).build();
   }
 
@@ -115,7 +116,7 @@ public class PipelinesApiImpl implements PipelinesApi {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   public Response getPipeline(@OrgIdentifier String org, @ProjectIdentifier String project,
       @ResourceIdentifier String pipeline, @AccountIdentifier String account, String branch, Boolean templatesApplied,
-      String connectorRef, String repoName, Boolean loadFromCache, Boolean loadFromFallbackBranch) {
+      String connectorRef, String repoName, String loadFromCache, Boolean loadFromFallbackBranch) {
     GitAwareContextHelper.populateGitDetails(
         GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
     log.info(String.format(
@@ -123,7 +124,9 @@ public class PipelinesApiImpl implements PipelinesApi {
     Optional<PipelineEntity> pipelineEntity;
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
+          Boolean.TRUE.equals(loadFromFallbackBranch),
+          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(
@@ -154,7 +157,7 @@ public class PipelinesApiImpl implements PipelinesApi {
       try {
         String templateResolvedPipelineYaml = "";
         TemplateMergeResponseDTO templateMergeResponseDTO =
-            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get());
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
         templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         pipelineGetResponseBody.setTemplateAppliedPipelineYaml(templateResolvedPipelineYaml);
       } catch (Exception e) {
@@ -162,6 +165,26 @@ public class PipelinesApiImpl implements PipelinesApi {
       }
     }
     return Response.ok().entity(pipelineGetResponseBody).build();
+  }
+
+  @Override
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  public Response startPipelineValidationEvent(@OrgIdentifier String org, @ProjectIdentifier String project,
+      String pipeline, @AccountIdentifier String account, String branch, String connectorRef, String repoName,
+      Boolean loadFromCache, Boolean loadFromFallbackBranch) {
+    GitAwareContextHelper.populateGitDetails(
+        GitEntityInfo.builder().branch(branch).connectorRef(connectorRef).repoName(repoName).build());
+    Optional<PipelineEntity> pipelineEntity =
+        pmsPipelineService.getPipeline(account, org, project, pipeline, false, false);
+    if (pipelineEntity.isEmpty()) {
+      throw new EntityNotFoundException(
+          String.format("Pipeline with the given ID: %s does not exist or has been deleted.", pipeline));
+    }
+    PipelineValidationEvent pipelineValidationEvent =
+        pipelineAsyncValidationService.startEvent(pipelineEntity.get(), branch, Action.CRUD);
+    PipelineValidationUUIDResponseBody pipelineValidationUUIDResponseBody =
+        PipelinesApiUtils.buildPipelineValidationUUIDResponseBody(pipelineValidationEvent);
+    return Response.ok().entity(pipelineValidationUUIDResponseBody).build();
   }
 
   @Override

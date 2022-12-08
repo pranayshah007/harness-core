@@ -921,4 +921,10 @@ public class GitSyncErrorServiceImpl implements GitSyncErrorService {
     populateTheConnectorName(gitProcessingErrors, connectorMap);
     return aPageResponse().withTotal(gitProcessingErrors.size()).withResponse(gitProcessingErrors).build();
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(GitSyncError.class).filter(GitSyncErrorKeys.accountId, accountId));
+  }
 }

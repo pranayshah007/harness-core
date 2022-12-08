@@ -19,10 +19,10 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -50,18 +50,10 @@ public class HealthService extends HealthCheck {
     long validUntil;
   }
 
-  private Map<HealthMonitor, Response> monitors = new HashMap<>();
+  private ConcurrentMap<HealthMonitor, Response> monitors = new ConcurrentHashMap<>();
 
   public void registerMonitor(HealthMonitor monitor) {
-    synchronized (monitors) {
-      monitors.put(monitor, Response.builder().build());
-    }
-  }
-
-  public void unregisterMonitor(HealthMonitor monitor) {
-    synchronized (monitors) {
-      monitors.remove(monitor);
-    }
+    monitors.putIfAbsent(monitor, Response.builder().build());
   }
 
   @Override
@@ -114,28 +106,26 @@ public class HealthService extends HealthCheck {
   public Result checkMonitors(long startTime) {
     Result result = Result.healthy();
 
-    synchronized (monitors) {
-      for (Entry<HealthMonitor, Response> entity : monitors.entrySet()) {
-        final HealthMonitor monitor = entity.getKey();
-        Response response = entity.getValue();
-        if (response.validUntil > startTime) {
-          try {
-            if (response.future.get() != null) {
-              // if the system is in initial state, we would like to be checking more often
-              if (initial) {
-                startCheck(monitor);
-              }
-              return Result.unhealthy(response.future.get());
+    for (Entry<HealthMonitor, Response> entity : monitors.entrySet()) {
+      final HealthMonitor monitor = entity.getKey();
+      Response response = entity.getValue();
+      if (response.validUntil > startTime) {
+        try {
+          if (response.future.get() != null) {
+            // if the system is in initial state, we would like to be checking more often
+            if (initial) {
+              startCheck(monitor);
             }
-          } catch (ExecutionException | InterruptedException exception) {
-            return Result.unhealthy(exception);
+            return Result.unhealthy(response.future.get());
           }
-          continue;
+        } catch (ExecutionException | InterruptedException exception) {
+          return Result.unhealthy(exception);
         }
-
-        result = null;
-        startCheck(monitor);
+        continue;
       }
+
+      result = null;
+      startCheck(monitor);
     }
 
     return result;

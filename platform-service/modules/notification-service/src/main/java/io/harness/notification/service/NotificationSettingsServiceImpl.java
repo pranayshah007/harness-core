@@ -10,8 +10,8 @@ package io.harness.notification.service;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
-import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
+import static io.harness.expression.common.ExpressionConstants.EXPR_END;
+import static io.harness.expression.common.ExpressionConstants.EXPR_START;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.utils.DelegateOwner.NG_DELEGATE_OWNER_CONSTANT;
 

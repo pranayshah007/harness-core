@@ -30,6 +30,7 @@ import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.InvalidArtifactServerException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionMetadataKeys;
@@ -100,6 +101,11 @@ public class GcrApiServiceImpl implements GcrApiService {
   private void checkValidImage(String imageName, Response<GcrImageTagResponse> response) throws IOException {
     if (response.code() >= 400) {
       if (response.code() == 404) {
+        if (response.body() == null) {
+          throw new InvalidRequestException(
+              "Image name [" + imageName + "] does not exist in Google Container Registry.");
+        }
+
         ErrorHandlingGlobalContextData globalContextData =
             GlobalContextManager.get(ErrorHandlingGlobalContextData.IS_SUPPORTED_ERROR_FRAMEWORK);
         if (globalContextData != null && globalContextData.isSupportedErrorFramework()
@@ -197,7 +203,11 @@ public class GcrApiServiceImpl implements GcrApiService {
           getGcrRestClient(gcrInternalConfig.getRegistryHostname())
               .getImageManifest(gcrInternalConfig.getBasicAuthHeader(), imageName, tag)
               .execute();
-      isSuccessful(response);
+
+      if (!isSuccessful(response)) {
+        throw new InvalidRequestException("Please provide a valid ImageName or Tag.");
+      }
+
       return getBuildDetailsInternal(gcrInternalConfig.getRegistryHostname(), imageName, tag);
     } catch (IOException e) {
       throw handleIOException(gcrInternalConfig, e);
@@ -225,6 +235,7 @@ public class GcrApiServiceImpl implements GcrApiService {
       case 200:
         return true;
       case 404:
+        return false;
       case 400:
         log.info("Response code {} received. Mostly with Image does not exist", code);
         return false;

@@ -34,6 +34,7 @@ public class NexusRegistrySpec implements ArtifactTypeSpec {
   String repositoryUrl;
   String classifier;
   String extension;
+  String group;
   String tag;
 
   @Override

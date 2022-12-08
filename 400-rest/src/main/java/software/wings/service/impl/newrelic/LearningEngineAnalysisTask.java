@@ -142,7 +142,7 @@ public class LearningEngineAnalysisTask extends Base implements AccountAccess {
   @JsonProperty("log_ml_result_url") private String logMLResultUrl;
   @JsonProperty("use_supervised_model") private boolean shouldUseSupervisedModel;
   private String feature_name;
-  @FdIndex private ExecutionStatus executionStatus;
+  private ExecutionStatus executionStatus;
   private String cvConfigId;
   private boolean is24x7Task;
   private String tag = "default";

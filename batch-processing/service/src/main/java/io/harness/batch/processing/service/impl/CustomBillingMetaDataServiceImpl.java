@@ -115,7 +115,7 @@ public class CustomBillingMetaDataServiceImpl implements CustomBillingMetaDataSe
         && billingDataService.isAWSClusterDataPresent(accountId, startTime.minus(3, ChronoUnit.DAYS))) {
       Instant startAt = endTime.minus(1, ChronoUnit.HOURS);
       Map<String, VMInstanceBillingData> awsEC2BillingData =
-          bigQueryHelperService.getAwsBillingData(startAt, endTime, awsDataSetId);
+          bigQueryHelperService.getAwsBillingData(startAt, endTime, awsDataSetId, accountId);
       return isNotEmpty(awsEC2BillingData);
     }
     return Boolean.TRUE;

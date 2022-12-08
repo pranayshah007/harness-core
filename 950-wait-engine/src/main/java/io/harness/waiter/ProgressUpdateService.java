@@ -19,6 +19,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
@@ -31,6 +32,7 @@ public class ProgressUpdateService implements Runnable {
   @Inject private Injector injector;
   @Inject private PersistenceWrapper persistenceWrapper;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private WaitInstanceService waitInstanceService;
 
   private final LoadingCache<String, String> busyCorrelationIds = CacheBuilder.newBuilder()
@@ -61,7 +63,9 @@ public class ProgressUpdateService implements Runnable {
         }
         log.info("Starting to process progress response");
 
-        ProgressData progressData = (ProgressData) kryoSerializer.asInflatedObject(progressUpdate.getProgressData());
+        ProgressData progressData = progressUpdate.isUsingKryoWithoutReference()
+            ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(progressUpdate.getProgressData())
+            : (ProgressData) kryoSerializer.asInflatedObject(progressUpdate.getProgressData());
 
         List<WaitInstance> waitInstances = persistenceWrapper.fetchWaitInstances(progressUpdate.getCorrelationId());
         for (WaitInstance waitInstance : waitInstances) {

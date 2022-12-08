@@ -62,6 +62,7 @@ import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
+import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
@@ -174,6 +175,7 @@ import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
 import io.harness.pms.data.OrchestrationRefType;
@@ -322,6 +324,32 @@ public class K8sStepHelperTest extends CategoryTest {
         Collections.singletonList(KubernetesResourceId.builder().kind("Deployment").build());
     prunedResourceIds = k8sStepHelper.getPrunedResourcesIds(true, kubernetesResourceIds);
     assertThat(prunedResourceIds.get(0).getKind()).isEqualTo("Deployment");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testResolveManifestsConfigExpressions() {
+    List<ManifestConfigWrapper> manifestConfigWrappers = Arrays.asList(
+        ManifestConfigWrapper.builder()
+            .manifest(ManifestConfig.builder()
+                          .identifier("identifier")
+                          .type(ManifestConfigType.VALUES)
+                          .spec(ValuesManifest.builder()
+                                    .store(ParameterField.createValueField(
+                                        StoreConfigWrapper.builder()
+                                            .spec(GithubStore.builder()
+                                                      .paths(ParameterField.createValueField(Arrays.asList(
+                                                          "k8s/<+pipeline.variables.sample>/values.yaml")))
+                                                      .build())
+                                            .build()))
+                                    .build())
+                          .build())
+            .build());
+    k8sStepHelper.resolveManifestsConfigExpressions(ambiance, manifestConfigWrappers);
+    verify(engineExpressionService)
+        .renderExpression(eq(ambiance), eq("k8s/<+pipeline.variables.sample>/values.yaml"),
+            eq(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED));
   }
 
   @Test

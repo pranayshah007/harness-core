@@ -66,6 +66,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
@@ -233,6 +234,7 @@ public class DeleteAccountHelperTest extends WingsBaseTest {
   @Test
   @Owner(developers = MEHUL)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void testDeleteOwnedByAccountEntities() {
     Account account = createAccount(AccountStatus.EXPIRED);
     Application application = createApplication();
@@ -248,6 +250,7 @@ public class DeleteAccountHelperTest extends WingsBaseTest {
   @Test
   @Owner(developers = MEHUL)
   @Category(UnitTests.class)
+  @Ignore("CI-6355: TI team to follow up")
   public void testDeleteAllEntities() {
     Account account = createAccount(AccountStatus.EXPIRED);
     Application application = createApplication();

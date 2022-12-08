@@ -1,0 +1,19 @@
+template:
+  name: testStage
+  identifier: testStage
+  versionLabel: "1"
+  type: Stage
+  projectIdentifier: njh
+  orgIdentifier: default
+  tags: {}
+  spec:
+    type: Approval
+    spec:
+      execution:
+        steps:
+          - stepGroup:
+              identifier: dfs
+              name: dfs
+              template:
+                templateRef: testStepGrp2
+                versionLabel: v1

@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "profiler",
+    srcs = ["profiler.go"],
+    importpath = "github.com/harness/harness-core/queue-service/hsqs/profiler",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//queue-service/hsqs/config",
+        "@com_google_cloud_go_profiler//:profiler",
+    ],
+)

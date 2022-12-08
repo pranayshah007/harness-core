@@ -52,7 +52,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
   public FilterValues filterValue(String accountId) {
     FilterValues filterValues = FilterValues.builder().build();
     RuleSetFilter ruleSetFilter = RuleSetFilter.builder().build();
-    List<RuleSet> ruleSet = ruleSetDAO.list(accountId, ruleSetFilter);
+    List<RuleSet> ruleSet = ruleSetDAO.list(accountId, ruleSetFilter).getRuleSet();
     if (ruleSet != null) {
       HashMap<String, String> ruleSetsIds = new HashMap<>();
       for (RuleSet iterate : ruleSet) {
@@ -61,7 +61,7 @@ public class RuleExecutionServiceImpl implements RuleExecutionService {
       filterValues.setRuleSetIds(ruleSetsIds);
     }
     GovernanceRuleFilter governancePolicyFilter = GovernanceRuleFilter.builder().build();
-    List<Rule> rules = rulesDao.list(governancePolicyFilter);
+    List<Rule> rules = rulesDao.list(governancePolicyFilter).getRule();
     if (rules != null) {
       HashMap<String, String> rulesIds = new HashMap<>();
       for (Rule iterate : rules) {

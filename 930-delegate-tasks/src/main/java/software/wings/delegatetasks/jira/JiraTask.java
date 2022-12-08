@@ -29,6 +29,7 @@ import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInstanceData;
+import io.harness.jira.JiraInstanceData.JiraDeploymentType;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueCreateMetadataNG;
 import io.harness.jira.JiraIssueNG;
@@ -87,7 +88,6 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.bson.types.ObjectId;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -630,8 +630,12 @@ public class JiraTask extends AbstractDelegateRunnableTask {
           continue;
         }
 
-        if (ObjectId.isValid(userField.getValue())) {
+        JiraInstanceData jiraInstanceData = jiraNGClient.getInstanceData();
+        if (JiraDeploymentType.CLOUD == jiraInstanceData.getDeploymentType()) {
           userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
+          if (userDataList.isEmpty()) {
+            userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
+          }
         } else {
           userDataList = jiraNGClient.getUsers(userField.getValue(), null, null);
         }
