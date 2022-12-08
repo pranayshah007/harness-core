@@ -16,6 +16,8 @@ import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTaskDefinitionsArnRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTaskDefinitionsArnResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.exception.AwsECSException;
 import io.harness.exception.ExceptionUtils;
@@ -29,6 +31,8 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ecs.AmazonECSClient;
 import com.amazonaws.services.ecs.model.ListClustersRequest;
 import com.amazonaws.services.ecs.model.ListClustersResult;
+import com.amazonaws.services.ecs.model.ListTaskDefinitionsRequest;
+import com.amazonaws.services.ecs.model.ListTaskDefinitionsResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -68,6 +72,39 @@ public class AwsECSDelegateTaskHelper {
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception get aws ecs clusters", sanitizedException);
+      throw new AwsECSException(ExceptionUtils.getMessage(sanitizedException), sanitizedException);
+    }
+  }
+
+  public DelegateResponseData getTaskDefinitionsArn(AwsTaskParams awsTaskParams) {
+    awsUtils.decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
+    AwsInternalConfig awsInternalConfig =
+        awsUtils.getAwsInternalConfig(awsTaskParams.getAwsConnector(), awsTaskParams.getRegion());
+
+    try (
+        CloseableAmazonWebServiceClient<AmazonECSClient> closeableAmazonECSClient = new CloseableAmazonWebServiceClient(
+            awsUtils.getAmazonECSClient(Regions.fromName(awsTaskParams.getRegion()), awsInternalConfig))) {
+      String nextToken = null;
+      List<String> result = new ArrayList<>();
+
+      do {
+        AwsListTaskDefinitionsArnRequest awsListTaskDefinitionsArnRequest =
+            (AwsListTaskDefinitionsArnRequest) awsTaskParams;
+        ListTaskDefinitionsRequest listTaskDefinitionsRequest =
+            new ListTaskDefinitionsRequest()
+                .withFamilyPrefix(awsListTaskDefinitionsArnRequest.getFamilyPrefix())
+                .withNextToken(nextToken);
+        tracker.trackECSCall("List Ecs TaskDefinitionArn");
+        ListTaskDefinitionsResult listTaskDefinitionsResult =
+            closeableAmazonECSClient.getClient().listTaskDefinitions(listTaskDefinitionsRequest);
+        result.addAll(listTaskDefinitionsResult.getTaskDefinitionArns());
+        nextToken = listTaskDefinitionsResult.getNextToken();
+      } while (nextToken != null);
+
+      return AwsListTaskDefinitionsArnResponse.builder().taskDefinitionsArn(result).build();
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception get aws ecs TaskDefinitionArn ", sanitizedException);
       throw new AwsECSException(ExceptionUtils.getMessage(sanitizedException), sanitizedException);
     }
   }

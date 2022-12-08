@@ -271,6 +271,38 @@ public class AwsHelperResource {
   }
 
   @GET
+  @Path("task-definitons-arn")
+  @ApiOperation(value = "Get task definitons arn", nickname = "task-definitons-arn")
+  public ResponseDTO<List<String>> getTaskDefinitionsArn(@QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @QueryParam("region") String region, @NotNull @QueryParam("familyName") String familyName,
+      @Parameter(description = NGCommonEntityConstants.ENV_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_KEY) String envId,
+      @Parameter(description = NGCommonEntityConstants.INFRADEF_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.INFRA_DEFINITION_KEY) String infraDefinitionId) {
+    Infrastructure spec = null;
+    if (isEmpty(awsConnectorRef) || isEmpty(region)) {
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig = getInfrastructureDefinitionConfig(
+          accountIdentifier, orgIdentifier, projectIdentifier, envId, infraDefinitionId);
+      spec = infrastructureDefinitionConfig.getSpec();
+    }
+
+    if (isEmpty(awsConnectorRef) && spec != null) {
+      awsConnectorRef = spec.getConnectorReference().getValue();
+    }
+
+    if (isEmpty(region) && spec != null) {
+      region = ((EcsInfrastructure) spec).getRegion().getValue();
+    }
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(
+        awsHelperService.getTaskDefinitionsArn(connectorRef, orgIdentifier, projectIdentifier, region, familyName));
+  }
+
+  @GET
   @Path("elastic-load-balancers")
   @ApiOperation(value = "Get elastic load balancers", nickname = "elastic load balancers")
   public ResponseDTO<List<String>> getElasticLoadBalancers(@QueryParam("awsConnectorRef") String awsConnectorRef,

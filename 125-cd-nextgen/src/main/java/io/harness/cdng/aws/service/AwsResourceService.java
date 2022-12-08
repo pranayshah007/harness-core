@@ -154,6 +154,18 @@ public interface AwsResourceService {
       IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 
   /**
+   * Get list of AWS ECS Task Definitions Arn
+   *
+   * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
+   * @param region AWS region
+   * @param taskFamily Task Definition Family Name
+   * @return list of Task Definitions Arn
+   */
+  List<String> getTaskDefinitionsArn(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region, String taskFamily);
+  /**
    * Get list of AWS elastic load balancers
    *
    * @param awsConnectorRef the IdentifierRef of the aws connector

@@ -36,6 +36,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTaskDefinitionsArnRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTaskDefinitionsArnResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -332,6 +334,26 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   @Override
+  public List<String> getTaskDefinitionsArn(IdentifierRef awsConnectorRef, String orgIdentifier,
+      String projectIdentifier, String region, String taskFamilyName) {
+    BaseNGAccess access =
+        serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(), orgIdentifier, projectIdentifier);
+
+    AwsConnectorDTO awsConnector = serviceHelper.getAwsConnector(awsConnectorRef);
+    List<EncryptedDataDetail> encryptedData = serviceHelper.getAwsEncryptionDetails(awsConnector, access);
+    AwsTaskParams awsTaskParams = AwsListTaskDefinitionsArnRequest.builder()
+                                      .awsConnector(awsConnector)
+                                      .awsTaskType(AwsTaskType.LIST_TASK_DEFINITIONS_ARN)
+                                      .encryptionDetails(encryptedData)
+                                      .region(region)
+                                      .familyPrefix(taskFamilyName)
+                                      .build();
+    DelegateResponseData responseData =
+        serviceHelper.getResponseData(access, awsTaskParams, TaskType.NG_AWS_TASK.name());
+    return getECSTaskDefinitionsArnExecutionResponse(responseData);
+  }
+
+  @Override
   public List<String> getElasticLoadBalancerNames(
       IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region) {
     BaseNGAccess access =
@@ -509,6 +531,19 @@ public class AwsResourceServiceImpl implements AwsResourceService {
       throw new AwsECSException("Failed to get aws ecs clusters");
     }
     return response.getClusters();
+  }
+
+  private List<String> getECSTaskDefinitionsArnExecutionResponse(DelegateResponseData responseData) {
+    if (responseData instanceof ErrorNotifyResponseData) {
+      ErrorNotifyResponseData errorNotifyResponseData = (ErrorNotifyResponseData) responseData;
+      throw new AwsECSException("Failed to get aws ecs task definitions arn"
+          + " : " + errorNotifyResponseData.getErrorMessage());
+    }
+    AwsListTaskDefinitionsArnResponse response = (AwsListTaskDefinitionsArnResponse) responseData;
+    if (response.getCommandExecutionStatus() != SUCCESS) {
+      throw new AwsECSException("Failed to get aws ecs task definitions arn");
+    }
+    return response.getTaskDefinitionsArn();
   }
 
   private List<String> getListElbTaskResponse(DelegateResponseData responseData) {
