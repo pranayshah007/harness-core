@@ -196,6 +196,9 @@ import io.harness.migrations.all.VerificationMetricJobMigration;
 import io.harness.migrations.all.YamlGitConfigAppMigration;
 import io.harness.migrations.all.YamlGitConfigMigration;
 import io.harness.migrations.all.YamlGitConfigRefactoringMigration;
+import io.harness.migrations.all.InitInfraProvisionerSourceType;
+
+
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -463,6 +466,7 @@ public class MigrationList {
         .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
         .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
+        .add(Pair.of(382, InitInfraProvisionerSourceType.class))
         .build();
   }
 }
