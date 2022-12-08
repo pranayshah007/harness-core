@@ -149,8 +149,11 @@ import io.harness.delegate.message.MessageServiceImpl;
 import io.harness.delegate.message.MessengerType;
 import io.harness.delegate.pcf.CfCommandTaskNGHandler;
 import io.harness.delegate.pcf.CfDataFetchCommandTaskHandlerNG;
+import io.harness.delegate.pcf.CfDeployCommandTaskHandlerNG;
+import io.harness.delegate.pcf.CfRollbackCommandTaskHandlerNG;
 import io.harness.delegate.pcf.CfSwapRollbackCommandTaskHandlerNG;
-import io.harness.delegate.pcf.TasRunPluginCommandTaskHandler;
+import io.harness.delegate.pcf.TasBasicSetupTaskHandler;
+import io.harness.delegate.pcf.TasBlueGreenSetupTaskHandler;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
@@ -1972,13 +1975,18 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GITOPS_FETCH_APP_TASK).toInstance(GitOpsFetchAppTask.class);
     mapBinder.addBinding(TaskType.CONTAINER_INITIALIZATION).toInstance(CIInitializeTask.class);
 
-      // TAS NG
-      MapBinder<String, CfCommandTaskNGHandler> cfTaskTypeToTaskHandlerMap =
-              MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
-      cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
-      cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.SWAP_ROLLBACK.name()).to(CfSwapRollbackCommandTaskHandlerNG.class);
+    // TAS NG
+    MapBinder<String, CfCommandTaskNGHandler> cfTaskTypeToTaskHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.SWAP_ROLLBACK.name())
+        .to(CfSwapRollbackCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TAS_BASIC_SETUP.name()).to(TasBasicSetupTaskHandler.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.APP_RESIZE.name()).to(CfDeployCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TAS_BG_SETUP.name()).to(TasBlueGreenSetupTaskHandler.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.ROLLBACK.name()).to(CfRollbackCommandTaskHandlerNG.class);
 
-      mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
+    mapBinder.addBinding(TaskType.CF_COMMAND_TASK_NG).toInstance(CfCommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {

@@ -13,6 +13,19 @@ import static io.harness.cdng.manifest.ManifestType.TAS_VARS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.docker.DockerAuthType.ANONYMOUS;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ACR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AMAZON_S3_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ARTIFACTORY_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.AZURE_ARTIFACTS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.DOCKER_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.ECR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.GCR_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.JENKINS_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceConstants.NEXUS3_REGISTRY_NAME;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.AMAZONS3;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.JENKINS;
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.NEXUS3_REGISTRY;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.INFO;
@@ -27,19 +40,30 @@ import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.defaultIfEmpty;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.google.common.base.Splitter;
-import io.fabric8.utils.Strings;
+import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FileReference;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.artifact.outcome.AcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.AzureArtifactsOutcome;
+import io.harness.cdng.artifact.outcome.DockerArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.GcrArtifactOutcome;
+import io.harness.cdng.artifact.outcome.JenkinsArtifactOutcome;
+import io.harness.cdng.artifact.outcome.NexusArtifactOutcome;
+import io.harness.cdng.artifact.outcome.S3ArtifactOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.k8s.beans.CustomFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
@@ -58,8 +82,11 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.azure.registry.AzureRegistryType;
+import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
@@ -69,6 +96,14 @@ import io.harness.delegate.task.manifests.request.CustomManifestFetchConfig;
 import io.harness.delegate.task.manifests.request.CustomManifestValuesFetchParams;
 import io.harness.delegate.task.manifests.response.CustomManifestValuesFetchResponse;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.delegate.task.pcf.artifact.ArtifactoryTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.AwsS3TasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.JenkinsTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.NexusTasArtifactRequestDetails;
+import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig.TasPackageArtifactConfigBuilder;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
@@ -84,12 +119,15 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
+import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pcf.CfCommandUnitConstants;
+import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pcf.model.PcfConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -105,24 +143,29 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
-import software.wings.beans.GitFileConfig;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.beans.TaskType;
+import software.wings.utils.RepositoryFormat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Splitter;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import io.fabric8.utils.Strings;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -137,8 +180,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import software.wings.beans.appmanifest.ApplicationManifest;
-import software.wings.beans.appmanifest.StoreType;
 
 @Slf4j
 public class TasStepHelper {
@@ -149,6 +190,7 @@ public class TasStepHelper {
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   private static int DEFAULT_INSTANCE_COUNT = 2;
 
   private static final Splitter lineSplitter = Splitter.onPattern("\\r?\\n").trimResults().omitEmptyStrings();
@@ -158,12 +200,13 @@ public class TasStepHelper {
   public static final String FILE_END_REGEX = "(\\s|,|;|'|\"|:|$)";
 
   public static final Pattern PATH_REGEX_REPO_ROOT_PATTERN =
-          Pattern.compile(FILE_START_REPO_ROOT_REGEX + ".*?" + FILE_END_REGEX);
+      Pattern.compile(FILE_START_REPO_ROOT_REGEX + ".*?" + FILE_END_REGEX);
   public static final Pattern FILE_START_SERVICE_MANIFEST_PATTERN =
-          Pattern.compile(FILE_START_SERVICE_MANIFEST_REGEX + ".*?" + FILE_END_REGEX);
+      Pattern.compile(FILE_START_SERVICE_MANIFEST_REGEX + ".*?" + FILE_END_REGEX);
 
   public static final String START_SLASH_ALL_MATCH = "\\A/+";
   public static final String END_SLASH_ALL_MATCH = "/+\\Z";
+  LogCallback logCallback;
 
   public TaskChainResponse startChainLink(
       TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
@@ -193,53 +236,53 @@ public class TasStepHelper {
 
   public String removeCommentedLineFromScript(String scriptString) {
     return lineSplitter.splitToList(scriptString)
-            .stream()
-            .filter(line -> !line.isEmpty())
-            .filter(line -> line.charAt(0) != '#')
-            .collect(Collectors.joining("\n"));
+        .stream()
+        .filter(line -> !line.isEmpty())
+        .filter(line -> line.charAt(0) != '#')
+        .collect(Collectors.joining("\n"));
   }
 
   public TaskChainResponse startChainLinkForCommandStep(
-          TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
-
+      TasStepExecutor tasStepExecutor, Ambiance ambiance, StepElementParameters stepElementParameters) {
     TasCommandStepParameters tasCommandStepParameters = (TasCommandStepParameters) stepElementParameters.getSpec();
 
     HarnessStore storeConfig;
-    if(ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
+    if (ManifestStoreType.HARNESS.equals(tasCommandStepParameters.getScript().getStore().getSpec().getKind())) {
       storeConfig = (HarnessStore) tasCommandStepParameters.getScript().getStore().getSpec();
     } else {
       throw new InvalidRequestException("Harness Store is only supported for TAS Command Scripts", USER);
     }
 
-    LogCallback logCallback = cdStepHelper.getLogCallback(
-            CfCommandUnitConstants.FetchCommandScript, ambiance, true);
+    logCallback = cdStepHelper.getLogCallback(CfCommandUnitConstants.FetchCommandScript, ambiance, true);
     String scriptString = null;
-    TasManifestFileContents tasManifestFileContents = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance), getParameterFieldValue(storeConfig.getFiles()),
-            "TasCommandScript" , "TasCommandScript", logCallback);
-    if(tasManifestFileContents.getLocalStoreFetchFilesResult() != null && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents() != null
-      && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().size() == 1) {
+    TasManifestFileContents tasManifestFileContents = getFileContentsFromManifest(AmbianceUtils.getNgAccess(ambiance),
+        getParameterFieldValue(storeConfig.getFiles()), "TasCommandScript", "TasCommandScript", logCallback);
+    if (tasManifestFileContents.getLocalStoreFetchFilesResult() != null
+        && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents() != null
+        && tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().size() == 1) {
       scriptString = tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(0);
     }
     logCallback.saveExecutionLog("Done", INFO, SUCCESS);
 
-    //Resolving expressions
+    // Resolving expressions
     ExpressionEvaluatorUtils.updateExpressions(
-            scriptString, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        scriptString, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
     String rawScript = removeCommentedLineFromScript(scriptString);
 
     ManifestsOutcome manifestsOutcome = resolveManifestsOutcome(ambiance);
     ExpressionEvaluatorUtils.updateExpressions(
-            manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+        manifestsOutcome, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
     cdStepHelper.validateManifestsOutcome(ambiance, manifestsOutcome);
 
     List<AutoScalerManifestOutcome> autoScalerManifestOutcomeList = new ArrayList<>();
     List<VarsManifestOutcome> varsManifestOutcomeList = new ArrayList<>();
     TasManifestOutcome tasManifestOutcome = filterManifestOutcomesByTypeAndReturnTasManifest(
-            manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
+        manifestsOutcome.values(), autoScalerManifestOutcomeList, varsManifestOutcomeList);
 
-    final boolean serviceManifestStoreInGitSubset = ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind());
+    final boolean serviceManifestStoreInGitSubset =
+        ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind());
 
-    //Finding Repo Root
+    // Finding Repo Root
     String repoRoot = "/";
     if (serviceManifestStoreInGitSubset) {
       repoRoot = getRepoRoot(tasManifestOutcome);
@@ -248,20 +291,20 @@ public class TasStepHelper {
     final List<String> pathsFromScript = findPathFromScript(rawScript, repoRoot);
 
     TasStepPassThroughData tasStepPassThroughData = TasStepPassThroughData.builder()
-            .tasManifestOutcome(tasManifestOutcome)
-            .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
-            .varsManifestOutcomeList(varsManifestOutcomeList)
-            .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
-            .rawScript(rawScript)
-            .repoRoot(repoRoot)
-            .pathsFromScript(pathsFromScript)
-            .build();
+                                                        .tasManifestOutcome(tasManifestOutcome)
+                                                        .manifestOutcomeList(new ArrayList<>(manifestsOutcome.values()))
+                                                        .varsManifestOutcomeList(varsManifestOutcomeList)
+                                                        .autoScalerManifestOutcomeList(autoScalerManifestOutcomeList)
+                                                        .rawScript(rawScript)
+                                                        .repoRoot(repoRoot)
+                                                        .pathsFromScript(pathsFromScript)
+                                                        .build();
 
-      //  fire task to fetch remote files
+    //  fire task to fetch remote files
     shouldExecuteStoreFetch(tasStepPassThroughData);
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
-            shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+        shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
   }
@@ -271,11 +314,10 @@ public class TasStepHelper {
   }
 
   private String getRepoRoot(TasManifestOutcome tasManifestOutcome) {
-    if(ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind())) {
+    if (ManifestStoreType.isInGitSubset(tasManifestOutcome.getStore().getKind())) {
       final GitStoreConfig gitFileConfig = (GitStoreConfig) tasManifestOutcome.getStore();
       return "/" + toRelativePath(defaultIfEmpty(getParameterFieldValue(gitFileConfig.getFolderPath()), "/").trim());
-    }
-    else {
+    } else {
       return "/";
     }
   }
@@ -283,15 +325,15 @@ public class TasStepHelper {
   List<String> findPathFromScript(String rendredScript, String repoRoot) {
     final Set<String> finalPathLists = new HashSet<>();
     final List<String> repoRootPrefixPathList =
-            findPathFromScript(rendredScript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
+        findPathFromScript(rendredScript, PATH_REGEX_REPO_ROOT_PATTERN, FILE_START_REPO_ROOT_REGEX, FILE_END_REGEX);
     List<String> serviceManifestPrefixPathList = findPathFromScript(
-            rendredScript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
+        rendredScript, FILE_START_SERVICE_MANIFEST_PATTERN, FILE_START_SERVICE_MANIFEST_REGEX, FILE_END_REGEX);
 
     if (!(isEmpty(repoRoot) || "/".equals(repoRoot))) {
       serviceManifestPrefixPathList = serviceManifestPrefixPathList.stream()
-              .map(path -> repoRoot + path)
-              .map(this::removeTrailingSlash)
-              .collect(Collectors.toList());
+                                          .map(path -> repoRoot + path)
+                                          .map(this::removeTrailingSlash)
+                                          .collect(Collectors.toList());
     }
 
     finalPathLists.addAll(repoRootPrefixPathList);
@@ -304,14 +346,14 @@ public class TasStepHelper {
   }
 
   private List<String> findPathFromScript(
-          String renderedScript, Pattern matchPattern, String prefixRegex, String fileEndRegex) {
+      String renderedScript, Pattern matchPattern, String prefixRegex, String fileEndRegex) {
     final Matcher matcher = matchPattern.matcher(renderedScript);
     List<String> filePathList = new ArrayList<>();
     while (matcher.find()) {
       final String filePath = renderedScript.substring(matcher.start(), matcher.end())
-              .trim()
-              .replaceFirst(prefixRegex, "")
-              .replaceFirst(fileEndRegex, "");
+                                  .trim()
+                                  .replaceFirst(prefixRegex, "")
+                                  .replaceFirst(fileEndRegex, "");
       filePathList.add(filePath);
     }
     return filePathList.stream().map(this::canonacalizePath).distinct().collect(Collectors.toList());
@@ -321,19 +363,19 @@ public class TasStepHelper {
     return Strings.defaultIfEmpty(path.trim(), "/");
   }
 
-
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
+    logCallback.saveExecutionLog("Starting manifest Fetch from Harness Store ", INFO);
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
       fetchFilesFromLocalStore(localStoreFileMapContents, ambiance, tasStepPassThroughData, logCallback);
     }
+    logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
 
-    logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     return prepareManifestFilesFetchTask(
         tasStepExecutor, ambiance, stepElementParameters, updatedTasStepPassThroughData);
   }
@@ -371,10 +413,14 @@ public class TasStepHelper {
 
     localStoreFetchFilesResultMap.add(getFileContentsFromManifest(ngAccess,
         List.of(localStoreConfig.getFiles().getValue().get(0)), TAS_MANIFEST, manifestIdentifier, logCallback));
-    localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, varsScopedFilePathList, TAS_VARS, manifestIdentifier, logCallback));
-    localStoreFetchFilesResultMap.add(
-        getFileContentsFromManifest(ngAccess, autoScalerScopedFilePath, TAS_AUTOSCALER, manifestIdentifier, logCallback));
+    if (isNotEmpty(varsScopedFilePathList)) {
+      localStoreFetchFilesResultMap.add(
+          getFileContentsFromManifest(ngAccess, varsScopedFilePathList, TAS_VARS, manifestIdentifier, logCallback));
+    }
+    if (isNotEmpty(autoScalerScopedFilePath)) {
+      localStoreFetchFilesResultMap.add(getFileContentsFromManifest(
+          ngAccess, autoScalerScopedFilePath, TAS_AUTOSCALER, manifestIdentifier, logCallback));
+    }
     return localStoreFetchFilesResultMap;
     // TODO: Check if default vars.yaml file need to be fetched
   }
@@ -408,7 +454,10 @@ public class TasStepHelper {
     }
     return TasManifestFileContents.builder()
         .manifestType(manifestType)
-        .localStoreFetchFilesResult(LocalStoreFetchFilesResult.builder().LocalStoreFileContents(fileContents).LocalStoreFilePaths(filePaths).build())
+        .localStoreFetchFilesResult(LocalStoreFetchFilesResult.builder()
+                                        .LocalStoreFileContents(fileContents)
+                                        .LocalStoreFilePaths(filePaths)
+                                        .build())
         .build();
   }
 
@@ -516,12 +565,19 @@ public class TasStepHelper {
               .build();
       return TaskChainResponse.builder().chainEnd(true).passThroughData(gitFetchResponsePassThroughData).build();
     }
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchGitFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog("Fetched all manifests from Git", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().gitFetchFilesResultMap(gitFetchResponse.getFilesFromMultipleRepo()).build();
     return executeTasTask(ambiance, stepElementParameters, tasStepExecutor, updatedTasStepPassThroughData, tasManifest);
+  }
+
+  public CfCliVersion cfCliVersionNGMapper(CfCliVersionNG cfCliVersionNG) {
+    if (cfCliVersionNG == CfCliVersionNG.V7) {
+      return CfCliVersion.V7;
+    }
+    throw new InvalidRequestException(format("Invalid CF CLI Version: %s", cfCliVersionNG.toString()));
   }
 
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, TasStepExecutor tasStepExecutor,
@@ -539,7 +595,7 @@ public class TasStepHelper {
       return TaskChainResponse.builder().chainEnd(true).passThroughData(customFetchResponsePassThroughData).build();
     }
 
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchCustomFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog("Fetched all manifests from Custom remote", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
@@ -624,7 +680,7 @@ public class TasStepHelper {
   protected TaskChainResponse prepareCustomFetchManifestsTaskChainResponse(StoreConfig storeConfig, Ambiance ambiance,
       StepElementParameters stepElementParameters, List<ManifestOutcome> manifestOutcomeList,
       TasStepPassThroughData tasStepPassThroughData) {
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchCustomFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog(color(format("%nStarting Custom Fetch Files"), LogColor.White, LogWeight.Bold));
 
@@ -762,7 +818,7 @@ public class TasStepHelper {
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData,
       StoreConfig storeConfig) {
-    LogCallback logCallback = cdStepHelper.getLogCallback(
+    logCallback = cdStepHelper.getLogCallback(
         CfCommandUnitConstants.FetchGitFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
     logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
 
@@ -859,49 +915,59 @@ public class TasStepHelper {
   public TaskChainResponse executeTasTask(Ambiance ambiance, StepElementParameters stepElementParameters,
       TasStepExecutor tasStepExecutor, TasStepPassThroughData tasStepPassThroughData,
       ManifestOutcome tasManifestOutcome) {
-    PcfManifestsPackage pcfManifestsPackage =
-        getManifestFilesContents(ambiance, new HashMap<>(), tasStepPassThroughData.getCustomFetchContent(),
-            tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
+    PcfManifestsPackage pcfManifestsPackage = getManifestFilesContents(ambiance,
+        tasStepPassThroughData.getGitFetchFilesResultMap(), tasStepPassThroughData.getCustomFetchContent(),
+        tasStepPassThroughData.getLocalStoreFileMapContents(), tasStepPassThroughData.getManifestOutcomeList());
 
-    Map<String,String> allFilesFetched = new HashMap<>();
-    if(tasStepPassThroughData.getGitFetchFilesResultMap() != null && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
+    Map<String, String> allFilesFetched = new HashMap<>();
+    if (tasStepPassThroughData.getGitFetchFilesResultMap() != null
+        && tasStepPassThroughData.getGitFetchFilesResultMap().values() != null) {
       for (FetchFilesResult entry : tasStepPassThroughData.getGitFetchFilesResultMap().values()) {
-        if(entry.getFiles() != null) {
-          entry.getFiles().stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+        if (entry.getFiles() != null) {
+          entry.getFiles().stream().map(
+              allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
         }
       }
     }
-    if(tasStepPassThroughData.getLocalStoreFileMapContents() != null && tasStepPassThroughData.getLocalStoreFileMapContents().values() != null) {
-      for (List<TasManifestFileContents> tasManifestFileContentsList : tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
+    if (tasStepPassThroughData.getLocalStoreFileMapContents() != null
+        && tasStepPassThroughData.getLocalStoreFileMapContents().values() != null) {
+      for (List<TasManifestFileContents> tasManifestFileContentsList :
+          tasStepPassThroughData.getLocalStoreFileMapContents().values()) {
         for (TasManifestFileContents tasManifestFileContents : tasManifestFileContentsList) {
-          for (int iterate = 0; iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size(); iterate++) {
-            allFilesFetched.put(tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
-                    tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
+          for (int iterate = 0;
+               iterate < tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().size();
+               iterate++) {
+            allFilesFetched.put(
+                tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFilePaths().get(iterate),
+                tasManifestFileContents.getLocalStoreFetchFilesResult().getLocalStoreFileContents().get(iterate));
           }
         }
       }
     }
-    if(tasStepPassThroughData.getCustomFetchContent() != null && tasStepPassThroughData.getCustomFetchContent().values() != null) {
-      for (Collection<CustomSourceFile> customSourceFileCollection : tasStepPassThroughData.getCustomFetchContent().values()) {
-        customSourceFileCollection.stream().map(allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
+    if (tasStepPassThroughData.getCustomFetchContent() != null
+        && tasStepPassThroughData.getCustomFetchContent().values() != null) {
+      for (Collection<CustomSourceFile> customSourceFileCollection :
+          tasStepPassThroughData.getCustomFetchContent().values()) {
+        customSourceFileCollection.stream().map(
+            allFiles -> allFilesFetched.put(allFiles.getFilePath(), allFiles.getFileContent()));
       }
     }
 
     List<UnitProgress> unitProgressList = new ArrayList<>();
-    if(tasStepPassThroughData.getRawScript() != null) {
+    if (tasStepPassThroughData.getRawScript() != null) {
       unitProgressList.add(UnitProgress.newBuilder()
-              .setUnitName(CfCommandUnitConstants.FetchCommandScript)
-              .setStatus(UnitStatus.SUCCESS)
-              .setStartTime(System.currentTimeMillis() - 10)
-              .setEndTime(System.currentTimeMillis() - 5)
-              .build());
+                               .setUnitName(CfCommandUnitConstants.FetchCommandScript)
+                               .setStatus(UnitStatus.SUCCESS)
+                               .setStartTime(System.currentTimeMillis() - 10)
+                               .setEndTime(System.currentTimeMillis() - 5)
+                               .build());
     }
     unitProgressList.add(UnitProgress.newBuilder()
-            .setUnitName(CfCommandUnitConstants.FetchFiles)
-            .setStatus(UnitStatus.SUCCESS)
-            .setStartTime(System.currentTimeMillis() - 5)
-            .setEndTime(System.currentTimeMillis())
-            .build());
+                             .setUnitName(CfCommandUnitConstants.FetchFiles)
+                             .setStatus(UnitStatus.SUCCESS)
+                             .setStartTime(System.currentTimeMillis() - 5)
+                             .setEndTime(System.currentTimeMillis())
+                             .build());
 
     return tasStepExecutor.executeTasTask(tasManifestOutcome, ambiance, stepElementParameters,
         TasExecutionPassThroughData.builder()
@@ -915,9 +981,7 @@ public class TasStepHelper {
             .allFilesFetched(allFilesFetched)
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
-        UnitProgressData.builder()
-            .unitProgresses(unitProgressList)
-            .build());
+        UnitProgressData.builder().unitProgresses(unitProgressList).build());
   }
 
   public PcfManifestsPackage getManifestFilesContents(Ambiance ambiance,
@@ -962,7 +1026,8 @@ public class TasStepHelper {
             } else {
               List<String> varsPaths = ((TasManifestOutcome) manifest).getVarsPaths().getValue();
               if (!isEmpty(varsPaths) && varsPaths.contains(customSourceFile.getFilePath())) {
-                addToPcfManifestPackageByType(pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
+                addToPcfManifestPackageByType(
+                    pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_VARS);
               } else {
                 addToPcfManifestPackageByType(
                     pcfManifestsPackage, List.of(customSourceFile.getFileContent()), TAS_AUTOSCALER);
@@ -1061,36 +1126,36 @@ public class TasStepHelper {
     if (isBlank(name)) {
       throw new InvalidArgumentsException(Pair.of("Manifest", "contains no application name"));
     }
-
-    boolean hasVarFiles = isNotEmpty(pcfManifestsPackage.getVariableYmls());
-    if (!hasVarFiles) {
-      appName = name;
-    } else {
-      appName = finalizeSubstitution(pcfManifestsPackage, name);
-    }
-    return appName;
+    return finalizeSubstitution(pcfManifestsPackage, name);
   }
 
   String finalizeSubstitution(PcfManifestsPackage pcfManifestsPackage, String name) {
-    String varName;
-    String appName;
-    Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(name);
-    List<String> varFiles = pcfManifestsPackage.getVariableYmls();
-    while (m.find()) {
-      varName = m.group(1);
-      for (int i = varFiles.size() - 1; i >= 0; i--) {
-        Object value = getVariableValue(varFiles.get(i), varName);
-        if (value != null) {
-          String val = value.toString();
-          if (isNotBlank(val)) {
-            name = name.replace("((" + varName + "))", val);
-            break;
+    if (name.contains("((") && name.contains("))")) {
+      if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
+        throw new InvalidRequestException(
+            "No Valid Variable file Found, please verify var file is present and has valid structure");
+      }
+      String varName;
+      String appName;
+      Matcher m = Pattern.compile("\\(\\(([^)]+)\\)\\)").matcher(name);
+      List<String> varFiles = pcfManifestsPackage.getVariableYmls();
+      while (m.find()) {
+        varName = m.group(1);
+        for (int i = varFiles.size() - 1; i >= 0; i--) {
+          Object value = getVariableValue(varFiles.get(i), varName);
+          if (value != null) {
+            String val = value.toString();
+            if (isNotBlank(val)) {
+              name = name.replace("((" + varName + "))", val);
+              break;
+            }
           }
         }
       }
+      appName = name;
+      return appName;
     }
-    appName = name;
-    return appName;
+    return name;
   }
 
   @VisibleForTesting
@@ -1142,13 +1207,7 @@ public class TasStepHelper {
       return DEFAULT_INSTANCE_COUNT;
     }
 
-    if (maxVal.contains("((") && maxVal.contains("))")) {
-      if (isEmpty(pcfManifestsPackage.getVariableYmls())) {
-        throw new InvalidRequestException(
-            "No Valid Variable file Found, please verify var file is present and has valid structure");
-      }
-      maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
-    }
+    maxVal = finalizeSubstitution(pcfManifestsPackage, maxVal);
     return Integer.parseInt(maxVal);
   }
 
@@ -1214,5 +1273,206 @@ public class TasStepHelper {
       allRoutes.addAll(additionalRoutesFromStep);
     }
     return allRoutes;
+  }
+
+  public TasArtifactConfig getPrimaryArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
+    switch (artifactOutcome.getArtifactType()) {
+      case DOCKER_REGISTRY_NAME:
+      case ECR_NAME:
+      case GCR_NAME:
+      case ACR_NAME:
+      case NEXUS3_REGISTRY_NAME:
+      case ARTIFACTORY_REGISTRY_NAME:
+      case AMAZON_S3_NAME:
+      case JENKINS_NAME:
+      case AZURE_ARTIFACTS_NAME:
+        if (isPackageArtifactType(artifactOutcome)) {
+          return getTasPackageArtifactConfig(ambiance, artifactOutcome);
+        } else {
+          return getTasContainerArtifactConfig(ambiance, artifactOutcome);
+        }
+      default:
+        throw new InvalidArgumentsException(Pair.of("artifacts",
+            format("Artifact type %s is not yet supported in Azure WebApp", artifactOutcome.getArtifactType())));
+    }
+  }
+
+  public boolean isPackageArtifactType(ArtifactOutcome artifactOutcome) {
+    switch (artifactOutcome.getArtifactType()) {
+      case ARTIFACTORY_REGISTRY_NAME:
+        return !(artifactOutcome instanceof ArtifactoryArtifactOutcome);
+      case AMAZON_S3_NAME:
+        return artifactOutcome instanceof S3ArtifactOutcome;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        return !RepositoryFormat.docker.name().equals(nexusArtifactOutcome.getRepositoryFormat());
+      case JENKINS_NAME:
+        return artifactOutcome instanceof JenkinsArtifactOutcome;
+      case AZURE_ARTIFACTS_NAME:
+        return artifactOutcome instanceof AzureArtifactsOutcome;
+      default:
+        return false;
+    }
+  }
+
+  private TasArtifactConfig getTasContainerArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
+    ConnectorInfoDTO connectorInfo;
+    TasContainerArtifactConfig.TasContainerArtifactConfigBuilder artifactConfigBuilder =
+        TasContainerArtifactConfig.builder();
+
+    switch (artifactOutcome.getArtifactType()) {
+      case DOCKER_REGISTRY_NAME:
+        DockerArtifactOutcome dockerArtifactOutcome = (DockerArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(dockerArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(
+            getAzureRegistryType((DockerConnectorDTO) connectorInfo.getConnectorConfig()));
+        artifactConfigBuilder.image(dockerArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(dockerArtifactOutcome.getTag());
+        break;
+      case ACR_NAME:
+        AcrArtifactOutcome acrArtifactOutcome = (AcrArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(acrArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.ACR);
+        artifactConfigBuilder.image(acrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(acrArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(acrArtifactOutcome.getRegistry());
+        break;
+      case ECR_NAME:
+        EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(ecrArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.ECR);
+        artifactConfigBuilder.image(ecrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(ecrArtifactOutcome.getTag());
+        artifactConfigBuilder.region(ecrArtifactOutcome.getRegion());
+        break;
+      case GCR_NAME:
+        GcrArtifactOutcome gcrArtifactOutcome = (GcrArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(gcrArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.GCR);
+        artifactConfigBuilder.image(gcrArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(gcrArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(gcrArtifactOutcome.getRegistryHostname());
+        break;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.NEXUS_PRIVATE_REGISTRY);
+        artifactConfigBuilder.image(nexusArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(nexusArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(nexusArtifactOutcome.getRegistryHostname());
+        break;
+      case ARTIFACTORY_REGISTRY_NAME:
+        ArtifactoryArtifactOutcome artifactoryArtifactOutcome = (ArtifactoryArtifactOutcome) artifactOutcome;
+        connectorInfo = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
+        artifactConfigBuilder.registryType(AzureRegistryType.ARTIFACTORY_PRIVATE_REGISTRY);
+        artifactConfigBuilder.image(artifactoryArtifactOutcome.getImage());
+        artifactConfigBuilder.tag(artifactoryArtifactOutcome.getTag());
+        artifactConfigBuilder.registryHostname(artifactoryArtifactOutcome.getRegistryHostname());
+        break;
+      default:
+        throw new InvalidArgumentsException(
+            Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
+    }
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    List<DecryptableEntity> decryptableEntities = connectorInfo.getConnectorConfig().getDecryptableEntities();
+    if (decryptableEntities != null) {
+      for (DecryptableEntity decryptableEntity : decryptableEntities) {
+        encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
+      }
+    }
+
+    return artifactConfigBuilder.connectorConfig(connectorInfo.getConnectorConfig())
+        .encryptedDataDetails(encryptedDataDetails)
+        .build();
+  }
+
+  private AzureRegistryType getAzureRegistryType(DockerConnectorDTO dockerConfig) {
+    if (dockerConfig.getAuth().getAuthType().equals(ANONYMOUS)) {
+      return AzureRegistryType.DOCKER_HUB_PUBLIC;
+    } else {
+      return AzureRegistryType.DOCKER_HUB_PRIVATE;
+    }
+  }
+
+  private TasPackageArtifactConfig getTasPackageArtifactConfig(Ambiance ambiance, ArtifactOutcome artifactOutcome) {
+    final TasPackageArtifactConfigBuilder artifactConfigBuilder = TasPackageArtifactConfig.builder();
+    ConnectorInfoDTO connectorInfoDTO;
+    switch (artifactOutcome.getArtifactType()) {
+      case ARTIFACTORY_REGISTRY_NAME:
+        ArtifactoryGenericArtifactOutcome artifactoryArtifactOutcome =
+            (ArtifactoryGenericArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(ArtifactSourceType.ARTIFACTORY_REGISTRY);
+        artifactConfigBuilder.artifactDetails(
+            ArtifactoryTasArtifactRequestDetails.builder()
+                .repository(artifactoryArtifactOutcome.getRepositoryName())
+                .repositoryFormat(artifactoryArtifactOutcome.getRepositoryFormat())
+                .artifactPaths(new ArrayList<>(singletonList(artifactoryArtifactOutcome.getArtifactPath())))
+                .build());
+        connectorInfoDTO = cdStepHelper.getConnector(artifactoryArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case AMAZON_S3_NAME:
+        S3ArtifactOutcome s3ArtifactOutcome = (S3ArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(AMAZONS3);
+        artifactConfigBuilder.artifactDetails(AwsS3TasArtifactRequestDetails.builder()
+                                                  .region(s3ArtifactOutcome.getRegion())
+                                                  .bucketName(s3ArtifactOutcome.getBucketName())
+                                                  .filePath(s3ArtifactOutcome.getFilePath())
+                                                  .identifier(s3ArtifactOutcome.getIdentifier())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(s3ArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case NEXUS3_REGISTRY_NAME:
+        NexusArtifactOutcome nexusArtifactOutcome = (NexusArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(NEXUS3_REGISTRY);
+        artifactConfigBuilder.artifactDetails(NexusTasArtifactRequestDetails.builder()
+                                                  .identifier(nexusArtifactOutcome.getIdentifier())
+                                                  .certValidationRequired(false)
+                                                  .artifactUrl(nexusArtifactOutcome.getMetadata().get("url"))
+                                                  .metadata(nexusArtifactOutcome.getMetadata())
+                                                  .repositoryFormat(nexusArtifactOutcome.getRepositoryFormat())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(nexusArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      case JENKINS_NAME:
+        JenkinsArtifactOutcome jenkinsArtifactOutcome = (JenkinsArtifactOutcome) artifactOutcome;
+        artifactConfigBuilder.sourceType(JENKINS);
+        artifactConfigBuilder.artifactDetails(JenkinsTasArtifactRequestDetails.builder()
+                                                  .artifactPath(jenkinsArtifactOutcome.getArtifactPath())
+                                                  .jobName(jenkinsArtifactOutcome.getJobName())
+                                                  .build(jenkinsArtifactOutcome.getBuild())
+                                                  .identifier(jenkinsArtifactOutcome.getIdentifier())
+                                                  .build());
+        connectorInfoDTO = cdStepHelper.getConnector(jenkinsArtifactOutcome.getConnectorRef(), ambiance);
+        break;
+      default:
+        throw new InvalidArgumentsException(
+            Pair.of("artifacts", format("Unsupported artifact type %s", artifactOutcome.getArtifactType())));
+    }
+
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    if (connectorInfoDTO.getConnectorConfig().getDecryptableEntities() != null) {
+      for (DecryptableEntity decryptableEntity : connectorInfoDTO.getConnectorConfig().getDecryptableEntities()) {
+        encryptedDataDetails.addAll(secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntity));
+      }
+    }
+
+    return artifactConfigBuilder.connectorConfig(connectorInfoDTO.getConnectorConfig())
+        .encryptedDataDetails(encryptedDataDetails)
+        .build();
+  }
+
+  public void closeLogStream(Ambiance ambiance) {
+    try {
+      Thread.sleep(500, 0);
+    } catch (InterruptedException e) {
+      log.error("Close Log Stream was interrupted", e);
+    } finally {
+      ILogStreamingStepClient logStreamingStepClient =
+          logStreamingStepClientFactory.getLogStreamingStepClient(ambiance);
+      logStreamingStepClient.closeAllOpenStreamsWithPrefix(StepUtils.generateLogKeys(ambiance, emptyList()).get(0));
+    }
   }
 }

@@ -23,6 +23,7 @@ import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.pcf.artifact.TasArtifactConfig;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.shell.ShellScriptTaskParametersNG;
 import io.harness.eraro.ErrorCode;
@@ -134,6 +135,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
         (TasCanaryAppSetupStepParameters) stepParameters.getSpec();
     ArtifactOutcome artifactOutcome = cdStepHelper.resolveArtifactsOutcome(ambiance).orElseThrow(
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
+    TasArtifactConfig tasArtifactConfig = tasStepHelper.getPrimaryArtifactConfig(ambiance, artifactOutcome);
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
     Integer maxCount;

@@ -50,10 +50,10 @@ public class TasStepPassThroughData implements PassThroughData {
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;
 
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteCustomFetch = Boolean.FALSE;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;
+  @Setter @NonFinal @Builder.Default Boolean shouldExecuteGitStoreFetch = Boolean.FALSE;
   @Setter @NonFinal Boolean shouldCloseFetchFilesStream;
-  @Setter @NonFinal Boolean shouldExecuteCustomFetch;
-  @Setter @NonFinal Boolean shouldExecuteHarnessStoreFetch;
-  @Setter @NonFinal Boolean shouldExecuteGitStoreFetch;
   @Setter @NonFinal Boolean shouldOpenFetchFilesStream;
   Set<String> manifestStoreTypeVisited;
   String rawScript;

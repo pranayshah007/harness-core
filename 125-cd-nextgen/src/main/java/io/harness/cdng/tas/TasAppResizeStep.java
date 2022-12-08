@@ -7,9 +7,9 @@
 
 package io.harness.cdng.tas;
 
-import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
-import static java.util.Objects.isNull;
+import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -21,7 +21,6 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.cdng.tas.beans.TasSetupDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
@@ -56,6 +55,7 @@ import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
@@ -99,8 +99,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
   @Override
   public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
       ThrowingSupplier<CfCommandResponseNG> responseDataSupplier) throws Exception {
-    StepResponse.StepResponseBuilder builder = StepResponse.builder();
-
+    StepResponseBuilder builder = StepResponse.builder();
     CfDeployCommandResponseNG response;
     try {
       response = (CfDeployCommandResponseNG) responseDataSupplier.get();
@@ -171,9 +170,11 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
           .build();
     }
     Integer upsizeInstanceCount =
-        new BigDecimal(tasAppResizeStepParameters.getNewAppInstances().getValue().getValue()).intValueExact();
+        new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getNewAppInstances().getSpec().getValue()))
+            .intValueExact();
     Integer downsizeInstanceCount =
-        new BigDecimal(tasAppResizeStepParameters.getOldAppInstances().getValue().getValue()).intValueExact();
+        new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getOldAppInstances().getSpec().getValue()))
+            .intValueExact();
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
     TasInstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
@@ -204,7 +205,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .commandName(TAS_APP_RESIZE)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
-            .downsizeAppDetail(tasSetupDataOutcome.getDownsizeAppDetail())
+            .downsizeAppDetail(tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
             .upsizeCount(upsizeCount)
             .downSizeCount(downsizeCount)
             .instanceData(tasSetupDataOutcome.getInstanceData())

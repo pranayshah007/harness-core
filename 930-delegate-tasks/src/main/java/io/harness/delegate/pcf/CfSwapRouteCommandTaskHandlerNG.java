@@ -7,9 +7,19 @@
 
 package io.harness.delegate.pcf;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_NON_VERSION;
+import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_VERSION;
+import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.ROLLBACK_OPERATOR;
+import static io.harness.pcf.PcfUtils.encodeColor;
+
+import static software.wings.beans.LogColor.White;
+import static software.wings.beans.LogHelper.color;
+import static software.wings.beans.LogWeight.Bold;
+
+import static java.util.stream.Collectors.toList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.task.tas.TasNgConfigMapper;
@@ -44,28 +54,20 @@ import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
 import io.harness.pcf.model.CfRequestConfig;
 import io.harness.pcf.model.CloudFoundryConfig;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.cloudfoundry.operations.applications.ApplicationDetail;
 import org.cloudfoundry.operations.applications.ApplicationSummary;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_NON_VERSION;
-import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_VERSION;
-import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.ROLLBACK_OPERATOR;
-import static io.harness.pcf.PcfUtils.encodeColor;
-import static java.util.stream.Collectors.toList;
-import static software.wings.beans.LogColor.White;
-import static software.wings.beans.LogHelper.color;
-import static software.wings.beans.LogWeight.Bold;
 
 @NoArgsConstructor
 @Singleton
@@ -81,8 +83,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   public CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
     if (!(cfCommandRequestNG instanceof CfSwapRoutesRequestNG)) {
-      throw new InvalidArgumentsException(
-          Pair.of("cfCommandRequest", "Must be instance of CfSwapRoutesRequestNG"));
+      throw new InvalidArgumentsException(Pair.of("cfCommandRequest", "Must be instance of CfSwapRoutesRequestNG"));
     }
     CfInBuiltVariablesUpdateValues updateValues = CfInBuiltVariablesUpdateValues.builder().build();
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
@@ -112,36 +113,33 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .spaceName(tasInfraConfig.getSpace())
               .timeOutIntervalInMins(cfSwapRoutesRequestNG.getTimeoutIntervalInMin())
               .cfHomeDirPath(workingDirectory.getAbsolutePath())
-              .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(
-                  true, cfSwapRoutesRequestNG.getCfCliVersion()))
+              .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(true, cfSwapRoutesRequestNG.getCfCliVersion()))
               .cfCliVersion(cfSwapRoutesRequestNG.getCfCliVersion())
               .build();
-
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
               .isRollback(true)
-              .existingApplicationDetails(
-                      cfSwapRoutesRequestNG.getExistingApplicationDetails())
+              .existingApplicationDetails(cfSwapRoutesRequestNG.getExistingApplicationDetails())
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
               .tempRoutes(cfSwapRoutesRequestNG.getTempRoutes())
               .skipRollback(false)
               .isStandardBlueGreen(true)
-              .newApplicationDetails(cfSwapRoutesRequestNG.getNewApplicationDetails())
+              .newApplicationDetails(cfSwapRoutesRequestNG.getNewApplicationDetails().toCfAppSetupTimeDetails())
               .versioningChanged(false)
               .nonVersioning(true)
               .newApplicationName(cfSwapRoutesRequestNG.getNewApplicationDetails().getApplicationName())
               .finalRoutes(cfSwapRoutesRequestNG.getFinalRoutes())
               .isMapRoutesOperation(false)
               .build();
-        // Swap routes
-        performRouteUpdateForStandardBlueGreen(cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback);
+      // Swap routes
+      performRouteUpdateForStandardBlueGreen(cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback);
 
-        // if deploy and downsizeOld is true
-        updateValues = downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG,
-                cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath());
+      // if deploy and downsizeOld is true
+      updateValues = downsizeOldAppDuringDeployAndRenameApps(executionLogCallback, cfSwapRoutesRequestNG,
+          cfRequestConfig, pcfRouteUpdateConfigData, workingDirectory.getAbsolutePath());
 
       cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       executionLogCallback.saveExecutionLog(
@@ -168,24 +166,24 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   }
 
   CfInBuiltVariablesUpdateValues downsizeOldAppDuringDeployAndRenameApps(LogCallback executionLogCallback,
-                                                                         CfSwapRoutesRequestNG cfSwapRoutesRequestNG, CfRequestConfig cfRequestConfig,
-                                                                         CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, String configVarPath) throws PivotalClientApiException {
+      CfSwapRoutesRequestNG cfSwapRoutesRequestNG, CfRequestConfig cfRequestConfig,
+      CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData, String configVarPath) throws PivotalClientApiException {
     if (pcfRouteUpdateConfigData.isDownsizeOldApplication()) {
-      resizeOldApplications(cfSwapRoutesRequestNG, cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback, configVarPath);
+      resizeOldApplications(
+          cfSwapRoutesRequestNG, cfRequestConfig, pcfRouteUpdateConfigData, executionLogCallback, configVarPath);
     }
     return renameApps(pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
   }
 
   private CfInBuiltVariablesUpdateValues renameApps(CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData,
-                                                    CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
-
+      CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
     return performRenamingWhenExistingStrategyWasNonVersioning(
-              pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
+        pcfRouteUpdateConfigData, cfRequestConfig, executionLogCallback);
   }
 
   private CfInBuiltVariablesUpdateValues performRenamingWhenExistingStrategyWasNonVersioning(
-          CfRouteUpdateRequestConfigData cfRouteUpdateConfigData, CfRequestConfig cfRequestConfig,
-          LogCallback executionLogCallback) throws PivotalClientApiException {
+      CfRouteUpdateRequestConfigData cfRouteUpdateConfigData, CfRequestConfig cfRequestConfig,
+      LogCallback executionLogCallback) throws PivotalClientApiException {
     executionLogCallback.saveExecutionLog(color("\n# Starting Renaming apps", White, Bold));
     boolean nonVersioning = cfRouteUpdateConfigData.isNonVersioning();
     NamingTransition transition = nonVersioning ? NON_VERSION_TO_NON_VERSION : NON_VERSION_TO_VERSION;

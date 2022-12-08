@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -50,7 +51,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  TasResizeStrategyType resizeStrategy;
+  @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
@@ -71,7 +72,13 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasCanaryAppSetupStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return TasCanaryAppSetupStepParameters.infoBuilder()
+        .instanceCount(this.instanceCount)
+        .existingVersionToKeep(this.existingVersionToKeep)
+        .additionalRoutes(this.additionalRoutes)
+        .resizeStrategy(this.resizeStrategy)
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override
