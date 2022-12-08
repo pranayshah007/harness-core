@@ -177,6 +177,10 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
          AutoLogContext ignore1 = new PerpetualTaskLogContext(taskId, OVERRIDE_ERROR)) {
       PerpetualTaskRecord perpetualTaskRecord = perpetualTaskRecordDao.getTask(taskId);
       if (perpetualTaskRecord != null) {
+        // disable reset option for container instance sync
+        if (perpetualTaskRecord.getPerpetualTaskType().equals(PerpetualTaskType.CONTAINER_INSTANCE_SYNC)) {
+          return false;
+        }
         String perpetualTaskType = perpetualTaskRecord.getPerpetualTaskType();
         log.info("Resetting the perpetual task {}, type: {}", taskId, perpetualTaskType);
         delegateMetricsService.recordPerpetualTaskMetrics(accountId, perpetualTaskType, PERPETUAL_TASK_RESET);
