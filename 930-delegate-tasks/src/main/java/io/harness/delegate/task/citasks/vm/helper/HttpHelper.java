@@ -41,19 +41,20 @@ public class HttpHelper {
   private static final String RUNNER_URL = "http://127.0.0.1:3000/";
   private static final String RUNNER_URL_ENV = "RUNNER_URL";
   private static final int RUNNER_CONNECT_TIMEOUT_SECS = 1;
-  private final int MAX_ATTEMPTS = 3;
+  private final int MAX_ATTEMPTS = 1440;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int DELETION_MAX_ATTEMPTS = 15;
   private final int POOL_OWNER_MAX_ATTEMPTS = 20;
 
-  public RunnerRestClient getRunnerClient(int timeoutInSecs) {
+  public RunnerRestClient getRunnerClient(int readTimeoutInSecs) {
     String runnerUrl = getRunnerUrl();
-    Retrofit retrofit = new Retrofit.Builder()
-                            .baseUrl(runnerUrl)
-                            .addConverterFactory(JacksonConverterFactory.create())
-                            .client(Http.getUnsafeOkHttpClient(runnerUrl, RUNNER_CONNECT_TIMEOUT_SECS, timeoutInSecs))
-                            .build();
+    Retrofit retrofit =
+        new Retrofit.Builder()
+            .baseUrl(runnerUrl)
+            .addConverterFactory(JacksonConverterFactory.create())
+            .client(Http.getUnsafeOkHttpClient(runnerUrl, RUNNER_CONNECT_TIMEOUT_SECS, readTimeoutInSecs))
+            .build();
     return retrofit.create(RunnerRestClient.class);
   }
 
@@ -75,7 +76,7 @@ public class HttpHelper {
   public Response<ExecuteStepResponse> executeStepWithRetries(ExecuteStepRequest executeStepRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying failed to execute step; attempt: {}", "Failing to execute step after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(14400).step(executeStepRequest).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).step(executeStepRequest).execute());
   }
 
   public Response<Void> cleanupStageWithRetries(DestroyVmRequest destroyVmRequest) {

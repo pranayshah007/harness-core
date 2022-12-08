@@ -29,7 +29,10 @@ public class StepExecutionHelper {
 
   public VmTaskExecutionResponse callRunnerForStepExecution(ExecuteStepRequest request) {
     try {
+      String stageRuntimeId = request.getStageRuntimeID();
+      log.info("Start step execution for stage runtime id {}", stageRuntimeId);
       Response<ExecuteStepResponse> response = httpHelper.executeStepWithRetries(request);
+      log.info("End step execution for stage runtime id {}", stageRuntimeId);
       if (!response.isSuccessful()) {
         return VmTaskExecutionResponse.builder().commandExecutionStatus(CommandExecutionStatus.FAILURE).build();
       }
