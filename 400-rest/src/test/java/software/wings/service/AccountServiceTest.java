@@ -103,7 +103,7 @@ import software.wings.beans.governance.GovernanceConfig;
 import software.wings.dl.WingsPersistence;
 import software.wings.features.GovernanceFeature;
 import software.wings.features.api.PremiumFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.licensing.LicenseService;
 import software.wings.resources.AccountResource;
 import software.wings.resources.UserResource;

@@ -145,7 +145,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.exception.AccountNotFoundException;
 import software.wings.features.GovernanceFeature;
 import software.wings.helpers.ext.account.DeleteAccountHelper;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.licensing.LicenseService;
 import software.wings.scheduler.AlertCheckJob;
 import software.wings.scheduler.InstanceStatsCollectorJob;

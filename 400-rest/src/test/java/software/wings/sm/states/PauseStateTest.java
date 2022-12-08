@@ -37,7 +37,7 @@ import software.wings.api.EmailStateExecutionData;
 import software.wings.app.MainConfiguration;
 import software.wings.app.PortalConfig;
 import software.wings.beans.User;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.UserServiceImpl;
 import software.wings.service.intfc.AccountService;

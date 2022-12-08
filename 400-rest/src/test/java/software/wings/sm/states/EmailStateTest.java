@@ -50,7 +50,7 @@ import software.wings.app.PortalConfig;
 import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.expression.ManagerExpressionEvaluator;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.service.impl.UserServiceImpl;
 import software.wings.service.intfc.AccountService;

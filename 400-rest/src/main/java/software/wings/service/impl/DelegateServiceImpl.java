@@ -204,7 +204,7 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.expression.SecretFunctor;
 import software.wings.features.DelegatesFeature;
 import software.wings.features.api.UsageLimitedFeature;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
 import software.wings.service.impl.TemplateParameters.TemplateParametersBuilder;

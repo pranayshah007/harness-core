@@ -279,7 +279,7 @@ import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskResponse;
 import software.wings.helpers.ext.k8s.response.K8sTrafficSplitResponse;
 import software.wings.helpers.ext.k8s.response.PodStatus;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.helpers.ext.pcf.request.CfCommandSetupRequest;
 import software.wings.helpers.ext.trigger.request.TriggerDeploymentNeededRequest;

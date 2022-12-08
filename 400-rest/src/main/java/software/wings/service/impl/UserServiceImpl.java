@@ -175,7 +175,7 @@ import software.wings.beans.sso.SamlSettings;
 import software.wings.beans.utm.UtmInfo;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.dl.WingsPersistence;
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.url.SubdomainUrlHelperIntfc;
 import software.wings.licensing.LicenseService;
 import software.wings.resources.UserResource;

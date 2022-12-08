@@ -15,7 +15,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.exception.ExceptionUtils;
 
-import software.wings.helpers.ext.mail.EmailData;
+import software.wings.persistence.mail.EmailData;
 import software.wings.helpers.ext.mail.SmtpConfig;
 
 import com.google.common.collect.ImmutableList;
