@@ -193,8 +193,11 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfRollbackCommandResult.setUpdatedValues(updateValues);
       cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
-      cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
-
+      if(cfRollbackCommandResult.getCfInstanceElements() != null) {
+        cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
+      } else {
+        cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
+      }
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
