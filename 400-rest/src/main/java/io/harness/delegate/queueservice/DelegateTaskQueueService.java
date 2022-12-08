@@ -58,12 +58,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
                                         .consumerName(delegateQueueServiceConfig.getTopic())
                                         .topic(delegateQueueServiceConfig.getTopic())
                                         .build();
-    List<DequeueResponse> dequeueResponses = null;
-    try {
-      dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    List<DequeueResponse> dequeueResponses = hsqsServiceClient.dequeue(dequeueRequest, "sampleToken").execute().body();
     List<DelegateTaskDequeue> delegateTasksDequeueList =
         dequeueResponses.stream()
             .map(dequeueResponse
