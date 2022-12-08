@@ -294,8 +294,8 @@ public class InfrastructureMapper {
                     service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
                 .build();
 
-        setInfraIdentifierAndName(tanzuInfrastructureOutcome, tanzuInfrastructureOutcome.getInfraIdentifier(),
-            tanzuInfrastructure.getInfraName());
+        setInfraIdentifierAndName(
+            tanzuInfrastructureOutcome, tanzuInfrastructure.getInfraIdentifier(), tanzuInfrastructure.getInfraName());
         infrastructureOutcome = tanzuInfrastructureOutcome;
         break;
 

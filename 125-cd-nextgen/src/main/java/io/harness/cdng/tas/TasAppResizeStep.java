@@ -11,6 +11,8 @@ import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
+import static java.util.Objects.isNull;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
@@ -172,11 +174,16 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     Integer upsizeInstanceCount =
         new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getNewAppInstances().getSpec().getValue()))
             .intValueExact();
-    Integer downsizeInstanceCount =
-        new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getOldAppInstances().getSpec().getValue()))
-            .intValueExact();
+    Integer downsizeInstanceCount = null;
+    if (!isNull(tasAppResizeStepParameters.getOldAppInstances())) {
+      downsizeInstanceCount =
+          new BigDecimal(getParameterFieldValue(tasAppResizeStepParameters.getOldAppInstances().getSpec().getValue()))
+              .intValueExact();
+    }
     TasInstanceUnitType upsizeInstanceCountType = tasAppResizeStepParameters.getNewAppInstances().getType();
-    TasInstanceUnitType downsizeCountType = tasAppResizeStepParameters.getOldAppInstances().getType();
+    TasInstanceUnitType downsizeCountType = isNull(tasAppResizeStepParameters.getOldAppInstances())
+        ? null
+        : tasAppResizeStepParameters.getOldAppInstances().getType();
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     Integer totalDesiredCount = tasSetupDataOutcome.getDesiredActualFinalCount();
 
