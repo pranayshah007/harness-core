@@ -931,7 +931,7 @@ public abstract class TerraformProvisionState extends State {
       if (getTfVarGitFileConfig() != null) {
         tfVarSource = fetchTfVarGitSource(context);
       }
-    } else if (null != tfVarS3FileConfig) {
+    } else if (tfVarS3FileConfig != null) {
       tfVarSource = fetchTfVarS3Source(context);
     }
 

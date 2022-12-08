@@ -21,10 +21,8 @@ import software.wings.beans.InfrastructureProvisioner;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerraformSourceType;
 import software.wings.dl.WingsPersistence;
-import software.wings.service.intfc.InfrastructureProvider;
 
 import com.google.inject.Inject;
-import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import java.util.List;
@@ -55,18 +53,17 @@ public class InitTerraformProvisionersSourceType implements Migration {
               infraProvisionersKeyIdList.stream()
                   .map(infrastructureProvisionerKey -> (String) infrastructureProvisionerKey.getId())
                   .collect(Collectors.toSet());
-          bulkSetTerraformSource(account.getUuid(), InfrastructureProvisioner.class, infraProvisionersIdSet);
+          bulkSetTerraformSourceType(account.getUuid(), InfrastructureProvisioner.class, infraProvisionersIdSet);
         }
       }
     }
   }
 
-  protected <T extends Base> void bulkSetTerraformSource(
+  protected <T extends Base> void bulkSetTerraformSourceType(
       String accountId, Class<T> clazz, Set<String> infrastructureProvisionersIdSet) {
     final DBCollection collection = wingsPersistence.getCollection(clazz);
     BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
 
-    int i = 1;
     try (HIterator<TerraformInfrastructureProvisioner> terraformInfrastructureProvisioners =
              new HIterator<>(wingsPersistence.createQuery(TerraformInfrastructureProvisioner.class)
                                  .field("_id")
