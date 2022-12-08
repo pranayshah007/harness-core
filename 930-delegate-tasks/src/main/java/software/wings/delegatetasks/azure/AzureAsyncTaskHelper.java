@@ -795,22 +795,29 @@ public class AzureAsyncTaskHelper {
         && azureKubeConfig.getUsers().get(0).getUser().getExec() != null
         && isNotEmpty(azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs())) {
       List<String> args = azureKubeConfig.getUsers().get(0).getUser().getExec().getArgs();
-      for (int index = 0; index < args.size(); index += 2) {
+      for (int index = 0; index < args.size(); index++) {
         switch (args.get(index)) {
           case SERVER_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setServerId(args.get(index + 1));
+            index+=1;
             break;
 
           case CLIENT_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setClientId(args.get(index + 1));
+            index+=1;
             break;
 
           case ENVIRONMENT_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setEnvironment(args.get(index + 1));
+            index+=1;
             break;
 
           case TENANT_ID_FLAG:
             azureKubeConfig.getUsers().get(0).getUser().getExec().setTenantId(args.get(index + 1));
+            index+=1;
+            break;
+
+          default:
             break;
         }
       }
