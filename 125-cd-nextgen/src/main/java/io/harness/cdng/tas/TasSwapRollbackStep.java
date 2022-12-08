@@ -110,7 +110,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
           .build();
     }
     TasSetupDataOutcome tasSetupDataOutcome =
-        (io.harness.cdng.tas.beans.TasSetupDataOutcome) tasSetupDataOptional.getOutput();
+            (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
