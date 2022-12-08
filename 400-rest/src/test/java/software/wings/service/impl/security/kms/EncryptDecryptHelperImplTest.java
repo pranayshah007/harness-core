@@ -38,9 +38,9 @@ import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.AdditionalMetadata;
 import io.harness.security.encryption.common.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.security.encryption.common.SecretManagerType;
 

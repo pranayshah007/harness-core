@@ -23,9 +23,9 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.secretmanagerclient.services.SshKeySpecDTOHelper;
 import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.security.encryption.common.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.utils.IdentifierRefHelper;
 

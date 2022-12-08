@@ -27,9 +27,9 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.VaultEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.AdditionalMetadata;
 import io.harness.security.encryption.common.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.common.base.Charsets;

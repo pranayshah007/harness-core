@@ -25,9 +25,9 @@ import io.harness.delegate.task.shell.ShellScriptTaskResponseNG;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.exception.CommandExecutionException;
 import io.harness.exception.SecretManagementDelegateException;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptedDataParams;
 import io.harness.security.encryption.common.EncryptedRecord;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.shell.ShellExecutionData;
 

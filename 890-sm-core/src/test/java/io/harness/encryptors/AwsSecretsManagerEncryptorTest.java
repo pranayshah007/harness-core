@@ -25,8 +25,8 @@ import io.harness.data.structure.UUIDGenerator;
 import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.AwsSecretsManagerConfig;

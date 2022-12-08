@@ -25,8 +25,8 @@ import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionType;
 
 import software.wings.beans.KmsConfig;

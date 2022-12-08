@@ -28,8 +28,8 @@ import io.harness.exception.SecretManagementDelegateException;
 import io.harness.exception.runtime.hashicorp.HashiCorpVaultRuntimeException;
 import io.harness.helpers.ext.vault.VaultAppRoleLoginResult;
 import io.harness.security.encryption.AccessType;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.VaultConfig;

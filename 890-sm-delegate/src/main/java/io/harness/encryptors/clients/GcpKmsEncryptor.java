@@ -31,8 +31,8 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionConfig;
 
 import software.wings.beans.GcpKmsConfig;

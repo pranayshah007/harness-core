@@ -25,8 +25,8 @@ import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.TaskData;
 import io.harness.managerclient.DelegateAgentManagerClient;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.delegate.DelegateDecryptionService;
 import io.harness.security.encryption.common.EncryptionConfig;
+import io.harness.security.encryption.delegate.DelegateDecryptionService;
 
 import software.wings.beans.KmsConfig;
 

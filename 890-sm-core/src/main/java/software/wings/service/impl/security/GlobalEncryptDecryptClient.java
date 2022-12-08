@@ -16,8 +16,8 @@ import io.harness.delegate.exception.DelegateRetryableException;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.security.SimpleEncryption;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionConfig;
 
 import com.google.inject.Inject;

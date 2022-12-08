@@ -31,8 +31,8 @@ import io.harness.delegatetasks.ValidateSecretReferenceTaskParameters;
 import io.harness.encryptors.DelegateTaskUtils;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.SecretManagementException;
-import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
+import io.harness.security.encryption.common.EncryptedRecord;
 import io.harness.security.encryption.common.EncryptionConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
 
