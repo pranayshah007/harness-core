@@ -46,10 +46,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.MorphiaIterator;
 
 @OwnedBy(HarnessTeam.PL)
 @Builder
@@ -57,15 +59,11 @@ import lombok.extern.slf4j.Slf4j;
 public class MongoPersistenceIterator<T extends PersistentIterable, F extends FilterExpander>
     implements PersistenceIterator<T> {
   private static final Duration QUERY_TIME = ofMillis(200);
+  private static final int BATCH_SIZE_MULTIPLY_FACTOR = 2; // The factor by how much the batchSize should be increased
+  private static final int WORKER_JOB_WAIT_DURATION_IN_MILLIS = 10000; // Wait duration when worker jobQ is full
 
   @Inject private final QueueController queueController;
   @Inject private PersistenceMetricsServiceImpl iteratorMetricsService;
-
-  public interface Handler<T> {
-    void handle(T entity);
-  }
-
-  public enum SchedulingType { REGULAR, IRREGULAR, IRREGULAR_SKIP_MISSED }
 
   @Getter private final PersistenceProvider<T, F> persistenceProvider;
   private F filterExpander;
@@ -79,20 +77,21 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
   private Duration throttleInterval;
   private Handler<T> handler;
   @Getter private ExecutorService executorService;
+  @Getter private ScheduledThreadPoolExecutor threadPoolExecutor;
   private Semaphore semaphore;
   private boolean redistribute;
   private EntityProcessController<T> entityProcessController;
   @Getter private SchedulingType schedulingType;
   private String iteratorName;
   private boolean unsorted;
+  private int replicaCount;
+  private int shardId;
 
-  private long movingAvg(long current, long sample) {
-    return (15 * current + sample) / 16;
+  public interface Handler<T> {
+    void handle(T entity);
   }
 
-  private boolean shouldProcess() {
-    return !MaintenanceController.getMaintenanceFlag() && queueController.isPrimary();
-  }
+  public enum SchedulingType { REGULAR, IRREGULAR, IRREGULAR_SKIP_MISSED }
 
   @Override
   public synchronized void wakeup() {
@@ -171,7 +170,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
               executorService.submit(() -> processEntity(finalEntity));
               // it might take some time until the submitted task is actually triggered.
               // lets wait for awhile until for this to happen
-              finalEntity.wait(10000);
+              finalEntity.wait(WORKER_JOB_WAIT_DURATION_IN_MILLIS);
             } catch (RejectedExecutionException e) {
               log.info("The executor service has been shutdown for entity {}", finalEntity);
             }
@@ -227,6 +226,92 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
     return maximumDelayForCheck;
   }
 
+  /**
+   * Process method for shard mode iterator.
+   *
+   * 1. Determine the total documents to be processed by this shard by fetching
+   *    the total docs count for the collection and dividing by nos of shards.
+   * 2. Find the start point (doc) for this shard by multiplying the total docs
+   *    for each shard and the shardId.
+   * 3. Initialize the currentEntity to point to the first doc that this shard
+   *    should process by fetching the first doc from the collection.
+   * 4. Get the remaining documents that are greater than the first doc in a
+   *    single batch from Mongo.
+   * 5. Submit each doc that was fetched to the worker Q and wait until the
+   *    doc is picked from the Q by a worker.
+   */
+  public void shardProcess() {
+    if (!shouldProcess()) {
+      return;
+    }
+
+    try {
+      // make sure we did not hit the limit
+      semaphore.acquire();
+
+      // Get the total count of documents this shard has to process.
+      long totalTimeStart = currentTimeMillis();
+      long startTime = currentTimeMillis();
+      int shardTotalDocsToProcess =
+          (int) Math.ceil((double) persistenceProvider.getDocumentsCount(clazz) / replicaCount);
+      int totalDocs = shardTotalDocsToProcess;
+      int start = shardTotalDocsToProcess * shardId;
+      T currentEntity = persistenceProvider.getOneDocumentBySkip(clazz, filterExpander, start);
+      long processTime = currentTimeMillis() - startTime;
+      log.info("Shard Iterator Mode - shardTotalDocsToProcess {}, start {}", shardTotalDocsToProcess, start);
+      log.info("The first entity being processed {} and time to fetch from Mongo {} ms", currentEntity.getUuid(),
+          processTime);
+      submitEntityForProcessing(currentEntity);
+      shardTotalDocsToProcess--;
+
+      /* After getting the start entity now just keep getting batch of entities
+         where the batch is determined by the number of available threads in the
+         executor and Q size.
+       */
+
+      while (true) {
+        // If number of documents left to process is <= 0 then break
+        // Note with this way of checking it would be possible that multiple
+        // shards might process some overlapping docs but that should be fine.
+        if (shardTotalDocsToProcess <= 0) {
+          log.info("The last entity that was processed {} ", currentEntity.getUuid());
+          break;
+        }
+
+        int limit =
+            Math.min(BATCH_SIZE_MULTIPLY_FACTOR * (threadPoolExecutor.getCorePoolSize() - 1), shardTotalDocsToProcess);
+        startTime = currentTimeMillis();
+        MorphiaIterator<T, T> docItr =
+            persistenceProvider.getDocumentsGreaterThanID(clazz, filterExpander, currentEntity.getUuid(), limit);
+        processTime = currentTimeMillis() - startTime;
+        log.info("Time to fetch {} docs from Mongo {} ms", limit, processTime);
+
+        if (!docItr.hasNext()) {
+          // There are no more documents to process so break
+          log.info("The last entity that was processed {} ", currentEntity.getUuid());
+          break;
+        }
+
+        while (docItr.hasNext()) {
+          currentEntity = docItr.next();
+          submitEntityForProcessing(currentEntity);
+          shardTotalDocsToProcess--;
+        }
+      }
+
+      log.info("Total time to process {} docs is {} ms", totalDocs, currentTimeMillis() - totalTimeStart);
+
+    } catch (InterruptedException exception) {
+      Thread.currentThread().interrupt();
+    } catch (Throwable exception) {
+      log.error("Exception occurred while processing iterator", exception);
+      iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+      sleep(ofSeconds(1));
+    } finally {
+      semaphore.release();
+    }
+  }
+
   // We are aware that the entity will be different object every time the method is
   // called. This is exactly what we want.
   // The theory is that ERROR type exception are unrecoverable, that is not exactly true.
@@ -257,8 +342,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
           log.debug("Working on entity");
           iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_WORKING_ON_ENTITY);
-          iteratorMetricsService.recordIteratorMetricsWithDuration(
-              iteratorName, Duration.ofMillis(delay), ITERATOR_DELAY);
+          iteratorMetricsService.recordIteratorMetricsWithDuration(iteratorName, ofMillis(delay), ITERATOR_DELAY);
 
           if (delay >= acceptableNoAlertDelay.toMillis()) {
             log.debug(
@@ -281,7 +365,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         long processTime = currentTimeMillis() - startTime;
         log.debug("Done with entity");
         iteratorMetricsService.recordIteratorMetricsWithDuration(
-            iteratorName, Duration.ofMillis(processTime), ITERATOR_PROCESSING_TIME);
+            iteratorName, ofMillis(processTime), ITERATOR_PROCESSING_TIME);
 
         try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
           if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
@@ -293,5 +377,81 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         }
       }
     }
+  }
+
+  /**
+   * Method to process an entity without updating any iteration fields.
+   *
+   * @param entity - Mongo doc that the worker thread should process.
+   */
+  private void processShardEntity(T entity) {
+    try (EntityLogContext ignore = new EntityLogContext(entity, OVERRIDE_ERROR)) {
+      try {
+        semaphore.acquire();
+      } catch (InterruptedException e) {
+        log.error("Working on entity was interrupted", e);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+        Thread.currentThread().interrupt();
+        return;
+      }
+      long startTime = currentTimeMillis();
+
+      try {
+        handler.handle(entity);
+      } catch (RuntimeException exception) {
+        log.error("Catch and handle all exceptions in the entity handler", exception);
+        iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+      } finally {
+        semaphore.release();
+
+        long processTime = currentTimeMillis() - startTime;
+        log.debug("Done with entity");
+        iteratorMetricsService.recordIteratorMetricsWithDuration(
+            iteratorName, ofMillis(processTime), ITERATOR_PROCESSING_TIME);
+
+        try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
+          if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
+            log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
+          }
+        } catch (Throwable exception) {
+          log.error("Exception while recording the processing of entity", exception);
+          iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
+        }
+      }
+    }
+  }
+
+  /**
+   * Method to submit a Mongo doc to the worker Q for processing.
+   *
+   * @param entity - Mongo doc that has to be processed.
+   */
+  private void submitEntityForProcessing(T entity) {
+    if (entity == null) {
+      return;
+    }
+
+    if (entityProcessController != null && !entityProcessController.shouldProcessEntity(entity)) {
+      return;
+    }
+
+    try {
+      threadPoolExecutor.submit(() -> processShardEntity(entity));
+      // If the jobQ is full then wait for some-time.
+      if (threadPoolExecutor.getQueue().size() >= (threadPoolExecutor.getCorePoolSize() * BATCH_SIZE_MULTIPLY_FACTOR)) {
+        log.warn("The jobQ for the worker threads has exceeding - pausing for 10 secs");
+        sleep(ofMillis(WORKER_JOB_WAIT_DURATION_IN_MILLIS));
+      }
+    } catch (RejectedExecutionException e) {
+      log.info("The executor service has been shutdown for iterator {} - exp {}", iteratorName, e);
+    }
+  }
+
+  private long movingAvg(long current, long sample) {
+    return (15 * current + sample) / 16;
+  }
+
+  private boolean shouldProcess() {
+    return !MaintenanceController.getMaintenanceFlag() && queueController.isPrimary();
   }
 }

@@ -771,6 +771,10 @@ public class WingsApplication extends Application<MainConfiguration> {
        */
       String iteratorConfigPath = "";
       String iteratorConfigFile = "";
+      int replicaCount = configuration.getReplicaCount();
+      int shardId = checkIfStatefulSetAndGetShardId(configuration);
+      log.info("Shard info - replicaCount {}, shardId {}", replicaCount, shardId);
+
       if ((configuration.getIteratorConfigPath() == null) || (configuration.getIteratorConfigPath().isEmpty())) {
         iteratorConfigPath = System.getProperty("user.dir") + "/360-cg-manager";
       } else {
@@ -781,7 +785,7 @@ public class WingsApplication extends Application<MainConfiguration> {
       log.info("Iterator config will be read from {} ", iteratorConfigFile);
       // Create the Iterator Execution Handler instance.
       IteratorExecutionHandler iteratorExecutionHandler =
-          new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile);
+          new IteratorExecutionHandlerImpl(iteratorConfigPath, iteratorConfigFile, replicaCount, shardId);
 
       if (isManager()) {
         registerIteratorsManager(injector, iteratorExecutionHandler);
@@ -793,6 +797,25 @@ public class WingsApplication extends Application<MainConfiguration> {
       // Start all the iterators.
       iteratorExecutionHandler.startIterators();
     }
+  }
+
+  /**
+   * Method to check if the pod is a statefulSet or a deployment.
+   * @param configuration The main configuration parameters.
+   * @return int - positive nos for statefulSet and -1 for non-statefulSet.
+   */
+  private int checkIfStatefulSetAndGetShardId(MainConfiguration configuration) {
+    String containerName = configuration.getContainerName();
+
+    String endsWith = containerName.substring(containerName.lastIndexOf('-') + 1);
+    int shardId = 0;
+    try {
+      shardId = Integer.parseInt(endsWith);
+    } catch (NumberFormatException e) {
+      return -1;
+    }
+
+    return shardId;
   }
 
   private void initializeGrpcServer(Injector injector) {

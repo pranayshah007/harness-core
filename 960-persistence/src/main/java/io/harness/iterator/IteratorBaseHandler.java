@@ -45,4 +45,15 @@ public abstract class IteratorBaseHandler<T extends PersistentIterable, F extend
    */
   protected abstract void createAndStartIterator(
       PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval);
+
+  /**
+   * This method is to create and start Shard mode iterator.
+   * @param executorOptions provides the executor thread-pool options
+   *                        needed for shard mode.
+   * @param targetInterval the targetInterval for iteration
+   */
+  protected void createAndStartShardIterator(
+      PersistenceIteratorFactory.ShardExecutorOptions executorOptions, Duration targetInterval) {
+    log.warn("createAndStartShardIterator should be overridden by the child class");
+  }
 }

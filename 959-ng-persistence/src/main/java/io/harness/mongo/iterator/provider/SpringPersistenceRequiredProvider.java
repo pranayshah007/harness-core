@@ -21,6 +21,7 @@ import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
 import org.mongodb.morphia.query.FilterOperator;
+import org.mongodb.morphia.query.MorphiaIterator;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -103,5 +104,21 @@ public class SpringPersistenceRequiredProvider<T extends PersistentIterable>
     Update updateEmpty = new Update();
     updateEmpty.unset(fieldName);
     persistence.updateFirst(new Query(Criteria.where(fieldName).size(0)), updateEmpty, clazz);
+  }
+
+  @Override
+  public long getDocumentsCount(Class<T> clazz) {
+    return 0;
+  }
+
+  @Override
+  public T getOneDocumentBySkip(Class<T> clazz, SpringFilterExpander filterExpander, int skip) {
+    return null;
+  }
+
+  @Override
+  public MorphiaIterator<T, T> getDocumentsGreaterThanID(
+      Class<T> clazz, SpringFilterExpander filterExpander, String id, int limit) {
+    return null;
   }
 }

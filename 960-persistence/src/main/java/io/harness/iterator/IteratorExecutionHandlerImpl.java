@@ -23,6 +23,8 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
   private final IteratorConfigWatcher iteratorConfigWatcher;
   private final HashMap<String, IteratorBaseHandler> iteratorHandlerMap;
   @Getter private final HashMap<String, IteratorState> iteratorState;
+  int replicaCount;
+  int shardId;
 
   /**
    * Enum represents the different states that an iterator can be at -
@@ -51,10 +53,13 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
    * @param iteratorConfigPath The path that contains the configuration file. Watcher will monitor this path.
    * @param iteratorConfigFile The file that contains the configuration. Watcher will read this file.
    */
-  public IteratorExecutionHandlerImpl(String iteratorConfigPath, String iteratorConfigFile) {
+  public IteratorExecutionHandlerImpl(
+      String iteratorConfigPath, String iteratorConfigFile, int replicaCount, int shardId) {
     this.iteratorConfigWatcher = new IteratorConfigWatcher(this, iteratorConfigPath, iteratorConfigFile);
     this.iteratorHandlerMap = new HashMap<String, IteratorBaseHandler>();
     this.iteratorState = new HashMap<String, IteratorState>();
+    this.replicaCount = replicaCount;
+    this.shardId = shardId;
   }
 
   /**
@@ -168,13 +173,14 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
     IteratorStateValues iteratorStateValue;
     if (configOption.isEnabled()) {
       log.info("Iterator {} is enabled - starting it up", configOption.getName());
-      iteratorHandlerMap.get(configOption.getName())
-          .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
-                                      .name(configOption.getName())
-                                      .poolSize(configOption.getThreadPoolSize())
-                                      .interval(getIntervalDuration(configOption.getThreadPoolIntervalInSeconds()))
-                                      .build(),
-              getNextIterationInterval(configOption));
+      switch (configOption.getIteratorMode()) {
+        case "SHARD":
+          createAndStartShardModeIterator(configOption);
+          break;
+        default:
+          createAndStartPumpLoopModeIterator(configOption);
+          break;
+      }
       iteratorStateValue = IteratorStateValues.RUNNING;
     } else {
       log.info("Iterator {} is not enabled - not starting it", configOption.getName());
@@ -214,5 +220,37 @@ public class IteratorExecutionHandlerImpl implements IteratorExecutionHandler {
         // Either of the above 2 iteration mode should be set, else its invalid configuration
         return Duration.ofMinutes(0);
     }
+  }
+
+  /**
+   * Helper method to create and start Shard mode iterator.
+   *
+   * @param config provides the necessary configuration for the iterator.
+   */
+  private void createAndStartShardModeIterator(DynamicIteratorConfig config) {
+    iteratorHandlerMap.get(config.getName())
+        .createAndStartShardIterator(PersistenceIteratorFactory.ShardExecutorOptions.builder()
+                                         .name(config.getName())
+                                         .poolSize(config.getThreadPoolSize())
+                                         .interval(getIntervalDuration(config.getThreadPoolIntervalInSeconds()))
+                                         .replicaCount(replicaCount)
+                                         .shardId(shardId)
+                                         .build(),
+            getNextIterationInterval(config));
+  }
+
+  /**
+   * Helper method to create and start Pump or Loop mode iterator.
+   *
+   * @param config provides the necessary configuration for the iterator.
+   */
+  private void createAndStartPumpLoopModeIterator(DynamicIteratorConfig config) {
+    iteratorHandlerMap.get(config.getName())
+        .createAndStartIterator(PersistenceIteratorFactory.PumpExecutorOptions.builder()
+                                    .name(config.getName())
+                                    .poolSize(config.getThreadPoolSize())
+                                    .interval(getIntervalDuration(config.getThreadPoolIntervalInSeconds()))
+                                    .build(),
+            getNextIterationInterval(config));
   }
 }

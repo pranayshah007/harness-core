@@ -22,6 +22,8 @@ import com.mongodb.BasicDBObject;
 import java.time.Duration;
 import java.util.List;
 import org.mongodb.morphia.query.FilterOperator;
+import org.mongodb.morphia.query.FindOptions;
+import org.mongodb.morphia.query.MorphiaIterator;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -96,5 +98,40 @@ public class MorphiaPersistenceRequiredProvider<T extends PersistentIterable>
         persistence.createUpdateOperations(clazz).unset(fieldName));
     persistence.update(persistence.createQuery(clazz).field(fieldName).sizeEq(0),
         persistence.createUpdateOperations(clazz).unset(fieldName));
+  }
+
+  @Override
+  public long getDocumentsCount(Class<T> clazz) {
+    Query<T> query = persistence.createQuery(clazz);
+    return query.count();
+  }
+
+  private Query<T> createIdSortQuery(Class<T> clazz) {
+    Query<T> query = persistence.createQuery(clazz);
+    query.order(Sort.ascending("_id"));
+
+    return query;
+  }
+
+  @Override
+  public T getOneDocumentBySkip(Class<T> clazz, MorphiaFilterExpander<T> filterExpander, int skip) {
+    Query<T> query = createIdSortQuery(clazz);
+    if (filterExpander != null) {
+      filterExpander.filter(query);
+    }
+    return query.get(new FindOptions().skip(skip).limit(1));
+  }
+
+  @Override
+  public MorphiaIterator<T, T> getDocumentsGreaterThanID(
+      Class<T> clazz, MorphiaFilterExpander<T> filterExpander, String id, int limit) {
+    Query<T> query = createIdSortQuery(clazz);
+    if (filterExpander == null) {
+      query.criteria("_id").greaterThan(id);
+    } else {
+      filterExpander.filter(query);
+      query.and(query.criteria("_id").greaterThan(id));
+    }
+    return query.fetch(new FindOptions().limit(limit));
   }
 }

@@ -10,6 +10,7 @@ package io.harness.iterator;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.LOOP;
 import static io.harness.iterator.PersistenceIterator.ProcessMode.PUMP;
+import static io.harness.iterator.PersistenceIterator.ProcessMode.SHARD;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.IRREGULAR_SKIP_MISSED;
 
@@ -67,6 +68,16 @@ public final class PersistenceIteratorFactory {
     private Duration interval;
   }
 
+  @Value
+  @Builder
+  public static class ShardExecutorOptions {
+    private String name;
+    private int poolSize;
+    private Duration interval;
+    private int shardId;
+    private int replicaCount;
+  }
+
   private <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
   createIteratorWithDedicatedThreadPool(PersistenceIterator.ProcessMode processMode, PumpExecutorOptions options,
       Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
@@ -112,5 +123,40 @@ public final class PersistenceIteratorFactory {
   createPumpIteratorWithDedicatedThreadPool(
       PumpExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
     return createIteratorWithDedicatedThreadPool(PUMP, options, cls, builder);
+  }
+
+  public <T extends PersistentIterable, F extends FilterExpander> PersistenceIterator<T>
+  createShardIteratorWithDedicatedThreadPool(
+      ShardExecutorOptions options, Class<?> cls, MongoPersistenceIteratorBuilder<T, F> builder) {
+    if (!workersConfiguration.confirmWorkerIsActive(cls)) {
+      log.info(getWorkerDisabledLog(cls.getName()));
+      return null;
+    }
+
+    String iteratorName = "Iterator-" + options.name;
+    ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
+        options.poolSize, new ThreadFactoryBuilder().setNameFormat(iteratorName).build());
+    log.info(getWorkerEnabledLog(cls.getName()));
+
+    MongoPersistenceIterator<T, F> iterator = builder.mode(SHARD)
+                                                  .threadPoolExecutor(executor)
+                                                  .semaphore(new Semaphore(options.poolSize))
+                                                  .iteratorName(options.name)
+                                                  .replicaCount(options.replicaCount)
+                                                  .shardId(options.shardId)
+                                                  .build();
+    injector.injectMembers(iterator);
+    long millis = options.interval.toMillis();
+    executor.scheduleAtFixedRate(iterator::shardProcess, random.nextInt((int) millis), millis, TimeUnit.MILLISECONDS);
+
+    return iterator;
+  }
+
+  private String getWorkerDisabledLog(String className) {
+    return "Worker { " + className + " } is disabled in this setup";
+  }
+
+  private String getWorkerEnabledLog(String className) {
+    return "Worker { " + className + " } is enabled in this setup";
   }
 }

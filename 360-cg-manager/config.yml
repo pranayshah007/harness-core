@@ -59,6 +59,8 @@ serviceScheduler:
 
 enableIterators: ${ENABLE_ITERATORS:-true}
 iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
+replicaCount: ${REPLICA_COUNT:-1}
+containerName: ${CONTAINER_NAME:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false

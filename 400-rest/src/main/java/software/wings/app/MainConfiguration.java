@@ -132,6 +132,8 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("disableResourceValidation") private boolean disableResourceValidation;
   @JsonProperty("enableIterators") private boolean enableIterators;
   @JsonProperty("iteratorConfigPath") private String iteratorConfigPath;
+  @JsonProperty("replicaCount") private int replicaCount;
+  @JsonProperty("containerName") private String containerName;
   @JsonProperty(defaultValue = "true") private boolean enableAuth = true;
   @JsonProperty(defaultValue = "50") private int jenkinsBuildQuerySize = 50;
   @JsonProperty("iteratorsConfig") private IteratorsConfig iteratorsConfig;

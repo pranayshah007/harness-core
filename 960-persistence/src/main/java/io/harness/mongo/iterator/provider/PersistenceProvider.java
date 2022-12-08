@@ -14,6 +14,7 @@ import io.harness.mongo.iterator.filter.FilterExpander;
 
 import java.time.Duration;
 import java.util.List;
+import org.mongodb.morphia.query.MorphiaIterator;
 
 public interface PersistenceProvider<T extends PersistentIterable, F extends FilterExpander> {
   void updateEntityField(T entity, List<Long> nextIterations, Class<T> clazz, String fieldName);
@@ -21,4 +22,7 @@ public interface PersistenceProvider<T extends PersistentIterable, F extends Fil
       Duration targetInterval, F filterExpander, boolean unsorted);
   T findInstance(Class<T> clazz, String fieldName, F filterExpander);
   void recoverAfterPause(Class<T> clazz, String fieldName);
+  long getDocumentsCount(Class<T> clazz);
+  T getOneDocumentBySkip(Class<T> clazz, F filterExpander, int limit);
+  MorphiaIterator<T, T> getDocumentsGreaterThanID(Class<T> clazz, F filterExpander, String id, int limit);
 }
