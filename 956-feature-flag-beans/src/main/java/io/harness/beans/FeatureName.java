@@ -340,7 +340,6 @@ public enum FeatureName {
   WINRM_ASG_ROLLBACK("Used for Collect remaining instances rollback step", HarnessTeam.CDP),
   NEW_LEFT_NAVBAR_SETTINGS("Used for new left navbar configuration", HarnessTeam.PL),
   SAVE_ARTIFACT_TO_DB("Saves artifact to db and proceed in artifact collection step if not found", HarnessTeam.CDC),
-  NG_INLINE_MANIFEST,
   CI_DISABLE_RESOURCE_OPTIMIZATION(
       "Used for disabling the resource optimization, AXA had asked this flag", HarnessTeam.CI),
   ENABLE_EXPERIMENTAL_STEP_FAILURE_STRATEGIES(
@@ -420,8 +419,6 @@ public enum FeatureName {
   NG_DEPLOYMENT_FREEZE_OVERRIDE("Override freeze for NG", HarnessTeam.CDC),
   PL_ENABLE_SWITCH_ACCOUNT_PAGINATION("Enables new API for Switch Account which is paginated", HarnessTeam.PL),
   SHELL_SCRIPT_PROVISION_NG("Used to allow customers to access Shell Script Provision NG", HarnessTeam.CDP),
-  NEW_EXECUTION_LIST_VIEW(
-      "Enables the new UX for Executions list view for Pipelines and Projects", HarnessTeam.PIPELINE),
   PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH(
       "For NG, it enables to read secrets from HashiCorp Vault directly using an fully qualified path expression without the need of creating secret in Harness.",
       HarnessTeam.PL),
@@ -511,6 +508,7 @@ public enum FeatureName {
       "Enable support for S3 bucket and URIs for Terraform Source, tfVars and Backend Config", HarnessTeam.CDP),
   CCM_BUDGET_CASCADES("Enable to allow nested budgets for Financial Management", HarnessTeam.CE),
   PIE_NG_GITX_CACHING("FF to enable caching on new git experience", HarnessTeam.PIPELINE),
+  INSTANT_DELEGATE_DOWN_ALERT("FF to instantly alert when delegates are down", HarnessTeam.SPG),
   WINRM_SCRIPT_COMMAND_SPLIT_NG(
       "Enables the new way of how to copy powershell/winrm script commands content to file on remote. (Copy is done in chunks of 6KB) ",
       HarnessTeam.CDP),

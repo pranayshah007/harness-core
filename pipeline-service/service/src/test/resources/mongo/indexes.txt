@@ -65,7 +65,6 @@ outcomeInstances {"name": "producedByRuntimeIdIdx", "background": true} {"produc
 outcomeInstances {"name": "unique_levelRuntimeIdUniqueIdx", "unique": true} {"planExecutionId": 1, "levelRuntimeIdIdx": 1, "name": 1}
 outcomeInstances {"name": "unique_producedBySetupIdRuntimeIdIdx", "unique": true} {"planExecutionId": 1, "producedBy.setupId": 1, "producedBy.runtimeId": 1, "name": 1}
 outcomeInstances {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-pipelineMetadata {"name": "account_org_project_pipeline_run_sequence_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "runSequence": -1}
 pipelineMetadata {"name": "account_org_project_pipeline_yaml_git_config_branch_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "entityGitDetails.branch": 1, "entityGitDetails.repoIdentifier": 1}
 pipelineMetadataV2 {"name": "account_org_project_pipeline", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 pipelineValidationEvent {"name": "fqn_action", "background": true} {"fqn": 1, "action": 1}

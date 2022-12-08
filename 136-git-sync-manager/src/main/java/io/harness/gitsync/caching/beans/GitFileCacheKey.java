@@ -25,4 +25,5 @@ public class GitFileCacheKey {
   String repoName;
   String ref;
   String completeFilePath;
+  boolean isDefaultBranch;
 }

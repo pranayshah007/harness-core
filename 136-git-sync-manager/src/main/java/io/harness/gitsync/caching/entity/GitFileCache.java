@@ -56,6 +56,7 @@ public class GitFileCache implements PersistentEntity, CreatedAtAware, UuidAcces
   String repoName;
   String ref;
   String completeFilepath;
+  boolean isDefaultBranch;
   GitFileObject gitFileObject;
   long createdAt;
   @FdTtlIndex Date validUntil;
@@ -64,13 +65,14 @@ public class GitFileCache implements PersistentEntity, CreatedAtAware, UuidAcces
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("accountIdentifier_gitProvider_repoName_ref_completeFilepath_unique_idx")
+                 .name("accountIdentifier_gitProvider_repoName_ref_completeFilepath_isDefaultBranch_unique_idx")
                  .unique(true)
                  .field(GitFileCacheKeys.accountIdentifier)
                  .field(GitFileCacheKeys.gitProvider)
                  .field(GitFileCacheKeys.repoName)
                  .field(GitFileCacheKeys.ref)
                  .field(GitFileCacheKeys.completeFilepath)
+                 .field(GitFileCacheKeys.isDefaultBranch)
                  .build())
         .build();
   }

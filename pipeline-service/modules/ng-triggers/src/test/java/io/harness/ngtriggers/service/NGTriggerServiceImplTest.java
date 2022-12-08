@@ -84,9 +84,9 @@ import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -429,22 +429,23 @@ public class NGTriggerServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetTriggerCatalog() {
     when(triggerCatalogHelper.getTriggerTypeToCategoryMapping(ACCOUNT_ID))
-        .thenReturn(Arrays.asList(TriggerCatalogItem.builder()
-                                      .category(TriggerCategory.ARTIFACT)
-                                      .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.ACR)))
-                                      .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.WEBHOOK)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.GITHUB)))
-                .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.SCHEDULED)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.CRON)))
-                .build(),
-            TriggerCatalogItem.builder()
-                .category(TriggerCategory.MANIFEST)
-                .triggerCatalogType(new HashSet<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
-                .build()));
+        .thenReturn(
+            Arrays.asList(TriggerCatalogItem.builder()
+                              .category(TriggerCategory.ARTIFACT)
+                              .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.ACR)))
+                              .build(),
+                TriggerCatalogItem.builder()
+                    .category(TriggerCategory.WEBHOOK)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.GITHUB)))
+                    .build(),
+                TriggerCatalogItem.builder()
+                    .category(TriggerCategory.SCHEDULED)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.CRON)))
+                    .build(),
+                TriggerCatalogItem.builder()
+                    .category(TriggerCategory.MANIFEST)
+                    .triggerCatalogType(new ArrayList<>(Collections.singleton(TriggerCatalogType.HELM_CHART)))
+                    .build()));
     List<TriggerCatalogItem> lst = ngTriggerServiceImpl.getTriggerCatalog(ACCOUNT_ID);
     assertThat(lst).isNotNull();
     assertThat(lst.size()).isEqualTo(4);

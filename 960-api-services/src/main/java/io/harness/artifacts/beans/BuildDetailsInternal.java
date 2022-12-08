@@ -7,6 +7,7 @@
 
 package io.harness.artifacts.beans;
 
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadataInternal;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class BuildDetailsInternal {
   Map<String, String> metadata;
   Map<String, String> buildParameters;
   Map<String, String> labels;
+  ArtifactMetaInfo artifactMetaInfo;
   List<ArtifactFileMetadataInternal> artifactFileMetadataList;
 
   public enum BuildStatus {
