@@ -838,7 +838,9 @@ public abstract class TerraformProvisionState extends State {
     gitConfig = null;
     String path = null;
 
-    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+    if (terraformProvisioner.getSourceType() == null
+        || (terraformProvisioner.getSourceType() != null
+            && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT))) {
       path = context.renderExpression(terraformProvisioner.getNormalizedPath());
       if (path == null) {
         path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
@@ -929,7 +931,7 @@ public abstract class TerraformProvisionState extends State {
       if (getTfVarGitFileConfig() != null) {
         tfVarSource = fetchTfVarGitSource(context);
       }
-    } else if ((null != tfVarS3FileConfig)) {
+    } else if (null != tfVarS3FileConfig) {
       tfVarSource = fetchTfVarS3Source(context);
     }
 
@@ -1074,7 +1076,9 @@ public abstract class TerraformProvisionState extends State {
     //    S3 ===>
     AwsConfig awsS3SourceBucketConfig = null;
 
-    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
+    if (terraformProvisioner.getSourceType() == null
+        || (terraformProvisioner.getSourceType() != null
+            && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT))) {
       gitConfig = gitUtilsManager.getGitConfig(terraformProvisioner.getSourceRepoSettingId());
 
       String branch = context.renderExpression(terraformProvisioner.getSourceRepoBranch());

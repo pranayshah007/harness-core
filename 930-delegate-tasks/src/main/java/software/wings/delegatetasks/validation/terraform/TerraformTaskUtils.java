@@ -73,7 +73,7 @@ public class TerraformTaskUtils {
     } else if (tfVarSource.getTfVarSourceType() == TfVarSourceType.S3) {
       TfVarS3Source source = (TfVarS3Source) tfVarSource;
       List<String> s3URIList = source.getS3FileConfig().getS3URIList();
-      List<String> s3FilePathList = new ArrayList<String>();
+      List<String> s3FilePathList = new ArrayList<>();
       s3URIList.forEach(uri -> {
         AmazonS3URI s3URI = new AmazonS3URI(uri);
         s3FilePathList.add(s3URI.getKey());

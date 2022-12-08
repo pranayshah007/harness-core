@@ -857,7 +857,6 @@ import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
 import software.wings.beans.StringValue;
 import software.wings.beans.TaskType;
-import software.wings.beans.TerraformSourceType;
 import software.wings.beans.apm.Method;
 import software.wings.beans.ce.CEAwsConfig;
 import software.wings.beans.ce.CEAzureConfig;
@@ -2010,13 +2009,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(GitOpsFetchAppTaskParams.class, 573561);
     kryo.register(GitOpsFetchAppTaskResponse.class, 573562);
-    kryo.register(TfVarS3Source.class, 573563);
 
-    kryo.register(EcsS3FetchRequest.class, 573569);
+    kryo.register(EcsS3FetchRequest.class, 573563);
     kryo.register(EcsS3FetchResponse.class, 573564);
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
     kryo.register(TerragruntApplyTaskResponse.class, 573568);
+    kryo.register(TfVarS3Source.class, 573570);
   }
 }

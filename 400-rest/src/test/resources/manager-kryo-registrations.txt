@@ -2738,6 +2738,7 @@
 573565:io.harness.delegate.task.ecs.EcsS3FetchFileConfig
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
+573570:software.wings.api.terraform.TfVarS3Source
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

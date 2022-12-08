@@ -37,7 +37,7 @@ import org.apache.commons.io.FilenameUtils;
 public class TerraformInfrastructureProvisioner extends InfrastructureProvisioner implements TerraGroupProvisioners {
   public static final String VARIABLE_KEY = "terraform";
   private String sourceRepoSettingId;
-  private TerraformSourceType sourceType;
+  private TerraformSourceType sourceType = TerraformSourceType.GIT;
   private String awsConfigId;
   private String s3URI;
 

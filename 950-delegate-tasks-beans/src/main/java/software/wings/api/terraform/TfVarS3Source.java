@@ -15,8 +15,6 @@ import io.harness.provision.TfVarSource;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
-import software.wings.beans.GitConfig;
-import software.wings.beans.GitFileConfig;
 import software.wings.beans.S3FileConfig;
 
 import java.util.List;

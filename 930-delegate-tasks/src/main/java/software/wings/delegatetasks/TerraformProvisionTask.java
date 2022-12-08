@@ -95,7 +95,6 @@ import software.wings.api.TerraformExecutionData;
 import software.wings.api.TerraformExecutionData.TerraformExecutionDataBuilder;
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.api.terraform.TfVarS3Source;
-import software.wings.beans.AwsConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.LogColor;
