@@ -3279,12 +3279,12 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType)) {
-      if(DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+//      if(DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
         String immutableDelegateEnabled = System.getenv(ON_PREM_IMMUTABLE_DELEGATE_ENABLED);
         if(isNotEmpty(immutableDelegateEnabled)) {
           return Boolean.TRUE.toString().equals(immutableDelegateEnabled);
         }
-      }
+
       return accountService.isImmutableDelegateEnabled(accountId);
     }
     return false;
