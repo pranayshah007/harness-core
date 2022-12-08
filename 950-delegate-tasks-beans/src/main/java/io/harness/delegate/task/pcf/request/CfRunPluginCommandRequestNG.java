@@ -10,6 +10,7 @@ import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.pcf.model.CfCliVersion;
+import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class CfRunPluginCommandRequestNG implements CfCommandRequestNG {
   List<String> filePathsInScript;
   @Expression(ALLOW_SECRETS) List<FileData> fileDataList;
   @Expression(ALLOW_SECRETS) String repoRoot;
-  @NotNull CfCliVersion cfCliVersionNG;
+  @NotNull CfCliVersionNG cfCliVersionNG;
   CfCliVersion cfCliVersion;
   List<EncryptedDataDetail> encryptedDataDetails;
 }
