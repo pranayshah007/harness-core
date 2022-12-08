@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 @OwnedBy(HarnessTeam.CDP)
 public class CfBasicSetupRequestNG implements CfCommandRequestNG {
   String accountId;
-  CfCommandTypeNG cfCommandType;
   CfCommandTypeNG cfCommandTypeNG;
   String commandName;
   CommandUnitsProgress commandUnitsProgress;
@@ -36,7 +35,6 @@ public class CfBasicSetupRequestNG implements CfCommandRequestNG {
   Integer maxCount;
   Integer currentRunningCount;
   boolean useCurrentCount;
-  @Expression(ALLOW_SECRETS) List<String> tempRouteMap;
   @Expression(ALLOW_SECRETS) List<String> routeMaps;
   boolean useAppAutoscalar;
   PcfManifestsPackage pcfManifestsPackage;
