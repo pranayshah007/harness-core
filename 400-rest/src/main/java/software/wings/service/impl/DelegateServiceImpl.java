@@ -347,6 +347,8 @@ public class DelegateServiceImpl implements DelegateService {
   private static final long MAX_GRPC_HB_TIMEOUT = TimeUnit.MINUTES.toMillis(15);
 
   private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
+
+  private static final String ON_PREM_IMMUTABLE_DELEGATE_ENABLED = "IMMUTABLE_DELEGATE_ENABLED";
   private long now() {
     return clock.millis();
   }
@@ -3277,6 +3279,12 @@ public class DelegateServiceImpl implements DelegateService {
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType)) {
+      if(DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
+        String immutableDelegateEnabled = System.getenv(ON_PREM_IMMUTABLE_DELEGATE_ENABLED);
+        if(isNotEmpty(immutableDelegateEnabled)) {
+          return Boolean.TRUE.toString().equals(immutableDelegateEnabled);
+        }
+      }
       return accountService.isImmutableDelegateEnabled(accountId);
     }
     return false;
