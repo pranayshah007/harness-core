@@ -12,7 +12,7 @@ import io.harness.delegate.beans.executioncapability.SmtpCapability;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.persistence.mail.EmailData;
+import software.wings.helpers.ext.mail.EmailData;
 import software.wings.helpers.ext.mail.SmtpConfig;
 
 import java.util.Arrays;

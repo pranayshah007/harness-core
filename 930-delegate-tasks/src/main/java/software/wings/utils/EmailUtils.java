@@ -9,7 +9,7 @@ package software.wings.utils;
 
 import static java.lang.String.format;
 
-import software.wings.persistence.mail.EmailData;
+import software.wings.helpers.ext.mail.EmailData;
 
 import com.google.inject.Singleton;
 

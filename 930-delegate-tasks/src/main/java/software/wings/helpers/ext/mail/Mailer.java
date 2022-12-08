@@ -17,7 +17,6 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.security.encryption.EncryptedDataDetail;
 
-import software.wings.persistence.mail.EmailData;
 import software.wings.service.intfc.security.EncryptionService;
 
 import com.google.common.collect.ImmutableList;
