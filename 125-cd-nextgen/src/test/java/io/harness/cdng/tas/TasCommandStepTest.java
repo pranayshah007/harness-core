@@ -8,6 +8,7 @@
 package io.harness.cdng.tas;
 
 import io.harness.CategoryTest;
+import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -24,6 +25,7 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,11 +56,9 @@ public class TasCommandStepTest extends CategoryTest {
                                         .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "test-org")
                                         .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "test-project")
                                         .build();
-  private final TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
-  private final StepElementParameters stepElementParameters =
-      StepElementParameters.builder().spec(tasCommandStepParameters).timeout(ParameterField.createValueField("10m")).build();
 
   @Mock private CDStepHelper cdStepHelper;
+  @Mock private StepHelper stepHelper;
 
 
   @Spy @InjectMocks private TasCommandStep tasCommandStep;
@@ -67,6 +67,9 @@ public class TasCommandStepTest extends CategoryTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void executeTasTaskTest() {
+    TasCommandStepParameters tasCommandStepParameters = TasCommandStepParameters.infoBuilder().build();
+    StepElementParameters stepElementParameters =
+            StepElementParameters.builder().spec(tasCommandStepParameters).timeout(ParameterField.createValueField("10m")).build();
     InfrastructureOutcome infrastructureOutcome = TanzuApplicationServiceInfrastructureOutcome.builder().build();
     doReturn(infrastructureOutcome).when(cdStepHelper).getInfrastructureOutcome(ambiance);
     String key = "key";
@@ -87,6 +90,8 @@ public class TasCommandStepTest extends CategoryTest {
                     .build();
     ManifestOutcome manifestOutcome = TasManifestOutcome.builder().build();
     UnitProgressData unitProgressData = UnitProgressData.builder().build();
+
+    doReturn(EnvironmentType.ALL).when(stepHelper).getEnvironmentType(ambiance);
 
     Mockito.mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
