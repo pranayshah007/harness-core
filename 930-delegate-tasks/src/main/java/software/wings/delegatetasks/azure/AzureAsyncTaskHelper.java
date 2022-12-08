@@ -12,6 +12,7 @@ import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PA
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.ENVIRONMENT_FLAG;
+import static io.harness.azure.model.AzureConstants.KUBELOGIN_BINARY_PATH;
 import static io.harness.azure.model.AzureConstants.SERVER_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.TENANT_ID_FLAG;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -58,6 +59,9 @@ import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
+import io.harness.delegate.clienttools.ClientTool;
+import io.harness.delegate.clienttools.InstallUtils;
+import io.harness.delegate.clienttools.KubeloginVersion;
 import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
 import io.harness.exception.AzureAuthenticationException;
@@ -547,7 +551,9 @@ public class AzureAsyncTaskHelper {
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
-
+      //      azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(InstallUtils.getPath(ClientTool.KUBELOGIN,
+      //      KubeloginVersion.V0_0_24));
+      azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(KUBELOGIN_BINARY_PATH);
       extractConfigFromArgs(azureKubeConfig);
       verifyAzureKubeConfig(azureKubeConfig);
 

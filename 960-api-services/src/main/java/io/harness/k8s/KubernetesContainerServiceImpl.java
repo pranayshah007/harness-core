@@ -8,6 +8,7 @@
 package io.harness.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.azure.model.AzureConstants.KUBELOGIN_BINARY_PATH;
 import static io.harness.data.encoding.EncodingUtils.compressString;
 import static io.harness.data.encoding.EncodingUtils.deCompressString;
 import static io.harness.data.encoding.EncodingUtils.decodeBase64;
@@ -2251,7 +2252,8 @@ public class KubernetesContainerServiceImpl implements KubernetesContainerServic
         .replace("${CLUSTER_USER}", config.getAzureConfig().getClusterUser())
         .replace("${CURRENT_CONTEXT}", config.getAzureConfig().getCurrentContext())
         .replace("${TOKEN}", config.getAzureConfig().getAadIdToken())
-        .replace("${ARGS}", args);
+        .replace("${ARGS}", args)
+        .replace("${KUBELOGIN_BINARY_PATH}", KUBELOGIN_BINARY_PATH);
   }
 
   private void encodeCharsIfNeeded(KubernetesConfig config) {

@@ -402,4 +402,5 @@ public interface AzureConstants {
   String ERROR_INVALID_MANAGEMENT_GROUP_ID = "Invalid credentials for Management Group ID";
   String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
   String AUTHORIZATION_ERROR = "does not have authorization";
+  String KUBELOGIN_BINARY_PATH = "/opt/harness-delegate/bin/linux_amd64/kubelogin";
 }

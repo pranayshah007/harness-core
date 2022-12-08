@@ -53,7 +53,10 @@ public enum ClientTool {
   CHARTMUSEUM("chartmuseum", "public/shared/tools/chartmuseum/release/%s/bin/%s/%s/chartmuseum",
       "./client-tools/chartmuseum/", "-v",
       "storage/harness-download/harness-chartmuseum/release/%s/bin/%s/%s/chartmuseum",
-      ImmutableList.copyOf(ChartmuseumVersion.values()), ChartmuseumVersion.V0_12);
+      ImmutableList.copyOf(ChartmuseumVersion.values()), ChartmuseumVersion.V0_12),
+  KUBELOGIN("kubelogin", "public/shared/tools/kubelogin/release/%s/bin/%s/%s/kubelogin", "./client-tools/kubelogin",
+      "--version", "storage/harness-download/harness-kubelogin/release/%s/bin/%s/%s/kubelogin",
+      ImmutableList.copyOf(KubeloginVersion.values()), KubeloginVersion.V0_0_24);
 
   @ToString.Include private final String binaryName;
   private final String cdnPath;
