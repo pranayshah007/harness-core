@@ -7,9 +7,11 @@
 
 package io.harness.migrations.all;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.Key;
 
+@OwnedBy(CDP)
 @Slf4j
 public class InitTerraformProvisionersSourceType implements Migration {
   @Inject protected WingsPersistence wingsPersistence;
