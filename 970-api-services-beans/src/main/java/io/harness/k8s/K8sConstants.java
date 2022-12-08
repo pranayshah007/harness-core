@@ -132,22 +132,22 @@ public interface K8sConstants {
       + "  user:\n"
       + "    token: ${TOKEN}\n"
       + "    exec:\n"
-      + "         apiVersion: client.authentication.k8s.io/v1beta1\n"
-      + "         args:\n"
+      + "      apiVersion: client.authentication.k8s.io/v1beta1\n"
+      + "      args:\n"
       + "${ARGS}"
-      + "         command: true\n"
-      + "         env: null\n"
-      + "         interactiveMode: Never\n"
-      + "         provideClusterInfo: false\n";
+      + "      command: true\n"
+      + "      env: null\n"
+      + "      interactiveMode: Never\n"
+      + "      provideClusterInfo: false\n";
 
-  String serverId = "           - --server-id\n"
-      + "           - ${APISERVER_ID}\n";
-  String clientId = "           - --client-id\n"
-      + "           - ${CLIENT_ID}\n";
-  String environment = "           - --environment\n"
-      + "           - ${ENVIRONMENT}\n";
-  String tenantId = "           - --tenant-id\n"
-      + "           - ${TENANT_ID}\n";
+  String serverId = "      - --server-id\n"
+      + "      - ${APISERVER_ID}\n";
+  String clientId = "      - --client-id\n"
+      + "      - ${CLIENT_ID}\n";
+  String environment = "      - --environment\n"
+      + "      - ${ENVIRONMENT}\n";
+  String tenantId = "      - --tenant-id\n"
+      + "      - ${TENANT_ID}\n";
   String eventOutputFormat =
       "custom-columns=KIND:involvedObject.kind,NAME:.involvedObject.name,MESSAGE:.message,REASON:.reason";
   int FETCH_FILES_DISPLAY_LIMIT = 100;
