@@ -21,11 +21,15 @@ import lombok.Value;
 @Value
 @Builder
 public class AckRequest {
+  //topic
   String consumerName;
 
+  //itemid from dequeue response
   String itemID;
 
+  //account id
   String subTopic;
 
+  //tpic
   String topic;
 }

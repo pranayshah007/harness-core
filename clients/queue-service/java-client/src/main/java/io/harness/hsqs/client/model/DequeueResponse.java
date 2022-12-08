@@ -21,10 +21,13 @@ import lombok.Value;
 @Value
 @Builder
 public class DequeueResponse {
+  //redis id
   String itemId;
 
+  //
   DequeueItemMetadata metadata;
 
+  //delegateTask
   String payload;
 
   String queueKey;
