@@ -1125,6 +1125,11 @@
 9130:io.harness.cvng.beans.aws.AwsDataCollectionRequest
 9131:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo
 9132:io.harness.cvng.beans.AwsPrometheusDataCollectionInfo.MetricCollectionInfo
+9140:io.harness.cvng.beans.sumologic.SumologicMetricSampleDataRequest
+9141:io.harness.cvng.beans.sumologic.SumologicLogSampleDataRequest
+9142:io.harness.cvng.beans.SumologicLogDataCollectionInfo
+9143:io.harness.cvng.beans.SumologicMetricDataCollectionInfo
+9144:io.harness.cvng.beans.SumologicMetricDataCollectionInfo.MetricCollectionInfo
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG

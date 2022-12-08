@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(HarnessTeam.CDC)
 public class NewrelicConnectorImpl implements BaseConnector {
@@ -40,10 +41,13 @@ public class NewrelicConnectorImpl implements BaseConnector {
   public ConnectorConfigDTO getConfigDTO(
       SettingAttribute settingAttribute, Set<CgEntityId> childEntities, Map<CgEntityId, NGYamlFile> migratedEntities) {
     NewRelicConfig newRelicConfig = (NewRelicConfig) settingAttribute.getValue();
+    String newrelicAccountId = StringUtils.isNotBlank(newRelicConfig.getNewRelicAccountId())
+        ? newRelicConfig.getNewRelicAccountId()
+        : "__FIX_ME__";
     return NewRelicConnectorDTO.builder()
         .url(newRelicConfig.getNewRelicUrl())
         .apiKeyRef(MigratorUtility.getSecretRef(migratedEntities, newRelicConfig.getEncryptedApiKey()))
-        .newRelicAccountId(newRelicConfig.getNewRelicAccountId())
+        .newRelicAccountId(newrelicAccountId)
         .build();
   }
 }

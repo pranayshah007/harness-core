@@ -10,6 +10,7 @@ package io.harness.delegate.task.artifacts.docker;
 import io.harness.artifacts.beans.BuildDetailsInternal;
 import io.harness.artifacts.comparator.BuildDetailsInternalComparatorDescending;
 import io.harness.artifacts.docker.service.DockerRegistryService;
+import io.harness.beans.ArtifactMetaInfo;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.task.artifacts.DelegateArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.mappers.DockerRequestResponseMapper;
@@ -34,6 +35,7 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
   @Override
   public ArtifactTaskExecutionResponse getLastSuccessfulBuild(DockerArtifactDelegateRequest attributesRequest) {
     BuildDetailsInternal lastSuccessfulBuild;
+    ArtifactMetaInfo artifactMetaInfo = null;
     List<Map<String, String>> labels;
     if (isRegex(attributesRequest)) {
       lastSuccessfulBuild = dockerRegistryService.getLastSuccessfulBuildFromRegex(
@@ -48,10 +50,11 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
       labels = dockerRegistryService.getLabels(DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest),
           attributesRequest.getImagePath(), Collections.singletonList(attributesRequest.getTag()));
     }
+    artifactMetaInfo = getArtifactMedataInfo(attributesRequest);
     DockerArtifactDelegateResponse dockerArtifactDelegateResponse;
     if (EmptyPredicate.isNotEmpty(labels)) {
-      dockerArtifactDelegateResponse =
-          DockerRequestResponseMapper.toDockerResponse(lastSuccessfulBuild, attributesRequest, labels.get(0));
+      dockerArtifactDelegateResponse = DockerRequestResponseMapper.toDockerResponse(
+          lastSuccessfulBuild, attributesRequest, labels.get(0), artifactMetaInfo);
     } else {
       dockerArtifactDelegateResponse =
           DockerRequestResponseMapper.toDockerResponse(lastSuccessfulBuild, attributesRequest);
@@ -92,6 +95,12 @@ public class DockerArtifactTaskHandler extends DelegateArtifactTaskHandler<Docke
     boolean isArtifactImageValid = dockerRegistryService.verifyImageName(
         DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath());
     return ArtifactTaskExecutionResponse.builder().isArtifactSourceValid(isArtifactImageValid).build();
+  }
+
+  public ArtifactMetaInfo getArtifactMedataInfo(DockerArtifactDelegateRequest attributesRequest) {
+    return dockerRegistryService.getArtifactMetaInfo(
+        DockerRequestResponseMapper.toDockerInternalConfig(attributesRequest), attributesRequest.getImagePath(),
+        attributesRequest.getTag());
   }
 
   private ArtifactTaskExecutionResponse getSuccessTaskExecutionResponse(

@@ -9,7 +9,6 @@ package io.harness.beans.environment;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.beans.environment.pod.PodSetupInfo;
-import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,12 +42,5 @@ public class K8BuildJobEnvInfo implements BuildJobEnvInfo {
   @Builder
   public static final class PodsSetupInfo {
     private List<PodSetupInfo> podSetupInfoList = new ArrayList<>();
-  }
-
-  @Data
-  @Builder
-  public static final class ConnectorConversionInfo {
-    private String connectorRef;
-    private Map<EnvVariableEnum, String> envToSecretsMap;
   }
 }

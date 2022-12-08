@@ -7,7 +7,20 @@
 
 package io.harness.licensing.usage.resources;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PAGE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.SORT;
+import static io.harness.NGCommonEntityConstants.SORT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.TIMESTAMP;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_FILTER_PARAM_MESSAGE;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.ACTIVE_SERVICES_SORT_QUERY_PROPERTIES;
+import static io.harness.licensing.usage.beans.cd.CDLicenseUsageConstants.SERVICE_INSTANCES_SORT_PROPERTY;
+import static io.harness.licensing.usage.utils.PageableUtils.validateSort;
+
 import io.harness.ModuleType;
+import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.cd.CDLicenseType;
@@ -17,7 +30,10 @@ import io.harness.licensing.usage.beans.cd.ServiceInstanceUsageDTO;
 import io.harness.licensing.usage.beans.cd.ServiceUsageDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.CDUsageRequestParams;
+import io.harness.licensing.usage.params.DefaultPageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
+import io.harness.licensing.usage.params.filter.ActiveServicesFilterParams;
+import io.harness.licensing.usage.utils.PageableUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -31,13 +47,22 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Api("usage")
 @Path("usage")
@@ -134,5 +159,34 @@ public class LicenseUsageResource {
     return ResponseDTO.newResponse(
         (ServiceInstanceUsageDTO) licenseUsageInterface.getLicenseUsage(accountIdentifier, ModuleType.CD, timestamp,
             CDUsageRequestParams.builder().cdLicenseType(CDLicenseType.SERVICE_INSTANCES).build()));
+  }
+
+  @POST
+  @Path("cd/active-services")
+  @ApiOperation(value = "List Active Services in CD Module", nickname = "lisCDActiveServices")
+  @Operation(operationId = "listCDActiveServices",
+      summary =
+          "List Active Services with instances, last deployed and licenses consumed details on Account, Organization and Project level",
+      responses =
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns a list of active services") })
+  @NGAccessControlCheck(resourceType = "LICENSE", permission = "core_license_view")
+  public ResponseDTO<Page<LicenseUsageDTO>>
+  listCDActiveServices(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                           ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
+          "0") int page,
+      @Parameter(description = SIZE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.SIZE) @DefaultValue("30")
+      int size, @Parameter(description = SORT_PARAM_MESSAGE) @QueryParam(SORT) List<String> sort,
+      @QueryParam(TIMESTAMP) long currentTS,
+      @NotNull @Valid @RequestBody(required = true,
+          description = ACTIVE_SERVICES_FILTER_PARAM_MESSAGE) ActiveServicesFilterParams filterParams) {
+    Pageable pageRequest =
+        PageableUtils.getPageRequest(page, size, sort, Sort.by(Sort.Direction.DESC, SERVICE_INSTANCES_SORT_PROPERTY));
+    validateSort(pageRequest.getSort(), ACTIVE_SERVICES_SORT_QUERY_PROPERTIES);
+    DefaultPageableUsageRequestParams requestParams =
+        DefaultPageableUsageRequestParams.builder().filterParams(filterParams).pageRequest(pageRequest).build();
+
+    return ResponseDTO.newResponse((Page<LicenseUsageDTO>) licenseUsageInterface.listLicenseUsage(
+        accountIdentifier, ModuleType.CD, currentTS, requestParams));
   }
 }

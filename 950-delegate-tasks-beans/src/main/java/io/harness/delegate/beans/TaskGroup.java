@@ -104,5 +104,6 @@ public enum TaskGroup {
   CUSTOM_DEPLOYMENT_NG,
   ELASTIGROUP,
   GITOPS,
-  TAS
+  TAS,
+  CONTAINER_PMS;
 }

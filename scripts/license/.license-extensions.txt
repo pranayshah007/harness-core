@@ -19,3 +19,12 @@ sh        , hash
 sql       , double_hyphen
 ts        , slash_star
 tsx       , slash_star
+bazel     , hash
+bzl       , hash
+amd64     , hash
+arm64     , hash
+bzl       , hash
+bazel     , hash
+common    , hash
+factories , hash
+ini       , hash

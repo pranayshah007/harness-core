@@ -17,7 +17,6 @@ import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetails.EntityGitDetailsKeys;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
-import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -57,15 +56,6 @@ public class PipelineMetadata {
                  .field(PipelineMetadataKeys.identifier)
                  .field(PipelineMetadataKeys.entityGitDetails + "." + EntityGitDetailsKeys.branch)
                  .field(PipelineMetadataKeys.entityGitDetails + "." + EntityGitDetailsKeys.repoIdentifier)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("account_org_project_pipeline_run_sequence_idx")
-                 .unique(true)
-                 .field(PipelineMetadataKeys.accountIdentifier)
-                 .field(PipelineMetadataKeys.orgIdentifier)
-                 .field(PipelineMetadataKeys.projectIdentifier)
-                 .field(PipelineMetadataKeys.identifier)
-                 .descRangeField(PipelineMetadataKeys.runSequence)
                  .build())
         .build();
   }

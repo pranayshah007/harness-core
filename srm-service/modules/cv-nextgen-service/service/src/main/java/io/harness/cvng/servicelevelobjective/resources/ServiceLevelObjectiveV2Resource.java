@@ -94,9 +94,9 @@ public class ServiceLevelObjectiveV2Resource {
   @Path("composite-slo/onboarding-graph")
   @ApiOperation(value = "Get onboarding graph for composite slo", nickname = "getOnboardingGraph")
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
-  public RestResponse<TimeGraphResponse> getOnboardingGraph(@NotNull @BeanParam ProjectParams projectParams,
-      @Parameter(description = "Composite SLO spec which consists of list of SLO details") @ApiParam(required = true)
-      @NotNull @Valid @Body CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
+  public RestResponse<TimeGraphResponse> getOnboardingGraph(@BeanParam ProjectParams projectParams,
+      @Parameter(description = "Composite SLO spec which consists of list of SLO details") @ApiParam(
+          required = true) @Valid @Body CompositeServiceLevelObjectiveSpec compositeServiceLevelObjectiveSpec) {
     return new RestResponse<>(serviceLevelObjectiveService.getOnboardingGraph(compositeServiceLevelObjectiveSpec));
   }
 
@@ -114,7 +114,7 @@ public class ServiceLevelObjectiveV2Resource {
   public RestResponse<ServiceLevelObjectiveV2Response>
   saveSLOV2Data(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @ApiParam(
                     required = true) @NotNull @QueryParam("accountId") String accountId,
-      @Parameter(description = "Details of the SLO to be saved") @NotNull @Valid
+      @Parameter(description = "Details of the SLO to be saved") @Valid
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, serviceLevelObjectiveDTO.getOrgIdentifier(),
                                                   serviceLevelObjectiveDTO.getProjectIdentifier()),
@@ -141,10 +141,10 @@ public class ServiceLevelObjectiveV2Resource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = EDIT_PERMISSION)
   public RestResponse<ServiceLevelObjectiveV2Response>
-  updateSLOV2Data(@NotNull @BeanParam ProjectParams projectParams,
+  updateSLOV2Data(@Valid @BeanParam ProjectParams projectParams,
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier,
-      @Parameter(description = "Details of the SLO to be updated") @NotNull @Valid
+      @Parameter(description = "Details of the SLO to be updated") @Valid
       @Body ServiceLevelObjectiveV2DTO serviceLevelObjectiveDTO) {
     return new RestResponse<>(serviceLevelObjectiveService.update(projectParams, identifier, serviceLevelObjectiveDTO));
   }
@@ -162,7 +162,7 @@ public class ServiceLevelObjectiveV2Resource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = DELETE_PERMISSION)
   public RestResponse<Boolean>
-  deleteSLOV2Data(@NotNull @BeanParam ProjectParams projectParams,
+  deleteSLOV2Data(@Valid @BeanParam ProjectParams projectParams,
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(serviceLevelObjectiveService.delete(projectParams, identifier));
@@ -177,7 +177,7 @@ public class ServiceLevelObjectiveV2Resource {
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default", description = "Gets the SLOs") })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public ResponseDTO<PageResponse<ServiceLevelObjectiveV2Response>>
-  getServiceLevelObjectivesV2(@NotNull @BeanParam ProjectParams projectParams,
+  getServiceLevelObjectivesV2(@Valid @BeanParam ProjectParams projectParams,
       @Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
           "offset") @NotNull Integer offset,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam("pageSize")
@@ -199,7 +199,7 @@ public class ServiceLevelObjectiveV2Resource {
       })
   @NGAccessControlCheck(resourceType = SLO, permission = VIEW_PERMISSION)
   public RestResponse<ServiceLevelObjectiveV2Response>
-  getServiceLevelObjectiveV2(@NotNull @BeanParam ProjectParams projectParams,
+  getServiceLevelObjectiveV2(@BeanParam ProjectParams projectParams,
       @Parameter(description = CVConstants.SLO_PARAM_MESSAGE) @ApiParam(required = true) @NotNull @PathParam(
           "identifier") @ResourceIdentifier String identifier) {
     return new RestResponse<>(serviceLevelObjectiveService.get(projectParams, identifier));

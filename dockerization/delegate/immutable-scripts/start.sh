@@ -7,10 +7,15 @@
 function append_config() {
   CONFIG_KEY=$1
   CONFIG_VALUE=$2
-  if [ ! -z "$CONFIG_VALUE" ] ; then
+  if [ -n "$CONFIG_VALUE" ] ; then
     echo "$CONFIG_KEY: $CONFIG_VALUE" >> config.yml
   fi
 }
+
+if [ ! -w . ]; then
+  echo "Missing required write permissions for running user $(id -run) or group $(id -rgn) on delegate home directory $PWD. Shutting down."
+  exit 1
+fi
 
 # 0. Proxy setup
 source ./proxy_setup.sh

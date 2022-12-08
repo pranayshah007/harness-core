@@ -105,7 +105,7 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
       List<FreezeSummaryResponseDTO> globalFreezeConfigs;
       List<FreezeSummaryResponseDTO> manualFreezeConfigs;
       globalFreezeConfigs = freezeEvaluateService.anyGlobalFreezeActive(accountId, orgId, projectId);
-      manualFreezeConfigs = freezeEvaluateService.getActiveFreezeEntities(accountId, orgId, projectId, entityMap);
+      manualFreezeConfigs = freezeEvaluateService.getActiveManualFreezeEntities(accountId, orgId, projectId, entityMap);
       if (globalFreezeConfigs.size() + manualFreezeConfigs.size() > 0) {
         final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
         FreezeOutcome freezeOutcome = FreezeOutcome.builder()

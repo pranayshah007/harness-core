@@ -58,11 +58,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @Singleton
 @OwnedBy(HarnessTeam.PIPELINE)
+@Slf4j
 public class PreflightServiceImpl implements PreflightService {
   private static final ExecutorService executorService = new ManagedExecutorService(Executors.newFixedThreadPool(1));
   private static final String PREFLIGHT_EVENT_NAME = "ng_preflight_execution";
@@ -152,9 +154,24 @@ public class PreflightServiceImpl implements PreflightService {
   @Override
   public List<ConnectorCheckResponse> updateConnectorCheckResponses(String accountId, String orgId, String projectId,
       String preflightEntityId, Map<String, Object> fqnToObjectMapMergedYaml, List<EntityDetail> connectorUsages) {
-    List<ConnectorCheckResponse> connectorCheckResponses =
-        connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
-            accountId, orgId, projectId, fqnToObjectMapMergedYaml, connectorUsages);
+    List<ConnectorCheckResponse> connectorCheckResponses;
+    try {
+      connectorCheckResponses = connectorPreflightHandler.getConnectorCheckResponsesForReferredConnectors(
+          accountId, orgId, projectId, fqnToObjectMapMergedYaml, connectorUsages);
+    } catch (Exception exception) {
+      log.error("Exception encountered while checking connector responses for preflightEntityId {}. {}",
+          preflightEntityId, exception.getMessage());
+      connectorCheckResponses = Collections.singletonList(
+          ConnectorCheckResponse.builder()
+              .status(PreFlightStatus.FAILURE)
+              .errorInfo(
+                  PreFlightEntityErrorInfo.builder()
+                      .causes(Collections.singletonList(PreFlightCause.builder().cause(exception.getMessage()).build()))
+                      .summary(String.format(
+                          "Exception encountered while checking connector responses. %s", exception.getMessage()))
+                      .build())
+              .build());
+    }
     if (isNotEmpty(connectorCheckResponses)) {
       Criteria criteria = Criteria.where(PreFlightEntityKeys.uuid).is(preflightEntityId);
       Update update = new Update();

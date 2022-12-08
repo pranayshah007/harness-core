@@ -962,9 +962,14 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds) {
+  public List<Account> listHarnessSupportAccounts(Set<String> excludedAccountIds, Set<String> fieldsToBeIncluded) {
     Query<Account> query = wingsPersistence.createQuery(Account.class, excludeAuthority)
                                .filter(AccountKeys.isHarnessSupportAccessAllowed, Boolean.TRUE);
+    if (isNotEmpty(fieldsToBeIncluded)) {
+      for (String field : fieldsToBeIncluded) {
+        query.project(field, true);
+      }
+    }
 
     List<Account> accountList = new ArrayList<>();
     try (HIterator<Account> iterator = new HIterator<>(query.fetch())) {
@@ -2000,7 +2005,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public boolean isRestrictedAccessEnabled(String accountId) {
+  public boolean isHarnessSupportAccessDisabled(String accountId) {
     Account account = get(accountId);
     notNullCheck("Invalid Account for the given Id: " + accountId, account);
     if (account.isHarnessSupportAccessAllowed()) {

@@ -1,0 +1,39 @@
+Var metricApiUrl = concat(Env:baseUrl, "api/v1/metrics/results")
+Var body = {}
+Var queryArr = []
+Var query_string = {}
+Var one = 1
+
+Var clause = concat(Env:query, " | quantize to 1m using avg")
+Var:query_string.put("query",Var:clause)
+Var:queryArr.append(Var:query_string)
+Var:body.put("query",Var:queryArr)
+Var:body.put("startTime",Env:startTimeMillis)
+Var:body.put("endTime",Env:endTimeMillis)
+
+Var response = sync-call(url=Var:metricApiUrl, header=Env:commonHeaders,body=Var:body)
+Var responseRows = extract(Var:response,$.response)
+Var metricDataResultRow = Var:responseRows[0]
+Var results = extract(Var:metricDataResultRow,$.results)
+Var lengthOfResults = Var:results.length()
+Var resultIndex = 0
+Var timeSeriesList = []
+Var metricName = "sample"
+
+ while Var:resultIndex !=  Var:lengthOfResults{
+     Var metricDataResult = Var:results[Var:resultIndex]
+     Var timeseries = extract(Var:metricDataResult,$.datapoints.timestamp)
+     Var values = extract(Var:metricDataResult,$.datapoints.value)
+     Var lengthOfItems = Var:values.length()
+     Var index = 0
+     while Var:index !=  Var:lengthOfItems{
+         Var value = Var:values[Var:index]
+         Var timestamp = Var:timeseries[Var:index]
+         Var tsRecord = new TimeseriesRecord(txnName=Env:groupName, metricName=Var:metricName, metricValue=Var:value, timestamp=Var:timestamp)
+         Var:timeSeriesList.append(Var:tsRecord)
+         index = Var:index + Var:one
+     }
+     resultIndex = Var:resultIndex + Var:one
+ }
+
+return Var:timeSeriesList

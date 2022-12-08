@@ -38,6 +38,7 @@ import io.harness.beans.RepairActionCode;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.WorkflowType;
 import io.harness.context.ContextElementType;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.exception.DeploymentFreezeException;
 import io.harness.exception.ExceptionLogger;
@@ -85,6 +86,7 @@ import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
+import software.wings.sm.StateExecutionContext;
 import software.wings.sm.StateType;
 import software.wings.sm.WorkflowStandardParams;
 
@@ -125,6 +127,7 @@ public class EnvState extends State implements WorkflowState {
   public static final Integer ENV_STATE_TIMEOUT_MILLIS = 7 * 24 * 60 * 60 * 1000;
 
   private static final Pattern secretNamePattern = Pattern.compile("\\$\\{secrets.getValue\\([^{}]+\\)}");
+  private static final Pattern secretManagerObtainPattern = Pattern.compile("\\$\\{secretManager.obtain\\([^{}]+\\)}");
 
   // NOTE: This field should no longer be used. It contains incorrect/stale values.
   @Attributes(required = true, title = "Environment") @Setter @Deprecated private String envId;
@@ -266,12 +269,23 @@ public class EnvState extends State implements WorkflowState {
       ExecutionContext context, ExecutionArgs executionArgs, List<String> workflowVariablesWithExpressionValue) {
     if (isNotEmpty(workflowVariablesWithExpressionValue)) {
       workflowVariablesWithExpressionValue.forEach(variable -> {
-        String secretVariable = executionArgs.getWorkflowVariables().get(variable);
-        Matcher matcher = secretNamePattern.matcher(secretVariable);
+        String variableValue = executionArgs.getWorkflowVariables().get(variable);
+        Matcher matcher = secretNamePattern.matcher(variableValue);
         if (!matcher.matches()) {
-          String value = context.renderExpression(executionArgs.getWorkflowVariables().get(variable));
-          executionArgs.getWorkflowVariables().put(variable,
-              value == null || "null".equals(value) ? executionArgs.getWorkflowVariables().get(variable) : value);
+          String renderedValue = context.renderExpression(variableValue,
+              StateExecutionContext.builder()
+                  .adoptDelegateDecryption(true)
+                  .expressionFunctorToken(HashGenerator.generateIntegerHash())
+                  .build());
+          // In case we are not able to resolve expression, keep the original expression in the value.
+          if (renderedValue == null || "null".equals(renderedValue)) {
+            renderedValue = variableValue;
+          }
+          // If rendered expression turns out to be a secret manager expression, keep the original expression
+          if (secretManagerObtainPattern.matcher(renderedValue).matches()) {
+            renderedValue = variableValue;
+          }
+          executionArgs.getWorkflowVariables().put(variable, renderedValue);
         }
       });
     }

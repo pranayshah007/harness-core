@@ -43,9 +43,6 @@ public class K8sCanaryDeleteStepInfo implements CDStepInfo, Visitable {
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
   private String uuid;
-
-  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> skipDryRun;
-
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @JsonIgnore String canaryStepFqn;
@@ -67,7 +64,6 @@ public class K8sCanaryDeleteStepInfo implements CDStepInfo, Visitable {
   @Override
   public SpecParameters getSpecParameters() {
     return K8sCanaryDeleteStepParameters.infoBuilder()
-        .skipDryRun(skipDryRun)
         .delegateSelectors(delegateSelectors)
         .canaryStepFqn(canaryStepFqn)
         .canaryDeleteStepFqn(canaryDeleteStepFqn)

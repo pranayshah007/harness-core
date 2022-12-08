@@ -477,6 +477,29 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   }
 
   @Override
+  public void cancelTaskV2(CancelTaskRequest request, StreamObserver<CancelTaskResponse> responseObserver) {
+    try {
+      DelegateTask preAbortedTask =
+          delegateTaskServiceClassic.abortTaskV2(request.getAccountId().getId(), request.getTaskId().getId());
+      if (preAbortedTask != null) {
+        responseObserver.onNext(
+            CancelTaskResponse.newBuilder()
+                .setCanceledAtStage(DelegateTaskGrpcUtils.mapTaskStatusToTaskExecutionStage(preAbortedTask.getStatus()))
+                .build());
+        responseObserver.onCompleted();
+        return;
+      }
+
+      responseObserver.onNext(
+          CancelTaskResponse.newBuilder().setCanceledAtStage(TaskExecutionStage.TYPE_UNSPECIFIED).build());
+      responseObserver.onCompleted();
+    } catch (Exception ex) {
+      log.error("Unexpected error occurred while processing cancel task request.", ex);
+      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
+    }
+  }
+
+  @Override
   public void taskProgress(TaskProgressRequest request, StreamObserver<TaskProgressResponse> responseObserver) {
     try {
       Optional<DelegateTask> delegateTaskOptional =

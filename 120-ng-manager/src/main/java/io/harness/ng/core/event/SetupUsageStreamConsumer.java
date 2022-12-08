@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.event;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.SETUP_USAGE;
 
 import io.harness.eventsframework.api.Consumer;

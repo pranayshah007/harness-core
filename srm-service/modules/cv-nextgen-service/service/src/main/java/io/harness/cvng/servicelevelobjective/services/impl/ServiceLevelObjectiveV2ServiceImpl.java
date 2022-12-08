@@ -67,6 +67,7 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveV
 import io.harness.cvng.servicelevelobjective.transformer.ServiceLevelObjectiveDetailsTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.SLOTargetTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelobjectivev2.SLOV2Transformer;
+import io.harness.cvng.utils.ScopedInformation;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -90,6 +91,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -547,6 +549,7 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
                     ? sloTargetTypeSLOTargetTransformerMap.get(filter.getSloTargetFilterDTO().getType())
                           .getSLOTarget(filter.getSloTargetFilterDTO().getSpec())
                     : null)
+            .childResource(filter.isChildResource())
             .build());
   }
 
@@ -708,6 +711,20 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
           "The weightage percentage of all the SLOs constituting the Composite SLO with identifier %s should sum upto 100.",
           serviceLevelObjectiveDTO.getIdentifier()));
     }
+
+    Set<String> scopedReferencedSimpleSLOs =
+        compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails()
+            .stream()
+            .map(serviceLevelObjectiveDetailsDTO
+                -> ScopedInformation.getScopedInformation(serviceLevelObjectiveDetailsDTO.getAccountId(),
+                    serviceLevelObjectiveDetailsDTO.getOrgIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getProjectIdentifier(),
+                    serviceLevelObjectiveDetailsDTO.getServiceLevelObjectiveRef()))
+            .collect(Collectors.toSet());
+    if (scopedReferencedSimpleSLOs.size()
+        != compositeServiceLevelObjectiveSpec.getServiceLevelObjectivesDetails().size()) {
+      throw new InvalidRequestException(String.format("An SLO can't be referenced more than once"));
+    }
   }
 
   private void checkIfValidSLOPresent(ServiceLevelObjectiveDetailsDTO serviceLevelObjectiveDetailsDTO,
@@ -795,11 +812,14 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
             .disableValidation()
             .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.accountId,
                 projectParams.getAccountIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
-                projectParams.getOrgIdentifier())
-            .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
-                projectParams.getProjectIdentifier())
             .order(Sort.descending(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.lastUpdatedAt));
+    if (!filter.isChildResource()) {
+      sloQuery = sloQuery
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.orgIdentifier,
+                         projectParams.getOrgIdentifier())
+                     .filter(AbstractServiceLevelObjective.ServiceLevelObjectiveV2Keys.projectIdentifier,
+                         projectParams.getProjectIdentifier());
+    }
     if (isNotEmpty(filter.getUserJourneys())) {
       sloQuery.field(ServiceLevelObjectiveV2Keys.userJourneyIdentifiers).hasAnyOf(filter.getUserJourneys());
     }
@@ -919,5 +939,6 @@ public class ServiceLevelObjectiveV2ServiceImpl implements ServiceLevelObjective
     String searchFilter;
     ServiceLevelObjective.SLOTarget sloTarget;
     ServiceLevelObjectiveType sloType;
+    boolean childResource;
   }
 }
