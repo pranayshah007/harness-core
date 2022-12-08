@@ -344,6 +344,7 @@ import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.instancesyncv2.model.InstanceSyncTaskDetails;
 import software.wings.metrics.TimeSeriesDataRecord;
+import software.wings.persistence.mail.EmailData;
 import software.wings.prune.PruneEvent;
 import software.wings.resources.DelegateFileResource.FileIdempotentResult;
 import software.wings.scheduler.events.segment.SegmentGroupEventJobContext;
@@ -696,6 +697,7 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(EcsServiceSpecification.class);
     set.add(ElasticsearchBulkMigrationJob.class);
     set.add(ElkCVConfiguration.class);
+    set.add(EmailData.class);
     set.add(EmailVerificationToken.class);
     set.add(EntityVersion.class);
     set.add(EntityVersionCollection.class);

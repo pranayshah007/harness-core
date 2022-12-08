@@ -545,7 +545,7 @@
 5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
 5299:software.wings.api.pcf.PcfRouteUpdateStateExecutionData
 5300:software.wings.api.pcf.PcfRouteSwapExecutionSummary
-5303:software.wings.persistence.mail.EmailData
+5303:software.wings.helpers.ext.mail.EmailData
 5304:software.wings.helpers.ext.mail.SmtpConfig
 5305:io.harness.security.encryption.EncryptionConfig
 5306:software.wings.helpers.ext.external.comm.CollaborationProviderRequest
@@ -2025,6 +2025,7 @@
 50022:io.harness.event.reconciliation.ReconciliationStatus
 50023:io.harness.event.reconciliation.ReconcilationAction
 50027:software.wings.delegatetasks.cv.RateLimitExceededException
+50032:software.wings.persistence.mail.EmailData
 54320:io.harness.ng.core.entities.Organization
 54321:io.harness.ng.core.entities.Project
 54322:io.harness.ng.core.entities.SampleEncryptableSettingImplementation

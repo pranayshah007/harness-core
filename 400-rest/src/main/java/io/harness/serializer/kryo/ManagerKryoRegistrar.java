@@ -219,6 +219,7 @@ import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PhysicalInfra;
 import software.wings.infra.PhysicalInfraWinrm;
 import software.wings.infra.RancherKubernetesInfrastructure;
+import software.wings.persistence.mail.EmailData;
 import software.wings.security.AccountPermissionSummary;
 import software.wings.security.AppPermissionSummary;
 import software.wings.security.AppPermissionSummary.EnvInfo;
@@ -610,5 +611,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(DetectionStatus.class, 50021);
     kryo.register(ReconciliationStatus.class, 50022);
     kryo.register(ReconcilationAction.class, 50023);
+    kryo.register(EmailData.class, 50032);
   }
 }
