@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppSetupStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.TasCanaryAppSetupStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -26,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -39,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = TasAppSetupStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = TasCanaryAppSetupStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
 @TypeAlias("tasCanaryAppSetupStepInfo")
 @RecasterAlias("io.harness.cdng.tas.TasCanaryAppSetupStepInfo")
@@ -50,9 +51,9 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   private String uuid;
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  TasResizeStrategyType resizeStrategy;
+  @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<Integer> existingVersionToKeep,
+  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       TasResizeStrategyType resizeStrategy) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
@@ -71,7 +72,13 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasCanaryAppSetupStepParameters.infoBuilder().delegateSelectors(this.getDelegateSelectors()).build();
+    return TasCanaryAppSetupStepParameters.infoBuilder()
+        .instanceCount(this.instanceCount)
+        .existingVersionToKeep(this.existingVersionToKeep)
+        .additionalRoutes(this.additionalRoutes)
+        .resizeStrategy(this.resizeStrategy)
+        .delegateSelectors(this.getDelegateSelectors())
+        .build();
   }
 
   @Override

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.pcf;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -9,15 +16,20 @@ import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
 import static io.harness.pcf.model.PcfConstants.APPLICATION_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.CREATE_SERVICE_MANIFEST_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.DELIMITER;
+import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.IMAGE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
 import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PROCESSES_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.USERNAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.WEB_PROCESS_TYPE_MANIFEST_YML_ELEMENT;
 
 import static software.wings.beans.LogColor.White;
@@ -38,7 +50,12 @@ import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
 import io.harness.delegate.cf.retry.RetryPolicy;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
+import io.harness.delegate.task.cf.TasArtifactDownloadContext;
+import io.harness.delegate.task.cf.TasArtifactDownloadResponse;
 import io.harness.delegate.task.pcf.PcfManifestsPackage;
+import io.harness.delegate.task.pcf.TasTaskHelperBase;
+import io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig;
+import io.harness.delegate.task.pcf.artifact.TasPackageArtifactConfig;
 import io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
@@ -70,6 +87,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -90,6 +108,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
   @Inject protected CfCommandTaskHelperNG cfCommandTaskHelperNG;
   @Inject CfDeploymentManager cfDeploymentManager;
   @Inject protected PcfCommandTaskHelper pcfCommandTaskHelper;
+  @Inject TasTaskHelperBase tasTaskHelperBase;
 
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
@@ -98,7 +117,8 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       throw new InvalidArgumentsException(Pair.of("cfCommandRequestNG", "Must be instance of CfBasicSetupRequestNG"));
     }
 
-    LogCallback logCallback = iLogStreamingTaskClient.obtainLogCallback(cfCommandRequestNG.getCommandName());
+    LogCallback logCallback = tasTaskHelperBase.getLogCallback(
+        iLogStreamingTaskClient, cfCommandRequestNG.getCommandName(), true, commandUnitsProgress);
     CfManifestFileData pcfManifestFileData = CfManifestFileData.builder().varFiles(new ArrayList<>()).build();
 
     CfBasicSetupRequestNG basicSetupRequestNG = (CfBasicSetupRequestNG) cfCommandRequestNG;
@@ -129,7 +149,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       // Print Existing applications information
       printExistingApplicationsDetails(logCallback, previousReleases);
 
-      artifactFile = downloadArtifactFile(basicSetupRequestNG);
+      artifactFile = downloadArtifactFile(basicSetupRequestNG, workingDirectory, logCallback);
 
       deleteOlderApplications(previousReleases, cfRequestConfig, basicSetupRequestNG, cfAppAutoscalarRequestData,
           logCallback, currentProdInfo);
@@ -139,16 +159,15 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       boolean varsYmlPresent = checkIfVarsFilePresent(basicSetupRequestNG);
       CfCreateApplicationRequestData requestData =
           CfCreateApplicationRequestData.builder()
-              .cfRequestConfig(cfRequestConfig)
+              .cfRequestConfig(updatePcfRequestConfig(
+                  basicSetupRequestNG, cfRequestConfig, basicSetupRequestNG.getReleaseNamePrefix()))
               .artifactPath(artifactFile == null ? null : artifactFile.getAbsolutePath())
               .configPathVar(workingDirectory.getAbsolutePath())
-              // TODO - verify how this can be done
-              //                      .password(pcfCommandTaskHelper.getPassword(basicSetupRequestNG.getArtifactStreamAttributes()))
+              .password(cfCommandTaskHelperNG.getPassword(basicSetupRequestNG.getTasArtifactConfig()))
               .newReleaseName(basicSetupRequestNG.getReleaseNamePrefix())
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
-              // TODO - verify how this can be done
-              .dockerBasedDeployment(false)
+              .dockerBasedDeployment(true)
               .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(basicSetupRequestNG, requestData));
@@ -160,10 +179,6 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
       }
 
       logCallback.saveExecutionLog(color("\n# Creating new Application", White, Bold));
-
-      // Update pcfRequestConfig with details to create application
-      // TODO - instead of updating create new object of CfRequestConfig
-      //      updatePcfRequestConfig(cfCommandSetupRequest, cfRequestConfig, newReleaseName);
 
       ApplicationDetail newApplication = createAppAndPrintDetails(logCallback, requestData);
 
@@ -197,10 +212,33 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
           .errorMessage(ExceptionUtils.getMessage(sanitizedException))
           .build();
     } finally {
-      logCallback = iLogStreamingTaskClient.obtainLogCallback(Wrapup);
+      logCallback = tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
       removeTempFilesCreated(basicSetupRequestNG, logCallback, artifactFile, workingDirectory, pcfManifestFileData);
       logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
     }
+  }
+
+  private CfRequestConfig updatePcfRequestConfig(
+      CfBasicSetupRequestNG cfBasicSetupRequestNG, CfRequestConfig cfRequestConfig, String newReleaseName) {
+    return CfRequestConfig.builder()
+        .orgName(cfRequestConfig.getOrgName())
+        .spaceName(cfRequestConfig.getSpaceName())
+        .userName(cfRequestConfig.getUserName())
+        .password(cfRequestConfig.getPassword())
+        .endpointUrl(cfRequestConfig.getEndpointUrl())
+        .manifestYaml(cfRequestConfig.getManifestYaml())
+        .desiredCount(cfRequestConfig.getDesiredCount())
+        .timeOutIntervalInMins(cfRequestConfig.getTimeOutIntervalInMins())
+        .useCFCLI(cfRequestConfig.isUseCFCLI())
+        .cfCliPath(cfRequestConfig.getCfCliPath())
+        .cfCliVersion(cfRequestConfig.getCfCliVersion())
+        .cfHomeDirPath(cfRequestConfig.getCfHomeDirPath())
+        .loggedin(cfRequestConfig.isLoggedin())
+        .limitPcfThreads(cfRequestConfig.isLimitPcfThreads())
+        .useNumbering(cfRequestConfig.isUseNumbering())
+        .applicationName(newReleaseName)
+        .routeMaps(cfBasicSetupRequestNG.getRouteMaps())
+        .build();
   }
 
   void prepareManifestYamlFile(CfCreateApplicationRequestData requestData) throws IOException {
@@ -236,6 +274,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     pcfCommandTaskBaseHelper.printApplicationDetail(newApplication, executionLogCallback);
     return newApplication;
   }
+
   private void renameProductionApplication(List<ApplicationSummary> previousReleases,
       CfBasicSetupRequestNG basicSetupRequestNG, CfRequestConfig cfRequestConfig, LogCallback logCallback,
       TasApplicationInfo currentProdInfo) throws PivotalClientApiException {
@@ -254,17 +293,23 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     }
 
     String appNamePrefix = basicSetupRequestNG.getReleaseNamePrefix();
-    String newName = appNamePrefix + revision;
+    String newName = appNamePrefix + DELIMITER + revision;
 
     pcfCommandTaskBaseHelper.renameApp(currentProdApplicationSummary, cfRequestConfig, logCallback, newName);
     currentProdInfo.setApplicationName(newName);
   }
 
-  private File downloadArtifactFile(CfBasicSetupRequestNG basicSetupRequestNG) {
+  private File downloadArtifactFile(
+      CfBasicSetupRequestNG basicSetupRequestNG, File workingDirectory, LogCallback logCallback) {
     File artifactFile = null;
     if (basicSetupRequestNG.isPackageArtifact()) {
-      // TODO - how artifact artifact.getArtifactFiles() works in NG or should we do the way it is done for Wbe App
-      // artifactFile = fetchArtifactFileForDeployment(cfCommandSetupRequest, workingDirectory, executionLogCallback);
+      TasArtifactDownloadResponse tasArtifactDownloadResponse = cfCommandTaskHelperNG.downloadPackageArtifact(
+          TasArtifactDownloadContext.builder()
+              .artifactConfig((TasPackageArtifactConfig) basicSetupRequestNG.getTasArtifactConfig())
+              .workingDirectory(workingDirectory)
+              .build(),
+          logCallback);
+      artifactFile = tasArtifactDownloadResponse.getArtifactFile();
     }
     return artifactFile;
   }
@@ -490,7 +535,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
     applicationToBeUpdated.put(NAME_MANIFEST_YML_ELEMENT, requestData.getNewReleaseName());
 
     // TODO - verify how this can be done
-    //    updateArtifactDetails(requestData, cfCommandSetupRequest, applicationToBeUpdated);
+    updateArtifactDetails(requestData, cfCommandSetupRequest, applicationToBeUpdated);
 
     applicationToBeUpdated.put(INSTANCE_MANIFEST_YML_ELEMENT, 0);
 
@@ -529,6 +574,22 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
                                               .append(manifestYaml)
                                               .toString(),
           e);
+    }
+  }
+
+  void updateArtifactDetails(CfCreateApplicationRequestData requestData, CfBasicSetupRequestNG cfCommandSetupRequest,
+      TreeMap<String, Object> applicationToBeUpdated) {
+    if (cfCommandSetupRequest.isPackageArtifact()) {
+      applicationToBeUpdated.put(PATH_MANIFEST_YML_ELEMENT, requestData.getArtifactPath());
+    } else {
+      Map<String, Object> dockerDetails = new HashMap<>();
+      String dockerImagePath = ((TasContainerArtifactConfig) cfCommandSetupRequest.getTasArtifactConfig()).getImage();
+      String username = cfCommandTaskHelperNG.getUsername(cfCommandSetupRequest.getTasArtifactConfig());
+      dockerDetails.put(IMAGE_MANIFEST_YML_ELEMENT, dockerImagePath);
+      if (!isEmpty(username)) {
+        dockerDetails.put(USERNAME_MANIFEST_YML_ELEMENT, username);
+      }
+      applicationToBeUpdated.put(DOCKER_MANIFEST_YML_ELEMENT, dockerDetails);
     }
   }
 

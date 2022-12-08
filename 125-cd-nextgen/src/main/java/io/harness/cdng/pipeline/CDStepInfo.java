@@ -60,14 +60,14 @@ import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackStepInfo;
 import io.harness.cdng.spot.elastigroup.deploy.ElastigroupDeployStepInfo;
 import io.harness.cdng.spot.elastigroup.rollback.ElastigroupRollbackStepInfo;
 import io.harness.cdng.ssh.CommandStepInfo;
-import io.harness.cdng.tas.TasAppResizeStep;
+import io.harness.cdng.tas.TasAppResizeStepInfo;
 import io.harness.cdng.tas.TasBGAppSetupStepInfo;
-import io.harness.cdng.tas.TasBasicAppSetupStep;
+import io.harness.cdng.tas.TasBasicAppSetupStepInfo;
 import io.harness.cdng.tas.TasCanaryAppSetupStepInfo;
-import io.harness.cdng.tas.TasRollbackStep;
-import io.harness.cdng.tas.TasSwapRollbackStepInfo;
-import io.harness.cdng.tas.TasSwapRoutesStep;
 import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRollbackStepInfo;
+import io.harness.cdng.tas.TasSwapRoutesStepInfo;
 import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
@@ -97,8 +97,9 @@ import io.swagger.annotations.ApiModel;
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
         TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, ElastigroupDeployStepInfo.class,
         ElastigroupRollbackStepInfo.class, ElastigroupSetupStepInfo.class, TasCanaryAppSetupStepInfo.class,
-        TasBGAppSetupStepInfo.class, TasBasicAppSetupStep.class, TasAppResizeStep.class, TasSwapRoutesStep.class,
-        TasRollbackStep.class, TasSwapRollbackStepInfo.class, TasCommandStepInfo.class})
+        TasBGAppSetupStepInfo.class, TasBasicAppSetupStepInfo.class, TasAppResizeStepInfo.class,
+        TasSwapRoutesStepInfo.class, TasRollbackStepInfo.class, TasSwapRollbackStepInfo.class,
+        TasCommandStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

@@ -17,6 +17,7 @@ import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,10 +32,10 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasCanaryAppSetupStepParameters")
 @RecasterAlias("io.harness.cdng.tas.TasCanaryAppSetupStepParameters")
 public class TasCanaryAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
-  TasResizeStrategyType resizeStrategy;
+  @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
   public TasCanaryAppSetupStepParameters(TasInstanceCountType instanceCount,
-      ParameterField<Integer> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
+      ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, TasResizeStrategyType resizeStrategy) {
     super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;

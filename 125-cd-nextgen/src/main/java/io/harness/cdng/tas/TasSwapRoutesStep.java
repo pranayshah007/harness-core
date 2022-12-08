@@ -139,7 +139,8 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
-            .existingInActiveApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
+            .existingInActiveApplicationDetails(
+                tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
             .newApplicationName(getNewApplicationName(tasSetupDataOutcome))
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROUTES)
             .tasInfraConfig(tasInfraConfig)

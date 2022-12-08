@@ -17,25 +17,26 @@ import io.harness.delegate.task.pcf.PcfManifestsPackage;
 import io.harness.pcf.model.CfCliVersionNG;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
-import lombok.Builder;
-import lombok.Value;
-import org.springframework.data.annotation.TypeAlias;
-
 import java.util.List;
 import java.util.Map;
+import lombok.Builder;
+import lombok.Value;
+import lombok.experimental.NonFinal;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 @OwnedBy(CDP)
 @TypeAlias("tasExecutionPassThroughData")
 @RecasterAlias("io.harness.cdng.tas.TasExecutionPassThroughData")
 public class TasExecutionPassThroughData implements PassThroughData {
   String applicationName;
+  @NonFinal Integer maxCount;
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
   String zippedManifestId;
   PcfManifestsPackage pcfManifestsPackage;
-  Map<String,String> allFilesFetched;
+  Map<String, String> allFilesFetched;
   String repoRoot;
   CfCliVersionNG cfCliVersion;
   String rawScript;

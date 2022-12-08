@@ -5,20 +5,22 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cdng.tas;
+package io.harness.delegate.task.cf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
-import lombok.Data;
-import org.jetbrains.annotations.NotNull;
+import software.wings.utils.ArtifactType;
 
+import java.io.File;
+import lombok.Builder;
+import lombok.Value;
+
+@Value
+@Builder
 @OwnedBy(CDP)
-@Data
-@RecasterAlias("io.harness.cdng.tas.TasInstanceSelectionWrapper")
-public class TasInstanceSelectionWrapper {
-  @NotNull TasInstanceUnitType type;
-  @NotNull TasInstanceValue spec;
+public class TasArtifactDownloadResponse {
+  File artifactFile;
+  ArtifactType artifactType;
 }

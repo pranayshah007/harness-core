@@ -7,14 +7,14 @@
 
 package io.harness.cdng.visitor.helpers.cdstepinfo;
 
-import io.harness.cdng.tas.TasCommandStepInfo;
+import io.harness.cdng.tas.TasBGAppSetupStepInfo;
 import io.harness.walktree.visitor.validation.ConfigValidator;
 import io.harness.walktree.visitor.validation.ValidationVisitor;
 
-public class TasCommandStepInfoVisitorHelper implements ConfigValidator {
+public class TasBGAppSetupStepInfoVisitorHelper implements ConfigValidator {
   @Override
   public Object createDummyVisitableElement(Object originalElement) {
-    return TasCommandStepInfo.infoBuilder().build();
+    return TasBGAppSetupStepInfo.infoBuilder().build();
   }
 
   @Override

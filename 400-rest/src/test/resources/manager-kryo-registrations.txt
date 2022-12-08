@@ -2881,3 +2881,16 @@
 10000215:io.harness.delegate.task.pcf.response.CfInfraMappingDataResponseNG
 10000216:io.harness.delegate.beans.pcf.CfInfraMappingDataResult
 10000217:io.harness.delegate.task.pcf.response.CfCommandResponseNG
+10000218:io.harness.delegate.task.pcf.request.CfBasicSetupRequestNG
+10000219:io.harness.delegate.task.pcf.request.CfBasicSetupResponseNG
+10000220:io.harness.delegate.task.pcf.request.CfBlueGreenSetupRequestNG
+10000221:io.harness.delegate.task.pcf.request.CfBlueGreenSetupResponseNG
+10000222:io.harness.delegate.task.pcf.request.CfDeployCommandRequestNG
+10000223:io.harness.delegate.task.pcf.request.CfDeployCommandResponseNG
+10000224:io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG
+10000225:io.harness.delegate.task.pcf.request.CfRollbackCommandResponseNG
+10000226:io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG
+10000227:io.harness.delegate.task.pcf.request.TasRunPluginResponse
+10000228:io.harness.delegate.beans.pcf.CfDeployCommandResult
+10000229:io.harness.delegate.task.pcf.artifact.TasContainerArtifactConfig
+10000230:io.harness.delegate.beans.pcf.TasApplicationInfo

@@ -131,7 +131,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .tempRoutes(cfRollbackCommandRequestNG.getTempRouteMaps())
               .skipRollback(false)
               .isStandardBlueGreen(true)
-              .newApplicationDetails(cfRollbackCommandRequestNG.getNewApplicationDetails())
+              .newApplicationDetails(cfRollbackCommandRequestNG.getNewApplicationDetails().toCfAppSetupTimeDetails())
               .upSizeInActiveApp(cfRollbackCommandRequestNG.isUpsizeInActiveApp())
               .versioningChanged(false)
               .nonVersioning(true)
