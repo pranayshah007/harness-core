@@ -30,10 +30,14 @@ import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.aws.asg.AsgCommandRequest;
+import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.ecs.EcsInfraConfig;
+import io.harness.delegate.task.ecs.response.EcsCommandResponse;
 import io.harness.exception.GeneralException;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -235,5 +239,13 @@ public class AsgStepCommonHelper extends CDStepHelper {
         .chainEnd(isChainEnd)
         .passThroughData(passThroughData)
         .build();
+  }
+  public static String getErrorMessage(AsgCommandResponse asgCommandResponse) {
+    return asgCommandResponse.getErrorMessage() == null ? "" : asgCommandResponse.getErrorMessage();
+  }
+
+  public AsgInfraConfig getAsgInfraConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    return ecsEntityHelper.getAsgInfraConfig(infrastructure, ngAccess);
   }
 }

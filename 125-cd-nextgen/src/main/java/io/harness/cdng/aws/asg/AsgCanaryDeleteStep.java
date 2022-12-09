@@ -15,17 +15,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteDataOutcome;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteOutcome;
-import io.harness.cdng.ecs.beans.EcsCanaryDeleteDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
+import io.harness.delegate.beans.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.ecs.EcsCommandTypeNG;
-import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
-import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -51,6 +49,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.delegate.task.aws.asg.AsgCommandResponse;
 
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -82,7 +81,7 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
 
     @Override
     public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-                                                            StepElementParameters stepElementParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
+                                                            StepElementParameters stepElementParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
             throws Exception {
         StepResponse stepResponse = null;
         try {
@@ -100,7 +99,7 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
     }
 
     private StepResponse generateStepResponse(
-            Ambiance ambiance, EcsCanaryDeleteResponse ecsCanaryDeleteResponse, StepResponseBuilder stepResponseBuilder) {
+            Ambiance ambiance, AsgCanaryDeleteResponse asgCanaryDeleteResponse, StepResponseBuilder stepResponseBuilder) {
         StepResponse stepResponse;
 
         if (asgCanaryDeleteResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {

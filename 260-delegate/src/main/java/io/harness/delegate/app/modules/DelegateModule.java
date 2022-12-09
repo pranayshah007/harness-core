@@ -96,9 +96,9 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
+import io.harness.delegate.asg.AsgCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.asg.AsgCanaryDeployCommandTaskHandler;
 import io.harness.delegate.asg.AsgCommandTaskNGHandler;
-import io.harness.delegate.asg.AsgCanaryDeleteCommandTaskHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -1970,16 +1970,14 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.ECS_COMMAND_TASK_NG).toInstance(EcsCommandTaskNG.class);
     mapBinder.addBinding(TaskType.ECS_S3_FETCH_TASK_NG).toInstance(EcsS3FetchTask.class);
 
-
     // ASG NG
     MapBinder<String, AsgCommandTaskNGHandler> asgTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, AsgCommandTaskNGHandler.class);
     asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DEPLOY.name())
         .to(AsgCanaryDeployCommandTaskHandler.class);
+    asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DELETE.name())
+        .to(AsgCanaryDeleteCommandTaskHandler.class);
     mapBinder.addBinding(TaskType.AWS_ASG_COMMAND_TASK_NG).toInstance(AsgCommandTaskNG.class);
-      asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DELETE.name())
-              .to(AsgCanaryDeleteCommandTaskHandler.class);
-
 
     bind(EcsV2Client.class).to(EcsV2ClientImpl.class);
     bind(ElbV2Client.class).to(ElbV2ClientImpl.class);

@@ -5,15 +5,13 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.delegate.task.aws.asg.request;
+package io.harness.delegate.task.aws.asg;
 
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
-import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.expression.Expression;
 import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import lombok.Builder;
@@ -32,6 +30,6 @@ public class AsgCanaryDeleteRequest implements AsgCommandRequest, NestedAnnotati
 
   @NonFinal @Expression(ALLOW_SECRETS) AsgInfraConfig asgInfraConfig;
 
-  @Expression(ALLOW_SECRETS) String asgServiceDefinitionManifestContent;
+  @Expression(ALLOW_SECRETS) String asgLaunchTemplateContent;
   String asgServiceNameSuffix;
 }
