@@ -9,7 +9,6 @@ package io.harness.cdng.aws.asg;
 
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -17,6 +16,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -32,11 +32,10 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("asgCanaryDeleteBaseStepInfo")
 @FieldNameConstants(innerTypeName = "AsgCanaryDeleteBaseStepInfoKeys")
 public class AsgCanaryDeleteBaseStepInfo {
-    @YamlSchemaTypes({runtime})
-    @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-    ParameterField<List<TaskSelectorYaml>> delegateSelectors;
+  @YamlSchemaTypes({runtime})
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
-    @JsonIgnore
-    String asgCanaryDeployFnq;
-    @JsonIgnore String asgCanaryDeleteFnq;
+  @JsonIgnore String asgCanaryDeployFnq;
+  @JsonIgnore String asgCanaryDeleteFnq;
 }

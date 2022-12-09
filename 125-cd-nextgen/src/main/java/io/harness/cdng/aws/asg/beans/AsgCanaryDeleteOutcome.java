@@ -26,6 +26,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("asgCanaryDeleteOutcome")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeleteOutcome")
 public class AsgCanaryDeleteOutcome implements Outcome, ExecutionSweepingOutput {
-    boolean canaryDeleted;
-    String canaryServiceName;
+  boolean canaryDeleted;
+  String canaryServiceName;
 }

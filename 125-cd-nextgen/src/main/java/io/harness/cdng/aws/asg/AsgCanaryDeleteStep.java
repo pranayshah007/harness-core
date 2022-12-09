@@ -6,7 +6,7 @@
  */
 
 package io.harness.cdng.aws.asg;
-
+/*
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.account.services.AccountService;
@@ -15,17 +15,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteDataOutcome;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteOutcome;
-import io.harness.cdng.ecs.beans.EcsCanaryDeleteDataOutcome;
 import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.ecs.EcsCanaryDeleteResult;
+import io.harness.delegate.beans.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.ecs.EcsCommandTypeNG;
-import io.harness.delegate.task.ecs.request.EcsCanaryDeleteRequest;
-import io.harness.delegate.task.ecs.response.EcsCanaryDeleteResponse;
-import io.harness.delegate.task.ecs.response.EcsCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.AsgCommandResponse;
+import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -58,148 +57,148 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
 public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCommandResponse> {
-    public static final StepType STEP_TYPE = StepType.newBuilder()
-            .setType(ExecutionNodeType.ASG_CANARY_DELETE.getYamlType())
-            .setStepCategory(StepCategory.STEP)
+  public static final StepType STEP_TYPE = StepType.newBuilder()
+                                               .setType(ExecutionNodeType.ASG_CANARY_DELETE.getYamlType())
+                                               .setStepCategory(StepCategory.STEP)
+                                               .build();
+  public static final String ASG_CANARY_DELETE_COMMAND_NAME = "AsgCanaryDelete";
+  public static final String ASG_CANARY_DELETE_STEP_MISSING = "Canary Deploy step is not configured.";
+  public static final String ASG_CANARY_DELETE_STEP_ALREADY_EXECUTED =
+      "Canary Service has already been deleted. Skipping delete canary service in rollback";
+  public static final String ASG_CANARY_DELETE_STEP_SKIPPED =
+      "Asg Canary Deploy Step was not executed. Skipping Canary Delete.";
+
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private OutcomeService outcomeService;
+  @Inject private AsgStepCommonHelper asgStepCommonHelper;
+  @Inject private AccountService accountService;
+  @Inject private StepHelper stepHelper;
+
+  @Override
+  public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
+    // Nothing to validate
+  }
+
+  @Override
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
+      StepElementParameters stepElementParameters, ThrowingSupplier<AsgCommandResponse> responseDataSupplier)
+      throws Exception {
+    StepResponse stepResponse = null;
+    try {
+      AsgCanaryDeleteResponse asgCanaryDeleteResponse = (AsgCanaryDeleteResponse) responseDataSupplier.get();
+
+      StepResponseBuilder stepResponseBuilder =
+          StepResponse.builder().unitProgressList(asgCanaryDeleteResponse.getUnitProgressData().getUnitProgresses());
+
+      stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
+    } catch (Exception e) {
+      log.error("Error while processing asg canary delete response: {}", ExceptionUtils.getMessage(e), e);
+      throw e;
+    }
+    return stepResponse;
+  }
+
+  private StepResponse generateStepResponse(
+      Ambiance ambiance, AsgCanaryDeleteResponse asgCanaryDeleteResponse, StepResponseBuilder stepResponseBuilder) {
+    StepResponse stepResponse;
+
+    if (asgCanaryDeleteResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+      stepResponse = stepResponseBuilder.status(Status.FAILED)
+                         .failureInfo(FailureInfo.newBuilder()
+                                          .setErrorMessage(asgStepCommonHelper.getErrorMessage(asgCanaryDeleteResponse))
+                                          .build())
+                         .build();
+    } else {
+      AsgCanaryDeleteResult asgCanaryDeleteResult = asgCanaryDeleteResponse.getAsgCanaryDeleteResult();
+
+      AsgCanaryDeleteOutcome asgCanaryDeleteOutcome =
+          AsgCanaryDeleteOutcome.builder()
+              .canaryDeleted(asgCanaryDeleteResult.isCanaryDeleted())
+              .canaryServiceName(asgCanaryDeleteResult.getCanaryServiceName())
+              .build();
+
+      executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME,
+          asgCanaryDeleteOutcome, StepOutcomeGroup.STEP.name());
+
+      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
+                         .stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(asgCanaryDeleteOutcome)
+                                          .build())
+                         .build();
+    }
+    return stepResponse;
+  }
+
+  @Override
+  public TaskRequest obtainTaskAfterRbac(
+      Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    AsgCanaryDeleteStepParameters asgCanaryDeleteStepParameters =
+        (AsgCanaryDeleteStepParameters) stepElementParameters.getSpec();
+
+    if (EmptyPredicate.isEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq())) {
+      throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
+    }
+
+    OptionalSweepingOutput asgCanaryDeleteDataOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq() + "."
+            + OutcomeExpressionConstants.ASG_CANARY_DELETE_DATA_OUTCOME));
+
+    if (!asgCanaryDeleteDataOptionalOutput.isFound()) {
+      return skipTaskRequestOrThrowException(ambiance);
+    }
+
+    if (StepUtils.isStepInRollbackSection(ambiance)
+        && EmptyPredicate.isNotEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq())) {
+      OptionalSweepingOutput existingCanaryDeleteOutput = executionSweepingOutputService.resolveOptional(ambiance,
+          RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq() + "."
+              + OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME));
+      if (existingCanaryDeleteOutput.isFound()) {
+        return TaskRequest.newBuilder()
+            .setSkipTaskRequest(
+                SkipTaskRequest.newBuilder().setMessage(ASG_CANARY_DELETE_STEP_ALREADY_EXECUTED).build())
             .build();
-    public static final String ASG_CANARY_DELETE_COMMAND_NAME = "AsgCanaryDelete";
-    public static final String ASG_CANARY_DELETE_STEP_MISSING = "Canary Deploy step is not configured.";
-    public static final String ASG_CANARY_DELETE_STEP_ALREADY_EXECUTED =
-            "Canary Service has already been deleted. Skipping delete canary service in rollback";
-    public static final String ASG_CANARY_DELETE_STEP_SKIPPED =
-            "Asg Canary Deploy Step was not executed. Skipping Canary Delete.";
-
-    @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-    @Inject private OutcomeService outcomeService;
-    @Inject private AsgStepCommonHelper asgStepCommonHelper;
-    @Inject private AccountService accountService;
-    @Inject private StepHelper stepHelper;
-
-    @Override
-    public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
-        // Nothing to validate
+      }
     }
 
-    @Override
-    public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance,
-                                                            StepElementParameters stepElementParameters, ThrowingSupplier<EcsCommandResponse> responseDataSupplier)
-            throws Exception {
-        StepResponse stepResponse = null;
-        try {
-            AsgCanaryDeleteResponse asgCanaryDeleteResponse = (AsgCanaryDeleteResponse) responseDataSupplier.get();
+    AsgCanaryDeleteDataOutcome asgCanaryDeleteDataOutcome =
+        (AsgCanaryDeleteDataOutcome) asgCanaryDeleteDataOptionalOutput.getOutput();
 
-            StepResponseBuilder stepResponseBuilder =
-                    StepResponse.builder().unitProgressList(asgCanaryDeleteResponse.getUnitProgressData().getUnitProgresses());
+    InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
 
-            stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
-        } catch (Exception e) {
-            log.error("Error while processing asg canary delete response: {}", ExceptionUtils.getMessage(e), e);
-            throw e;
-        }
-        return stepResponse;
+    AsgCanaryDeleteRequest asgCanaryDeleteRequest =
+        AsgCanaryDeleteRequest.builder()
+            .accountId(accountId)
+            .asgCommandType(AsgCommandTypeNG.ASG_CANARY_DELETE)
+            .commandName(ASG_CANARY_DELETE_COMMAND_NAME)
+            .commandUnitsProgress(CommandUnitsProgress.builder().build())
+            .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
+            .asgConfigurationContent(asgCanaryDeleteDataOutcome.getCreateServiceRequestBuilderString())
+            .asgServiceNameSuffix(asgCanaryDeleteDataOutcome.getAsgServiceNameSuffix())
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .build();
+
+    return asgStepCommonHelper
+        .queueAsgTask(stepElementParameters, asgCanaryDeleteRequest, ambiance,
+            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+        .getTaskRequest();
+  }
+
+  private TaskRequest skipTaskRequestOrThrowException(Ambiance ambiance) {
+    if (StepUtils.isStepInRollbackSection(ambiance)) {
+      return TaskRequest.newBuilder()
+          .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(ASG_CANARY_DELETE_STEP_SKIPPED).build())
+          .build();
     }
 
-    private StepResponse generateStepResponse(
-            Ambiance ambiance, EcsCanaryDeleteResponse ecsCanaryDeleteResponse, StepResponseBuilder stepResponseBuilder) {
-        StepResponse stepResponse;
+    throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
+  }
 
-        if (asgCanaryDeleteResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
-            stepResponse = stepResponseBuilder.status(Status.FAILED)
-                    .failureInfo(FailureInfo.newBuilder()
-                            .setErrorMessage(asgStepCommonHelper.getErrorMessage(asgCanaryDeleteResponse))
-                            .build())
-                    .build();
-        } else {
-            AsgCanaryDeleteResult asgCanaryDeleteResult = asgCanaryDeleteResponse.getAsgCanaryDeleteResult();
-
-            AsgCanaryDeleteOutcome asgCanaryDeleteOutcome =
-                    AsgCanaryDeleteOutcome.builder()
-                            .canaryDeleted(asgCanaryDeleteResult.isCanaryDeleted())
-                            .canaryServiceName(asgCanaryDeleteResult.getCanaryServiceName())
-                            .build();
-
-            executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME,
-                    asgCanaryDeleteOutcome, StepOutcomeGroup.STEP.name());
-
-            stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
-                    .stepOutcome(StepResponse.StepOutcome.builder()
-                            .name(OutcomeExpressionConstants.OUTPUT)
-                            .outcome(asgCanaryDeleteOutcome)
-                            .build())
-                    .build();
-        }
-        return stepResponse;
-    }
-
-    @Override
-    public TaskRequest obtainTaskAfterRbac(
-            Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
-        final String accountId = AmbianceUtils.getAccountId(ambiance);
-
-        AsgCanaryDeleteStepParameters asgCanaryDeleteStepParameters =
-                (AsgCanaryDeleteStepParameters) stepElementParameters.getSpec();
-
-        if (EmptyPredicate.isEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq())) {
-            throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
-        }
-
-        OptionalSweepingOutput asgCanaryDeleteDataOptionalOutput = executionSweepingOutputService.resolveOptional(ambiance,
-                RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeployFnq() + "."
-                        + OutcomeExpressionConstants.ASG_CANARY_DELETE_DATA_OUTCOME));
-
-        if (!asgCanaryDeleteDataOptionalOutput.isFound()) {
-            return skipTaskRequestOrThrowException(ambiance);
-        }
-
-        if (StepUtils.isStepInRollbackSection(ambiance)
-                && EmptyPredicate.isNotEmpty(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq())) {
-            OptionalSweepingOutput existingCanaryDeleteOutput = executionSweepingOutputService.resolveOptional(ambiance,
-                    RefObjectUtils.getSweepingOutputRefObject(asgCanaryDeleteStepParameters.getAsgCanaryDeleteFnq() + "."
-                            + OutcomeExpressionConstants.ASG_CANARY_DELETE_OUTCOME));
-            if (existingCanaryDeleteOutput.isFound()) {
-                return TaskRequest.newBuilder()
-                        .setSkipTaskRequest(
-                                SkipTaskRequest.newBuilder().setMessage(ASG_CANARY_DELETE_STEP_ALREADY_EXECUTED).build())
-                        .build();
-            }
-        }
-
-        AsgCanaryDeleteDataOutcome asgCanaryDeleteDataOutcome =
-                (AsgCanaryDeleteDataOutcome) asgCanaryDeleteDataOptionalOutput.getOutput();
-
-        InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(
-                ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-
-        AsgCanaryDeleteRequest asgCanaryDeleteRequest =
-                AsgCanaryDeleteRequest.builder()
-                        .accountId(accountId)
-                        .asgCommandType(AsgCommandTypeNG.ASG_CANARY_DELETE)
-                        .commandName(ASG_CANARY_DELETE_COMMAND_NAME)
-                        .commandUnitsProgress(CommandUnitsProgress.builder().build())
-                        .asgInfraConfig(asgStepCommonHelper.getAsgInfraConfig(infrastructureOutcome, ambiance))
-                        .asgServiceDefinitionManifestContent(asgCanaryDeleteDataOutcome.getCreateServiceRequestBuilderString())
-                        .asgServiceNameSuffix(asgCanaryDeleteDataOutcome.getAsgServiceNameSuffix())
-                        .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-                        .build();
-
-        return asgStepCommonHelper
-                .queueAsgTask(stepElementParameters, asgCanaryDeleteRequest, ambiance,
-                        EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
-                .getTaskRequest();
-    }
-
-    private TaskRequest skipTaskRequestOrThrowException(Ambiance ambiance) {
-        if (StepUtils.isStepInRollbackSection(ambiance)) {
-            return TaskRequest.newBuilder()
-                    .setSkipTaskRequest(SkipTaskRequest.newBuilder().setMessage(ASG_CANARY_DELETE_STEP_SKIPPED).build())
-                    .build();
-        }
-
-        throw new InvalidRequestException(ASG_CANARY_DELETE_STEP_MISSING, USER);
-    }
-
-    @Override
-    public Class<StepElementParameters> getStepParametersClass() {
-        return StepElementParameters.class;
-    }
-}
+  @Override
+  public Class<StepElementParameters> getStepParametersClass() {
+    return StepElementParameters.class;
+  }
+}*/

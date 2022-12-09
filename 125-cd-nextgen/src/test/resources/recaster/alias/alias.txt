@@ -619,3 +619,6 @@ io.harness.cdng.infra.yaml.AsgInfrastructure
 io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo
 io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters
 io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode
+io.harness.cdng.aws.asg.beans.
+io.harness.cdng.aws.asg.beans.AsgCanaryDeleteOutcome
+io.harness.cdng.aws.asg.beans.AsgCanaryDeleteDataOutcome

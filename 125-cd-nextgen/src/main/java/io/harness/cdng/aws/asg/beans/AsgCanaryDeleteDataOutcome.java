@@ -24,6 +24,6 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("ecsCanaryDeleteDataOutcome")
 @RecasterAlias("io.harness.cdng.ecs.EcsCanaryDeleteDataOutcome")
 public class AsgCanaryDeleteDataOutcome implements ExecutionSweepingOutput {
-    String createServiceRequestBuilderString;
-    String asgServiceNameSuffix;
+  String createServiceRequestBuilderString;
+  String asgServiceNameSuffix;
 }
