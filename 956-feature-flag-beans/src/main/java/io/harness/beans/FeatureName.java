@@ -503,7 +503,8 @@ public enum FeatureName {
       "Enables authorization with X-Api-Key header for custom webhook triggers in NG", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
-  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP);
+  TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
+  SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG);
 
   @Deprecated
   FeatureName() {
