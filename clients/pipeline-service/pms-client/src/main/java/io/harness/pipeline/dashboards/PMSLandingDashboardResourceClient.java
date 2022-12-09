@@ -32,4 +32,11 @@ public interface PMSLandingDashboardResourceClient {
       @NotNull @Query(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @Query(NGResourceFilterConstants.END_TIME) long endInterval,
       @NotNull @Body LandingDashboardRequestPMS landingDashboardRequestPMS);
+
+  @POST(LANDING_DASHBOARDS_ENDPOINT + "/executionsCount")
+  Call<ResponseDTO<PipelinesCount>> getExecutionsCount(
+      @NotNull @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @Query(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @Query(NGResourceFilterConstants.END_TIME) long endInterval,
+      @NotNull @Body LandingDashboardRequestPMS landingDashboardRequestPMS);
 }

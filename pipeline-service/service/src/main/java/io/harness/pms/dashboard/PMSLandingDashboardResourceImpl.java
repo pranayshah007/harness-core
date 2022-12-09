@@ -14,6 +14,7 @@ import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.LandingDashboardRequestPMS;
 import io.harness.pms.dashboards.PipelinesCount;
 
@@ -35,6 +36,14 @@ public class PMSLandingDashboardResourceImpl implements PMSLandingDashboardResou
       @NotNull long startInterval, @NotNull long endInterval,
       @NotNull LandingDashboardRequestPMS landingDashboardRequestPMS) {
     return ResponseDTO.newResponse(pmsLandingDashboardService.getPipelinesCount(
+        accountIdentifier, landingDashboardRequestPMS.getOrgProjectIdentifiers(), startInterval, endInterval));
+  }
+
+  @NGAccessControlCheck(resourceType = "ACCOUNT", permission = "core_account_view")
+  public ResponseDTO<ExecutionsCount> getExecutionsCount(@NotNull @AccountIdentifier String accountIdentifier,
+      @NotNull long startInterval, @NotNull long endInterval,
+      @NotNull LandingDashboardRequestPMS landingDashboardRequestPMS) {
+    return ResponseDTO.newResponse(pmsLandingDashboardService.getExecutionsCount(
         accountIdentifier, landingDashboardRequestPMS.getOrgProjectIdentifiers(), startInterval, endInterval));
   }
 }

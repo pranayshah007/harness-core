@@ -8,11 +8,13 @@
 package io.harness.pms.dashboard;
 
 import static io.harness.timescaledb.Tables.PIPELINES;
+import static io.harness.timescaledb.Tables.PIPELINE_EXECUTION_SUMMARY;
 
 import static org.jooq.impl.DSL.row;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.OrgProjectIdentifier;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.PipelinesCount;
 
 import com.google.inject.Inject;
@@ -43,6 +45,33 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
     return PipelinesCount.builder().totalCount(totalCount).newCount(trendCount).build();
   }
 
+  @Override
+  public ExecutionsCount getExecutionsCount(String accountIdentifier, List<OrgProjectIdentifier> orgProjectIdentifiers,
+      long startInterval, long endInterval) {
+    if (EmptyPredicate.isEmpty(orgProjectIdentifiers)) {
+      return ExecutionsCount.builder().build();
+    }
+    Table<Record2<String, String>> orgProjectTable = getOrgProjectTable(orgProjectIdentifiers);
+
+    Integer totalCount = getTotalExecutionsCount(accountIdentifier, orgProjectTable);
+    int trendCount = getNewExecutionsCount(accountIdentifier, startInterval, endInterval, orgProjectTable);
+    return ExecutionsCount.builder().totalCount(totalCount).newCount(trendCount).build();
+  }
+
+  private Integer getTotalExecutionsCount(String accountIdentifier, Table<Record2<String, String>> orgProjectTable) {
+    return dsl.select(DSL.count())
+        .from(PIPELINE_EXECUTION_SUMMARY)
+        .where(PIPELINE_EXECUTION_SUMMARY.ACCOUNTID.eq(accountIdentifier))
+        .andExists(
+            dsl.selectOne()
+                .from(orgProjectTable)
+                .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
+                           .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
+                               (Field<String>) orgProjectTable.field("projectId")))))
+        .fetchInto(Integer.class)
+        .get(0);
+  }
+
   private Integer getTotalPipelinesCount(String accountIdentifier, Table<Record2<String, String>> orgProjectTable) {
     return dsl.select(DSL.count())
         .from(PIPELINES)
@@ -70,6 +99,23 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
                 .from(orgProjectTable)
                 .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
                            .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field("projectId")))))
+        .fetchInto(Integer.class)
+        .get(0);
+  }
+
+  private Integer getNewExecutionsCount(
+      String accountIdentifier, long startInterval, long endInterval, Table<Record2<String, String>> orgProjectTable) {
+    return dsl.select(DSL.count())
+        .from(PIPELINE_EXECUTION_SUMMARY)
+        .where(PIPELINE_EXECUTION_SUMMARY.ACCOUNTID.eq(accountIdentifier))
+        .and(PIPELINE_EXECUTION_SUMMARY.STARTTS.greaterOrEqual(startInterval))
+        .and(PIPELINE_EXECUTION_SUMMARY.STARTTS.lessThan(endInterval))
+        .andExists(
+            dsl.selectOne()
+                .from(orgProjectTable)
+                .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
+                           .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
+                               (Field<String>) orgProjectTable.field("projectId")))))
         .fetchInto(Integer.class)
         .get(0);
   }
