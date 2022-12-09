@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @EqualsAndHashCode(callSuper = true)
 @TypeAlias("asgCanaryDeleteStepParameters")
 @RecasterAlias("io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters")
-public class AsgCanaryDeleteStepParameters extends AsgCanaryDeleteStepInfo implements AsgSpecParameters {
+public class AsgCanaryDeleteStepParameters extends AsgCanaryDeleteBaseStepInfo implements AsgSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public AsgCanaryDeleteStepParameters(
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, String asgCanaryDeployFnq, String asgCanaryDeleteFnq) {
