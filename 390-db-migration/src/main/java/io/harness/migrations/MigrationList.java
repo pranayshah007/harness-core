@@ -464,7 +464,7 @@ public class MigrationList {
         .add(Pair.of(379, AddNGFieldToDelegateMigration.class))
         .add(Pair.of(380, AddImmutableDelegateEnabledFieldToAccountCollection.class))
         .add(Pair.of(381, AddRingDetailsToDelegateRing.class))
-        .add(Pair.of(382, InitTerraformProvisionersSourceType.class))
+        .add(Pair.of(384, InitTerraformProvisionersSourceType.class))
         .build();
   }
 }

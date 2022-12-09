@@ -30,52 +30,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.Key;
+import org.mongodb.morphia.query.UpdateResults;
 
 @OwnedBy(CDP)
 @Slf4j
 public class InitTerraformProvisionersSourceType implements Migration {
-  @Inject protected WingsPersistence wingsPersistence;
+  @Inject protected WingsPersistence persistence;
 
   @Override
   public void migrate() {
-    try (HIterator<Account> accounts =
-             new HIterator<>(wingsPersistence.createQuery(Account.class, excludeAuthority).fetch())) {
-      while (accounts.hasNext()) {
-        final Account account = accounts.next();
-
-        List<Key<InfrastructureProvisioner>> infraProvisionersKeyIdList =
-            wingsPersistence.createQuery(InfrastructureProvisioner.class)
-                .filter(InfrastructureProvisioner.ACCOUNT_ID_KEY, account.getUuid())
-                .filter(InfrastructureProvisioner.INFRASTRUCTURE_PROVISIONER_TYPE_KEY, "TERRAFORM")
-                .asKeyList();
-        if (isNotEmpty(infraProvisionersKeyIdList)) {
-          Set<String> infraProvisionersIdSet =
-              infraProvisionersKeyIdList.stream()
-                  .map(infrastructureProvisionerKey -> (String) infrastructureProvisionerKey.getId())
-                  .collect(Collectors.toSet());
-          bulkSetTerraformSourceType(account.getUuid(), InfrastructureProvisioner.class, infraProvisionersIdSet);
-        }
-      }
-    }
-  }
-
-  protected <T extends Base> void bulkSetTerraformSourceType(
-      String accountId, Class<T> clazz, Set<String> infrastructureProvisionersIdSet) {
-    final DBCollection collection = wingsPersistence.getCollection(clazz);
-    BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
-
-    try (HIterator<TerraformInfrastructureProvisioner> terraformInfrastructureProvisioners =
-             new HIterator<>(wingsPersistence.createQuery(TerraformInfrastructureProvisioner.class)
-                                 .field("_id")
-                                 .in(infrastructureProvisionersIdSet)
-                                 .field("sourceType")
-                                 .doesNotExist()
-                                 .fetch())) {
-      while (terraformInfrastructureProvisioners.hasNext()) {
-        final TerraformInfrastructureProvisioner terraformProvisioner = terraformInfrastructureProvisioners.next();
-        terraformProvisioner.setSourceType(TerraformSourceType.GIT);
-        wingsPersistence.save(terraformProvisioner);
-      }
-    }
+    log.info("InitTerraformProvisionersSourceType migration started");
+    UpdateResults updateResults = persistence.update(persistence.createQuery(TerraformInfrastructureProvisioner.class),
+        persistence.createUpdateOperations(TerraformInfrastructureProvisioner.class)
+            .set("sourceType", TerraformSourceType.GIT));
+    log.info("InitTerraformProvisionersSourceType migration finishes");
+    log.info(String.format("InitTerraformProvisionersSourceType update count: %s, ", updateResults.getUpdatedCount()));
   }
 }

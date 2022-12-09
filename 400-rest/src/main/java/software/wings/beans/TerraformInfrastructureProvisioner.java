@@ -40,7 +40,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
   private TerraformSourceType sourceType = TerraformSourceType.GIT;
   private String awsConfigId;
   private String s3URI;
-
+  private String awsSourceConfigName;
   /**
    * This could be either a branch or a commit id or any other reference which
    * can be checked out.
@@ -77,12 +77,14 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       List<InfrastructureMappingBlueprint> mappingBlueprints, String accountId, String description,
       EmbeddedUser createdBy, long createdAt, EmbeddedUser lastUpdatedBy, long lastUpdatedAt, String entityYamlPath,
       List<NameValuePair> backendConfigs, String repoName, List<NameValuePair> environmentVariables,
-      boolean skipRefreshBeforeApplyingPlan, String kmsId) {
+      boolean skipRefreshBeforeApplyingPlan, String kmsId, String s3URI, String awsConfigId) {
     super(name, description, TERRAFORM.name(), variables, mappingBlueprints, accountId, uuid, appId, createdBy,
         createdAt, lastUpdatedBy, lastUpdatedAt, entityYamlPath);
     setSourceRepoSettingId(sourceRepoSettingId);
     setSourceRepoBranch(sourceRepoBranch);
     setCommitId(commitId);
+    setS3URI(s3URI);
+    setAwsConfigId(awsConfigId);
     setPath(path);
     setNormalizedPath(FilenameUtils.normalize(path));
     this.backendConfigs = backendConfigs;
@@ -113,6 +115,8 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
     private TerraformSourceType sourceType;
 
     private String awsConfigId;
+
+    private String awsSourceConfigName;
     private String s3URI;
 
     @Builder
@@ -121,7 +125,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
         String sourceRepoSettingName, String sourceRepoBranch, String path, List<NameValuePair.Yaml> backendConfigs,
         String repoName, List<NameValuePair.Yaml> environmentVariables, String commitId,
         boolean skipRefreshBeforeApplyingPlan, String secretMangerName, String s3URI, TerraformSourceType sourceType,
-        String awsConfigId) {
+        String awsConfigId, String awsSourceConfigName) {
       super(type, harnessApiVersion, description, infrastructureProvisionerType, variables, mappingBlueprints);
       this.sourceRepoSettingName = sourceRepoSettingName;
       this.sourceRepoBranch = sourceRepoBranch;
@@ -136,6 +140,7 @@ public class TerraformInfrastructureProvisioner extends InfrastructureProvisione
       this.s3URI = s3URI;
       this.sourceType = sourceType;
       this.awsConfigId = awsConfigId;
+      this.awsSourceConfigName = awsSourceConfigName;
     }
   }
 }

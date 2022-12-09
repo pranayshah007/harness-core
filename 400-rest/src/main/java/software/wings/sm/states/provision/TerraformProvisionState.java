@@ -255,8 +255,6 @@ public abstract class TerraformProvisionState extends State {
 
   @Getter @Setter private List<String> tfVarFiles;
 
-  @Attributes(title = "tfVarAWSConfigId") @Getter @Setter private String tfVarAWSConfigId;
-
   @Getter @Setter private S3FileConfig tfVarS3FileConfig;
   @Getter @Setter private GitFileConfig tfVarGitFileConfig;
 
@@ -838,9 +836,7 @@ public abstract class TerraformProvisionState extends State {
     gitConfig = null;
     String path = null;
 
-    if (terraformProvisioner.getSourceType() == null
-        || (terraformProvisioner.getSourceType() != null
-            && terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT))) {
+    if (terraformProvisioner.getSourceType().equals(TerraformSourceType.GIT)) {
       path = context.renderExpression(terraformProvisioner.getNormalizedPath());
       if (path == null) {
         path = context.renderExpression(FilenameUtils.normalize(terraformProvisioner.getPath()));
@@ -997,8 +993,7 @@ public abstract class TerraformProvisionState extends State {
     if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
         && terraformProvisioner.getSourceType() != null
         && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
-      setAWSS3SourceAndAuthParamsIfPresent(
-          terraformProvisioner.getAwsConfigId(), terraformProvisioner, context, terraformProvisionParametersBuilder);
+      setAWSS3SourceAndAuthParamsIfPresent(terraformProvisioner, context, terraformProvisionParametersBuilder);
     }
 
     return createAndRunTask(
@@ -1332,16 +1327,14 @@ public abstract class TerraformProvisionState extends State {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
-        && terraformProvisioner.getSourceType() != null
         && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
-      setAWSS3SourceAndAuthParamsIfPresent(
-          terraformProvisioner.getAwsConfigId(), terraformProvisioner, context, terraformProvisionParametersBuilder);
+      setAWSS3SourceAndAuthParamsIfPresent(terraformProvisioner, context, terraformProvisionParametersBuilder);
     }
 
     return createAndRunTask(activityId, executionContext, terraformProvisionParametersBuilder.build(), delegateTag);
   }
 
-  protected void setAWSS3SourceAndAuthParamsIfPresent(String awsConfigId,
+  protected void setAWSS3SourceAndAuthParamsIfPresent(
       TerraformInfrastructureProvisioner terraformInfrastructureProvisioner, ExecutionContext context,
       TerraformProvisionParametersBuilder terraformProvisionParametersBuilder) {
     AwsConfig awsS3SourceBucketConfig =
@@ -1420,12 +1413,12 @@ public abstract class TerraformProvisionState extends State {
     List<EncryptedDataDetail> encryptionDetails =
         secretManager.getEncryptionDetails(awsConfig, GLOBAL_APP_ID, context.getWorkflowExecutionId());
 
-    String s3URI = tfVarS3FileConfig.getS3URI();
+    String s3URI = config.getS3URI();
 
     if (isNotEmpty(s3URI)) {
-      List<String> multipleFiles = splitCommaSeparatedFilePath(s3URI);
-      tfVarS3FileConfig.setS3URIList(multipleFiles);
+      config.setS3URIList(splitCommaSeparatedFilePath(s3URI));
     }
+
     return TfVarS3Source.builder()
         .awsConfig(awsConfig)
         .encryptedDataDetails(encryptionDetails)
