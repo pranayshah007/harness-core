@@ -348,7 +348,6 @@ public class DelegateServiceImpl implements DelegateService {
 
   private static final long AUTO_UPGRADE_CHECK_TIME_IN_MINUTES = 90;
 
-  private static final String ON_PREM_IMMUTABLE_DELEGATE_ENABLED = "IMMUTABLE_DELEGATE_ENABLED";
   private long now() {
     return clock.millis();
   }
@@ -3280,18 +3279,6 @@ public class DelegateServiceImpl implements DelegateService {
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
     if (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType) || DOCKER.equals(delegateType)) {
       boolean immutableDelegateEnabledInDb = accountService.isImmutableDelegateEnabled(accountId);
-
-      // immutable delegate for ON-PREM is toggled using variable IMMUTABLE_DELEGATE_ENABLED in manager configMap
-      if (DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())) {
-        String immutableDelegateInConfigMap = System.getenv(ON_PREM_IMMUTABLE_DELEGATE_ENABLED);
-        if (isNotEmpty(immutableDelegateInConfigMap)) {
-          // update account collection variable in case of difference.
-          if (!String.valueOf(immutableDelegateEnabledInDb).equals(immutableDelegateInConfigMap)) {
-            accountService.setImmutableDelegateEnabledFlag(
-                accountId, Boolean.parseBoolean(immutableDelegateInConfigMap));
-          }
-        }
-      }
 
       return immutableDelegateEnabledInDb;
     }
