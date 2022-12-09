@@ -17,8 +17,8 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
-import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 @Data

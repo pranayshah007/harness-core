@@ -56,11 +56,9 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -120,7 +118,6 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
           .build();
     }
 
-
     List<CfServiceData> instanceData = new ArrayList<>();
     if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
       tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
@@ -145,7 +142,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .instanceData(instanceData)
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
-            .timeoutIntervalInMin(10)
+            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())

@@ -44,7 +44,6 @@ import io.harness.connector.task.tas.TasNgConfigMapper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.cf.PcfCommandTaskBaseHelper;
 import io.harness.delegate.cf.retry.RetryAbleTaskExecutor;
@@ -167,7 +166,7 @@ public class TasBasicSetupTaskHandler extends CfCommandTaskNGHandler {
               .newReleaseName(basicSetupRequestNG.getReleaseNamePrefix())
               .pcfManifestFileData(pcfManifestFileData)
               .varsYmlFilePresent(varsYmlPresent)
-              .dockerBasedDeployment(true)
+              .dockerBasedDeployment(!basicSetupRequestNG.isPackageArtifact())
               .build();
 
       requestData.setFinalManifestYaml(generateManifestYamlForPush(basicSetupRequestNG, requestData));

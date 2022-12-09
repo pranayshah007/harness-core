@@ -18,6 +18,7 @@ import io.harness.cdng.manifest.yaml.TasManifestOutcome;
 import io.harness.cdng.manifest.yaml.VarsManifestOutcome;
 import io.harness.delegate.task.localstore.ManifestFiles;
 import io.harness.git.model.FetchFilesResult;
+import io.harness.logging.UnitProgress;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
@@ -49,6 +50,7 @@ public class TasStepPassThroughData implements PassThroughData {
   // for custom source manifest and values files
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;
+  @Setter @NonFinal List<UnitProgress> unitProgresses;
 
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteCustomFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.visitor.YamlTypes.TAS_BASIC_APP_SETUP;
@@ -44,10 +51,10 @@ public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwap
     tasSwapRoutesStepParameters.setTasBGSetupFqn(tasBGSetupFqn);
 
     String tasBasicSetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_BASIC_APP_SETUP);
-    tasSwapRoutesStepParameters.setTasBGSetupFqn(tasBasicSetupFqn);
+    tasSwapRoutesStepParameters.setTasBasicSetupFqn(tasBasicSetupFqn);
 
     String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
-    tasSwapRoutesStepParameters.setTasBGSetupFqn(tasCanarySetupFqn);
+    tasSwapRoutesStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
     return stepParameters;
   }
 }

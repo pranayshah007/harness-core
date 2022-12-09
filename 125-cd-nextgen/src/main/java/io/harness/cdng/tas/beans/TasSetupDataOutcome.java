@@ -46,6 +46,7 @@ public class TasSetupDataOutcome implements Outcome, ExecutionSweepingOutput {
   List<String> tempRouteMap;
   List<String> routeMaps;
   List<CfAppSetupTimeDetails> appDetailsToBeDownsized;
+  @Builder.Default Boolean isBlueGreen = Boolean.FALSE;
 
   boolean useAppAutoscalar;
 }

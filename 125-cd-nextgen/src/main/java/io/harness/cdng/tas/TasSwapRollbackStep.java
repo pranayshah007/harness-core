@@ -156,7 +156,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
-            .timeoutIntervalInMin(10)
+            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())

@@ -41,6 +41,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.ng.core.BaseNGAccess;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
@@ -65,6 +66,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -218,6 +220,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .instanceData(tasSetupDataOutcome.getInstanceData())
             .cfCommandTypeNG(CfCommandTypeNG.APP_RESIZE)
             .resizeStrategy(tasSetupDataOutcome.getResizeStrategy())
+            .isStandardBlueGreen(tasSetupDataOutcome.getIsBlueGreen())
             .newReleaseName(tasSetupDataOutcome.getNewReleaseName())
             .tasInfraConfig(tasInfraConfig)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
@@ -231,7 +234,8 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
                                   .parameters(new Object[] {cfDeployCommandRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Collections.singletonList(TasAppResizeStep.COMMAND_UNIT), CF_COMMAND_TASK_NG.getDisplayName(),
+        Arrays.asList(CfCommandUnitConstants.Downsize, CfCommandUnitConstants.Upsize, CfCommandUnitConstants.Wrapup),
+        CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasAppResizeStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }

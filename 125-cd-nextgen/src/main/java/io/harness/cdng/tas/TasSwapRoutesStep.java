@@ -9,6 +9,7 @@ package io.harness.cdng.tas;
 
 import static software.wings.beans.TaskType.CF_COMMAND_TASK_NG;
 
+import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -33,12 +34,14 @@ import io.harness.exception.AccessDeniedException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.SkipTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -56,6 +59,7 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -73,7 +77,6 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
-  public static final String TAS_SWAP_ROUTES = "TasSwapRoutes";
   public static final String COMMAND_UNIT = "Tas Swap Routes";
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {
@@ -99,6 +102,13 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
       log.error("Error while processing Tas response: {}", ExceptionUtils.getMessage(ex), ex);
       throw ex;
     }
+    if (!response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+      return StepResponse.builder()
+          .status(Status.FAILED)
+          .failureInfo(FailureInfo.newBuilder().setErrorMessage(response.getErrorMessage()).build())
+          .unitProgressList(response.getUnitProgressData().getUnitProgresses())
+          .build();
+    }
     builder.unitProgressList(response.getUnitProgressData().getUnitProgresses());
     builder.status(Status.SUCCEEDED);
     return builder.build();
@@ -115,16 +125,19 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
     if (!tasSetupDataOptional.isFound()) {
       return TaskRequest.newBuilder()
           .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas App resize Step was not executed. Skipping .").build())
+              SkipTaskRequest.newBuilder().setMessage("Tas App Swap Route Step was not executed. Skipping.").build())
           .build();
     }
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
-    List<String> existingAppNames = tasSetupDataOutcome.getAppDetailsToBeDownsized()
-                                        .stream()
-                                        .map(CfAppSetupTimeDetails::getApplicationName)
-                                        .collect(toList());
+    List<String> existingAppNames = new ArrayList<>();
+    if (!isNull(tasSetupDataOutcome.getAppDetailsToBeDownsized())) {
+      existingAppNames = tasSetupDataOutcome.getAppDetailsToBeDownsized()
+                             .stream()
+                             .map(CfAppSetupTimeDetails::getApplicationName)
+                             .collect(toList());
+    }
 
     boolean downSizeOldApplication = false;
     CfSwapRoutesRequestNG cfSwapRoutesRequestNG =
@@ -135,7 +148,8 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .accountId(accountId)
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
-            .commandName(TAS_SWAP_ROUTES)
+            .commandName(CfCommandTypeNG.SWAP_ROUTES.toString())
+            .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .tempRoutes(tasSetupDataOutcome.getTempRouteMap())
@@ -144,7 +158,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
             .newApplicationName(getNewApplicationName(tasSetupDataOutcome))
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROUTES)
             .tasInfraConfig(tasInfraConfig)
-            .timeoutIntervalInMin(10)
+            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -154,7 +168,7 @@ public class TasSwapRoutesStep extends TaskExecutableWithRollbackAndRbac<CfComma
                                   .parameters(new Object[] {cfSwapRoutesRequestNG})
                                   .build();
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Collections.singletonList(TasAppResizeStep.COMMAND_UNIT), CF_COMMAND_TASK_NG.getDisplayName(),
+        Collections.singletonList(CfCommandTypeNG.SWAP_ROUTES.toString()), CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasSwapRoutesStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
   }
