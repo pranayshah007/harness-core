@@ -462,7 +462,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     when(azureArtifactsService.listFiles(
              any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class), any(), anyMap(), eq(true)))
         .thenReturn(Collections.singletonList(new AzureArtifactsPackageFileInfo(ARTIFACT_FILE_NAME, -1)));
-    when(executor.executeCommandString(any(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(executor.executeCommandString(any(), anyBoolean(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = downloadArtifactCommandUnit.executeInternal(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -501,7 +501,8 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
-    when(executor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(executor.executeCommandString(anyString(), anyBoolean(), anyBoolean()))
+        .thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = downloadArtifactCommandUnit.executeInternal(artifactoryContextAnon);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -527,7 +528,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
     downloadArtifactCommandUnit.executeInternal(nexusContextMaven);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+    verify(executor).executeCommandString(argument.capture(), anyBoolean(), anyBoolean());
     assertThat(argument.getValue()).isEqualTo(command);
   }
 
@@ -587,7 +588,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
     downloadArtifactCommandUnit.executeInternal(nexusContextMavenAnon);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+    verify(executor).executeCommandString(argument.capture(), anyBoolean(), anyBoolean());
     assertThat(argument.getValue()).isEqualTo(command);
   }
 
@@ -603,7 +604,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
     downloadArtifactCommandUnit.executeInternal(jenkinsContext);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+    verify(executor).executeCommandString(argument.capture(), anyBoolean(), anyBoolean());
     assertThat(argument.getValue()).isEqualTo(command);
   }
 
@@ -619,7 +620,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
     downloadArtifactCommandUnit.executeInternal(bambooContext);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+    verify(executor).executeCommandString(argument.capture(), anyBoolean(), anyBoolean());
     assertThat(argument.getValue()).isEqualTo(command);
   }
 
@@ -636,7 +637,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     when(awsHelperService.getBucketRegion(any(AwsConfig.class), any(), any())).thenReturn("us-west-1");
     downloadArtifactCommandUnit.executeInternal(context);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
-    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+    verify(executor).executeCommandString(argument.capture(), anyBoolean(), anyBoolean());
     assertThat(argument.getValue()).endsWith(command);
   }
 
