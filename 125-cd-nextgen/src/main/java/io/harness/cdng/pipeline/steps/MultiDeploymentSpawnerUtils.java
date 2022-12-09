@@ -128,4 +128,16 @@ public class MultiDeploymentSpawnerUtils {
         .infrastructureDefinition(ParameterField.createValueField(infraStructureDefinitionYaml))
         .build();
   }
+
+  public boolean hasMultiDeploymentConfigured(DeploymentStageNode node) {
+    DeploymentStageConfig config = node.getDeploymentStageConfig();
+    return hasMultiDeploymentConfigured(config);
+  }
+
+  public boolean hasMultiDeploymentConfigured(DeploymentStageConfig config) {
+    if (config.getGitOpsEnabled()) {
+      return config.getServices() != null;
+    }
+    return config.getServices() != null || config.getEnvironments() != null || config.getEnvironmentGroup() != null;
+  }
 }
