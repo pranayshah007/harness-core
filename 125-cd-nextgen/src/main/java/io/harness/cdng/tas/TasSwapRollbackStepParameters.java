@@ -22,8 +22,8 @@ public class TasSwapRollbackStepParameters extends TasSwapRollbackBaseStepInfo i
   @Builder(builderMethodName = "infoBuilder")
   public TasSwapRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
       String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn,
-      ParameterField<Boolean> upsizeInActiveApp) {
+      String tasResizeFqn, ParameterField<Boolean> upsizeInActiveApp) {
     super(delegateSelectors, tasRollbackFqn, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn,
-        upsizeInActiveApp);
+        tasResizeFqn, upsizeInActiveApp);
   }
 }

@@ -45,9 +45,9 @@ public class TasSwapRollbackStepInfo extends TasSwapRollbackBaseStepInfo impleme
   @Builder(builderMethodName = "infoBuilder")
   public TasSwapRollbackStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
       String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn,
-      ParameterField<Boolean> upsizeInActiveApp) {
+      String tasResizeFqn, ParameterField<Boolean> upsizeInActiveApp) {
     super(delegateSelectors, tasRollbackFqn, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn,
-        upsizeInActiveApp);
+        tasResizeFqn, upsizeInActiveApp);
   }
 
   @Override
@@ -62,7 +62,16 @@ public class TasSwapRollbackStepInfo extends TasSwapRollbackBaseStepInfo impleme
 
   @Override
   public SpecParameters getSpecParameters() {
-    return TasSwapRollbackStepParameters.infoBuilder().delegateSelectors(this.delegateSelectors).build();
+    return TasSwapRollbackStepParameters.infoBuilder()
+        .upsizeInActiveApp(upsizeInActiveApp)
+        .tasCanarySetupFqn(tasCanarySetupFqn)
+        .tasResizeFqn(tasResizeFqn)
+        .tasRollbackFqn(tasRollbackFqn)
+        .tasSwapRoutesFqn(tasSwapRoutesFqn)
+        .tasBGSetupFqn(tasBGSetupFqn)
+        .tasBasicSetupFqn(tasBasicSetupFqn)
+        .delegateSelectors(this.delegateSelectors)
+        .build();
   }
 
   @Override
