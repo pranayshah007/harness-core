@@ -77,7 +77,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
   private static final String TABLE_SUFFIX = "%s_%s";
   private static final String AWS_CUR_TABLE_NAME = "awscur_%s";
   private static final String AZURE_TABLE_NAME = "unifiedTable";
-  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_billing_export_resource_*";
+  private static final String GCP_TABLE_NAME_WITH_WILDCARD = "gcp_cost_export_*";
   private String resourceCondition = "resourceid like '%%%s%%'";
 
   @Override
