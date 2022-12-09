@@ -405,17 +405,22 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
 
   private List<Instance> getInstancesForAccount(String accountId, long timestamp, Query<Instance> query) {
     Set<Instance> instanceSet = new HashSet<>();
-    query.field("accountId").equal(accountId);
+    query.field(InstanceKeys.accountId).equal(accountId);
     if (timestamp > 0) {
       query.field(Instance.CREATED_AT_KEY).lessThanOrEq(timestamp);
       Query<Instance> clonedQuery_1 = query.cloneQuery();
       Query<Instance> clonedQuery_2 = query.cloneQuery();
-      clonedQuery_1.field("isDeleted").equal(false);
-      clonedQuery_2.field("deletedAt").greaterThanOrEq(timestamp);
+      clonedQuery_1.field(InstanceKeys.isDeleted).equal(false);
+      clonedQuery_2.field(InstanceKeys.deletedAt).greaterThanOrEq(timestamp);
+      FindOptions findOptions2 = wingsPersistence.analyticNodePreferenceOptions();
+      if (featureFlagService.isEnabled(FeatureName.SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES, accountId)) {
+        findOptions2.modifier("$hint", "instance_index7");
+      }
       instanceSet.addAll(clonedQuery_1.asList(wingsPersistence.analyticNodePreferenceOptions()));
-      instanceSet.addAll(clonedQuery_2.asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(clonedQuery_2.asList(findOptions2));
     } else {
-      instanceSet.addAll(query.filter("isDeleted", false).asList(wingsPersistence.analyticNodePreferenceOptions()));
+      instanceSet.addAll(
+          query.filter(InstanceKeys.isDeleted, false).asList(wingsPersistence.analyticNodePreferenceOptions()));
     }
 
     int counter = instanceSet.size();
