@@ -25,7 +25,7 @@ public enum ActivityType {
 
   public final String name;
 
-  private ActivityType(String name) {
+  ActivityType(String name) {
     this.name = name;
   }
 

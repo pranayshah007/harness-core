@@ -1035,7 +1035,8 @@ public class BuilderFactory {
                              .setInternalLinkToEntity("testInternalUrl")
                              .setChangeEventDetailsLink("testChangeEventDetailsLink")
                              .build())
-        .setType("FEATURE_FLAG");
+        .setType("FEATURE_FLAG")
+        .setExecutionTime(1000l);
   }
 
   public InternalChangeEventDTO.Builder getInternalChangeEventBuilder() {
@@ -1051,7 +1052,8 @@ public class BuilderFactory {
                              .setInternalLinkToEntity("testInternalUrl")
                              .setChangeEventDetailsLink("testChangeEventDetailsLink")
                              .build())
-        .setType("FEATURE_FLAG");
+        .setType("FEATURE_FLAG")
+        .setExecutionTime(1000l);
   }
 
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {

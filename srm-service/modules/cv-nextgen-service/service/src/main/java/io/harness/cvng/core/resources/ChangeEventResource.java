@@ -36,10 +36,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
@@ -279,41 +276,5 @@ public class ChangeEventResource {
 
     return new RestResponse<>(changeEventService.getMonitoredServiceChangeTimeline(
         monitoredServiceParams, searchText, changeSourceTypes, durationDTO, Instant.ofEpochMilli(endTime)));
-  }
-
-  @GET
-  @Timed
-  @NextGenManagerAuth
-  @Path(CHANGE_EVENT_PATH + "/change-categories")
-  @ExceptionMetered
-  @ApiOperation(value = "get change categories", nickname = "getChangeCategories")
-  public RestResponse<Map<ChangeCategory, String>> getChangeCategoryTypes(
-      @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
-      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
-      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-    return new RestResponse<>(changeEventService.getChangeCategories(projectParams));
-  }
-
-  @GET
-  @Timed
-  @NextGenManagerAuth
-  @Path("change-event/change-sources")
-  @ExceptionMetered
-  @ApiOperation(value = "get change categories", nickname = "getChangeSources")
-  public RestResponse<Map<ChangeSourceType, String>> getChangeSourceTypes(
-      @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
-      @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
-      @PathParam(CVNextGenConstants.PROJECT_IDENTIFIER_KEY) @NonNull String projectIdentifier) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(accountIdentifier)
-                                      .orgIdentifier(orgIdentifier)
-                                      .projectIdentifier(projectIdentifier)
-                                      .build();
-    return new RestResponse<>(changeEventService.getChangeSourceTypes(projectParams));
   }
 }

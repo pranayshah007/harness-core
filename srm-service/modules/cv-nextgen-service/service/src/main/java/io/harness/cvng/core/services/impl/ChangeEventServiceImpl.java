@@ -294,19 +294,6 @@ public class ChangeEventServiceImpl implements ChangeEventService {
         projectParams, monitoredServiceIdentifiers, changeCategories, changeSourceTypes, startTime, endTime);
   }
 
-  @Override
-  public Map<ChangeCategory, String> getChangeCategories(ProjectParams projectParams) {
-    return Arrays.stream(ChangeCategory.values())
-        .collect(Collectors.toMap(changeCategory -> changeCategory, changeCategory -> changeCategory.getDisplayName()));
-  }
-
-  @Override
-  public Map<ChangeSourceType, String> getChangeSourceTypes(ProjectParams projectParams) {
-    return Arrays.stream(ChangeSourceType.values())
-        .collect(Collectors.toMap(
-            changeSourceType -> changeSourceType, changeSourceType -> changeSourceType.getDisplayName()));
-  }
-
   private ChangeSummaryDTO getChangeSummary(ProjectParams projectParams, List<String> monitoredServiceIdentifiers,
       List<ChangeCategory> changeCategories, List<ChangeSourceType> changeSourceTypes, Instant startTime,
       Instant endTime) {

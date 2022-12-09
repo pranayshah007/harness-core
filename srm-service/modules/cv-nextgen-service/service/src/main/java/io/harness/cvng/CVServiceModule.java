@@ -135,6 +135,7 @@ import io.harness.cvng.core.services.api.EntityDisabledTimeService;
 import io.harness.cvng.core.services.api.ExecutionLogService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.HostRecordService;
+import io.harness.cvng.core.services.api.InternalChangeConsumerService;
 import io.harness.cvng.core.services.api.LogRecordService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
@@ -190,6 +191,7 @@ import io.harness.cvng.core.services.impl.ErrorTrackingDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.ExecutionLogServiceImpl;
 import io.harness.cvng.core.services.impl.FeatureFlagServiceImpl;
 import io.harness.cvng.core.services.impl.HostRecordServiceImpl;
+import io.harness.cvng.core.services.impl.InternalChangeConsumerServiceImpl;
 import io.harness.cvng.core.services.impl.KubernetesChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.LogRecordServiceImpl;
 import io.harness.cvng.core.services.impl.MetricPackServiceImpl;
@@ -867,6 +869,7 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     sloTargetTypeSLOTargetTransformerMapBinder.addBinding(SLOTargetType.ROLLING).to(RollingSLOTargetTransformer.class);
     bind(ChangeEventService.class).to(ChangeEventServiceImpl.class).in(Scopes.SINGLETON);
+    bind(InternalChangeConsumerService.class).to(InternalChangeConsumerServiceImpl.class).in(Scopes.SINGLETON);
     bind(ChangeEventEntityAndDTOTransformer.class);
 
     MapBinder<ServiceLevelObjectiveType, SLOV2Transformer> serviceLevelObjectiveTypeSLOV2TransformerMapBinder =
@@ -911,7 +914,7 @@ public class CVServiceModule extends AbstractModule {
     changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_CD_CURRENT_GEN)
         .to(HarnessCDCurrentGenChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
-    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.INTERNAL_CHANGE_SOURCE_FF)
+    changeTypeMetaDataTransformerMapBinder.addBinding(ChangeSourceType.HARNESS_FF)
         .to(InternalChangeEventTransformer.class)
         .in(Scopes.SINGLETON);
 

@@ -7,6 +7,8 @@
 
 package io.harness.cvng.beans.change;
 
+import io.harness.cvng.beans.activity.ActivityType;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -22,14 +24,14 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InternalChangeEventMetaData extends ChangeEventMetadata {
-  String eventType;
+  ActivityType activityType;
   String updateBy;
   EventDetails eventDetails;
-  long ExecutionStartTime;
-  long ExecutionEndTime;
+  Long eventStartTime;
+  Long eventEndTime;
 
   @Override
   public ChangeSourceType getType() {
-    return null;
+    return ChangeSourceType.ofActivityType(activityType);
   }
 }

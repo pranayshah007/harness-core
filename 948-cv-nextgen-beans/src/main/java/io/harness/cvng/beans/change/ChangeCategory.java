@@ -14,22 +14,19 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.apache.commons.collections4.MapUtils;
 
 @AllArgsConstructor
 public enum ChangeCategory {
   //@JsonProperty added for swagger as it doesnt understand @JsonValue
-  @JsonProperty("Deployment") DEPLOYMENT("Deployment", "Deployment"),
-  @JsonProperty("Infrastructure") INFRASTRUCTURE("Infrastructure", "Infrastructure"),
-  @JsonProperty("Alert") ALERTS("Alert", "Incidents"),
-  @JsonProperty("FeatureFlag") FEATURE_FLAG("FeatureFlag", "Feature Flag");
+  @JsonProperty("Deployment") DEPLOYMENT("Deployment"),
+  @JsonProperty("Infrastructure") INFRASTRUCTURE("Infrastructure"),
+  @JsonProperty("Alert") ALERTS("Alert"),
+  @JsonProperty("FeatureFlag") FEATURE_FLAG("FeatureFlag");
 
   private static Map<String, ChangeCategory> STRING_TO_CHANGE_CATEGORY_MAP;
 
   private String value;
-
-  @Getter private String displayName;
 
   @JsonValue
   public String getValue() {

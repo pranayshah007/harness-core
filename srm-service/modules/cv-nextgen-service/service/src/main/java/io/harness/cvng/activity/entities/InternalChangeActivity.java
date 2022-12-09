@@ -28,12 +28,13 @@ import org.mongodb.morphia.query.UpdateOperations;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class InternalChangeActivity extends Activity {
-  @FdIndex ActivityType type;
+  @FdIndex ActivityType activityType;
   String updatedBy;
   EventDetails eventDetails;
+  Long eventEndTime;
 
   public ActivityType getType() {
-    return type;
+    return activityType;
   }
 
   @Override
@@ -67,7 +68,7 @@ public class InternalChangeActivity extends Activity {
     public void setUpdateOperations(
         UpdateOperations<InternalChangeActivity> updateOperations, InternalChangeActivity activity) {
       setCommonUpdateOperations(updateOperations, activity);
-      updateOperations.set(InternalChangeActivityKeys.type, activity.getType());
+      updateOperations.set(InternalChangeActivityKeys.activityType, activity.getType());
       updateOperations.set(InternalChangeActivityKeys.updatedBy, activity.getUpdatedBy());
       updateOperations.set(InternalChangeActivityKeys.eventDetails, activity.getEventDetails());
     }

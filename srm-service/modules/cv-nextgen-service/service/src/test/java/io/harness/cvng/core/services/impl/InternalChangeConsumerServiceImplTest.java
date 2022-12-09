@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.cvng.core.jobs;
+package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
 
@@ -18,7 +18,10 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.beans.change.ChangeCategory;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.beans.change.DeepLinkData;
+import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 import io.harness.cvng.core.services.api.ChangeEventService;
+import io.harness.cvng.core.services.api.InternalChangeConsumerService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
 import io.harness.rule.Owner;
@@ -34,8 +37,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
-public class InternalChangeEventFFConsumerTest extends CvNextGenTestBase {
-  @Inject InternalChangeEventFFConsumer internalChangeEventFFConsumer;
+public class InternalChangeConsumerServiceImplTest extends CvNextGenTestBase {
+  @Inject InternalChangeConsumerService internalChangeConsumerService;
 
   @Mock ChangeEventService changeEventService;
 
@@ -45,7 +48,7 @@ public class InternalChangeEventFFConsumerTest extends CvNextGenTestBase {
   public void setup() throws IllegalAccessException {
     MockitoAnnotations.initMocks(this);
     builderFactory = BuilderFactory.getDefault();
-    FieldUtils.writeField(internalChangeEventFFConsumer, "changeEventService", changeEventService, true);
+    FieldUtils.writeField(internalChangeConsumerService, "changeEventService", changeEventService, true);
   }
 
   @Test
@@ -54,7 +57,7 @@ public class InternalChangeEventFFConsumerTest extends CvNextGenTestBase {
   public void testProcessMessage() throws InterruptedException {
     InternalChangeEventDTO internalChangeEventDTO = builderFactory.getInternalChangeEventBuilder().build();
     final ArgumentCaptor<ChangeEventDTO> captor = ArgumentCaptor.forClass(ChangeEventDTO.class);
-    internalChangeEventFFConsumer.processMessage(
+    internalChangeConsumerService.processMessage(
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                             .setData(internalChangeEventDTO.toByteString())
@@ -71,17 +74,32 @@ public class InternalChangeEventFFConsumerTest extends CvNextGenTestBase {
     assertThat(changeEventDTOs.get(0).getServiceIdentifier()).isEqualTo(internalChangeEventDTO.getServiceIdentifier(0));
     assertThat(changeEventDTOs.get(0).getEnvIdentifier()).isEqualTo(internalChangeEventDTO.getEnvironmentIdentifier(0));
     assertThat(changeEventDTOs.get(0).getCategory()).isEqualTo(ChangeCategory.FEATURE_FLAG);
-    // assertThat(changeEventDTOs.get(0).getEventTime(internalChangeEventDTO.getExecutionTime()));
-    assertThat(changeEventDTOs.get(0).getType()).isEqualTo(ChangeSourceType.INTERNAL_CHANGE_SOURCE_FF);
+    assertThat(changeEventDTOs.get(0).getType()).isEqualTo(ChangeSourceType.HARNESS_FF);
+    assertThat(changeEventDTOs.get(0).getEventTime()).isEqualTo(1000l);
+
+    InternalChangeEventMetaData internalChangeEventMetaData =
+        (InternalChangeEventMetaData) changeEventDTOs.get(0).getMetadata();
+    assertThat(internalChangeEventMetaData.getEventDetails().getEventDescriptions().get(0))
+        .isEqualTo("test event detail");
+    assertThat(internalChangeEventMetaData.getEventDetails().getChangeEventDetailsLink().getUrl())
+        .isEqualTo("testChangeEventDetailsLink");
+    assertThat(internalChangeEventMetaData.getEventDetails().getChangeEventDetailsLink().getAction())
+        .isEqualTo(DeepLinkData.Action.FETCH_DIFF_DATA);
+    assertThat(internalChangeEventMetaData.getEventDetails().getInternalLinkToEntity().getUrl())
+        .isEqualTo("testInternalUrl");
+    assertThat(internalChangeEventMetaData.getEventDetails().getInternalLinkToEntity().getAction())
+        .isEqualTo(DeepLinkData.Action.REDIRECT_URL);
+    assertThat(internalChangeEventMetaData.getUpdateBy()).isEqualTo("user");
   }
 
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testProcessMessage_multipleServiceEnv() throws InterruptedException {
-    InternalChangeEventDTO internalChangeEventDTO = builderFactory.getInternalChangeEventBuilder().build();
+    InternalChangeEventDTO internalChangeEventDTO =
+        builderFactory.getInternalChangeEventWithMultipleServiceEnvBuilder().build();
     final ArgumentCaptor<ChangeEventDTO> captor = ArgumentCaptor.forClass(ChangeEventDTO.class);
-    internalChangeEventFFConsumer.processMessage(
+    internalChangeConsumerService.processMessage(
         Message.newBuilder()
             .setMessage(io.harness.eventsframework.producer.Message.newBuilder()
                             .setData(internalChangeEventDTO.toByteString())
@@ -95,7 +113,7 @@ public class InternalChangeEventFFConsumerTest extends CvNextGenTestBase {
     assertThat(changeEventDTOs.get(3).getAccountId()).isEqualTo(internalChangeEventDTO.getAccountId());
     assertThat(changeEventDTOs.get(3).getOrgIdentifier()).isEqualTo(internalChangeEventDTO.getOrgIdentifier());
     assertThat(changeEventDTOs.get(3).getProjectIdentifier()).isEqualTo(internalChangeEventDTO.getProjectIdentifier());
-    assertThat(changeEventDTOs.get(3).getServiceIdentifier()).isEqualTo(internalChangeEventDTO.getServiceIdentifier(0));
+    assertThat(changeEventDTOs.get(3).getServiceIdentifier()).isEqualTo(internalChangeEventDTO.getServiceIdentifier(1));
     assertThat(changeEventDTOs.get(3).getEnvIdentifier()).isEqualTo(internalChangeEventDTO.getEnvironmentIdentifier(1));
   }
 }

@@ -8,7 +8,6 @@
 package io.harness.cvng.core.transformer.changeEvent;
 
 import io.harness.cvng.activity.entities.InternalChangeActivity;
-import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.InternalChangeEventMetaData;
 
@@ -21,9 +20,11 @@ public class InternalChangeEventTransformer
     InternalChangeEventMetaData internalChangeEventMetaData =
         (InternalChangeEventMetaData) changeEventDTO.getMetadata();
     return InternalChangeActivity.builder()
-        .type(ActivityType.fromString(internalChangeEventMetaData.getEventType()))
+        .type(internalChangeEventMetaData.getActivityType())
+        .activityType(internalChangeEventMetaData.getActivityType())
         .eventDetails(internalChangeEventMetaData.getEventDetails())
         .updatedBy(internalChangeEventMetaData.getUpdateBy())
+        .eventEndTime(internalChangeEventMetaData.getEventEndTime())
         .accountId(changeEventDTO.getAccountId())
         .orgIdentifier(changeEventDTO.getOrgIdentifier())
         .projectIdentifier(changeEventDTO.getProjectIdentifier())
@@ -38,7 +39,9 @@ public class InternalChangeEventTransformer
     return InternalChangeEventMetaData.builder()
         .eventDetails(activity.getEventDetails())
         .updateBy(activity.getUpdatedBy())
-        .eventType(activity.getType().getName())
+        .activityType(activity.getActivityType())
+        .eventStartTime(activity.getEventTime().toEpochMilli())
+        .eventEndTime(activity.getEventEndTime())
         .build();
   }
 }
