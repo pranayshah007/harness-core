@@ -86,6 +86,7 @@ public class TerraformInfrastructureProvisionerYamlHandlerTest extends YamlHandl
       + "secretMangerName: SECRET_MANAGER\n"
       + "skipRefreshBeforeApplyingPlan: true\n"
       + "sourceRepoBranch: master\n"
+      + "sourceType: GIT\n"
       + "sourceRepoSettingName: TERRAFORM_TEST_GIT_REPO\n"
       + "variables:\n"
       + "- name: access_key\n"

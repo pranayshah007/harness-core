@@ -117,7 +117,7 @@ public class TerraformInfrastructureProvisionerYamlHandler
     super.toBean(changeContext, bean, appId, yamlFilePath);
     bean.setPath(yaml.getPath());
 
-    if (yaml.getSourceType().equals(TerraformSourceType.S3)) {
+    if (yaml.getSourceType() != null && yaml.getSourceType().equals(TerraformSourceType.S3)) {
       validateS3Source(yaml.getAwsSourceConfigName(), yaml.getS3URI(), yaml.getSourceRepoSettingName());
       bean.setAwsConfigId(getSourceRepoSettingId(appId, yaml.getAwsSourceConfigName()));
       bean.setS3URI(yaml.getS3URI());

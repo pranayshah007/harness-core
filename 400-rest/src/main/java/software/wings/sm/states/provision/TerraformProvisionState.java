@@ -40,6 +40,8 @@ import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_CONNE
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY;
+import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY;
+import static io.harness.provision.TerraformConstants.REMOTE_BE_CONFIG_S3_URI_KEY;
 import static io.harness.provision.TerraformConstants.REMOTE_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.S3_STORE_TYPE;
 import static io.harness.provision.TerraformConstants.TARGETS_KEY;
@@ -57,6 +59,8 @@ import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_FILE_PATH
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_REPO_NAME_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_USE_BRANCH_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_CONFIG_ID_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_URI_KEY;
 import static io.harness.provision.TerraformConstants.VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.WORKSPACE_KEY;
 import static io.harness.validation.Validator.notNullCheck;
@@ -636,23 +640,29 @@ public abstract class TerraformProvisionState extends State {
       others.put("qualifier", QUALIFIER_APPLY);
       collectVariables(others, terraformExecutionData.getVariables(), VARIABLES_KEY, ENCRYPTED_VARIABLES_KEY, true);
 
-      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())) {
-        if (backendConfig != null) {
-          if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
-            collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
-                ENCRYPTED_BACKEND_CONFIG_KEY, false);
-          } else {
-            // remote backend config
-            if (backendConfig.getRemoteBackendConfig() != null) {
-              GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
-              others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
-              others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
-              others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
-              others.put(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
-              others.put(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
-              others.put(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
-            }
+      if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId()) && backendConfig != null
+          && !backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
+        if (LOCAL_STORE_TYPE.equals(getBackendConfig().getStoreType())) {
+          collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIG_KEY,
+              ENCRYPTED_BACKEND_CONFIG_KEY, false);
+        } else {
+          // remote backend config
+          if (backendConfig.getRemoteBackendConfig() != null) {
+            GitFileConfig gitFileConfig = backendConfig.getRemoteBackendConfig();
+            others.put(REMOTE_BE_CONFIG_GIT_BRANCH_KEY, gitFileConfig.getBranch());
+            others.put(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY, gitFileConfig.getConnectorId());
+            others.put(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY, gitFileConfig.getCommitId());
+            others.put(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
+            others.put(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
+            others.put(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
           }
+        }
+      } else if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId()) && backendConfig != null
+          && backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
+        if (backendConfig.getS3BackendConfig() != null) {
+          S3FileConfig s3FileConfig = backendConfig.getS3BackendConfig();
+          others.put(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
+          others.put(REMOTE_BE_CONFIG_S3_URI_KEY, s3FileConfig.getS3URI());
         }
       } else {
         collectVariables(others, terraformExecutionData.getBackendConfigs(), BACKEND_CONFIGS_KEY,
@@ -682,6 +692,10 @@ public abstract class TerraformProvisionState extends State {
           others.put(TF_VAR_FILES_GIT_FILE_PATH_KEY, gitFileConfig.getFilePath());
           others.put(TF_VAR_FILES_GIT_REPO_NAME_KEY, gitFileConfig.getRepoName());
           others.put(TF_VAR_FILES_GIT_USE_BRANCH_KEY, gitFileConfig.isUseBranch());
+        } else if (tfVarSource.getTfVarSourceType() == TfVarSourceType.S3) {
+          S3FileConfig s3FileConfig = ((TfVarS3Source) tfVarSource).getS3FileConfig();
+          others.put(TF_VAR_FILES_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
+          others.put(TF_VAR_FILES_S3_URI_KEY, s3FileConfig.getS3URI());
         }
       }
 
@@ -1219,19 +1233,31 @@ public abstract class TerraformProvisionState extends State {
           if (featureFlagService.isEnabled(TERRAFORM_REMOTE_BACKEND_CONFIG, context.getAccountId())
               && backendConfig != null) {
             backendConfigStoreType = backendConfig.getStoreType();
-            String gitFileConnectorId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
-            if (isNotEmpty(gitFileConnectorId)) {
-              GitFileConfig gitFileConfig =
-                  GitFileConfig.builder()
-                      .connectorId(gitFileConnectorId)
-                      .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
-                      .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
-                      .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
-                      .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
-                      .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+
+            if (!backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
+              String gitFileConnectorId =
+                  (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_CONNECTOR_ID_KEY);
+              if (isNotEmpty(gitFileConnectorId)) {
+                GitFileConfig gitFileConfig =
+                    GitFileConfig.builder()
+                        .connectorId(gitFileConnectorId)
+                        .filePath((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_FILE_PATH_KEY))
+                        .branch((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_BRANCH_KEY))
+                        .commitId((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_COMMIT_ID_KEY))
+                        .useBranch((boolean) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_USE_BRANCH_KEY))
+                        .repoName((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_GIT_REPO_NAME_KEY))
+                        .build();
+                backendConfig.setRemoteBackendConfig(gitFileConfig);
+                remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
+              }
+            } else if (backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
+              String awsConfigId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY);
+              S3FileConfig s3FileConfig =
+                  S3FileConfig.builder()
+                      .awsConfigId(awsConfigId)
+                      .s3URI((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_KEY))
                       .build();
-              backendConfig.setRemoteBackendConfig(gitFileConfig);
-              remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
+              backendConfig.setS3BackendConfig(s3FileConfig);
             }
           }
 

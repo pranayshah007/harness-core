@@ -850,10 +850,6 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
     }
   }
 
-  private TaskData buildTaskData(TaskData.TaskDataBuilder delegateTaskDataBuilder) {
-    return delegateTaskDataBuilder.build();
-  }
-
   private void validateBranchCommitId(String sourceRepoBranch, String commitId) {
     if (isEmpty(sourceRepoBranch) && isEmpty(commitId)) {
       throw new InvalidRequestException("Either sourceRepoBranch or commitId should be specified", USER);
