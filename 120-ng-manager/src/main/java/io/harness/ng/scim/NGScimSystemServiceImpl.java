@@ -39,22 +39,22 @@ import static io.harness.ng.scim.NGScimSystemSchemaHelper.getSortAttribute;
 import static io.harness.ng.scim.NGScimSystemSchemaHelper.getSubAttributesAttributeForSchema;
 import static io.harness.ng.scim.NGScimSystemSchemaHelper.getSupportedAttribute;
 import static io.harness.ng.scim.NGScimSystemSchemaHelper.getUserNameAttribute;
-import static io.harness.scim.system.ServiceProviderConfig.SCHEMA_SERVICE_PROVIDER_CONFIG;
+import static io.harness.scim.system.ServiceProviderConfigResource.SCHEMA_SERVICE_PROVIDER_CONFIG;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.service.ScimSystemService;
-import io.harness.scim.system.AuthenticationScheme;
-import io.harness.scim.system.BulkConfig;
-import io.harness.scim.system.ChangePasswordConfig;
-import io.harness.scim.system.ETagConfig;
-import io.harness.scim.system.FilterConfig;
-import io.harness.scim.system.PatchConfig;
-import io.harness.scim.system.ResourceType;
 import io.harness.scim.system.SchemaResource;
-import io.harness.scim.system.ScimResourceAttribute;
-import io.harness.scim.system.ServiceProviderConfig;
-import io.harness.scim.system.SortConfig;
+import io.harness.scim.system.ScimAttributeResource;
+import io.harness.scim.system.ScimAuthenticationScheme;
+import io.harness.scim.system.ScimBulkConfigResource;
+import io.harness.scim.system.ScimChangePasswordConfig;
+import io.harness.scim.system.ScimETagConfig;
+import io.harness.scim.system.ScimFilterConfig;
+import io.harness.scim.system.ScimPatchConfig;
+import io.harness.scim.system.ScimResourceType;
+import io.harness.scim.system.ScimSortConfig;
+import io.harness.scim.system.ServiceProviderConfigResource;
 
 import com.google.common.collect.Sets;
 import java.util.ArrayList;
@@ -68,15 +68,16 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class NGScimSystemServiceImpl implements ScimSystemService {
   @Override
-  public ServiceProviderConfig getServiceProviderConfig(String accountIdentifier) {
-    return new ServiceProviderConfig(DOCUMENTATION_URI, new PatchConfig(true), new BulkConfig(false, 1, 0),
-        new FilterConfig(true, 1000), new ChangePasswordConfig(false), new SortConfig(false), new ETagConfig(false),
-        Collections.singletonList(AuthenticationScheme.geBearerTokenAuth(true)));
+  public ServiceProviderConfigResource getServiceProviderConfig(String accountIdentifier) {
+    return new ServiceProviderConfigResource(DOCUMENTATION_URI, new ScimPatchConfig(true),
+        new ScimBulkConfigResource(false, 1, 0), new ScimFilterConfig(true, 1000), new ScimChangePasswordConfig(false),
+        new ScimSortConfig(false), new ScimETagConfig(false),
+        Collections.singletonList(ScimAuthenticationScheme.getBearerTokenAuth(true)));
   }
 
   @Override
-  public ScimListResponse<ResourceType> getResourceTypes(String accountIdentifier) {
-    ScimListResponse<ResourceType> resourceTypeScimListResponse = new ScimListResponse<>();
+  public ScimListResponse<ScimResourceType> getResourceTypes(String accountIdentifier) {
+    ScimListResponse<ScimResourceType> resourceTypeScimListResponse = new ScimListResponse<>();
 
     resourceTypeScimListResponse.resource(getUserResourceType());
     resourceTypeScimListResponse.resource(getGroupResourceType());
@@ -103,69 +104,69 @@ public class NGScimSystemServiceImpl implements ScimSystemService {
     return schemaResourceScimListResponse;
   }
 
-  private ResourceType getUserResourceType() {
+  private ScimResourceType getUserResourceType() {
     String user = "User";
-    return new ResourceType(
+    return new ScimResourceType(
         Sets.newHashSet(USER_SCHEMA), user, DOCUMENTATION_URI, user, "/Users", "User Account", USER_SCHEMA);
   }
 
-  private ResourceType getGroupResourceType() {
+  private ScimResourceType getGroupResourceType() {
     String group = "Group";
-    return new ResourceType(
+    return new ScimResourceType(
         Sets.newHashSet(GROUP_SCHEMA), group, DOCUMENTATION_URI, group, "/Group", "Groups", GROUP_SCHEMA);
   }
 
   private SchemaResource getServiceProviderConfigSchemaResource() {
-    List<ScimResourceAttribute> scimResourceAttributeList = new ArrayList<>();
-    ScimResourceAttribute supportedAttribute = getSupportedAttribute();
-    scimResourceAttributeList.add(getPatchAttribute(supportedAttribute));
-    scimResourceAttributeList.add(
+    List<ScimAttributeResource> scimAttributeResourceList = new ArrayList<>();
+    ScimAttributeResource supportedAttribute = getSupportedAttribute();
+    scimAttributeResourceList.add(getPatchAttribute(supportedAttribute));
+    scimAttributeResourceList.add(
         getBulkAttribute(supportedAttribute, getMaxOperationsAttribute(), getMaxPayloadSizeAttribute()));
-    scimResourceAttributeList.add(getFilterAttribute(supportedAttribute, getMaxResultsAttribute()));
-    scimResourceAttributeList.add(getChangePasswordAttribute(supportedAttribute));
-    scimResourceAttributeList.add(getSortAttribute(supportedAttribute));
-    scimResourceAttributeList.add(getAuthenticationSchemesAttribute());
+    scimAttributeResourceList.add(getFilterAttribute(supportedAttribute, getMaxResultsAttribute()));
+    scimAttributeResourceList.add(getChangePasswordAttribute(supportedAttribute));
+    scimAttributeResourceList.add(getSortAttribute(supportedAttribute));
+    scimAttributeResourceList.add(getAuthenticationSchemesAttribute());
     return new SchemaResource(SCHEMA_SERVICE_PROVIDER_CONFIG, "Service Provider Configuration",
-        DESCRIPTION_SERVICE_PROVIDER_CONFIG, scimResourceAttributeList);
+        DESCRIPTION_SERVICE_PROVIDER_CONFIG, scimAttributeResourceList);
   }
 
   private SchemaResource getResourceTypesSchemaResource() {
-    List<ScimResourceAttribute> scimResourceAttributeList = new ArrayList<>();
-    ScimResourceAttribute nameAttribute = getNameAttribute(
+    List<ScimAttributeResource> scimAttributeResourceList = new ArrayList<>();
+    ScimAttributeResource nameAttribute = getNameAttribute(
         "The resource type name. When applicable, service providers MUST specify the name, e.g., 'User'.", false);
-    scimResourceAttributeList.add(nameAttribute);
-    scimResourceAttributeList.add(getEndPointAttribute());
-    scimResourceAttributeList.add(getSchemaAttribute());
+    scimAttributeResourceList.add(nameAttribute);
+    scimAttributeResourceList.add(getEndPointAttribute());
+    scimAttributeResourceList.add(getSchemaAttribute());
     return new SchemaResource(
-        SCHEMA_RESOURCE_TYPE, "ResourceType", DESCRIPTION_RESOURCE_TYPE, scimResourceAttributeList);
+        SCHEMA_RESOURCE_TYPE, "ResourceType", DESCRIPTION_RESOURCE_TYPE, scimAttributeResourceList);
   }
 
   private SchemaResource getSchemasSchemaResource() {
-    List<ScimResourceAttribute> scimResourceAttributeList = new ArrayList<>();
-    scimResourceAttributeList.add(getIdAttributeForSchema());
-    ScimResourceAttribute nameAttributeForSchema = getNameAttribute(
+    List<ScimAttributeResource> scimAttributeResourceList = new ArrayList<>();
+    scimAttributeResourceList.add(getIdAttributeForSchema());
+    ScimAttributeResource nameAttributeForSchema = getNameAttribute(
         "The schema's human-readable name. When applicable, service providers MUST specify the name, e.g., 'User'.",
         false);
-    scimResourceAttributeList.add(nameAttributeForSchema);
-    scimResourceAttributeList.add(getSubAttributesAttributeForSchema());
-    return new SchemaResource(ID_SCHEMA, "Schema", DESCRIPTION_SCHEMA, scimResourceAttributeList);
+    scimAttributeResourceList.add(nameAttributeForSchema);
+    scimAttributeResourceList.add(getSubAttributesAttributeForSchema());
+    return new SchemaResource(ID_SCHEMA, "Schema", DESCRIPTION_SCHEMA, scimAttributeResourceList);
   }
 
   private SchemaResource getUserSchemaResource() {
-    List<ScimResourceAttribute> scimResourceAttributeList = new ArrayList<>();
-    scimResourceAttributeList.add(getUserNameAttribute());
-    scimResourceAttributeList.add(getExternalIdAttribute());
-    scimResourceAttributeList.add(getNameAttributeOfUser());
-    scimResourceAttributeList.add(getDisplayNameAttribute());
-    scimResourceAttributeList.add(getActiveAttribute());
-    scimResourceAttributeList.add(getEmailsAttribute());
-    return new SchemaResource(USER_SCHEMA, "User", "User Account", scimResourceAttributeList);
+    List<ScimAttributeResource> scimAttributeResourceList = new ArrayList<>();
+    scimAttributeResourceList.add(getUserNameAttribute());
+    scimAttributeResourceList.add(getExternalIdAttribute());
+    scimAttributeResourceList.add(getNameAttributeOfUser());
+    scimAttributeResourceList.add(getDisplayNameAttribute());
+    scimAttributeResourceList.add(getActiveAttribute());
+    scimAttributeResourceList.add(getEmailsAttribute());
+    return new SchemaResource(USER_SCHEMA, "User", "User Account", scimAttributeResourceList);
   }
 
   private SchemaResource getGroupSchemaResource() {
-    List<ScimResourceAttribute> scimResourceAttributeList = new ArrayList<>();
-    scimResourceAttributeList.add(getDisplayNameAttributeForGroup());
-    scimResourceAttributeList.add(getMembersAttribute());
-    return new SchemaResource(GROUP_SCHEMA, "Group", "Group", scimResourceAttributeList);
+    List<ScimAttributeResource> scimAttributeResourceList = new ArrayList<>();
+    scimAttributeResourceList.add(getDisplayNameAttributeForGroup());
+    scimAttributeResourceList.add(getMembersAttribute());
+    return new SchemaResource(GROUP_SCHEMA, "Group", "Group", scimAttributeResourceList);
   }
 }

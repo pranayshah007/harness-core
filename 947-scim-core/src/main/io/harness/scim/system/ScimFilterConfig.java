@@ -1,19 +1,4 @@
-/*
- * Copyright 2015-2021 Ping Identity Corporation
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License (GPLv2 only)
- * or the terms of the GNU Lesser General Public License (LGPLv2.1 only)
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
- */
+
 
 package io.harness.scim.system;
 
@@ -35,13 +20,13 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "FilterConfigKeys")
 @OwnedBy(PL)
-public class FilterConfig {
+public class ScimFilterConfig {
   private boolean supported;
 
   private int maxResults;
 
   @JsonCreator
-  public FilterConfig(@JsonProperty(value = "supported", required = true) final boolean supported,
+  public ScimFilterConfig(@JsonProperty(value = "supported", required = true) final boolean supported,
       @JsonProperty(value = "maxResults", required = true) final int maxResults) {
     this.supported = supported;
     this.maxResults = maxResults;

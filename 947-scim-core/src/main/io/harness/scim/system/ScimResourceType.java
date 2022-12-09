@@ -23,7 +23,7 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ResourceTypeKeys")
 @OwnedBy(PL)
-public class ResourceType {
+public class ScimResourceType {
   private Set<String> schemas;
   private String id;
   private String documentationUri;
@@ -33,7 +33,7 @@ public class ResourceType {
   private String schema;
 
   @JsonCreator
-  public ResourceType(@JsonProperty(value = "schemas") Set<String> schemas, @JsonProperty(value = "id") String id,
+  public ScimResourceType(@JsonProperty(value = "schemas") Set<String> schemas, @JsonProperty(value = "id") String id,
       @JsonProperty(value = "documentationUri") String documentationUri, @JsonProperty(value = "name") String name,
       @JsonProperty(value = "endpoint") String endpoint, @JsonProperty(value = "description") String description,
       @JsonProperty(value = "schema") String schema) {

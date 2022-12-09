@@ -28,10 +28,10 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ScimResourceAttributeKeys")
 @OwnedBy(PL)
-public class ScimResourceAttribute {
+public class ScimAttributeResource {
   private String name;
   private Type type;
-  private Collection<ScimResourceAttribute> subAttributes;
+  private Collection<ScimAttributeResource> subAttributes;
   private boolean multiValued;
   private String description;
   private boolean required;
@@ -43,9 +43,9 @@ public class ScimResourceAttribute {
   private Collection<String> referenceTypes;
 
   @JsonCreator
-  public ScimResourceAttribute(@JsonProperty(value = "name", required = true) String name,
+  public ScimAttributeResource(@JsonProperty(value = "name", required = true) String name,
       @JsonProperty(value = "type", required = true) Type type,
-      @JsonProperty(value = "subAttributes") Collection<ScimResourceAttribute> subAttributes,
+      @JsonProperty(value = "subAttributes") Collection<ScimAttributeResource> subAttributes,
       @JsonProperty(value = "multiValued", required = true) boolean multiValued,
       @JsonProperty(value = "description") String description,
       @JsonProperty(value = "required", required = true) boolean required,
@@ -58,7 +58,7 @@ public class ScimResourceAttribute {
     this.name = name;
     this.type = type;
     this.subAttributes =
-        subAttributes == null ? null : unmodifiableList(new ArrayList<ScimResourceAttribute>(subAttributes));
+        subAttributes == null ? null : unmodifiableList(new ArrayList<ScimAttributeResource>(subAttributes));
     this.multiValued = multiValued;
     this.description = description;
     this.required = required;

@@ -10,8 +10,8 @@ package io.harness.ng.scim.resource;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimResource;
 import io.harness.scim.service.ScimSystemService;
-import io.harness.scim.system.ResourceType;
 import io.harness.scim.system.SchemaResource;
+import io.harness.scim.system.ScimResourceType;
 import io.harness.security.annotations.ScimAPI;
 
 import com.google.inject.Inject;
@@ -57,7 +57,7 @@ public class NGScimSystemResource extends ScimResource {
   public Response
   getResourceTypes(@PathParam("accountIdentifier") String accountIdentifier) {
     try {
-      ScimListResponse<ResourceType> resourceTypes = scimSystemService.getResourceTypes(accountIdentifier);
+      ScimListResponse<ScimResourceType> resourceTypes = scimSystemService.getResourceTypes(accountIdentifier);
       return Response.status(Response.Status.OK).entity(resourceTypes).build();
     } catch (Exception ex) {
       log.error("NGSCIM: Failed to fetch ResourceTypes, for accountId {}, Exception is", accountIdentifier, ex);

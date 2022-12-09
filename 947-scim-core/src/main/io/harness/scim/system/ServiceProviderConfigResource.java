@@ -27,29 +27,29 @@ import lombok.experimental.FieldNameConstants;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldNameConstants(innerTypeName = "ServiceProviderConfigKeys")
 @OwnedBy(PL)
-public class ServiceProviderConfig {
+public class ServiceProviderConfigResource {
   public static final String SCHEMA_SERVICE_PROVIDER_CONFIG =
       "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig";
   public static Set<String> schemas = new HashSet<>(Arrays.asList(SCHEMA_SERVICE_PROVIDER_CONFIG));
   private String documentationUri;
-  private PatchConfig patch;
-  private BulkConfig bulk;
-  private FilterConfig filter;
-  private ChangePasswordConfig changePassword;
-  private SortConfig sort;
-  private ETagConfig etag;
-  private List<AuthenticationScheme> authenticationSchemes;
+  private ScimPatchConfig patch;
+  private ScimBulkConfigResource bulk;
+  private ScimFilterConfig filter;
+  private ScimChangePasswordConfig changePassword;
+  private ScimSortConfig sort;
+  private ScimETagConfig etag;
+  private List<ScimAuthenticationScheme> scimAuthenticationSchemes;
 
   @JsonCreator
-  public ServiceProviderConfig(@JsonProperty(value = "documentationUri") final String documentationUri,
-      @JsonProperty(value = "patch", required = true) final PatchConfig patch,
-      @JsonProperty(value = "bulk", required = true) final BulkConfig bulk,
-      @JsonProperty(value = "filter", required = true) final FilterConfig filter,
-      @JsonProperty(value = "changePassword", required = true) final ChangePasswordConfig changePassword,
-      @JsonProperty(value = "sort", required = true) final SortConfig sort,
-      @JsonProperty(value = "etag", required = true) final ETagConfig etag,
-      @JsonProperty(
-          value = "authenticationSchemes", required = true) final List<AuthenticationScheme> authenticationSchemes) {
+  public ServiceProviderConfigResource(@JsonProperty(value = "documentationUri") final String documentationUri,
+      @JsonProperty(value = "patch", required = true) final ScimPatchConfig patch,
+      @JsonProperty(value = "bulk", required = true) final ScimBulkConfigResource bulk,
+      @JsonProperty(value = "filter", required = true) final ScimFilterConfig filter,
+      @JsonProperty(value = "changePassword", required = true) final ScimChangePasswordConfig changePassword,
+      @JsonProperty(value = "sort", required = true) final ScimSortConfig sort,
+      @JsonProperty(value = "etag", required = true) final ScimETagConfig etag,
+      @JsonProperty(value = "authenticationSchemes",
+          required = true) final List<ScimAuthenticationScheme> scimAuthenticationSchemes) {
     this.documentationUri = documentationUri;
     this.patch = patch;
     this.bulk = bulk;
@@ -57,7 +57,7 @@ public class ServiceProviderConfig {
     this.changePassword = changePassword;
     this.sort = sort;
     this.etag = etag;
-    this.authenticationSchemes =
-        authenticationSchemes == null ? null : Collections.unmodifiableList(authenticationSchemes);
+    this.scimAuthenticationSchemes =
+        scimAuthenticationSchemes == null ? null : Collections.unmodifiableList(scimAuthenticationSchemes);
   }
 }

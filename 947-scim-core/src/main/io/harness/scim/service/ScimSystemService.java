@@ -8,13 +8,12 @@
 package io.harness.scim.service;
 
 import io.harness.scim.ScimListResponse;
-import io.harness.scim.system.ResourceType;
 import io.harness.scim.system.SchemaResource;
-import io.harness.scim.system.ServiceProviderConfig;
+import io.harness.scim.system.ScimResourceType;
+import io.harness.scim.system.ServiceProviderConfigResource;
 
 public interface ScimSystemService {
-  ServiceProviderConfig getServiceProviderConfig(String accountIdentifier);
-  ScimListResponse<ResourceType> getResourceTypes(String accountIdentifier);
-
+  ServiceProviderConfigResource getServiceProviderConfig(String accountIdentifier);
+  ScimListResponse<ScimResourceType> getResourceTypes(String accountIdentifier);
   ScimListResponse<SchemaResource> getSchemas(String accountIdentifier);
 }

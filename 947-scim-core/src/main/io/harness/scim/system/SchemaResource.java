@@ -27,12 +27,12 @@ public class SchemaResource {
   private String id;
   private String name;
   private String description;
-  private Collection<ScimResourceAttribute> attributes;
+  private Collection<ScimAttributeResource> attributes;
 
   @JsonCreator
   public SchemaResource(@JsonProperty(value = "id") String id, @JsonProperty(value = "name") String name,
       @JsonProperty(value = "description") String description,
-      @JsonProperty(value = "attributes") Collection<ScimResourceAttribute> attributes) {
+      @JsonProperty(value = "attributes") Collection<ScimAttributeResource> attributes) {
     this.id = id;
     this.name = name;
     this.description = description;
