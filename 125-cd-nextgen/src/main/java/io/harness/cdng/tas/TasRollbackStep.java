@@ -22,6 +22,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
+import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.task.pcf.CfCommandTypeNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
@@ -55,7 +56,11 @@ import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -114,6 +119,18 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
               SkipTaskRequest.newBuilder().setMessage("Tas Setup Step was not executed. Skipping .").build())
           .build();
     }
+
+
+    List<CfServiceData> instanceData = new ArrayList<>();
+    if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
+      tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
+        Integer temp = cfServiceData.getDesiredCount();
+        cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
+        cfServiceData.setPreviousCount(temp);
+        instanceData.add(cfServiceData);
+      });
+    }
+
     TasSetupDataOutcome tasSetupDataOutcome = (TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
@@ -125,7 +142,7 @@ public class TasRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCommand
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
-            .instanceData(tasAppResizeDataOutcome.getInstanceData())
+            .instanceData(instanceData)
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.ROLLBACK)
             .timeoutIntervalInMin(10)
