@@ -22,9 +22,11 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InternalChangeEventMetaData extends ChangeEventMetadata {
-  String eventType; // Maps to activity type in internal change activity class.
+  String eventType;
   String updateBy;
   EventDetails eventDetails;
+  long ExecutionStartTime;
+  long ExecutionEndTime;
 
   @Override
   public ChangeSourceType getType() {

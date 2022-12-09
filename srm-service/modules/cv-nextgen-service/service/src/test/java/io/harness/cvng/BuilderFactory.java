@@ -199,6 +199,8 @@ import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
+import io.harness.eventsframework.schemas.cv.EventDetails;
+import io.harness.eventsframework.schemas.cv.InternalChangeEventDTO;
 import io.harness.eventsframework.schemas.deployment.ArtifactDetails;
 import io.harness.eventsframework.schemas.deployment.DeploymentEventDTO;
 import io.harness.eventsframework.schemas.deployment.ExecutionDetails;
@@ -1018,6 +1020,38 @@ public class BuilderFactory {
                                  .build())
         .setArtifactDetails(
             ArtifactDetails.newBuilder().setArtifactTag("artifactTag").setArtifactType("artifactType").build());
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventWithMultipleServiceEnvBuilder() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addAllServiceIdentifier(Arrays.asList("Service1", "Service2"))
+        .addAllEnvironmentIdentifier(Arrays.asList("Env1", "Env2"))
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("FEATURE_FLAG");
+  }
+
+  public InternalChangeEventDTO.Builder getInternalChangeEventBuilder() {
+    return InternalChangeEventDTO.newBuilder()
+        .setAccountId(context.getAccountId())
+        .setOrgIdentifier(context.getOrgIdentifier())
+        .setProjectIdentifier(context.getProjectIdentifier())
+        .addServiceIdentifier("Service1")
+        .addEnvironmentIdentifier("Env1")
+        .setEventDetails(EventDetails.newBuilder()
+                             .setUser("user")
+                             .addEventDetails("test event detail")
+                             .setInternalLinkToEntity("testInternalUrl")
+                             .setChangeEventDetailsLink("testChangeEventDetailsLink")
+                             .build())
+        .setType("FEATURE_FLAG");
   }
 
   private ChangeSourceDTOBuilder getChangeSourceDTOBuilder(ChangeSourceType changeSourceType) {

@@ -68,7 +68,9 @@ public class InternalChangeEventFFConsumer extends AbstractStreamConsumer {
                                               .url(internalChangeEventDTO.getEventDetails().getInternalLinkToEntity())
                                               .build())
                     .build())
-            .updateBy(internalChangeEventDTO.getEventDetails().getUser());
+            .updateBy(internalChangeEventDTO.getEventDetails().getUser())
+            .ExecutionStartTime(internalChangeEventDTO.getExecutionTime())
+            .ExecutionEndTime(internalChangeEventDTO.getExecutionEndTime());
 
     ChangeEventDTO changeEventDTO = ChangeEventDTO.builder()
                                         .accountId(internalChangeEventDTO.getAccountId())
@@ -83,8 +85,8 @@ public class InternalChangeEventFFConsumer extends AbstractStreamConsumer {
       for (int j = 0; j < internalChangeEventDTO.getServiceIdentifierCount(); j++) {
         changeEventDTO.setServiceIdentifier(internalChangeEventDTO.getServiceIdentifier(j));
         changeEventDTO.setEnvIdentifier(internalChangeEventDTO.getEnvironmentIdentifier(i));
+        changeEventService.register(changeEventDTO);
       }
-      changeEventService.register(changeEventDTO);
     }
   }
 }

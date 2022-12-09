@@ -145,8 +145,8 @@ public class ChangeEventResource {
   @NextGenManagerAuth
   @Path(CHANGE_EVENT_PATH + "/monitored-service-summary")
   @ExceptionMetered
-  @ApiOperation(
-      value = "get ChangeEvent summary for monitored service", nickname = "getMonitoredServiceChangeEventSummary")
+  @ApiOperation(value = "get ChangeEvent summary for monitored service version2",
+      nickname = "getMonitoredServiceChangeEventSummaryV2")
   public RestResponse<ChangeSummaryDTO>
   getSummary(@PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
       @PathParam(CVNextGenConstants.ORG_IDENTIFIER_KEY) @NonNull String orgIdentifier,
@@ -260,7 +260,7 @@ public class ChangeEventResource {
   @Path(CHANGE_EVENT_PATH + "/monitored-service-timeline")
   @ExceptionMetered
   @ApiOperation(
-      value = "get monitored service timeline with durationDTO", nickname = "getMonitoredServiceChangeTimeline")
+      value = "get monitored service timeline with durationDTO", nickname = "getMonitoredServiceChangeTimelineV2")
   public RestResponse<ChangeTimeline>
   getMonitoredServiceChangeTimeline(
       @PathParam(CVNextGenConstants.ACCOUNT_IDENTIFIER_KEY) @NonNull String accountIdentifier,
