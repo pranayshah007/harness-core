@@ -8,7 +8,6 @@
 package io.harness.serializer.morphia;
 
 import io.harness.beans.EncryptedData;
-import io.harness.beans.MigrateSecretTask;
 import io.harness.beans.SecretChangeLog;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretUsageLog;
@@ -86,8 +85,8 @@ import software.wings.beans.PcfConfig;
 import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
-import software.wings.beans.SecretManagerRuntimeParameters;
 import software.wings.beans.ServiceNowConfig;
+import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SmbConfig;
 import software.wings.beans.SplunkConfig;
@@ -192,17 +191,16 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(KmsConfig.class);
     set.add(LocalEncryptionConfig.class);
     set.add(VaultConfig.class);
-    set.add(SecretManagerRuntimeParameters.class);
     set.add(BaseVaultConfig.class);
     set.add(SecretManagerConfig.class);
     set.add(SSHVaultConfig.class);
     set.add(SecretChangeLog.class);
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);
-    set.add(MigrateSecretTask.class);
     set.add(EmailData.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);
+    set.add(ServiceVariable.class);
     set.add(CustomSecretNGManagerConfig.class);
   }
 

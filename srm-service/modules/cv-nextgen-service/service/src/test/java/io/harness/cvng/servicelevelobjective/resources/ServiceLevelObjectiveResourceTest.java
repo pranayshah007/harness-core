@@ -446,11 +446,10 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                    .get();
     assertThat(response.getStatus()).isEqualTo(500);
     assertThat(response.readEntity(String.class))
-        .contains(
-            String.format("\"message\":\"io.harness.exception.InvalidRequestException: SLO  with identifier slo1, "
-                    + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
-                builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
-                builderFactory.getContext().getProjectIdentifier()));
+        .contains(String.format("\"message\":\"io.harness.exception.InvalidRequestException: SLO with identifier slo1, "
+                + "accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.\"",
+            builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
+            builderFactory.getContext().getProjectIdentifier()));
   }
 
   private static String convertToJson(String yamlString) {

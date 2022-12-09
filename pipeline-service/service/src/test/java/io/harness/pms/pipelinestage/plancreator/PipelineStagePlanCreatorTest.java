@@ -91,10 +91,12 @@ public class PipelineStagePlanCreatorTest {
                                      .build();
     doReturn("inputYaml").when(pipelineStageHelper).getInputSetYaml(yamlField);
 
-    PipelineStageStepParameters stepParameters = pipelineStagePlanCreator.getStepParameter(config, yamlField);
+    PipelineStageStepParameters stepParameters =
+        pipelineStagePlanCreator.getStepParameter(config, yamlField, "planNodeId");
     assertThat(stepParameters.getPipeline()).isEqualTo(PIPELINE);
     assertThat(stepParameters.getOrg()).isEqualTo(ORG);
     assertThat(stepParameters.getProject()).isEqualTo(PROJ);
+    assertThat(stepParameters.getStageNodeId()).isEqualTo("planNodeId");
     assertThat(stepParameters.getPipelineInputs()).isEqualTo("inputYaml");
     assertThat(stepParameters.getInputSetReferences().size()).isEqualTo(1);
     assertThat(stepParameters.getInputSetReferences().get(0)).isEqualTo("ref");

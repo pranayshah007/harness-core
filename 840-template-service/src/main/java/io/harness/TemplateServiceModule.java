@@ -7,8 +7,8 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.authorization.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
@@ -72,6 +72,7 @@ import io.harness.template.eventsframework.TemplateEventsFrameworkModule;
 import io.harness.template.handler.CustomDeploymentYamlConversionHandler;
 import io.harness.template.handler.PipelineTemplateYamlConversionHandler;
 import io.harness.template.handler.SecretManagerTemplateYamlConversionHandler;
+import io.harness.template.handler.StepGroupTemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandler;
 import io.harness.template.handler.TemplateYamlConversionHandlerRegistry;
 import io.harness.template.mappers.TemplateFilterPropertiesMapper;
@@ -334,7 +335,7 @@ public class TemplateServiceModule extends AbstractModule {
     templateYamlConversionHandlerRegistry.register(
         ARTIFACT_SOURCE, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
-        STEP_GROUP, injector.getInstance(TemplateYamlConversionHandler.class));
+        STEP_GROUP, injector.getInstance(StepGroupTemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")
 load("//:tools/bazel/harness.bzl", "harness_sign", "java_library")
@@ -31,6 +36,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/eraro:module",
         "//980-commons/src/main/java/io/harness/eraro/mongo:module",
         "//980-commons/src/main/java/io/harness/event/model:module",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/metadata:module",
         "//980-commons/src/main/java/io/harness/expression/common:module",
         "//980-commons/src/main/java/io/harness/govern:module",
         "//980-commons/src/main/java/io/harness/governance:module",
@@ -48,6 +54,7 @@ java_library(
         "//980-commons/src/main/java/io/harness/text/resolver:module",
         "//980-commons/src/main/java/io/harness/windows:module",
         "//980-commons/src/main/java/io/harness/yaml:module",
+        "//980-commons/src/main/java/software/wings/misc:module",
         "//980-commons/src/main/proto:980_commons_java_proto",
         "//999-annotations:module",
         "@maven//:ch_qos_logback_contrib_logback_jackson",

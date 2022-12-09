@@ -7,6 +7,8 @@
 
 package io.harness.logstreaming;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.secret.ConfigSecret;
 
 import lombok.Builder;
@@ -18,5 +20,13 @@ import lombok.experimental.FieldDefaults;
 @Builder
 public class LogStreamingServiceConfig {
   private String baseUrl;
+  private String externalUrl;
   @ConfigSecret private String serviceToken;
+
+  public String getExternalUrl() {
+    if (isEmpty(externalUrl)) {
+      return baseUrl;
+    }
+    return externalUrl;
+  }
 }

@@ -7,6 +7,12 @@
 
 package io.harness.delegate.outbox;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_DELETE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_REGISTER_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_CREATE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_TOKEN_REVOKE_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_UNREGISTER_EVENT;
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_UPSERT_EVENT;
 import static io.harness.ng.core.utils.NGYamlUtils.getYamlString;
 
 import io.harness.ModuleType;
@@ -18,12 +24,12 @@ import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
 import io.harness.audit.client.api.AuditClientService;
 import io.harness.context.GlobalContext;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateNgTokenCreateEvent;
 import io.harness.delegate.events.DelegateNgTokenRevokeEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxEventHandler;
 
@@ -48,17 +54,17 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
   public boolean handle(OutboxEvent outboxEvent) {
     try {
       switch (outboxEvent.getEventType()) {
-        case "DelegateGroupUpsertEvent":
+        case DELEGATE_UPSERT_EVENT:
           return handleDelegateUpsertEvent(outboxEvent);
-        case "DelegateGroupDeleteEvent":
+        case DELEGATE_DELETE_EVENT:
           return handleDelegateDeleteEvent(outboxEvent);
-        case DelegateNgTokenCreateEvent.DELEGATE_TOKEN_CREATE_EVENT:
+        case DELEGATE_TOKEN_CREATE_EVENT:
           return handleDelegateNgTokenCreateEvent(outboxEvent);
-        case DelegateNgTokenRevokeEvent.DELEGATE_TOKEN_REVOKE_EVENT:
+        case DELEGATE_TOKEN_REVOKE_EVENT:
           return handleDelegateNgTokenRevokeEvent(outboxEvent);
-        case DelegateRegisterEvent.DELEGATE_REGISTER_EVENT:
+        case DELEGATE_REGISTER_EVENT:
           return handleDelegateRegisterEvent(outboxEvent);
-        case DelegateUnregisterEvent.DELEGATE_UNREGISTER_EVENT:
+        case DELEGATE_UNREGISTER_EVENT:
           return handleDelegateUnRegisterEvent(outboxEvent);
         default:
           return false;
@@ -70,12 +76,12 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handleDelegateUpsertEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    DelegateGroupUpsertEvent delegateGroupUpsertEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), DelegateGroupUpsertEvent.class);
+    DelegateUpsertEvent delegateUpsertEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), DelegateUpsertEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPSERT)
                                 .module(ModuleType.CORE)
-                                .newYaml(getYamlString(delegateGroupUpsertEvent.getDelegateSetupDetails()))
+                                .newYaml(getYamlString(delegateUpsertEvent.getDelegateSetupDetails()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -86,12 +92,12 @@ public class DelegateOutboxEventHandler implements OutboxEventHandler {
 
   private boolean handleDelegateDeleteEvent(OutboxEvent outboxEvent) throws IOException {
     GlobalContext globalContext = outboxEvent.getGlobalContext();
-    DelegateGroupDeleteEvent delegateGroupDeleteEvent =
-        objectMapper.readValue(outboxEvent.getEventData(), DelegateGroupDeleteEvent.class);
+    DelegateDeleteEvent delegateDeleteEvent =
+        objectMapper.readValue(outboxEvent.getEventData(), DelegateDeleteEvent.class);
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.DELETE)
                                 .module(ModuleType.CORE)
-                                .newYaml(getYamlString(delegateGroupDeleteEvent.getDelegateSetupDetails()))
+                                .newYaml(getYamlString(delegateDeleteEvent.getDelegateSetupDetails()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
                                 .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

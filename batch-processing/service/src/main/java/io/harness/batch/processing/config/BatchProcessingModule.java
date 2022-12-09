@@ -7,8 +7,8 @@
 
 package io.harness.batch.processing.config;
 
-import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.account.AccountClient;
 import io.harness.annotations.retry.MethodExecutionHelper;

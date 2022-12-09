@@ -16,6 +16,7 @@ import io.harness.ccm.commons.beans.usage.CELicenseUsageDTO;
 import io.harness.ccm.commons.utils.CCMLicenseUsageHelper;
 import io.harness.licensing.usage.beans.UsageDataDTO;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
+import io.harness.licensing.usage.params.PageableUsageRequestParams;
 import io.harness.licensing.usage.params.UsageRequestParams;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -30,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
+import org.springframework.data.domain.Page;
 
 @Slf4j
 public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicenseUsageDTO, UsageRequestParams> {
@@ -70,6 +73,12 @@ public class LicenseUsageInterfaceImpl implements LicenseUsageInterface<CELicens
             .build();
     licenseUsageCache.put(cacheKey, ceLicenseUsageDTO);
     return ceLicenseUsageDTO;
+  }
+
+  @Override
+  public Page<CELicenseUsageDTO> listLicenseUsage(
+      String accountIdentifier, ModuleType module, long currentTS, PageableUsageRequestParams usageRequest) {
+    throw new NotImplementedException("List license usage is not implemented yet for CE module");
   }
 
   private Long getActiveSpend(long timestamp, String accountIdentifier) {

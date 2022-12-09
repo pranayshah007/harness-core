@@ -34,6 +34,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
           value = EcsScalingPolicyDefinitionManifestOutcome.class, name = ManifestType.EcsScalingPolicyDefinition),
       @JsonSubTypes.Type(value = EcsServiceDefinitionManifestOutcome.class, name = ManifestType.EcsServiceDefinition),
       @JsonSubTypes.Type(value = EcsTaskDefinitionManifestOutcome.class, name = ManifestType.EcsTaskDefinition),
+      @JsonSubTypes.Type(value = TasManifestOutcome.class, name = ManifestType.TAS_MANIFEST),
+      @JsonSubTypes.Type(value = VarsManifestOutcome.class, name = ManifestType.TAS_VARS),
+      @JsonSubTypes.Type(value = AutoScalerManifestOutcome.class, name = ManifestType.TAS_AUTOSCALER),
+      @JsonSubTypes.Type(value = AsgLaunchTemplateManifestOutcome.class, name = ManifestType.AsgLaunchTemplate),
+      @JsonSubTypes.Type(value = AsgConfigurationManifestOutcome.class, name = ManifestType.AsgConfiguration),
+      @JsonSubTypes.Type(value = AsgScalingPolicyManifestOutcome.class, name = ManifestType.AsgScalingPolicy),
+      @JsonSubTypes.Type(value = AsgScheduledUpdateGroupActionManifestOutcome.class,
+          name = ManifestType.AsgScheduledUpdateGroupAction),
 })
 public interface ManifestOutcome extends Outcome, WithIdentifier {
   String getIdentifier();

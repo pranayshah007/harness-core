@@ -1026,6 +1026,29 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = KARAN_SARASWAT)
+  @Category(UnitTests.class)
+  public void testDelete_ActivityDeletion_Success() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    assertCommonMonitoredService(monitoredService, monitoredServiceDTO);
+    activityService.createActivity(builderFactory.getKubernetesClusterActivityBuilder().build());
+    activityService.createActivity(builderFactory.getDeploymentActivityBuilder().build());
+    activityService.createActivity(builderFactory.getPagerDutyActivityBuilder().build());
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builderWithProjectParams(projectParams)
+                                                        .monitoredServiceIdentifier(monitoredServiceIdentifier)
+                                                        .build();
+    assertThat(activityService.getByMonitoredServiceIdentifier(monitoredServiceParams).size()).isEqualTo(3);
+    boolean isDeleted =
+        monitoredServiceService.delete(builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier);
+    assertThat(isDeleted).isEqualTo(true);
+    assertThat(activityService.getByMonitoredServiceIdentifier(monitoredServiceParams).size()).isEqualTo(0);
+    monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    assertThat(monitoredService).isEqualTo(null);
+  }
+
+  @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
   public void testDelete_PagerDutyChangeSource_HandleDeleteException() {

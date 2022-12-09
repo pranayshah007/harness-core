@@ -7,7 +7,6 @@
 
 package io.harness.cimanager.serializer;
 
-import static io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
 import static io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
 import static io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml.VmPoolYamlSpec;
 
@@ -45,6 +44,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.UseFromStageInfraYaml;
@@ -92,7 +92,6 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(TestStepInfo.class, 100013);
     kryo.register(CustomVariable.class, 100023);
     kryo.register(K8sDirectInfraYaml.class, 100040);
-    kryo.register(K8sDirectInfraYamlSpec.class, 100041);
     kryo.register(CIStepOutcome.class, 100057);
     kryo.register(PluginStepInfo.class, 100058);
     kryo.register(SecurityStepInfo.class, 110105);
@@ -130,6 +129,8 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(DockerRuntime.class, 110116);
     kryo.register(DockerInfraYaml.class, 110117);
 
+    kryo.register(K8sDirectInfraYamlSpec.class, 100041);
+
     kryo.register(CIVolume.class, 390005);
     kryo.register(EmptyDirYaml.class, 390006);
     kryo.register(HostPathYaml.class, 390007);
@@ -161,7 +162,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(ArchType.class, 110140);
     kryo.register(OSType.class, 110141);
     kryo.register(BooleanNode.class, 110142);
-    kryo.register(NullNode.class, 110143);
-    kryo.register(DockerInfraSpec.class, 110144);
+    kryo.register(NullNode.class, 110145);
+    kryo.register(DockerInfraSpec.class, 110146);
   }
 }

@@ -69,7 +69,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
   @SchemaIgnore @FdIndex private long createdAt;
   // Will be used by ECS delegate, when hostName is mentioned in TaskSpec.
-  @NotEmpty @FdIndex private String accountId;
+  @NotEmpty private String accountId;
 
   // Will be used for NG to hold delegate size details
   private DelegateSizeDetails sizeDetails;

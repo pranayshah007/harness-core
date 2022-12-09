@@ -92,7 +92,7 @@ public class AnalysisContext extends Base implements PersistentRegularIterable, 
   @FdIndex private String accountId;
   private String workflowId;
   private String workflowExecutionId;
-  @FdIndex private String stateExecutionId;
+  private String stateExecutionId;
   private String serviceId;
   private String predictiveCvConfigId;
   private int predictiveHistoryMinutes;

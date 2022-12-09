@@ -10,13 +10,16 @@ package io.harness.cdng.pipeline.executions.beans;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.Value;
 
 @OwnedBy(HarnessTeam.CDC)
 @Data
@@ -25,6 +28,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GitOpsExecutionSummary {
   Set<Environment> environments = new HashSet<>();
+  List<Cluster> clusters = new ArrayList<>();
 
   public void addSingleEnvironment(@NotEmpty String envId, @NotEmpty String envName) {
     environments.add(Environment.builder().identifier(envId).name(envName).build());
@@ -47,5 +51,16 @@ public class GitOpsExecutionSummary {
     String identifier;
     String envGroupIdentifier;
     String envGroupName;
+  }
+
+  @Value
+  @Builder
+  public static class Cluster {
+    String envGroupId;
+    String envGroupName;
+    String envId;
+    String envName;
+    String clusterId;
+    String clusterName;
   }
 }

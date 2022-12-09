@@ -45,6 +45,7 @@ import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.yaml.AzureRepoStore;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GithubStore;
@@ -65,6 +66,14 @@ import io.harness.delegate.TaskSetupAbstractions;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectionTypeDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
@@ -929,6 +938,101 @@ public class CDStepHelperTest extends CategoryTest {
     assertThat(convertedBitbucketConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
     assertThat(convertedBitbucketConnectorDTO.getConnectionType()).isEqualTo(GitConnectionType.REPO);
     assertThat(convertedBitbucketConnectorDTO.getApiAccess()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetAzureRepoStoreDelegateConfigFFEnabledGithubApiAccess() {
+    List<String> paths = asList("path/to");
+    GitStoreConfig gitStoreConfig = AzureRepoStore.builder()
+                                        .repoName(ParameterField.createValueField("parent-repo/module"))
+                                        .paths(ParameterField.createValueField(paths))
+                                        .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    AzureRepoConnectorDTO azureRepoConnectorDTO =
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .url("http://localhost")
+            .apiAccess(AzureRepoApiAccessDTO.builder().spec(AzureRepoTokenSpecDTO.builder().build()).build())
+            .authentication(AzureRepoAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(AzureRepoHttpCredentialsDTO.builder()
+                                                 .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                 .httpCredentialsSpec(AzureRepoUsernameTokenDTO.builder()
+                                                                          .username("username")
+                                                                          .tokenRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+    connectorInfoDTO.setConnectorConfig(azureRepoConnectorDTO);
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
+
+    assertThat(gitStoreDelegateConfig).isNotNull();
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(AzureRepoConnectorDTO.class);
+    assertThat(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()).isEqualTo(apiEncryptedDataDetails);
+    AzureRepoConnectorDTO convertedAzureRepoConnectorDTO =
+        (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+    assertThat(convertedAzureRepoConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
+    assertThat(convertedAzureRepoConnectorDTO.getConnectionType()).isEqualTo(AzureRepoConnectionTypeDTO.REPO);
+    assertThat(convertedAzureRepoConnectorDTO.getApiAccess()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void shouldGetAzureRepoStoreDelegateConfigFFEnabledGithubUsernameTokenAuth() {
+    List<String> paths = asList("path/to");
+    GitStoreConfig gitStoreConfig = AzureRepoStore.builder()
+                                        .repoName(ParameterField.createValueField("parent-repo/module"))
+                                        .paths(ParameterField.createValueField(paths))
+                                        .build();
+    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().build();
+    SSHKeySpecDTO sshKeySpecDTO = SSHKeySpecDTO.builder().build();
+    List<EncryptedDataDetail> apiEncryptedDataDetails = new ArrayList<>();
+    AzureRepoConnectorDTO azureRepoConnectorDTO =
+        AzureRepoConnectorDTO.builder()
+            .connectionType(AzureRepoConnectionTypeDTO.PROJECT)
+            .url("http://localhost")
+            .authentication(AzureRepoAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(AzureRepoHttpCredentialsDTO.builder()
+                                                 .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                 .httpCredentialsSpec(AzureRepoUsernameTokenDTO.builder()
+                                                                          .username("username")
+                                                                          .tokenRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+    connectorInfoDTO.setConnectorConfig(azureRepoConnectorDTO);
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), eq(OPTIMIZED_GIT_FETCH_FILES));
+    doReturn(sshKeySpecDTO).when(gitConfigAuthenticationInfoHelper).getSSHKey(any(), any(), any(), any());
+    doReturn(apiEncryptedDataDetails).when(secretManagerClientService).getEncryptionDetails(any(), any());
+
+    GitStoreDelegateConfig gitStoreDelegateConfig = cdStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorInfoDTO, K8sManifestOutcome.builder().build(), paths, ambiance);
+
+    assertThat(gitStoreDelegateConfig).isNotNull();
+    assertThat(gitStoreDelegateConfig.isOptimizedFilesFetch()).isTrue();
+    assertThat(gitStoreDelegateConfig.getGitConfigDTO()).isInstanceOf(AzureRepoConnectorDTO.class);
+    assertThat(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails()).isEqualTo(apiEncryptedDataDetails);
+    AzureRepoConnectorDTO convertedAzureRepoConnectorDTO =
+        (AzureRepoConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+    assertThat(convertedAzureRepoConnectorDTO.getUrl()).isEqualTo("http://localhost/parent-repo/module");
+    assertThat(convertedAzureRepoConnectorDTO.getConnectionType()).isEqualTo(AzureRepoConnectionTypeDTO.REPO);
+    assertThat(convertedAzureRepoConnectorDTO.getApiAccess()).isNotNull();
   }
 
   @Test

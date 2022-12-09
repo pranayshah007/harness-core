@@ -1,9 +1,15 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "csharp",
     srcs = [
         "dotnet.go",
+        "helper.go",
         "nunit_console.go",
     ],
     importpath = "github.com/harness/harness-core/product/ci/addon/testintelligence/csharp",
@@ -11,6 +17,8 @@ go_library(
     deps = [
         "//commons/go/lib/exec",
         "//commons/go/lib/filesystem",
+        "//commons/go/lib/utils",
+        "//product/ci/common/external",
         "//product/ci/ti-service/types",
         "@org_uber_go_zap//:zap",
     ],
@@ -18,7 +26,10 @@ go_library(
 
 go_test(
     name = "csharp_test",
-    srcs = ["dotnet_test.go"],
+    srcs = [
+        "dotnet_test.go",
+        "helper_test.go",
+    ],
     embed = [":csharp"],
     deps = [
         "//commons/go/lib/exec",

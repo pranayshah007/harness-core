@@ -104,7 +104,8 @@ public class User extends Base implements Principal {
   public static final String EMAIL_KEY = "email";
   public static final String ROLES_KEY = "roles";
 
-  @NotEmpty @FdIndex private String name;
+  @NotEmpty private String name;
+
   @FdIndex private String externalUserId;
 
   private String givenName;

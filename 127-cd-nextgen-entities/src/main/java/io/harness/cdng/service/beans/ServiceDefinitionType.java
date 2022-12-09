@@ -66,7 +66,19 @@ public enum ServiceDefinitionType {
   ELASTIGROUP(ServiceSpecType.ELASTIGROUP,
       Lists.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.BASIC,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.ELASTIGROUP);
+      ServiceSpecType.ELASTIGROUP),
+
+  @JsonProperty(ServiceSpecType.TAS)
+  TAS(ServiceSpecType.TAS,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.TAS),
+
+  @JsonProperty(ServiceSpecType.ASG)
+  ASG(ServiceSpecType.ASG,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.ASG);
 
   /*
   //Unsupported for now

@@ -63,6 +63,7 @@ import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.task.common.DataCollectionExecutorService;
 import io.harness.entities.CVTask;
+import io.harness.ff.FeatureFlagService;
 import io.harness.managerclient.VerificationManagerClient;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.rest.RestResponse;
@@ -209,6 +210,7 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
   @Inject private DataCollectionExecutorService dataCollectionService;
   @Inject private DataStoreService dataStoreService;
   @Inject Map<AlertType, Class<? extends AlertData>> alertTypeClassMap;
+  @Mock private FeatureFlagService featureFlagService;
 
   @Mock private CVConfigurationService cvConfigurationService;
   @Mock private CVTaskService cvTaskService;
@@ -332,9 +334,11 @@ public class ContinuousVerificationServiceTest extends VerificationBase {
     writeField(alertService, "executorService", Executors.newSingleThreadScheduledExecutor(), true);
     writeField(alertService, "injector", injector, true);
     writeField(alertService, "alertTypeClassMap", alertTypeClassMap, true);
+    writeField(alertService, "featureFlagService", featureFlagService, true);
     writeField(managerVerificationService, "alertService", alertService, true);
     when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
         .thenReturn(mock(CVActivityLogger.class));
+    when(featureFlagService.isEnabled(FeatureName.INSTANT_DELEGATE_DOWN_ALERT, accountId)).thenReturn(false);
     when(cvActivityLogService.getLoggerByCVConfigId(anyString(), anyString(), anyLong())).thenReturn(activityLogger);
     when(verificationManagerClient.triggerCVDataCollection(anyString(), anyObject(), anyLong(), anyLong()))
         .then(invocation -> {

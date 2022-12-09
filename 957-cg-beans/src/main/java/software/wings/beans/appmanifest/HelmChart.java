@@ -71,7 +71,7 @@ public class HelmChart implements AccountAccess, NameAccess, PersistentEntity, U
   @Transient private String appManifestName;
   private String name;
   private String displayName;
-  @FdIndex private String accountId;
+  private String accountId;
   private String appId;
   private String serviceId;
   private long createdAt;

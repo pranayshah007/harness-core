@@ -83,10 +83,6 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
         return StepResponse.builder().status(Status.SUCCEEDED).build();
       }
     } else {
-      WaitStepDetailsInfo waitStepDetailsInfo =
-          WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.TIMED_OUT).build();
-      sdkGraphVisualizationDataService.publishStepDetailInformation(
-          ambiance, waitStepDetailsInfo, "waitStepActionTaken");
       waitStepService.updatePlanStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       return StepResponse.builder().status(Status.SUCCEEDED).build();
     }

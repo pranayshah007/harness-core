@@ -12,9 +12,9 @@ import static java.time.Duration.ofSeconds;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.scheduler.PersistentScheduler;
 
-import software.wings.beans.AppContainer;
-import software.wings.beans.artifact.Artifact;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.FileService;
 
 import com.google.inject.Inject;

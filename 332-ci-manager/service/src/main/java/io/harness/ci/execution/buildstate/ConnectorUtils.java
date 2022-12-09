@@ -24,7 +24,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.environment.K8BuildJobEnvInfo;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -163,7 +163,7 @@ public class ConnectorUtils {
   }
 
   public ConnectorDetails getConnectorDetailsWithConversionInfo(
-      NGAccess ngAccess, K8BuildJobEnvInfo.ConnectorConversionInfo connectorConversionInfo) {
+      NGAccess ngAccess, ConnectorConversionInfo connectorConversionInfo) {
     ConnectorDetails connectorDetails = getConnectorDetails(ngAccess, connectorConversionInfo.getConnectorRef());
     connectorDetails.setEnvToSecretsMap(connectorConversionInfo.getEnvToSecretsMap());
     return connectorDetails;

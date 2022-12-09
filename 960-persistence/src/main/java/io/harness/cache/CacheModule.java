@@ -15,7 +15,7 @@ import static javax.cache.Caching.getCachingProvider;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.govern.ServersModule;
-import io.harness.redis.CompatibleFieldSerializerWithoutReferenceCodec;
+import io.harness.redis.RedissonKryoCodec;
 
 import com.google.common.io.Files;
 import com.google.inject.AbstractModule;
@@ -137,7 +137,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
     if (file.exists()) {
       uri = file.toURI();
       Config config = Config.fromYAML(uri.toURL());
-      config.setCodec(new CompatibleFieldSerializerWithoutReferenceCodec());
+      config.setCodec(new RedissonKryoCodec());
       Files.write(config.toYAML().getBytes(StandardCharsets.UTF_8), file);
       log.info("Found the redisson config in the working directory {}", uri);
     }
@@ -202,8 +202,7 @@ public class CacheModule extends AbstractModule implements ServersModule {
   @Override
   protected void configure() {
     if (cacheConfig.getCacheBackend() == REDIS) {
-      bind(CompatibleFieldSerializerWithoutReferenceCodec.class)
-          .toInstance(new CompatibleFieldSerializerWithoutReferenceCodec());
+      bind(RedissonKryoCodec.class).toInstance(new RedissonKryoCodec());
     }
     MapBinder.newMapBinder(binder(), TypeLiteral.get(String.class), new TypeLiteral<Cache<?, ?>>() {});
 

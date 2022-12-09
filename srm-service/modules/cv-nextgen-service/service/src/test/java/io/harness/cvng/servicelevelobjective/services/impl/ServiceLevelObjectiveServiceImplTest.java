@@ -61,6 +61,7 @@ import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardApiFilter;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetDTO;
@@ -87,7 +88,6 @@ import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator.SLOHeal
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.ServiceLevelObjectiveKeys;
-import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -109,11 +109,9 @@ import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
 import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -308,7 +306,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         () -> serviceLevelObjectiveService.delete(projectParams, serviceLevelObjectiveDTO.getIdentifier()))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s is not present",
+            "SLO with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             serviceLevelObjectiveDTO.getIdentifier(), projectParams.getAccountIdentifier(),
             projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier()));
   }
@@ -416,6 +414,40 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   }
 
   @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdate_SLIUpdate_WithMissingDataType() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    createMonitoredService();
+    ServiceLevelObjectiveResponse serviceLevelObjectiveResponse =
+        serviceLevelObjectiveService.create(projectParams, sloDTO);
+    assertThat(serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO()).isEqualTo(sloDTO);
+    ServiceLevelIndicatorDTO responseSLIDTO =
+        serviceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getServiceLevelIndicators().get(0);
+    ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
+        builderFactory.getProjectParams(), responseSLIDTO.getIdentifier());
+    String sliIndicator = serviceLevelIndicator.getUuid();
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO1 = sloDTO.getServiceLevelIndicators().get(0);
+    serviceLevelIndicatorDTO1.setSliMissingDataType(SLIMissingDataType.BAD);
+    sloDTO.setServiceLevelIndicators(Collections.singletonList(serviceLevelIndicatorDTO1));
+    ServiceLevelObjectiveResponse updateServiceLevelObjectiveResponse =
+        serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO);
+    ServiceLevelIndicator updatedServiceLevelIndicator =
+        serviceLevelIndicatorService.getServiceLevelIndicator(builderFactory.getProjectParams(),
+            updateServiceLevelObjectiveResponse.getServiceLevelObjectiveDTO()
+                .getServiceLevelIndicators()
+                .get(0)
+                .getIdentifier());
+    String updatedSliIndicator = updatedServiceLevelIndicator.getUuid();
+    assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isNotEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
+    serviceLevelIndicator.setSliMissingDataType(SLIMissingDataType.BAD);
+    assertThat(serviceLevelIndicator.getSliMissingDataType())
+        .isEqualTo(updatedServiceLevelIndicator.getSliMissingDataType());
+  }
+
+  @Test
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testUpdate_SLIUpdateWithSLOTarget() throws ParseException {
@@ -448,15 +480,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                      .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getStartTime())
-        .isEqualTo(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse("2020-07-20T12:00:00").toInstant());
   }
 
   @Test
@@ -487,13 +510,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThat(updateServiceLevelObjectiveResponse.getServiceLevelObjectiveDTO().getTarget())
         .isEqualTo(updatedSloTarget);
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(121);
   }
 
   @Test
@@ -566,19 +582,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                      .getUuid();
 
     assertThat(sliIndicator).isEqualTo(updatedSliIndicator);
-    String verificationTaskId =
-        verificationTaskService.createSLIVerificationTask(builderFactory.getContext().getAccountId(), sliIndicator);
-    AnalysisOrchestrator analysisOrchestrator =
-        hPersistence.createQuery(AnalysisOrchestrator.class)
-            .filter(AnalysisOrchestratorKeys.verificationTaskId, verificationTaskId)
-            .get();
-    ServiceLevelObjective serviceLevelObjective =
-        serviceLevelObjectiveService.getEntity(projectParams, sloDTO.getIdentifier());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().size()).isEqualTo(14);
-    LocalDateTime currentLocalDate = LocalDateTime.ofInstant(clock.instant(), serviceLevelObjective.getZoneOffset());
-    TimePeriod timePeriod = serviceLevelObjective.getCurrentTimeRange(currentLocalDate);
-    Instant startTime = timePeriod.getStartTime(serviceLevelObjective.getZoneOffset());
-    assertThat(analysisOrchestrator.getAnalysisStateMachineQueue().get(0).getAnalysisStartTime()).isBefore(startTime);
   }
 
   @Test
@@ -716,7 +719,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(() -> serviceLevelObjectiveService.update(projectParams, sloDTO.getIdentifier(), sloDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(String.format(
-            "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+            "SLO  with identifier %s, accountId %s, orgIdentifier %s, and projectIdentifier %s is not present.",
             sloDTO.getIdentifier(), projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier()));
   }

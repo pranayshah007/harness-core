@@ -41,7 +41,7 @@ public class K8sApplyStepMapperImpl implements StepMapper {
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     K8sApplyState state = (K8sApplyState) getState(stepYaml);
     K8sApplyStepNode k8sApplyStepNode = new K8sApplyStepNode();
-    baseSetup(stepYaml, k8sApplyStepNode);
+    baseSetup(state, k8sApplyStepNode);
     K8sApplyStepInfo k8sApplyStepInfo =
         K8sApplyStepInfo.infoBuilder()
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))

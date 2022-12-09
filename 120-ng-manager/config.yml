@@ -136,7 +136,7 @@ ciManagerClientConfig:
   readTimeOutSeconds: 15
 
 cvngClientConfig:
-  baseUrl: http://localhost:6060/cv/api/
+  baseUrl: http://localhost:6457/cv/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
@@ -371,7 +371,7 @@ gitSdkConfiguration:
 
 baseUrls:
   currentGenUiUrl: http://localhost:8181/#/
-  nextGenUiUrl: http://localhost:8181/ng/#/
+  nextGenUiUrl: https://localhost:8181/ng/#/
   nextGenAuthUiUrl: http://localhost:8181/auth/#/
   webhookBaseUrl: http://localhost:7457/
 
