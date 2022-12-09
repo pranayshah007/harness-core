@@ -96,7 +96,7 @@ public class NGTemplateServiceHelper {
       boolean getMetadataOnly, boolean loadFromCache) {
     try {
       Optional<TemplateEntity> optionalTemplate = getTemplate(accountId, orgIdentifier, projectIdentifier,
-          templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache);
+          templateIdentifier, versionLabel, deleted, getMetadataOnly, loadFromCache, false);
       if (optionalTemplate.isPresent() && optionalTemplate.get().isEntityInvalid()) {
         throw new NGTemplateException(
             "Invalid Template yaml cannot be used. Please correct the template version yaml.");
@@ -429,19 +429,21 @@ public class NGTemplateServiceHelper {
   }
 
   public Optional<TemplateEntity> getTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache) {
+      String templateIdentifier, String versionLabel, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (EmptyPredicate.isEmpty(versionLabel)) {
-      return getStableTemplate(
-          accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted, getMetadataOnly, loadFromCache);
+      return getStableTemplate(accountId, orgIdentifier, projectIdentifier, templateIdentifier, deleted,
+          getMetadataOnly, loadFromCache, loadFromFallbackBranch);
 
     } else {
       return getTemplateWithVersionLabel(accountId, orgIdentifier, projectIdentifier, templateIdentifier, versionLabel,
-          deleted, getMetadataOnly, loadFromCache);
+          deleted, getMetadataOnly, loadFromCache, loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getStableTemplate(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache) {
+      String templateIdentifier, boolean deleted, boolean getMetadataOnly, boolean loadFromCache,
+      boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
@@ -449,13 +451,14 @@ public class NGTemplateServiceHelper {
     } else {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(accountId,
-              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache);
+              orgIdentifier, projectIdentifier, templateIdentifier, !deleted, getMetadataOnly, loadFromCache,
+              loadFromFallbackBranch);
     }
   }
 
   public Optional<TemplateEntity> getTemplateWithVersionLabel(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted,
-      boolean getMetadataOnly, boolean loadFromCache) {
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch) {
     if (isOldGitSync(accountId, orgIdentifier, projectIdentifier)) {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNotForOldGitSync(
@@ -464,7 +467,7 @@ public class NGTemplateServiceHelper {
       return templateRepository
           .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(accountId,
               orgIdentifier, projectIdentifier, templateIdentifier, versionLabel, !deleted, getMetadataOnly,
-              loadFromCache);
+              loadFromCache, loadFromFallbackBranch);
     }
   }
 

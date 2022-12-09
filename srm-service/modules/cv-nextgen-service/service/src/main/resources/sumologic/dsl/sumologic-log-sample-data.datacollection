@@ -1,0 +1,58 @@
+Var one = 1
+Var maxRetryCount = 60
+Var jobUrl = concat(Env:baseUrl, "api/v1/search/jobs")
+Var bodyMap = {}
+Var:bodyMap.put("query", Env:query)
+Var:bodyMap.put("timeZone", "IST")
+Var:bodyMap.put("from", Env:from)
+Var:bodyMap.put("to", Env:to)
+Var job = sync-call(url=Var:jobUrl, header=Env:commonHeaders, body=Var:bodyMap)
+Var jobId = extract(Var:job, $.id)
+sleep(500)
+Var resultsUrl = concat(Env:baseUrl, "api/v1/search/jobs/", Var:jobId)
+Var jobResult = sync-call(url=Var:resultsUrl, header=Env:commonHeaders)
+Var jobState = extract(Var:jobResult, $.state)
+
+Var resultGathered = "false"
+Var retryCount = 0
+while Var:resultGathered == "false" {
+  if Var:retryCount is equal to Var:maxRetryCount {
+    throw exception "Max retry exceeded"
+  }
+  if Var:jobState == "FORCE PAUSED" {
+    resultGathered = "true"
+  }
+  if Var:jobState == "DONE GATHERING RESULTS" {
+    resultGathered = "true"
+  }
+  if Var:jobState == "CANCELLED" {
+    resultGathered = "true"
+  }
+  sleep(500)
+  jobResult = sync-call(url=Var:resultsUrl, header=Env:commonHeaders)
+  jobState = extract(Var:jobResult, $.state)
+  retryCount = Var:retryCount + Var:one
+}
+
+if Var:jobState == "CANCELLED" {
+  throw exception "Serarch job cancelled"
+}
+
+Var messageCount = extract(Var:jobResult, $.messageCount)
+Var logs = []
+Var currentSize = 0
+Var pageSize = 50
+
+Var options = {}
+Var messageResults = {}
+Var:options.put("offset", Var:currentSize)
+Var:options.put("limit", Var:pageSize)
+  Var:options.put("offset", Var:currentSize)
+  Var messageUrl = concat(Env:baseUrl, "api/v1/search/jobs/", Var:jobId,"/messages")
+  messageResults = sync-call(url=Var:messageUrl, header=Env:commonHeaders, options=Var:options)
+  Var messages = extract(Var:messageResults, $.messages)
+  foreach logRow in Var:messages {
+    Var logEntry = extract(Var:logRow, $.map)
+    Var:logs.append(Var:logEntry)
+  }
+return Var:logs

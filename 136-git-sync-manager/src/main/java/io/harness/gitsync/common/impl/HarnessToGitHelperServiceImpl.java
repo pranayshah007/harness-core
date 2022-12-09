@@ -668,20 +668,27 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         GetFileResponse.newBuilder()
             .setStatusCode(HTTP_200)
             .setFileContent(scmGetFileResponseDTO.getFileContent())
-            .setGitMetaData(
-                GitMetaData.newBuilder()
-                    .setRepoName(getFileRequest.getRepoName())
-                    .setBranchName(scmGetFileResponseDTO.getBranchName())
-                    .setCommitId(scmGetFileResponseDTO.getCommitId())
-                    .setBlobId(scmGetFileResponseDTO.getBlobId())
-                    .setFilePath(getFileRequest.getFilePath())
-                    .setFileUrl(gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(),
-                        scmGetFileResponseDTO.getBranchName(), getFileRequest.getFilePath(), gitRepositoryDTO))
-                    .build());
+            .setGitMetaData(GitMetaData.newBuilder()
+                                .setRepoName(getFileRequest.getRepoName())
+                                .setBranchName(scmGetFileResponseDTO.getBranchName())
+                                .setCommitId(scmGetFileResponseDTO.getCommitId())
+                                .setBlobId(scmGetFileResponseDTO.getBlobId())
+                                .setFilePath(getFileRequest.getFilePath())
+                                .setFileUrl(getFileUrl(getFileRequest, scmGetFileResponseDTO, scope, gitRepositoryDTO))
+                                .build());
     if (scmGetFileResponseDTO.getCacheDetails() != null) {
       getFileResponseOrBuilder.setCacheResponse(getCacheResponse(scmGetFileResponseDTO.getCacheDetails()));
     }
     return getFileResponseOrBuilder.build();
+  }
+
+  private String getFileUrl(GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope,
+      GitRepositoryDTO gitRepositoryDTO) {
+    if (isEmpty(scmGetFileResponseDTO.getBranchName())) {
+      return getFileRequest.getFilePath();
+    }
+    return gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(), scmGetFileResponseDTO.getBranchName(),
+        getFileRequest.getFilePath(), gitRepositoryDTO);
   }
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(

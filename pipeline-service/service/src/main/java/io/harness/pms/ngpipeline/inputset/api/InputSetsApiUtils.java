@@ -170,6 +170,8 @@ public class InputSetsApiUtils {
         .baseBranch(gitDetails.getBaseBranch())
         .lastCommitId(gitDetails.getLastCommitId())
         .lastObjectId(gitDetails.getLastObjectId())
+        .parentEntityConnectorRef(gitDetails.getParentEntityConnectorRef())
+        .parentEntityRepoName(gitDetails.getParentEntityRepoName())
         .build();
   }
 

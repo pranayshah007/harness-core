@@ -197,15 +197,17 @@ public class NGTemplateResource {
           NGCommonEntityConstants.DELETED_KEY) @DefaultValue("false") boolean deleted,
       @Parameter(description = "This contains details of Git Entity like Git Branch info")
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
-      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache) {
+      @HeaderParam("Load-From-Cache") @DefaultValue("false") String loadFromCache,
+      @QueryParam("loadFromFallbackBranch") @DefaultValue("false") boolean loadFromFallbackBranch) {
     // if label is not given, return stable template
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
         Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_VIEW_PERMISSION);
     log.info(
         String.format("Retrieving Template with identifier %s and versionLabel %s in project %s, org %s, account %s",
             templateIdentifier, versionLabel, projectId, orgId, accountId));
-    Optional<TemplateEntity> templateEntity = templateService.get(accountId, orgId, projectId, templateIdentifier,
-        versionLabel, deleted, NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+    Optional<TemplateEntity> templateEntity =
+        templateService.get(accountId, orgId, projectId, templateIdentifier, versionLabel, deleted,
+            NGTemplateDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache), loadFromFallbackBranch);
 
     String version = "0";
     if (templateEntity.isPresent()) {

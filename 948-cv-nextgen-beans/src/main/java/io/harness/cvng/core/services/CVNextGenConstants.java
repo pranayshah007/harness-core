@@ -45,6 +45,7 @@ public interface CVNextGenConstants {
   String PROJECT_PATH = "account/{" + ACCOUNT_IDENTIFIER_KEY + "}/org/{" + ORG_IDENTIFIER_KEY + "}/project/{"
       + PROJECT_IDENTIFIER_KEY + "}";
   String CHANGE_EVENT_PATH = PROJECT_PATH + "/change-event";
+  String HEALTH_SOURCE_PATH = PROJECT_PATH + "/health-source";
   String VERIFY_STEP_PATH = PROJECT_PATH + "/verify-step";
   String MONITORED_SERVICE_YAML_ROOT = "monitoredService";
 }

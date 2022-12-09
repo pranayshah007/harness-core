@@ -13,6 +13,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
@@ -32,15 +33,16 @@ public class ProjectParams {
   @AccountIdentifier
   @QueryParam("accountId")
   @NotNull
+  @Valid
   String accountIdentifier;
   @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)
   @OrgIdentifier
   @QueryParam("orgIdentifier")
-  @NotNull
+  @Valid
   String orgIdentifier;
   @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE)
   @ProjectIdentifier
   @QueryParam("projectIdentifier")
-  @NotNull
+  @Valid
   String projectIdentifier;
 }

@@ -226,6 +226,13 @@ public class DelegateTask implements PersistentEntity, UuidAware, CreatedAtAware
     return description;
   }
 
+  public String calcDescriptionV2() {
+    if (isEmpty(description)) {
+      return taskDataV2.getTaskType();
+    }
+    return description;
+  }
+
   public boolean isNGTask(Map<String, String> setupAbstractions) {
     return !isEmpty(setupAbstractions) && setupAbstractions.get(NgSetupFields.NG) != null
         && Boolean.TRUE.equals(Boolean.valueOf(setupAbstractions.get(NgSetupFields.NG)));

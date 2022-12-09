@@ -153,7 +153,7 @@ function handle_slash_star {
 }
 
 function read_header_slash_star {
-  awk '{ if (/(\/\*| \*)/) {print} else {exit} }' "$FILE"
+  awk '/\/\*/ {h=1}; h==1 {print}; /\*\// {exit}' "$FILE"
 }
 
 function write_file_slash_star {

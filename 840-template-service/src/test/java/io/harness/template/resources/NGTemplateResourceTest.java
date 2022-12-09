@@ -216,9 +216,10 @@ public class NGTemplateResourceTest extends CategoryTest {
   public void testGetTemplate() {
     doReturn(Optional.of(entityWithMongoVersion))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
-    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false,
+            false);
+    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, null, false);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getVersion()).isEqualTo(1L);
     assertThat(responseDTO.getData().getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
@@ -235,10 +236,10 @@ public class NGTemplateResourceTest extends CategoryTest {
     doReturn(Optional.empty())
         .when(templateService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false,
-            false);
+            false, false);
     assertThatThrownBy(()
                            -> templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
-                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, null))
+                               incorrectPipelineIdentifier, TEMPLATE_VERSION_LABEL, false, null, null, false))
         .isInstanceOf(InvalidRequestException.class);
   }
 
@@ -447,9 +448,10 @@ public class NGTemplateResourceTest extends CategoryTest {
     entityWithMongoVersion = entityWithMongoVersion.withStoreType(StoreType.REMOTE);
     doReturn(Optional.of(entityWithMongoVersion))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, true);
-    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, "true");
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, true,
+            false);
+    ResponseDTO<TemplateResponseDTO> responseDTO = templateResource.get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+        TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, null, "true", false);
     assertThat(responseDTO.getData()).isNotNull();
     assertThat(responseDTO.getData().getCacheResponseMetadata()).isNotNull();
     assertEquals(CacheState.VALID_CACHE, responseDTO.getData().getCacheResponseMetadata().getCacheState());

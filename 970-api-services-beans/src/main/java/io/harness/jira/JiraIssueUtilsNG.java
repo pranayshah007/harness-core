@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @UtilityClass
@@ -180,6 +181,8 @@ public class JiraIssueUtilsNG {
         return parseDateTime(name, value);
       case OPTION:
         return convertOptionToFinalValue(field, name, value);
+      case ISSUE_LINK:
+        return convertIssueLinkToFinalValue(field, name, value);
       default:
         throw new JiraClientException(String.format("Unsupported field type: %s", field.getSchema().getType()), true);
     }
@@ -242,5 +245,16 @@ public class JiraIssueUtilsNG {
     } catch (NumberFormatException ex) {
       throw new JiraClientException(String.format("Invalid datetime value for field [%s]", name), true);
     }
+  }
+
+  private Object convertIssueLinkToFinalValue(JiraFieldNG field, String name, String value) {
+    // reference
+    // https://community.atlassian.com/t5/Jira-questions/Creating-sub-task-from-an-existing-issue-using-API/qaq-p/1275793
+    if (StringUtils.isBlank(value)) {
+      throw new JiraClientException(String.format("Invalid issuelink value for field [%s]", name), true);
+    }
+    Map<String, String> issueLinkMap = new HashMap<>();
+    issueLinkMap.put("key", value);
+    return issueLinkMap;
   }
 }

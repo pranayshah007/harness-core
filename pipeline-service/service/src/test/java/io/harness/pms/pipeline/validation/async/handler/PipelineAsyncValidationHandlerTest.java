@@ -21,6 +21,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
 import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.governance.service.PipelineGovernanceService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
 import io.harness.pms.pipeline.validation.async.beans.ValidationParams;
@@ -41,6 +42,7 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   PipelineAsyncValidationHandler pipelineAsyncValidationHandler;
   @Mock PipelineAsyncValidationService validationService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
+  @Mock PipelineGovernanceService pipelineGovernanceService;
 
   PipelineEntity pipelineEntity;
   PipelineValidationEvent pipelineValidationEvent;
@@ -48,7 +50,7 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.openMocks(this);
-    pipelineEntity = PipelineEntity.builder().build();
+    pipelineEntity = PipelineEntity.builder().accountId("acc").orgIdentifier("org").projectIdentifier("proj").build();
     pipelineValidationEvent = PipelineValidationEvent.builder()
                                   .uuid("abc123")
                                   .params(ValidationParams.builder().pipelineEntity(pipelineEntity).build())
@@ -57,6 +59,7 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
                                          .validationEvent(pipelineValidationEvent)
                                          .validationService(validationService)
                                          .pipelineTemplateHelper(pipelineTemplateHelper)
+                                         .pipelineGovernanceService(pipelineGovernanceService)
                                          .build();
   }
 
@@ -82,12 +85,15 @@ public class PipelineAsyncValidationHandlerTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testSuccessfulRun() {
-    doReturn(TemplateMergeResponseDTO.builder().build())
-        .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(pipelineEntity, true);
+    TemplateMergeResponseDTO templateMergeResponse =
+        TemplateMergeResponseDTO.builder().mergedPipelineYamlWithTemplateRef("yaml").build();
+    doReturn(templateMergeResponse).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(pipelineEntity, true);
     doReturn(new HashSet<>(Arrays.asList("CD", "CI")))
         .when(pipelineTemplateHelper)
-        .getTemplatesModuleInfo(TemplateMergeResponseDTO.builder().build());
+        .getTemplatesModuleInfo(templateMergeResponse);
+    doReturn(io.harness.governance.GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineGovernanceService)
+        .validateGovernanceRules("acc", "org", "proj", "yaml");
     pipelineAsyncValidationHandler.run();
     verify(validationService, times(1))
         .updateEvent("abc123", ValidationStatus.IN_PROGRESS, ValidationResult.builder().build());

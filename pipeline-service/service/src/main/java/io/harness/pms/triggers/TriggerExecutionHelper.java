@@ -40,6 +40,7 @@ import io.harness.exception.TriggerException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.common.ExpressionConstants;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
@@ -253,6 +254,14 @@ public class TriggerExecutionHelper {
               .setPipelineIdentifier(pipelineEntity.getIdentifier())
               .setHarnessVersion(pipelineEntity.getHarnessVersion());
 
+      if (isNotEmpty(pipelineEntity.getConnectorRef())) {
+        executionMetaDataBuilder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
+      }
+      if (pipelineEntity.getStoreType() != null) {
+        executionMetaDataBuilder.setPipelineStoreType(getPipelineStoreType(pipelineEntity.getStoreType()));
+      } else {
+        log.warn("The storeType is null for the pipeline: " + pipelineEntity.getIdentifier());
+      }
       if (gitSyncBranchContextByteString != null) {
         executionMetaDataBuilder.setGitSyncBranchContext(gitSyncBranchContextByteString);
       }
@@ -584,5 +593,15 @@ public class TriggerExecutionHelper {
   public boolean isBranchExpr(String pipelineBranch) {
     return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
         && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
+  }
+
+  private PipelineStoreType getPipelineStoreType(StoreType storeType) {
+    if (StoreType.REMOTE.equals(storeType)) {
+      return PipelineStoreType.REMOTE;
+    } else if (StoreType.INLINE.equals(storeType)) {
+      return PipelineStoreType.INLINE;
+    } else {
+      return PipelineStoreType.UNDEFINED;
+    }
   }
 }

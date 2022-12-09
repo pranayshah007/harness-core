@@ -67,6 +67,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
+import io.harness.plugin.PluginMetadataRecordsJob;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
@@ -309,6 +310,8 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
     initializeCiManagerMonitoring(injector);
+
+    initializePluginPublisher(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -559,5 +562,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   private void initializeCiManagerMonitoring(Injector injector) {
     log.info("Initializing CI Manager Monitoring");
     injector.getInstance(CiTelemetryRecordsJob.class).scheduleTasks();
+  }
+
+  private void initializePluginPublisher(Injector injector) {
+    log.info("Initializing plugin metadata publishing job");
+    injector.getInstance(PluginMetadataRecordsJob.class).scheduleTasks();
   }
 }

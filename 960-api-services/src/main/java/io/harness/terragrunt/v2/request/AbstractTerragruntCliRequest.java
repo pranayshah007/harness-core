@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 import java.util.Map;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
@@ -24,5 +25,6 @@ public abstract class AbstractTerragruntCliRequest {
   @Getter String workingDirectory;
   @Getter TerragruntRunType runType;
   @Getter Map<String, String> envVars;
+  @Getter @Builder.Default TerragruntCliArgs args = TerragruntCliArgs.builder().build();
   @Getter Long timeoutInMillis;
 }

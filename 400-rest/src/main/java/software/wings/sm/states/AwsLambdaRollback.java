@@ -32,7 +32,7 @@ import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityKeys;
 import software.wings.beans.DeploymentExecutionContext;
 import software.wings.beans.Tag;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.sm.ExecutionContext;
 import software.wings.sm.StateType;
