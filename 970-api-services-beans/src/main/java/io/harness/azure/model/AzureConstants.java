@@ -407,7 +407,8 @@ public interface AzureConstants {
   String ERROR_INVALID_TENANT_CREDENTIALS = "Invalid credentials at Tenant Level";
   String AUTHORIZATION_ERROR = "does not have authorization";
   String KUBELOGIN_BINARY_PATH = InstallUtils.getPath(ClientTool.KUBELOGIN, KubeloginVersion.V0_0_24);
-  String AZLOGIN_SERVICE_PRINCIPAL = "az login --service-principal -u ${APP_ID} -p ${PASSWORD-OR-CERT} --tenant ${TENANT_ID}";
+  String AZLOGIN_SERVICE_PRINCIPAL =
+      "az login --service-principal -u ${APP_ID} -p ${PASSWORD-OR-CERT} --tenant ${TENANT_ID}";
   String AZLOGIN_MANAGED_IDENTITY = "az login --identity";
   String AZLOGIN_USER_MANAGED_IDENTITY = "--username ${CLIENT_ID}";
   int TIMEOUTINMILIS = 45;
