@@ -52,6 +52,7 @@ public class EmailData extends Queuable {
 
   public software.wings.helpers.ext.mail.EmailData toDTO() {
     return software.wings.helpers.ext.mail.EmailData.builder()
+        .accountId(accountId)
         .to(to)
         .cc(cc)
         .bcc(bcc)
