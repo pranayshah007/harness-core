@@ -7,19 +7,28 @@
 
 package software.wings.delegatetasks.azure;
 
+import static io.harness.azure.model.AzureConstants.AZLOGIN_MANAGED_IDENTITY;
+import static io.harness.azure.model.AzureConstants.AZLOGIN_SERVICE_PRINCIPAL;
+import static io.harness.azure.model.AzureConstants.AZLOGIN_USER_MANAGED_IDENTITY;
 import static io.harness.azure.model.AzureConstants.CLIENT_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.ENVIRONMENT_FLAG;
+import static io.harness.azure.model.AzureConstants.ERROR_AZLOGIN;
+import static io.harness.azure.model.AzureConstants.HINT_ERROR_AZLOGIN;
 import static io.harness.azure.model.AzureConstants.KUBELOGIN_BINARY_PATH;
 import static io.harness.azure.model.AzureConstants.SERVER_ID_FLAG;
 import static io.harness.azure.model.AzureConstants.TENANT_ID_FLAG;
+import static io.harness.azure.model.AzureConstants.TIMEOUTINMILIS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static io.harness.exception.WingsException.USER;
 import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
@@ -41,6 +50,7 @@ import io.harness.azure.utility.AzureUtils;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.encoding.EncodingUtils;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.azure.AzureConfigContext;
 import io.harness.delegate.beans.azure.ManagementGroupData;
@@ -59,15 +69,13 @@ import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
-import io.harness.delegate.clienttools.ClientTool;
-import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.delegate.clienttools.KubeloginVersion;
 import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.AzureContainerRegistryException;
 import io.harness.exception.HintException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.UnexpectedTypeException;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
 import io.harness.k8s.model.KubernetesAzureConfig;
@@ -76,6 +84,8 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.azure.core.management.Region;
@@ -89,11 +99,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -388,13 +401,14 @@ public class AzureAsyncTaskHelper {
         .build();
   }
 
-  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext) throws IOException {
+  public KubernetesConfig getClusterConfig(AzureConfigContext azureConfigContext) throws Exception {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(
         azureConfigContext.getAzureConnector().getCredential(), azureConfigContext.getEncryptedDataDetails(),
         azureConfigContext.getAzureConnector().getCredential().getAzureCredentialType(),
         azureConfigContext.getAzureConnector().getAzureEnvironmentType(), secretDecryptionService,
         azureConfigContext.getCertificateWorkingDirectory());
 
+    azClusterLogin(azureConfig);
     return getKubernetesConfigK8sCluster(azureConfig, azureConfigContext.getSubscriptionId(),
         azureConfigContext.getResourceGroup(), azureConfigContext.getCluster(), azureConfigContext.getNamespace(),
         azureConfigContext.isUseClusterAdminCredentials());
@@ -551,8 +565,6 @@ public class AzureAsyncTaskHelper {
       log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
 
       AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
-      //      azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(InstallUtils.getPath(ClientTool.KUBELOGIN,
-      //      KubeloginVersion.V0_0_24));
       azureKubeConfig.getUsers().get(0).getUser().getExec().setCommand(KUBELOGIN_BINARY_PATH);
       extractConfigFromArgs(azureKubeConfig);
       verifyAzureKubeConfig(azureKubeConfig);
@@ -824,5 +836,60 @@ public class AzureAsyncTaskHelper {
         }
       }
     }
+  }
+
+  private void azClusterLogin(AzureConfig azureConfig) throws Exception {
+    String loginCommand = AzureCliCommandToLogin(azureConfig);
+    ProcessResult processResult =
+            executeShellCommand(loginCommand);
+    if (processResult.getExitValue() != 0) {
+      throw NestedExceptionUtils.hintWithExplanationException(HINT_ERROR_AZLOGIN,
+              format(ERROR_AZLOGIN, loginCommand),
+              new AzureAuthenticationException(getErrorMessageIfProcessFailed("Failed to login to kubernetes cluster. ", processResult), USER));
+    }
+  }
+
+  private String AzureCliCommandToLogin(AzureConfig azureConfig) {
+    switch (azureConfig.getAzureAuthenticationType()) {
+      case SERVICE_PRINCIPAL_SECRET:
+        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
+                .replace("${PASSWORD-OR-CERT}", String.valueOf(azureConfig.getKey()))
+                .replace("${TENANT_ID}", azureConfig.getTenantId());
+
+      case SERVICE_PRINCIPAL_CERT:
+        return AZLOGIN_SERVICE_PRINCIPAL.replace("${APP_ID}", azureConfig.getClientId())
+                .replace("${PASSWORD-OR-CERT}", new String(azureConfig.getCert()))
+                .replace("${TENANT_ID}", azureConfig.getTenantId());
+
+      case MANAGED_IDENTITY_SYSTEM_ASSIGNED:
+        return AZLOGIN_MANAGED_IDENTITY;
+
+      case MANAGED_IDENTITY_USER_ASSIGNED:
+        return AZLOGIN_MANAGED_IDENTITY + " " + AZLOGIN_USER_MANAGED_IDENTITY.replace("${CLIENT_ID}", azureConfig.getClientId());
+
+      default:
+        new UnexpectedTypeException("Invalid Azure Authentication Type");
+        break;
+    }
+    return null;
+  }
+
+  @VisibleForTesting
+  public ProcessResult executeShellCommand(String command) throws IOException, InterruptedException, TimeoutException {
+    ProcessExecutor processExecutor = new ProcessExecutor()
+            .timeout(ofSeconds(TIMEOUTINMILIS).toMillis(), TimeUnit.MILLISECONDS)
+            .commandSplit(command)
+            .readOutput(true);
+
+    return processExecutor.execute();
+  }
+
+  @VisibleForTesting
+  String getErrorMessageIfProcessFailed(String baseMessage, ProcessResult processResult) {
+    StringBuilder stringBuilder = new StringBuilder(baseMessage);
+    if (EmptyPredicate.isNotEmpty(processResult.getOutput().getUTF8())) {
+      stringBuilder.append(String.format(" Error %s", processResult.getOutput().getUTF8()));
+    }
+    return stringBuilder.toString();
   }
 }

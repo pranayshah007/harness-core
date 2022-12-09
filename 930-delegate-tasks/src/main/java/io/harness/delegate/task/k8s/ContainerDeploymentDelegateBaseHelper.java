@@ -148,7 +148,7 @@ public class ContainerDeploymentDelegateBaseHelper {
                 .certificateWorkingDirectory(workingDirectory)
                 .build();
         return azureAsyncTaskHelper.getClusterConfig(azureConfigContext);
-      } catch (IOException ioe) {
+      } catch (Exception ioe) {
         throw NestedExceptionUtils.hintWithExplanationException("Failed to authenticate with Azure",
             "Please check you Azure connector configuration or delegate filesystem permissions.",
             new AzureAuthenticationException(ioe.getMessage()));
