@@ -257,6 +257,8 @@ public interface AccountService {
 
   boolean isImmutableDelegateEnabled(String accountId);
 
+  void setImmutableDelegateEnabledFlag(String accountId, boolean immutableDelegateEnabled);
+
   boolean doMultipleAccountsExist();
 
   List<AccountDTO> getAllAccounts();

@@ -2079,6 +2079,13 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public void setImmutableDelegateEnabledFlag(String accountId, boolean immutableDelegateEnabled) {
+    wingsPersistence.updateField(
+        Account.class, accountId, AccountKeys.immutableDelegateEnabled, immutableDelegateEnabled);
+    dbCache.invalidate(Account.class, accountId);
+  }
+
+  @Override
   public boolean doMultipleAccountsExist() {
     return wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
                .filter(ApplicationKeys.appId, GLOBAL_APP_ID)
