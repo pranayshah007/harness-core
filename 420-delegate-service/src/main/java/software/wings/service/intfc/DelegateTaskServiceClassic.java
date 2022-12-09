@@ -86,7 +86,5 @@ public interface DelegateTaskServiceClassic extends OwnedByAccount {
 
   List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities);
 
-  boolean saveAndBroadcastDelegateTask(DelegateTask task);
-
   boolean saveAndBroadcastDelegateTaskV2(DelegateTask task);
 }

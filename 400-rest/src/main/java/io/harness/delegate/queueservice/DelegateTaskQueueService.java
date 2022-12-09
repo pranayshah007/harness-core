@@ -92,7 +92,7 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   private void acknowledgeAndProcessDelegateTask(DelegateTaskDequeue delegateTaskDequeue) {
     try {
       if (delegateTaskDequeue.getDelegateTask() != null
-          && delegateTaskServiceClassic.saveAndBroadcastDelegateTask(delegateTaskDequeue.getDelegateTask())) {
+          && delegateTaskServiceClassic.saveAndBroadcastDelegateTaskV2(delegateTaskDequeue.getDelegateTask())) {
         acknowledge(delegateTaskDequeue.getItemId(), delegateTaskDequeue.getDelegateTask().getAccountId());
       }
     } catch (Exception e) {

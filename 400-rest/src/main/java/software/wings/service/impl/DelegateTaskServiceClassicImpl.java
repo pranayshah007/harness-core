@@ -1858,17 +1858,6 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   @Override
-  public boolean saveAndBroadcastDelegateTask(DelegateTask delegateTask) {
-    persistence.save(delegateTask);
-    if (delegateTask.getData().isAsync()) {
-      broadcastHelper.broadcastNewDelegateTaskAsync(delegateTask);
-    } else {
-      broadcastHelper.rebroadcastDelegateTask(delegateTask);
-    }
-    return true;
-  }
-
-  @Override
   public boolean saveAndBroadcastDelegateTaskV2(DelegateTask delegateTask) {
     persistence.save(delegateTask);
     if (delegateTask.getTaskDataV2().isAsync()) {
