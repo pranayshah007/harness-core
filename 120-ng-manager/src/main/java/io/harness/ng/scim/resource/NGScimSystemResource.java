@@ -11,6 +11,7 @@ import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimResource;
 import io.harness.scim.service.ScimSystemService;
 import io.harness.scim.system.ResourceType;
+import io.harness.scim.system.SchemaResource;
 import io.harness.security.annotations.ScimAPI;
 
 import com.google.inject.Inject;
@@ -60,6 +61,19 @@ public class NGScimSystemResource extends ScimResource {
       return Response.status(Response.Status.OK).entity(resourceTypes).build();
     } catch (Exception ex) {
       log.error("NGSCIM: Failed to fetch ResourceTypes, for accountId {}, Exception is", accountIdentifier, ex);
+      return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
+    }
+  }
+
+  @GET
+  @Path("Schemas")
+  @ApiOperation(value = " Get All Schemas supported by Application's SCIM 2.0 APIs. ", nickname = "getSchemas")
+  public Response getSchemas(@PathParam("accountIdentifier") String accountIdentifier) {
+    try {
+      ScimListResponse<SchemaResource> resourceTypes = scimSystemService.getSchemas(accountIdentifier);
+      return Response.status(Response.Status.OK).entity(resourceTypes).build();
+    } catch (Exception ex) {
+      log.error("NGSCIM: Failed to fetch Schemas, for accountId {}, Exception is", accountIdentifier, ex);
       return getExceptionResponse(ex, Response.Status.NOT_FOUND.getStatusCode(), Response.Status.NOT_FOUND);
     }
   }

@@ -15,10 +15,12 @@ import java.util.List;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 @Getter
 @Setter
 @JsonInclude(Include.NON_NULL)
+@FieldNameConstants(innerTypeName = "ScimGroupKeys")
 public class ScimGroup extends ScimBaseResource {
   private Set<String> schemas = new HashSet<>(Arrays.asList("urn:ietf:params:scim:schemas:core:2.0:Group"));
   private String displayName;

@@ -15,15 +15,22 @@ import java.util.List;
 import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
+/**
+ * All fields in this class are defined as per below doc.
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc7643#section-5">SCIM ServiceProviderConfig Definition</a>
+ */
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@FieldNameConstants(innerTypeName = "ServiceProviderConfigKeys")
 @OwnedBy(PL)
 public class ServiceProviderConfig {
-  private final Set<String> schemas =
-      new HashSet<>(Arrays.asList("urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"));
+  public static final String SCHEMA_SERVICE_PROVIDER_CONFIG =
+      "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig";
+  public static Set<String> schemas = new HashSet<>(Arrays.asList(SCHEMA_SERVICE_PROVIDER_CONFIG));
   private String documentationUri;
   private PatchConfig patch;
   private BulkConfig bulk;

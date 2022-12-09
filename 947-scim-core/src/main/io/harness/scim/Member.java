@@ -10,9 +10,11 @@ package io.harness.scim;
 import java.net.URI;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 @Getter
 @Setter
+@FieldNameConstants(innerTypeName = "MemberKeys")
 public class Member {
   private String value;
   private URI ref;

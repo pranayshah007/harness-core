@@ -11,10 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldNameConstants(innerTypeName = "ScimBaseResourceKeys")
 public class ScimBaseResource {
   private String id;
   private String externalId;

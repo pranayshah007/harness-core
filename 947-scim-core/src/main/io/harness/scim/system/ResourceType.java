@@ -11,11 +11,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Set;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
+/**
+ * All fields in this class are defined as per below doc.
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc7643#section-6">SCIM ResourceType Definition</a>
+ */
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@FieldNameConstants(innerTypeName = "ResourceTypeKeys")
 @OwnedBy(PL)
 public class ResourceType {
   private Set<String> schemas;

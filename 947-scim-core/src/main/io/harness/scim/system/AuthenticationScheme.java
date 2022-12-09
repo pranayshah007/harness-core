@@ -29,11 +29,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
+@FieldNameConstants(innerTypeName = "AuthenticationSchemeKeys")
 @OwnedBy(PL)
 public class AuthenticationScheme {
   private String name;
