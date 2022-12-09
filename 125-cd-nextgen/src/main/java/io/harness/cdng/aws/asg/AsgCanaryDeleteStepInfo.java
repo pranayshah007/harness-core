@@ -10,7 +10,6 @@ package io.harness.cdng.aws.asg;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.AsgCanaryDeleteStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;

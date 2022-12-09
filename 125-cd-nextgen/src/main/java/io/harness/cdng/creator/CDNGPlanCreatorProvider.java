@@ -734,7 +734,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setName("Asg Canary Delete")
             .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
-            .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
             .build();
 
     StepInfo createStack = StepInfo.newBuilder()

@@ -6,7 +6,7 @@
  */
 
 package io.harness.cdng.aws.asg;
-/*
+
 import static io.harness.exception.WingsException.USER;
 
 import io.harness.account.services.AccountService;
@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteDataOutcome;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteOutcome;
-import io.harness.cdng.ecs.beans.EcsExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -56,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDP)
 @Slf4j
-public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCommandResponse> {
+public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCommandResponse> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.ASG_CANARY_DELETE.getYamlType())
                                                .setStepCategory(StepCategory.STEP)
@@ -129,7 +128,7 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
     }
     return stepResponse;
   }
-
+/*
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
@@ -185,8 +184,9 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
         .queueAsgTask(stepElementParameters, asgCanaryDeleteRequest, ambiance,
             EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
         .getTaskRequest();
-  }
 
+  }
+*/
   private TaskRequest skipTaskRequestOrThrowException(Ambiance ambiance) {
     if (StepUtils.isStepInRollbackSection(ambiance)) {
       return TaskRequest.newBuilder()
@@ -201,4 +201,4 @@ public class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndRbac<AsgCo
   public Class<StepElementParameters> getStepParametersClass() {
     return StepElementParameters.class;
   }
-}*/
+}
