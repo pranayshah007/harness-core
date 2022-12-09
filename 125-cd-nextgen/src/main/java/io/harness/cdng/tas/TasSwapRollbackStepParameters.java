@@ -6,12 +6,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
+
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -20,8 +20,10 @@ import java.util.List;
 @RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepParameters")
 public class TasSwapRollbackStepParameters extends TasSwapRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasSwapRollbackStepParameters(
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn, String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn, ParameterField<Boolean> upsizeInActiveApp) {
-    super(delegateSelectors, tasRollbackFqn, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn, upsizeInActiveApp);
+  public TasSwapRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
+      String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn,
+      String tasResizeFqn, ParameterField<Boolean> upsizeInActiveApp) {
+    super(delegateSelectors, tasRollbackFqn, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn,
+        tasResizeFqn, upsizeInActiveApp);
   }
 }
