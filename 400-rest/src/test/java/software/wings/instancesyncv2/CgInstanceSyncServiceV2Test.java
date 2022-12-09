@@ -15,9 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
@@ -25,6 +28,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskId;
 import io.harness.perpetualtask.instancesyncv2.CgInstanceSyncResponse;
@@ -66,6 +71,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -93,10 +99,15 @@ public class CgInstanceSyncServiceV2Test extends CategoryTest {
   @Mock private KryoSerializer kryoSerializer;
   @Mock private DeploymentService deploymentService;
   @Mock private InstanceService instanceService;
+  @Mock private PersistentLocker persistentLocker;
 
   @Before
   public void setup() {
     initMocks(this);
+
+    AcquiredLock<?> acquiredLock = mock(AcquiredLock.class);
+    when(persistentLocker.tryToAcquireLock(any(), any(), any())).thenReturn(acquiredLock);
+    when(persistentLocker.waitToAcquireLock(eq(DeploymentSummary.class), any(), any(), any())).thenReturn(acquiredLock);
 
     doReturn(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1))
         .when(k8sHandler)

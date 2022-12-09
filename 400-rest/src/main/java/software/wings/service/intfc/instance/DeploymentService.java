@@ -31,6 +31,16 @@ public interface DeploymentService extends OwnedByApplication {
   @ValidationGroups(Create.class) DeploymentSummary save(@Valid DeploymentSummary instance);
 
   /**
+   * Save instance information. for Helm and K8s swimlane
+   *
+   * @param instance the instance
+   * @return the instance
+   */
+  @ValidationGroups(Create.class) DeploymentSummary saveForInstanceSyncV2(@Valid DeploymentSummary instance);
+
+  @ValidationGroups(Create.class) DeploymentSummary saveForRollbackInstanceSyncV2(@Valid DeploymentSummary instance);
+
+  /**
    * Gets instance information.
    */
   DeploymentSummary get(String deploymentSummaryId);
@@ -44,6 +54,8 @@ public interface DeploymentService extends OwnedByApplication {
 
   Optional<DeploymentSummary> get(@Valid DeploymentSummary deploymentSummary);
   // DeploymentSummary saveOrUpdate(@Valid DeploymentSummary deploymentSummary);
+
+  Optional<DeploymentSummary> getNthLatestEntryForInstanceSyncV2(@Valid DeploymentSummary deploymentSummary, int N);
 
   Optional<DeploymentSummary> getWithAccountId(DeploymentSummary deploymentSummary);
 

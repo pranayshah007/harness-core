@@ -9,13 +9,17 @@ package software.wings.instancesyncv2;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.AccountId;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.K8sPodSyncException;
 import io.harness.grpc.DelegateServiceGrpcClient;
+import io.harness.lock.AcquiredLock;
+import io.harness.lock.PersistentLocker;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.perpetualtask.PerpetualTaskClientContextDetails;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -47,6 +51,7 @@ import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.util.Durations;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -76,6 +81,7 @@ public class CgInstanceSyncServiceV2 {
   @NonNull private KryoSerializer kryoSerializer;
   @NonNull private InstanceService instanceService;
   @NonNull private DeploymentService deploymentService;
+  @NonNull private PersistentLocker persistentLocker;
 
   public static final String AUTO_SCALE = "AUTO_SCALE";
   public static final int PERPETUAL_TASK_INTERVAL = 10;
@@ -99,60 +105,68 @@ public class CgInstanceSyncServiceV2 {
         .filter(deployment -> Objects.nonNull(deployment.getDeploymentInfo()))
         .filter(this::hasDeploymentKey)
         .forEach(deploymentSummary -> {
-          if (event.isRollback()) {
-            deploymentSummary = getDeploymentSummaryForRollback(deploymentSummary);
-          }
-          log.info("Saving DeploymentSummary of New Deployment: [{}]", deploymentSummary);
-          saveDeploymentSummary(deploymentSummary, event.isRollback());
+          try (AcquiredLock lock = persistentLocker.waitToAcquireLock(InfrastructureMapping.class,
+                   deploymentSummary.getInfraMappingId(), Duration.ofSeconds(200), Duration.ofSeconds(220))) {
+            SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
+            CgInstanceSyncV2Handler instanceSyncHandler =
+                handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
+            if (Objects.isNull(instanceSyncHandler)) {
+              log.error("No handler registered for cloud provider type: [{}]. Doing nothing",
+                  cloudProvider.getValue().getSettingType());
+              throw new InvalidRequestException("No handler registered for cloud provider type: ["
+                  + cloudProvider.getValue().getSettingType() + "] with Instance Sync V2");
+            }
 
-          SettingAttribute cloudProvider = fetchCloudProvider(deploymentSummary);
+            if (!instanceSyncHandler.isDeploymentInfoTypeSupported(deploymentSummary.getDeploymentInfo().getClass())) {
+              log.error("Instance Sync V2 not enabled for deployment info type: [{}]",
+                  deploymentSummary.getDeploymentInfo().getClass().getName());
+              throw new InvalidRequestException("Instance Sync V2 not enabled for deployment info type: "
+                  + deploymentSummary.getDeploymentInfo().getClass().getName());
+            }
 
-          CgInstanceSyncV2Handler instanceSyncHandler =
-              handlerFactory.getHandler(cloudProvider.getValue().getSettingType());
-          if (Objects.isNull(instanceSyncHandler)) {
-            log.error("No handler registered for cloud provider type: [{}]. Doing nothing",
-                cloudProvider.getValue().getSettingType());
-            throw new InvalidRequestException("No handler registered for cloud provider type: ["
-                + cloudProvider.getValue().getSettingType() + "] with Instance Sync V2");
-          }
+            if (event.isRollback()) {
+              deploymentSummary = savingDeploymentSummaryForRollback(deploymentSummary);
+            } else {
+              log.info("Saving DeploymentSummary of New Deployment: [{}]", deploymentSummary);
+              deploymentSummary = deploymentService.saveForInstanceSyncV2(deploymentSummary);
+            }
 
-          if (!instanceSyncHandler.isDeploymentInfoTypeSupported(deploymentSummary.getDeploymentInfo().getClass())) {
-            log.error("Instance Sync V2 not enabled for deployment info type: [{}]",
-                deploymentSummary.getDeploymentInfo().getClass().getName());
-            throw new InvalidRequestException("Instance Sync V2 not enabled for deployment info type: "
-                + deploymentSummary.getDeploymentInfo().getClass().getName());
-          }
+            String configuredPerpetualTaskId =
+                getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
+            log.info("configuredPerpetualTaskId: [{}]", configuredPerpetualTaskId);
 
-          String configuredPerpetualTaskId =
-              getConfiguredPerpetualTaskId(deploymentSummary, cloudProvider.getUuid(), instanceSyncHandler);
-          log.info("configuredPerpetualTaskId: [{}]", configuredPerpetualTaskId);
+            if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
+              String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
+              trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
+            } else {
+              updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
+            }
 
-          if (StringUtils.isEmpty(configuredPerpetualTaskId)) {
-            String perpetualTaskId = createInstanceSyncPerpetualTask(cloudProvider);
-            trackDeploymentRelease(cloudProvider.getUuid(), perpetualTaskId, deploymentSummary, instanceSyncHandler);
-          } else {
-            updateInstanceSyncPerpetualTask(cloudProvider, configuredPerpetualTaskId);
-          }
+            Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
+                instanceSyncHandler.createReleaseIdentifiers(deploymentSummary);
 
-          Set<CgReleaseIdentifiers> cgReleaseIdentifiers =
-              instanceSyncHandler.createReleaseIdentifiers(deploymentSummary);
+            log.info("cgReleaseIdentifiers Set for deploymentSummary: [{}]", cgReleaseIdentifiers);
 
-          log.info("cgReleaseIdentifiers Set for deploymentSummary: [{}]", cgReleaseIdentifiers);
+            Map<CgReleaseIdentifiers, List<Instance>> deployedInstancesMap =
+                instanceSyncHandler.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
 
-          Map<CgReleaseIdentifiers, List<Instance>> deployedInstancesMap =
-              instanceSyncHandler.getDeployedInstances(cgReleaseIdentifiers, deploymentSummary);
+            log.info("deployedInstancesMap: [{}]", deployedInstancesMap);
 
-          log.info("deployedInstancesMap: [{}]", deployedInstancesMap);
+            Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap =
+                instanceSyncHandler.fetchDbInstancesForNewDeployment(cgReleaseIdentifiers, deploymentSummary);
 
-          Map<CgReleaseIdentifiers, List<Instance>> instancesInDbMap =
-              instanceSyncHandler.fetchDbInstancesForNewDeployment(cgReleaseIdentifiers, deploymentSummary);
+            log.info("instancesInDbMap: [{}]", instancesInDbMap);
 
-          log.info("instancesInDbMap: [{}]", instancesInDbMap);
-
-          for (CgReleaseIdentifiers cgReleaseIdentifier : cgReleaseIdentifiers) {
-            log.info("For cgReleaseIdentifier handleInstances method: [{}]", cgReleaseIdentifier);
-            handleInstances(deployedInstancesMap.get(cgReleaseIdentifier), instancesInDbMap.get(cgReleaseIdentifier),
-                instanceSyncHandler);
+            for (CgReleaseIdentifiers cgReleaseIdentifier : cgReleaseIdentifiers) {
+              log.info("For cgReleaseIdentifier handleInstances method: [{}]", cgReleaseIdentifier);
+              handleInstances(deployedInstancesMap.get(cgReleaseIdentifier), instancesInDbMap.get(cgReleaseIdentifier),
+                  instanceSyncHandler);
+            }
+          } catch (Exception ex) {
+            throw new RuntimeException(
+                format("Exception while handling deployment event for executionId [{}], infraMappingId [{}]",
+                    deploymentSummary.getWorkflowExecutionId(), deploymentSummary.getInfraMappingId()),
+                ex);
           }
         });
   }
@@ -169,30 +183,12 @@ public class CgInstanceSyncServiceV2 {
         || deploymentSummary.getCustomDeploymentKey() != null;
   }
 
-  @VisibleForTesting
-  DeploymentSummary saveDeploymentSummary(DeploymentSummary deploymentSummary, boolean rollback) {
-    if (shouldSaveDeploymentSummary(deploymentSummary, rollback)) {
-      return deploymentService.save(deploymentSummary);
-    }
-    return deploymentSummary;
-  }
-
-  @VisibleForTesting
-  boolean shouldSaveDeploymentSummary(DeploymentSummary summary, boolean isRollback) {
-    if (summary == null) {
-      return false;
-    }
-    if (!isRollback) {
-      return true;
-    }
-    // save rollback for lambda deployments
-    return summary.getAwsLambdaDeploymentKey() != null;
-  }
-  protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
-    Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);
+  protected DeploymentSummary savingDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
+    Optional<DeploymentSummary> summaryOptional =
+        deploymentService.getNthLatestEntryForInstanceSyncV2(deploymentSummary, 2);
     if (summaryOptional.isPresent()) {
       DeploymentSummary deploymentSummaryFromDB = summaryOptional.get();
-      deploymentSummary.setUuid(deploymentSummaryFromDB.getUuid());
+      deploymentSummary.setDeploymentInfo(deploymentSummaryFromDB.getDeploymentInfo());
       // Copy Artifact Information for rollback version for previous deployment summary
       deploymentSummary.setArtifactBuildNum(deploymentSummaryFromDB.getArtifactBuildNum());
       deploymentSummary.setArtifactName(deploymentSummaryFromDB.getArtifactName());
@@ -202,7 +198,7 @@ public class CgInstanceSyncServiceV2 {
     } else {
       log.info("Unable to find DeploymentSummary while rolling back " + deploymentSummary);
     }
-    return deploymentSummary;
+    return deploymentService.saveForRollbackInstanceSyncV2(deploymentSummary);
   }
 
   private void handleInstances(
@@ -338,56 +334,69 @@ public class CgInstanceSyncServiceV2 {
       InfrastructureMapping infrastructureMapping =
           infrastructureMappingService.get(taskDetails.getAppId(), taskDetails.getInfraMappingId());
 
-      Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
-          instanceSyncHandler.getCgReleaseIdentifiersList(instanceSyncDataList);
-
-      log.info("cgReleaseIdentifiersInstanceSyncDataMap: [{}]", cgReleaseIdentifiersInstanceSyncDataMap);
-
-      Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
-          Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
-
-      for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
-        List<DeploymentSummary> deploymentSummariesList = new ArrayList<>();
-        if (isNotEmpty(cgReleaseIdentifiers.getDeploymentIdentifiers())) {
-          cgReleaseIdentifiers.getDeploymentIdentifiers()
-              .stream()
-              .map(DeploymentIdentifier::getLastDeploymentSummaryUuid)
-              .map(deploymentService::get)
-              .forEach(deploymentSummariesList::add);
+      try (AcquiredLock lock = persistentLocker.tryToAcquireLock(
+               InfrastructureMapping.class, infrastructureMapping.getUuid(), Duration.ofSeconds(180))) {
+        if (lock == null) {
+          log.warn("Couldn't acquire infra lock. appId [{}]", infrastructureMapping.getAppId());
+          return;
         }
-        deploymentSummaries.put(cgReleaseIdentifiers, deploymentSummariesList);
-      }
 
-      log.info("deploymentSummaries: [{}]", deploymentSummaries);
+        Map<CgReleaseIdentifiers, InstanceSyncData> cgReleaseIdentifiersInstanceSyncDataMap =
+            instanceSyncHandler.getCgReleaseIdentifiersList(instanceSyncDataList);
 
-      instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
-          cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
+        log.info("cgReleaseIdentifiersInstanceSyncDataMap: [{}]", cgReleaseIdentifiersInstanceSyncDataMap);
 
-      log.info("instancesInDbMap for Perpetual Task: [{}]", instancesInDbMap);
-      deployedInstances = instanceSyncHandler.groupInstanceSyncData(
-          infrastructureMapping, deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
+        Set<CgReleaseIdentifiers> cgReleaseIdentifiersResult =
+            Sets.intersection(taskDetails.getReleaseIdentifiers(), cgReleaseIdentifiersInstanceSyncDataMap.keySet());
 
-      log.info("deployedInstances for Perpetual Task: [{}]", deployedInstances);
-
-      Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
-      Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
-      for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
-        log.info("For cgReleaseIdentifiers : [{}]", cgReleaseIdentifiers);
-        List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
-        List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
-        handleInstances(instances, instancesInDb, instanceSyncHandler);
-
-        long deleteReleaseAfter = instanceSyncHandler.getDeleteReleaseAfter(
-            cgReleaseIdentifiers, cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
-        cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
-        if (deleteReleaseAfter > System.currentTimeMillis()) {
-          releasesToUpdate.add(cgReleaseIdentifiers);
-        } else {
-          releasesToDelete.add(cgReleaseIdentifiers);
+        for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
+          List<DeploymentSummary> deploymentSummariesList = new ArrayList<>();
+          if (isNotEmpty(cgReleaseIdentifiers.getDeploymentIdentifiers())) {
+            cgReleaseIdentifiers.getDeploymentIdentifiers()
+                .stream()
+                .map(DeploymentIdentifier::getLastDeploymentSummaryUuid)
+                .map(deploymentService::get)
+                .forEach(deploymentSummariesList::add);
+          }
+          deploymentSummaries.put(cgReleaseIdentifiers, deploymentSummariesList);
         }
-      }
 
-      taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
+        log.info("deploymentSummaries: [{}]", deploymentSummaries);
+
+        instancesInDbMap = instanceSyncHandler.fetchInstancesFromDb(
+            cgReleaseIdentifiersInstanceSyncDataMap.keySet(), taskDetails.getAppId(), taskDetails.getInfraMappingId());
+
+        log.info("instancesInDbMap for Perpetual Task: [{}]", instancesInDbMap);
+        deployedInstances = instanceSyncHandler.groupInstanceSyncData(
+            infrastructureMapping, deploymentSummaries, cgReleaseIdentifiersInstanceSyncDataMap);
+
+        log.info("deployedInstances for Perpetual Task: [{}]", deployedInstances);
+
+        Set<CgReleaseIdentifiers> releasesToDelete = new HashSet<>();
+        Set<CgReleaseIdentifiers> releasesToUpdate = new HashSet<>();
+        for (CgReleaseIdentifiers cgReleaseIdentifiers : cgReleaseIdentifiersResult) {
+          log.info("For cgReleaseIdentifiers : [{}]", cgReleaseIdentifiers);
+          List<Instance> instances = deployedInstances.get(cgReleaseIdentifiers);
+          List<Instance> instancesInDb = instancesInDbMap.get(cgReleaseIdentifiers);
+          handleInstances(instances, instancesInDb, instanceSyncHandler);
+
+          long deleteReleaseAfter = instanceSyncHandler.getDeleteReleaseAfter(
+              cgReleaseIdentifiers, cgReleaseIdentifiersInstanceSyncDataMap.get(cgReleaseIdentifiers));
+          cgReleaseIdentifiers.setDeleteAfter(deleteReleaseAfter);
+          if (deleteReleaseAfter > System.currentTimeMillis()) {
+            releasesToUpdate.add(cgReleaseIdentifiers);
+          } else {
+            releasesToDelete.add(cgReleaseIdentifiers);
+          }
+        }
+
+        taskDetailsService.updateLastRun(taskDetailsId, releasesToUpdate, releasesToDelete);
+      } catch (Exception ex) {
+        // We have to catch all kinds of runtime exceptions, log it and move on, otherwise the queue impl keeps retrying
+        // forever in case of exception
+        log.warn("Exception while handling Perpetual Task [{}], infraMappingId [{}]", perpetualTaskId,
+            infrastructureMapping.getUuid(), ex);
+      }
     }
   }
 

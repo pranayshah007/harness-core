@@ -45,7 +45,9 @@ import software.wings.service.intfc.instance.DeploymentService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
@@ -76,6 +78,32 @@ public class DeploymentServiceImpl implements DeploymentService {
   }
 
   @Override
+  public DeploymentSummary saveForRollbackInstanceSyncV2(@Valid DeploymentSummary deploymentSummary) {
+    String key = wingsPersistence.save(deploymentSummary);
+    return wingsPersistence.getWithAppId(DeploymentSummary.class, deploymentSummary.getAppId(), key);
+  }
+
+  @Override
+  public DeploymentSummary saveForInstanceSyncV2(@Valid DeploymentSummary deploymentSummary) {
+    Query<DeploymentSummary> query = wingsPersistence.createAuthorizedQuery(DeploymentSummary.class);
+    query.filter("infraMappingId", deploymentSummary.getInfraMappingId());
+    query.filter("workflowExecutionId", deploymentSummary.getWorkflowExecutionId());
+    addDeploymentKeyFilterToQueryForInstanceSyncV2(query, deploymentSummary);
+    query.order(Sort.descending(DeploymentSummary.CREATED_AT_KEY));
+    DeploymentSummary deploymentSummaryFromDB = query.get();
+    if (deploymentSummaryFromDB == null) {
+      String key = wingsPersistence.save(deploymentSummary);
+      return wingsPersistence.getWithAppId(DeploymentSummary.class, deploymentSummary.getAppId(), key);
+    }
+
+    Map<String, Object> fieldsToUpdate = new HashMap<>();
+    fieldsToUpdate.put("deployedAt", deploymentSummary.getDeployedAt());
+    deploymentSummaryFromDB.setDeployedAt(deploymentSummary.getDeployedAt());
+    wingsPersistence.updateFields(DeploymentSummary.class, deploymentSummaryFromDB.getUuid(), fieldsToUpdate);
+    return deploymentSummaryFromDB;
+  }
+
+  @Override
   public Optional<DeploymentSummary> get(@Valid DeploymentSummary deploymentSummary) {
     Query<DeploymentSummary> query = wingsPersistence.createAuthorizedQuery(DeploymentSummary.class);
     // If later someone needs to extend deploymentKey to add more attributes to key, this method can be modified
@@ -89,6 +117,23 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
 
     return Optional.of(summary);
+  }
+
+  @Override
+  public Optional<DeploymentSummary> getNthLatestEntryForInstanceSyncV2(
+      @Valid DeploymentSummary deploymentSummary, int N) {
+    Query<DeploymentSummary> query = wingsPersistence.createAuthorizedQuery(DeploymentSummary.class);
+    // If later someone needs to extend deploymentKey to add more attributes to key, this method can be modified
+    // to check keyClass and perform required check
+    query.filter("infraMappingId", deploymentSummary.getInfraMappingId());
+    query.limit(N);
+    addDeploymentKeyFilterToQueryForInstanceSyncV2(query, deploymentSummary);
+    query.order(Sort.descending(DeploymentSummary.CREATED_AT_KEY));
+    List<DeploymentSummary> summaries = query.asList();
+    if (summaries == null || summaries.size() < N) {
+      return Optional.of(deploymentSummary);
+    }
+    return Optional.of(summaries.get(N - 1));
   }
 
   @Override
@@ -139,6 +184,62 @@ public class DeploymentServiceImpl implements DeploymentService {
     } else if (deploymentSummary.getK8sDeploymentKey() != null) {
       K8sDeploymentInfo deploymentInfo = (K8sDeploymentInfo) deploymentSummary.getDeploymentInfo();
       query.filter(DeploymentSummaryKeys.RELEASE_NAME_K8S_DEPLOYMENT_INFO, deploymentInfo.getReleaseName());
+    }
+  }
+
+  private DeploymentKey addDeploymentKeyFilterToQueryForInstanceSyncV2(
+      Query<DeploymentSummary> query, DeploymentSummary deploymentSummary) {
+    if (deploymentSummary.getPcfDeploymentKey() != null) {
+      PcfDeploymentKey pcfDeploymentKey = deploymentSummary.getPcfDeploymentKey();
+      query.filter("pcfDeploymentKey.applicationName", pcfDeploymentKey.getApplicationName());
+      return pcfDeploymentKey;
+    } else if (deploymentSummary.getK8sDeploymentKey() != null) {
+      K8sDeploymentKey k8sDeploymentKey = deploymentSummary.getK8sDeploymentKey();
+      query.filter("k8sDeploymentKey.releaseName", k8sDeploymentKey.getReleaseName());
+      return k8sDeploymentKey;
+    } else if (deploymentSummary.getContainerDeploymentKey() != null) {
+      return AddDeploymentKeyFilterForContainerForInstanceSyncV2(query, deploymentSummary);
+    } else if (deploymentSummary.getAwsAmiDeploymentKey() != null) {
+      AwsAmiDeploymentKey awsAmiDeploymentKey = deploymentSummary.getAwsAmiDeploymentKey();
+      query.filter(
+          DeploymentSummaryKeys.AWS_AMI_DEPLOYMENT_KEY_ASG_NAME, awsAmiDeploymentKey.getAutoScalingGroupName());
+      return awsAmiDeploymentKey;
+    } else if (deploymentSummary.getAwsCodeDeployDeploymentKey() != null) {
+      AwsCodeDeployDeploymentKey awsCodeDeployDeploymentKey = deploymentSummary.getAwsCodeDeployDeploymentKey();
+      query.filter(DeploymentSummaryKeys.AWS_CODE_DEPLOY_DEPLOYMENT_KEY_KEY, awsCodeDeployDeploymentKey.getKey());
+      return awsCodeDeployDeploymentKey;
+    } else if (deploymentSummary.getSpotinstAmiDeploymentKey() != null) {
+      SpotinstAmiDeploymentKey spotinstAmiDeploymentKey = deploymentSummary.getSpotinstAmiDeploymentKey();
+      query.filter("spotinstAmiDeploymentKey.elastigroupId", spotinstAmiDeploymentKey.getElastigroupId());
+      return spotinstAmiDeploymentKey;
+    } else if (deploymentSummary.getAwsLambdaDeploymentKey() != null) {
+      final AwsLambdaDeploymentKey awsLambdaDeploymentKey = deploymentSummary.getAwsLambdaDeploymentKey();
+      query.filter("awsLambdaDeploymentKey.functionName", awsLambdaDeploymentKey.getFunctionName());
+      query.filter("awsLambdaDeploymentKey.version", awsLambdaDeploymentKey.getVersion());
+      return awsLambdaDeploymentKey;
+    } else if (deploymentSummary.getCustomDeploymentKey() != null) {
+      CustomDeploymentKey customDeploymentKey = deploymentSummary.getCustomDeploymentKey();
+      query.filter(
+          join(".", DeploymentSummaryKeys.customDeploymentKey, CustomDeploymentFieldKeys.instanceFetchScriptHash),
+          customDeploymentKey.getInstanceFetchScriptHash());
+      if (isNotEmpty(customDeploymentKey.getTags())) {
+        query.filter(join(".", DeploymentSummaryKeys.customDeploymentKey, CustomDeploymentFieldKeys.tags),
+            customDeploymentKey.getTags());
+      }
+      return customDeploymentKey;
+    } else if (deploymentSummary.getAzureVMSSDeploymentKey() != null) {
+      AzureVMSSDeploymentKey azureVMSSDeploymentKey = deploymentSummary.getAzureVMSSDeploymentKey();
+      query.filter("azureVMSSDeploymentKey.vmssId", azureVMSSDeploymentKey.getVmssId());
+      return azureVMSSDeploymentKey;
+    } else if (deploymentSummary.getAzureWebAppDeploymentKey() != null) {
+      AzureWebAppDeploymentKey azureWebAppDeploymentKey = deploymentSummary.getAzureWebAppDeploymentKey();
+      query.filter("azureWebAppDeploymentKey.appName", azureWebAppDeploymentKey.getAppName());
+      query.filter("azureWebAppDeploymentKey.slotName", azureWebAppDeploymentKey.getSlotName());
+      return azureWebAppDeploymentKey;
+    } else {
+      String msg = "Either AMI, CodeDeploy, container or pcf deployment key needs to be set";
+      log.error(msg);
+      throw new WingsException(msg);
     }
   }
 
@@ -199,6 +300,16 @@ public class DeploymentServiceImpl implements DeploymentService {
     }
   }
 
+  private DeploymentKey AddDeploymentKeyFilterForContainerForInstanceSyncV2(
+      Query<DeploymentSummary> query, DeploymentSummary deploymentSummary) {
+    ContainerDeploymentKey containerDeploymentKey = deploymentSummary.getContainerDeploymentKey();
+    if (isNotEmpty(containerDeploymentKey.getContainerServiceName())) {
+      query.filter("containerDeploymentKey.containerServiceName", containerDeploymentKey.getContainerServiceName());
+    } else if (isNotEmpty(containerDeploymentKey.getLabels())) {
+      query.field("containerDeploymentKey.labels").hasAllOf(containerDeploymentKey.getLabels());
+    }
+    return containerDeploymentKey;
+  }
   private DeploymentKey AddDeploymentKeyFilterForContainer(
       Query<DeploymentSummary> query, DeploymentSummary deploymentSummary) {
     ContainerDeploymentKey containerDeploymentKey = deploymentSummary.getContainerDeploymentKey();
