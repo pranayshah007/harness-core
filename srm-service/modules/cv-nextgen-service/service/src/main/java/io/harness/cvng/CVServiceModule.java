@@ -72,6 +72,8 @@ import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceRe
 import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
+import io.harness.cvng.client.ErrorTrackingService;
+import io.harness.cvng.client.ErrorTrackingServiceImpl;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
 import io.harness.cvng.client.VerificationManagerService;
@@ -292,6 +294,7 @@ import io.harness.cvng.notification.services.api.NotificationRuleTemplateDataGen
 import io.harness.cvng.notification.services.impl.BurnRateTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeImpactTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.ChangeObservedTemplateDataGenerator;
+import io.harness.cvng.notification.services.impl.ErrorTrackingTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.HealthScoreTemplateDataGenerator;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
 import io.harness.cvng.notification.services.impl.RemainingMinutesTemplateDataGenerator;
@@ -494,6 +497,7 @@ public class CVServiceModule extends AbstractModule {
         .to(SLIDataCollectionTaskServiceImpl.class)
         .in(Scopes.SINGLETON);
     bind(VerificationManagerService.class).to(VerificationManagerServiceImpl.class);
+    bind(ErrorTrackingService.class).to(ErrorTrackingServiceImpl.class);
     bind(Clock.class).toInstance(Clock.systemUTC());
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
     bind(HeatMapService.class).to(HeatMapServiceImpl.class);
@@ -1019,6 +1023,9 @@ public class CVServiceModule extends AbstractModule {
     notificationRuleConditionTypeTemplateDataGeneratorMapBinder
         .addBinding(NotificationRuleConditionType.ERROR_BUDGET_BURN_RATE)
         .to(BurnRateTemplateDataGenerator.class)
+        .in(Scopes.SINGLETON);
+    notificationRuleConditionTypeTemplateDataGeneratorMapBinder.addBinding(NotificationRuleConditionType.CODE_ERRORS)
+        .to(ErrorTrackingTemplateDataGenerator.class)
         .in(Scopes.SINGLETON);
 
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
