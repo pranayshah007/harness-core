@@ -27,6 +27,7 @@ import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
 import io.harness.delegate.beans.ConnectionMode;
 import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateConfiguration.Action;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
@@ -580,6 +581,19 @@ public class DelegateAgentResource {
           RequestBody.create(MediaType.parse("application/octet-stream"), serializedExecutionResponse)));
     }
     return new RestResponse<>(Boolean.TRUE);
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("register-delegateCapacity/{delegateId}")
+  @Timed
+  @ExceptionMetered
+  public void registerDelegateCapacity(@QueryParam("accountId") @NotEmpty String accountId,
+      @PathParam("delegateId") String delegateId, DelegateCapacity delegateCapacity) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+      delegateService.registerDelegateCapacity(accountId, delegateId, delegateCapacity);
+    }
   }
 
   private DelegateHeartbeatResponse buildDelegateHBResponse(Delegate delegate) {

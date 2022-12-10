@@ -99,6 +99,7 @@ import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
+import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateDTO;
@@ -1902,6 +1903,20 @@ public class DelegateServiceTest extends WingsBaseTest {
 
     verifyDownloadECSDelegateResult(downloadedFile);
   }
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void registerDelegateCapacity() {
+    String accountId = generateUuid();
+    Delegate delegate = createDelegateBuilder().build();
+    delegate.setAccountId(accountId);
+    persistence.save(delegate);
+    delegateService.registerDelegateCapacity(accountId,delegate.getUuid(), DelegateCapacity.builder().maximumNumberOfBuilds(5).build());
+    Delegate updatedDelegate = persistence.get(Delegate.class, delegate.getUuid());
+    assertThat(updatedDelegate.getDelegateCapacity()).isNotNull();
+    assertThat(updatedDelegate.getDelegateCapacity().getMaximumNumberOfBuilds()).isEqualTo(5);
+  }
+
 
   private void verifyDownloadECSDelegateResult(File gzipFile) throws IOException {
     File tarFile = File.createTempFile(ECS_DELEGATE, ".tar");

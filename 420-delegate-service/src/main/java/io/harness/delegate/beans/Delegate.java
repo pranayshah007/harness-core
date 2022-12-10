@@ -96,6 +96,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean polllingModeEnabled;
   private boolean proxy;
   private boolean ceEnabled;
+  private DelegateCapacity delegateCapacity;
 
   private List<String> supportedTaskTypes;
 
