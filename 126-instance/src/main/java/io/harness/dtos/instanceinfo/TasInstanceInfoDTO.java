@@ -33,7 +33,7 @@ public class TasInstanceInfoDTO extends InstanceInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(tasApplicationName).build().toString();
+    return InstanceSyncKey.builder().part(tasApplicationGuid).build().toString();
   }
 
   @Override

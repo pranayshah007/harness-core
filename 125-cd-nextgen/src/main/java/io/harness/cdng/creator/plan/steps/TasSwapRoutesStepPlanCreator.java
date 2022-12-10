@@ -9,6 +9,7 @@ package io.harness.cdng.creator.plan.steps;
 
 import static io.harness.cdng.visitor.YamlTypes.TAS_BASIC_APP_SETUP;
 import static io.harness.cdng.visitor.YamlTypes.TAS_CANARY_APP_SETUP;
+import static io.harness.executions.steps.StepSpecTypeConstants.TAS_APP_RESIZE;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_BG_APP_SETUP;
 import static io.harness.executions.steps.StepSpecTypeConstants.TAS_SWAP_ROUTES;
 
@@ -55,6 +56,9 @@ public class TasSwapRoutesStepPlanCreator extends CDPMSStepPlanCreatorV2<TasSwap
 
     String tasCanarySetupFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_CANARY_APP_SETUP);
     tasSwapRoutesStepParameters.setTasCanarySetupFqn(tasCanarySetupFqn);
+
+    String tasResizeFqn = getExecutionStepFqn(ctx.getCurrentField(), TAS_APP_RESIZE);
+    tasSwapRoutesStepParameters.setTasResizeFqn(tasResizeFqn);
     return stepParameters;
   }
 }

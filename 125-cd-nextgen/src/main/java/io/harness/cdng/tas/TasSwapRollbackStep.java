@@ -149,7 +149,6 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
-            .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .commandName(TAS_SWAP_ROLLBACK)
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
@@ -163,7 +162,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .tempRouteMaps(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
-            .appDetailsToBeDownsized(tasSetupDataOutcome.getAppDetailsToBeDownsized())
+            .existingApplicationDetails(Collections.singletonList(
+                tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails()))
             .instanceData(instanceData)
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
             .build();

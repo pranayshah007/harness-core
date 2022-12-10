@@ -33,6 +33,6 @@ public class TasDeploymentInfoDTO extends DeploymentInfoDTO {
 
   @Override
   public String prepareInstanceSyncHandlerKey() {
-    return InstanceSyncKey.builder().part(applicationName).build().toString();
+    return InstanceSyncKey.builder().part(applicationGuid).build().toString();
   }
 }

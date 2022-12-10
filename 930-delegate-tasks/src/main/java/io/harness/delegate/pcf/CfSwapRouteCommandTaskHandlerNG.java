@@ -54,6 +54,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -115,7 +116,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
               .isRollback(true)
-              .existingApplicationDetails(cfSwapRoutesRequestNG.getExistingApplicationDetails())
+              .existingApplicationDetails(
+                  Collections.singletonList(cfSwapRoutesRequestNG.getExistingApplicationDetails()))
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
@@ -141,6 +143,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
           "\n--------- PCF Route Update completed successfully", INFO, CommandExecutionStatus.SUCCESS);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getCfAppNamePrefix());
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);

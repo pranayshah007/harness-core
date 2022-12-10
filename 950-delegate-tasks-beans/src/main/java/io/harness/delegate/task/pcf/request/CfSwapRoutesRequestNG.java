@@ -32,7 +32,7 @@ public class CfSwapRoutesRequestNG implements CfCommandRequestNG {
   Integer timeoutIntervalInMin;
   TasInfraConfig tasInfraConfig;
   String newApplicationName;
-  List<CfAppSetupTimeDetails> existingApplicationDetails;
+  CfAppSetupTimeDetails existingApplicationDetails;
   List<String> existingApplicationNames;
   List<String> tempRoutes;
   List<String> finalRoutes;

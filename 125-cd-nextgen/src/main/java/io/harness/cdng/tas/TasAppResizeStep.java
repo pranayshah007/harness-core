@@ -66,6 +66,7 @@ import io.harness.supplier.ThrowingSupplier;
 
 import com.google.inject.Inject;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -114,6 +115,7 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
     TasAppResizeDataOutcome tasAppResizeDataOutcome =
         TasAppResizeDataOutcome.builder()
             .instanceData(response.getCfDeployCommandResult().getInstanceDataUpdated())
+            .cfInstanceElements(response.getCfDeployCommandResult().getCfInstanceElements())
             .build();
     List<ServerInstanceInfo> serverInstanceInfoList = getServerInstanceInfoList(response, ambiance);
     StepResponse.StepOutcome stepOutcome =
@@ -141,9 +143,12 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
       return Collections.emptyList();
     }
     List<CfInternalInstanceElement> instances = cfDeployCommandResult.getCfInstanceElements();
-    return instances.stream()
-        .map(instance -> getServerInstance(instance, infrastructureOutcome))
-        .collect(Collectors.toList());
+    if (!isNull(instances)) {
+      return instances.stream()
+          .map(instance -> getServerInstance(instance, infrastructureOutcome))
+          .collect(Collectors.toList());
+    }
+    return new ArrayList<>();
   }
 
   private ServerInstanceInfo getServerInstance(
