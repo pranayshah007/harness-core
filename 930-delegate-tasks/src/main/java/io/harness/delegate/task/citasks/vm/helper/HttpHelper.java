@@ -41,7 +41,7 @@ public class HttpHelper {
   private static final String RUNNER_URL = "http://127.0.0.1:3000/";
   private static final String RUNNER_URL_ENV = "RUNNER_URL";
   private static final int RUNNER_CONNECT_TIMEOUT_SECS = 1;
-  private final int MAX_ATTEMPTS = 1440;
+  private final int MAX_ATTEMPTS = 3;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int DELETION_MAX_ATTEMPTS = 15;
@@ -76,7 +76,7 @@ public class HttpHelper {
   public Response<ExecuteStepResponse> executeStepWithRetries(ExecuteStepRequest executeStepRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying failed to execute step; attempt: {}", "Failing to execute step after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(30).step(executeStepRequest).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(14400).step(executeStepRequest).execute());
   }
 
   public Response<Void> cleanupStageWithRetries(DestroyVmRequest destroyVmRequest) {
