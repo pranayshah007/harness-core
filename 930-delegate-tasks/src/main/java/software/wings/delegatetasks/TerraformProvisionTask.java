@@ -735,6 +735,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .backendConfigs(backendConfigs)
               .backendConfigStoreType(parameters.getBackendConfigStoreType())
               .remoteBackendConfig(parameters.getRemoteBackendConfig())
+              .remoteS3BackendConfig(parameters.getRemoteS3BackendConfig())
               .environmentVariables(environmentVars)
               .targets(parameters.getTargets())
               .tfVarFiles(parameters.getTfVarFiles())

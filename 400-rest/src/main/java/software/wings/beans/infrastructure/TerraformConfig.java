@@ -23,8 +23,11 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
 import io.harness.validation.Update;
 
+import software.wings.api.terraform.TfVarS3Source;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.NameValuePair;
+import software.wings.beans.S3FileConfig;
+import software.wings.beans.TerraformSourceType;
 
 import com.github.reinert.jjschema.SchemaIgnore;
 import java.util.List;
@@ -70,6 +73,9 @@ public class TerraformConfig implements PersistentEntity, UuidAware, CreatedAtAw
   private final List<String> tfVarFiles;
   private final GitFileConfig tfVarGitFileConfig;
   private final GitFileConfig remoteBackendConfig;
+  private final S3FileConfig s3BackendFileConfig;
+  private TerraformSourceType sourceType;
+  private final S3FileConfig tfVarS3FileConfig;
   private final String backendConfigStoreType;
   private final TerraformCommand command;
 

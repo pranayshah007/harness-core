@@ -98,7 +98,6 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final String planName;
 
   private final TfVarSource tfVarSource;
-  private final TfVarS3Source tfVarS3Source;
   private TerraformSourceType sourceType;
   private final String s3URI;
   private final TfVarS3Source remoteS3BackendConfig;

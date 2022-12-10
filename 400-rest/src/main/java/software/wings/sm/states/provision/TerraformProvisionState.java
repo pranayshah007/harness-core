@@ -1251,10 +1251,10 @@ public abstract class TerraformProvisionState extends State {
                 remoteBackendGitFileConfig = fetchRemoteConfigGitSource(context);
               }
             } else if (backendConfig.getStoreType().equals(S3_STORE_TYPE)) {
-              String awsConfigId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY);
+              String backendAwsConfigId = (String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_CONFIG_ID_KEY);
               S3FileConfig s3FileConfig =
                   S3FileConfig.builder()
-                      .awsConfigId(awsConfigId)
+                      .awsConfigId(backendAwsConfigId)
                       .s3URI((String) fileMetadata.getMetadata().get(REMOTE_BE_CONFIG_S3_URI_KEY))
                       .build();
               backendConfig.setS3BackendConfig(s3FileConfig);
@@ -1353,6 +1353,7 @@ public abstract class TerraformProvisionState extends State {
       setAWSAuthParamsIfPresent(context, terraformProvisionParametersBuilder);
     }
     if (featureFlagService.isEnabled(CDS_TERRAFORM_S3_SUPPORT, context.getAccountId())
+        && terraformProvisioner.getSourceType() != null
         && terraformProvisioner.getSourceType().equals(TerraformSourceType.S3)) {
       setAWSS3SourceAndAuthParamsIfPresent(terraformProvisioner, context, terraformProvisionParametersBuilder);
     }
@@ -1569,10 +1570,19 @@ public abstract class TerraformProvisionState extends State {
     GitFileConfig gitFileConfig = null != tfVarSource && tfVarSource.getTfVarSourceType() == TfVarSourceType.GIT
         ? ((TfVarGitSource) tfVarSource).getGitFileConfig()
         : null;
+    S3FileConfig s3FileConfig = null != tfVarSource && tfVarSource.getTfVarSourceType() == TfVarSourceType.S3
+        ? ((TfVarS3Source) tfVarSource).getS3FileConfig()
+        : null;
 
+    S3FileConfig s3RemoteBackendConfig = null;
     GitFileConfig remoteBackendConfig = null;
+
     if (executionData.getRemoteBackendConfig() != null) {
       remoteBackendConfig = executionData.getRemoteBackendConfig().getGitFileConfig();
+    }
+
+    if (executionData.getRemoteS3BackendConfig() != null) {
+      s3RemoteBackendConfig = executionData.getRemoteS3BackendConfig().getS3FileConfig();
     }
 
     TerraformConfig terraformConfig =
@@ -1588,6 +1598,8 @@ public abstract class TerraformProvisionState extends State {
             .environmentVariables(executionData.getEnvironmentVariables())
             .tfVarFiles(executionData.getTfVarFiles())
             .tfVarGitFileConfig(gitFileConfig)
+            .tfVarS3FileConfig(s3FileConfig)
+            .s3BackendFileConfig(s3RemoteBackendConfig)
             .workflowExecutionId(context.getWorkflowExecutionId())
             .targets(executionData.getTargets())
             .command(executionData.getCommandExecuted())
