@@ -146,3 +146,7 @@ Ce2.sh
 numsnsn
 Gas.sh
 cc.sh
+Ce1.sh
+Ce3.sh
+Ce4.sh
+PEKA.sh
