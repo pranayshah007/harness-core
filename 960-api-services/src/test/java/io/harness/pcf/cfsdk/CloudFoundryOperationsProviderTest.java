@@ -40,6 +40,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -129,20 +130,22 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
     String port = "1502";
     String username = "username";
     String password = "password";
-    String endpointUrl = "api.run.pivotal.io";
+    String endpointUrl1 = "api.run.pivotal.io";
+    String endpointUrl2 = "api.run.pivotal2.io";
+    String endpointUrl3 = "api.run.pivotal3.io";
+    String endpointUrl4 = "api.run.pivotal4.io";
 
     CfRequestConfig cfRequestConfig = getCfRequestConfig();
     cfRequestConfig.setUserName(username);
     cfRequestConfig.setPassword(password);
-    cfRequestConfig.setEndpointUrl(endpointUrl);
-    cfRequestConfig.setIgnorePcfConnectionContextCache(true);
+    cfRequestConfig.setEndpointUrl(endpointUrl1);
 
     // Case 1: Authenticated Proxy
     // Expected behaviour: hostname, port, username, password must be present inside ProxyConfiguration object
-    when(Http.getProxyHostName()).thenReturn(hostname);
-    when(Http.getProxyPort()).thenReturn(port);
-    when(Http.getProxyUserName()).thenReturn(username);
-    when(Http.getProxyPassword()).thenReturn(password);
+    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
+    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
+    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> username);
+    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> password);
 
     CloudFoundryOperationsWrapper cloudFoundryOperationsWrapper =
         cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
@@ -158,10 +161,11 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
     // Case 1: Unauthenticated Proxy
     // Expected behaviour: hostname, port must be present inside ProxyConfiguration object
     // username and password must be empty
-    when(Http.getProxyHostName()).thenReturn(hostname);
-    when(Http.getProxyPort()).thenReturn(port);
-    when(Http.getProxyUserName()).thenReturn(null);
-    when(Http.getProxyPassword()).thenReturn(null);
+    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
+    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
+    when(Http.getProxyUserName()).thenAnswer((Answer<Void>) invocation -> null);
+    when(Http.getProxyPassword()).thenAnswer((Answer<Void>) invocation -> null);
+    cfRequestConfig.setEndpointUrl(endpointUrl2);
 
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
 
@@ -174,7 +178,8 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
 
     // Case 3: No Proxy
     // Expected behaviour: The ProxyConfiguration object must be empty
-    when(Http.getProxyHostName()).thenReturn(null);
+    when(Http.getProxyHostName()).thenAnswer((Answer<Void>) invocation -> null);
+    cfRequestConfig.setEndpointUrl(endpointUrl3);
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
 
     connectionContext = (DefaultConnectionContext) cloudFoundryOperationsWrapper.getConnectionContext();
@@ -182,11 +187,12 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
 
     // Case 4: Explicit No Proxy
     // Expected behaviour: The ProxyConfiguration object must be empty
-    when(Http.shouldUseNonProxy(endpointUrl)).thenReturn(true);
-    when(Http.getProxyHostName()).thenReturn(hostname);
-    when(Http.getProxyPort()).thenReturn(port);
-    when(Http.getProxyUserName()).thenReturn(username);
-    when(Http.getProxyPassword()).thenReturn(password);
+    when(Http.shouldUseNonProxy(endpointUrl4)).thenAnswer((Answer<Boolean>) invocation -> true);
+    when(Http.getProxyHostName()).thenAnswer((Answer<String>) invocation -> hostname);
+    when(Http.getProxyPort()).thenAnswer((Answer<String>) invocation -> port);
+    when(Http.getProxyUserName()).thenAnswer((Answer<String>) invocation -> username);
+    when(Http.getProxyPassword()).thenAnswer((Answer<String>) invocation -> password);
+    cfRequestConfig.setEndpointUrl(endpointUrl4);
 
     cloudFoundryOperationsWrapper = cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);
 

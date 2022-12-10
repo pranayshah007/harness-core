@@ -10,7 +10,9 @@ package io.harness.ci.registrars;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ci.states.ACRStep;
+import io.harness.ci.states.ActionStep;
 import io.harness.ci.states.BackgroundStep;
+import io.harness.ci.states.BitriseStep;
 import io.harness.ci.states.CISpecStep;
 import io.harness.ci.states.CleanupStep;
 import io.harness.ci.states.DockerStep;
@@ -30,6 +32,7 @@ import io.harness.ci.states.SecurityStep;
 import io.harness.ci.states.UploadToArtifactoryStep;
 import io.harness.ci.states.UploadToGCSStep;
 import io.harness.ci.states.UploadToS3Step;
+import io.harness.ci.states.V1.InitializeTaskStepV2;
 import io.harness.ci.states.codebase.CodeBaseStep;
 import io.harness.ci.states.codebase.CodeBaseTaskStep;
 import io.harness.pms.contracts.steps.StepType;
@@ -44,7 +47,8 @@ public class ExecutionRegistrar {
   public static Map<StepType, Class<? extends Step>> getEngineSteps() {
     Map<StepType, Class<? extends Step>> engineSteps = new HashMap<>();
 
-    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    //    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStep.class);
+    engineSteps.put(InitializeTaskStep.STEP_TYPE, InitializeTaskStepV2.class);
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.put(BackgroundStep.STEP_TYPE, BackgroundStep.class);
@@ -66,6 +70,8 @@ public class ExecutionRegistrar {
     engineSteps.put(IntegrationStageStepPMS.STEP_TYPE, IntegrationStageStepPMS.class);
     engineSteps.put(CodeBaseStep.STEP_TYPE, CodeBaseStep.class);
     engineSteps.put(CodeBaseTaskStep.STEP_TYPE, CodeBaseTaskStep.class);
+    engineSteps.put(ActionStep.STEP_TYPE, ActionStep.class);
+    engineSteps.put(BitriseStep.STEP_TYPE, BitriseStep.class);
     engineSteps.put(CISpecStep.STEP_TYPE, CISpecStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
     return engineSteps;

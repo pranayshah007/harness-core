@@ -32,7 +32,8 @@ import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.JsonSchemaValidationException;
 import io.harness.jackson.JsonNodeUtils;
-import io.harness.licensing.remote.NgLicenseHttpClient;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
@@ -40,12 +41,9 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.merger.helpers.FQNMapGenerator;
 import io.harness.pms.pipeline.service.yamlschema.PmsYamlSchemaHelper;
 import io.harness.pms.pipeline.service.yamlschema.SchemaFetcher;
-import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
-import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
-import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -72,9 +70,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
@@ -86,35 +88,30 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   private static final String STEP_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StepElementConfig.class);
   public static final String STAGE_ELEMENT_CONFIG = YamlSchemaUtils.getSwaggerName(StageElementConfig.class);
-  public static final Class<StageElementConfig> STAGE_ELEMENT_CONFIG_CLASS = StageElementConfig.class;
+
+  public static final long SCHEMA_TIMEOUT = 10;
 
   private final YamlSchemaProvider yamlSchemaProvider;
-  private final YamlSchemaGenerator yamlSchemaGenerator;
   private final YamlSchemaValidator yamlSchemaValidator;
   private final PmsSdkInstanceService pmsSdkInstanceService;
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
-  private final ApprovalYamlSchemaService approvalYamlSchemaService;
-  private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
-  private final NgLicenseHttpClient ngLicenseHttpClient;
+
+  private ExecutorService yamlSchemaExecutor;
   Integer allowedParallelStages;
 
   @Inject
-  public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
-      YamlSchemaValidator yamlSchemaValidator, PmsSdkInstanceService pmsSdkInstanceService,
-      PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
-      FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
-      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages) {
+  public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaValidator yamlSchemaValidator,
+      PmsSdkInstanceService pmsSdkInstanceService, PmsYamlSchemaHelper pmsYamlSchemaHelper, SchemaFetcher schemaFetcher,
+      @Named("allowedParallelStages") Integer allowedParallelStages,
+      @Named("YamlSchemaExecutorService") ExecutorService executor) {
     this.yamlSchemaProvider = yamlSchemaProvider;
-    this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
     this.pmsSdkInstanceService = pmsSdkInstanceService;
     this.pmsYamlSchemaHelper = pmsYamlSchemaHelper;
-    this.approvalYamlSchemaService = approvalYamlSchemaService;
-    this.featureFlagYamlService = featureFlagYamlService;
     this.schemaFetcher = schemaFetcher;
-    this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
+    this.yamlSchemaExecutor = executor;
   }
 
   @Override
@@ -129,15 +126,36 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @Override
-  public void validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
+  public boolean validateYamlSchema(String accountId, String orgId, String projectId, String yaml) {
     // Keeping pipeline yaml schema validation behind ff. If ff is disabled then schema validation will happen. Will
     // remove after finding the root cause of invalid schema generation and fixing it.
     if (!pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DISABLE_PIPELINE_SCHEMA_VALIDATION, accountId)) {
-      validateYamlSchemaInternal(accountId, orgId, projectId, yaml);
+      Future<Boolean> future =
+          yamlSchemaExecutor.submit(() -> validateYamlSchemaInternal(accountId, orgId, projectId, yaml));
+      try (AutoLogContext accountLogContext =
+               new AccountLogContext(accountId, AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
+        return future.get(SCHEMA_TIMEOUT, TimeUnit.SECONDS);
+      } catch (ExecutionException e) {
+        // If e.getCause() instance of InvalidYamlException then it means we got some legit schema-validation errors and
+        // it has error info according to the schema-error-experience.
+        if (e.getCause() != null && e.getCause() instanceof io.harness.yaml.validator.InvalidYamlException) {
+          throw(io.harness.yaml.validator.InvalidYamlException) e.getCause();
+        }
+        throw new RuntimeException(e.getCause());
+      } catch (TimeoutException | InterruptedException e) {
+        log.error(String.format("Timeout while validating schema for accountId: %s, orgId: %s, projectId: %s",
+                      accountId, orgId, projectId),
+            e);
+        // if validation does not happen before timeout, we will skip the validation and allow the operations(Pipeline
+        // save/execute).
+        return true;
+      }
     }
+    return true;
   }
 
-  private void validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
+  @VisibleForTesting
+  boolean validateYamlSchemaInternal(String accountIdentifier, String orgId, String projectId, String yaml) {
     long start = System.currentTimeMillis();
     try {
       JsonNode schema = getPipelineYamlSchema(accountIdentifier, projectId, orgId, Scope.PROJECT);
@@ -145,10 +163,18 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
       yamlSchemaValidator.validate(yaml, schemaString,
           pmsYamlSchemaHelper.isFeatureFlagEnabled(FeatureName.DONT_RESTRICT_PARALLEL_STAGE_COUNT, accountIdentifier),
           allowedParallelStages, PIPELINE_NODE + "/" + STAGES_NODE);
+      return true;
     } catch (io.harness.yaml.validator.InvalidYamlException e) {
       log.info("[PMS_SCHEMA] Schema validation took total time {}ms", System.currentTimeMillis() - start);
       throw e;
     } catch (Exception ex) {
+      if (ex instanceof NullPointerException
+          || ex.getCause() != null && ex.getCause() instanceof NullPointerException) {
+        log.error(format(
+            "Schema validation thrown NullPointerException. Please check the generated schema for account: %s, org: %s, project: %s",
+            accountIdentifier, orgId, projectId));
+        return false;
+      }
       log.error(ex.getMessage(), ex);
       throw new JsonSchemaValidationException(ex.getMessage(), ex);
     }
@@ -286,7 +312,8 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   @SuppressWarnings("unchecked")
   private List<ModuleType> obtainEnabledModules(String accountIdentifier) {
-    List<ModuleType> modules = new ArrayList<>();
+    List<ModuleType> modules =
+        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
 
     // TODO: Ideally it should be received from accountLicenses but there were some issues observed this part.
     //    AccountLicenseDTO accountLicense =
@@ -297,16 +324,13 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     //      }
     //    });
 
-    modules =
-        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
-
     List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
                                                .stream()
                                                .map(ModuleType::fromString)
                                                .collect(Collectors.toList());
 
     if (instanceModuleTypes.size() != modules.size()) {
-      log.warn(
+      log.debug(
           "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
     }
     return (List<ModuleType>) CollectionUtils.intersection(modules, instanceModuleTypes);

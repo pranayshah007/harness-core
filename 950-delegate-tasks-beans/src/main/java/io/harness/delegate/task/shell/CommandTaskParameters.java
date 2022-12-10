@@ -51,7 +51,7 @@ public abstract class CommandTaskParameters implements TaskParameters, Execution
   String executionId;
   @Default @Expression(ALLOW_SECRETS) Map<String, String> environmentVariables = new HashMap<>();
   boolean executeOnDelegate;
-  List<NgCommandUnit> commandUnits;
+  @Expression(ALLOW_SECRETS) List<NgCommandUnit> commandUnits;
   SshWinRmArtifactDelegateConfig artifactDelegateConfig;
   FileDelegateConfig fileDelegateConfig;
   @Expression(ALLOW_SECRETS) List<String> outputVariables;

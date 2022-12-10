@@ -9,6 +9,8 @@ package software.wings.timescale.migrations;
 
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
+
 import io.harness.persistence.HIterator;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -34,25 +36,26 @@ import com.google.inject.Singleton;
 import com.mongodb.ReadPreference;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateInfraDefinitionToTimescaleDB {
+public class MigrateInfraDefinitionToTimescaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
   @Inject WingsPersistence wingsPersistence;
 
   private static final int MAX_RETRY = 5;
 
   private static final String upsert_statement =
-      "INSERT INTO CG_INFRA_DEFINITION (ID,NAME,ACCOUNT_ID,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY,CLOUD_PROVIDER_ID,CLOUD_PROVIDER_TYPE,DEPLOYMENT_TYPE,NAMESPACE,REGION,AUTOSCALING_GROUP_NAME,RESOURCE_GROUP,RESOURCE_GROUP_NAME,SUBSCRIPTION_ID,DEPLOYMENT_GROUP,USERNAME,ORGANIZATION,CLUSTER_NAME) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE  SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY,CLOUD_PROVIDER_ID = excluded.CLOUD_PROVIDER_ID,CLOUD_PROVIDER_TYPE = excluded.CLOUD_PROVIDER_TYPE,DEPLOYMENT_TYPE = excluded.DEPLOYMENT_TYPE,NAMESPACE = excluded.NAMESPACE,REGION = excluded.REGION,AUTOSCALING_GROUP_NAME = excluded.AUTOSCALING_GROUP_NAME,RESOURCE_GROUP = excluded.RESOURCE_GROUP,RESOURCE_GROUP_NAME = excluded.RESOURCE_GROUP_NAME,SUBSCRIPTION_ID = excluded.SUBSCRIPTION_ID,DEPLOYMENT_GROUP = excluded.DEPLOYMENT_GROUP,USERNAME = excluded.USERNAME,ORGANIZATION = excluded.ORGANIZATION,CLUSTER_NAME = excluded.CLUSTER_NAME;";
+      "INSERT INTO CG_INFRA_DEFINITION (ID,NAME,ACCOUNT_ID,APP_ID,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY,CLOUD_PROVIDER_ID,CLOUD_PROVIDER_TYPE,DEPLOYMENT_TYPE,NAMESPACE,REGION,AUTOSCALING_GROUP_NAME,RESOURCE_GROUP,RESOURCE_GROUP_NAME,SUBSCRIPTION_ID,DEPLOYMENT_GROUP,USERNAME,ORGANIZATION,CLUSTER_NAME,ENV_ID) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(ID) DO UPDATE  SET NAME = excluded.NAME,ACCOUNT_ID = excluded.ACCOUNT_ID,APP_ID = excluded.APP_ID,CREATED_AT = excluded.CREATED_AT,LAST_UPDATED_AT = excluded.LAST_UPDATED_AT,CREATED_BY = excluded.CREATED_BY,LAST_UPDATED_BY = excluded.LAST_UPDATED_BY,CLOUD_PROVIDER_ID = excluded.CLOUD_PROVIDER_ID,CLOUD_PROVIDER_TYPE = excluded.CLOUD_PROVIDER_TYPE,DEPLOYMENT_TYPE = excluded.DEPLOYMENT_TYPE,NAMESPACE = excluded.NAMESPACE,REGION = excluded.REGION,AUTOSCALING_GROUP_NAME = excluded.AUTOSCALING_GROUP_NAME,RESOURCE_GROUP = excluded.RESOURCE_GROUP,RESOURCE_GROUP_NAME = excluded.RESOURCE_GROUP_NAME,SUBSCRIPTION_ID = excluded.SUBSCRIPTION_ID,DEPLOYMENT_GROUP = excluded.DEPLOYMENT_GROUP,USERNAME = excluded.USERNAME,ORGANIZATION = excluded.ORGANIZATION,CLUSTER_NAME = excluded.CLUSTER_NAME,ENV_ID = excluded.ENV_ID;";
+
+  private static final String TABLE_NAME = "CG_INFRA_DEFINITION";
 
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_INFRA_DEFINITION");
       return false;
     }
     int count = 0;
@@ -61,32 +64,40 @@ public class MigrateInfraDefinitionToTimescaleDB {
       findOptions_infra_definitions.readPreference(ReadPreference.secondaryPreferred());
 
       try (HIterator<InfrastructureDefinition> iterator =
-               new HIterator<>(wingsPersistence.createQuery(InfrastructureDefinition.class, excludeAuthority)
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(InfrastructureDefinition.class, excludeAuthority)
                                    .field(InfrastructureDefinitionKeys.accountId)
                                    .equal(accountId)
                                    .fetch(findOptions_infra_definitions))) {
         while (iterator.hasNext()) {
           InfrastructureDefinition infrastructureDefinition = iterator.next();
-          prepareTimeScaleQueries(infrastructureDefinition);
+          saveToTimeScale(infrastructureDefinition);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_INFRA_DEFINITION", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_INFRA_DEFINITION", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(InfrastructureDefinition infrastructureDefinition) {
+  @Override
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
+  }
+
+  @Override
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public void saveToTimeScale(InfrastructureDefinition infrastructureDefinition) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
     while (!successful && retryCount < MAX_RETRY) {
-      ResultSet queryResult = null;
-
       try (Connection connection = timeScaleDBService.getDBConnection();
            PreparedStatement upsertStatement = connection.prepareStatement(upsert_statement)) {
         upsertDataInTimeScaleDB(infrastructureDefinition, connection, upsertStatement);
@@ -217,6 +228,7 @@ public class MigrateInfraDefinitionToTimescaleDB {
     upsertPreparedStatement.setString(19, username);
     upsertPreparedStatement.setString(20, organization);
     upsertPreparedStatement.setString(21, cluster_name);
+    upsertPreparedStatement.setString(22, infrastructureDefinition.getEnvId());
 
     upsertPreparedStatement.execute();
   }

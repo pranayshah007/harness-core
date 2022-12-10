@@ -8,6 +8,7 @@
 package io.harness.cdng.service.beans;
 
 import io.harness.beans.ExecutionStrategyType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -59,7 +60,25 @@ public enum ServiceDefinitionType {
   ECS("ECS",
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.ECS);
+      ServiceSpecType.ECS),
+
+  @JsonProperty(ServiceSpecType.ELASTIGROUP)
+  ELASTIGROUP(ServiceSpecType.ELASTIGROUP,
+      Lists.newArrayList(ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.BASIC,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.ELASTIGROUP),
+
+  @JsonProperty(ServiceSpecType.TAS)
+  TAS(ServiceSpecType.TAS,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.TAS),
+
+  @JsonProperty(ServiceSpecType.ASG)
+  ASG(ServiceSpecType.ASG,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+          ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.ASG);
 
   /*
   //Unsupported for now
@@ -85,6 +104,9 @@ public enum ServiceDefinitionType {
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static ServiceDefinitionType getServiceDefinitionType(@JsonProperty("type") String yamlName) {
+    if (EmptyPredicate.isEmpty(yamlName)) {
+      return null;
+    }
     for (ServiceDefinitionType serviceDefinitionType : ServiceDefinitionType.values()) {
       if (serviceDefinitionType.yamlName.equalsIgnoreCase(yamlName)) {
         return serviceDefinitionType;

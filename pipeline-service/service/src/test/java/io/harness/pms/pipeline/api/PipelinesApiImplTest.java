@@ -7,12 +7,17 @@
 package io.harness.pms.pipeline.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.rule.OwnerRule.ADITHYA;
 import static io.harness.rule.OwnerRule.MANKRIT;
+import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
@@ -32,11 +37,18 @@ import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineMetadataService;
+import io.harness.pms.pipeline.validation.async.beans.Action;
+import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.pms.pipeline.validation.async.beans.ValidationStatus;
+import io.harness.pms.pipeline.validation.async.service.PipelineAsyncValidationService;
 import io.harness.rule.Owner;
-import io.harness.spec.server.pipeline.model.PipelineCreateRequestBody;
-import io.harness.spec.server.pipeline.model.PipelineGetResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineListResponseBody;
-import io.harness.spec.server.pipeline.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineCreateResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineGetResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineListResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineUpdateRequestBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationResponseBody;
+import io.harness.spec.server.pipeline.v1.model.PipelineValidationUUIDResponseBody;
 import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.io.Resources;
@@ -66,6 +78,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Mock PMSPipelineServiceHelper pipelineServiceHelper;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
   @Mock PipelineMetadataService pipelineMetadataService;
+  @Mock PipelineAsyncValidationService pipelineAsyncValidationService;
 
   String slug = "basichttpFail";
   String name = "basichttpFail";
@@ -80,9 +93,9 @@ public class PipelinesApiImplTest extends CategoryTest {
 
   @Before
   public void setup() throws IOException {
-    MockitoAnnotations.initMocks(this);
-    pipelinesApiImpl = new PipelinesApiImpl(
-        pmsPipelineService, pipelineServiceHelper, pipelineTemplateHelper, pipelineMetadataService);
+    MockitoAnnotations.openMocks(this);
+    pipelinesApiImpl = new PipelinesApiImpl(pmsPipelineService, pipelineServiceHelper, pipelineTemplateHelper,
+        pipelineMetadataService, pipelineAsyncValidationService);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "simplified-yaml.yaml";
     yaml = Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
@@ -118,13 +131,14 @@ public class PipelinesApiImplTest extends CategoryTest {
     pipelineRequestBody.setPipelineYaml(yaml);
     pipelineRequestBody.setSlug(slug);
     pipelineRequestBody.setName(name);
-    when(pmsPipelineService.create(any()))
+    when(pmsPipelineService.validateAndCreatePipeline(any(), eq(false)))
         .thenReturn(PipelineCRUDResult.builder()
                         .pipelineEntity(entity)
                         .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
                         .build());
     Response response = pipelinesApiImpl.createPipeline(pipelineRequestBody, org, project, account);
-    assertEquals(slug, response.getEntity());
+    PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
+    assertEquals(slug, responseBody.getSlug());
   }
 
   @Test
@@ -155,18 +169,19 @@ public class PipelinesApiImplTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
-    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY, false);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(account, org, project, yaml);
+        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
     requestBody.setSlug(slug);
     requestBody.setName(name);
     Response response = pipelinesApiImpl.updatePipeline(requestBody, org, project, slug, account);
-    assertThat(response.getEntity()).isEqualTo(slug);
+    PipelineCreateResponseBody responseBody = (PipelineCreateResponseBody) response.getEntity();
+    assertEquals(slug, responseBody.getSlug());
   }
 
   @Test
@@ -176,12 +191,12 @@ public class PipelinesApiImplTest extends CategoryTest {
     GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(true).build();
     PipelineCRUDResult pipelineCRUDResult =
         PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityModified).build();
-    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).validateAndUpdatePipeline(entity, ChangeType.MODIFY, false);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
         .when(pipelineTemplateHelper)
-        .resolveTemplateRefsInPipeline(account, org, project, yaml);
+        .resolveTemplateRefsInPipeline(account, org, project, yaml, BOOLEAN_FALSE_VALUE);
     PipelineUpdateRequestBody requestBody = new PipelineUpdateRequestBody();
     requestBody.setPipelineYaml(yaml);
     requestBody.setSlug(slug);
@@ -198,11 +213,33 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPipelineGetNoTemplates() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
-    doReturn(optional).when(pmsPipelineService).get(account, org, project, slug, false);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, false);
+    doReturn(optional)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(yaml, responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
+  }
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testNPEInPipelineGet() {
+    Optional<PipelineEntity> optional = Optional.ofNullable(entity);
+    doReturn(optional)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, null);
+    PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
+    assertEquals(yaml, responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
   }
 
   @Test
@@ -210,14 +247,22 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPipelineGetWithTemplates() {
     Optional<PipelineEntity> optional = Optional.ofNullable(entity);
-    doReturn(optional).when(pmsPipelineService).get(account, org, project, slug, false);
+    doReturn(optional)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
     String extraYaml = yaml + "extra";
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(extraYaml).build();
-    doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
-    Response response = pipelinesApiImpl.getPipeline(org, project, slug, account, null, true);
+    doReturn(templateMergeResponseDTO)
+        .when(pipelineTemplateHelper)
+        .resolveTemplateRefsInPipeline(entity, BOOLEAN_FALSE_VALUE);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, true, null, null, BOOLEAN_FALSE_VALUE, false);
     PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
     assertEquals(extraYaml, responseBody.getTemplateAppliedPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
     assertEquals(true, responseBody.isValid().booleanValue());
   }
 
@@ -225,9 +270,13 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineGetFailPolicyEvaluation() {
-    doThrow(PolicyEvaluationFailureException.class).when(pmsPipelineService).get(account, org, project, slug, false);
+    doThrow(PolicyEvaluationFailureException.class)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl
+            .getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 
@@ -235,9 +284,13 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineGetFailInvalidYaml() {
-    doThrow(InvalidYamlException.class).when(pmsPipelineService).get(account, org, project, slug, false);
+    doThrow(InvalidYamlException.class)
+        .when(pmsPipelineService)
+        .getAndValidatePipeline(account, org, project, slug, false, false, false);
     PipelineGetResponseBody response =
-        (PipelineGetResponseBody) pipelinesApiImpl.getPipeline(org, project, slug, account, null, false).getEntity();
+        (PipelineGetResponseBody) pipelinesApiImpl
+            .getPipeline(org, project, slug, account, null, false, null, null, BOOLEAN_FALSE_VALUE, false)
+            .getEntity();
     assertEquals(false, response.isValid().booleanValue());
   }
 
@@ -245,7 +298,7 @@ public class PipelinesApiImplTest extends CategoryTest {
   @Owner(developers = MANKRIT)
   @Category(UnitTests.class)
   public void testPipelineList() {
-    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.createdAt));
+    Pageable pageable = PageRequest.of(0, 10, Sort.by(Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
     Page<PipelineEntity> pipelineEntities = new PageImpl<>(Collections.singletonList(entityModified), pageable, 1);
     doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), any());
     doReturn(Collections.emptyMap())
@@ -261,5 +314,48 @@ public class PipelinesApiImplTest extends CategoryTest {
     PipelineListResponseBody responseBody = content.get(0);
     assertThat(responseBody.getSlug()).isEqualTo(slug);
     assertThat(responseBody.getName()).isEqualTo(name);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testStartPipelineValidationEvent() {
+    doReturn(Optional.of(entity)).when(pmsPipelineService).getPipeline(account, org, project, "pipeline", false, false);
+    doReturn(PipelineValidationEvent.builder().uuid("abc1").build())
+        .when(pipelineAsyncValidationService)
+        .startEvent(entity, null, Action.CRUD);
+    Response response =
+        pipelinesApiImpl.startPipelineValidationEvent(org, project, "pipeline", account, null, null, null, null, null);
+    PipelineValidationUUIDResponseBody responseBody = (PipelineValidationUUIDResponseBody) response.getEntity();
+    assertThat(responseBody.getUuid()).isEqualTo("abc1");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetPipelineValidateResult() {
+    doReturn(Optional.of(PipelineValidationEvent.builder().status(ValidationStatus.IN_PROGRESS).build()))
+        .when(pipelineAsyncValidationService)
+        .getEventByUuid("uuid1");
+
+    Response response = pipelinesApiImpl.getPipelineValidateResult(null, null, "uuid1", null);
+    PipelineValidationResponseBody responseBody = (PipelineValidationResponseBody) response.getEntity();
+    assertThat(responseBody.getStatus()).isEqualTo("IN_PROGRESS");
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testPipelineGetNoTemplatesWithCaching() {
+    Optional<PipelineEntity> optional = Optional.ofNullable(entity);
+    doReturn(optional).when(pmsPipelineService).getAndValidatePipeline(account, org, project, slug, false, false, true);
+    Response response =
+        pipelinesApiImpl.getPipeline(org, project, slug, account, null, false, null, null, "true", false);
+    PipelineGetResponseBody responseBody = (PipelineGetResponseBody) response.getEntity();
+    assertEquals(yaml, responseBody.getPipelineYaml());
+    assertEquals(slug, responseBody.getSlug());
+    assertEquals(org, responseBody.getOrg());
+    assertEquals(project, responseBody.getProject());
+    assertTrue(responseBody.isValid());
   }
 }

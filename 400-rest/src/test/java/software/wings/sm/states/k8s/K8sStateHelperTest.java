@@ -9,7 +9,6 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.KUBERNETES_EXPORT_MANIFESTS;
 import static io.harness.k8s.manifest.ManifestHelper.values_filename;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -284,7 +283,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
 
     SettingAttribute settingAttribute =
         aSettingAttribute().withAccountId(ACCOUNT_ID).withValue(AwsConfig.builder().build()).build();
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
@@ -292,18 +291,18 @@ public class K8sStateHelperTest extends WingsBaseTest {
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(KubernetesClusterConfig.builder().build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(KubernetesClusterConfig.builder().useKubernetesDelegate(true).build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isEmpty();
 
     settingAttribute.setValue(
         KubernetesClusterConfig.builder().useKubernetesDelegate(true).delegateName("delegateName").build());
-    containerServiceParams.setSettingAttribute(settingAttribute);
+    containerServiceParams.setSettingAttribute(settingAttribute.toDTO());
     tags = fetchTagsFromK8sCloudProvider(containerServiceParams);
     assertThat(tags).isNotEmpty();
     assertThat(tags).contains("delegateName");
@@ -535,24 +534,20 @@ public class K8sStateHelperTest extends WingsBaseTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testCommandUnitListFeatureEnabled() {
-    doReturn(true).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     List<CommandUnit> commandUnits = k8sStateHelper.getCommandUnits(false, "accountId", false, false, true);
     assertThat(commandUnits).isNotEmpty();
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.Init);
 
-    doReturn(true).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", false, false, true);
     assertThat(commandUnits).isNotEmpty();
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
     assertThat(commandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
 
-    doReturn(true).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", false, true, true);
     assertThat(commandUnits.size()).isEqualTo(2);
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
     assertThat(commandUnits.get(1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
 
-    doReturn(true).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", true, false, true);
     assertThat(commandUnits).isNotEmpty();
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.Init);
@@ -563,28 +558,24 @@ public class K8sStateHelperTest extends WingsBaseTest {
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testCommandUnitListFeatureDisabled() {
-    doReturn(false).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     List<CommandUnit> commandUnits = k8sStateHelper.getCommandUnits(false, "accountId", false, false, true);
     assertThat(commandUnits.size()).isEqualTo(5);
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.Init);
     assertThat(commandUnits.get(commandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
 
-    doReturn(false).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", false, false, true);
     assertThat(commandUnits.size()).isEqualTo(6);
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
     assertThat(commandUnits.get(commandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
 
-    doReturn(false).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", false, true, true);
-    assertThat(commandUnits.size()).isEqualTo(6);
+    assertThat(commandUnits.size()).isEqualTo(2);
     assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
-    assertThat(commandUnits.get(commandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
+    assertThat(commandUnits.get(commandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.Init);
 
-    doReturn(false).when(featureFlagService).isEnabled(KUBERNETES_EXPORT_MANIFESTS, "accountId");
     commandUnits = k8sStateHelper.getCommandUnits(true, "accountId", true, false, true);
-    assertThat(commandUnits.size()).isEqualTo(6);
-    assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.FetchFiles);
+    assertThat(commandUnits.size()).isEqualTo(5);
+    assertThat(commandUnits.get(0).getName()).isEqualTo(K8sCommandUnitConstants.Init);
     assertThat(commandUnits.get(commandUnits.size() - 1).getName()).isEqualTo(K8sCommandUnitConstants.WrapUp);
   }
 }

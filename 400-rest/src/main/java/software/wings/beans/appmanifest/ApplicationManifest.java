@@ -10,6 +10,8 @@ package software.wings.beans.appmanifest;
 import static io.harness.annotations.dev.HarnessModule._957_CG_BEANS;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
+
 import static java.lang.String.join;
 
 import io.harness.annotation.HarnessEntity;
@@ -18,7 +20,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.persistence.AccountAccess;
@@ -29,9 +30,11 @@ import software.wings.beans.HelmChartConfig;
 import software.wings.beans.HelmChartConfig.HelmChartConfigKeys;
 import software.wings.beans.HelmCommandFlagConfig;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.yaml.BaseEntityYaml;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -74,7 +77,7 @@ public class ApplicationManifest extends Base implements AccountAccess, NGMigrat
   public static final String ID = "_id";
   public static final String CREATED_AT = "createdAt";
 
-  @FdIndex private String accountId;
+  private String accountId;
   private String serviceId;
   private String envId;
   private String name;
@@ -123,6 +126,18 @@ public class ApplicationManifest extends Base implements AccountAccess, NGMigrat
   @Override
   public String getMigrationEntityName() {
     return getUuid();
+  }
+
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(MANIFEST)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
   }
 
   public enum AppManifestSource { SERVICE, ENV, ENV_SERVICE }

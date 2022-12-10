@@ -11,6 +11,7 @@ import io.harness.ChangeHandler;
 import io.harness.beans.FeatureName;
 import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
+import io.harness.changehandlers.PlanExecutionSummaryCIStageChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeDataHandler;
 import io.harness.changehandlers.PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
 import io.harness.changehandlers.PlanExecutionSummaryChangeDataHandler;
@@ -25,6 +26,7 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
   @Inject CfClient cfClient;
   @Inject private PlanExecutionSummaryChangeDataHandler planExecutionSummaryChangeDataHandler;
   @Inject private PlanExecutionSummaryCdChangeDataHandler planExecutionSummaryCdChangeDataHandler;
+  @Inject private PlanExecutionSummaryCIStageChangeDataHandler planExecutionSummaryCIStageChangeDataHandler;
   @Inject
   private PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew
       planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
@@ -42,7 +44,10 @@ public class PipelineExecutionSummaryEntityCDCEntityWithDebeziumEnabled
       }
     } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityServiceAndInfra")) {
       return planExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew;
+    } else if (handlerClass.contentEquals("PipelineExecutionSummaryEntityCIStage")) {
+      return planExecutionSummaryCIStageChangeDataHandler;
     }
+
     return null;
   }
 

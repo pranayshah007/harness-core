@@ -28,17 +28,17 @@ import io.harness.exception.WingsException;
 
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
+import com.azure.core.http.rest.PagedIterable;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.authorization.models.BuiltInRole;
+import com.azure.resourcemanager.authorization.models.RoleAssignment;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.azure.PagedList;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.graphrbac.BuiltInRole;
-import com.microsoft.azure.management.graphrbac.RoleAssignment;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
@@ -59,7 +59,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
       throw new IllegalArgumentException(ROLE_ASSIGNMENT_NAME_BLANK_VALIDATION_MSG);
     }
 
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
 
     log.debug(
         "Start role assignment at subscription scope, subscriptionId: {}, objectId: {}, roleAssignmentName: {}, builtInRole: {}",
@@ -82,18 +82,18 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
       throw new IllegalArgumentException("Parameter roleName cannot be null or empty");
     }
 
-    Azure azure = getAzureClient(azureConfig, scope);
+    AzureResourceManager azure = getAzureClient(azureConfig, scope);
 
     log.debug("Start getting role definition at scope: {}, subscriptionId: {}, roleName: {}", scope, roleName);
-    PagedList<RoleAssignment> roleAssignments = azure.accessManagement().roleAssignments().listByScope(scope);
-    return new ArrayList<>(roleAssignments.size());
+    PagedIterable<RoleAssignment> roleAssignments = azure.accessManagement().roleAssignments().listByScope(scope);
+    return roleAssignments.stream().collect(Collectors.toList());
   }
 
   @Override
   public boolean validateAzureConnection(AzureConfig azureConfig) {
     try {
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(90L), () -> {
-        Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
+        AzureResourceManager azure = getAzureClientWithDefaultSubscription(azureConfig);
         AzureAuthenticationType azureCredentialType = azureConfig.getAzureAuthenticationType();
         StringBuffer message = new StringBuffer(128);
         message.append("Azure connection validation for ");
@@ -135,15 +135,19 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
 
       if (azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED
           || azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED) {
-        String token = getAuthenticationTokenCredentials(azureConfig).getToken(scope);
+        String token = getAuthenticationTokenCredentials(azureConfig)
+                           .getToken(AzureUtils.getTokenRequestContext(new String[] {scope}))
+                           .block()
+                           .getToken();
 
         log.trace(format("%s user access token: %s", azureCredentialType.name(), token));
 
         return AzureIdentityAccessTokenResponse.builder().accessToken(token).build();
       }
 
-      AzureAuthorizationRestClient azureAuthorizationRestClient =
-          getAzureRestClient(AzureUtils.AUTH_URL, AzureAuthorizationRestClient.class);
+      AzureAuthorizationRestClient azureAuthorizationRestClient = getAzureRestClient(
+          AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getActiveDirectoryEndpoint(),
+          AzureAuthorizationRestClient.class);
       Response<AzureIdentityAccessTokenResponse> response = null;
       if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
         String clientAssertion = createClientAssertion(azureConfig);

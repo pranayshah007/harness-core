@@ -1,0 +1,96 @@
+spec:
+  execution:
+    steps:
+      - step:
+          name: "Deploy"
+          identifier: Deploy
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          template:
+            templateRef: account.Default_IIS_Website_PowerShell
+            templateInputs:
+              type: Command
+              spec:
+                environmentVariables:
+                  - name: ReleaseNo
+                    type: String
+                    value: "0.1"
+                  - name: AppPoolName
+                    type: String
+                    value: "DefaultAppPool"
+                  - name: AppPoolDotNetVersion
+                    type: String
+                    value: "v4.0"
+                  - name: DownloadDirectory
+                    type: String
+                    value: "$env:TEMP"
+                  - name: AppPhysicalDirectory
+                    type: String
+                    value: "$env:SYSTEMDRIVE"
+                  - name: SiteProtocol
+                    type: String
+                    value: "http"
+                  - name: SitePort
+                    type: String
+                    value: "80"
+                  - name: SiteHostName
+                    type: String
+                    value: "*"
+                  - name: DestinationDirectory
+                    type: String
+                    value: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: { }
+    rollbackSteps:
+      - step:
+          name: "Rollback"
+          identifier: Rollback
+          timeout: 10m
+          strategy:
+            repeat:
+              items: <+stage.output.hosts>
+          template:
+            templateRef: account.Default_IIS_Website_PowerShell
+            templateInputs:
+              type: Command
+              spec:
+                environmentVariables:
+                  - name: ReleaseNo
+                    type: String
+                    value: "0.1"
+                  - name: AppPoolName
+                    type: String
+                    value: "DefaultAppPool"
+                  - name: AppPoolDotNetVersion
+                    type: String
+                    value: "v4.0"
+                  - name: DownloadDirectory
+                    type: String
+                    value: "$env:TEMP"
+                  - name: AppPhysicalDirectory
+                    type: String
+                    value: "$env:SYSTEMDRIVE"
+                  - name: SiteProtocol
+                    type: String
+                    value: "http"
+                  - name: SitePort
+                    type: String
+                    value: "80"
+                  - name: SiteHostName
+                    type: String
+                    value: "*"
+                  - name: DestinationDirectory
+                    type: String
+                    value: "%USERPROFILE%\\<+service.name>\\<+env.name>"
+      - step:
+          type: Verify
+          name: Verify Rollback
+          identifier: Verify_Rollback
+          timeout: 2h
+          spec: { }

@@ -13,6 +13,7 @@ import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -191,18 +192,27 @@ public class UpdateReleaseRepoStep extends TaskExecutableWithRollbackAndRbac<NGG
       GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
       List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
 
-      String file = filePath;
+      String file;
 
       for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
-        if (filePath.contains("<+cluster.name>")) {
-          file = filePath.replaceAll("<\\+cluster.name>", cluster.getClusterName());
+        file = filePath;
+        if (filePath.contains("<+envgroup.name>")) {
+          file = filePath.replaceAll(
+              "<\\+envgroup.name>/", cluster.getEnvGroupName() == null ? EMPTY : cluster.getEnvGroupName() + "/");
         }
         if (filePath.contains("<+env.name>")) {
           file = file.replaceAll("<\\+env.name>", cluster.getEnvName());
         }
+        if (filePath.contains("<+cluster.name>")) {
+          file = file.replaceAll("<\\+cluster.name>", cluster.getClusterName());
+        }
+        List<String> files = new ArrayList<>();
+        files.add(file);
         // Resolve any other expressions in the filepaths. eg. service variables
         ExpressionEvaluatorUtils.updateExpressions(
-            file, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+            files, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+
+        file = files.get(0);
 
         ExpressionEvaluatorUtils.updateExpressions(
             cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
@@ -216,18 +226,29 @@ public class UpdateReleaseRepoStep extends TaskExecutableWithRollbackAndRbac<NGG
         // Convert variables from spec parameters
         for (Map.Entry<String, Object> variableEntry : variables.entrySet()) {
           ParameterField p = (ParameterField) variableEntry.getValue();
-          if (p.isExpression()) {
-            if (p.getExpressionValue().contains("<+cluster.name>")) {
-              p.setExpressionValue(p.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
+          ParameterField copyParameter = ParameterField.builder()
+                                             .expression(p.isExpression())
+                                             .expressionValue(p.getExpressionValue())
+                                             .value(p.getValue())
+                                             .build();
+          if (copyParameter.isExpression()) {
+            if (copyParameter.getExpressionValue().contains("<+envgroup.name>")) {
+              copyParameter.setExpressionValue(copyParameter.getExpressionValue().replaceAll(
+                  "<\\+envgroup.name>", cluster.getEnvGroupName() == null ? EMPTY : cluster.getEnvGroupName()));
             }
-            if (p.getExpressionValue().contains("<+env.name>")) {
-              p.setExpressionValue(p.getExpressionValue().replaceAll("<\\+env.name>", cluster.getEnvName()));
+            if (copyParameter.getExpressionValue().contains("<+env.name>")) {
+              copyParameter.setExpressionValue(
+                  copyParameter.getExpressionValue().replaceAll("<\\+env.name>", cluster.getEnvName()));
+            }
+            if (copyParameter.getExpressionValue().contains("<+cluster.name>")) {
+              copyParameter.setExpressionValue(
+                  copyParameter.getExpressionValue().replaceAll("<\\+cluster.name>", cluster.getClusterName()));
             }
           }
 
           ExpressionEvaluatorUtils.updateExpressions(
-              p, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
-          flattennedVariables.put(variableEntry.getKey(), p.getValue().toString());
+              copyParameter, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+          flattennedVariables.put(variableEntry.getKey(), copyParameter.getValue().toString());
         }
         filePathsToVariables.put(file, flattennedVariables);
       }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.git.model.ChangeType;
 import io.harness.pms.pipeline.PipelineEntity;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,8 @@ public interface PMSPipelineRepositoryCustom {
       String projectIdentifier, boolean getDistinctFromBranches);
 
   Long countAllPipelines(Criteria criteria);
+
+  Long countAllPipelinesInAccount(String accountId);
 
   PipelineEntity saveForOldGitSync(PipelineEntity pipelineToSave);
 
@@ -42,7 +45,8 @@ public interface PMSPipelineRepositoryCustom {
    * flows
    */
   Optional<PipelineEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly);
+      String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache);
 
   PipelineEntity updatePipelineYamlForOldGitSync(
       PipelineEntity pipelineToUpdate, PipelineEntity oldPipelineEntity, ChangeType changeType);
@@ -69,4 +73,6 @@ public interface PMSPipelineRepositoryCustom {
   PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave);
 
   Long countFileInstances(String accountId, String repoURL, String filePath);
+
+  List<String> findAllUniqueRepos(Criteria criteria);
 }

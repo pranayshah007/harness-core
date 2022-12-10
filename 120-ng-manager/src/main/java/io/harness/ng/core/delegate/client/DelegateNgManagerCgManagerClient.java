@@ -17,6 +17,7 @@ import io.harness.delegate.beans.DelegateGroupTags;
 import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
+import io.harness.delegate.utilities.DelegateGroupDeleteResponse;
 import io.harness.rest.RestResponse;
 
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -128,6 +130,14 @@ public interface DelegateNgManagerCgManagerClient {
       @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @Body @NotNull DelegateSetupDetails delegateSetupDetails);
+
+  @DELETE(DELEGATE_SETUP_NG_API + "/delegate")
+  Call<RestResponse<DelegateGroupDeleteResponse>> deleteDelegateGroup(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(NGCommonEntityConstants.DELEGATE_IDENTIFIER_KEY) @NotNull String delegateGroupIdentifier);
+
   //------------------------ Delegate Download Apis -----------------------------------
 
   @POST(DELEGATE_DOWNLOAD_API + "/kubernetes")

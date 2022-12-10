@@ -11,7 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.exception.WingsException;
 import io.harness.gitsync.common.beans.ScmApis;
+import io.harness.gitsync.common.dtos.GitErrorMetadata;
 import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.helper.RepoProviderHelper;
 import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
@@ -43,7 +45,15 @@ public class ScmApiErrorHandlingHelper {
     }
 
     ScmApiErrorHandler scmAPIErrorHandler = getScmAPIErrorHandler(scmAPI, connectorType, repoUrl);
-    scmAPIErrorHandler.handleError(statusCode, errorMessage, errorMetadata);
+    try {
+      scmAPIErrorHandler.handleError(statusCode, errorMessage, errorMetadata);
+    } catch (WingsException exception) {
+      exception.setMetadata(GitErrorMetadata.builder()
+                                .branch(errorMetadata.getBranchName())
+                                .filepath(errorMetadata.getFilepath())
+                                .build());
+      throw exception;
+    }
   }
 
   public void processAndThrowError(

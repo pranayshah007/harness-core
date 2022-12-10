@@ -7,19 +7,42 @@
 
 package io.harness.connector.mappers.servicenow;
 
+import static java.util.Objects.isNull;
+
 import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowUserNamePasswordAuthentication;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO.ServiceNowConnectorDTOBuilder;
 import io.harness.encryption.SecretRefHelper;
 
 public class ServiceNowEntityToDTO implements ConnectorEntityToDTOMapper<ServiceNowConnectorDTO, ServiceNowConnector> {
   @Override
   public ServiceNowConnectorDTO createConnectorDTO(ServiceNowConnector connector) {
-    return ServiceNowConnectorDTO.builder()
-        .serviceNowUrl(connector.getServiceNowUrl())
-        .username(connector.getUsername())
-        .usernameRef(SecretRefHelper.createSecretRef(connector.getUsernameRef()))
-        .passwordRef(SecretRefHelper.createSecretRef(connector.getPasswordRef()))
-        .build();
+    // no change required after ServiceNow connector migration
+    ServiceNowConnectorDTOBuilder serviceNowConnectorDTOBuilder =
+        ServiceNowConnectorDTO.builder()
+            .serviceNowUrl(connector.getServiceNowUrl())
+            .username(connector.getUsername())
+            .usernameRef(SecretRefHelper.createSecretRef(connector.getUsernameRef()))
+            .passwordRef(SecretRefHelper.createSecretRef(connector.getPasswordRef()));
+    if (!isNull(connector.getServiceNowAuthentication())) {
+      serviceNowConnectorDTOBuilder.auth(
+          ServiceNowAuthenticationDTO.builder()
+              .authType(connector.getAuthType())
+              .credentials(connector.getServiceNowAuthentication().toServiceNowAuthCredentialsDTO())
+              .build());
+      if (ServiceNowAuthType.USER_PASSWORD.equals(connector.getAuthType())) {
+        // override old base level fields with value present in new ServiceNowAuthCredentials in USER_PASSWORD case
+        ServiceNowUserNamePasswordAuthentication serviceNowUserNamePasswordAuthentication =
+            (ServiceNowUserNamePasswordAuthentication) connector.getServiceNowAuthentication();
+        serviceNowConnectorDTOBuilder.username(serviceNowUserNamePasswordAuthentication.getUsername())
+            .usernameRef(SecretRefHelper.createSecretRef(serviceNowUserNamePasswordAuthentication.getUsernameRef()))
+            .passwordRef(SecretRefHelper.createSecretRef(serviceNowUserNamePasswordAuthentication.getPasswordRef()));
+      }
+    }
+    return serviceNowConnectorDTOBuilder.build();
   }
 }

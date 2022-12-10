@@ -60,6 +60,26 @@ public class GcrApiServiceTest extends WingsBaseTest {
                              .willReturn(aResponse().withStatus(200).withBody(
                                  "{\"name\":\"someImage\",\"tags\":[\"v1\",\"v2\",\"latest\"]}")));
 
+    wireMockRule.stubFor(
+        WireMock.get(WireMock.urlEqualTo("/v2/someImage/manifests/latest"))
+            .withHeader("Authorization", equalTo("auth"))
+            .willReturn(aResponse().withStatus(200).withBody("{\n"
+                + "    \"schemaVersion\": 2,\n"
+                + "    \"mediaType\": \"application/vnd.docker.distribution.manifest.v2+json\",\n"
+                + "    \"config\": {\n"
+                + "        \"mediaType\": \"application/vnd.docker.container.image.v1+json\",\n"
+                + "        \"size\": 1457,\n"
+                + "        \"digest\": \"sha256:7a80323521ccd4c2b4b423fa6e38e5cea156600f40cd855e464cc52a321a24dd\"\n"
+                + "    },\n"
+                + "    \"layers\": [\n"
+                + "        {\n"
+                + "            \"mediaType\": \"application/vnd.docker.image.rootfs.diff.tar.gzip\",\n"
+                + "            \"size\": 773262,\n"
+                + "            \"digest\": \"sha256:50783e0dfb64b73019e973e7bce2c0d5a882301b781327ca153b876ad758dbd3\"\n"
+                + "        }\n"
+                + "    ]\n"
+                + "}")));
+
     wireMockRule.stubFor(WireMock.get(WireMock.urlEqualTo("/v2/noImage/tags/list"))
                              .withHeader("Authorization", equalTo("auth"))
                              .willReturn(aResponse().withStatus(404)));
@@ -119,5 +139,13 @@ public class GcrApiServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testValidateCredentials() {
     assertThat(gcrService.validateCredentials(gcpInternalConfig, "someImage")).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_PUTHRAYA)
+  @Category(UnitTests.class)
+  public void shouldGetBuild() {
+    BuildDetailsInternal actual = gcrService.verifyBuildNumber(gcpInternalConfig, "someImage", "latest");
+    assertThat(actual.getNumber()).isEqualTo("latest");
   }
 }

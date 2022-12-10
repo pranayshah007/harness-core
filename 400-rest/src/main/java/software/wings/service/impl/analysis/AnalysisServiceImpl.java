@@ -18,6 +18,7 @@ import static io.harness.govern.Switch.unhandled;
 import static io.harness.persistence.HPersistence.upToOne;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.common.VerificationConstants.DEMO_FAILURE_LOG_STATE_EXECUTION_ID;
 import static software.wings.common.VerificationConstants.DEMO_SUCCESS_LOG_STATE_EXECUTION_ID;
@@ -262,19 +263,6 @@ public class AnalysisServiceImpl implements AnalysisService {
     PageRequest<LogMLFeedbackRecord> feedbackPageRequest =
         PageRequestBuilder.aPageRequest().withLimit(UNLIMITED).addFilter("cvConfigId", Operator.EQ, cvConfigId).build();
     return dataStoreService.list(LogMLFeedbackRecord.class, feedbackPageRequest);
-  }
-
-  @Override
-  public List<LogMLFeedbackRecord> getMLFeedback(String accountId, String workflowId) {
-    List<LogMLFeedbackRecord> feedbackRecords = null;
-    if (accountResource.isFeatureEnabled(FeatureName.GLOBAL_CV_DASH.name(), accountId).getResource()) {
-      PageRequest<LogMLFeedbackRecord> feedbackPageRequest = PageRequestBuilder.aPageRequest()
-                                                                 .withLimit(UNLIMITED)
-                                                                 .addFilter("workflowId", Operator.EQ, workflowId)
-                                                                 .build();
-      feedbackRecords = dataStoreService.list(LogMLFeedbackRecord.class, feedbackPageRequest);
-    }
-    return feedbackRecords;
   }
 
   @Override
@@ -1292,6 +1280,12 @@ public class AnalysisServiceImpl implements AnalysisService {
 
     return instanceDetails.stream().collect(Collectors.toMap(
         InstanceDetails::getHostName, instanceDetail -> Collections.singletonMap("instanceDetails", instanceDetail)));
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(LearningEngineExperimentalAnalysisTask.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 
   public enum CLUSTER_TYPE { CONTROL, TEST, UNKNOWN, IGNORE }

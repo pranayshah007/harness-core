@@ -27,7 +27,11 @@ import io.harness.ccm.audittrails.events.PerspectiveCreateEvent;
 import io.harness.ccm.audittrails.events.PerspectiveDeleteEvent;
 import io.harness.ccm.audittrails.events.PerspectiveUpdateEvent;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.budget.BudgetType;
+import io.harness.ccm.budget.ValueDataPoint;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -193,6 +197,45 @@ public class PerspectiveResource {
       BudgetPeriod period) {
     rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
     return ResponseDTO.newResponse(budgetCostService.getLastPeriodCost(accountId, perspectiveId, startTime, period));
+  }
+
+  @GET
+  @Path("lastYearMonthlyCost")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get last twelve month cost for perspective", nickname = "lastYearMonthlyCost")
+  @Operation(operationId = "getLastYearMonthlyCost", description = "Get last twelve month cost for a Perspective",
+      summary = "Get the last twelve month cost for a Perspective",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Return list of actual monthly budget cost and respective month in epoch",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<List<ValueDataPoint>>
+  getLastYearMonthlyCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
+          required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
+      @NotNull @Valid @QueryParam("startTime") @Parameter(
+          required = true, description = "The Start time (timestamp in millis) for the current period") long startTime,
+      @NotNull @Valid @QueryParam("period") @Parameter(
+          required = true, description = "Only support for YEARLY budget period") BudgetPeriod period,
+      @NotNull @Valid @QueryParam("type") @Parameter(
+          required = true, description = "Only support for PREVIOUS_PERIOD_SPEND budget type") BudgetType type,
+      @NotNull @Valid @QueryParam("breakdown") @Parameter(
+          required = true, description = "Only support for MONTHLY breakdown") BudgetBreakdown breakdown) {
+    rbacHelper.checkPerspectiveViewPermission(accountId, null, null);
+    List<ValueDataPoint> response = null;
+    if (period == BudgetPeriod.YEARLY && type == BudgetType.PREVIOUS_PERIOD_SPEND
+        && breakdown == BudgetBreakdown.MONTHLY) {
+      Double[] lastYearMonthlyCost =
+          budgetCostService.getLastYearMonthlyCost(accountId, perspectiveId, startTime, period);
+      response = BudgetUtils.getYearlyMonthWiseKeyValuePairs(
+          BudgetUtils.getStartOfLastPeriod(startTime, period), lastYearMonthlyCost);
+    }
+    return ResponseDTO.newResponse(response);
   }
 
   @GET
@@ -380,6 +423,10 @@ public class PerspectiveResource {
     ceView.setAccountId(accountId);
     log.info(ceView.toString());
     CEView newPerspective = updateTotalCost(ceViewService.update(ceView));
+    if (ceView.getName() != null && !ceView.getName().equals("")
+        && !oldPerspective.getName().equals(ceView.getName())) {
+      budgetService.updatePerspectiveName(accountId, ceView.getUuid(), ceView.getName());
+    }
     return ResponseDTO.newResponse(
         Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
           outboxService.save(new PerspectiveUpdateEvent(accountId, newPerspective.toDTO(), oldPerspective.toDTO()));

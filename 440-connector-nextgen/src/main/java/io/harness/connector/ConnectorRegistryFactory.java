@@ -34,6 +34,8 @@ import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
+import io.harness.connector.heartbeat.SpotValidationParamsProvider;
+import io.harness.connector.heartbeat.TasConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.VaultConnectorValidationParamsProvider;
 import io.harness.connector.mappers.ConnectorDTOToEntityMapper;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
@@ -121,8 +123,12 @@ import io.harness.connector.mappers.servicenow.ServiceNowDTOtoEntity;
 import io.harness.connector.mappers.servicenow.ServiceNowEntityToDTO;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkDTOToEntity;
 import io.harness.connector.mappers.splunkconnectormapper.SplunkEntityToDTO;
+import io.harness.connector.mappers.spotmapper.SpotDTOToEntity;
+import io.harness.connector.mappers.spotmapper.SpotEntityToDTO;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicDTOToEntity;
 import io.harness.connector.mappers.sumologicmapper.SumoLogicEntityToDTO;
+import io.harness.connector.mappers.tasmapper.TasDTOToEntity;
+import io.harness.connector.mappers.tasmapper.TasEntityToDTO;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.connector.task.NotSupportedValidationHandler;
 import io.harness.connector.task.artifactory.ArtifactoryValidationHandler;
@@ -131,6 +137,8 @@ import io.harness.connector.task.azure.AzureValidationHandler;
 import io.harness.connector.task.docker.DockerValidationHandler;
 import io.harness.connector.task.gcp.GcpValidationTaskHandler;
 import io.harness.connector.task.git.GitValidationHandler;
+import io.harness.connector.task.spot.SpotValidationHandler;
+import io.harness.connector.task.tas.TasValidationHandler;
 import io.harness.connector.validator.ArtifactoryConnectionValidator;
 import io.harness.connector.validator.AwsConnectorValidator;
 import io.harness.connector.validator.AzureArtifactsConnectorValidator;
@@ -151,6 +159,7 @@ import io.harness.connector.validator.OciHelmRepoConnectionValidator;
 import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
 import io.harness.connector.validator.SecretManagerConnectorValidator;
 import io.harness.connector.validator.ServiceNowConnectorValidator;
+import io.harness.connector.validator.SpotConnectorValidator;
 import io.harness.connector.validator.scmValidators.AwsCodeCommitValidator;
 import io.harness.connector.validator.scmValidators.AzureRepoConnectorValidator;
 import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
@@ -158,6 +167,7 @@ import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
 import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
+import io.harness.connector.validator.scmValidators.TasConnectorValidator;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -179,7 +189,7 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.GIT,
         new ConnectorRegistrar(ConnectorCategory.CODE_REPO, GitConnectorValidator.class,
             ScmConnectorValidationParamsProvider.class, GitDTOToEntity.class, GitEntityToDTO.class,
-            NotSupportedValidationHandler.class));
+            GitValidationHandler.class));
     registrar.put(ConnectorType.APP_DYNAMICS,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, AppDynamicsDTOToEntity.class, AppDynamicsEntityToDTO.class,
@@ -208,7 +218,7 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, DynatraceDTOToEntity.class, DynatraceEntityToDTO.class,
             NotSupportedValidationHandler.class));
-    registrar.put(ConnectorType.ELK,
+    registrar.put(ConnectorType.ELASTICSEARCH,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, ELKDTOToEntity.class, ELKEntityToDTO.class,
             NotSupportedValidationHandler.class));
@@ -247,6 +257,10 @@ public class ConnectorRegistryFactory {
     registrar.put(ConnectorType.AWS,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AwsConnectorValidator.class,
             AwsValidationParamsProvider.class, AwsDTOToEntity.class, AwsEntityToDTO.class, AwsValidationHandler.class));
+    registrar.put(ConnectorType.SPOT,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, SpotConnectorValidator.class,
+            SpotValidationParamsProvider.class, SpotDTOToEntity.class, SpotEntityToDTO.class,
+            SpotValidationHandler.class));
     registrar.put(ConnectorType.AZURE,
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, AzureConnectorValidator.class,
             AzureValidationParamsProvider.class, AzureDTOToEntity.class, AzureEntityToDTO.class,
@@ -335,6 +349,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, AzureArtifactsConnectorValidator.class,
             AzureArtifactsConnectorValidationParamsProvider.class, AzureArtifactsDTOToEntity.class,
             AzureArtifactsEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.TAS,
+        new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, TasConnectorValidator.class,
+            TasConnectorValidationParamsProvider.class, TasDTOToEntity.class, TasEntityToDTO.class,
+            TasValidationHandler.class));
     registrar.put(ConnectorType.GCP_SECRET_MANAGER,
         new ConnectorRegistrar(ConnectorCategory.SECRET_MANAGER, SecretManagerConnectorValidator.class,
             GcpSecretManagerValidationParamProvider.class, GcpSecretManagerDTOToEntity.class,

@@ -24,12 +24,30 @@ public class ArtifactStreamFactory {
   private static final ArtifactStreamMapper dockerMapper = new DockerArtifactStreamMapper();
   private static final ArtifactStreamMapper artifactoryMapper = new ArtifactoryArtifactStreamMapper();
 
+  private static final ArtifactStreamMapper nexusMapper = new NexusArtifactStreamMapper();
+
+  private static final ArtifactStreamMapper jenkinsMapper = new JenkinsArtifactStreamMapper();
+
+  private static final ArtifactStreamMapper customArtifactMapper = new CustomArtifactStreamMapper();
+
+  private static final ArtifactStreamMapper azureArtifactMapper = new AzureArtifactsArtifactStreamMapper();
+
+  private static final ArtifactStreamMapper amazonS3Mapper = new AmazonS3ArtifactStreamMapper();
+
+  private static final ArtifactStreamMapper acrMapper = new ACRArtifactStreamMapper();
+
   private static final Map<ArtifactStreamType, ArtifactStreamMapper> ARTIFACT_STREAM_MAPPER_MAP =
       ImmutableMap.<ArtifactStreamType, ArtifactStreamMapper>builder()
           .put(ArtifactStreamType.ARTIFACTORY, artifactoryMapper)
           .put(ArtifactStreamType.DOCKER, dockerMapper)
           .put(ArtifactStreamType.GCR, gcrArtifactStreamMapper)
           .put(ArtifactStreamType.ECR, ecrArtifactStreamMapper)
+          .put(ArtifactStreamType.NEXUS, nexusMapper)
+          .put(ArtifactStreamType.JENKINS, jenkinsMapper)
+          .put(ArtifactStreamType.CUSTOM, customArtifactMapper)
+          .put(ArtifactStreamType.AZURE_ARTIFACTS, azureArtifactMapper)
+          .put(ArtifactStreamType.AMAZON_S3, amazonS3Mapper)
+          .put(ArtifactStreamType.ACR, acrMapper)
           .build();
 
   public static ArtifactStreamMapper getArtifactStreamMapper(ArtifactStream artifactStream) {

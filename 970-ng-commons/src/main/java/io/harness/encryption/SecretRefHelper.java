@@ -7,6 +7,8 @@
 
 package io.harness.encryption;
 
+import io.harness.ng.core.BaseNGAccess;
+
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -24,5 +26,18 @@ public class SecretRefHelper {
       return null;
     }
     return secretRefData.toSecretRefStringValue();
+  }
+
+  public BaseNGAccess getScopeIdentifierForSecretRef(
+      SecretRefData secretRefData, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Scope secretRefScope = secretRefData.getScope();
+    String orgIdBasedOnScope = secretRefScope.equals(Scope.ACCOUNT) ? null : orgIdentifier;
+    String projectIdBasedOnScope = secretRefScope.equals(Scope.PROJECT) ? projectIdentifier : null;
+    return BaseNGAccess.builder()
+        .identifier(secretRefData.getIdentifier())
+        .accountIdentifier(accountIdentifier)
+        .orgIdentifier(orgIdBasedOnScope)
+        .projectIdentifier(projectIdBasedOnScope)
+        .build();
   }
 }

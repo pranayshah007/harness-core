@@ -17,13 +17,13 @@ import static io.harness.validation.Validator.notNullCheck;
 
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 
-import static com.microsoft.azure.management.compute.PowerState.RUNNING;
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.beans.PageResponse;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ExceptionUtils;
@@ -45,20 +45,22 @@ import software.wings.infra.AzureInstanceInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.service.intfc.security.EncryptionService;
 
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.identity.ClientSecretCredential;
+import com.azure.identity.ClientSecretCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.compute.models.PowerState;
+import com.azure.resourcemanager.compute.models.VirtualMachine;
+import com.azure.resourcemanager.containerservice.models.OSType;
+import com.azure.resourcemanager.keyvault.models.Vault;
+import com.azure.resourcemanager.resources.models.ResourceGroup;
+import com.azure.resourcemanager.resources.models.Subscription;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.microsoft.aad.adal4j.AuthenticationException;
-import com.microsoft.azure.AzureEnvironment;
-import com.microsoft.azure.credentials.ApplicationTokenCredentials;
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.Azure.Authenticated;
-import com.microsoft.azure.management.compute.VirtualMachine;
-import com.microsoft.azure.management.containerservice.OSType;
-import com.microsoft.azure.management.keyvault.Vault;
-import com.microsoft.azure.management.resources.ResourceGroup;
-import com.microsoft.rest.LogLevel;
-import java.io.IOException;
+import com.microsoft.aad.msal4j.MsalException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -110,12 +112,23 @@ public class AzureHelperService {
         throw new InvalidRequestException("Please input a valid encrypted key.");
       }
 
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              new String(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
+      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                          .clientId(azureConfig.getClientId())
+                                                          .tenantId(azureConfig.getTenantId())
+                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .build();
 
-      Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withDefaultSubscription();
+      AzureResourceManager.Authenticated authenticated =
+          AzureResourceManager.configure()
+              .withLogLevel(HttpLogDetailLevel.NONE)
+              .withRetryPolicy(
+                  AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+              .authenticate(clientSecretCredential,
+                  new AzureProfile(
+                      azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())));
 
+      Subscription subscription = authenticated.subscriptions().list().stream().findFirst().get();
+      AzureResourceManager azureResourceManager = authenticated.withSubscription(subscription.subscriptionId());
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -175,7 +188,7 @@ public class AzureHelperService {
   public List<AzureAvailabilitySet> listAvailabilitySets(
       AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails, String subscriptionId) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     return azure.availabilitySets()
         .list()
         .stream()
@@ -205,8 +218,9 @@ public class AzureHelperService {
     List<VirtualMachine> matchingVMs = new ArrayList<>();
 
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
-    List<VirtualMachine> listVms = azure.virtualMachines().listByResourceGroup(resourceGroupName);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
+    List<VirtualMachine> listVms =
+        azure.virtualMachines().listByResourceGroup(resourceGroupName).stream().collect(toList());
 
     if (isEmpty(listVms)) {
       log.info("List VMs by Tags and Resource group did not find any matching VMs in Azure for subscription : "
@@ -228,9 +242,9 @@ public class AzureHelperService {
     for (VirtualMachine vm : listVms) {
       if (tags.isEmpty()) {
         matchingVMs.add(vm);
-      } else if (vm.inner() != null && vm.inner().getTags() != null) {
-        if (vm.inner().getTags().keySet().containsAll(tags.keySet())
-            && vm.inner().getTags().values().containsAll(tags.values())) {
+      } else if (vm.innerModel() != null && vm.innerModel().tags() != null) {
+        if (vm.innerModel().tags().keySet().containsAll(tags.keySet())
+            && vm.innerModel().tags().values().containsAll(tags.values())) {
           matchingVMs.add(vm);
         }
       }
@@ -240,7 +254,7 @@ public class AzureHelperService {
   }
 
   private boolean isVmRunning(VirtualMachine vm) {
-    return vm.powerState().equals(RUNNING);
+    return vm.powerState().equals(PowerState.RUNNING);
   }
 
   public PageResponse<Host> listHosts(AzureInfrastructureMapping azureInfrastructureMapping,
@@ -251,22 +265,20 @@ public class AzureHelperService {
     if (isNotEmpty(vms)) {
       List<Host> azureHosts = new ArrayList<>();
       for (VirtualMachine vm : vms) {
-        Host host =
-            aHost()
-                .withHostName(vm.name())
-                .withPublicDns(azureInfrastructureMapping.isUsePublicDns()
-                        ? (vm.getPrimaryPublicIPAddress() != null ? vm.getPrimaryPublicIPAddress().fqdn() : null)
-                        : null)
-                .withAppId(azureInfrastructureMapping.getAppId())
-                .withEnvId(azureInfrastructureMapping.getEnvId())
-                .withHostConnAttr(azureInfrastructureMapping.getHostConnectionAttrs())
-                .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
-                        ? azureInfrastructureMapping.getWinRmConnectionAttributes()
-                        : null)
-                .withInfraMappingId(azureInfrastructureMapping.getUuid())
-                .withInfraDefinitionId(azureInfrastructureMapping.getInfrastructureDefinitionId())
-                .withServiceTemplateId(azureInfrastructureMapping.getServiceTemplateId())
-                .build();
+        Host host = aHost()
+                        .withHostName(vm.name())
+                        .withPublicDns(computeHostConnectString(azureInfrastructureMapping.isUsePublicDns(),
+                            azureInfrastructureMapping.isUsePrivateIp(), vm))
+                        .withAppId(azureInfrastructureMapping.getAppId())
+                        .withEnvId(azureInfrastructureMapping.getEnvId())
+                        .withHostConnAttr(azureInfrastructureMapping.getHostConnectionAttrs())
+                        .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
+                                ? azureInfrastructureMapping.getWinRmConnectionAttributes()
+                                : null)
+                        .withInfraMappingId(azureInfrastructureMapping.getUuid())
+                        .withInfraDefinitionId(azureInfrastructureMapping.getInfrastructureDefinitionId())
+                        .withServiceTemplateId(azureInfrastructureMapping.getServiceTemplateId())
+                        .build();
         azureHosts.add(host);
       }
       return aPageResponse().withResponse(azureHosts).build();
@@ -286,21 +298,19 @@ public class AzureHelperService {
     if (isNotEmpty(vms)) {
       List<Host> azureHosts = new ArrayList<>();
       for (VirtualMachine vm : vms) {
-        Host host =
-            aHost()
-                .withHostName(vm.name())
-                .withPublicDns(azureInstanceInfrastructure.isUsePublicDns()
-                        ? (vm.getPrimaryPublicIPAddress() != null ? vm.getPrimaryPublicIPAddress().fqdn() : null)
-                        : null)
-                .withAppId(infrastructureDefinition.getAppId())
-                .withEnvId(infrastructureDefinition.getEnvId())
-                .withHostConnAttr(azureInstanceInfrastructure.getHostConnectionAttrs())
-                .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
-                        ? azureInstanceInfrastructure.getWinRmConnectionAttributes()
-                        : null)
-                .withInfraMappingId(infrastructureDefinition.getUuid())
-                .withInfraDefinitionId(infrastructureDefinition.getUuid())
-                .build();
+        Host host = aHost()
+                        .withHostName(vm.name())
+                        .withPublicDns(computeHostConnectString(azureInstanceInfrastructure.isUsePublicDns(),
+                            azureInstanceInfrastructure.isUsePrivateIp(), vm))
+                        .withAppId(infrastructureDefinition.getAppId())
+                        .withEnvId(infrastructureDefinition.getEnvId())
+                        .withHostConnAttr(azureInstanceInfrastructure.getHostConnectionAttrs())
+                        .withWinrmConnAttr(DeploymentType.WINRM == deploymentType
+                                ? azureInstanceInfrastructure.getWinRmConnectionAttributes()
+                                : null)
+                        .withInfraMappingId(infrastructureDefinition.getUuid())
+                        .withInfraDefinitionId(infrastructureDefinition.getUuid())
+                        .build();
         azureHosts.add(host);
       }
       return aPageResponse().withResponse(azureHosts).build();
@@ -312,7 +322,7 @@ public class AzureHelperService {
   public List<AzureVirtualMachineScaleSet> listVirtualMachineScaleSets(
       AzureConfig azureConfig, List<EncryptedDataDetail> encryptionDetails, String subscriptionId) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     return azure.virtualMachineScaleSets()
         .list()
         .stream()
@@ -327,13 +337,21 @@ public class AzureHelperService {
   }
 
   @VisibleForTesting
-  protected Azure getAzureClient(AzureConfig azureConfig, String subscriptionId) {
+  protected AzureResourceManager getAzureClient(AzureConfig azureConfig, String subscriptionId) {
     try {
-      ApplicationTokenCredentials credentials =
-          new ApplicationTokenCredentials(azureConfig.getClientId(), azureConfig.getTenantId(),
-              new String(azureConfig.getKey()), getAzureEnvironment(azureConfig.getAzureEnvironmentType()));
+      ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                          .clientId(azureConfig.getClientId())
+                                                          .tenantId(azureConfig.getTenantId())
+                                                          .clientSecret(String.valueOf(azureConfig.getKey()))
+                                                          .build();
 
-      return Azure.configure().withLogLevel(LogLevel.NONE).authenticate(credentials).withSubscription(subscriptionId);
+      return AzureResourceManager.configure()
+          .withLogLevel(HttpLogDetailLevel.NONE)
+          .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+          .authenticate(clientSecretCredential,
+              new AzureProfile(
+                  azureConfig.getTenantId(), null, getAzureEnvironment(azureConfig.getAzureEnvironmentType())))
+          .withSubscription(subscriptionId);
     } catch (Exception e) {
       handleAzureAuthenticationException(e);
     }
@@ -346,7 +364,7 @@ public class AzureHelperService {
     Throwable e1 = e;
     while (e1.getCause() != null) {
       e1 = e1.getCause();
-      if (e1 instanceof AuthenticationException) {
+      if (e1 instanceof MsalException) {
         throw new InvalidRequestException("Invalid Azure credentials.", USER);
       }
     }
@@ -366,7 +384,7 @@ public class AzureHelperService {
   public List<AzureImageGallery> listImageGalleries(AzureConfig azureConfig,
       List<EncryptedDataDetail> encryptionDetails, String subscriptionId, String resourceGroupName) {
     encryptionService.decrypt(azureConfig, encryptionDetails, false);
-    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    AzureResourceManager azure = getAzureClient(azureConfig, subscriptionId);
     return azure.galleries()
         .listByResourceGroup(resourceGroupName)
         .stream()
@@ -380,26 +398,49 @@ public class AzureHelperService {
         .collect(Collectors.toList());
   }
 
-  private List<Vault> listVaultsInternal(String accountId, AzureVaultConfig azureVaultConfig) throws IOException {
-    Azure azure = null;
+  private List<Vault> listVaultsInternal(String accountId, AzureVaultConfig azureVaultConfig) {
+    AzureResourceManager azureResourceManager;
     List<Vault> vaultList = new ArrayList<>();
-    ApplicationTokenCredentials credentials =
-        new ApplicationTokenCredentials(azureVaultConfig.getClientId(), azureVaultConfig.getTenantId(),
-            azureVaultConfig.getSecretKey(), getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType()));
 
-    Authenticated authenticate = Azure.configure().authenticate(credentials);
+    ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
+                                                        .clientId(azureVaultConfig.getClientId())
+                                                        .tenantId(azureVaultConfig.getTenantId())
+                                                        .clientSecret(azureVaultConfig.getSecretKey())
+                                                        .build();
 
-    if (isEmpty(azureVaultConfig.getSubscription())) {
-      azure = authenticate.withDefaultSubscription();
-    } else {
-      azure = authenticate.withSubscription(azureVaultConfig.getSubscription());
+    String subscriptionId = azureVaultConfig.getSubscription();
+
+    AzureResourceManager.Authenticated authenticate =
+        AzureResourceManager.configure()
+            .withLogLevel(HttpLogDetailLevel.NONE)
+            .withRetryPolicy(AzureUtils.getRetryPolicy(AzureUtils.getRetryOptions(AzureUtils.getDefaultDelayOptions())))
+            .authenticate(clientSecretCredential,
+                new AzureProfile(azureVaultConfig.getTenantId(), subscriptionId,
+                    getAzureEnvironment(azureVaultConfig.getAzureEnvironmentType())));
+
+    if (isEmpty(subscriptionId)) {
+      Subscription subscription = authenticate.subscriptions().list().stream().findFirst().get();
+      subscriptionId = subscription.subscriptionId();
     }
-    log.info("Subscription {} is being used for account Id {}", azure.subscriptionId(), accountId);
 
-    for (ResourceGroup rGroup : azure.resourceGroups().list()) {
-      vaultList.addAll(azure.vaults().listByResourceGroup(rGroup.name()));
+    azureResourceManager = authenticate.withSubscription(subscriptionId);
+
+    log.info("Subscription {} is being used for account Id {}", azureResourceManager.subscriptionId(), accountId);
+
+    for (ResourceGroup rGroup : azureResourceManager.resourceGroups().list()) {
+      vaultList.addAll(azureResourceManager.vaults().listByResourceGroup(rGroup.name()).stream().collect(toList()));
     }
     log.info("Found azure vaults {} or account id: {}", vaultList, accountId);
     return vaultList;
+  }
+
+  private String computeHostConnectString(boolean isUsePublicDns, boolean isUsePrivateIp, VirtualMachine vm) {
+    if (isUsePublicDns && vm.getPrimaryPublicIPAddress() != null) {
+      return vm.getPrimaryPublicIPAddress().fqdn();
+    }
+    if (isUsePrivateIp && vm.getPrimaryNetworkInterface() != null) {
+      return vm.getPrimaryNetworkInterface().primaryPrivateIP();
+    }
+    return vm.name();
   }
 }

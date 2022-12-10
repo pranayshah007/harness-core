@@ -32,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SecretManagerImportService implements ImportService {
   @Inject private SecretManagerConfigService secretManagerConfigService;
   @Inject DiscoveryService discoveryService;
+  @Inject private SecretFactory secretFactory;
 
   public DiscoveryResult discover(String authToken, ImportDTO importConnectorDTO) {
     SecretManagerFilter filter = (SecretManagerFilter) importConnectorDTO.getFilter();
@@ -42,15 +43,9 @@ public class SecretManagerImportService implements ImportService {
         // Note: All here means all the connectors we support today
         secretManagerIds = secretManagerConfigService.listSecretManagers(accountId, false)
                                .stream()
-                               .map(SecretManagerConfig::getUuid)
-                               .collect(Collectors.toList());
-        break;
-      case TYPE:
-        secretManagerIds = secretManagerConfigService.listSecretManagers(accountId, false)
-                               .stream()
                                .filter(secretManagerConfig -> {
                                  try {
-                                   SecretFactory.getConnectorType(secretManagerConfig);
+                                   secretFactory.getSecretMigrator(secretManagerConfig);
                                    return true;
                                  } catch (Exception e) {
                                    log.warn("Unsupported secret manager", e);
@@ -59,6 +54,23 @@ public class SecretManagerImportService implements ImportService {
                                })
                                .map(SecretManagerConfig::getUuid)
                                .collect(Collectors.toList());
+        break;
+      case TYPE:
+        secretManagerIds =
+            secretManagerConfigService.listSecretManagers(accountId, false)
+                .stream()
+                .filter(secretManagerConfig -> filter.getTypes().contains(secretManagerConfig.getEncryptionType()))
+                .filter(secretManagerConfig -> {
+                  try {
+                    SecretFactory.getConnectorType(secretManagerConfig);
+                    return true;
+                  } catch (Exception e) {
+                    log.warn("Unsupported secret manager", e);
+                    return false;
+                  }
+                })
+                .map(SecretManagerConfig::getUuid)
+                .collect(Collectors.toList());
         break;
       case SPECIFIC:
         secretManagerIds = filter.getIds();

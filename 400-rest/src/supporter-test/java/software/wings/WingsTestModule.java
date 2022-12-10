@@ -12,6 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static org.mockito.Mockito.mock;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.ami.service.AMIRegistryService;
+import io.harness.artifacts.ami.service.AMIRegistryServiceImpl;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryService;
 import io.harness.artifacts.azureartifacts.service.AzureArtifactsRegistryServiceImpl;
 import io.harness.artifacts.docker.client.DockerRestClientFactory;
@@ -214,6 +216,7 @@ public class WingsTestModule extends AbstractModule {
     bind(DockerRegistryService.class).to(DockerRegistryServiceImpl.class);
     bind(AzureArtifactsRegistryService.class).to(AzureArtifactsRegistryServiceImpl.class);
     bind(GithubPackagesRegistryService.class).to(GithubPackagesRegistryServiceImpl.class);
+    bind(AMIRegistryService.class).to(AMIRegistryServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
     bind(GcrApiService.class).to(GcrApiServiceImpl.class);
     bind(GithubPackagesRestClientFactory.class).to(GithubPackagesRestClientFactoryImpl.class);

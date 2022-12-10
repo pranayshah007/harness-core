@@ -149,10 +149,11 @@ public interface UserGroupService
   /**
    * Return if there exists any user group linked to given sso provider id
    *
-   * @param ssoId SSO Provider ID
+   * @param ssoId     SSO Provider ID
+   * @param accountId
    * @return
    */
-  boolean existsLinkedUserGroup(@NotBlank String ssoId);
+  boolean existsLinkedUserGroup(String accountId, @NotBlank String ssoId);
 
   boolean delete(String accountId, String userGroupId, boolean forceDelete);
 

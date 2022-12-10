@@ -8,7 +8,6 @@
 package software.wings.sm.states.pcf;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.FeatureName.IGNORE_PCF_CONNECTION_CONTEXT_CACHE;
 import static io.harness.beans.FeatureName.LIMIT_PCF_THREADS;
 import static io.harness.beans.FeatureName.SINGLE_MANIFEST_SUPPORT;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -349,8 +348,6 @@ public class PcfStateHelper {
             .useCfCLI(queueRequestData.isUseCfCli())
             .limitPcfThreads(
                 featureFlagService.isEnabled(LIMIT_PCF_THREADS, queueRequestData.getPcfConfig().getAccountId()))
-            .ignorePcfConnectionContextCache(featureFlagService.isEnabled(
-                IGNORE_PCF_CONNECTION_CONTEXT_CACHE, queueRequestData.getPcfConfig().getAccountId()))
             .cfCliVersion(getCfCliVersionOrDefault(app.getAppId(), setupSweepingOutputPcf.getServiceId()))
             .build();
 

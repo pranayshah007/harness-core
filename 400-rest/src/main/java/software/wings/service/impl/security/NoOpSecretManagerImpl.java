@@ -111,8 +111,20 @@ public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAtt
   }
 
   @Override
+  public Optional<EncryptedDataDetail> encryptedDataDetails(String accountId, String fieldName, String encryptedDataId,
+      String workflowExecutionId, boolean updateSecretUsage) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public Optional<EncryptedDataDetail> getEncryptedDataDetails(
       String accountId, String fieldName, EncryptedData encryptedData, String workflowExecutionId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public Optional<EncryptedDataDetail> getEncryptedDataDetails(String accountId, String fieldName,
+      EncryptedData encryptedData, String workflowExecutionId, boolean updateSecretUsage) {
     throw new UnsupportedOperationException();
   }
 
@@ -124,6 +136,12 @@ public class NoOpSecretManagerImpl implements SecretManager, EncryptedSettingAtt
   @Override
   public List<EncryptedDataDetail> getEncryptionDetails(
       EncryptableSetting object, String appId, String workflowExecutionId) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public List<EncryptedDataDetail> getEncryptionDetails(
+      EncryptableSetting object, String appId, String workflowExecutionId, boolean updateSecretUsage) {
     throw new UnsupportedOperationException();
   }
 

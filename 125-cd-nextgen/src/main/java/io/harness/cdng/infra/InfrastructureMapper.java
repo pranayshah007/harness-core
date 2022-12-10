@@ -19,6 +19,7 @@ import io.harness.cdng.customdeploymentng.CustomDeploymentInfrastructureHelper;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -28,6 +29,7 @@ import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostAttributesFilter;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostFilterSpec;
@@ -39,6 +41,7 @@ import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -47,6 +50,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
@@ -224,6 +228,7 @@ public class InfrastructureMapper {
         EcsInfrastructureOutcome ecsInfrastructureOutcome =
             EcsInfrastructureOutcome.builder()
                 .connectorRef(ecsInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
                 .region(ecsInfrastructure.getRegion().getValue())
                 .cluster(ecsInfrastructure.getCluster().getValue())
                 .infrastructureKey(InfrastructureKey.generate(
@@ -232,6 +237,20 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(
             ecsInfrastructureOutcome, ecsInfrastructure.getInfraIdentifier(), ecsInfrastructure.getInfraName());
         infrastructureOutcome = ecsInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        ElastigroupInfrastructureOutcome elastigroupInfrastructureOutcome =
+            ElastigroupInfrastructureOutcome.builder()
+                .connectorRef(elastigroupInfrastructure.getConnectorRef().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, elastigroupInfrastructure.getInfrastructureKeyValues()))
+                .build();
+        setInfraIdentifierAndName(elastigroupInfrastructureOutcome, elastigroupInfrastructure.getInfraIdentifier(),
+            elastigroupInfrastructure.getInfraName());
+        infrastructureOutcome = elastigroupInfrastructureOutcome;
         break;
 
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
@@ -259,6 +278,25 @@ public class InfrastructureMapper {
         setInfraIdentifierAndName(customDeploymentInfrastructureOutcome,
             customDeploymentInfrastructure.getInfraIdentifier(), customDeploymentInfrastructure.getInfraName());
         infrastructureOutcome = customDeploymentInfrastructureOutcome;
+        break;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+
+        TanzuApplicationServiceInfrastructureOutcome tanzuInfrastructureOutcome =
+            TanzuApplicationServiceInfrastructureOutcome.builder()
+                .connectorRef(tanzuInfrastructure.getConnectorRef().getValue())
+                .organization(tanzuInfrastructure.getOrganization().getValue())
+                .space(tanzuInfrastructure.getSpace().getValue())
+                .environment(environmentOutcome)
+                .infrastructureKey(InfrastructureKey.generate(
+                    service, environmentOutcome, tanzuInfrastructure.getInfrastructureKeyValues()))
+                .build();
+
+        setInfraIdentifierAndName(tanzuInfrastructureOutcome, tanzuInfrastructureOutcome.getInfraIdentifier(),
+            tanzuInfrastructure.getInfraName());
+        infrastructureOutcome = tanzuInfrastructureOutcome;
         break;
 
       default:
@@ -320,6 +358,7 @@ public class InfrastructureMapper {
       InfrastructureOutcomeAbstract infrastructureOutcome, String infraIdentifier, String infraName) {
     infrastructureOutcome.setInfraIdentifier(infraIdentifier);
     infrastructureOutcome.setInfraName(infraName);
+    infrastructureOutcome.setName(infraName);
   }
 
   private String getValueOrExpression(ParameterField<String> parameterField) {

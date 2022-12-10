@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -30,6 +31,8 @@ import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.ManifestConfig;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.k8s.K8sApplyRequest;
@@ -112,6 +115,26 @@ public class K8sApplyStepTest extends AbstractK8sStepExecutorTestBase {
     final StepElementParameters stepElementParameters =
         StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.ofNull()).build();
     k8sApplyStep.startChainLink(ambiance, stepElementParameters, StepInputPackage.builder().build());
+
+    verify(k8sStepHelper, times(1)).startChainLink(eq(k8sApplyStep), eq(ambiance), eq(stepElementParameters));
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testShouldValidateFilePathsSuccessOverrides() {
+    K8sApplyStepParameters stepParameters = new K8sApplyStepParameters();
+    stepParameters.setFilePaths(ParameterField.createValueField(Arrays.asList("file1.yaml", "file2.yaml")));
+    stepParameters.setOverrides(
+        Collections.singletonList(ManifestConfigWrapper.builder().manifest(ManifestConfig.builder().build()).build()));
+    ManifestsOutcome manifestsOutcomes = new ManifestsOutcome();
+    doReturn(manifestsOutcomes).when(k8sStepHelper).resolveManifestsOutcome(ambiance);
+    doReturn(K8sManifestOutcome.builder().build()).when(k8sStepHelper).getK8sSupportedManifestOutcome(any());
+
+    final StepElementParameters stepElementParameters =
+        StepElementParameters.builder().spec(stepParameters).timeout(ParameterField.ofNull()).build();
+    k8sApplyStep.startChainLink(ambiance, stepElementParameters, StepInputPackage.builder().build());
+    verify(k8sStepHelper, times(1)).resolveManifestsConfigExpressions(eq(ambiance), eq(stepParameters.overrides));
 
     verify(k8sStepHelper, times(1)).startChainLink(eq(k8sApplyStep), eq(ambiance), eq(stepElementParameters));
   }

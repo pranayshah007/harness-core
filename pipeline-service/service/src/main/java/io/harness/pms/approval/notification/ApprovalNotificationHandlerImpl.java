@@ -10,14 +10,21 @@ package io.harness.pms.approval.notification;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.shell.ShellScriptTaskNG.COMMAND_UNIT;
+import static io.harness.utils.IdentifierRefHelper.IDENTIFIER_REF_DELIMITER;
 
 import static java.util.Objects.isNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
+import io.harness.exception.ExceptionUtils;
 import io.harness.logging.AutoLogContext;
+import io.harness.logging.LogLevel;
+import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO.UserGroupFilterDTOBuilder;
@@ -47,6 +54,7 @@ import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.time.Instant;
@@ -63,6 +71,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -74,29 +83,43 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
   private final NotificationClient notificationClient;
   private final NotificationHelper notificationHelper;
   private final PMSExecutionService pmsExecutionService;
+  private final LogStreamingStepClientFactory logStreamingStepClientFactory;
 
   @Inject
   public ApprovalNotificationHandlerImpl(@Named("PRIVILEGED") UserGroupClient userGroupClient,
       NotificationClient notificationClient, NotificationHelper notificationHelper,
-      PMSExecutionService pmsExecutionService) {
+      PMSExecutionService pmsExecutionService, LogStreamingStepClientFactory logStreamingStepClientFactory) {
     this.userGroupClient = userGroupClient;
     this.notificationClient = notificationClient;
     this.notificationHelper = notificationHelper;
     this.pmsExecutionService = pmsExecutionService;
+    this.logStreamingStepClientFactory = logStreamingStepClientFactory;
   }
 
   @Override
   public void sendNotification(HarnessApprovalInstance approvalInstance, Ambiance ambiance) {
     try (AutoLogContext ignore = approvalInstance.autoLogContext()) {
-      sendNotificationInternal(approvalInstance, ambiance);
+      NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, COMMAND_UNIT, false);
+      sendNotificationInternal(approvalInstance, ambiance, logCallback);
     }
   }
 
-  private void sendNotificationInternal(HarnessApprovalInstance approvalInstance, Ambiance ambiance) {
+  private void sendNotificationInternal(
+      HarnessApprovalInstance approvalInstance, Ambiance ambiance, NGLogCallback logCallback) {
     try {
+      log.info("Sending notification to user groups for harness approval");
+      logCallback.saveExecutionLog("-----");
+      logCallback.saveExecutionLog("Sending notification to user groups for harness approval");
       PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = getPipelineExecutionSummary(ambiance);
 
-      List<UserGroupDTO> userGroups = getUserGroups(approvalInstance);
+      List<UserGroupDTO> userGroups = approvalInstance.getValidatedUserGroups();
+      List<String> invalidUserGroupIds =
+          findInvalidInputUserGroups(userGroups, approvalInstance.getApprovers().getUserGroups());
+      if (isNotEmpty(invalidUserGroupIds)) {
+        logCallback.saveExecutionLog(
+            String.format("Some invalid user groups were given as inputs: %s", invalidUserGroupIds), LogLevel.WARN);
+        log.warn(String.format("Some invalid user groups were given as inputs: %s", invalidUserGroupIds));
+      }
       ApprovalSummaryBuilder approvalSummaryBuilder = ApprovalSummary.builder();
 
       ApprovalSummary approvalSummary =
@@ -116,10 +139,38 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
       if (approvalInstance.isIncludePipelineExecutionHistory()) {
         generateModuleSpecificSummary(approvalSummary, pipelineExecutionSummaryEntity);
       }
-      sendNotificationInternal(approvalInstance, userGroups, approvalSummary.toParams());
+      sendNotificationInternal(approvalInstance, userGroups, approvalSummary.toParams(), logCallback);
     } catch (Exception e) {
+      logCallback.saveExecutionLog(String.format(
+          "Error sending notification to user groups for harness approval: %s", ExceptionUtils.getMessage(e)));
       log.error("Error while sending notification for harness approval", e);
     }
+  }
+
+  private List<String> findInvalidInputUserGroups(
+      List<UserGroupDTO> validatedUserGroups, List<String> inputUserGroups) {
+    if (isEmpty(inputUserGroups)) {
+      return null;
+    }
+    if (isEmpty(validatedUserGroups)) {
+      return inputUserGroups;
+    }
+    return new ArrayList<>(Sets.difference(Sets.newHashSet(inputUserGroups),
+        validatedUserGroups.stream()
+            .map(ug
+                -> toUserGroupId(ug.getOrgIdentifier(), ug.getProjectIdentifier(), ug.getIdentifier(),
+                    IDENTIFIER_REF_DELIMITER.substring(1)))
+            .collect(Collectors.toSet())));
+  }
+
+  private String toUserGroupId(String orgIdentifier, String projectIdentifier, String identifier, String delimiter) {
+    if (!isBlank(projectIdentifier)) {
+      return identifier;
+    }
+    if (!isBlank(orgIdentifier)) {
+      return StringUtils.joinWith(delimiter, Scope.ORG.getYamlRepresentation(), identifier);
+    }
+    return StringUtils.joinWith(delimiter, Scope.ACCOUNT.getYamlRepresentation(), identifier);
   }
 
   private void generateModuleSpecificSummary(
@@ -149,8 +200,8 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
-  private void sendNotificationInternal(
-      HarnessApprovalInstance instance, List<UserGroupDTO> userGroups, Map<String, String> templateData) {
+  private void sendNotificationInternal(HarnessApprovalInstance instance, List<UserGroupDTO> userGroups,
+      Map<String, String> templateData, NGLogCallback logCallback) {
     for (UserGroupDTO userGroup : userGroups) {
       for (NotificationSettingConfigDTO notificationSettingConfig : userGroup.getNotificationConfigs()) {
         NotificationChannel notificationChannel =
@@ -159,6 +210,11 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
           notificationClient.sendNotificationAsync(notificationChannel);
         } else {
           log.warn("Error constructing NotificationChannel for {}", notificationSettingConfig);
+          logCallback.saveExecutionLog(
+              String.format(
+                  "Error sending notification to user groups for harness approval: Error occurred while sending notification to %s user group via %s notification channel",
+                  userGroup.getName(), notificationSettingConfig.getType()),
+              LogLevel.ERROR);
         }
       }
     }
@@ -226,7 +282,7 @@ public class ApprovalNotificationHandlerImpl implements ApprovalNotificationHand
     }
   }
 
-  private List<UserGroupDTO> getUserGroups(HarnessApprovalInstance instance) {
+  public List<UserGroupDTO> getUserGroups(HarnessApprovalInstance instance) {
     List<UserGroupDTO> userGroups = new ArrayList<>();
     List<String> userGroupIds = instance.getApprovers().getUserGroups();
 

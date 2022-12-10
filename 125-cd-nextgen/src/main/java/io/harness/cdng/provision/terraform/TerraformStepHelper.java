@@ -7,21 +7,30 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.beans.FeatureName.TERRAFORM_REMOTE_BACKEND_CONFIG;
+import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.FileReference;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
+import io.harness.beans.SecretManagerConfig;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.fileservice.FileServiceClientFactory;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -34,12 +43,18 @@ import io.harness.cdng.manifest.yaml.GitStore;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfigDTO;
 import io.harness.cdng.manifest.yaml.GithubStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
+import io.harness.cdng.pipeline.executions.TerraformSecretCleanupTaskNotifyCallback;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigBuilder;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInheritOutputBuilder;
+import io.harness.cdng.provision.terraform.executions.TFPlanExecutionDetailsKey;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExectionDetailsService;
+import io.harness.cdng.provision.terraform.executions.TerraformPlanExecutionDetails;
+import io.harness.cdng.provision.terraform.output.TerraformHumanReadablePlanOutput;
 import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
@@ -56,14 +71,22 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.filestore.FileStoreFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.terraform.InlineTerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.InlineTerraformVarFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo;
+import io.harness.delegate.task.terraform.RemoteTerraformBackendConfigFileInfo.RemoteTerraformBackendConfigFileInfoBuilder;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo;
 import io.harness.delegate.task.terraform.RemoteTerraformVarFileInfo.RemoteTerraformVarFileInfoBuilder;
+import io.harness.delegate.task.terraform.TerraformBackendConfigFileInfo;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
+import io.harness.delegate.task.terraform.cleanup.TerraformSecretCleanupTaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
@@ -81,10 +104,15 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.validation.Validator;
 import io.harness.validator.NGRegexValidatorConstants;
+import io.harness.waiter.WaitNotifyEngine;
+
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -93,12 +121,15 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
@@ -115,10 +146,12 @@ public class TerraformStepHelper {
   private static final String TF_INHERIT_OUTPUT_FORMAT = "tfInheritOutput_%s_%s";
   public static final String TF_CONFIG_FILES = "TF_CONFIG_FILES";
   public static final String TF_VAR_FILES = "TF_VAR_FILES_%d";
+  public static final String TF_BACKEND_CONFIG_FILE = "TF_BACKEND_CONFIG_FILE";
   public static final String USE_CONNECTOR_CREDENTIALS = "useConnectorCredentials";
 
   @Inject private HPersistence persistence;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject TerraformPlanExectionDetailsService terraformPlanExectionDetailsService;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Inject private FileServiceClientFactory fileService;
@@ -127,6 +160,30 @@ public class TerraformStepHelper {
   @Inject private CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private CDStepHelper cdStepHelper;
   @Inject public TerraformConfigDAL terraformConfigDAL;
+  @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  @Inject private WaitNotifyEngine waitNotifyEngine;
+
+  @Inject private FileStoreService fileStoreService;
+
+  public static Optional<EntityDetail> prepareEntityDetailForBackendConfigFiles(
+      String accountId, String orgIdentifier, String projectIdentifier, TerraformBackendConfig config) {
+    if (config == null || config.getType().equals(TerraformVarFileTypes.Inline)) {
+      return Optional.empty();
+    }
+    ParameterField<String> connectorReference =
+        ((RemoteTerraformBackendConfigSpec) config.getTerraformBackendConfigSpec())
+            .getStore()
+            .getSpec()
+            .getConnectorReference();
+    if (connectorReference == null) {
+      return Optional.empty();
+    }
+    String connectorReferenceValue = connectorReference.getValue();
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(connectorReferenceValue, accountId, orgIdentifier, projectIdentifier);
+    EntityDetail entityDetail = EntityDetail.builder().type(EntityType.CONNECTORS).entityRef(identifierRef).build();
+    return Optional.of(entityDetail);
+  }
 
   public static List<EntityDetail> prepareEntityDetailsForVarFiles(
       String accountId, String orgIdentifier, String projectIdentifier, Map<String, TerraformVarFile> varFiles) {
@@ -171,10 +228,15 @@ public class TerraformStepHelper {
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
-    if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
-      validationMessage = "Config Files";
-    } else {
-      validationMessage = format("Var Files with identifier: %s", identifier);
+    switch (identifier) {
+      case TerraformStepHelper.TF_CONFIG_FILES:
+        validationMessage = "Config Files";
+        break;
+      case TerraformStepHelper.TF_VAR_FILES:
+        validationMessage = "Backend Configuration Files";
+        break;
+      default:
+        validationMessage = format("Var Files with identifier: %s", identifier);
     }
     // TODO: fix manifest part, remove k8s dependency
     cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
@@ -192,7 +254,7 @@ public class TerraformStepHelper {
       gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
     }
     List<String> paths = new ArrayList<>();
-    if (TF_CONFIG_FILES.equals(identifier)) {
+    if (TF_CONFIG_FILES.equals(identifier) || TF_BACKEND_CONFIG_FILE.equals(identifier)) {
       paths.add(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getFolderPath()));
     } else {
       paths.addAll(ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getPaths()));
@@ -215,6 +277,22 @@ public class TerraformStepHelper {
         .build();
   }
 
+  String getLocalFileStoreDelegateConfigPath(StoreConfig store, Ambiance ambiance) {
+    HarnessStore harnessStore = (HarnessStore) store;
+    String scopedFilePath = harnessStore.getFiles().getValue().get(0);
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    FileReference fileReference = FileReference.of(
+        scopedFilePath, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    Optional<FileStoreNodeDTO> optionalFileStoreNodeDTO =
+        fileStoreService.getWithChildrenByPath(fileReference.getAccountIdentifier(), fileReference.getOrgIdentifier(),
+            fileReference.getProjectIdentifier(), fileReference.getPath(), false);
+    if (optionalFileStoreNodeDTO.isPresent()) {
+      FileStoreNodeDTO manifestFileDirectory = optionalFileStoreNodeDTO.get();
+      return manifestFileDirectory.getPath();
+    }
+    return null;
+  }
+
   public FileStoreFetchFilesConfig getFileStoreFetchFilesConfig(
       StoreConfig store, Ambiance ambiance, String identifier) {
     if (store == null || !ManifestStoreType.ARTIFACTORY.equals(store.getKind())) {
@@ -225,13 +303,18 @@ public class TerraformStepHelper {
     String connectorId = ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getConnectorRef());
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
     String validationMessage = "";
-    if (identifier.equals(TerraformStepHelper.TF_CONFIG_FILES)) {
-      if (ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()).size() > 1) {
-        throw new InvalidRequestException("Config file should not contain more than one file path");
-      }
-      validationMessage = "Config Files";
-    } else {
-      validationMessage = format("Var Files with identifier: %s", identifier);
+    switch (identifier) {
+      case TerraformStepHelper.TF_CONFIG_FILES:
+        if (ParameterFieldHelper.getParameterFieldValue(artifactoryStoreConfig.getArtifactPaths()).size() > 1) {
+          throw new InvalidRequestException("Config file should not contain more than one file path");
+        }
+        validationMessage = "Config Files";
+        break;
+      case TerraformStepHelper.TF_BACKEND_CONFIG_FILE:
+        validationMessage = "Backend Configuration File";
+        break;
+      default:
+        validationMessage = format("Var Files with identifier: %s", identifier);
     }
     cdStepHelper.validateManifest(store.getKind(), connectorDTO, validationMessage);
     NGAccess basicNGAccessObject = AmbianceUtils.getNgAccess(ambiance);
@@ -307,6 +390,8 @@ public class TerraformStepHelper {
 
     builder.varFileConfigs(toTerraformVarFileConfig(configuration.getVarFiles(), terraformTaskNGResponse, ambiance))
         .backendConfig(getBackendConfig(configuration.getBackendConfig()))
+        .backendConfigurationFileConfig(
+            toTerraformBackendConfigFileConfig(configuration.getBackendConfig(), terraformTaskNGResponse))
         .environmentVariables(getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
         .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
         .encryptedTfPlan(terraformTaskNGResponse.getEncryptedTfPlan())
@@ -339,27 +424,148 @@ public class TerraformStepHelper {
     return outputName;
   }
 
-  public void cleanupTfPlanJsonForProvisioner(Ambiance ambiance, List<String> planStepFQNs, String provisioner) {
-    for (String planStepFQN : planStepFQNs) {
-      OptionalSweepingOutput tfPlanJsonSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
-          RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(planStepFQN, provisioner)));
-      if (tfPlanJsonSweepingOutput == null || !tfPlanJsonSweepingOutput.isFound()) {
-        continue;
-      }
+  @Nullable
+  public String saveTerraformPlanHumanReadableOutput(
+      Ambiance ambiance, TerraformTaskNGResponse response, String provisionIdentifier) {
+    if (isEmpty(response.getTfHumanReadablePlanFileId())) {
+      return null;
+    }
 
-      TerraformPlanJsonOutput tfPlanJsonOutput = (TerraformPlanJsonOutput) tfPlanJsonSweepingOutput.getOutput();
-      if (isNotEmpty(tfPlanJsonOutput.getProvisionerIdentifier())
-          && provisioner.equals(tfPlanJsonOutput.getProvisionerIdentifier())) {
-        if (isNotEmpty(tfPlanJsonOutput.getTfPlanFileId()) && isNotEmpty(tfPlanJsonOutput.getTfPlanFileBucket())) {
-          try {
-            FileBucket fileBucket = FileBucket.valueOf(tfPlanJsonOutput.getTfPlanFileBucket());
-            log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
-                tfPlanJsonOutput.getTfPlanFileId(), fileBucket, tfPlanJsonOutput.getProvisionerIdentifier());
-            CGRestUtils.getResponse(fileService.get().deleteFile(tfPlanJsonOutput.getTfPlanFileId(), fileBucket));
-          } catch (Exception e) {
-            log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
-                tfPlanJsonOutput.getTfPlanFileId(), tfPlanJsonOutput.getProvisionerIdentifier(), e);
+    TerraformHumanReadablePlanOutput terraformHumanReadablePlanOutput =
+        TerraformHumanReadablePlanOutput.builder()
+            .provisionerIdentifier(provisionIdentifier)
+            .tfPlanFileId(response.getTfHumanReadablePlanFileId())
+            .tfPlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
+            .build();
+
+    String outputName = TerraformHumanReadablePlanOutput.getOutputName(provisionIdentifier);
+    executionSweepingOutputService.consume(
+        ambiance, outputName, terraformHumanReadablePlanOutput, StepCategory.STEP.name());
+
+    return outputName;
+  }
+
+  public void saveTerraformPlanExecutionDetails(Ambiance ambiance, TerraformTaskNGResponse response,
+      String provisionerIdentifier, TerraformPlanStepParameters planStepParameters) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    String stageExecutionId = ambiance.getStageExecutionId();
+    TerraformPlanExecutionDetails terraformPlanExecutionDetails =
+        TerraformPlanExecutionDetails.builder()
+            .accountIdentifier(accountId)
+            .orgIdentifier(orgId)
+            .projectIdentifier(projectId)
+            .pipelineExecutionId(planExecutionId)
+            .stageExecutionId(stageExecutionId)
+            .provisionerId(provisionerIdentifier)
+            .encryptedTfPlan(List.of(response.getEncryptedTfPlan()))
+            .encryptionConfig(getEncryptionConfig(ambiance, planStepParameters))
+            .tfPlanJsonFieldId(response.getTfPlanJsonFileId())
+            .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+            .tfHumanReadablePlanId(response.getTfHumanReadablePlanFileId())
+            .tfHumanReadablePlanFileBucket(FileBucket.TERRAFORM_HUMAN_READABLE_PLAN.name())
+            .build();
+
+    terraformPlanExectionDetailsService.save(terraformPlanExecutionDetails);
+  }
+
+  public void cleanupTfPlanJson(List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
+    for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformPlanExecutionDetails.getTfPlanJsonFieldId())
+          && isNotEmpty(terraformPlanExecutionDetails.getTfPlanFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformPlanExecutionDetails.getTfPlanFileBucket());
+        try {
+          log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket,
+              terraformPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformPlanExecutionDetails.getTfPlanJsonFieldId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfPlanJsonFieldId(), terraformPlanExecutionDetails.getProvisionerId(),
+              e);
+        }
+      }
+    }
+  }
+
+  public TFPlanExecutionDetailsKey createTFPlanExecutionDetailsKey(Ambiance ambiance) {
+    String planExecutionId = ambiance.getPlanExecutionId();
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+    return TFPlanExecutionDetailsKey.builder()
+        .scope(Scope.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build())
+        .pipelineExecutionId(planExecutionId)
+        .build();
+  }
+
+  public List<TerraformPlanExecutionDetails> getAllPipelineTFPlanExecutionDetails(
+      TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey) {
+    return terraformPlanExectionDetailsService.listAllPipelineTFPlanExecutionDetails(tfPlanExecutionDetailsKey);
+  }
+
+  public Map<EncryptionConfig, List<EncryptedRecordData>> getEncryptedTfPlanWithConfig(
+      List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
+    Map<EncryptionConfig, List<EncryptedRecordData>> map = new HashMap<>();
+
+    for (TerraformPlanExecutionDetails executionDetails : terraformPlanExecutionDetailsList) {
+      if (executionDetails.getEncryptionConfig() != null) {
+        if (!map.isEmpty()) {
+          boolean isGrouped = false;
+          for (Map.Entry<EncryptionConfig, List<EncryptedRecordData>> entry : map.entrySet()) {
+            if (executionDetails.getEncryptionConfig() instanceof SecretManagerConfig) {
+              SecretManagerConfig secretManagerConfig = (SecretManagerConfig) executionDetails.getEncryptionConfig();
+              String identifier = secretManagerConfig.getIdentifier();
+              String projIdentifier = secretManagerConfig.getProjectIdentifier();
+              String accIdentifier = secretManagerConfig.getAccountIdentifier();
+              String orgIdentifier = secretManagerConfig.getOrgIdentifier();
+
+              if (!isBlank(identifier) && !isBlank(projIdentifier) && !isBlank(accIdentifier)
+                  && !isBlank(orgIdentifier)) {
+                if (identifier.equals(((SecretManagerConfig) entry.getKey()).getNgMetadata().getIdentifier())
+                    && projIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getProjectIdentifier())
+                    && accIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getAccountIdentifier())
+                    && orgIdentifier.equals(
+                        ((SecretManagerConfig) entry.getKey()).getNgMetadata().getOrgIdentifier())) {
+                  entry.getValue().add(executionDetails.getEncryptedTfPlan().get(0));
+                  isGrouped = true;
+                }
+              }
+            }
           }
+          if (!isGrouped) {
+            map.put(executionDetails.getEncryptionConfig(),
+                new ArrayList<>(Arrays.asList(executionDetails.getEncryptedTfPlan().get(0))));
+          }
+        } else {
+          map.put(executionDetails.getEncryptionConfig(),
+              new ArrayList<>(Arrays.asList(executionDetails.getEncryptedTfPlan().get(0))));
+        }
+      }
+    }
+    return map;
+  }
+
+  public void cleanupTfPlanHumanReadable(List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList) {
+    for (TerraformPlanExecutionDetails terraformPlanExecutionDetails : terraformPlanExecutionDetailsList) {
+      if (isNotEmpty(terraformPlanExecutionDetails.getTfHumanReadablePlanId())
+          && isNotEmpty(terraformPlanExecutionDetails.getTfHumanReadablePlanFileBucket())) {
+        FileBucket fileBucket = FileBucket.valueOf(terraformPlanExecutionDetails.getTfHumanReadablePlanFileBucket());
+        try {
+          log.info("Remove terraform plan human readable file [{}] from bucket [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfHumanReadablePlanId(), fileBucket,
+              terraformPlanExecutionDetails.getProvisionerId());
+          CGRestUtils.getResponse(
+              fileService.get().deleteFile(terraformPlanExecutionDetails.getTfHumanReadablePlanId(), fileBucket));
+        } catch (Exception e) {
+          log.warn("Failed to remove terraform plan human readable file [{}] for provisioner [{}]",
+              terraformPlanExecutionDetails.getTfHumanReadablePlanId(),
+              terraformPlanExecutionDetails.getProvisionerId(), e);
         }
       }
     }
@@ -454,6 +660,7 @@ public class TerraformStepHelper {
                     : null)
             .varFileConfigs(inheritOutput.getVarFileConfigs())
             .backendConfig(inheritOutput.getBackendConfig())
+            .backendConfigFileConfig(inheritOutput.getBackendConfigurationFileConfig())
             .environmentVariables(inheritOutput.getEnvironmentVariables())
             .workspace(inheritOutput.getWorkspace())
             .targets(inheritOutput.getTargets())
@@ -539,6 +746,7 @@ public class TerraformStepHelper {
     }
     builder.varFileConfigs(toTerraformVarFileConfig(spec.getVarFiles(), response, ambiance))
         .backendConfig(getBackendConfig(spec.getBackendConfig()))
+        .backendConfigFileConfig(toTerraformBackendConfigFileConfig(spec.getBackendConfig(), response))
         .environmentVariables(getEnvironmentVariablesMap(spec.getEnvironmentVariables()))
         .workspace(ParameterFieldHelper.getParameterFieldValue(spec.getWorkspace()))
         .targets(ParameterFieldHelper.getParameterFieldValue(spec.getTargets()));
@@ -640,6 +848,66 @@ public class TerraformStepHelper {
   }
 
   // Conversion Methods
+
+  public TerraformBackendConfigFileInfo toTerraformBackendFileInfo(
+      TerraformBackendConfig backendConfig, Ambiance ambiance) {
+    TerraformBackendConfigFileInfo fileInfo = null;
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+      return null;
+    }
+    if (backendConfig != null) {
+      TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
+      if (spec instanceof InlineTerraformBackendConfigSpec) {
+        String content =
+            ParameterFieldHelper.getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
+        if (EmptyPredicate.isNotEmpty(content)) {
+          fileInfo = InlineTerraformBackendConfigFileInfo.builder().backendConfigFileContent(content).build();
+        }
+      } else if (spec instanceof RemoteTerraformBackendConfigSpec) {
+        StoreConfigWrapper storeConfigWrapper = ((RemoteTerraformBackendConfigSpec) spec).getStore();
+        if (storeConfigWrapper != null) {
+          StoreConfig storeConfig = storeConfigWrapper.getSpec();
+          // Retrieve the files from the GIT stores
+          GitFetchFilesConfig gitFetchFilesConfig =
+              getGitFetchFilesConfig(storeConfig, ambiance, TF_BACKEND_CONFIG_FILE);
+          // And retrive the files from the Files stores
+          FileStoreFetchFilesConfig fileFetchFilesConfig =
+              getFileStoreFetchFilesConfig(storeConfig, ambiance, TF_BACKEND_CONFIG_FILE);
+
+          if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
+            fileInfo = harnessFileStoreToInlineBackendConfig(storeConfig, ambiance);
+          } else {
+            fileInfo = RemoteTerraformBackendConfigFileInfo.builder()
+                           .gitFetchFilesConfig(gitFetchFilesConfig)
+                           .filestoreFetchFilesConfig(fileFetchFilesConfig)
+                           .build();
+          }
+        }
+      }
+    }
+    return fileInfo;
+  }
+
+  private InlineTerraformBackendConfigFileInfo harnessFileStoreToInlineBackendConfig(
+      StoreConfig storeConfig, Ambiance ambiance) {
+    String filePath = getLocalFileStoreDelegateConfigPath(storeConfig, ambiance);
+    Optional<FileStoreNodeDTO> file = fileStoreService.getWithChildrenByPath(AmbianceUtils.getAccountId(ambiance),
+        AmbianceUtils.getOrgIdentifier(ambiance), AmbianceUtils.getProjectIdentifier(ambiance), filePath, true);
+
+    if (!file.isPresent()) {
+      throw new InvalidRequestException(format("File not found in local file store, path [%s]", filePath));
+    }
+
+    FileStoreNodeDTO fileStoreNodeDTO = file.get();
+    if (!(fileStoreNodeDTO instanceof FileNodeDTO)) {
+      throw new InvalidRequestException(format("Requested file is a folder, path [%s]", filePath));
+    }
+
+    return InlineTerraformBackendConfigFileInfo.builder()
+        .backendConfigFileContent(((FileNodeDTO) fileStoreNodeDTO).getContent())
+        .build();
+  }
+
   public List<TerraformVarFileInfo> toTerraformVarFileInfo(
       Map<String, TerraformVarFile> varFilesMap, Ambiance ambiance) {
     if (EmptyPredicate.isNotEmpty(varFilesMap)) {
@@ -676,6 +944,39 @@ public class TerraformStepHelper {
       return varFileInfo;
     }
     return Collections.emptyList();
+  }
+
+  public TerraformBackendConfigFileConfig toTerraformBackendConfigFileConfig(
+      TerraformBackendConfig backendConfig, TerraformTaskNGResponse response) {
+    TerraformBackendConfigFileConfig fileConfig = null;
+    if (backendConfig != null) {
+      TerraformBackendConfigSpec spec = backendConfig.getTerraformBackendConfigSpec();
+      if (spec instanceof InlineTerraformBackendConfigSpec) {
+        String content =
+            ParameterFieldHelper.getParameterFieldValue(((InlineTerraformBackendConfigSpec) spec).getContent());
+        if (EmptyPredicate.isNotEmpty(content)) {
+          fileConfig = TerraformInlineBackendConfigFileConfig.builder().backendConfigFileContent(content).build();
+        }
+      } else if (spec instanceof RemoteTerraformBackendConfigSpec) {
+        StoreConfigWrapper storeConfigWrapper = ((RemoteTerraformBackendConfigSpec) spec).getStore();
+        if (storeConfigWrapper != null) {
+          StoreConfig storeConfig = storeConfigWrapper.getSpec();
+          if (storeConfig.getKind().equals(ManifestStoreType.ARTIFACTORY)
+              || storeConfig.getKind().equals(ManifestStoreType.HARNESS)) {
+            fileConfig = TerraformRemoteBackendConfigFileConfig.builder()
+                             .fileStoreConfigDTO(((FileStorageStoreConfig) storeConfig).toFileStorageConfigDTO())
+                             .build();
+          } else {
+            GitStoreConfigDTO gitStoreConfigDTO = getStoreConfigAtCommitId(
+                storeConfig, response.getCommitIdForConfigFilesMap().get(TF_BACKEND_CONFIG_FILE))
+                                                      .toGitStoreConfigDTO();
+
+            fileConfig = TerraformRemoteBackendConfigFileConfig.builder().gitStoreConfigDTO(gitStoreConfigDTO).build();
+          }
+        }
+      }
+    }
+    return fileConfig;
   }
 
   public List<TerraformVarFileConfig> toTerraformVarFileConfig(
@@ -749,5 +1050,85 @@ public class TerraformStepHelper {
       return varFileInfo;
     }
     return Collections.emptyList();
+  }
+
+  public TerraformBackendConfigFileInfo prepareTerraformBackendConfigFileInfo(
+      TerraformBackendConfigFileConfig bcFileConfig, Ambiance ambiance) {
+    TerraformBackendConfigFileInfo fileInfo = null;
+    if (!cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), TERRAFORM_REMOTE_BACKEND_CONFIG)) {
+      return null;
+    }
+    if (bcFileConfig != null) {
+      if (bcFileConfig instanceof TerraformInlineBackendConfigFileConfig) {
+        fileInfo = InlineTerraformBackendConfigFileInfo.builder()
+                       .backendConfigFileContent(
+                           ((TerraformInlineBackendConfigFileConfig) bcFileConfig).getBackendConfigFileContent())
+                       .build();
+      } else if (bcFileConfig instanceof TerraformRemoteBackendConfigFileConfig) {
+        RemoteTerraformBackendConfigFileInfoBuilder remoteTerraformBCFileInfoBuilder =
+            RemoteTerraformBackendConfigFileInfo.builder();
+        TerraformRemoteBackendConfigFileConfig terraformRemoteBCFileConfig =
+            (TerraformRemoteBackendConfigFileConfig) bcFileConfig;
+        if (terraformRemoteBCFileConfig.getGitStoreConfigDTO() != null) {
+          GitStoreConfig gitStoreConfig =
+              ((TerraformRemoteBackendConfigFileConfig) bcFileConfig).getGitStoreConfigDTO().toGitStoreConfig();
+          remoteTerraformBCFileInfoBuilder.gitFetchFilesConfig(
+              getGitFetchFilesConfig(gitStoreConfig, ambiance, format(TerraformStepHelper.TF_BACKEND_CONFIG_FILE)));
+          fileInfo = remoteTerraformBCFileInfoBuilder.build();
+        }
+        if (terraformRemoteBCFileConfig.getFileStoreConfigDTO() != null) {
+          remoteTerraformBCFileInfoBuilder.filestoreFetchFilesConfig(getFileStoreFetchFilesConfig(
+              terraformRemoteBCFileConfig.getFileStoreConfigDTO().toFileStorageStoreConfig(), ambiance,
+              format(TerraformStepHelper.TF_BACKEND_CONFIG_FILE)));
+          if (HARNESS_STORE_TYPE.equals(terraformRemoteBCFileConfig.getFileStoreConfigDTO().getKind())) {
+            fileInfo = harnessFileStoreToInlineBackendConfig(
+                terraformRemoteBCFileConfig.getFileStoreConfigDTO().toFileStorageStoreConfig(), ambiance);
+          } else {
+            fileInfo = remoteTerraformBCFileInfoBuilder.build();
+          }
+        }
+      }
+    }
+    return fileInfo;
+  }
+
+  public void cleanupAllTerraformPlanExecutionDetails(TFPlanExecutionDetailsKey tfPlanExecutionDetailsKey) {
+    boolean deleteSuccess =
+        terraformPlanExectionDetailsService.deleteAllTerraformPlanExecutionDetails(tfPlanExecutionDetailsKey);
+    if (!deleteSuccess) {
+      log.warn("Unable to delete the TerraformPlanExecutionDetails");
+    }
+  }
+
+  public void cleanupTerraformVaultSecret(
+      Ambiance ambiance, List<TerraformPlanExecutionDetails> terraformPlanExecutionDetailsList, String pipelineId) {
+    Map<EncryptionConfig, List<EncryptedRecordData>> encryptedTfPlanWithConfig =
+        getEncryptedTfPlanWithConfig(terraformPlanExecutionDetailsList);
+    encryptedTfPlanWithConfig.forEach((encryptionConfig, listEncryptedPlan) -> {
+      runCleanupTerraformSecretTask(ambiance, encryptionConfig, listEncryptedPlan, pipelineId);
+    });
+  }
+
+  private void runCleanupTerraformSecretTask(Ambiance ambiance, EncryptionConfig encryptionConfig,
+      List<EncryptedRecordData> encryptedRecordDataList, String cleanupSecretUuid) {
+    DelegateTaskRequest delegateTaskRequest =
+        DelegateTaskRequest.builder()
+            .accountId(AmbianceUtils.getAccountId(ambiance))
+            .taskParameters(TerraformSecretCleanupTaskParameters.builder()
+                                .encryptedRecordDataList(encryptedRecordDataList)
+                                .encryptionConfig(encryptionConfig)
+                                .cleanupUuid(cleanupSecretUuid)
+                                .build())
+            .taskType(TaskType.TERRAFORM_SECRET_CLEANUP_TASK_NG.name())
+            .executionTimeout(Duration.ofMinutes(10))
+            .taskSetupAbstraction(SetupAbstractionKeys.ng, "true")
+            .logStreamingAbstractions(new LinkedHashMap<>() {
+              { put(SetupAbstractionKeys.accountId, AmbianceUtils.getAccountId(ambiance)); }
+            })
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    log.info("Task Successfully queued with taskId: {}", taskId);
+    waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new TerraformSecretCleanupTaskNotifyCallback(), taskId);
   }
 }

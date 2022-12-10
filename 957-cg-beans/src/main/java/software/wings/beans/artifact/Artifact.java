@@ -76,6 +76,12 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
                  .field(ArtifactKeys.artifactStreamId)
                  .field(ArtifactKeys.metadata_buildNo)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("artifactStream_createdAt_buildNo")
+                 .field(ArtifactKeys.artifactStreamId)
+                 .descSortField(ArtifactKeys.createdAt)
+                 .rangeField(ArtifactKeys.metadata_buildNo)
+                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("artifactStream_artifactPath")
                  .field(ArtifactKeys.artifactStreamId)
@@ -131,7 +137,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   @EqualsAndHashCode.Exclude @Deprecated public static final String LAST_UPDATED_AT_KEY2 = "lastUpdatedAt";
 
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @EqualsAndHashCode.Exclude @SchemaIgnore private EmbeddedUser createdBy;
   @EqualsAndHashCode.Exclude @SchemaIgnore @FdIndex private long createdAt;
 
@@ -176,7 +182,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
   private ContentStatus contentStatus;
   private Map<String, String> source;
   private String settingId;
-  @FdIndex private String accountId;
+  private String accountId;
   private String artifactStreamType;
   private String uiDisplayName;
   private String buildIdentity;
@@ -419,6 +425,8 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
     private String artifactStreamType;
     private String uiDisplayName;
 
+    private String buildNo;
+
     private Builder() {}
 
     public static Builder anArtifact() {
@@ -545,6 +553,11 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
       return this;
     }
 
+    public Builder withBuildNo(String buildNo) {
+      this.buildNo = buildNo;
+      return this;
+    }
+
     public Builder but() {
       return anArtifact()
           .withArtifactStreamId(artifactStreamId)
@@ -570,6 +583,7 @@ public class Artifact implements PersistentEntity, UuidAware, CreatedAtAware, Cr
           .withSettingId(settingId)
           .withAccountId(accountId)
           .withArtifactStreamType(artifactStreamType)
+          .withBuildNo(buildNo)
           .withUiDisplayName(uiDisplayName);
     }
 

@@ -7,6 +7,39 @@
 
 package io.harness.ng.core.api.impl;
 
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import io.harness.accesscontrol.AccessControlAdminClient;
+import io.harness.accesscontrol.principals.PrincipalDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
+import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
+import io.harness.beans.ScopeLevel;
+import io.harness.exception.DuplicateFieldException;
+import io.harness.ng.core.api.DefaultUserGroupService;
+import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.dto.UserGroupDTO;
+import io.harness.ng.core.user.entities.UserGroup;
+import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
+import io.harness.remote.client.NGRestUtils;
+import io.harness.repositories.user.spring.UserMembershipRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.query.Criteria;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+
 import static io.harness.NGConstants.ACCOUNT_BASIC_ROLE;
 import static io.harness.NGConstants.ACCOUNT_VIEWER_ROLE;
 import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
@@ -22,41 +55,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.utils.UserGroupMapper.toDTO;
-
 import static java.util.Collections.emptyList;
-
-import io.harness.accesscontrol.AccessControlAdminClient;
-import io.harness.accesscontrol.principals.PrincipalDTO;
-import io.harness.accesscontrol.roleassignments.api.RoleAssignmentCreateRequestDTO;
-import io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO;
-import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
-import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Scope;
-import io.harness.beans.ScopeLevel;
-import io.harness.exception.DuplicateFieldException;
-import io.harness.ng.core.api.DefaultUserGroupService;
-import io.harness.ng.core.api.UserGroupService;
-import io.harness.ng.core.dto.UserGroupDTO;
-import io.harness.ng.core.user.entities.UserGroup;
-import io.harness.ng.core.user.entities.UserMembership.UserMembershipKeys;
-import io.harness.remote.client.NGRestUtils;
-import io.harness.repositories.user.spring.UserMembershipRepository;
-import io.harness.utils.NGFeatureFlagHelperService;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(PL)
 @Singleton
@@ -64,14 +63,17 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private final UserGroupService userGroupService;
   private final AccessControlAdminClient accessControlAdminClient;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final UserMembershipRepository userMembershipRepository;
   private static final String DEBUG_MESSAGE = "DefaultUserGroupServiceImpl: ";
 
   @Inject
   public DefaultUserGroupServiceImpl(UserGroupService userGroupService,
-      AccessControlAdminClient accessControlAdminClient, UserMembershipRepository userMembershipRepository) {
+      AccessControlAdminClient accessControlAdminClient, NGFeatureFlagHelperService ngFeatureFlagHelperService,
+      UserMembershipRepository userMembershipRepository) {
     this.userGroupService = userGroupService;
     this.accessControlAdminClient = accessControlAdminClient;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
     this.userMembershipRepository = userMembershipRepository;
   }
 
@@ -101,7 +103,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
         createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
       } else {
-        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope, true);
       }
       log.info(DEBUG_MESSAGE + "Created default user group {} at scope {}", userGroupIdentifier, scope);
       return userGroup;
@@ -190,11 +192,16 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     }
   }
 
-  private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
+  private void createRoleAssignmentsForAccount(
+      String principalIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
     createRoleAssignment(
         principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-    createRoleAssignment(
-        principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    boolean isAccountBasicFeatureFlagEnabled =
+        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
+    if (!isAccountBasicFeatureFlagEnabled && createAccountViewerRoleBinding) {
+      createRoleAssignment(
+          principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+    }
   }
 
   @Override
@@ -300,18 +307,14 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
 
   private void createRoleAssignmentAtScope(Scope scope) {
     Optional<List<RoleAssignmentResponseDTO>> optionalRoleAssignmentResponseDTO = getRoleAssignmentsAtScope(scope);
-    if (optionalRoleAssignmentResponseDTO.isPresent()) {
+    if (optionalRoleAssignmentResponseDTO.isPresent() && isEmpty(optionalRoleAssignmentResponseDTO.get())) {
       String userGroupIdentifier = getUserGroupIdentifier(scope);
       if (isNotEmpty(scope.getProjectIdentifier())) {
-        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
-          createRoleAssignmentForProject(userGroupIdentifier, scope);
-        }
+        createRoleAssignmentForProject(userGroupIdentifier, scope);
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
-        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
-          createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
-        }
-      } else if (optionalRoleAssignmentResponseDTO.get().size() != 2) {
-        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+        createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+      } else {
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope, false);
       }
     }
   }
@@ -341,7 +344,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForAccountScope() {
     return RoleAssignmentFilterDTO.builder()
         .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
-        .roleFilter(ImmutableSet.of(ACCOUNT_BASIC_ROLE, ACCOUNT_VIEWER_ROLE))
+        .roleFilter(Collections.singleton(ACCOUNT_BASIC_ROLE))
         .principalFilter(Collections.singleton(PrincipalDTO.builder()
                                                    .identifier(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
                                                    .scopeLevel("account")

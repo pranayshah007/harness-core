@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
+import io.harness.ami.AMITagsResponse;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifactory.ArtifactoryConfigRequest;
 import io.harness.artifactory.ArtifactoryImagePath;
@@ -63,9 +64,12 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraFieldAllowedValueNG;
 import io.harness.jira.JiraFieldNG;
+import io.harness.jira.JiraFieldSchema;
 import io.harness.jira.JiraFieldSchemaNG;
 import io.harness.jira.JiraFieldTypeNG;
 import io.harness.jira.JiraIssueCreateMetadataNG;
+import io.harness.jira.JiraIssueCreateMetadataNGFields;
+import io.harness.jira.JiraIssueCreateMetadataNGIssueTypes;
 import io.harness.jira.JiraIssueNG;
 import io.harness.jira.JiraIssueTransitionNG;
 import io.harness.jira.JiraIssueTransitionRequestNG;
@@ -98,6 +102,7 @@ import io.harness.manifest.CustomManifestSource;
 import io.harness.manifest.CustomSourceConfig;
 import io.harness.manifest.CustomSourceFile;
 import io.harness.nexus.NexusRequest;
+import io.harness.ngtriggers.WebhookSecretData;
 import io.harness.pcf.model.CfCliVersion;
 import io.harness.pcf.model.ManifestType;
 import io.harness.provision.TfVarScriptRepositorySource;
@@ -172,6 +177,7 @@ import software.wings.helpers.ext.gcb.models.VerifyOption;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.helpers.ext.jenkins.JobDetails;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
+import software.wings.helpers.ext.nexus.NexusRepositories;
 import software.wings.settings.SettingVariableTypes;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
@@ -217,8 +223,6 @@ import com.google.api.services.monitoring.v3.model.Point;
 import com.google.api.services.monitoring.v3.model.TimeInterval;
 import com.google.api.services.monitoring.v3.model.TimeSeries;
 import com.google.api.services.monitoring.v3.model.TypedValue;
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
 import com.sumologic.client.SumoServerException;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import javax.ws.rs.core.MultivaluedHashMap;
@@ -268,8 +272,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(Distribution.class, 2012);
     kryo.register(BucketOptions.class, 2013);
     kryo.register(Exponential.class, 2014);
-    kryo.register(BasicDBList.class, 2015);
-    kryo.register(BasicDBObject.class, 2016);
     kryo.register(CommandExecutionStatus.class, 5037);
     kryo.register(ResizeCommandUnitExecutionData.class, 5053);
     kryo.register(EncryptionConfig.class, 5305);
@@ -342,6 +344,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueType.class, 7199);
     kryo.register(JiraField.class, 7200);
     kryo.register(JiraCreateMetaResponse.class, 7201);
+    kryo.register(JiraFieldSchema.class, 7510);
 
     kryo.register(AwsConfig.class, 1428);
     kryo.register(CrossAccountAccess.class, 1429);
@@ -398,10 +401,11 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(JiraIssueTransitionsNG.class, 97017);
     kryo.register(JiraIssueUpdateMetadataNG.class, 97018);
     kryo.register(JiraUpdateIssueRequestNG.class, 97019);
-
+    kryo.register(JiraIssueCreateMetadataNGIssueTypes.class, 97020);
     kryo.register(EntityOperationIdentifier.class, 97021);
     kryo.register(EntityOperationIdentifier.EntityOperation.class, 97022);
     kryo.register(CfCliVersion.class, 97023);
+    kryo.register(JiraIssueCreateMetadataNGFields.class, 97024);
     kryo.register(KubernetesResourceId.class, 97031);
     kryo.register(HelmClientException.class, 97032);
     kryo.register(HelmCliCommandType.class, 97033);
@@ -467,5 +471,8 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureArtifactsProtocolMetadataData.class, 80309);
     kryo.register(AzureDevopsProjects.class, 80310);
     kryo.register(ArtifactoryImagePath.class, 80311);
+    kryo.register(WebhookSecretData.class, 80312);
+    kryo.register(AMITagsResponse.class, 81001);
+    kryo.register(NexusRepositories.class, 9000312);
   }
 }

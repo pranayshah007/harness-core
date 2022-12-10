@@ -15,6 +15,7 @@ import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
+import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -40,6 +41,7 @@ import io.harness.secretmanagerclient.dto.SecretManagerMetadataRequestDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.security.encryption.EncryptedDataParams;
 import io.harness.security.encryption.EncryptionConfig;
+import io.harness.security.encryption.EncryptionType;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import software.wings.beans.VaultConfig;
@@ -50,6 +52,7 @@ import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import javax.validation.constraints.NotNull;
@@ -107,8 +110,8 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
       try {
         switch (encryptionConfig.getType()) {
           case VAULT:
-            if (AZURE_VAULT == encryptionConfig.getEncryptionType()
-                || AWS_SECRETS_MANAGER == encryptionConfig.getEncryptionType()) {
+            Set<EncryptionType> vaultSet = EnumSet.of(AZURE_VAULT, AWS_SECRETS_MANAGER, GCP_SECRETS_MANAGER);
+            if (vaultSet.contains(encryptionConfig.getEncryptionType())) {
               validationResult = vaultEncryptorsRegistry.getVaultEncryptor(encryptionConfig.getEncryptionType())
                                      .validateSecretManagerConfiguration(accountIdentifier, encryptionConfig);
             } else {

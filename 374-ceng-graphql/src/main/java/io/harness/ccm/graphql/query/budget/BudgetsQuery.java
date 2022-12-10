@@ -10,6 +10,7 @@ package io.harness.ccm.graphql.query.budget;
 import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
@@ -95,9 +96,11 @@ public class BudgetsQuery {
 
   @GraphQLQuery(name = "budgetCostData", description = "Budget cost data")
   public BudgetData budgetCostData(@GraphQLArgument(name = "budgetId", defaultValue = "") String budgetId,
-      @GraphQLEnvironment final ResolutionEnvironment env) {
+      @GraphQLEnvironment final ResolutionEnvironment env,
+      @GraphQLArgument(name = "breakdown") BudgetBreakdown breakdown) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return budgetService.getBudgetTimeSeriesStats(budgetDao.get(budgetId, accountId));
+    return budgetService.getBudgetTimeSeriesStats(
+        budgetDao.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown);
   }
 
   @GraphQLQuery(name = "budgetSummaryList", description = "List of budget cards for perspectives")
@@ -148,6 +151,7 @@ public class BudgetsQuery {
         .period(BudgetUtils.getBudgetPeriod(budget))
         .startTime(BudgetUtils.getBudgetStartTime(budget))
         .type(budget.getType())
+        .budgetMonthlyBreakdown(budget.getBudgetMonthlyBreakdown())
         .build();
   }
 }

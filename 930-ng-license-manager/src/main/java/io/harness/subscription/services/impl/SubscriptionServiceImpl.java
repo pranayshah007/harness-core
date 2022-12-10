@@ -8,7 +8,7 @@
 package io.harness.subscription.services.impl;
 
 import io.harness.ModuleType;
-import io.harness.beans.FeatureName;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnsupportedOperationException;
 import io.harness.licensing.Edition;
@@ -31,6 +31,7 @@ import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
+import io.harness.subscription.enums.PaymentFrequency;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
 import io.harness.subscription.params.BillingParams;
@@ -41,14 +42,18 @@ import io.harness.subscription.params.SubscriptionParams;
 import io.harness.subscription.params.UsageKey;
 import io.harness.subscription.services.SubscriptionService;
 import io.harness.subscription.utils.NGFeatureFlagHelperService;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,20 +67,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   private final StripeCustomerRepository stripeCustomerRepository;
   private final SubscriptionDetailRepository subscriptionDetailRepository;
   private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
+  private final TelemetryReporter telemetryReporter;
 
   private final Map<String, StripeEventHandler> eventHandlers;
 
+  private final String deployMode = System.getenv().get("DEPLOY_MODE");
+
+  private static final String EDITION_CHECK_FAILED =
+      "Cannot create a subscription of %s edition. An active subscription of %s edition already exists.";
+  private static final String QUANTITY_GREATER_THAN_MAX =
+      "Quantity requested is greater than maximum quantity allowed.";
   private static final double RECOMMENDATION_MULTIPLIER = 1.2d;
+  private static final String SUBSCRIPTION = "subscription";
 
   @Inject
   public SubscriptionServiceImpl(StripeHelper stripeHelper, ModuleLicenseRepository licenseRepository,
       StripeCustomerRepository stripeCustomerRepository, SubscriptionDetailRepository subscriptionDetailRepository,
-      NGFeatureFlagHelperService nGFeatureFlagHelperService, Map<String, StripeEventHandler> eventHandlers) {
+      NGFeatureFlagHelperService nGFeatureFlagHelperService, TelemetryReporter telemetryReporter,
+      Map<String, StripeEventHandler> eventHandlers) {
     this.stripeHelper = stripeHelper;
     this.licenseRepository = licenseRepository;
     this.stripeCustomerRepository = stripeCustomerRepository;
     this.subscriptionDetailRepository = subscriptionDetailRepository;
     this.nGFeatureFlagHelperService = nGFeatureFlagHelperService;
+    this.telemetryReporter = telemetryReporter;
     this.eventHandlers = eventHandlers;
   }
 
@@ -119,14 +134,14 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public PriceCollectionDTO listPrices(String accountIdentifier, ModuleType module) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     return stripeHelper.getPrices(module);
   }
 
   @Override
   public InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
         accountIdentifier, subscriptionDTO.getCustomerId());
@@ -155,7 +170,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    // the module for telemetry event is hard-coded as CF. This method createFfSubscription will be deprecated for
+    // a generic createSubscription where the module won't be hardcoded
+    sendTelemetryEvent("Subscription Creation Initiated", null, accountIdentifier, ModuleType.CF.toString());
+
+    isSelfServiceEnable();
 
     // TODO: transaction control in case any race condition
 
@@ -167,6 +186,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     } else {
       updateStripeCustomer(accountIdentifier, stripeCustomer.getCustomerId(), subscriptionDTO.getCustomer());
     }
+
+    checkEdition(accountIdentifier, subscriptionDTO.getEdition());
 
     // Not allowed for creation if active subscriptionId exists
     SubscriptionDetail subscriptionDetail =
@@ -185,6 +206,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     val developerPriceId = stripeHelper.getPrice(
         ModuleType.CF, "DEVELOPERS", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
 
+    int maxDevelopers = Integer.parseInt(developerPriceId.getMetadata().getOrDefault("max", "0"));
+
+    if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopers) {
+      throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
+    }
+
     subscriptionItems.add(ItemParams.builder()
                               .priceId(developerPriceId.getId())
                               .quantity((long) subscriptionDTO.getNumberOfDevelopers())
@@ -196,6 +223,9 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(ItemParams.builder().priceId(mauPriceId.getId()).quantity(1L).build());
 
     if (subscriptionDTO.isPremiumSupport()) {
+      if (subscriptionDTO.getPaymentFreq().equalsIgnoreCase(PaymentFrequency.MONTHLY.toString())) {
+        throw new InvalidArgumentsException("Cannot subscribe to premium support with a monthly renewal rate.");
+      }
       val mauSupportPriceId = stripeHelper.getPrice(ModuleType.CF, "MAU_SUPPORT", subscriptionDTO.getEdition(),
           subscriptionDTO.getPaymentFreq(), subscriptionDTO.getNumberOfMau());
 
@@ -203,6 +233,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
       val developerSupportPriceId = stripeHelper.getPrice(
           ModuleType.CF, "DEVELOPERS_SUPPORT", subscriptionDTO.getEdition(), subscriptionDTO.getPaymentFreq());
+
+      int maxDevelopersSupport = Integer.parseInt(developerSupportPriceId.getMetadata().getOrDefault("max", "0"));
+
+      if (subscriptionDTO.getNumberOfDevelopers() > maxDevelopersSupport) {
+        throw new InvalidArgumentsException(QUANTITY_GREATER_THAN_MAX);
+      }
 
       subscriptionItems.add(new ItemParams(
           developerSupportPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(), Prices.PREMIUM_SUPPORT));
@@ -233,9 +269,23 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return subscription;
   }
 
+  private void checkEdition(String accountId, String edition) {
+    List<ModuleLicense> licenses = licenseRepository.findByAccountIdentifier(accountId);
+    String editionToCheck =
+        edition.equalsIgnoreCase(Edition.TEAM.toString()) ? Edition.ENTERPRISE.toString() : Edition.TEAM.toString();
+    if (licenses.stream()
+            .filter(l -> l.isActive())
+            .anyMatch(l -> l.getEdition().toString().equalsIgnoreCase(editionToCheck))) {
+      throw new InvalidRequestException(String.format(EDITION_CHECK_FAILED, edition, editionToCheck));
+    }
+  }
+
   @Override
   public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    sendTelemetryEvent(
+        "Subscription Creation Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+
+    isSelfServiceEnable();
 
     // TODO: transaction control in case any race condition
 
@@ -283,7 +333,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   @Override
   public SubscriptionDetailDTO updateSubscription(
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    sendTelemetryEvent(
+        "Subscription Modification Initiated", null, accountIdentifier, subscriptionDTO.getModuleType().toString());
+
+    isSelfServiceEnable();
 
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
@@ -301,12 +354,15 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
   @Override
   public void cancelSubscription(String accountIdentifier, String subscriptionId) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
       throw new InvalidRequestException("Invalid subscriptionId");
     }
+
+    sendTelemetryEvent(
+        "Subscription Cancellation Initiated", null, accountIdentifier, subscriptionDetail.getModuleType().toString());
 
     stripeHelper.cancelSubscription(
         SubscriptionParams.builder().subscriptionId(subscriptionDetail.getSubscriptionId()).build());
@@ -315,7 +371,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public void cancelAllSubscriptions(String accountIdentifier) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     List<SubscriptionDetail> subscriptionDetails =
         subscriptionDetailRepository.findByAccountIdentifier(accountIdentifier);
@@ -327,7 +383,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
   @Override
   public SubscriptionDetailDTO getSubscription(String accountIdentifier, String subscriptionId) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
@@ -345,7 +401,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public List<SubscriptionDetailDTO> listSubscriptions(String accountIdentifier, ModuleType moduleType) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     List<SubscriptionDetail> subscriptions = new ArrayList<>();
     if (moduleType == null) {
@@ -367,7 +423,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     if (!EmailValidator.getInstance().isValid(customerDTO.getBillingEmail())) {
       throw new InvalidRequestException("Billing email is invalid");
@@ -392,7 +448,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     StripeCustomer stripeCustomer =
         stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
@@ -409,6 +465,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (!Strings.isNullOrEmpty(customerDTO.getCompanyName())) {
       builder.name(customerDTO.getCompanyName());
     }
+
+    if (customerDTO.getAddress() != null) {
+      builder.address(customerDTO.getAddress());
+    }
+
     CustomerDetailDTO customerDetailDTO = stripeHelper.updateCustomer(builder.build());
 
     // Update customer information at local After succeed
@@ -418,7 +479,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public CustomerDetailDTO getStripeCustomer(String accountIdentifier) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
@@ -430,7 +491,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
@@ -463,7 +524,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
   @Override
   public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier) {
-    isSelfServiceEnable(accountIdentifier);
+    isSelfServiceEnable();
 
     // TODO: Might not needed any more because we request every time user input a payment method
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
@@ -497,9 +558,16 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     return subscriptionDetail == null || !subscriptionDetail.getAccountIdentifier().equals(accountIdentifier);
   }
 
-  private void isSelfServiceEnable(String accountIdentifier) {
-    if (!nGFeatureFlagHelperService.isEnabled(accountIdentifier, FeatureName.SELF_SERVICE_ENABLED)) {
-      throw new UnsupportedOperationException("Self Service is currently unavailable");
+  private void isSelfServiceEnable() {
+    if (deployMode.equals("KUBERNETES_ONPREM")) {
+      throw new UnsupportedOperationException("Self Service is not available for OnPrem deployments.");
     }
+  }
+
+  private void sendTelemetryEvent(String event, String email, String accountId, String module) {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("module", module);
+    telemetryReporter.sendTrackEvent(event, email, accountId, properties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.AMPLITUDE, true).build(), SUBSCRIPTION);
   }
 }

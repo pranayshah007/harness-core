@@ -46,6 +46,7 @@ public class GitConfigYamlHandler extends SourceRepoProviderYamlHandler<Yaml, Gi
             .urlType(gitConfig.getUrlType())
             .delegateSelectors(gitConfig.getDelegateSelectors())
             .providerType(gitConfig.getProviderType())
+            .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
             .build();
     toYaml(yaml, settingAttribute, appId);
     return yaml;
@@ -74,7 +75,11 @@ public class GitConfigYamlHandler extends SourceRepoProviderYamlHandler<Yaml, Gi
             .urlType(yaml.getUrlType())
             .delegateSelectors(yaml.getDelegateSelectors())
             .providerType(yaml.getProviderType())
+            .disableUserGitConfig(yaml.getDisableUserGitConfig())
             .build();
+    if (previous != null) {
+      config.setWebhookToken(((GitConfig) previous.getValue()).getWebhookToken());
+    }
     return buildSettingAttribute(accountId, changeContext.getChange().getFilePath(), uuid, config);
   }
 

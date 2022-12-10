@@ -3,19 +3,26 @@
 // that can be found in the licenses directory at the root of this repository, also available at
 // https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+// swag init -g cmd/server.go
+
 package cmd
 
 import (
 	"fmt"
 	"net/http"
+	"os"
+
+	"github.com/rs/zerolog"
 
 	"github.com/harness/harness-core/queue-service/hsqs/config"
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
 	"github.com/harness/harness-core/queue-service/hsqs/handler"
+	"github.com/harness/harness-core/queue-service/hsqs/profiler"
 	"github.com/harness/harness-core/queue-service/hsqs/router"
 	"github.com/harness/harness-core/queue-service/hsqs/store/redis"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 
 	"github.com/spf13/cobra"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -45,13 +52,15 @@ var serverCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		path, _ := cmd.Flags().GetString(envarg)
 		err := godotenv.Load(path)
+		l := zerolog.New(os.Stderr).With().Timestamp().Logger()
 		if err != nil {
-			panic("error parsing config file")
+			l.Error().Msgf("error parsing config file")
 		}
 
 		c, err := config.Load()
 		if err != nil {
-			panic("error loading config")
+			l.Error().Msgf("error in loading the environment variables")
+			panic("error loading environment variables")
 		}
 		startServer(c)
 	},
@@ -59,7 +68,14 @@ var serverCmd = &cobra.Command{
 
 func startServer(c *config.Config) {
 
-	r := router.New(c.Debug)
+	if c.EnableProfiler {
+		err := profiler.Start(c)
+		if err != nil {
+			log.Warn(err.Error())
+		}
+	}
+
+	r := router.New(c)
 	r.GET("/swagger/*", echoSwagger.WrapHandler)
 	r.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
@@ -67,7 +83,7 @@ func startServer(c *config.Config) {
 
 	g := r.Group("v1")
 
-	store := redis.NewRedisStore(c.Redis.Endpoint)
+	store := redis.NewRedisStoreWithTLS(c.Redis.Endpoint, c.Redis.Password, c.Redis.SSLEnabled, c.Redis.CertPath)
 	h := handler.NewHandler(store)
 	h.Register(g)
 

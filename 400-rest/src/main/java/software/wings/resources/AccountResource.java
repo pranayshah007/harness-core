@@ -22,7 +22,6 @@ import static software.wings.utils.Utils.urlDecode;
 
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 
-import io.harness.account.ProvisionStep;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.authenticationservice.beans.AuthenticationInfo;
@@ -35,6 +34,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.SMPEncLicenseDTO;
+import io.harness.licensing.beans.modules.SMPLicenseRequestDTO;
+import io.harness.licensing.beans.modules.SMPValidationResultDTO;
 import io.harness.licensing.remote.admin.AdminLicenseHttpClient;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
@@ -80,6 +82,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import io.dropwizard.jersey.PATCH;
 import io.swagger.annotations.Api;
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -174,6 +177,12 @@ public class AccountResource {
   public RestResponse<Boolean> isFeatureEnabled(
       @QueryParam("featureName") String featureName, @QueryParam("accountId") String accountId) {
     return new RestResponse<>(accountService.isFeatureFlagEnabled(featureName, accountId));
+  }
+
+  @GET
+  @Path("{accountId}/immutable-delegate-enabled")
+  public RestResponse<Boolean> isImmutableDelegateEnabled(@PathParam("accountId") @NotEmpty String accountId) {
+    return new RestResponse<>(accountService.isImmutableDelegateEnabled(accountId));
   }
 
   @GET
@@ -280,6 +289,27 @@ public class AccountResource {
   }
 
   @PUT
+  @Path("{accountId}/is-product-led")
+  @Timed
+  @ExceptionMetered
+  public RestResponse<Boolean> updateIsProductLed(@PathParam("accountId") @NotEmpty String accountId,
+      @QueryParam("isProductLed") @DefaultValue("false") boolean isProductLed) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(accountService.updateIsProductLed(accountId, isProductLed));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(Lists.newArrayList(
+              ResponseMessage.builder().message("User not allowed to update account product-led status").build()))
+          .build();
+    }
+  }
+
+  @PUT
   @Path("{accountId}/sales-contacts")
   @Timed
   @ExceptionMetered
@@ -316,31 +346,6 @@ public class AccountResource {
   public RestResponse<Void> updateDefaultExperience(
       @PathParam("accountId") @NotEmpty String accountId, Account account) {
     return new RestResponse<>(accountService.setDefaultExperience(accountId, account.getDefaultExperience()));
-  }
-
-  @GET
-  @Path("delegate/active")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<Boolean> checkSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateExists(accountId));
-  }
-
-  @GET
-  @Path("delegate/progress")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<List<ProvisionStep>> checkProgressSampleDelegate(
-      @QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.sampleDelegateProgress(accountId));
-  }
-
-  @POST
-  @Path("delegate/generate")
-  @Timed
-  @ExceptionMetered
-  public RestResponse<String> generateSampleDelegate(@QueryParam("accountId") @NotEmpty String accountId) {
-    return new RestResponse<>(accountService.generateSampleDelegate(accountId));
   }
 
   @POST
@@ -562,7 +567,7 @@ public class AccountResource {
   @Path("{accountId}/isRestrictedAccessEnabled")
   @AuthRule(permissionType = MANAGE_RESTRICTED_ACCESS)
   public RestResponse<Boolean> isRestrictedAccessEnabled(@PathParam("accountId") String accountId) {
-    return new RestResponse<>(accountService.isRestrictedAccessEnabled(accountId));
+    return new RestResponse<>(accountService.isHarnessSupportAccessDisabled(accountId));
   }
 
   @GET
@@ -662,6 +667,47 @@ public class AccountResource {
       return RestResponse.Builder.aRestResponse()
           .withResponseMessages(
               Lists.newArrayList(ResponseMessage.builder().message("User not allowed to query licenses").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/smp/licenses/generate")
+  @Hidden
+  public RestResponse<SMPEncLicenseDTO> generateSMPLicense(
+      @PathParam("accountId") String accountId, @Body SMPLicenseRequestDTO licenseRequestDTO) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(
+          adminLicenseHttpClient.generateSMPLicense(licenseRequestDTO.getCustomerAccountId(), licenseRequestDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to generate smp license").build()))
+          .build();
+    }
+  }
+
+  @POST
+  @Path("{accountId}/smp/licenses/validate")
+  @Hidden
+  public RestResponse<SMPValidationResultDTO> validateSMPLicense(
+      @PathParam("accountId") String accountId, @Body SMPEncLicenseDTO licenseDTO) {
+    User existingUser = UserThreadLocal.get();
+    if (existingUser == null) {
+      throw new InvalidRequestException("Invalid User");
+    }
+
+    if (harnessUserGroupService.isHarnessSupportUser(existingUser.getUuid())) {
+      return new RestResponse<>(getResponse(adminLicenseHttpClient.validateSMPLicense(licenseDTO)));
+    } else {
+      return RestResponse.Builder.aRestResponse()
+          .withResponseMessages(
+              Lists.newArrayList(ResponseMessage.builder().message("User not allowed to validate smp license").build()))
           .build();
     }
   }

@@ -9,17 +9,17 @@ package io.harness.migrations.all;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static software.wings.yaml.gitSync.YamlGitConfig.ENTITY_ID_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.ENTITY_TYPE_KEY;
-import static software.wings.yaml.gitSync.YamlGitConfig.SYNC_MODE_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.ENTITY_ID_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.ENTITY_TYPE_KEY;
+import static software.wings.yaml.gitSync.beans.YamlGitConfig.SYNC_MODE_KEY;
 
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
 import software.wings.beans.EntityType;
 import software.wings.dl.WingsPersistence;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.inject.Inject;
 import java.util.HashMap;

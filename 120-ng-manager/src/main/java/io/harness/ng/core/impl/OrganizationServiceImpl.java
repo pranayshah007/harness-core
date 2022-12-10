@@ -13,6 +13,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_ORGANIZATIONS;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
@@ -24,6 +25,7 @@ import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -34,8 +36,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.logging.AccountLogContext;
+import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.api.DefaultUserGroupService;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -121,13 +126,13 @@ public class OrganizationServiceImpl implements OrganizationService {
       validate(organization);
       Organization savedOrganization = saveOrganization(organization);
       setupOrganization(Scope.of(accountIdentifier, organizationDTO.getIdentifier(), null));
-      log.info(String.format("Organization with identifier %s was successfully created", organization.getIdentifier()));
+      log.info(
+          String.format("Organization with identifier [%s] was successfully created", organization.getIdentifier()));
       instrumentationHelper.sendOrganizationCreateEvent(organization, accountIdentifier);
       return savedOrganization;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
-          String.format(
-              "An organization with identifier %s is already present or was deleted", organization.getIdentifier()),
+          String.format("An organization with identifier [%s] is already present", organization.getIdentifier()),
           USER_SRE, ex);
     }
   }
@@ -272,7 +277,7 @@ public class OrganizationServiceImpl implements OrganizationService {
       validate(organization);
       return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
         Organization updatedOrganization = organizationRepository.save(organization);
-        log.info(String.format("Organization with identifier %s was successfully updated", identifier));
+        log.info(String.format("Organization with identifier [%s] was successfully updated", identifier));
         outboxService.save(new OrganizationUpdateEvent(organization.getAccountIdentifier(),
             OrganizationMapper.writeDto(updatedOrganization), OrganizationMapper.writeDto(existingOrganization)));
         return updatedOrganization;
@@ -349,19 +354,24 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public boolean delete(String accountIdentifier, String organizationIdentifier, Long version) {
-    return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-      Organization organization = organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
-      boolean delete = organization != null;
+    try (AutoLogContext ignore0 = new AccountLogContext(accountIdentifier, OVERRIDE_ERROR)) {
+      return Failsafe.with(DEFAULT_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+        Organization organization =
+            organizationRepository.hardDelete(accountIdentifier, organizationIdentifier, version);
 
-      if (delete) {
-        log.info(String.format("Organization with identifier %s was successfully deleted", organizationIdentifier));
+        if (isNull(organization)) {
+          log.error(String.format(
+              "Organization with identifier [%s] could not be deleted as it does not exist", organizationIdentifier));
+          throw new EntityNotFoundException(String.format(
+              "Organization with identifier [%s] does not exist in the specified scope", organizationIdentifier));
+        }
+
+        log.info(String.format("Organization with identifier [%s] was successfully deleted", organizationIdentifier));
         outboxService.save(new OrganizationDeleteEvent(accountIdentifier, OrganizationMapper.writeDto(organization)));
         instrumentationHelper.sendOrganizationDeleteEvent(organization, accountIdentifier);
-      } else {
-        log.error(String.format("Organization with identifier %s could not be deleted", organizationIdentifier));
-      }
-      return delete;
-    }));
+        return true;
+      }));
+    }
   }
 
   @Override

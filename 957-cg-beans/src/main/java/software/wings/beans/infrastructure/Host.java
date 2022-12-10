@@ -59,12 +59,19 @@ public class Host implements PersistentEntity, UuidAware, CreatedAtAware, Update
                  .field(HostKeys.appId)
                  .field(HostKeys.infraMappingId)
                  .build())
+        .add(CompoundMongoIndex.builder()
+                 .name("appId_envId_inframappingId_hostName")
+                 .field(HostKeys.appId)
+                 .field(HostKeys.envId)
+                 .field(HostKeys.infraMappingId)
+                 .field(HostKeys.hostName)
+                 .build())
         .build();
   }
 
   // Pulled out of Base
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore @FdIndex private long createdAt;
   @SchemaIgnore @NotNull private long lastUpdatedAt;
 

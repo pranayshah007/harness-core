@@ -26,4 +26,6 @@ public class VMInstanceServiceBillingData {
   private String serviceCode;
   private String productFamily; // MeterCategory for Azure
   private String usageType;
+  private Double amortisedCost;
+  private Double netAmortisedCost;
 }

@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.DataCollectionRequestType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
@@ -21,6 +23,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @OwnedBy(CV)
 public class PagerDutyServicesRequest extends PagerDutyDataCollectionRequest {
+  String query;
+
   public static final String DSL =
       PagerDutyDataCollectionRequest.readDSL("pagerduty-services.datacollection", PagerDutyServicesRequest.class);
 
@@ -32,5 +36,12 @@ public class PagerDutyServicesRequest extends PagerDutyDataCollectionRequest {
   @Override
   public DataCollectionRequestType getType() {
     return DataCollectionRequestType.PAGERDUTY_SERVICES;
+  }
+
+  @Override
+  public Map<String, Object> fetchDslEnvVariables() {
+    Map<String, Object> dslEnvVariables = new HashMap<>();
+    dslEnvVariables.put("query", query);
+    return dslEnvVariables;
   }
 }

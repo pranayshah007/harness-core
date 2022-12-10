@@ -14,7 +14,7 @@ import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.encryption.SecretRefData;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.FunctorException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.SecretNGVariable;

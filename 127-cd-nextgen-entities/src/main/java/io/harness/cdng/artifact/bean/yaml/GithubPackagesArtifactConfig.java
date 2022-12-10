@@ -39,6 +39,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.experimental.Wither;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDC)
@@ -55,7 +56,11 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
   /**
    * Git connector.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> connectorRef;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> connectorRef;
 
   /**
    * Package Type.
@@ -69,7 +74,11 @@ public class GithubPackagesArtifactConfig implements ArtifactConfig, Visitable, 
   /**
    * packageName.
    */
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Wither ParameterField<String> packageName;
+  @NotNull
+  @NotEmpty
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+  @Wither
+  ParameterField<String> packageName;
 
   /**
    * Organization

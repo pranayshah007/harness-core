@@ -7,6 +7,8 @@
 
 package io.harness.ci.plan.creator.codebase;
 
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.INITIALIZE_EXECUTION;
+import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.STAGE_EXECUTION;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
@@ -17,8 +19,19 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.stages.IntegrationStageStepParametersPMS;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
+import io.harness.beans.sweepingoutputs.InitializeExecutionSweepingOutput;
+import io.harness.beans.sweepingoutputs.StageExecutionSweepingOutput;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.HostedVmInfraYaml.HostedVmInfraSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml.K8sHostedInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.beans.yaml.extended.platform.ArchType;
+import io.harness.beans.yaml.extended.platform.Platform;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.buildstate.ConnectorUtils;
 import io.harness.ci.executionplan.CIExecutionPlanTestHelper;
@@ -26,12 +39,18 @@ import io.harness.ci.executionplan.CIExecutionTestBase;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
+import io.harness.ci.states.InitializeTaskStep;
+import io.harness.ci.states.IntegrationStageStepPMS;
+import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -49,10 +68,6 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.CI)
 public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   private CIExecutionPlanTestHelper ciExecutionPlanTestHelper = new CIExecutionPlanTestHelper();
-  private final Ambiance ambiance = Ambiance.newBuilder()
-                                        .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
-                                            "projectIdentifier", "orgIdentifier", "orgIdentifier"))
-                                        .build();
 
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIModuleInfoProvider ciModuleInfoProvider;
@@ -69,7 +84,11 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetPipelineLevelModuleInfoWithoutResolvedParameters() {
     OrchestrationEvent event =
-        OrchestrationEvent.builder().ambiance(ambiance).serviceName("ci").status(Status.RUNNING).build();
+        OrchestrationEvent.builder()
+            .ambiance(getAmbianceWithLevel(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build()))
+            .serviceName("ci")
+            .status(Status.RUNNING)
+            .build();
 
     when(executionSweepingOutputService.resolveOptional(any(), any()))
         .thenReturn(OptionalSweepingOutput.builder()
@@ -110,7 +129,7 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
 
     OrchestrationEvent event =
         OrchestrationEvent.builder()
-            .ambiance(ambiance)
+            .ambiance(getAmbianceWithLevel(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build()))
             .serviceName("ci")
             .status(Status.RUNNING)
             .resolvedStepParameters(StepElementParameters.builder().spec(initializeStepInfo).build())
@@ -133,7 +152,11 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void testGetPipelineLevelModuleInfoForAzure() {
     OrchestrationEvent event =
-        OrchestrationEvent.builder().ambiance(ambiance).serviceName("ci").status(Status.RUNNING).build();
+        OrchestrationEvent.builder()
+            .ambiance(getAmbianceWithLevel(Level.newBuilder().setStepType(InitializeTaskStep.STEP_TYPE).build()))
+            .serviceName("ci")
+            .status(Status.RUNNING)
+            .build();
 
     List<CodebaseSweepingOutput.CodeBaseCommit> commits =
         new ArrayList<>(Arrays.asList(CodebaseSweepingOutput.CodeBaseCommit.builder().id("1").build(),
@@ -162,5 +185,125 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getSourceBranch()).isEqualTo("test");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getCommits()).isEqualTo(ciBuildCommits);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetPipelineStageLevelModuleInfoForK8Hosted() {
+    Ambiance ambiance = getAmbianceWithLevel(
+        Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
+    Infrastructure infrastructure =
+        K8sHostedInfraYaml.builder().spec(K8sHostedInfraYamlSpec.builder().identifier("k8HostedInfra").build()).build();
+    OrchestrationEvent event =
+        OrchestrationEvent.builder()
+            .ambiance(ambiance)
+            .serviceName("ci")
+            .resolvedStepParameters(
+                StageElementParameters.builder()
+                    .identifier("stageId")
+                    .name("stageName")
+                    .specConfig(IntegrationStageStepParametersPMS.builder().infrastructure(infrastructure).build())
+                    .build())
+            .status(Status.RUNNING)
+            .build();
+
+    when(executionSweepingOutputService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(1234L).build())
+                        .build());
+    when(executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STAGE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageExecutionSweepingOutput.builder().stageExecutionTime(5671L).build())
+                        .build());
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo()).isNotNull();
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageId()).isEqualTo("stageId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageName()).isEqualTo("stageName");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsArch()).isEqualTo("Amd64");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("Linux");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetPipelineStageLevelModuleInfoForHostedVM() {
+    Ambiance ambiance = getAmbianceWithLevel(
+        Level.newBuilder().setStartTs(1111L).setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
+    Infrastructure infrastructure =
+        HostedVmInfraYaml.builder()
+            .spec(
+                HostedVmInfraSpec.builder()
+                    .platform(ParameterField.createValueField(Platform.builder()
+                                                                  .os(ParameterField.createValueField(OSType.MacOS))
+                                                                  .arch(ParameterField.createValueField(ArchType.Amd64))
+                                                                  .build()))
+                    .build())
+            .build();
+    OrchestrationEvent event =
+        OrchestrationEvent.builder()
+            .ambiance(ambiance)
+            .serviceName("ci")
+            .resolvedStepParameters(
+                StageElementParameters.builder()
+                    .identifier("stageId")
+                    .name("stageName")
+                    .specConfig(IntegrationStageStepParametersPMS.builder().infrastructure(infrastructure).build())
+                    .build())
+            .status(Status.RUNNING)
+            .build();
+
+    when(executionSweepingOutputService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(INITIALIZE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(InitializeExecutionSweepingOutput.builder().initialiseExecutionTime(1234L).build())
+                        .build());
+    when(executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(STAGE_EXECUTION)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageExecutionSweepingOutput.builder().stageExecutionTime(5671L).build())
+                        .build());
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo()).isNotNull();
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageId()).isEqualTo("stageId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageName()).isEqualTo("stageName");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsArch()).isEqualTo("Amd64");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getOsType()).isEqualTo("MacOS");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageExecutionId()).isEqualTo("stageExecutionId");
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getCpuTime()).isEqualTo(4437L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStageBuildTime()).isEqualTo(5671L);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo().getStartTs()).isEqualTo(1111L);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetPipelineStageLevelModuleInfoWithoutResolvedParameter() {
+    Ambiance ambiance = getAmbianceWithLevel(Level.newBuilder().setStepType(IntegrationStageStepPMS.STEP_TYPE).build());
+    OrchestrationEvent event =
+        OrchestrationEvent.builder().ambiance(ambiance).serviceName("ci").status(Status.RUNNING).build();
+
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+        (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+    assertThat(ciPipelineModuleInfo.getCiPipelineStageModuleInfo()).isNull();
+  }
+
+  private Ambiance getAmbianceWithLevel(Level level) {
+    return Ambiance.newBuilder()
+        .putAllSetupAbstractions(Maps.of(
+            "accountId", "accountId", "projectIdentifier", "projectIdentifier", "orgIdentifier", "orgIdentifier"))
+        .addLevels(level)
+        .setStageExecutionId("stageExecutionId")
+        .build();
   }
 }

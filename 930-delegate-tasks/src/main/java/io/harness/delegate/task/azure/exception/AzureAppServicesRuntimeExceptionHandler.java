@@ -34,7 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request;
-import retrofit2.adapter.rxjava.HttpException;
+import retrofit2.HttpException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)

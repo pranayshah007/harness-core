@@ -391,4 +391,50 @@ public class YamlServiceImplTest extends WingsBaseTest {
     file = new File(resourcePath + PATH_DELIMITER + fileName + ".zip");
     return new FileInputStream(file);
   }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void test_computeProcessingOrder_1() {
+    final Change change1 = aFileChange()
+                               .withAccountId(ACCOUNT_ID)
+                               .withFilePath(generatePath(PATH_DELIMITER, false, SETUP_FOLDER, APPLICATIONS_FOLDER,
+                                   "app123", SERVICES_FOLDER, "service1", MANIFEST_FOLDER, INDEX_YAML))
+                               .withChangeType(MODIFY)
+                               .build();
+    final Change change2 = aFileChange()
+                               .withAccountId(ACCOUNT_ID)
+                               .withFilePath(generatePath(PATH_DELIMITER, false, SETUP_FOLDER, APPLICATIONS_FOLDER,
+                                   "app123", SERVICES_FOLDER, "service1", MANIFEST_FOLDER, INDEX_YAML))
+                               .withChangeType(DELETE)
+                               .build();
+    final Change change3 = aFileChange()
+                               .withAccountId(ACCOUNT_ID)
+                               .withFilePath(generatePath(PATH_DELIMITER, false, SETUP_FOLDER, APPLICATIONS_FOLDER,
+                                   "app123", SERVICES_FOLDER, "service1", INDEX_YAML))
+                               .withChangeType(MODIFY)
+                               .build();
+    final Change change4 =
+        aFileChange()
+            .withAccountId(ACCOUNT_ID)
+            .withFilePath(generatePath(PATH_DELIMITER, false, SETUP_FOLDER, APPLICATIONS_FOLDER, "app123",
+                SERVICES_FOLDER, "service1", MANIFEST_FOLDER, MANIFEST_FILE_FOLDER, "vars.yaml"))
+            .withChangeType(DELETE)
+            .build();
+    final ArrayList<ChangeContext> changeList =
+        Lists.newArrayList(ChangeContext.Builder.aChangeContext().withChange(change1).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change2).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change3).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change4).build());
+    YamlServiceImpl.ChangeContextErrorMap changeContextErrorMap =
+        new YamlServiceImpl.ChangeContextErrorMap(null, changeList);
+    yamlService.sortByProcessingOrder(changeContextErrorMap);
+    final ArrayList<ChangeContext> expected =
+        Lists.newArrayList(ChangeContext.Builder.aChangeContext().withChange(change4).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change2).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change3).build(),
+            ChangeContext.Builder.aChangeContext().withChange(change1).build());
+
+    assertThat(changeContextErrorMap.changeContextList).isEqualTo(expected);
+  }
 }

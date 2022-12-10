@@ -19,10 +19,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.rule.Owner;
+import io.harness.utils.PmsFeatureFlagHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;

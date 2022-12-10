@@ -34,7 +34,7 @@ public class CDChangeSourceIntegrationServiceImpl implements CDChangeSourceInteg
   @Override
   public List<HarnessCDCurrentGenEventMetadata> getCurrentGenEventsBetween(
       String accountId, String appId, String serviceId, String environmentId, Instant startTime, Instant endTime) {
-    Query<WorkflowExecution> query = hPersistence.createQuery(WorkflowExecution.class)
+    Query<WorkflowExecution> query = hPersistence.createAnalyticsQuery(WorkflowExecution.class)
                                          .filter(WorkflowExecutionKeys.accountId, accountId)
                                          .filter(WorkflowExecutionKeys.appId, appId)
                                          .field(WorkflowExecutionKeys.serviceIds)

@@ -14,6 +14,7 @@ import io.harness.pms.preflight.connector.ConnectorCheckResponse;
 import io.harness.pms.preflight.inputset.PipelineInputResponse;
 
 import com.fasterxml.jackson.databind.node.TextNode;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +75,8 @@ public class PreflightCommonUtils {
     }
   }
 
-  private PreFlightStatus getPipelineInputStatus(List<PipelineInputResponse> pipelineInputResponse) {
+  @VisibleForTesting
+  PreFlightStatus getPipelineInputStatus(List<PipelineInputResponse> pipelineInputResponse) {
     for (PipelineInputResponse response : pipelineInputResponse) {
       if (!response.isSuccess()) {
         return PreFlightStatus.FAILURE;
@@ -83,7 +85,8 @@ public class PreflightCommonUtils {
     return PreFlightStatus.SUCCESS;
   }
 
-  private PreFlightStatus getConnectorCheckStatus(List<ConnectorCheckResponse> connectorCheckResponse) {
+  @VisibleForTesting
+  PreFlightStatus getConnectorCheckStatus(List<ConnectorCheckResponse> connectorCheckResponse) {
     for (ConnectorCheckResponse response : connectorCheckResponse) {
       PreFlightStatus status = response.getStatus();
       if (status != PreFlightStatus.SUCCESS) {

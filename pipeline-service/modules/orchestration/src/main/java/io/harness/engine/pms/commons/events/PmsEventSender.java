@@ -7,7 +7,7 @@
 
 package io.harness.engine.pms.commons.events;
 
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_REDIS_URL;
 import static io.harness.pms.events.PmsEventFrameworkConstants.PIPELINE_MONITORING_ENABLED;
 import static io.harness.pms.events.PmsEventFrameworkConstants.SERVICE_NAME;
@@ -24,7 +24,6 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisProducerFactory;
 import io.harness.eventsframework.producer.Message;
 import io.harness.exception.InvalidRequestException;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ConsumerConfig;
 import io.harness.pms.contracts.plan.ConsumerConfig.ConfigCase;
@@ -35,6 +34,7 @@ import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.sdk.PmsSdkInstance.PmsSdkInstanceKeys;
 import io.harness.redis.RedisConfig;
 import io.harness.redis.RedissonClientFactory;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.RetryUtils;
 
 import com.google.common.annotations.VisibleForTesting;

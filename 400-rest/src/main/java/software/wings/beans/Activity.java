@@ -78,10 +78,18 @@ public class Activity implements PersistentEntity, AccountDataRetentionEntity, U
                  .field(ActivityKeys.status)
                  .descSortField(ActivityKeys.createdAt)
                  .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("appId_serviceId_environmentId_status_createdAt")
+                 .field(ActivityKeys.appId)
+                 .field(ActivityKeys.serviceId)
+                 .field(ActivityKeys.environmentId)
+                 .field(ActivityKeys.status)
+                 .descSortField(ActivityKeys.createdAt)
+                 .build())
         .build();
   }
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
-  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @NotNull @SchemaIgnore protected String appId;
   @SchemaIgnore private EmbeddedUser createdBy;
   @SchemaIgnore @FdIndex private long createdAt;
 

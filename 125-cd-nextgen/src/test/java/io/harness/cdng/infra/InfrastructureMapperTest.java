@@ -10,9 +10,12 @@ package io.harness.cdng.infra;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABHISHEK;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.ANIL;
+import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.PRAGYESH;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -23,7 +26,10 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.elastigroup.ElastigroupConfiguration;
 import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
+import io.harness.cdng.infra.beans.EcsInfrastructureOutcome;
+import io.harness.cdng.infra.beans.ElastigroupInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcomeAbstract;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
@@ -32,18 +38,25 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostNamesFilterDTO;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
@@ -101,6 +114,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                           .namespace(ParameterField.createValueField("namespace"))
                                                           .releaseName(ParameterField.createValueField("release"))
                                                           .build();
+    k8SDirectInfrastructure.setInfraName("infraName");
 
     K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
         K8sDirectInfrastructureOutcome.builder()
@@ -113,6 +127,8 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         k8SDirectInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    InfrastructureOutcomeAbstract infrastructureOutcomeAbstract = (InfrastructureOutcomeAbstract) infrastructureOutcome;
+    assertThat(infrastructureOutcomeAbstract.getName()).isEqualTo("infraName");
     assertThat(infrastructureOutcome).isEqualTo(k8sDirectInfrastructureOutcome);
   }
 
@@ -193,6 +209,35 @@ public class InfrastructureMapperTest extends CategoryTest {
 
     InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
         serverlessAwsLambdaInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = ARVIND)
+  @Category(UnitTests.class)
+  public void testElastigroupInfraMapper() {
+    InlineStoreConfig storeConfig =
+        InlineStoreConfig.builder().content(ParameterField.createValueField("this is content")).build();
+    ElastigroupInfrastructure infrastructure =
+        ElastigroupInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .configuration(
+                ElastigroupConfiguration.builder()
+                    .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
+                    .build())
+            .build();
+
+    ElastigroupInfrastructureOutcome expectedOutcome =
+        ElastigroupInfrastructureOutcome.builder()
+            .connectorRef("connectorId")
+            .environment(environment)
+            .infrastructureKey("bef2304c702e57cf3f33982f5473222df5c1731f")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(infrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
     assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
@@ -367,6 +412,63 @@ public class InfrastructureMapperTest extends CategoryTest {
                                                    .build();
     outcome.setConnector(Connector.builder().name("my_connector").build());
     assertThat(infrastructureOutcome).isEqualToIgnoringGivenFields(outcome, "infrastructureKey");
+  }
+
+  @Test
+  @Owner(developers = ANIL)
+  @Category(UnitTests.class)
+  public void testTanzuApplicationServiceInfraMapper() {
+    String pcfConnector = "connectorId";
+    String org = "devtest";
+    String space = "devspace";
+
+    TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+        TanzuApplicationServiceInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField(pcfConnector))
+            .organization(ParameterField.createValueField(org))
+            .space(ParameterField.createValueField(space))
+            .build();
+
+    TanzuApplicationServiceInfrastructureOutcome expectedOutcome =
+        TanzuApplicationServiceInfrastructureOutcome.builder()
+            .connectorRef(pcfConnector)
+            .organization(org)
+            .space(space)
+            .environment(environment)
+            .infrastructureKey("8d27ebf01280cd9d93840db85e22bc910b604418")
+            .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome = infrastructureMapper.toOutcome(
+        tanzuApplicationServiceInfrastructure, environment, serviceOutcome, "accountId", "orgId", "projectId");
+
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
+  }
+
+  @Test
+  @Owner(developers = PRAGYESH)
+  @Category(UnitTests.class)
+  public void testEcsInfraMapper() {
+    EcsInfrastructure ecsInfrastructure = EcsInfrastructure.builder()
+                                              .connectorRef(ParameterField.createValueField("connectorId"))
+                                              .region(ParameterField.createValueField("region"))
+                                              .cluster(ParameterField.createValueField("cluster"))
+                                              .build();
+
+    EcsInfrastructureOutcome expectedOutcome = EcsInfrastructureOutcome.builder()
+                                                   .connectorRef("connectorId")
+                                                   .region("region")
+                                                   .cluster("cluster")
+                                                   .environment(environment)
+                                                   .infrastructureKey("4e88dbd8bc5e4694fe1c72d90371e127a8bc3d1c")
+                                                   .build();
+
+    expectedOutcome.setConnector(Connector.builder().name("my_connector").build());
+
+    InfrastructureOutcome infrastructureOutcome =
+        infrastructureMapper.toOutcome(ecsInfrastructure, environment, serviceOutcome, "accountId", "projId", "orgId");
+    assertThat(infrastructureOutcome).isEqualTo(expectedOutcome);
   }
 
   @Test

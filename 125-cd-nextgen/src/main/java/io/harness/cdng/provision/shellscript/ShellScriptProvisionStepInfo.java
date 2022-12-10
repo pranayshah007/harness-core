@@ -11,7 +11,7 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.ShellScriptDeploymentStepInfoVisitorHelper;
+import io.harness.cdng.visitor.helpers.cdstepinfo.ShellScriptProvisionStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -40,7 +40,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@SimpleVisitorHelper(helperClass = ShellScriptDeploymentStepInfoVisitorHelper.class)
+@SimpleVisitorHelper(helperClass = ShellScriptProvisionStepInfoVisitorHelper.class)
 @JsonTypeName(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
 @TypeAlias("shellScriptProvisionStepInfo")
 @RecasterAlias("io.harness.cdng.provision.shellscript.ShellScriptProvisionStepInfo")

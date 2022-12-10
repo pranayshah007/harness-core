@@ -41,6 +41,7 @@ import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.OverlayInputSetErrorWrapperDTOPMS;
+import io.harness.pms.ngpipeline.inputset.api.InputSetsApiUtils;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -56,6 +57,7 @@ import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.ngpipeline.inputset.service.InputSetValidationHelper;
 import io.harness.pms.ngpipeline.inputset.service.PMSInputSetService;
 import io.harness.pms.ngpipeline.overlayinputset.beans.resource.OverlayInputSetResponseDTOPMS;
+import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.rule.Owner;
 
@@ -88,6 +90,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Mock PMSPipelineService pipelineService;
   @Mock ValidateAndMergeHelper validateAndMergeHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
+  @Mock InputSetsApiUtils inputSetsApiUtils;
 
   private static final String ACCOUNT_ID = "accountId";
   private static final String ORG_IDENTIFIER = "orgId";
@@ -103,6 +106,7 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
 
   InputSetEntity inputSetEntity;
   InputSetEntity overlayInputSetEntity;
+  PipelineEntity pipelineEntity;
 
   List<String> stages =
       Arrays.asList("using", "a", "list", "to", "ensure", "that", "this", "param", "is", "not", "ignored");
@@ -119,8 +123,8 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Before
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
-    inputSetResourcePMSImpl =
-        new InputSetResourcePMSImpl(pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper);
+    inputSetResourcePMSImpl = new InputSetResourcePMSImpl(
+        pmsInputSetService, pipelineService, gitSyncSdkService, validateAndMergeHelper, inputSetsApiUtils);
 
     String inputSetFilename = "inputSet1.yml";
     inputSetYaml = readFile(inputSetFilename);
@@ -152,6 +156,14 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
                                 .inputSetEntityType(InputSetEntityType.OVERLAY_INPUT_SET)
                                 .version(1L)
                                 .build();
+    pipelineEntity = PipelineEntity.builder()
+                         .accountId(ACCOUNT_ID)
+                         .orgIdentifier(ORG_IDENTIFIER)
+                         .projectIdentifier(PROJ_IDENTIFIER)
+                         .identifier(PIPELINE_IDENTIFIER)
+                         .yaml(pipelineYaml)
+                         .version(1L)
+                         .build();
   }
 
   @Test
@@ -362,6 +374,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testCreateInputSet() {
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).create(any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.createInputSet(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);
@@ -389,6 +404,9 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdateInputSet() {
+    doReturn(pipelineYaml)
+        .when(inputSetsApiUtils)
+        .getPipelineYaml(any(), any(), any(), any(), any(), any(), any(), any());
     doReturn(inputSetEntity).when(pmsInputSetService).update(any(), any(), any(), any());
     ResponseDTO<InputSetResponseDTOPMS> responseDTO = inputSetResourcePMSImpl.updateInputSet(null, INPUT_SET_ID,
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, inputSetYaml);

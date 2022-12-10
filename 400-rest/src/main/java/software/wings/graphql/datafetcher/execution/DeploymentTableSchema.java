@@ -73,10 +73,15 @@ public class DeploymentTableSchema {
   DbColumn failedStepTypes;
   DbColumn stageName;
   DbColumn rollbackDuration;
+  DbColumn onDemandRollback;
+  DbColumn originalExecutionId;
+  DbColumn manuallyRolledBack;
   DbColumn instancesDeployed;
   DbColumn tags;
   DbColumn parentPipelineId;
   DbColumn cause;
+  DbColumn infraDefinitions;
+  DbColumn infraMappings;
   public DeploymentTableSchema() {
     dbSpec = new DbSpec();
     dbSchema = dbSpec.addDefaultSchema();
@@ -103,9 +108,14 @@ public class DeploymentTableSchema {
     failedStepTypes = deploymentTable.addColumn("FAILED_STEP_TYPES", "text", null);
     stageName = deploymentTable.addColumn("STAGENAME", "text", null);
     rollbackDuration = deploymentTable.addColumn("ROLLBACK_DURATION", "bigint", null);
+    onDemandRollback = deploymentTable.addColumn("ON_DEMAND_ROLLBACK", "boolean", null);
+    originalExecutionId = deploymentTable.addColumn("ORIGINAL_EXECUTION_ID", "text", null);
+    manuallyRolledBack = deploymentTable.addColumn("MANUALLY_ROLLED_BACK", "boolean", null);
     instancesDeployed = deploymentTable.addColumn("INSTANCES_DEPLOYED", "int", null);
     tags = deploymentTable.addColumn("TAGS", "hstore", null);
     parentPipelineId = deploymentTable.addColumn("PARENT_PIPELINE_ID", "text", null);
     cause = deploymentTable.addColumn("CREATED_BY_TYPE", "text", null);
+    infraDefinitions = deploymentTable.addColumn("INFRA_DEFINITIONS", "text[]", null);
+    infraMappings = deploymentTable.addColumn("INFRA_MAPPINGS", "text[]", null);
   }
 }

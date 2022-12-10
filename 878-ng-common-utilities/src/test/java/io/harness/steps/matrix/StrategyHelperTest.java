@@ -7,6 +7,8 @@
 
 package io.harness.steps.matrix;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,12 +24,14 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -278,7 +282,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
     List<String> variableAValues = Lists.newArrayList("1", "1", "2", "2", "2", "3", "3", "3");
@@ -314,7 +319,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
     YamlField approvalStageYamlField = stageYamlNodes.get(0).getField("stage");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
     List<String> variableAValues = Lists.newArrayList(
@@ -351,7 +357,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
     YamlField approvalStageYamlField = stageYamlNodes.get(2).getField("stage");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(10);
     int current = 0;
     for (JsonNode jsonNode : jsonNodes) {
@@ -381,7 +388,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
     YamlField approvalStageYamlField = stageYamlNodes.get(5).getField("stage");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(1);
     int current = 0;
     List<String> expectedValues = Lists.newArrayList("a", "b", "c");
@@ -413,7 +421,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
 
     YamlField approvalStageYamlField = stageYamlNodes.get(3).getField("stage");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(approvalStageYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     assertThat(jsonNodes.size()).isEqualTo(4);
     int current = 0;
     for (JsonNode jsonNode : jsonNodes) {
@@ -459,7 +468,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .get(0)
                                   .getField("step");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(8);
     List<String> appendValues = Lists.newArrayList("0_1", "0_2", "1_0", "1_1", "1_2", "2_0", "2_1", "2_2");
@@ -510,7 +520,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .get(0)
                                   .getField("step");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(10);
 
@@ -535,7 +546,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                         .asArray()
                         .get(1)
                         .getField("step");
-    jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+    jsonNodes = strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode(), Optional.empty())
+                    .getExpandedJsonNodes();
     current = 0;
     assertThat(jsonNodes.size()).isEqualTo(1);
 
@@ -581,7 +593,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
                                   .get(0)
                                   .getField("step");
     List<JsonNode> jsonNodes =
-        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode()).getExpandedJsonNodes();
+        strategyHelper.expandJsonNodes(stepYamlField.getNode().getCurrJsonNode(), Optional.empty())
+            .getExpandedJsonNodes();
     int current = 0;
     assertThat(jsonNodes.size()).isEqualTo(4);
 
@@ -603,7 +616,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty());
     assertThat(
         expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(executionWrapperConfig.getUuid()))
         .isTrue();
@@ -623,7 +636,8 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     List<ExecutionWrapperConfig> executionWrapperConfigs =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig).getExpandedExecutionConfigs();
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty())
+            .getExpandedExecutionConfigs();
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(JSON_FOR_STEP_GROUP_EXPANSION);
   }
@@ -639,9 +653,64 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     List<ExecutionWrapperConfig> executionWrapperConfigs =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig).getExpandedExecutionConfigs();
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty())
+            .getExpandedExecutionConfigs();
     String yaml = YamlUtils.write(executionWrapperConfigs);
     assertThat(yaml).isEqualTo(EXPECTED_JSON_FOR_PARALLEL);
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testParallelExpansionWithLimit() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("matrix-with-expansion-limit.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+
+    assertThatThrownBy(()
+                           -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(2))
+                                  .getExpandedExecutionConfigs())
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("Iteration count is beyond the supported limit of 2");
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testParallelExpansionWithLoop() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("loop-with-expansion-limit.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+
+    assertThatThrownBy(()
+                           -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(2))
+                                  .getExpandedExecutionConfigs())
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("Iteration count is beyond the supported limit of 2");
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testMatrixExpansionWithLimit() throws IOException {
+    MockitoAnnotations.initMocks(this);
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("parallel-with-expansion-limit.yaml");
+    assertThat(testFile).isNotNull();
+    String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
+    ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
+
+    assertThatThrownBy(()
+                           -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(100))
+                                  .getExpandedExecutionConfigs())
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("Parallelism count is beyond the supported limit of 100");
   }
 
   @Test
@@ -654,7 +723,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     assertThat(testFile).isNotNull();
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
-    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
+    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty()))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage(
             "Cannot deserialize value of type `java.lang.Integer` from String \"as\": not a valid `java.lang.Integer` value");
@@ -670,7 +739,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     assertThat(testFile).isNotNull();
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
-    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig))
+    assertThatThrownBy(() -> strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty()))
         .isInstanceOf(InvalidYamlException.class)
         .hasMessage("Value provided for axes [b] is string. It should either be a List or an Expression.");
   }
@@ -686,7 +755,7 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
     String stepYaml = Resources.toString(testFile, Charsets.UTF_8);
     ExecutionWrapperConfig executionWrapperConfig = YamlUtils.read(stepYaml, ExecutionWrapperConfig.class);
     ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
-        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig);
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.empty());
 
     for (ExecutionWrapperConfig executionWrapperConfigEntry :
         expandedExecutionWrapperInfo.getExpandedExecutionConfigs()) {
@@ -713,5 +782,17 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
         assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isFalse();
       }
     }
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void nullStepTest() throws IOException {
+    JsonNode step = NullNode.getInstance();
+    ExecutionWrapperConfig executionWrapperConfig = ExecutionWrapperConfig.builder().step(step).build();
+    ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(10));
+    assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData()).isEmpty();
+    assertThat(expandedExecutionWrapperInfo.getExpandedExecutionConfigs().get(0).getUuid()).isNull();
   }
 }

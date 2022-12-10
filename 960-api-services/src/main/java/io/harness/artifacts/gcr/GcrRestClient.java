@@ -10,11 +10,13 @@ package io.harness.artifacts.gcr;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
 import io.harness.artifacts.gcr.service.GcrApiServiceImpl.GcrImageTagResponse;
 
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.Headers;
 import retrofit2.http.Path;
 
 /**
@@ -29,4 +31,11 @@ public interface GcrRestClient {
   @GET("/v2/_catalog")
   Call<GcrImageTagResponse> listCatalogs(
       @Header("Authorization") String bearerAuthHeader, @Path(value = "imageName", encoded = true) String imageName);
+
+  @Headers(
+      "Accept: application/vnd.docker.distribution.manifest.v1+json, application/vnd.docker.distribution.manifest.v1+prettyjws")
+  @GET("/v2/{imageName}/manifests/{tag}")
+  Call<DockerImageManifestResponse>
+  getImageManifest(@Header("Authorization") String bearerAuthHeader,
+      @Path(value = "imageName", encoded = true) String imageName, @Path(value = "tag", encoded = true) String tag);
 }

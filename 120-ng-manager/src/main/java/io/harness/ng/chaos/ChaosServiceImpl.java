@@ -11,9 +11,12 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import io.harness.beans.DelegateTaskRequest;
+import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
+import io.harness.cdng.chaos.ChaosStepNotifyData;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.storeconfig.LocalFileStoreDelegateConfig;
 import io.harness.delegate.task.TaskParameters;
@@ -31,7 +34,6 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import lombok.NonNull;
@@ -47,21 +49,29 @@ public class ChaosServiceImpl implements ChaosService {
   private final String K8S_APPLY_COMMAND_NAME = "K8s Apply";
 
   @Override
+  public void notifyStep(String notifyId, ChaosStepNotifyData data) {
+    waitNotifyEngine.doneWith(notifyId, data);
+  }
+
+  @Override
   public String applyK8sManifest(ChaosK8sRequest chaosK8sRequest) {
     String chaosUid = generateUuid();
     LinkedHashMap<String, String> logAbstractions = buildLogAbstractions(chaosK8sRequest, chaosUid);
-    DelegateTaskRequest delegateTaskRequest =
+    DelegateTaskRequestBuilder requestBuilder =
         DelegateTaskRequest.builder()
             .accountId(chaosK8sRequest.getAccountId())
-            .taskParameters(getTaskParams(
-                chaosK8sRequest.getAccountId(), chaosK8sRequest.getK8sConnectorId(), chaosK8sRequest.getK8sManifest()))
-            .eligibleToExecuteDelegateIds(Arrays.asList(chaosK8sRequest.getDelegateId()))
+            .taskParameters(getTaskParams(chaosK8sRequest.getAccountId(), chaosK8sRequest.getOrgId(),
+                chaosK8sRequest.getProjectId(), chaosK8sRequest.getK8sConnectorId(), chaosK8sRequest.getK8sManifest()))
             .taskType(TaskType.K8S_COMMAND_TASK_NG.name())
             .executionTimeout(Duration.ofMinutes(15))
             .taskSetupAbstraction("ng", "true")
-            .logStreamingAbstractions(logAbstractions)
-            .build();
-    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+            .logStreamingAbstractions(logAbstractions);
+
+    if (EmptyPredicate.isNotEmpty(chaosK8sRequest.getDelegateId())) {
+      requestBuilder.eligibleToExecuteDelegateIds(Collections.singletonList(chaosK8sRequest.getDelegateId()));
+    }
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(requestBuilder.build(), Duration.ZERO);
     log.info("Task Successfully queued with taskId: {}", taskId);
     waitNotifyEngine.waitForAllOn(NG_ORCHESTRATION, new ChaosNotifyCallback(chaosUid), taskId);
     return taskId;
@@ -75,8 +85,13 @@ public class ChaosServiceImpl implements ChaosService {
     return logAbstractions;
   }
 
-  private TaskParameters getTaskParams(String accountIdentifier, String connectorIdentifier, String manifestContent) {
-    BaseNGAccess ngAccess = BaseNGAccess.builder().accountIdentifier(accountIdentifier).build();
+  private TaskParameters getTaskParams(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, String manifestContent) {
+    BaseNGAccess ngAccess = BaseNGAccess.builder()
+                                .accountIdentifier(accountIdentifier)
+                                .orgIdentifier(orgIdentifier)
+                                .projectIdentifier(projectIdentifier)
+                                .build();
     ConnectorInfoDTO responseDTO = k8sEntityHelper.getConnectorInfoDTO(connectorIdentifier, ngAccess);
 
     LocalFileStoreDelegateConfig storeDelegateConfig =

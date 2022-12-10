@@ -10,6 +10,7 @@ package software.wings.service.impl.yaml.handler.app;
 import static io.harness.annotations.dev.HarnessModule._955_CG_YAML;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GITHUB_WEBHOOK_AUTHENTICATION;
+import static io.harness.beans.FeatureName.SPG_ALLOW_DISABLE_TRIGGERS;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 
 import static software.wings.beans.Application.Builder.anApplication;
@@ -30,8 +31,8 @@ import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.yaml.YamlGitService;
-import software.wings.yaml.gitSync.YamlGitConfig;
-import software.wings.yaml.gitSync.YamlGitConfig.SyncMode;
+import software.wings.yaml.gitSync.beans.YamlGitConfig;
+import software.wings.yaml.gitSync.beans.YamlGitConfig.SyncMode;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -92,6 +93,10 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
     if (featureFlagService.isEnabled(WEBHOOK_TRIGGER_AUTHORIZATION, application.getAccountId())) {
       yaml.setIsManualTriggerAuthorized(application.getIsManualTriggerAuthorized());
     }
+
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, application.getAccountId())) {
+      yaml.setDisableTriggers(application.getDisableTriggers());
+    }
     updateYamlWithAdditionalInfo(application, appId, yaml);
     return yaml;
   }
@@ -124,6 +129,14 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
       }
     }
 
+    if (featureFlagService.isEnabled(SPG_ALLOW_DISABLE_TRIGGERS, accountId)) {
+      if (yaml.getDisableTriggers() == null && previous != null && previous.getDisableTriggers() != null) {
+        current.setDisableTriggers(false);
+      } else {
+        current.setDisableTriggers(yaml.getDisableTriggers());
+      }
+    }
+
     current.setSyncFromGit(changeContext.getChange().isSyncFromGit());
 
     Application updatedApplication;
@@ -137,7 +150,7 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
 
       updatedApplication = appService.update(current);
     } else {
-      YamlGitConfig yamlGitConfig = null;
+      software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig = null;
 
       if (changeContext.getChange() instanceof GitFileChange) {
         yamlGitConfig = ((GitFileChange) changeContext.getChange()).getYamlGitConfig();
@@ -161,7 +174,8 @@ public class ApplicationYamlHandler extends BaseYamlHandler<Application.Yaml, Ap
     return yamlHelper.getApp(accountId, yamlFilePath);
   }
 
-  private YamlGitConfig createAppYamlGitConfig(String accountId, YamlGitConfig yamlGitConfig) {
+  private YamlGitConfig createAppYamlGitConfig(
+      String accountId, software.wings.yaml.gitSync.YamlGitConfig yamlGitConfig) {
     if (yamlGitConfig == null) {
       return null;
     }

@@ -10,6 +10,7 @@ package software.wings.beans.command;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.delegate.beans.artifact.ArtifactFileMetadata.builder;
 import static io.harness.rule.OwnerRule.AADITI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
@@ -130,7 +131,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.AMAZON_S3.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-          .serverSetting(awsSetting)
+          .serverSetting(awsSetting.toDTO())
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
   private Host host = Host.Builder.aHost().withPublicDns(WingsTestConstants.PUBLIC_DNS).build();
@@ -157,7 +158,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-          .serverSetting(artifactorySetting)
+          .serverSetting(artifactorySetting.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID_ARTIFACTORY)
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
@@ -171,7 +172,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.ARTIFACTORY.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-          .serverSetting(artifactoryAnonSetting)
+          .serverSetting(artifactoryAnonSetting.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID_ARTIFACTORY)
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .build();
@@ -180,7 +181,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.AZURE_ARTIFACTS.name())
           .metadataOnly(true)
           .metadata(mockMetadata(ArtifactStreamType.AZURE_ARTIFACTS))
-          .serverSetting(azureArtifactsConfig)
+          .serverSetting(azureArtifactsConfig.toDTO())
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
           .project("PROJECT")
@@ -232,7 +233,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                   .url(
                       "https://nexus2-cdteam.harness.io/service/local/artifact/maven/content?r=releases&g=io.harness.test&a=todolist&v=7.0&p=war&e=war&c=sources")
                   .build()))
-          .serverSetting(nexusSetting)
+          .serverSetting(nexusSetting.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")
@@ -247,7 +248,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactStreamType(ArtifactStreamType.NEXUS.name())
           .metadataOnly(true)
           .artifactFileMetadata(asList())
-          .serverSetting(nexusSetting)
+          .serverSetting(nexusSetting.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")
@@ -274,7 +275,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                   .url(
                       "https://nexus2-cdteam.harness.io/service/local/artifact/maven/content?r=releases&g=io.harness.test&a=todolist&v=7.0&p=war&e=tar")
                   .build()))
-          .serverSetting(nexusSettingAnon)
+          .serverSetting(nexusSettingAnon.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("releases")
           .groupId("io.harness.test")
@@ -289,7 +290,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .artifactFileMetadata(
               asList(builder().fileName(JENKINS_ARTIFACT_FILENAME_1).url(JENKINS_ARTIFACT_URL_1).build(),
                   builder().fileName(JENKINS_ARTIFACT_FILENAME_2).url(JENKINS_ARTIFACT_URL_2).build()))
-          .serverSetting(jenkinsSetting)
+          .serverSetting(jenkinsSetting.toDTO())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .jobName("scheduler")
           .artifactPaths(asList("build/libs/docker-scheduler-1.0-SNAPSHOT-all.jar",
@@ -311,7 +312,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
                       .fileName("todolist.war")
                       .url("http://localhost:9095/artifact/TOD-TOD/JOB1/build-11/artifacts/todolist.war")
                       .build()))
-          .serverSetting(bambooSetting)
+          .serverSetting(bambooSetting.toDTO())
           .artifactServerEncryptedDataDetails(Collections.emptyList())
           .artifactStreamId(ARTIFACT_STREAM_ID)
           .build();
@@ -321,7 +322,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(artifactStreamAttributesForAmazonS3)
                                            .metadata(mockMetadata(ArtifactStreamType.AMAZON_S3))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -332,7 +333,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(artifactStreamAttributesForAmazonS3)
                                            .metadata(mockMetadataForS3Folder())
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -343,7 +344,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(artifactStreamAttributesForArtifactory)
                                            .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -354,7 +355,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(streamAttributesAnon)
                                            .metadata(mockMetadata(ArtifactStreamType.ARTIFACTORY))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -365,7 +366,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(artifactStreamAttributesForAzureArtifacts)
                                            .metadata(mockMetadata(ArtifactStreamType.AZURE_ARTIFACTS))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -376,7 +377,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(nexus2MavenStreamAttributes)
                                            .metadata(mockMetadata(ArtifactStreamType.NEXUS))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -387,7 +388,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       aCommandExecutionContext()
           .artifactStreamAttributes(nexus2MavenStreamAttributesWithoutArtifactFileMetadata)
           .metadata(mockMetadata(ArtifactStreamType.NEXUS))
-          .hostConnectionAttributes(hostConnectionAttributes)
+          .hostConnectionAttributes(hostConnectionAttributes.toDTO())
           .appId(WingsTestConstants.APP_ID)
           .activityId(ACTIVITY_ID)
           .host(host)
@@ -398,7 +399,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(nexus2MavenStreamAttributesAnon)
                                            .metadata(mockMetadata(ArtifactStreamType.NEXUS))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -409,7 +410,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(bambooStreamAttributes)
                                            .metadata(mockMetadata(ArtifactStreamType.BAMBOO))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -420,7 +421,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
       new ShellCommandExecutionContext(aCommandExecutionContext()
                                            .artifactStreamAttributes(jenkinsArtifactStreamAttributes)
                                            .metadata(mockMetadata(ArtifactStreamType.JENKINS))
-                                           .hostConnectionAttributes(hostConnectionAttributes)
+                                           .hostConnectionAttributes(hostConnectionAttributes.toDTO())
                                            .appId(WingsTestConstants.APP_ID)
                                            .activityId(ACTIVITY_ID)
                                            .host(host)
@@ -633,6 +634,50 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(executor).executeCommandString(argument.capture(), anyBoolean());
     assertThat(argument.getValue()).endsWith(command);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellAndProxy() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    downloadArtifactCommandUnit.executeInternal(context);
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+
+    final String command = argument.getValue();
+    assertThat(command).startsWith("$Headers = @");
+    assertThat(command).contains("-Proxy \"$env:HTTP_PROXY\"");
+    assertThat(command).contains("if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {");
+    assertThat(command).endsWith("-OutFile \"DESTINATION_DIR_PATH\\ARTIFACT_FILE_NAME\"\n}");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDownloadFromArtifactoryUsingPowerShellAndProxyWithoutCredentials() {
+    ShellCommandExecutionContext context = artifactoryContext;
+
+    context.setExecutor(executor);
+    ((ArtifactoryConfig) context.getArtifactStreamAttributes().getServerSetting().getValue()).setUsername(null);
+    downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
+    downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
+
+    downloadArtifactCommandUnit.executeInternal(context);
+    ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
+    verify(executor).executeCommandString(argument.capture(), anyBoolean());
+
+    final String command = argument.getValue();
+
+    assertThat(command).startsWith("[Net.ServicePointManager]::");
+    assertThat(command).contains("-Proxy \"$env:HTTP_PROXY\"");
+    assertThat(command).contains("if ( (-not [string]::IsNullOrEmpty($var2)) -and  (\"true\" -eq $var1) ) {");
+    assertThat(command).endsWith("-OutFile \"DESTINATION_DIR_PATH\\ARTIFACT_FILE_NAME\"\n}");
   }
 
   private Map<String, String> mockMetadata(ArtifactStreamType artifactStreamType) {

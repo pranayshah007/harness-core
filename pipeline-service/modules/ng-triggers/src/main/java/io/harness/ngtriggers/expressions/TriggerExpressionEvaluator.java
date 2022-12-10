@@ -12,7 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HeaderConfig;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.expression.EngineJexlContext;
-import io.harness.expression.ExpressionMode;
+import io.harness.expression.common.ExpressionMode;
 import io.harness.ngtriggers.expressions.functors.PayloadFunctor;
 import io.harness.ngtriggers.expressions.functors.TriggerPayloadFunctor;
 import io.harness.pms.contracts.ambiance.Ambiance;

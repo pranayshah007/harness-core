@@ -19,6 +19,8 @@ import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.Log.Builder.aLog;
+import static software.wings.beans.command.DownloadArtifactConstants.AUTHORIZATION;
+import static software.wings.beans.command.DownloadArtifactConstants.PWSH_ARTIFACTORY_USING_CREDENTIALS;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -93,6 +95,7 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
   private static final String ISO_8601_BASIC_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
   private static final String EMPTY_BODY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
   private static final String PERIOD_DELIMITER = ".";
+  static final String POWERSHELL_USE_ENV_PROXY = "POWERSHELL_USE_ENV_PROXY";
 
   @Inject private EncryptionService encryptionService;
   @Inject @Transient private transient DelegateLogService delegateLogService;
@@ -526,19 +529,15 @@ public class DownloadArtifactCommandUnit extends ExecCommandUnit {
         break;
       case POWERSHELL:
         if (!artifactoryConfig.hasCredentials()) {
-          command = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12\n "
-              + "$ProgressPreference = 'SilentlyContinue'\n"
-              + "Invoke-WebRequest -Uri \""
-              + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)) + "\" -OutFile \""
-              + getCommandPath() + "\\" + artifactFileName + "\"";
+          command = DownloadArtifactConstants.PWSH_ARTIFACTORY_NO_CREDENTIALS
+                        .replace(DownloadArtifactConstants.URI,
+                            getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)))
+                        .replace(DownloadArtifactConstants.OUT_FILE, getCommandPath() + "\\" + artifactFileName);
         } else {
-          command = "$Headers = @{\n"
-              + "    Authorization = \"" + authHeader + "\"\n"
-              + "}\n [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12"
-              + "\n $ProgressPreference = 'SilentlyContinue'"
-              + "\n Invoke-WebRequest -Uri \""
-              + getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath))
-              + "\" -Headers $Headers -OutFile \"" + getCommandPath() + "\\" + artifactFileName + "\"";
+          command = PWSH_ARTIFACTORY_USING_CREDENTIALS.replace(AUTHORIZATION, authHeader)
+                        .replace(DownloadArtifactConstants.URI,
+                            getArtifactoryUrl(artifactoryConfig, metadata.get(ArtifactMetadataKeys.artifactPath)))
+                        .replace(DownloadArtifactConstants.OUT_FILE, getCommandPath() + "\\" + artifactFileName);
         }
         break;
       default:

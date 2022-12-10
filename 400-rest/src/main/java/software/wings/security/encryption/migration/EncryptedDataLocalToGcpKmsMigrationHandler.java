@@ -18,12 +18,13 @@ import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
 import static software.wings.settings.SettingVariableTypes.SECRET_TEXT;
 
 import static java.time.Duration.ofHours;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.MigrateSecretTask;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -41,6 +42,7 @@ import software.wings.settings.SettingVariableTypes;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -54,7 +56,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 @Singleton
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class EncryptedDataLocalToGcpKmsMigrationHandler implements Handler<EncryptedData> {
+public class EncryptedDataLocalToGcpKmsMigrationHandler
+    extends IteratorPumpModeHandler implements Handler<EncryptedData> {
   public static final int MAX_RETRY_COUNT = 3;
   private final List<SettingVariableTypes> secretTypes;
   private final WingsPersistence wingsPersistence;
@@ -84,12 +87,12 @@ public class EncryptedDataLocalToGcpKmsMigrationHandler implements Handler<Encry
     secretTypes.add(APM_VERIFICATION);
   }
 
-  public void registerIterators() {
+  private MorphiaFilterExpander<EncryptedData> getFilterExpander() {
     this.gcpKmsConfig = gcpSecretsManagerService.getGlobalKmsConfig();
     if (gcpKmsConfig == null) {
       log.error(
           "Global GCP KMS config found to be null hence not registering EncryptedDataLocalToGcpKmsMigrationHandler iterators");
-      return;
+      return null;
     }
 
     Set<String> accountIds = featureFlagService.getAccountIds(ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS);
@@ -101,29 +104,43 @@ public class EncryptedDataLocalToGcpKmsMigrationHandler implements Handler<Encry
       log.info(
           "Feature flag {} is enabled for accounts {} hence registering EncryptedDataLocalToGcpKmsMigrationHandler iterators",
           ACTIVE_MIGRATION_FROM_LOCAL_TO_GCP_KMS, accountIds.toString());
-      MorphiaFilterExpander<EncryptedData> filterExpander = getFilterQueryWithAccountIdsFilter(accountIds);
-      registerIteratorWithFactory(filterExpander);
+      return getFilterQueryWithAccountIdsFilter(accountIds);
     }
+
+    return null;
   }
 
-  private void registerIteratorWithFactory(@NotNull MorphiaFilterExpander<EncryptedData> filterExpander) {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("EncryptedDataLocalToGcpKmsMigrationHandler")
-            .poolSize(5)
-            .interval(ofSeconds(30))
-            .build(),
-        EncryptedData.class,
-        MongoPersistenceIterator.<EncryptedData, MorphiaFilterExpander<EncryptedData>>builder()
-            .clazz(EncryptedData.class)
-            .fieldName(EncryptedDataKeys.nextLocalToGcpKmsMigrationIteration)
-            .targetInterval(ofHours(20))
-            .acceptableNoAlertDelay(ofHours(40))
-            .handler(this)
-            .filterExpander(filterExpander)
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    MorphiaFilterExpander<EncryptedData> filterExpander = getFilterExpander();
+
+    if (filterExpander == null) {
+      log.warn("Iterator {} not started since the Morphia Filter is NULL", iteratorName);
+      return;
+    }
+
+    iterator =
+        (MongoPersistenceIterator<EncryptedData, MorphiaFilterExpander<EncryptedData>>)
+            persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions, EncryptedData.class,
+                MongoPersistenceIterator.<EncryptedData, MorphiaFilterExpander<EncryptedData>>builder()
+                    .clazz(EncryptedData.class)
+                    .fieldName(EncryptedDataKeys.nextLocalToGcpKmsMigrationIteration)
+                    .targetInterval(targetInterval)
+                    .acceptableNoAlertDelay(ofHours(40))
+                    .handler(this)
+                    .filterExpander(filterExpander)
+                    .schedulingType(REGULAR)
+                    .persistenceProvider(persistenceProvider)
+                    .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "EncryptedDataLocalToGcpKmsMigrationHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   private MorphiaFilterExpander<EncryptedData> getFilterQueryWithAccountIdsFilter(Set<String> accountIds) {

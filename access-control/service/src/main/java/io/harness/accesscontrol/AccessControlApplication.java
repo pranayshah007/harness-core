@@ -7,19 +7,20 @@
 
 package io.harness.accesscontrol;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.AuthorizationServiceHeader.BEARER;
-import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
-import static io.harness.AuthorizationServiceHeader.DEFAULT;
-import static io.harness.AuthorizationServiceHeader.DELEGATE_SERVICE;
-import static io.harness.AuthorizationServiceHeader.IDENTITY_SERVICE;
-import static io.harness.AuthorizationServiceHeader.MANAGER;
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
-import static io.harness.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
-import static io.harness.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.accesscontrol.AccessControlConfiguration.ALL_ACCESS_CONTROL_RESOURCES;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.BEARER;
+import static io.harness.authorization.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.CODE;
+import static io.harness.authorization.AuthorizationServiceHeader.CV_NEXT_GEN;
+import static io.harness.authorization.AuthorizationServiceHeader.DEFAULT;
+import static io.harness.authorization.AuthorizationServiceHeader.DELEGATE_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.IDENTITY_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
+import static io.harness.authorization.AuthorizationServiceHeader.NOTIFICATION_SERVICE;
+import static io.harness.authorization.AuthorizationServiceHeader.PIPELINE_SERVICE;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 import static com.google.common.collect.ImmutableMap.of;
@@ -61,6 +62,7 @@ import io.harness.ng.core.CorrelationFilter;
 import io.harness.ng.core.TraceFilter;
 import io.harness.ng.core.exceptionmappers.GenericExceptionMapperV2;
 import io.harness.ng.core.exceptionmappers.JerseyViolationExceptionMapperV2;
+import io.harness.ng.core.exceptionmappers.NotFoundExceptionMapper;
 import io.harness.ng.core.exceptionmappers.WingsExceptionMapperV2;
 import io.harness.outbox.OutboxEventPollService;
 import io.harness.persistence.HPersistence;
@@ -74,6 +76,7 @@ import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
 import io.harness.telemetry.filter.APIAuthTelemetryResponseFilter;
+import io.harness.telemetry.filter.TerraformTelemetryFilter;
 import io.harness.token.remote.TokenClient;
 
 import com.codahale.metrics.MetricRegistry;
@@ -267,6 +270,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     environment.jersey().register(JerseyViolationExceptionMapperV2.class);
     environment.jersey().register(NGAccessDeniedExceptionMapper.class);
     environment.jersey().register(WingsExceptionMapperV2.class);
+    environment.jersey().register(NotFoundExceptionMapper.class);
     environment.jersey().register(GenericExceptionMapperV2.class);
   }
 
@@ -298,6 +302,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
       AccessControlConfiguration configuration, Environment environment, Injector injector) {
     if (configuration.getSegmentConfiguration() != null && configuration.getSegmentConfiguration().isEnabled()) {
       registerAPIAuthTelemetryFilter(environment, injector);
+      registerTerraformTelemetryFilter(environment, injector);
       registerAPIAuthTelemetryResponseFilter(environment, injector);
     }
   }
@@ -305,6 +310,11 @@ public class AccessControlApplication extends Application<AccessControlConfigura
   private void registerAPIAuthTelemetryFilter(Environment environment, Injector injector) {
     TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
     environment.jersey().register(new APIAuthTelemetryFilter(telemetryReporter));
+  }
+
+  private void registerTerraformTelemetryFilter(Environment environment, Injector injector) {
+    TelemetryReporter telemetryReporter = injector.getInstance(TelemetryReporter.class);
+    environment.jersey().register(new TerraformTelemetryFilter(telemetryReporter));
   }
 
   private void registerAPIAuthTelemetryResponseFilter(Environment environment, Injector injector) {
@@ -339,6 +349,7 @@ public class AccessControlApplication extends Application<AccessControlConfigura
     serviceToSecretMapping.put(NOTIFICATION_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(PIPELINE_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(ACCESS_CONTROL_SERVICE.getServiceId(), configuration.getDefaultServiceSecret());
+    serviceToSecretMapping.put(CODE.getServiceId(), configuration.getDefaultServiceSecret());
     serviceToSecretMapping.put(IDENTITY_SERVICE.getServiceId(), configuration.getIdentityServiceSecret());
     environment.jersey().register(new NextGenAuthenticationFilter(predicate, null, serviceToSecretMapping,
         injector.getInstance(Key.get(TokenClient.class, Names.named("PRIVILEGED")))));

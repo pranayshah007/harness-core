@@ -9,9 +9,13 @@ package io.harness.overviewdashboard.dashboardaggregateservice.impl;
 
 import static io.harness.dashboards.SortBy.DEPLOYMENTS;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.dashboards.DeploymentStatsSummary;
 import io.harness.dashboards.EnvCount;
 import io.harness.dashboards.LandingDashboardRequestCD;
@@ -24,9 +28,11 @@ import io.harness.dashboards.ServicesCount;
 import io.harness.dashboards.ServicesDashboardInfo;
 import io.harness.dashboards.SortBy;
 import io.harness.dashboards.TimeBasedDeploymentInfo;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.OrgProjectIdentifier;
 import io.harness.ng.core.dto.ActiveProjectsCountDTO;
 import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.overviewdashboard.bean.OverviewDashboardRequestType;
 import io.harness.overviewdashboard.bean.RestCallRequest;
 import io.harness.overviewdashboard.bean.RestCallResponse;
@@ -37,9 +43,11 @@ import io.harness.overviewdashboard.dtos.CountChangeAndCountChangeRateInfo;
 import io.harness.overviewdashboard.dtos.CountChangeDetails;
 import io.harness.overviewdashboard.dtos.CountInfo;
 import io.harness.overviewdashboard.dtos.CountOverview;
+import io.harness.overviewdashboard.dtos.CountOverview.CountOverviewBuilder;
 import io.harness.overviewdashboard.dtos.CountWithSuccessFailureDetails;
 import io.harness.overviewdashboard.dtos.DeploymentsOverview;
 import io.harness.overviewdashboard.dtos.DeploymentsStatsOverview;
+import io.harness.overviewdashboard.dtos.DeploymentsStatsOverview.DeploymentsStatsOverviewBuilder;
 import io.harness.overviewdashboard.dtos.DeploymentsStatsSummary;
 import io.harness.overviewdashboard.dtos.ExecutionResponse;
 import io.harness.overviewdashboard.dtos.ExecutionStatus;
@@ -60,10 +68,14 @@ import io.harness.pms.dashboards.GroupBy;
 import io.harness.pms.dashboards.LandingDashboardRequestPMS;
 import io.harness.pms.dashboards.PipelinesCount;
 import io.harness.project.remote.ProjectClient;
+import io.harness.user.remote.UserClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import dashboards.CDLandingDashboardResourceClient;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,10 +93,12 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
   private final String FAILURE_MESSAGE = "Failed to fetch data";
 
   DashboardRBACService dashboardRBACService;
+  NGFeatureFlagHelperService featureFlagService;
   CDLandingDashboardResourceClient cdLandingDashboardResourceClient;
   PMSLandingDashboardResourceClient pmsLandingDashboardResourceClient;
   ParallelRestCallExecutor parallelRestCallExecutor;
   ProjectClient projectClient;
+  UserClient userClient;
 
   @Override
   public ExecutionResponse<TopProjectsPanel> getTopProjectsPanel(
@@ -140,15 +154,19 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
   }
 
   @Override
-  public ExecutionResponse<DeploymentsStatsOverview> getDeploymentStatsOverview(
-      String accountIdentifier, String userId, long startInterval, long endInterval, GroupBy groupBy, SortBy sortBy) {
+  public ExecutionResponse<DeploymentsStatsOverview> getDeploymentStatsOverview(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String userId, long startInterval, long endInterval,
+      GroupBy groupBy, SortBy sortBy) {
     List<ProjectDTO> listOfAccessibleProject = dashboardRBACService.listAccessibleProject(accountIdentifier, userId);
     List<String> orgIdentifiers = getOrgIdentifiers(listOfAccessibleProject);
     Map<String, String> mapOfOrganizationIdentifierAndOrganizationName =
         dashboardRBACService.getMapOfOrganizationIdentifierAndOrganizationName(accountIdentifier, orgIdentifiers);
     List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(listOfAccessibleProject);
     LandingDashboardRequestCD landingDashboardRequestCD =
-        LandingDashboardRequestCD.builder().orgProjectIdentifiers(orgProjectIdentifierList).build();
+        LandingDashboardRequestCD.builder()
+            .orgProjectIdentifiers(
+                getOrgProjectIdentifierList(orgProjectIdentifierList, orgIdentifier, projectIdentifier))
+            .build();
     Map<String, String> mapOfProjectIdentifierAndProjectName =
         getMapOfProjectIdentifierAndProjectName(listOfAccessibleProject);
     List<RestCallRequest> restCallRequestList = getRestCallRequestListForDeploymentStatsOverview(
@@ -177,14 +195,17 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
             (DeploymentStatsSummary) deploymentStatsInfoOptional.get().getResponse();
         ServicesDashboardInfo servicesDashboardInfo =
             (ServicesDashboardInfo) mostActiveServicesOptional.get().getResponse();
+        DeploymentsStatsOverviewBuilder deploymentSummary =
+            DeploymentsStatsOverview.builder()
+                .deploymentsStatsSummary(getDeploymentStatsSummary(deploymentStatsInfo))
+                .mostActiveServicesList(getMostActiveServicesList(sortBy, servicesDashboardInfo,
+                    mapOfProjectIdentifierAndProjectName, mapOfOrganizationIdentifierAndOrganizationName));
+        if (!featureFlagService.isEnabled(accountIdentifier, FeatureName.LANDING_OVERVIEW_PAGE_V2)) {
+          deploymentSummary.deploymentsOverview(getDeploymentsOverview(activeDeploymentsInfo,
+              mapOfProjectIdentifierAndProjectName, mapOfOrganizationIdentifierAndOrganizationName));
+        }
         return ExecutionResponse.<DeploymentsStatsOverview>builder()
-            .response(DeploymentsStatsOverview.builder()
-                          .deploymentsOverview(getDeploymentsOverview(activeDeploymentsInfo,
-                              mapOfProjectIdentifierAndProjectName, mapOfOrganizationIdentifierAndOrganizationName))
-                          .deploymentsStatsSummary(getDeploymentStatsSummary(deploymentStatsInfo))
-                          .mostActiveServicesList(getMostActiveServicesList(sortBy, servicesDashboardInfo,
-                              mapOfProjectIdentifierAndProjectName, mapOfOrganizationIdentifierAndOrganizationName))
-                          .build())
+            .response(deploymentSummary.build())
             .executionStatus(ExecutionStatus.SUCCESS)
             .executionMessage(SUCCESS_MESSAGE)
             .build();
@@ -197,14 +218,87 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
   }
 
   @Override
-  public ExecutionResponse<CountOverview> getCountOverview(
-      String accountIdentifier, String userId, long startInterval, long endInterval) {
+  public ExecutionResponse<DeploymentsStatsOverview> getActiveDeploymentsOverview(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String userId) {
+    List<ProjectDTO> listOfAccessibleProject = dashboardRBACService.listAccessibleProject(accountIdentifier, userId);
+    List<String> orgIdentifiers = getOrgIdentifiers(listOfAccessibleProject);
+    Map<String, String> mapOfOrganizationIdentifierAndOrganizationName =
+        dashboardRBACService.getMapOfOrganizationIdentifierAndOrganizationName(accountIdentifier, orgIdentifiers);
+    List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(listOfAccessibleProject);
+    LandingDashboardRequestCD landingDashboardRequestCD =
+        LandingDashboardRequestCD.builder()
+            .orgProjectIdentifiers(
+                getOrgProjectIdentifierList(orgProjectIdentifierList, orgIdentifier, projectIdentifier))
+            .build();
+    Map<String, String> mapOfProjectIdentifierAndProjectName =
+        getMapOfProjectIdentifierAndProjectName(listOfAccessibleProject);
+    List<RestCallRequest> restCallRequestList =
+        getRestCallRequestListForActiveDeploymentsOverview(accountIdentifier, landingDashboardRequestCD);
+    List<RestCallResponse> restCallResponses = parallelRestCallExecutor.executeRestCalls(restCallRequestList);
+    Optional<RestCallResponse> activeDeploymentsInfoOptional =
+        getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_ACTIVE_DEPLOYMENTS_INFO);
+    if (activeDeploymentsInfoOptional.isPresent()) {
+      if (activeDeploymentsInfoOptional.get().isCallFailed()) {
+        return ExecutionResponse.<DeploymentsStatsOverview>builder()
+            .executionStatus(ExecutionStatus.FAILURE)
+            .executionMessage(FAILURE_MESSAGE)
+            .build();
+      } else {
+        PipelinesExecutionDashboardInfo activeDeploymentsInfo =
+            (PipelinesExecutionDashboardInfo) activeDeploymentsInfoOptional.get().getResponse();
+        DeploymentsStatsOverview activeDeploymentsOverview =
+            DeploymentsStatsOverview.builder()
+                .deploymentsOverview(getDeploymentsOverview(activeDeploymentsInfo, mapOfProjectIdentifierAndProjectName,
+                    mapOfOrganizationIdentifierAndOrganizationName))
+                .build();
+        return ExecutionResponse.<DeploymentsStatsOverview>builder()
+            .response(activeDeploymentsOverview)
+            .executionStatus(ExecutionStatus.SUCCESS)
+            .executionMessage(SUCCESS_MESSAGE)
+            .build();
+      }
+    }
+    return ExecutionResponse.<DeploymentsStatsOverview>builder()
+        .executionStatus(ExecutionStatus.FAILURE)
+        .executionMessage(FAILURE_MESSAGE)
+        .build();
+  }
+
+  private List<RestCallRequest> getRestCallRequestListForActiveDeploymentsOverview(
+      String accountIdentifier, LandingDashboardRequestCD landingDashboardRequestCD) {
+    List<RestCallRequest> restCallRequestList = new ArrayList<>();
+    restCallRequestList.add(RestCallRequest.<PipelinesExecutionDashboardInfo>builder()
+                                .request(cdLandingDashboardResourceClient.getActiveDeploymentStats(
+                                    accountIdentifier, landingDashboardRequestCD))
+                                .requestType(OverviewDashboardRequestType.GET_ACTIVE_DEPLOYMENTS_INFO)
+                                .build());
+    return restCallRequestList;
+  }
+
+  boolean isCountPresent(List<Optional<RestCallResponse>> entitiesResponses) {
+    return entitiesResponses.stream().allMatch(Optional::isPresent);
+  }
+
+  boolean isCallFailed(List<Optional<RestCallResponse>> entitiesResponses) {
+    List<RestCallResponse> callResponses = entitiesResponses.stream().map(Optional::get).collect(Collectors.toList());
+    return callResponses.stream().anyMatch(RestCallResponse::isCallFailed);
+  }
+
+  @Override
+  public ExecutionResponse<CountOverview> getCountOverview(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String userId, long startInterval, long endInterval) {
     List<ProjectDTO> listOfAccessibleProject = dashboardRBACService.listAccessibleProject(accountIdentifier, userId);
     List<OrgProjectIdentifier> orgProjectIdentifierList = getOrgProjectIdentifier(listOfAccessibleProject);
     LandingDashboardRequestCD landingDashboardRequestCD =
-        LandingDashboardRequestCD.builder().orgProjectIdentifiers(orgProjectIdentifierList).build();
+        LandingDashboardRequestCD.builder()
+            .orgProjectIdentifiers(
+                getOrgProjectIdentifierList(orgProjectIdentifierList, orgIdentifier, projectIdentifier))
+            .build();
     LandingDashboardRequestPMS landingDashboardRequestPMS =
-        LandingDashboardRequestPMS.builder().orgProjectIdentifiers(orgProjectIdentifierList).build();
+        LandingDashboardRequestPMS.builder()
+            .orgProjectIdentifiers(
+                getOrgProjectIdentifierList(orgProjectIdentifierList, orgIdentifier, projectIdentifier))
+            .build();
     List<RestCallRequest> restCallRequestList = getRestCallRequestListForCountOverview(
         accountIdentifier, userId, startInterval, endInterval, landingDashboardRequestCD, landingDashboardRequestPMS);
     List<RestCallResponse> restCallResponses = parallelRestCallExecutor.executeRestCalls(restCallRequestList);
@@ -217,11 +311,19 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_PIPELINES_COUNT);
     Optional<RestCallResponse> projectsCountOptional =
         getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_PROJECTS_COUNT);
+    Optional<RestCallResponse> usersCountOptional =
+        getResponseOptional(restCallResponses, OverviewDashboardRequestType.GET_USER_COUNT);
 
-    if (servicesCountOptional.isPresent() && envCountOptional.isPresent() && pipelinesCountOptional.isPresent()
-        && projectsCountOptional.isPresent()) {
-      if (servicesCountOptional.get().isCallFailed() || envCountOptional.get().isCallFailed()
-          || pipelinesCountOptional.get().isCallFailed() || projectsCountOptional.get().isCallFailed()) {
+    // For project scope making projectDetails return 0
+    if (isNotEmpty(projectIdentifier) && isNotEmpty(orgIdentifier)) {
+      projectsCountOptional =
+          Optional.of(RestCallResponse.builder().response(ActiveProjectsCountDTO.builder().count(0).build()).build());
+      listOfAccessibleProject = Collections.emptyList();
+    }
+    List<Optional<RestCallResponse>> entitiesResponses = Arrays.asList(
+        servicesCountOptional, envCountOptional, pipelinesCountOptional, projectsCountOptional, usersCountOptional);
+    if (isCountPresent(entitiesResponses)) {
+      if (isCallFailed(entitiesResponses)) {
         return ExecutionResponse.<CountOverview>builder()
             .executionStatus(ExecutionStatus.FAILURE)
             .executionMessage(FAILURE_MESSAGE)
@@ -231,13 +333,19 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         EnvCount envCount = (EnvCount) envCountOptional.get().getResponse();
         PipelinesCount pipelinesCount = (PipelinesCount) pipelinesCountOptional.get().getResponse();
         ActiveProjectsCountDTO projectsNewCount = (ActiveProjectsCountDTO) projectsCountOptional.get().getResponse();
+        UsersCountDTO usersCount = (UsersCountDTO) usersCountOptional.get().getResponse();
+        CountOverviewBuilder countOverviewBuilder =
+            CountOverview.builder()
+                .servicesCountDetail(getServicesCount(servicesCount))
+                .envCountDetail(getEnvCount(envCount))
+                .pipelinesCountDetail(getPipelinesCount(pipelinesCount))
+                .projectsCountDetail(getProjectsCount(listOfAccessibleProject.size(), projectsNewCount));
+        if (featureFlagService.isEnabled(accountIdentifier, FeatureName.LANDING_OVERVIEW_PAGE_V2)) {
+          countOverviewBuilder.usersCountDetail(getUsersCount(usersCount));
+        }
+
         return ExecutionResponse.<CountOverview>builder()
-            .response(CountOverview.builder()
-                          .servicesCountDetail(getServicesCount(servicesCount))
-                          .envCountDetail(getEnvCount(envCount))
-                          .pipelinesCountDetail(getPipelinesCount(pipelinesCount))
-                          .projectsCountDetail(getProjectsCount(listOfAccessibleProject.size(), projectsNewCount))
-                          .build())
+            .response(countOverviewBuilder.build())
             .executionStatus(ExecutionStatus.SUCCESS)
             .executionMessage(SUCCESS_MESSAGE)
             .build();
@@ -247,6 +355,22 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         .executionStatus(ExecutionStatus.FAILURE)
         .executionMessage(FAILURE_MESSAGE)
         .build();
+  }
+
+  private List<OrgProjectIdentifier> getOrgProjectIdentifierList(
+      List<OrgProjectIdentifier> orgProjectIdentifierList, String orgIdentifier, String projectIdentifier) {
+    if (isNotEmpty(orgIdentifier) && isNotEmpty(projectIdentifier)) {
+      OrgProjectIdentifier orgProjectIdentifier =
+          OrgProjectIdentifier.builder().orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+      if (orgProjectIdentifierList.contains(orgProjectIdentifier)) {
+        return Collections.singletonList(orgProjectIdentifier);
+      } else {
+        throw new InvalidRequestException(
+            format("Project with identifier %s in organization with identifier %s in not accessible to the user",
+                projectIdentifier, orgIdentifier));
+      }
+    }
+    return orgProjectIdentifierList;
   }
 
   private DeploymentsOverview getDeploymentsOverview(PipelinesExecutionDashboardInfo activeDeploymentsInfo,
@@ -399,6 +523,14 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         .build();
   }
 
+  private CountChangeDetails getUsersCount(UsersCountDTO usersCount) {
+    return CountChangeDetails.builder()
+        .countChangeAndCountChangeRateInfo(
+            CountChangeAndCountChangeRateInfo.builder().countChange(usersCount.getNewCount()).build())
+        .count(usersCount.getTotalCount())
+        .build();
+  }
+
   private CountChangeDetails getProjectsCount(long totalCount, ActiveProjectsCountDTO newCount) {
     return CountChangeDetails.builder()
         .countChangeAndCountChangeRateInfo(
@@ -519,11 +651,21 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
                                     accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
                                 .requestType(OverviewDashboardRequestType.GET_PIPELINES_COUNT)
                                 .build());
+    restCallRequestList.add(RestCallRequest.<PipelinesCount>builder()
+                                .request(pmsLandingDashboardResourceClient.getPipelinesCount(
+                                    accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
+                                .requestType(OverviewDashboardRequestType.GET_PIPELINES_COUNT)
+                                .build());
     restCallRequestList.add(
         RestCallRequest.<ActiveProjectsCountDTO>builder()
             .request(projectClient.getAccessibleProjectsCount(accountIdentifier, startInterval, endInterval))
             .requestType(OverviewDashboardRequestType.GET_PROJECTS_COUNT)
             .build());
+
+    restCallRequestList.add(RestCallRequest.<UsersCountDTO>builder()
+                                .request(userClient.getUsersCount(accountIdentifier, startInterval, endInterval))
+                                .requestType(OverviewDashboardRequestType.GET_USER_COUNT)
+                                .build());
     return restCallRequestList;
   }
 

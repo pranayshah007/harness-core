@@ -13,7 +13,6 @@ import static io.harness.exception.WingsException.USER_SRE;
 import static java.lang.String.format;
 
 import io.harness.exception.InvalidArgumentsException;
-import io.harness.expression.ExpressionReflectionUtils;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -170,6 +169,11 @@ public class ReflectionUtils {
   }
 
   public static Map<String, Object> getFieldValues(@Nonnull Object obj, @Nonnull Set<String> fieldNames) {
+    return getFieldValues(obj, fieldNames, true);
+  }
+
+  public static Map<String, Object> getFieldValues(
+      @Nonnull Object obj, @Nonnull Set<String> fieldNames, boolean shouldLogWarnAndError) {
     Map<String, Object> fieldNameValueMap = new HashMap<>();
     for (String fieldName : fieldNames) {
       try {
@@ -178,9 +182,13 @@ public class ReflectionUtils {
         Object value = field.get(obj);
         fieldNameValueMap.put(fieldName, value);
       } catch (NoSuchFieldException ignored) {
-        log.error(format("Field \"%s\" not available in object \"%s\"", fieldName, obj.toString()));
+        if (shouldLogWarnAndError) {
+          log.warn(format("Field \"%s\" not available in object \"%s\"", fieldName, obj.toString()));
+        }
       } catch (IllegalAccessException e) {
-        log.error(format("Unable to access field \"%s\"", fieldName));
+        if (shouldLogWarnAndError) {
+          log.error(format("Unable to access field \"%s\"", fieldName));
+        }
       }
     }
     return fieldNameValueMap;

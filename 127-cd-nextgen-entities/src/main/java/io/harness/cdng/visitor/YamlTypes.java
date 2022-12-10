@@ -55,10 +55,14 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
   String COMMAND = StepSpecTypeConstants.COMMAND;
 
+  String ELASTIGROUP_DEPLOY = StepSpecTypeConstants.ELASTIGROUP_DEPLOY;
+  String ELASTIGROUP_ROLLBACK = StepSpecTypeConstants.ELASTIGROUP_ROLLBACK;
+
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
   String ECS_CANARY_DEPLOY = StepSpecTypeConstants.ECS_CANARY_DEPLOY;
   String ECS_CANARY_DELETE = StepSpecTypeConstants.ECS_CANARY_DELETE;
+  String ECS_RUN_TASK = StepSpecTypeConstants.ECS_RUN_TASK;
   String ECS_BLUE_GREEN_CREATE_SERVICE = StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE;
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS;
   String ECS_BLUE_GREEN_ROLLBACK = StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK;
@@ -88,6 +92,7 @@ public interface YamlTypes {
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
+  String CONFIGURATION = "configuration";
   String TAG = "tag";
   String TAG_REGEX = "tagRegex";
   String IMAGE_PATH = "imagePath";
@@ -110,6 +115,7 @@ public interface YamlTypes {
   String COMMAND_FLAGS_WRAPPER = "commandFlags";
   String REGION = "region";
   String STAGE = "stage";
+  String TEMPLATE = "template";
   String CREDENTIALS_REF = "credentialsRef";
   String HOSTS = "hosts";
   String HOST_FILTER = "hostFilter";
@@ -145,6 +151,7 @@ public interface YamlTypes {
   String JENKINS_BUILD = StepSpecTypeConstants.JENKINS_BUILD;
   String STARTUP_COMMAND = "startupCommand";
 
+  String ELASTIGROUP_SERVICE_SETTINGS_STEP = "Elastigroup_Service_Settings";
   String AZURE_SERVICE_SETTINGS_STEP = "Azure_Service_Settings";
 
   String APPLICATION_SETTINGS = "applicationSettings";
@@ -155,4 +162,12 @@ public interface YamlTypes {
   String ENV_PRE_PRODUCTION = "PreProduction";
 
   String SERVICE_ENTITIES = "services";
+
+  String PIPELINE = "pipeline";
+  String PARALLEL_STAGE = "parallel";
+  String STAGES = "stages";
+  String ELASTIGROUP_SETUP = StepSpecTypeConstants.ELASTIGROUP_SETUP;
+
+  String ORG = "organization";
+  String SPACE = "space";
 }

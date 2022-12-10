@@ -467,19 +467,32 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     setServiceId(artifactStream);
 
     boolean originalMetadataOnly = artifactStream.isMetadataOnly();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    boolean isArtifactStreamMetadataFFEnabled = featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId);
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(true);
     }
     artifactStream.validateRequiredFields();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(originalMetadataOnly);
     }
 
     validateIfNexus2AndDockerRepositoryType(artifactStream, accountId);
 
+    // Set collectionEnabled status
+    if (artifactStream.getCollectionEnabled() == null) {
+      artifactStream.setCollectionEnabled(true);
+    }
+
+    // Set collection status initially to UNSTABLE.
+    artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.UNSTABLE.name());
+
     // check if artifact stream is parameterized
     boolean streamParameterized = artifactStream.checkIfStreamParameterized();
     if (streamParameterized) {
+      // parameterised artifact stream cannot have collection enabled true, forcing it to be false.
+      artifactStream.setCollectionEnabled(false);
+      // setting parameterised artifact stream status to be STOPPED since collection cannot be enabled for it.
+      artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.STOPPED.name());
       // if nexus check if its not version 3
       validateIfNexus2AndParameterized(artifactStream, accountId);
       artifactStream.setArtifactStreamParameterized(true);
@@ -523,8 +536,6 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     handleArtifactoryDockerSupportForPcf(artifactStream);
     // Add keywords.
     artifactStream.setKeywords(trimmedLowercaseSet(artifactStream.generateKeywords()));
-    // Set collection status initially to UNSTABLE.
-    artifactStream.setCollectionStatus(ArtifactStreamCollectionStatus.UNSTABLE.name());
     // Trim out whitespaces
     artifactStream.setName(artifactStream.getName().trim());
 
@@ -711,11 +722,12 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     artifactStream.setAccountId(accountId);
 
     boolean originalMetadataOnly = artifactStream.isMetadataOnly();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    boolean isArtifactStreamMetadataFFEnabled = featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId);
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(true);
     }
     artifactStream.validateRequiredFields();
-    if (featureFlagService.isEnabled(ARTIFACT_STREAM_METADATA_ONLY, accountId)) {
+    if (isArtifactStreamMetadataFFEnabled) {
       artifactStream.setMetadataOnly(originalMetadataOnly);
     }
 
@@ -755,10 +767,15 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
     if (!fromTemplate) {
       populateCustomArtifactStreamFields(artifactStream, existingArtifactStream);
     }
+    if (artifactStream.getCollectionEnabled() == null) {
+      artifactStream.setCollectionEnabled(true);
+    }
 
     // check if artifact stream is parameterized
     boolean streamParameterized = artifactStream.checkIfStreamParameterized();
     if (streamParameterized) {
+      // parameterised artifact stream cannot have collection enabled true, forcing it to be false.
+      artifactStream.setCollectionEnabled(false);
       validateIfNexus2AndParameterized(artifactStream, accountId);
     }
     artifactStream.setArtifactStreamParameterized(streamParameterized);
@@ -905,6 +922,42 @@ public class ArtifactStreamServiceImpl implements ArtifactStreamService {
       resetPerpetualTask(artifactStream);
     }
     return artifactStream;
+  }
+
+  @Override
+  public boolean resetStoppedArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class)
+            .filter(ArtifactStreamKeys.accountId, accountId)
+            .filter(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.UNSTABLE)
+            .set(ArtifactStreamKeys.failedCronAttempts, 0);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to reset with accountId {}", accountId);
+    }
+    alertService.deleteArtifactStreamAlertForAccount(accountId);
+    // not handlng PT cases since they are deprecated.
+    return true;
+  }
+
+  @Override
+  public boolean stopArtifactCollectionForAccount(String accountId) {
+    Query<ArtifactStream> query =
+        wingsPersistence.createQuery(ArtifactStream.class).filter(ArtifactStreamKeys.accountId, accountId);
+    UpdateOperations<ArtifactStream> updateOperations =
+        wingsPersistence.createUpdateOperations(ArtifactStream.class)
+            .set(ArtifactStreamKeys.collectionStatus, ArtifactStreamCollectionStatus.STOPPED);
+
+    UpdateResults updateResults = wingsPersistence.update(query, updateOperations);
+    if (updateResults.getUpdatedCount() == 0) {
+      log.warn("No valid artifact source available to stop collecting for accountId {}", accountId);
+    }
+    // not handlng PT cases since they are deprecated.
+    return true;
   }
 
   @Override

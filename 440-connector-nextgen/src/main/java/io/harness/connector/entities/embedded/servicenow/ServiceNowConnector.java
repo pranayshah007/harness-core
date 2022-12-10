@@ -11,8 +11,11 @@ import io.harness.annotations.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
 import io.harness.ng.DbAliases;
 
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -35,7 +38,12 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("io.harness.connector.entities.embedded.servicenow.ServiceNowConnector")
 public class ServiceNowConnector extends Connector {
   String serviceNowUrl;
-  String username;
-  String usernameRef;
-  String passwordRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication") String username;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication") String usernameRef;
+  /** @deprecated */
+  @Deprecated(since = "moved to ServiceNowConnector with authType and serviceNowAuthentication") String passwordRef;
+  @NotEmpty ServiceNowAuthType authType;
+  @NotNull ServiceNowAuthentication serviceNowAuthentication;
 }

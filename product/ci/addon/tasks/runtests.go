@@ -95,6 +95,7 @@ type runTestsTask struct {
 	cmdContextFactory    exec.CmdContextFactory
 	testSplitStrategy    string
 	parallelizeTests     bool
+	testGlobs            string
 }
 
 func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogger,
@@ -143,6 +144,7 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		addonLogger:          addonLogger,
 		testSplitStrategy:    testSplitStrategy,
 		parallelizeTests:     r.GetParallelizeTests(),
+		testGlobs:            r.GetTestGlobs(),
 	}
 }
 
@@ -345,9 +347,9 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.R
 	for _, t := range testsToSplit {
 		switch splitStrategy {
 		case classTimingTestSplitStrategy, countTestSplitStrategy:
-			testID = t.Pkg + t.Class
+			testID = t.Pkg + "." + t.Class
 		default:
-			testID = t.Pkg + t.Class
+			testID = t.Pkg + "." + t.Class
 		}
 		currentTestSet[testID] = true
 		currentTestMap[testID] = append(currentTestMap[testID], t)
@@ -394,7 +396,10 @@ func (r *runTestsTask) getSplitTests(ctx context.Context, testsToSplit []types.R
 func formatTests(tests []types.RunnableTest) string {
 	testStrings := make([]string, 0)
 	for _, t := range tests {
-		tString := fmt.Sprintf("%s.%s", t.Pkg, t.Class)
+		tString := t.Class
+		if t.Pkg != "" {
+			tString = fmt.Sprintf("%s.", t.Pkg) + tString
+		}
 		if t.Autodetect.Rule != "" {
 			tString += fmt.Sprintf(" %s", t.Autodetect.Rule)
 		}
@@ -403,7 +408,7 @@ func formatTests(tests []types.RunnableTest) string {
 	return strings.Join(testStrings, ", ")
 }
 
-func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp, ignoreInstr *bool) {
+func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testintelligence.TestRunner, selection *types.SelectTestsResp) {
 	if !r.parallelizeTests {
 		r.log.Info("Skipping test splitting as requested")
 		return
@@ -437,7 +442,8 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 		// For full runs, detect all the tests in the repo and split them
 		// If autodetect fails or detects no tests, we run all tests in step 0
 		var err error
-		tests, err = runner.AutoDetectTests(ctx)
+		testGlobs := strings.Split(r.testGlobs, ",")
+		tests, err = runner.AutoDetectTests(ctx, testGlobs)
 		if err != nil || len(tests) == 0 {
 			// AutoDetectTests output should be same across all the parallel steps. If one of the step
 			// receives error / no tests to run, all the other steps should have the same output
@@ -449,7 +455,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 				// Error while auto-detecting, no tests for other parallel steps
 				selection.Tests = []types.RunnableTest{}
 				r.runOnlySelectedTests = true
-				*ignoreInstr = false // TODO: (Rutvij) Ignore instrumentation for manual runs with split tests
 				r.log.Errorw("Error in auto-detecting tests for splitting, running all tests in parallel step 0")
 			}
 			return
@@ -473,7 +478,6 @@ func (r *runTestsTask) computeSelectedTests(ctx context.Context, runner testinte
 	// Modify runner input to run selected tests
 	selection.Tests = splitTests
 	r.runOnlySelectedTests = true
-	*ignoreInstr = false
 }
 
 func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
@@ -484,10 +488,21 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 	if err != nil {
 		return "", err
 	}
+	for _, file := range files {
+		if file.Status != types.FileDeleted {
+			pkg, err := utils.ReadJavaPkg(r.log, r.fs, file.Name, make([]string, 0), -1)
+			if err != nil {
+				r.log.Errorw("something went wrong when parsing package, using file path as package", zap.Error(err))
+			}
+			file.Package = pkg
+		}
+	}
+
+	// Ignore instrumentation when it's a manual run or user has unchecked RunOnlySelectedTests option
+	isManual := isManualFn()
+	ignoreInstr := isManual || !r.runOnlySelectedTests
 
 	// Test selection
-	isManual := isManualFn()
-	ignoreInstr := isManual
 	selection = r.getTestSelection(ctx, files, isManual)
 
 	// Runner selection
@@ -555,7 +570,7 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 
 	// Test splitting: only when parallelism is enabled
 	if isParallelismEnabled() {
-		r.computeSelectedTests(ctx, runner, &selection, &ignoreInstr)
+		r.computeSelectedTests(ctx, runner, &selection)
 	}
 
 	// Test command
@@ -573,6 +588,9 @@ func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile stri
 		return "", err
 	}
 
+	if ignoreInstr {
+		r.log.Infow("Ignoring instrumentation and not attaching agent")
+	}
 	return resolvedCmd, nil
 }
 

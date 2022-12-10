@@ -12,16 +12,19 @@ package io.harness.timescaledb;
 
 import io.harness.timescaledb.tables.Anomalies;
 import io.harness.timescaledb.tables.BillingData;
+import io.harness.timescaledb.tables.CeRecommendations;
 import io.harness.timescaledb.tables.Environments;
 import io.harness.timescaledb.tables.KubernetesUtilizationData;
 import io.harness.timescaledb.tables.NgInstanceStats;
 import io.harness.timescaledb.tables.NodeInfo;
+import io.harness.timescaledb.tables.PipelineExecutionSummary;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCd;
 import io.harness.timescaledb.tables.PipelineExecutionSummaryCi;
 import io.harness.timescaledb.tables.Pipelines;
 import io.harness.timescaledb.tables.PodInfo;
 import io.harness.timescaledb.tables.ServiceInfraInfo;
 import io.harness.timescaledb.tables.Services;
+import io.harness.timescaledb.tables.UtilizationData;
 
 import org.jooq.Index;
 import org.jooq.OrderField;
@@ -175,12 +178,23 @@ public class Indexes {
       DSL.name("node_info_accid_clusterid_poolname"), NodeInfo.NODE_INFO,
       new OrderField[] {NodeInfo.NODE_INFO.ACCOUNTID, NodeInfo.NODE_INFO.CLUSTERID, NodeInfo.NODE_INFO.NODEPOOLNAME},
       false);
+
+  public static final Index PIPELINE_EXECUTION_SUMMARY_STARTTS_IDX = Internal.createIndex(
+      DSL.name("pipeline_execution_summary_startts_idx"), PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY,
+      new OrderField[] {PipelineExecutionSummary.PIPELINE_EXECUTION_SUMMARY.STARTTS.desc()}, false);
+
   public static final Index PIPELINE_EXECUTION_SUMMARY_CD_STARTTS_IDX = Internal.createIndex(
       DSL.name("pipeline_execution_summary_cd_startts_idx"), PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD,
       new OrderField[] {PipelineExecutionSummaryCd.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS.desc()}, false);
   public static final Index PIPELINE_EXECUTION_SUMMARY_CI_STARTTS_IDX = Internal.createIndex(
       DSL.name("pipeline_execution_summary_ci_startts_idx"), PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI,
       new OrderField[] {PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI.STARTTS.desc()}, false);
+  public static final Index PIPELINE_SUMMERY_CI_ACCOUNT_ORG_PROJ_IDX = Internal.createIndex(
+      DSL.name("pipeline_summery_ci_account_org_proj_idx"), PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI,
+      new OrderField[] {PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI.ACCOUNTID,
+          PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI.ORGIDENTIFIER,
+          PipelineExecutionSummaryCi.PIPELINE_EXECUTION_SUMMARY_CI.PROJECTIDENTIFIER},
+      false);
   public static final Index PIPELINES_ACCOUNT_ID_CREATED_AT_IDX =
       Internal.createIndex(DSL.name("pipelines_account_id_created_at_idx"), Pipelines.PIPELINES,
           new OrderField[] {Pipelines.PIPELINES.ACCOUNT_ID, Pipelines.PIPELINES.CREATED_AT}, false);
@@ -198,6 +212,25 @@ public class Indexes {
           new OrderField[] {PodInfo.POD_INFO.ACCOUNTID, PodInfo.POD_INFO.CLUSTERID, PodInfo.POD_INFO.INSTANCEID,
               PodInfo.POD_INFO.STARTTIME.desc()},
           true);
+  public static final Index PODINFO_ACC_CLUS_SRTIME_SPTIME_PNDEX =
+      Internal.createIndex(DSL.name("podinfo_acc_clus_srtime_sptime_pndex"), PodInfo.POD_INFO,
+          new OrderField[] {PodInfo.POD_INFO.ACCOUNTID, PodInfo.POD_INFO.CLUSTERID, PodInfo.POD_INFO.STARTTIME.desc(),
+              PodInfo.POD_INFO.STOPTIME.desc()},
+          false);
+  public static final Index RECOMMENDATION_ACCOUNTID_LASTPROCESSEDAT_ISVALID_RESOURCETYPE_I = Internal.createIndex(
+      DSL.name("recommendation_accountid_lastprocessedat_isvalid_resourcetype_i"), CeRecommendations.CE_RECOMMENDATIONS,
+      new OrderField[] {CeRecommendations.CE_RECOMMENDATIONS.ACCOUNTID,
+          CeRecommendations.CE_RECOMMENDATIONS.LASTPROCESSEDAT, CeRecommendations.CE_RECOMMENDATIONS.ISVALID,
+          CeRecommendations.CE_RECOMMENDATIONS.RESOURCETYPE},
+      false);
+  public static final Index RECOMMENDATION_ACCOUNTID_VALID_INDEX =
+      Internal.createIndex(DSL.name("recommendation_accountid_valid_index"), CeRecommendations.CE_RECOMMENDATIONS,
+          new OrderField[] {CeRecommendations.CE_RECOMMENDATIONS.ACCOUNTID,
+              CeRecommendations.CE_RECOMMENDATIONS.LASTPROCESSEDAT, CeRecommendations.CE_RECOMMENDATIONS.ISVALID},
+          false);
+  public static final Index SERVICE_INFRA_INFO_PIPELINE_EXECUTION_IDX =
+      Internal.createIndex(DSL.name("service_infra_info_pipeline_execution_idx"), ServiceInfraInfo.SERVICE_INFRA_INFO,
+          new OrderField[] {ServiceInfraInfo.SERVICE_INFRA_INFO.PIPELINE_EXECUTION_SUMMARY_CD_ID}, false);
   public static final Index SERVICE_INFRA_INFO_SERVICE_STARTTS_IDX =
       Internal.createIndex(DSL.name("service_infra_info_service_startts_idx"), ServiceInfraInfo.SERVICE_INFRA_INFO,
           new OrderField[] {ServiceInfraInfo.SERVICE_INFRA_INFO.SERVICE_STARTTS.desc()}, false);
@@ -206,4 +239,17 @@ public class Indexes {
           new OrderField[] {Services.SERVICES.ACCOUNT_ID, Services.SERVICES.CREATED_AT}, false);
   public static final Index SERVICES_PKEY =
       Internal.createIndex(DSL.name("services_pkey"), Services.SERVICES, new OrderField[] {Services.SERVICES.ID}, true);
+  public static final Index UTILIZATION_DATA_INSTANCEID_INDEX = Internal.createIndex(
+      DSL.name("utilization_data_instanceid_index"), UtilizationData.UTILIZATION_DATA,
+      new OrderField[] {UtilizationData.UTILIZATION_DATA.INSTANCEID, UtilizationData.UTILIZATION_DATA.STARTTIME.desc()},
+      false);
+  public static final Index UTILIZATION_DATA_STARTTIME_IDX =
+      Internal.createIndex(DSL.name("utilization_data_starttime_idx"), UtilizationData.UTILIZATION_DATA,
+          new OrderField[] {UtilizationData.UTILIZATION_DATA.STARTTIME.desc()}, false);
+  public static final Index UTILIZATION_DATA_UNIQUE_INDEX =
+      Internal.createIndex(DSL.name("utilization_data_unique_index"), UtilizationData.UTILIZATION_DATA,
+          new OrderField[] {UtilizationData.UTILIZATION_DATA.ACCOUNTID, UtilizationData.UTILIZATION_DATA.SETTINGID,
+              UtilizationData.UTILIZATION_DATA.CLUSTERID, UtilizationData.UTILIZATION_DATA.INSTANCEID,
+              UtilizationData.UTILIZATION_DATA.INSTANCETYPE, UtilizationData.UTILIZATION_DATA.STARTTIME.desc()},
+          true);
 }

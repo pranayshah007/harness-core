@@ -13,10 +13,15 @@ import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.
 import static io.harness.persistence.CreatedAtAccess.CREATED_AT_KEY;
 
 import static software.wings.beans.Account.AccountKeys;
+import static software.wings.yaml.gitSync.YamlChangeSet.Status.COMPLETED;
+import static software.wings.yaml.gitSync.YamlChangeSet.Status.FAILED;
+import static software.wings.yaml.gitSync.YamlChangeSet.Status.SKIPPED;
 
-import static java.time.Duration.ofHours;
 import static java.time.Duration.ofMinutes;
 
+import io.harness.exception.WingsException;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -30,11 +35,13 @@ import software.wings.beans.GitCommit.GitCommitKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.AppService;
+import software.wings.service.intfc.yaml.YamlChangeSetService;
 import software.wings.service.intfc.yaml.sync.GitSyncErrorService;
 import software.wings.service.intfc.yaml.sync.GitSyncService;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +54,7 @@ import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
 @Slf4j
-public class GitSyncEntitiesExpiryHandler implements Handler<Account> {
+public class GitSyncEntitiesExpiryHandler extends IteratorPumpModeHandler implements Handler<Account> {
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private AccountService accountService;
   @Inject private GitSyncService gitSyncService;
@@ -55,29 +62,43 @@ public class GitSyncEntitiesExpiryHandler implements Handler<Account> {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private GitSyncErrorService gitSyncErrorService;
   @Inject private MorphiaPersistenceProvider<Account> persistenceProvider;
+  @Inject private YamlChangeSetService yamlChangeSetService;
 
   private static long ONE_MONTH_IN_MILLIS = 2592000000L;
   private static long TWELVE_MONTH_IN_MILLIS = 31104000000L;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("GitSyncEntitiyExpiryCheck")
-            .poolSize(1)
-            .interval(ofHours(12))
-            .build(),
-        GitSyncEntitiesExpiryHandler.class,
-        MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
-            .clazz(Account.class)
-            .fieldName(AccountKeys.gitSyncExpiryCheckIteration)
-            .targetInterval(ofHours(12))
-            .acceptableNoAlertDelay(ofMinutes(120))
-            .acceptableExecutionTime(ofMinutes(5))
-            .handler(this)
-            .entityProcessController(new AccountLevelEntityProcessController(accountService))
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  // Delete max 20k records per job run
+  private static final int MAX_DELETE_PER_JOB_RUN = 20000;
+  // Delete any YamlChangeSets older than 30 days
+  private static final int RETENTION_PERIOD_IN_DAYS = 30;
+  // Delete 2k record in a batch
+  private static final String BATCH_SIZE = "500";
+
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<Account, MorphiaFilterExpander<Account>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       GitSyncEntitiesExpiryHandler.class,
+                       MongoPersistenceIterator.<Account, MorphiaFilterExpander<Account>>builder()
+                           .clazz(Account.class)
+                           .fieldName(AccountKeys.gitSyncExpiryCheckIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofMinutes(120))
+                           .acceptableExecutionTime(ofMinutes(5))
+                           .handler(this)
+                           .entityProcessController(new AccountLevelEntityProcessController(accountService))
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "GitSyncEntityExpiryCheck";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override
@@ -89,6 +110,18 @@ public class GitSyncEntitiesExpiryHandler implements Handler<Account> {
     handleGitFileActivity(account, twelveMonthExpiryMillis);
     handleGitError(account, oneMonthExpiryMillis);
     handleGitCommits(account, twelveMonthExpiryMillis);
+
+    handleYamlChangeSet(account);
+  }
+
+  private void handleYamlChangeSet(Account account) {
+    try {
+      yamlChangeSetService.deleteChangeSets(account.getUuid(), new YamlChangeSet.Status[] {FAILED, SKIPPED, COMPLETED},
+          MAX_DELETE_PER_JOB_RUN, BATCH_SIZE, RETENTION_PERIOD_IN_DAYS);
+
+    } catch (WingsException e) {
+      log.error("YamlChangeSet deletion cron job failed with error: " + e.getParams().get("message"));
+    }
   }
 
   @VisibleForTesting

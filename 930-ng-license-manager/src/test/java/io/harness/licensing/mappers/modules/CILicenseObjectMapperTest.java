@@ -29,12 +29,19 @@ public class CILicenseObjectMapperTest extends CategoryTest {
   private CIModuleLicense moduleLicense;
   private CIModuleLicenseDTO moduleLicenseDTO;
   private static final int DEFAULT_NUMBER_OF_COMMITTERS = 10;
+  private static final int DEFAULT_HOSTING_CREDITS = 100;
 
   @Before
   public void setUp() {
     initMocks(this);
-    moduleLicense = CIModuleLicense.builder().numberOfCommitters(DEFAULT_NUMBER_OF_COMMITTERS).build();
-    moduleLicenseDTO = CIModuleLicenseDTO.builder().numberOfCommitters(DEFAULT_NUMBER_OF_COMMITTERS).build();
+    moduleLicense = CIModuleLicense.builder()
+                        .numberOfCommitters(DEFAULT_NUMBER_OF_COMMITTERS)
+                        .hostingCredits(DEFAULT_HOSTING_CREDITS)
+                        .build();
+    moduleLicenseDTO = CIModuleLicenseDTO.builder()
+                           .numberOfCommitters(DEFAULT_NUMBER_OF_COMMITTERS)
+                           .hostingCredits(DEFAULT_HOSTING_CREDITS)
+                           .build();
   }
 
   @Test

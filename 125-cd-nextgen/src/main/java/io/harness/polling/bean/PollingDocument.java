@@ -51,7 +51,6 @@ public class PollingDocument implements PersistentEntity, AccountAccess, UuidAwa
                  .field(PollingDocumentKeys.pollingInfo)
                  .field(PollingDocumentKeys.signatures)
                  .build())
-        .add(CompoundMongoIndex.builder().name("accountId").field(PollingDocumentKeys.accountId).build())
         .build();
   }
 

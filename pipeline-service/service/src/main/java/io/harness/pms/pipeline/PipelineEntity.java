@@ -19,8 +19,8 @@ import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
-import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
+import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.persistence.AccountAccess;
@@ -29,6 +29,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.pms.yaml.PipelineVersion;
 import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -49,6 +50,7 @@ import lombok.Singular;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.NonFinal;
+import lombok.experimental.UtilityClass;
 import lombok.experimental.Wither;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
@@ -74,7 +76,9 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class PipelineEntity
     implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
-    return ImmutableList.<MongoIndex>builder()
+    return ImmutableList
+        .<MongoIndex>builder()
+        // pipeline get call
         .add(CompoundMongoIndex.builder()
                  .name("unique_accountId_organizationId_projectId_pipelineId_repo_branch")
                  .unique(true)
@@ -85,6 +89,7 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.yamlGitConfigRef)
                  .field(PipelineEntityKeys.branch)
                  .build())
+        // count pipelines in account
         .add(CompoundMongoIndex.builder()
                  .name("accountId_organizationId_projectId_lastUpdatedAt")
                  .field(PipelineEntityKeys.accountId)
@@ -92,12 +97,43 @@ public class PipelineEntity
                  .field(PipelineEntityKeys.lastUpdatedAt)
                  .field(PipelineEntityKeys.projectIdentifier)
                  .build())
-        .add(CompoundMongoIndex.builder().name("lastUpdatedAt_idx").field(PipelineEntityKeys.lastUpdatedAt).build())
+        // used by countFileInstances
         .add(CompoundMongoIndex.builder()
                  .name("accountId_repoURL_filePath")
                  .field(PipelineEntityKeys.accountId)
                  .field(PipelineEntityKeys.repoURL)
                  .field(PipelineEntityKeys.filePath)
+                 .build())
+        // Used by sort in pipeline list api
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_lastUpdatedAt_repo_identifier_idx")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.orgIdentifier)
+                 .field(PipelineEntityKeys.projectIdentifier)
+                 .descSortField(PipelineEntityKeys.lastUpdatedAt)
+                 // Range filters
+                 .ascRangeField(PipelineEntityKeys.repo)
+                 .ascRangeField(PipelineEntityKeys.identifier)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_name_repo_identifier_idx")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.orgIdentifier)
+                 .field(PipelineEntityKeys.projectIdentifier)
+                 .descSortField(PipelineEntityKeys.name)
+                 // Range filters
+                 .ascRangeField(PipelineEntityKeys.repo)
+                 .ascRangeField(PipelineEntityKeys.identifier)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_orgId_projectId_lastExecutedAt_repo_identifier_idx")
+                 .field(PipelineEntityKeys.accountId)
+                 .field(PipelineEntityKeys.orgIdentifier)
+                 .field(PipelineEntityKeys.projectIdentifier)
+                 .descSortField(PipelineEntityKeys.lastExecutedAt)
+                 // Range filters
+                 .ascRangeField(PipelineEntityKeys.repo)
+                 .ascRangeField(PipelineEntityKeys.identifier)
                  .build())
         .build();
   }
@@ -113,7 +149,8 @@ public class PipelineEntity
 
   @Wither @NotEmpty @NonFinal @Setter String yaml;
 
-  @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
+  // Used by PipelineTelemetryPublisher
+  @Setter @NonFinal @SchemaIgnore @CreatedDate long createdAt;
   @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
   @Wither @Default Boolean deleted = Boolean.FALSE;
 
@@ -124,8 +161,12 @@ public class PipelineEntity
   @Wither @Version Long version;
 
   @Wither @Default Map<String, org.bson.Document> filters = new HashMap<>();
-  // Todo: Move this to pipelineMetadata
-  ExecutionSummaryInfo executionSummaryInfo;
+
+  /**
+   * @deprecated Use {@link RecentExecutionInfo} from {@link PipelineMetadataV2}
+   * lastExecutionTs move out from this dto to first class in pipelineEntity for sort filter
+   */
+  @Deprecated ExecutionSummaryInfo executionSummaryInfo;
   int runSequence;
 
   @Wither int stageCount;
@@ -147,6 +188,9 @@ public class PipelineEntity
   @Wither @Setter @NonFinal String repo;
   @Wither @Setter @NonFinal String connectorRef;
   @Wither @Setter @NonFinal String repoURL;
+
+  // to maintain pipeline version
+  @Setter @NonFinal String harnessVersion;
 
   public String getData() {
     return yaml;
@@ -182,5 +226,18 @@ public class PipelineEntity
       return false;
     }
     return TemplateRefHelper.hasTemplateRefOrCustomDeploymentRef(getData());
+  }
+
+  public String getHarnessVersion() {
+    if (harnessVersion == null || harnessVersion.equals("V0")) {
+      return PipelineVersion.V0;
+    }
+    return harnessVersion;
+  }
+
+  @UtilityClass
+  public static class PipelineEntityKeys {
+    public static final String lastExecutedAt = PipelineEntityKeys.executionSummaryInfo + "."
+        + "lastExecutionTs";
   }
 }

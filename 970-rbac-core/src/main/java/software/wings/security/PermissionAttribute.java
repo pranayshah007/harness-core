@@ -325,13 +325,13 @@ public class PermissionAttribute {
      */
     EXECUTE_WORKFLOW_ROLLBACK,
     /**
-     * default action.
-     */
-    DEFAULT,
-    /**
      * Abort Workflow
      */
-    ABORT_WORKFLOW
+    ABORT_WORKFLOW,
+    /**
+     * default action.
+     */
+    DEFAULT
   }
 
   /**
@@ -546,6 +546,11 @@ public class PermissionAttribute {
     /**
      * Manage Restricted Access
      */
-    MANAGE_RESTRICTED_ACCESS;
+    MANAGE_RESTRICTED_ACCESS,
+
+    /**
+     * Hide NextGen Button
+     */
+    HIDE_NEXTGEN_BUTTON;
   }
 }

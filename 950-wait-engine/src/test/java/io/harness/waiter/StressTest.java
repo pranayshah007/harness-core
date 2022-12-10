@@ -37,7 +37,7 @@ public class StressTest extends WaitEngineTestBase {
 
   @Inject private HPersistence persistence;
   @Inject private WaitNotifyEngine waitNotifyEngine;
-  @Inject private NotifyResponseCleaner notifyResponseCleaner;
+  @Inject private NotifyResponseCleanupHelper notifyResponseCleaner;
 
   @Test
   @Owner(developers = GEORGE)

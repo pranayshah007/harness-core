@@ -161,6 +161,7 @@ public class NGTemplateRepositoryCustomImplTest {
     TemplateEntity templateToSaveWithStoreType = templateToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
+                                                     .withFallBackBranch(branch)
                                                      .withFilePath(filePath);
 
     TemplateEntity templateToSaveWithStoreTypeWithExtraFields =
@@ -246,12 +247,22 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
 
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, false, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -276,7 +287,7 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, true, true, false, false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -296,12 +307,23 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .storeType(StoreType.REMOTE)
                                         .build();
 
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
+
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, false, false,
+                false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(1)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -326,7 +348,8 @@ public class NGTemplateRepositoryCustomImplTest {
     Optional<TemplateEntity> optionalPipelineEntity =
         ngTemplateRepositoryCustom
             .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
-                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true);
+                accountIdentifier, orgIdentifier, projectIdentifier, templateId, templateVersion, true, true, false,
+                false);
     assertThat(optionalPipelineEntity.isPresent()).isTrue();
     assertThat(optionalPipelineEntity.get()).isEqualTo(templateEntity);
     verify(gitAwareEntityHelper, times(0)).fetchEntityFromRemote(any(), any(), any(), any());
@@ -345,6 +368,16 @@ public class NGTemplateRepositoryCustomImplTest {
                                         .yaml(pipelineYaml)
                                         .storeType(StoreType.REMOTE)
                                         .build();
+
+    GitEntityInfo branchInfo = GitEntityInfo.builder()
+                                   .storeType(StoreType.REMOTE)
+                                   .connectorRef(connectorRef)
+                                   .repoName(repoName)
+                                   .branch(branch)
+                                   .filePath(filePath)
+                                   .build();
+
+    setupGitContext(branchInfo);
 
     doReturn(templateEntity).when(mongoTemplate).findOne(any(), any());
     doReturn(templateEntity).when(gitAwareEntityHelper).fetchEntityFromRemote(any(), any(), any(), any());

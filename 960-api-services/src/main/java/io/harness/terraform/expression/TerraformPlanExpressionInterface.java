@@ -12,9 +12,14 @@ public interface TerraformPlanExpressionInterface {
   String DELEGATE_FUNCTOR_NAME = "delegateTerraformPlan";
 
   String DELEGATE_EXPRESSION = "${" + DELEGATE_FUNCTOR_NAME + ".obtainPlan(\"%s\", %d).%s()}";
+  String HUMAN_READABLE_DELEGATE_EXPRESSION =
+      "${" + DELEGATE_FUNCTOR_NAME + ".obtainHumanReadablePlan(\"%s\", %d).%s()}";
 
   String EXAMPLE_USAGE = "${" + FUNCTOR_NAME + ".jsonFilePath()}";
   String DESTROY_EXAMPLE_USAGE = "${" + FUNCTOR_NAME + ".destroy.jsonFilePath()}";
+  String HUMAN_READABLE_EXAMPLE_USAGE = "${" + FUNCTOR_NAME + ".humanReadableFilePath()}";
+  String DESTROY_HUMAN_READABLE_EXAMPLE_USAGE = "${" + FUNCTOR_NAME + "destroy.humanReadableFilePath()}";
 
   String jsonFilePath();
+  String humanReadableFilePath();
 }

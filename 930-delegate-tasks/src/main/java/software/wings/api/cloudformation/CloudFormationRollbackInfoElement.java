@@ -36,6 +36,8 @@ public class CloudFormationRollbackInfoElement implements CloudFormationElement 
   private boolean skipBasedOnStackStatus;
   private List<String> stackStatusesToMarkAsSuccess;
   private Map<String, String> oldStackParameters;
+  private List<String> capabilities;
+  private String tags;
 
   @Override
   public ContextElementType getElementType() {

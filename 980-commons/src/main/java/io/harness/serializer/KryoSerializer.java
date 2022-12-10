@@ -104,15 +104,17 @@ public class KryoSerializer {
   }
 
   public byte[] asBytes(Object obj) {
-    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    writeToStream(obj, outputStream);
-    return outputStream.toByteArray();
+    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+      writeToStream(obj, outputStream);
+      return outputStream.toByteArray();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public byte[] asDeflatedBytes(Object obj) {
-    try {
-      final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-      final DeflaterOutputStream outputStream = new DeflaterOutputStream(byteStream);
+    try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+         DeflaterOutputStream outputStream = new DeflaterOutputStream(byteStream)) {
       writeToStream(obj, outputStream);
       outputStream.finish();
       return byteStream.toByteArray();
@@ -122,8 +124,7 @@ public class KryoSerializer {
   }
 
   private void writeToStream(Object obj, OutputStream outputStream) {
-    try {
-      Output output = new Output(outputStream);
+    try (Output output = new Output(outputStream)) {
       pool.run(kryo -> {
         kryo.writeClassAndObject(output, obj);
         return null;
@@ -139,17 +140,17 @@ public class KryoSerializer {
   }
 
   public Object asObject(byte[] bytes) {
-    Input input = new Input(bytes);
-    Object obj = pool.run(kryo -> kryo.readClassAndObject(input));
-    input.close();
-    return obj;
+    try (Input input = new Input(bytes)) {
+      return pool.run(kryo -> kryo.readClassAndObject(input));
+    }
   }
 
   public Object asInflatedObject(byte[] bytes) {
-    Input input = new Input(new InflaterInputStream(new Input(bytes)));
-    Object obj = pool.run(kryo -> kryo.readClassAndObject(input));
-    input.close();
-    return obj;
+    try (Input input = new Input(new InflaterInputStream(new Input(bytes)))) {
+      return pool.run(kryo -> kryo.readClassAndObject(input));
+    } catch (Exception exception) {
+      throw new RuntimeException(exception);
+    }
   }
 
   public Object asObject(String base64) {

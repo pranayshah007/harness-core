@@ -10,6 +10,7 @@ package io.harness.delegate.beans.connector.azureconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureAuthCredentialOutcomeDTO;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,4 +27,8 @@ import lombok.Data;
           value = AzureSystemAssignedMSIAuthDTO.class, name = AzureConstants.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
 })
 @Schema(name = "AzureAuthCredential", description = "This contains azure auth credentials")
-public abstract class AzureAuthCredentialDTO implements DecryptableEntity {}
+public abstract class AzureAuthCredentialDTO implements DecryptableEntity {
+  public AzureAuthCredentialOutcomeDTO toOutcome() {
+    return null;
+  }
+}

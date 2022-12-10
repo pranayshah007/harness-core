@@ -8,42 +8,48 @@
 package io.harness.ngmigration.service.entity;
 
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.environment.beans.EnvironmentType.PreProduction;
 import static io.harness.ng.core.environment.beans.EnvironmentType.Production;
 
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
+import static software.wings.ngmigration.NGMigrationEntityType.CONFIG_FILE;
+import static software.wings.ngmigration.NGMigrationEntityType.MANIFEST;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.MigratedEntityMapping;
-import io.harness.cdng.environment.yaml.EnvironmentYaml;
+import io.harness.cdng.configfile.ConfigFileWrapper;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.gitsync.beans.YamlDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.environment.beans.NGEnvironmentGlobalOverride;
 import io.harness.ng.core.environment.dto.EnvironmentRequestDTO;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
-import io.harness.ngmigration.beans.BaseEntityInput;
-import io.harness.ngmigration.beans.BaseInputDefinition;
-import io.harness.ngmigration.beans.BaseProvidedInput;
 import io.harness.ngmigration.beans.MigrationInputDTO;
-import io.harness.ngmigration.beans.MigratorInputType;
 import io.harness.ngmigration.beans.NGYamlFile;
 import io.harness.ngmigration.beans.NgEntityDetail;
 import io.harness.ngmigration.client.NGClient;
 import io.harness.ngmigration.client.PmsClient;
+import io.harness.ngmigration.client.TemplateClient;
+import io.harness.ngmigration.dto.ImportError;
+import io.harness.ngmigration.dto.MigrationImportSummaryDTO;
 import io.harness.ngmigration.service.MigratorMappingService;
 import io.harness.ngmigration.service.MigratorUtility;
 import io.harness.ngmigration.service.NgMigrationService;
 import io.harness.serializer.JsonUtils;
 import io.harness.yaml.core.variables.NGVariable;
 
+import software.wings.beans.ConfigFile;
+import software.wings.beans.EntityType;
 import software.wings.beans.Environment;
 import software.wings.beans.ServiceVariable;
+import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.CgEntityId;
@@ -52,6 +58,8 @@ import software.wings.ngmigration.DiscoveryNode;
 import software.wings.ngmigration.NGMigrationEntity;
 import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.ngmigration.NGMigrationStatus;
+import software.wings.service.intfc.ApplicationManifestService;
+import software.wings.service.intfc.ConfigService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureDefinitionService;
 import software.wings.service.intfc.ServiceVariableService;
@@ -75,6 +83,10 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureDefinitionService infrastructureDefinitionService;
   @Inject private ServiceVariableService serviceVariableService;
+  @Inject private ApplicationManifestService applicationManifestService;
+  @Inject ManifestMigrationService manifestMigrationService;
+  @Inject ConfigService configService;
+  @Inject ConfigFileMigrationService configFileMigrationService;
 
   @Override
   public MigratedEntityMapping generateMappingEntity(NGYamlFile yamlFile) {
@@ -106,6 +118,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
     CgEntityId environmentEntityId = CgEntityId.builder().type(NGMigrationEntityType.ENVIRONMENT).id(entityId).build();
     CgEntityNode environmentNode = CgEntityNode.builder()
                                        .id(entityId)
+                                       .appId(environment.getAppId())
                                        .type(NGMigrationEntityType.ENVIRONMENT)
                                        .entityId(environmentEntityId)
                                        .entity(environment)
@@ -132,6 +145,22 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                      .build())
                           .collect(Collectors.toList()));
     }
+    List<ApplicationManifest> applicationManifests =
+        applicationManifestService.getAllByEnvId(environment.getAppId(), environment.getUuid());
+    if (isNotEmpty(applicationManifests)) {
+      children.addAll(applicationManifests.stream()
+                          .filter(manifest -> StringUtils.isBlank(manifest.getServiceId()))
+                          .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
+                          .collect(Collectors.toList()));
+    }
+    List<ConfigFile> configFiles =
+        configService.getConfigFileOverridesForEnv(environment.getAppId(), environment.getUuid());
+    if (isNotEmpty(configFiles)) {
+      children.addAll(configFiles.stream()
+                          .map(configFile -> CgEntityId.builder().id(configFile.getUuid()).type(CONFIG_FILE).build())
+                          .collect(Collectors.toList()));
+    }
+
     return DiscoveryNode.builder().children(children).entityNode(environmentNode).build();
   }
 
@@ -152,58 +181,69 @@ public class EnvironmentMigrationService extends NgMigrationService {
   }
 
   @Override
-  public void migrate(String auth, NGClient ngClient, PmsClient pmsClient, MigrationInputDTO inputDTO,
-      NGYamlFile yamlFile) throws IOException {
-    if (!yamlFile.isExists()) {
-      NGEnvironmentInfoConfig environmentConfig =
-          ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
-      EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
-                                                        .identifier(environmentConfig.getIdentifier())
-                                                        .type(environmentConfig.getType())
-                                                        .orgIdentifier(environmentConfig.getOrgIdentifier())
-                                                        .projectIdentifier(environmentConfig.getProjectIdentifier())
-                                                        .name(environmentConfig.getName())
-                                                        .tags(environmentConfig.getTags())
-                                                        .description(environmentConfig.getDescription())
-                                                        .yaml(getYamlString(yamlFile))
-                                                        .build();
-      Response<ResponseDTO<ConnectorResponseDTO>> resp =
-          ngClient.createEnvironment(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(environmentRequestDTO))
-              .execute();
-      log.info("Environment creation Response details {} {}", resp.code(), resp.message());
+  public MigrationImportSummaryDTO migrate(String auth, NGClient ngClient, PmsClient pmsClient,
+      TemplateClient templateClient, MigrationInputDTO inputDTO, NGYamlFile yamlFile) throws IOException {
+    if (yamlFile.isExists()) {
+      return MigrationImportSummaryDTO.builder()
+          .errors(
+              Collections.singletonList(ImportError.builder()
+                                            .message("Environment was not migrated as it was already imported before")
+                                            .entity(yamlFile.getCgBasicInfo())
+                                            .build()))
+          .build();
     }
+    NGEnvironmentInfoConfig environmentConfig = ((NGEnvironmentConfig) yamlFile.getYaml()).getNgEnvironmentInfoConfig();
+    EnvironmentRequestDTO environmentRequestDTO = EnvironmentRequestDTO.builder()
+                                                      .identifier(environmentConfig.getIdentifier())
+                                                      .type(environmentConfig.getType())
+                                                      .orgIdentifier(environmentConfig.getOrgIdentifier())
+                                                      .projectIdentifier(environmentConfig.getProjectIdentifier())
+                                                      .name(environmentConfig.getName())
+                                                      .tags(environmentConfig.getTags())
+                                                      .description(environmentConfig.getDescription())
+                                                      .yaml(getYamlString(yamlFile))
+                                                      .build();
+    Response<ResponseDTO<ConnectorResponseDTO>> resp =
+        ngClient.createEnvironment(auth, inputDTO.getAccountIdentifier(), JsonUtils.asTree(environmentRequestDTO))
+            .execute();
+    log.info("Environment creation Response details {} {}", resp.code(), resp.message());
+    return handleResp(yamlFile, resp);
   }
 
   @Override
   public List<NGYamlFile> generateYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities,
-      NgEntityDetail ngEntityDetail) {
+      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId, Map<CgEntityId, NGYamlFile> migratedEntities) {
     Environment environment = (Environment) entities.get(entityId).getEntity();
-    String name = environment.getName();
-    String identifier = MigratorUtility.generateIdentifier(name);
-    String projectIdentifier = null;
-    String orgIdentifier = null;
-    Scope scope =
-        MigratorUtility.getDefaultScope(inputDTO.getDefaults(), NGMigrationEntityType.ENVIRONMENT, Scope.PROJECT);
-    if (inputDTO.getInputs() != null && inputDTO.getInputs().containsKey(entityId)) {
-      // TODO: @deepakputhraya We should handle if the connector needs to be reused.
-      BaseProvidedInput input = inputDTO.getInputs().get(entityId);
-      identifier = StringUtils.isNotBlank(input.getIdentifier()) ? input.getIdentifier() : identifier;
-      name = StringUtils.isNotBlank(input.getIdentifier()) ? input.getName() : name;
-      if (input.getScope() != null) {
-        scope = input.getScope();
-      }
-    }
-    if (Scope.PROJECT.equals(scope)) {
-      projectIdentifier = inputDTO.getProjectIdentifier();
-      orgIdentifier = inputDTO.getOrgIdentifier();
-    }
-    if (Scope.ORG.equals(scope)) {
-      orgIdentifier = inputDTO.getOrgIdentifier();
-    }
+    String name = MigratorUtility.generateName(inputDTO.getOverrides(), entityId, environment.getName());
+    String identifier = MigratorUtility.generateIdentifierDefaultName(inputDTO.getOverrides(), entityId, name);
+    String projectIdentifier = MigratorUtility.getProjectIdentifier(Scope.PROJECT, inputDTO);
+    String orgIdentifier = MigratorUtility.getOrgIdentifier(Scope.PROJECT, inputDTO);
     List<ServiceVariable> serviceVariablesForAllServices = serviceVariableService.getServiceVariablesForEntity(
         environment.getAppId(), environment.getUuid(), OBTAIN_VALUE);
+    Set<CgEntityId> manifestIds =
+        entities.values()
+            .stream()
+            .filter(entry -> MANIFEST.equals(entry.getType()))
+            .map(node -> (ApplicationManifest) node.getEntity())
+            .filter(manifest -> StringUtils.equals(manifest.getEnvId(), environment.getUuid()))
+            .filter(manifest -> StringUtils.isBlank(manifest.getServiceId()))
+            .map(manifest -> CgEntityId.builder().id(manifest.getUuid()).type(MANIFEST).build())
+            .collect(Collectors.toSet());
+    Set<CgEntityId> configFileIds =
+        entities.values()
+            .stream()
+            .filter(entry -> CONFIG_FILE == entry.getType())
+            .map(entry -> (ConfigFile) entry.getEntity())
+            .filter(configFile -> configFile.getEntityType() == EntityType.ENVIRONMENT)
+            .filter(configFile -> StringUtils.equals(configFile.getEntityId(), environment.getUuid()))
+            .map(configFile -> CgEntityId.builder().type(CONFIG_FILE).id(configFile.getUuid()).build())
+            .collect(Collectors.toSet());
 
+    List<ManifestConfigWrapper> manifests =
+        manifestMigrationService.getManifests(manifestIds, inputDTO, entities, migratedEntities);
+
+    List<ConfigFileWrapper> configFiles =
+        configFileMigrationService.getConfigFiles(configFileIds, inputDTO, entities, migratedEntities);
     NGEnvironmentConfig environmentConfig =
         NGEnvironmentConfig.builder()
             .ngEnvironmentInfoConfig(
@@ -215,8 +255,9 @@ public class EnvironmentMigrationService extends NgMigrationService {
                     .orgIdentifier(orgIdentifier)
                     .projectIdentifier(projectIdentifier)
                     .variables(getGlobalVariables(migratedEntities, serviceVariablesForAllServices))
-                    .type(io.harness.beans.EnvironmentType.PROD == environment.getEnvironmentType() ? Production
-                                                                                                    : PreProduction)
+                    .ngEnvironmentGlobalOverride(
+                        NGEnvironmentGlobalOverride.builder().configFiles(configFiles).manifests(manifests).build())
+                    .type(PROD == environment.getEnvironmentType() ? Production : PreProduction)
                     .build())
             .build();
 
@@ -230,12 +271,7 @@ public class EnvironmentMigrationService extends NgMigrationService {
                                                     .projectIdentifier(inputDTO.getProjectIdentifier())
                                                     .build())
                                 .type(NGMigrationEntityType.ENVIRONMENT)
-                                .cgBasicInfo(CgBasicInfo.builder()
-                                                 .accountId(environment.getAccountId())
-                                                 .appId(environment.getAppId())
-                                                 .id(environment.getUuid())
-                                                 .type(NGMigrationEntityType.ENVIRONMENT)
-                                                 .build())
+                                .cgBasicInfo(environment.getCgBasicInfo())
                                 .build();
     files.add(ngYamlFile);
 
@@ -265,29 +301,5 @@ public class EnvironmentMigrationService extends NgMigrationService {
   @Override
   protected boolean isNGEntityExists() {
     return true;
-  }
-
-  @Override
-  public BaseEntityInput generateInput(
-      Map<CgEntityId, CgEntityNode> entities, Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    Environment environment = (Environment) entities.get(entityId).getEntity();
-    return BaseEntityInput.builder()
-        .migrationStatus(MigratorInputType.CREATE_NEW)
-        .identifier(BaseInputDefinition.buildIdentifier(MigratorUtility.generateIdentifier(environment.getName())))
-        .name(BaseInputDefinition.buildName(environment.getName()))
-        .spec(null)
-        .build();
-  }
-
-  public EnvironmentYaml getEnvironmentYaml(MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities,
-      Map<CgEntityId, Set<CgEntityId>> graph, CgEntityId entityId) {
-    Environment environment = (Environment) entities.get(entityId).getEntity();
-    EnvironmentType environmentType = (environment.getEnvironmentType() == PROD) ? Production : PreProduction;
-    return EnvironmentYaml.builder()
-        .name(environment.getName())
-        .identifier(environment.getName())
-        .type(environmentType)
-        .tags(null)
-        .build();
   }
 }

@@ -9,8 +9,6 @@ package io.harness.service.stats.usagemetrics.eventpublisher;
 
 import static io.harness.eventsframework.EventsFrameworkConstants.INSTANCE_STATS;
 
-import static java.util.stream.Collectors.groupingBy;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -34,6 +32,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.DX)
 public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublisher {
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String ORG_ID = "orgId";
+  public static final String PROJECT_ID = "projectId";
+  public static final String SERVICE_ID = "serviceId";
   private final Producer eventProducer;
 
   @Inject
@@ -41,52 +43,66 @@ public class UsageMetricsEventPublisherImpl implements UsageMetricsEventPublishe
     this.eventProducer = eventProducer;
   }
 
+  @Override
   public void publishInstanceStatsTimeSeries(String accountId, long timestamp, List<InstanceDTO> instances) {
     if (EmptyPredicate.isEmpty(instances)) {
       return;
     }
 
-    List<DataPoint> dataPointList = new ArrayList<>();
-    // key - infraMappingId, value - Set<InstanceDTO>
-    Map<String, List<InstanceDTO>> infraMappingInstancesMap =
-        instances.stream().collect(groupingBy(InstanceDTO::getInfrastructureMappingId));
-
-    infraMappingInstancesMap.values().forEach(instanceList -> {
-      if (EmptyPredicate.isEmpty(instanceList)) {
-        return;
-      }
-
-      int size = instanceList.size();
-      InstanceDTO instance = instanceList.get(0);
-      Map<String, String> data = new HashMap<>();
-      data.put(TimescaleConstants.ACCOUNT_ID.getKey(), instance.getAccountIdentifier());
-      data.put(TimescaleConstants.ORG_ID.getKey(), instance.getOrgIdentifier());
-      data.put(TimescaleConstants.PROJECT_ID.getKey(), instance.getProjectIdentifier());
-      data.put(TimescaleConstants.SERVICE_ID.getKey(), instance.getServiceIdentifier());
-      data.put(TimescaleConstants.ENV_ID.getKey(), instance.getEnvIdentifier());
-      data.put(TimescaleConstants.INFRAMAPPING_ID.getKey(), instance.getInfrastructureMappingId());
-      data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), instance.getConnectorRef());
-      data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instance.getInstanceType().name());
-      data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(size));
-      log.info("Adding the instance record {} to the list", instance);
-      dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
-    });
-
-    TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.newBuilder()
-                                             .setAccountId(accountId)
-                                             .setTimestamp(timestamp)
-                                             .addAllDataPointList(dataPointList)
-                                             .build();
-
     try {
+      List<DataPoint> dataPoints = collectInstanceStats(instances);
+      TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.newBuilder()
+                                               .setAccountId(accountId)
+                                               .setTimestamp(timestamp)
+                                               .addAllDataPointList(dataPoints)
+                                               .build();
+
       eventProducer.send(Message.newBuilder()
                              .putAllMetadata(ImmutableMap.of(
-                                 "accountId", accountId, EventsFrameworkMetadataConstants.ENTITY_TYPE, INSTANCE_STATS))
+                                 ACCOUNT_ID, accountId, EventsFrameworkMetadataConstants.ENTITY_TYPE, INSTANCE_STATS))
                              .setData(eventInfo.toByteString())
                              .build());
+      Map<String, String> dataMap = dataPoints.get(0).getDataMap();
+      log.info("Event sent for service: {} (account: {}, org: {}, project: {})",
+          dataMap.get(TimescaleConstants.SERVICE_ID.getKey()), accountId,
+          dataMap.get(TimescaleConstants.ORG_ID.getKey()), dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));
     } catch (Exception ex) {
-      log.error(
-          String.format("Failed to publish instance stats event for Account %s via event framework.", accountId), ex);
+      log.error("Error publishing instance stats for services of account {}", accountId, ex);
     }
+  }
+
+  private List<DataPoint> collectInstanceStats(List<InstanceDTO> instances) {
+    List<DataPoint> dataPointList = new ArrayList<>();
+    if (EmptyPredicate.isEmpty(instances)) {
+      return dataPointList;
+    }
+
+    try {
+      int size = instances.size();
+      InstanceDTO instance = instances.get(0);
+      Map<String, String> data = populateInstanceData(instance, size);
+      log.info("Adding instance record {} to the list", data);
+      dataPointList.add(DataPoint.newBuilder().putAllData(data).build());
+    } catch (Exception e) {
+      log.error("Error adding instance record for service", e);
+    }
+    return dataPointList;
+  }
+
+  private Map<String, String> populateInstanceData(InstanceDTO instance, int size) {
+    Map<String, String> data = new HashMap<>();
+    data.put(TimescaleConstants.ACCOUNT_ID.getKey(), instance.getAccountIdentifier());
+    data.put(TimescaleConstants.ORG_ID.getKey(), instance.getOrgIdentifier());
+    data.put(TimescaleConstants.PROJECT_ID.getKey(), instance.getProjectIdentifier());
+    data.put(TimescaleConstants.SERVICE_ID.getKey(), instance.getServiceIdentifier());
+    data.put(TimescaleConstants.ENV_ID.getKey(), instance.getEnvIdentifier());
+    data.put(TimescaleConstants.INSTANCE_TYPE.getKey(), instance.getInstanceType().name());
+    data.put(TimescaleConstants.INSTANCECOUNT.getKey(), String.valueOf(size));
+    String connectorRef = instance.getConnectorRef();
+    if (connectorRef == null) {
+      connectorRef = "";
+    }
+    data.put(TimescaleConstants.CLOUDPROVIDER_ID.getKey(), connectorRef);
+    return data;
   }
 }

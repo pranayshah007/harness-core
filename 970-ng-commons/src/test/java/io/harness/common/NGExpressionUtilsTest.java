@@ -9,8 +9,10 @@ package io.harness.common;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN;
+import static io.harness.common.NGExpressionUtils.GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -133,5 +135,36 @@ public class NGExpressionUtilsTest extends CategoryTest {
     assertThatThrownBy(() -> NGExpressionUtils.getFirstKeyOfExpression("staticValue"))
         .hasMessage("staticValue is not a syntactically valid pipeline expression")
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testMatchesExpressionPatternForMatrix() {
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+pipeline.stages.s1>"))
+        .isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+PIPEline.stages.11>"))
+        .isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+pipeline.stages.1s>"))
+        .isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+pipeline>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+>")).isFalse();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+12.12.23>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+pipeline.1stages.S0OS>"))
+        .isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+too..many.dots>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+too.many.dots.>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+.too.many.dots>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+input>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+.input>")).isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX, "<+manifests.m2.store>"))
+        .isTrue();
+    assertThat(NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX,
+                   "<+steps.output_list.output.outputVariables.projects>.split(\",\")>"))
+        .isTrue();
+    assertThat(
+        NGExpressionUtils.containsPattern(GENERIC_EXPRESSIONS_PATTERN_FOR_MATRIX,
+            "<+secrets.getValue(<+pipeline.stages.Prepare_Common.spec.execution.steps.Prepare_Secrets.output.outputVariables.DEPUTY_DAF_CLIENT_SECRET>)>"))
+        .isTrue();
   }
 }

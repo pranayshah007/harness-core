@@ -13,12 +13,10 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.globalcontex.AuditGlobalContextData.AUDIT_ID;
 import static io.harness.persistence.HPersistence.DEFAULT_STORE;
 import static io.harness.persistence.HQuery.excludeAuthority;
-import static io.harness.threading.Morpheus.sleep;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
-import static java.time.Duration.ofSeconds;
 import static org.apache.commons.codec.digest.DigestUtils.sha1Hex;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.mongodb.morphia.mapping.Mapper.ID_KEY;
@@ -31,15 +29,14 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.context.GlobalContextData;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.WingsException.ExecutionContext;
 import io.harness.ff.FeatureFlagService;
 import io.harness.globalcontex.AuditGlobalContextData;
-import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.NameAccess;
@@ -93,13 +90,14 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.BasicDBObject;
+import com.mongodb.BulkWriteOperation;
+import com.mongodb.BulkWriteResult;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import io.fabric8.utils.Lists;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -115,7 +113,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
-import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
@@ -386,66 +383,74 @@ public class AuditServiceImpl implements AuditService {
   @Override
   public void deleteAuditRecords(long retentionMillis) {
     final int batchSize = 1000;
-    final int limit = 3000;
     final long days = Instant.ofEpochMilli(retentionMillis).until(Instant.now(), ChronoUnit.DAYS);
-    List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
+    log.info("Start: Deleting audit records older than {} days", days);
+    // AuditHeaders Cleanup
     try {
-      log.info("Start: Deleting audit records older than {} days", days);
-      HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMinutes(10), () -> {
-        while (true) {
-          List<AuditHeader> auditHeaders = wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
-                                               .field(AuditHeaderKeys.createdAt)
-                                               .lessThan(retentionMillis)
-                                               .asList(new FindOptions().limit(limit).batchSize(batchSize));
-          if (isEmpty(auditHeaders)) {
-            log.info("No more audit records older than {} days", days);
-            return true;
-          }
-          try {
-            log.info("Deleting {} audit records", auditHeaders.size());
-            wingsPersistence.getCollection(DEFAULT_STORE, "audits")
-                .remove(new BasicDBObject(
-                    ID_KEY, new BasicDBObject("$in", auditHeaders.stream().map(AuditHeader::getUuid).toArray())));
-
-            // Deleting Audit Files and Chunks
-
-            DBCollection auditFilesCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
-            DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
-            final BasicDBObject filter = new BasicDBObject().append(
-                "uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
-            BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
-            DBCursor fileIdsToBeDeleted =
-                auditFilesCollection.find(filter, projection).limit(limit).batchSize(batchSize);
-
-            log.info("Deleting {} audit Files and its related chunks", fileIdsToBeDeleted.size());
-            while (fileIdsToBeDeleted.hasNext()) {
-              DBObject record = fileIdsToBeDeleted.next();
-              String uuId = record.get("_id").toString();
-              fileIdsTobeDeletedList.add(new ObjectId(uuId));
-            }
-            if (isNotEmpty(fileIdsTobeDeletedList)) {
-              // Deleting the chunks if they exist
-              auditChunksCollection.remove(
-                  new BasicDBObject("files_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
-              // Deleting the audit files
-              auditFilesCollection.remove(
-                  new BasicDBObject("_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
-            }
-
-          } catch (Exception ex) {
-            log.warn("Failed to delete {} audit records", auditHeaders.size(), ex);
-          }
-          log.info("Successfully deleted {} audits, audit files and chunks", auditHeaders.size());
-          if (auditHeaders.size() < limit) {
-            return true;
-          }
-          sleep(ofSeconds(2L));
-        }
-      });
-    } catch (Exception ex) {
-      log.warn("Failed to delete audit records older than last {} days within 10 minutes.", days, ex);
+      DBCollection collection = wingsPersistence.getCollection(AuditHeader.class);
+      BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
+      bulkWriteOperation
+          .find(wingsPersistence.createQuery(AuditHeader.class, excludeAuthority)
+                    .field(AuditHeaderKeys.createdAt)
+                    .lessThan(retentionMillis)
+                    .getQueryObject())
+          .remove();
+      BulkWriteResult writeResult = bulkWriteOperation.execute();
+      boolean deletedSuccessfully = writeResult.isAcknowledged();
+      if (deletedSuccessfully) {
+        log.info("No more audit records older than {} days, result: {}", days, writeResult);
+      }
+    } catch (Exception e) {
+      log.error("Audit Records Deletion has failed", e);
     }
-    log.info("Deleted audit records older than {} days", days);
+    // AuditRecords Cleanup
+    try {
+      DBCollection collection = wingsPersistence.getCollection(AuditRecord.class);
+      BulkWriteOperation bulkWriteOperation = collection.initializeUnorderedBulkOperation();
+      bulkWriteOperation
+          .find(wingsPersistence.createQuery(AuditRecord.class, excludeAuthority)
+                    .field(AuditRecordKeys.createdAt)
+                    .lessThan(retentionMillis)
+                    .getQueryObject())
+          .remove();
+      BulkWriteResult writeResult = bulkWriteOperation.execute();
+      boolean deletedSuccessfully = writeResult.isAcknowledged();
+      if (deletedSuccessfully) {
+        log.info("No more audit headers records older than {} days, result: {} ", days, writeResult);
+      }
+    } catch (Exception e) {
+      log.error("Audit headers deletion has failed with exception", e);
+    }
+
+    //  Audit Files and Chunks clean up
+    DBCollection auditFilesCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.files");
+    DBCollection auditChunksCollection = wingsPersistence.getCollection(DEFAULT_STORE, "audits.chunks");
+    final BasicDBObject filter =
+        new BasicDBObject().append("uploadDate", new BasicDBObject("$lt", Instant.ofEpochMilli(retentionMillis)));
+    BasicDBObject projection = new BasicDBObject("_id", Boolean.TRUE);
+    try (DBCursor fileIdsToBeDeleted = auditFilesCollection.find(filter, projection).batchSize(batchSize)) {
+      while (true) {
+        List<ObjectId> fileIdsTobeDeletedList = new ArrayList<>();
+        while (fileIdsToBeDeleted.hasNext()) {
+          DBObject record = fileIdsToBeDeleted.next();
+          String uuId = record.get("_id").toString();
+          fileIdsTobeDeletedList.add(new ObjectId(uuId));
+        }
+        if (isNotEmpty(fileIdsTobeDeletedList)) {
+          // Deleting the chunks if they exist
+          auditChunksCollection.remove(
+              new BasicDBObject("files_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
+          // Deleting the audit files
+          auditFilesCollection.remove(
+              new BasicDBObject("_id", new BasicDBObject("$in", fileIdsTobeDeletedList.toArray())));
+        } else {
+          log.info("Expired audit files and chunks are deleted successfully");
+          break;
+        }
+      }
+    } catch (Exception e) {
+      log.error("Audit Files and Chunks deletion failed", e);
+    }
   }
 
   @Override
@@ -600,15 +605,20 @@ public class AuditServiceImpl implements AuditService {
         long now = System.currentTimeMillis();
         // Setting createdAt in EntityAuditRecord
         record.setCreatedAt(now);
-        AuditRecord auditRecord = AuditRecord.builder()
-                                      .auditHeaderId(auditHeaderId)
-                                      .entityAuditRecord(record)
-                                      .createdAt(now)
-                                      .accountId(accountId)
-                                      .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
-                                      .build();
+        if (isNotEmpty(accountId)) {
+          AuditRecord auditRecord = AuditRecord.builder()
+                                        .auditHeaderId(auditHeaderId)
+                                        .entityAuditRecord(record)
+                                        .createdAt(now)
+                                        .accountId(accountId)
+                                        .nextIteration(now + TimeUnit.MINUTES.toMillis(3))
+                                        .build();
 
-        wingsPersistence.save(auditRecord);
+          wingsPersistence.save(auditRecord);
+        } else {
+          log.warn("Unable to create audit for entityAuditRecord {} because accountId is {}", record, accountId,
+              new Exception());
+        }
       } else {
         UpdateOperations<AuditHeader> operations = wingsPersistence.createUpdateOperations(AuditHeader.class);
         operations.addToSet("entityAuditRecords", record);

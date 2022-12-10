@@ -10,6 +10,7 @@ package io.harness.ng;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.PHOENIKX;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static io.github.benas.randombeans.api.EnhancedRandom.random;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -41,7 +42,6 @@ import io.harness.rule.Owner;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 
-import java.io.IOException;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -120,20 +120,19 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = PHOENIKX)
+  @Owner(developers = VIKAS_M)
   @Category(UnitTests.class)
-  public void testCreateSecretManagerConnectorShouldFail_exceptionFromManager() throws IOException {
+  public void testCreateVaultSecretManagerConnector_withRenewalIntervalZero() {
     SecretManagerConfigDTO secretManagerConfigDTO = random(VaultConfigDTO.class);
     when(defaultConnectorService.get(any(), any(), any(), any())).thenReturn(Optional.empty());
+    when(ngSecretManagerService.createSecretManager(any())).thenReturn(secretManagerConfigDTO);
+    when(defaultConnectorService.create(any(), any())).thenReturn(null);
     when(connectorRepository.updateMultiple(any(), any())).thenReturn(null);
-    try {
-      ConnectorDTO requestDTO = getRequestDTO();
-      ((VaultConnectorDTO) requestDTO.getConnectorInfo().getConnectorConfig()).setRenewalIntervalMinutes(0);
-      secretManagerConnectorService.create(requestDTO, ACCOUNT);
-      fail("Should fail if execution reaches here");
-    } catch (InvalidRequestException exception) {
-      // do nothing
-    }
+    ConnectorDTO requestDTO = getRequestDTO();
+    ((VaultConnectorDTO) requestDTO.getConnectorInfo().getConnectorConfig()).setRenewalIntervalMinutes(0);
+    ConnectorResponseDTO connectorDTO = secretManagerConnectorService.create(requestDTO, ACCOUNT);
+    assertThat(connectorDTO).isEqualTo(null);
+    verify(defaultConnectorService).create(any(), any(), any());
   }
 
   @Test
@@ -181,8 +180,8 @@ public class SecretManagerConnectorServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDeleteSecretManager() {
     when(ngSecretManagerService.getSecretManager(any(), any(), any(), any(), eq(true))).thenReturn(null);
-    when(defaultConnectorService.delete(any(), any(), any(), any(), any())).thenReturn(true);
-    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier");
+    when(defaultConnectorService.delete(any(), any(), any(), any(), any(), eq(false))).thenReturn(true);
+    boolean success = secretManagerConnectorService.delete(ACCOUNT, null, null, "identifier", false);
     assertThat(success).isEqualTo(true);
   }
 }

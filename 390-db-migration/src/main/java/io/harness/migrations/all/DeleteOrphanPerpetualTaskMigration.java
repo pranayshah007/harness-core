@@ -44,7 +44,7 @@ public class DeleteOrphanPerpetualTaskMigration implements Migration {
 
   @Override
   public void migrate() {
-    List<Account> allAccounts = accountService.listAllAccountWithDefaultsWithoutLicenseInfo();
+    List<Account> allAccounts = accountService.getAccountsWithBasicInfo(false);
     for (Account account : allAccounts) {
       Set<String> pTasksToBeDeleted = new HashSet<>();
       Set<String> instanceSyncPTaskInfoToBeDeleted = new HashSet<>();

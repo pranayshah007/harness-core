@@ -42,7 +42,9 @@ import software.wings.sm.ExecutionContext;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Singleton
 @OwnedBy(CDP)
 public class HelmChartConfigHelperService {
@@ -137,8 +139,7 @@ public class HelmChartConfigHelperService {
     helmChartConfigParamsBuilder.useLatestChartMuseumVersion(
         featureFlagService.isEnabled(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, context.getAccountId()));
 
-    helmChartConfigParamsBuilder.checkIncorrectChartVersion(
-        featureFlagService.isEnabled(FeatureName.HELM_CHART_VERSION_STRICT_MATCH, context.getAccountId()));
+    helmChartConfigParamsBuilder.checkIncorrectChartVersion(true);
 
     if (isNotBlank(helmChartConfig.getChartName())) {
       String chartName = helmChartConfig.getChartName();
@@ -150,6 +151,8 @@ public class HelmChartConfigHelperService {
       if (!smartChartNameSplitEnabled || chartSourceIsUnknown(helmChartConfig)) {
         int lastIndex = chartName.lastIndexOf('/');
         if (lastIndex != -1) {
+          log.info(
+              "WARNING: Your chart name has `/` which will be deprecated soon. Please rename your chart. Reach out to Customer Support for details");
           helmChartConfigParamsBuilder.chartName(chartName.substring(lastIndex + 1))
               .repoName(chartName.substring(0, lastIndex));
         } else {

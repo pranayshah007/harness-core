@@ -9,10 +9,12 @@ package io.harness.freeze.beans;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class FreezeEntityRule {
-  @JsonProperty("entities") List<EntityConfig> entityConfigList;
-  String name;
+  @NotNull @JsonProperty("entities") List<EntityConfig> entityConfigList;
+  @NotEmpty String name;
 }

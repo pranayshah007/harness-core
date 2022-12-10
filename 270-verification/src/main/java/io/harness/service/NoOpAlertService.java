@@ -92,4 +92,9 @@ public class NoOpAlertService implements AlertService {
   public void deleteByArtifactStream(String appId, String artifactStreamId) {
     throw new UnsupportedOperationException();
   }
+
+  @Override
+  public void deleteArtifactStreamAlertForAccount(String accountId) {
+    throw new UnsupportedOperationException();
+  }
 }

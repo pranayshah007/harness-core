@@ -41,8 +41,17 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListClustersTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenerRulesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbListenersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListElbTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -53,6 +62,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
+import software.wings.service.impl.aws.model.AwsVPC;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,6 +87,12 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Mock private AwsIAMDelegateTaskHelper awsIAMDelegateTaskHelper;
   @Mock private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
   @Mock private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
+  @Mock private AwsListVpcDelegateTaskHelper awsListVpcDelegateTaskHelper;
+  @Mock private AwsListTagsDelegateTaskHelper awsListTagsDelegateTaskHelper;
+  @Mock private AwsListLoadBalancersDelegateTaskHelper awsListLoadBalancersDelegateTaskHelper;
+  @Mock private AwsECSDelegateTaskHelper awsECSDelegateTaskHelper;
+  @Mock private AwsElasticLoadBalancersDelegateTaskHelper awsElasticLoadBalancersDelegateTaskHelper;
+
   @InjectMocks private AwsValidationHandler awsValidationHandler;
 
   @InjectMocks
@@ -282,5 +298,161 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(result).isEqualTo(response);
 
     verify(awsASGDelegateTaskHelper, times(1)).getInstances(eq(awsTaskParams));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListAsgNames() {
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_ASG_NAMES).build();
+
+    AwsListASGNamesTaskResponse response = AwsListASGNamesTaskResponse.builder()
+                                               .names(Arrays.asList("asg1"))
+                                               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                               .build();
+
+    doReturn(response).when(awsASGDelegateTaskHelper).getASGNames(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListASGNamesTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListVpcs() {
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_VPC).build();
+
+    AwsListVpcTaskResponse response = AwsListVpcTaskResponse.builder()
+                                          .vpcs(Arrays.asList(AwsVPC.builder().name("vpc").build()))
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .build();
+
+    doReturn(response).when(awsListVpcDelegateTaskHelper).getVpcList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListVpcTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListTags() {
+    AwsListTagsTaskParamsRequest awsTaskParams =
+        AwsListTagsTaskParamsRequest.builder().awsTaskType(AwsTaskType.LIST_TAGS).build();
+
+    AwsListTagsTaskResponse response = AwsListTagsTaskResponse.builder()
+                                           .tags(Collections.singletonMap("tag", "value"))
+                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                           .build();
+
+    doReturn(response).when(awsListTagsDelegateTaskHelper).getTagList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListTagsTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListLoadBalancers() {
+    AwsListTagsTaskParamsRequest awsTaskParams =
+        AwsListTagsTaskParamsRequest.builder().awsTaskType(AwsTaskType.LIST_LOAD_BALANCERS).build();
+
+    AwsListLoadBalancersTaskResponse response = AwsListLoadBalancersTaskResponse.builder()
+                                                    .loadBalancers(Arrays.asList("lb1"))
+                                                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                    .build();
+
+    doReturn(response).when(awsListLoadBalancersDelegateTaskHelper).getLoadBalancerList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListLoadBalancersTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListClusters() {
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_ECS_CLUSTERS).build();
+
+    AwsListClustersTaskResponse response = AwsListClustersTaskResponse.builder()
+                                               .clusters(Arrays.asList("cluster"))
+                                               .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                               .build();
+
+    doReturn(response).when(awsECSDelegateTaskHelper).getEcsClustersList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListClustersTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListElasticLoadBalancers() {
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCERS).build();
+
+    AwsListElbTaskResponse response = AwsListElbTaskResponse.builder()
+                                          .loadBalancerNames(Arrays.asList("elb"))
+                                          .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                          .build();
+
+    doReturn(response).when(awsElasticLoadBalancersDelegateTaskHelper).getElbList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListElbTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListElbListeners() {
+    AwsTaskParams awsTaskParams =
+        AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCER_LISTENERS).build();
+
+    AwsListElbListenersTaskResponse response = AwsListElbListenersTaskResponse.builder()
+                                                   .listenerArnMap(Collections.singletonMap("key", "value"))
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .build();
+
+    doReturn(response).when(awsElasticLoadBalancersDelegateTaskHelper).getElbListenerList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListElbListenersTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListElbRules() {
+    AwsTaskParams awsTaskParams =
+        AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_ELASTIC_LOAD_BALANCER_LISTENER_RULE).build();
+
+    AwsListElbListenerRulesTaskResponse response = AwsListElbListenerRulesTaskResponse.builder()
+                                                       .listenerRulesArn(Arrays.asList("rule"))
+                                                       .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                       .build();
+
+    doReturn(response).when(awsElasticLoadBalancersDelegateTaskHelper).getElbListenerRulesList(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListElbListenerRulesTaskResponse.class);
+    assertThat(result).isEqualTo(response);
   }
 }

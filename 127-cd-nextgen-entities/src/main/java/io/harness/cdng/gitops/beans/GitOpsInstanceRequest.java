@@ -29,6 +29,8 @@ public class GitOpsInstanceRequest {
     @NotNull private String namespace;
     @NotNull private String podName;
     @NotNull private String podId;
+    @NotEmpty private String agentIdentifier;
+    @NotEmpty private String clusterIdentifier;
     private List<K8sContainer> containerList;
   }
 

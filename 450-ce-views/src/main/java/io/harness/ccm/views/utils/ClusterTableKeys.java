@@ -87,6 +87,7 @@ public class ClusterTableKeys {
   public static final String COUNT = "totalCount";
   public static final String COUNT_INNER = "totalCountInner";
   public static final String PRICING_SOURCE = "pricingsource";
+  public static final String TIME_GRANULARITY = "time_granularity";
 
   // Some default constants
   public static final String DEFAULT_STRING_VALUE = "";

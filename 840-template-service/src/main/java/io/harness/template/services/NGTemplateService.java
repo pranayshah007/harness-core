@@ -14,9 +14,12 @@ import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateResponseDTO;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.template.beans.FilterParamsDTO;
 import io.harness.template.beans.PageParamsDTO;
+import io.harness.template.beans.TemplateImportRequestDTO;
+import io.harness.template.beans.TemplateListRepoResponse;
 import io.harness.template.entity.TemplateEntity;
 
 import java.util.Optional;
@@ -32,8 +35,15 @@ public interface NGTemplateService {
   TemplateEntity updateTemplateEntity(
       TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate, String comments);
 
+  TemplateEntity updateTemplateEntity(TemplateEntity templateEntity, ChangeType changeType, boolean setDefaultTemplate,
+      String comments, TemplateResponseDTO templateResponse);
+
   Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateIdentifier, String versionLabel, boolean deleted);
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache);
+
+  Optional<TemplateEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, String versionLabel, boolean deleted, boolean loadFromCache,
+      boolean loadFromFallbackBranch);
 
   Optional<TemplateEntity> getMetadataOrThrowExceptionIfInvalid(String accountId, String orgIdentifier,
       String projectIdentifier, String templateIdentifier, String versionLabel, boolean deleted);
@@ -76,4 +86,10 @@ public interface NGTemplateService {
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
+
+  TemplateEntity importTemplateFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String templateIdentifier, TemplateImportRequestDTO templateImportRequest, boolean isForceImport);
+
+  TemplateListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      boolean includeAllTemplatesAccessibleAtScope);
 }

@@ -19,18 +19,18 @@ import static software.wings.settings.SettingVariableTypes.APM_VERIFICATION;
 import static software.wings.settings.SettingVariableTypes.SECRET_TEXT;
 
 import static java.time.Duration.ofHours;
-import static java.time.Duration.ofMinutes;
-import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Encryptable;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedData.EncryptedDataKeys;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.encryption.Encryptable;
 import io.harness.encryption.EncryptionReflectUtils;
 import io.harness.ff.FeatureFlagService;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -50,6 +50,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,32 +62,39 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class SettingAttributesSecretsMigrationHandler implements Handler<SettingAttribute> {
+public class SettingAttributesSecretsMigrationHandler
+    extends IteratorPumpModeHandler implements Handler<SettingAttribute> {
   @Inject private AccountService accountService;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MorphiaPersistenceProvider<SettingAttribute> persistenceProvider;
 
-  public void registerIterators() {
-    persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(
-        PersistenceIteratorFactory.PumpExecutorOptions.builder()
-            .name("SettingAttributesSecretsMigrationHandler")
-            .poolSize(2)
-            .interval(ofSeconds(30))
-            .build(),
-        SettingAttribute.class,
-        MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
-            .clazz(SettingAttribute.class)
-            .fieldName(SettingAttributeKeys.nextSecretMigrationIteration)
-            .targetInterval(ofMinutes(30))
-            .acceptableNoAlertDelay(ofHours(1))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .filterExpander(this::createQuery)
-            .schedulingType(REGULAR)
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    iterator = (MongoPersistenceIterator<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>)
+                   persistenceIteratorFactory.createPumpIteratorWithDedicatedThreadPool(executorOptions,
+                       SettingAttribute.class,
+                       MongoPersistenceIterator.<SettingAttribute, MorphiaFilterExpander<SettingAttribute>>builder()
+                           .clazz(SettingAttribute.class)
+                           .fieldName(SettingAttributeKeys.nextSecretMigrationIteration)
+                           .targetInterval(targetInterval)
+                           .acceptableNoAlertDelay(ofHours(1))
+                           .handler(this)
+                           .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                           .filterExpander(this::createQuery)
+                           .schedulingType(REGULAR)
+                           .persistenceProvider(persistenceProvider)
+                           .redistribute(true));
+  }
+
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "SettingAttributesSecretsMigrationHandler";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @VisibleForTesting

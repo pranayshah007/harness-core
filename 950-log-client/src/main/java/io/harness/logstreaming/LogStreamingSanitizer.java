@@ -12,6 +12,8 @@ import static io.harness.expression.SecretString.SECRET_MASK;
 
 import static org.apache.commons.lang3.StringUtils.replaceEach;
 
+import io.harness.logging.LogSanitizerHelper;
+
 import java.util.ArrayList;
 import java.util.Set;
 import lombok.Builder;
@@ -19,21 +21,38 @@ import lombok.Builder;
 @Builder
 public class LogStreamingSanitizer {
   private final Set<String> secrets;
-
   public void sanitizeLogMessage(LogLine logLine) {
-    if (isEmpty(secrets)) {
-      return;
+    String sanitizedLogMessage = logLine.getMessage();
+    if (!isEmpty(secrets)) {
+      ArrayList<String> secretMasks = new ArrayList<>();
+      ArrayList<String> secretValues = new ArrayList<>();
+      for (String secret : secrets) {
+        secretMasks.add(SECRET_MASK);
+        secretValues.add(secret);
+
+        addSecretMasksWithQuotesRemoved(secret, secretMasks, secretValues);
+      }
+      sanitizedLogMessage = replaceEach(
+          logLine.getMessage(), secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
     }
 
-    ArrayList<String> secretMasks = new ArrayList<>();
-    ArrayList<String> secretValues = new ArrayList<>();
-    for (String secret : secrets) {
-      secretMasks.add(SECRET_MASK);
-      secretValues.add(secret);
-    }
-    String sanitizedLogMessage =
-        replaceEach(logLine.getMessage(), secretValues.toArray(new String[] {}), secretMasks.toArray(new String[] {}));
+    // JWT mask
+    sanitizedLogMessage = LogSanitizerHelper.sanitizeJWT(sanitizedLogMessage);
 
     logLine.setMessage(sanitizedLogMessage);
+  }
+
+  private void addSecretMasksWithQuotesRemoved(
+      String secret, ArrayList<String> secretMasks, ArrayList<String> secretValues) {
+    String secretWithDoubleQuoteRemoved = secret.replaceAll("\"", "");
+    if (!secretWithDoubleQuoteRemoved.equals(secret)) {
+      secretMasks.add(SECRET_MASK);
+      secretValues.add(secretWithDoubleQuoteRemoved);
+    }
+    String secretWithSingleQuoteRemoved = secret.replaceAll("\'", "");
+    if (!secretWithSingleQuoteRemoved.equals(secret)) {
+      secretMasks.add(SECRET_MASK);
+      secretValues.add(secretWithSingleQuoteRemoved);
+    }
   }
 }

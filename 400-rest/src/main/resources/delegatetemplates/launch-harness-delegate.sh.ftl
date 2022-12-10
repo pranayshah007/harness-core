@@ -10,10 +10,28 @@ sudo docker run -d --restart unless-stopped --hostname="$(hostname -f | head -c 
 -e ACCOUNT_ID=${accountId} \
 -e DELEGATE_TOKEN=${delegateToken} \
 -e MANAGER_HOST_AND_PORT=${managerHostAndPort} \
+<#if isImmutable == "false">
 -e WATCHER_STORAGE_URL=${watcherStorageUrl} \
 -e WATCHER_CHECK_LOCATION=${watcherCheckLocation} \
 -e DELEGATE_STORAGE_URL=${delegateStorageUrl} \
 -e DELEGATE_CHECK_LOCATION=${delegateCheckLocation} \
+-e HELM_DESIRED_VERSION= \
+-e JRE_VERSION=${jreVersion} \
+-e HELM3_PATH= \
+-e HELM_PATH= \
+-e KUSTOMIZE_PATH= \
+-e KUBECTL_PATH= \
+-e CF_PLUGIN_HOME= \
+-e CF_CLI6_PATH= \
+-e CF_CLI7_PATH= \
+-e OC_PATH= \
+<#if useCdn == "true">
+-e REMOTE_WATCHER_URL_CDN=${remoteWatcherUrlCdn} \
+-e CDN_URL=${cdnUrl} \
+</#if>
+<#else>
+-e LOG_STREAMING_SERVICE_URL=${logStreamingServiceBaseUrl} \
+</#if>
 -e DELEGATE_NAME=${delegateName} \
 -e DELEGATE_PROFILE=${delegateProfile} \
 -e DELEGATE_TYPE=${delegateType} \
@@ -26,18 +44,4 @@ sudo docker run -d --restart unless-stopped --hostname="$(hostname -f | head -c 
 -e NO_PROXY= \
 -e PROXY_MANAGER=true \
 -e POLL_FOR_TASKS=false \
--e HELM_DESIRED_VERSION= \
--e CF_PLUGIN_HOME= \
-<#if useCdn == "true">
--e REMOTE_WATCHER_URL_CDN=${remoteWatcherUrlCdn} \
--e CDN_URL=${cdnUrl} \
-</#if>
--e JRE_VERSION=${jreVersion} \
--e HELM3_PATH= \
--e HELM_PATH= \
--e CF_CLI6_PATH= \
--e CF_CLI7_PATH= \
--e KUSTOMIZE_PATH= \
--e OC_PATH= \
--e KUBECTL_PATH= \
 ${delegateDockerImage}

@@ -28,10 +28,10 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.AwsConfig;
-import software.wings.beans.SettingAttribute;
 import software.wings.beans.command.EcsResizeParams;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.cloudprovider.aws.EcsContainerService;
 import software.wings.delegatetasks.aws.ecs.ecstaskhandler.EcsCommandTaskHelper;
@@ -430,7 +430,6 @@ public class EcsDeployCommandTaskHelper {
 
     executionLogCallback.saveExecutionLog(
         format("Registering task definition with family => %s", runTaskDefinition.getFamily()), LogLevel.INFO);
-
     return awsClusterService.createTask(
         region, cloudProviderSetting, encryptedDataDetails, registerTaskDefinitionRequest);
   }

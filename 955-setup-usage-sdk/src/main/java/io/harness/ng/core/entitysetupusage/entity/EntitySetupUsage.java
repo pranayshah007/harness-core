@@ -118,7 +118,7 @@ public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
   }
 
   @Id @org.mongodb.morphia.annotations.Id String id;
-  @FdIndex @NotBlank @EqualsAndHashCode.Include String accountIdentifier;
+  @NotBlank @EqualsAndHashCode.Include String accountIdentifier;
   @NotNull EntityDetail referredEntity;
   @NotNull EntityDetail referredByEntity;
   SetupUsageDetail detail;

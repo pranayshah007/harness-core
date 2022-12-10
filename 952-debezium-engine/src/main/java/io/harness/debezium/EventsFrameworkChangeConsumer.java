@@ -7,6 +7,9 @@
 
 package io.harness.debezium;
 
+import io.harness.beans.FeatureName;
+import io.harness.cf.client.api.CfClient;
+import io.harness.cf.client.dto.Target;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 
@@ -14,7 +17,10 @@ import com.google.common.annotations.VisibleForTesting;
 import io.debezium.embedded.EmbeddedEngineChangeEvent;
 import io.debezium.engine.ChangeEvent;
 import io.debezium.engine.DebeziumEngine;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -31,34 +37,47 @@ public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsu
   private long sleepInterval;
   private long producingCountPerBatch;
   private int redisStreamSize;
+  private CfClient cfClient;
 
   public EventsFrameworkChangeConsumer(long sleepInterval, String collectionName,
-      DebeziumProducerFactory producerFactory, long producingCountPerBatch, int redisStreamSize) {
+      DebeziumProducerFactory producerFactory, long producingCountPerBatch, int redisStreamSize, CfClient cfClient) {
     this.collectionName = collectionName;
     this.producerFactory = producerFactory;
     this.sleepInterval = sleepInterval;
     this.producingCountPerBatch = producingCountPerBatch;
     this.redisStreamSize = redisStreamSize;
+    this.cfClient = cfClient;
   }
 
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
     log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
-    // Add the batch records to the stream(s)
+    Collections.reverse(records);
+    Map<String, ChangeEvent<String, String>> recordsMap = new HashMap<>();
     for (ChangeEvent<String, String> record : records) {
+      if (!recordsMap.containsKey(record.key())) {
+        recordsMap.put(record.key(), record);
+      }
+    }
+    // Add the batch records to the stream(s)
+    for (ChangeEvent<String, String> record : recordsMap.values()) {
       cnt++;
       Optional<OpType> opType = getOperationType(((EmbeddedEngineChangeEvent<String, String>) record).sourceRecord());
-
-      DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
-                                                    .setKey(getKeyOrDefault(record))
-                                                    .setValue(getValueOrDefault(record))
-                                                    .setOptype(opType.get().toString())
-                                                    .setTimestamp(System.currentTimeMillis())
-                                                    .build();
-
-      Producer producer = producerFactory.get(record.destination(), redisStreamSize);
-      producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+      if (!opType.isEmpty()) {
+        DebeziumChangeEvent debeziumChangeEvent = DebeziumChangeEvent.newBuilder()
+                                                      .setKey(getKeyOrDefault(record))
+                                                      .setValue(getValueOrDefault(record))
+                                                      .setOptype(opType.get().toString())
+                                                      .setTimestamp(System.currentTimeMillis())
+                                                      .build();
+        boolean debeziumEnabled =
+            cfClient.boolVariation(FeatureName.DEBEZIUM_ENABLED.toString(), Target.builder().build(), false);
+        Producer producer = producerFactory.get(record.destination(), redisStreamSize);
+        if (debeziumEnabled) {
+          producer.send(Message.newBuilder().setData(debeziumChangeEvent.toByteString()).build());
+        }
+      }
       try {
         recordCommitter.markProcessed(record);
       } catch (InterruptedException e) {

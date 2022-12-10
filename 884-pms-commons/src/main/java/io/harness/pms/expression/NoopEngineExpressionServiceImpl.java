@@ -10,6 +10,7 @@ package io.harness.pms.expression;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExpressionMode;
 
 import com.google.inject.Singleton;
 
@@ -18,6 +19,11 @@ import com.google.inject.Singleton;
 public class NoopEngineExpressionServiceImpl implements EngineExpressionService {
   @Override
   public String renderExpression(Ambiance ambiance, String expression, boolean skipUnresolvedExpressionsCheck) {
+    return null;
+  }
+
+  @Override
+  public String renderExpression(Ambiance ambiance, String expression, ExpressionMode mode) {
     return null;
   }
 

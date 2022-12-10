@@ -7,6 +7,7 @@
 
 package io.harness.ccm.graphql.core.budget;
 
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 
@@ -19,6 +20,7 @@ public interface BudgetService {
   Budget get(String budgetId, String accountId);
 
   void update(String budgetId, Budget budget);
+  void updatePerspectiveName(String accountId, String perspectiveId, String perspectiveName);
 
   List<Budget> list(String accountId);
   List<Budget> list(String accountId, String viewId);
@@ -26,6 +28,6 @@ public interface BudgetService {
   boolean delete(String budgetId, String accountId);
   boolean deleteBudgetsForPerspective(String accountId, String perspectiveId);
 
-  BudgetData getBudgetTimeSeriesStats(Budget budget);
+  BudgetData getBudgetTimeSeriesStats(Budget budget, BudgetBreakdown breakdown);
   void updateBudgetCosts(Budget budget);
 }

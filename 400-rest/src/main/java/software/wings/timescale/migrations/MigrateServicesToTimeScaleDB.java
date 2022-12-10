@@ -10,6 +10,7 @@ package software.wings.timescale.migrations;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.beans.Service.ServiceKeys;
+import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.deleteFromTimescaleDB;
 import static software.wings.timescale.migrations.TimescaleEntityMigrationHelper.insertArrayData;
 
 import io.harness.persistence.HIterator;
@@ -29,7 +30,7 @@ import org.mongodb.morphia.query.FindOptions;
 
 @Slf4j
 @Singleton
-public class MigrateServicesToTimeScaleDB {
+public class MigrateServicesToTimeScaleDB implements TimeScaleEntityMigrationInterface {
   @Inject TimeScaleDBService timeScaleDBService;
 
   @Inject WingsPersistence wingsPersistence;
@@ -39,9 +40,11 @@ public class MigrateServicesToTimeScaleDB {
   private static final String upsert_statement =
       "INSERT INTO CG_SERVICES (ID,NAME,ARTIFACT_TYPE,VERSION,ACCOUNT_ID,APP_ID,ARTIFACT_STREAM_IDS,CREATED_AT,LAST_UPDATED_AT,CREATED_BY,LAST_UPDATED_BY,DEPLOYMENT_TYPE) VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON  CONFLICT(ID) DO UPDATE SET NAME = excluded.NAME, ARTIFACT_TYPE = excluded.ARTIFACT_TYPE, VERSION = excluded.VERSION, ACCOUNT_ID = excluded.ACCOUNT_ID, APP_ID = excluded.APP_ID, ARTIFACT_STREAM_IDS = excluded.ARTIFACT_STREAM_IDS, CREATED_AT = excluded.CREATED_AT, LAST_UPDATED_AT = excluded.LAST_UPDATED_AT, CREATED_BY = excluded.CREATED_BY, LAST_UPDATED_BY = excluded.LAST_UPDATED_BY, DEPLOYMENT_TYPE = excluded.DEPLOYMENT_TYPE;";
 
+  private static final String TABLE_NAME = "CG_SERVICES";
+
   public boolean runTimeScaleMigration(String accountId) {
     if (!timeScaleDBService.isValid()) {
-      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB");
+      log.info("TimeScaleDB not found, not migrating data to TimeScaleDB for CG_SERVICES");
       return false;
     }
     int count = 0;
@@ -49,26 +52,27 @@ public class MigrateServicesToTimeScaleDB {
       FindOptions findOptions_services = new FindOptions();
       findOptions_services.readPreference(ReadPreference.secondaryPreferred());
 
-      try (HIterator<Service> iterator = new HIterator<>(wingsPersistence.createQuery(Service.class, excludeAuthority)
-                                                             .field(ServiceKeys.accountId)
-                                                             .equal(accountId)
-                                                             .fetch(findOptions_services))) {
+      try (HIterator<Service> iterator =
+               new HIterator<>(wingsPersistence.createAnalyticsQuery(Service.class, excludeAuthority)
+                                   .field(ServiceKeys.accountId)
+                                   .equal(accountId)
+                                   .fetch(findOptions_services))) {
         while (iterator.hasNext()) {
           Service service = iterator.next();
-          prepareTimeScaleQueries(service);
+          saveToTimeScale(service);
           count++;
         }
       }
     } catch (Exception e) {
-      log.warn("Failed to complete migration", e);
+      log.warn("Failed to complete migration for CG_SERVICES", e);
       return false;
     } finally {
-      log.info("Completed migrating [{}] records", count);
+      log.info("Completed migrating [{}] records for CG_SERVICES", count);
     }
     return true;
   }
 
-  private void prepareTimeScaleQueries(Service service) {
+  public void saveToTimeScale(Service service) {
     long startTime = System.currentTimeMillis();
     boolean successful = false;
     int retryCount = 0;
@@ -120,5 +124,13 @@ public class MigrateServicesToTimeScaleDB {
         12, service.getDeploymentType() != null ? service.getDeploymentType().getDisplayName() : null);
 
     upsertPreparedStatement.execute();
+  }
+
+  public void deleteFromTimescale(String id) {
+    deleteFromTimescaleDB(id, timeScaleDBService, MAX_RETRY, TABLE_NAME);
+  }
+
+  public String getTimescaleDBClass() {
+    return TABLE_NAME;
   }
 }

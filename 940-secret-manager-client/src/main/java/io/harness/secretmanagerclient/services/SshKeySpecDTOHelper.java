@@ -67,15 +67,18 @@ public class SshKeySpecDTOHelper {
       return emptyList();
     }
 
-    switch (kerberosConfigDTO.getTgtGenerationMethod()) {
-      case Password:
-        TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
-        return secretManagerClientService.getEncryptionDetails(ngAccess, tgtPasswordSpecDTO);
-      case KeyTabFilePath:
-        TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
-        return secretManagerClientService.getEncryptionDetails(ngAccess, tgtKeyTabFilePathSpecDTO);
-      default:
-        return emptyList();
+    if (kerberosConfigDTO.getTgtGenerationMethod() != null) { // skip no TGT
+      switch (kerberosConfigDTO.getTgtGenerationMethod()) {
+        case Password:
+          TGTPasswordSpecDTO tgtPasswordSpecDTO = (TGTPasswordSpecDTO) kerberosConfigDTO.getSpec();
+          return secretManagerClientService.getEncryptionDetails(ngAccess, tgtPasswordSpecDTO);
+        case KeyTabFilePath:
+          TGTKeyTabFilePathSpecDTO tgtKeyTabFilePathSpecDTO = (TGTKeyTabFilePathSpecDTO) kerberosConfigDTO.getSpec();
+          return secretManagerClientService.getEncryptionDetails(ngAccess, tgtKeyTabFilePathSpecDTO);
+        default:
+          return emptyList();
+      }
     }
+    return emptyList();
   }
 }

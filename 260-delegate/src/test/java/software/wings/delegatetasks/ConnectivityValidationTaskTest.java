@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnectionAttributes;
 import static software.wings.beans.HostValidationResponse.Builder.aHostValidationResponse;
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 
 import static java.util.Collections.emptyList;
@@ -33,6 +32,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.WinRmConnectionAttributes;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.helpers.ext.mail.Mailer;
 import software.wings.helpers.ext.mail.SmtpConfig;
 import software.wings.settings.validation.ConnectivityValidationDelegateRequest;
@@ -72,10 +72,10 @@ public class ConnectivityValidationTaskTest extends WingsBaseTest {
     ConnectivityValidationDelegateRequest request =
         ConnectivityValidationDelegateRequest.builder()
             .encryptedDataDetails(emptyList())
-            .settingAttribute(aSettingAttribute()
-                                  .withAccountId(ACCOUNT_ID)
-                                  .withValue(aHostConnectionAttributes().build())
-                                  .withConnectivityValidationAttributes(
+            .settingAttribute(SettingAttribute.builder()
+                                  .accountId(ACCOUNT_ID)
+                                  .value(aHostConnectionAttributes().build())
+                                  .validationAttributes(
                                       SshConnectionConnectivityValidationAttributes.builder().hostName("host").build())
                                   .build())
             .build();
@@ -86,28 +86,27 @@ public class ConnectivityValidationTaskTest extends WingsBaseTest {
     verify(mockHostValidationService).validateHost(anyList(), any(), anyList(), any(), any());
     request = ConnectivityValidationDelegateRequest.builder()
                   .encryptedDataDetails(emptyList())
-                  .settingAttribute(aSettingAttribute()
-                                        .withAccountId(ACCOUNT_ID)
-                                        .withValue(WinRmConnectionAttributes.builder().build())
-                                        .withConnectivityValidationAttributes(
+                  .settingAttribute(SettingAttribute.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .value(WinRmConnectionAttributes.builder().build())
+                                        .validationAttributes(
                                             WinRmConnectivityValidationAttributes.builder().hostName("host").build())
                                         .build())
                   .build();
     task.run(new Object[] {request});
     verify(mockHostValidationService, times(2)).validateHost(anyList(), any(), anyList(), any(), any());
-    request =
-        ConnectivityValidationDelegateRequest.builder()
-            .encryptedDataDetails(emptyList())
-            .settingAttribute(aSettingAttribute()
-                                  .withAccountId(ACCOUNT_ID)
-                                  .withValue(SmtpConfig.builder().build())
-                                  .withConnectivityValidationAttributes(SmtpConnectivityValidationAttributes.builder()
-                                                                            .to("harness@harness.io")
-                                                                            .body("body")
-                                                                            .subject("subject")
-                                                                            .build())
-                                  .build())
-            .build();
+    request = ConnectivityValidationDelegateRequest.builder()
+                  .encryptedDataDetails(emptyList())
+                  .settingAttribute(SettingAttribute.builder()
+                                        .accountId(ACCOUNT_ID)
+                                        .value(SmtpConfig.builder().build())
+                                        .validationAttributes(SmtpConnectivityValidationAttributes.builder()
+                                                                  .to("harness@harness.io")
+                                                                  .body("body")
+                                                                  .subject("subject")
+                                                                  .build())
+                                        .build())
+                  .build();
     task.run(new Object[] {request});
     verify(mockMailer).send(any(), anyList(), any());
   }

@@ -10,6 +10,7 @@ package software.wings.graphql.schema.type.connector;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
+import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitConfig.UrlType;
 import software.wings.graphql.schema.type.QLCustomCommitDetails;
 import software.wings.graphql.schema.type.QLUser;
@@ -42,6 +43,8 @@ public class QLGitConnector implements QLConnector {
   private QLCustomCommitDetails customCommitDetails;
   private QLUsageScope usageScope;
   private List<String> delegateSelectors;
+  private Boolean disableUserGitConfig;
+  private ProviderType providerType;
 
   public static class QLGitConnectorBuilder implements QLConnectorBuilder {}
 }

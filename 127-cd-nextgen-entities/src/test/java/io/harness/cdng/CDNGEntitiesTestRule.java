@@ -40,6 +40,8 @@ import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.ServiceEntityServiceImpl;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.outbox.api.OutboxService;
@@ -53,6 +55,7 @@ import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
 import io.harness.springdata.HTransactionTemplate;
+import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -186,6 +189,12 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
       public boolean getSerializationForDelegate() {
         return false;
       }
+
+      @Provides
+      @Singleton
+      TemplateResourceClient getTemplateResourceClient() {
+        return mock(TemplateResourceClient.class);
+      }
     });
     modules.add(new AbstractModule() {
       @Override
@@ -205,6 +214,7 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(ClusterService.class).to(ClusterServiceImpl.class);
         bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
         bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
+        bind(ServiceEntityService.class).to(ServiceEntityServiceImpl.class);
       }
     });
     modules.add(TimeModule.getInstance());

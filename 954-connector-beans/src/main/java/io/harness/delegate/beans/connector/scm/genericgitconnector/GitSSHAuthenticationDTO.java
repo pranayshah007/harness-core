@@ -8,8 +8,10 @@
 package io.harness.delegate.beans.connector.scm.genericgitconnector;
 
 import io.harness.delegate.beans.connector.scm.GitConfigConstants;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitAuthenticationOutcomeDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.outcome.GitSSHAuthenticationOutcomeDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -32,4 +34,8 @@ public class GitSSHAuthenticationDTO extends GitAuthenticationDTO {
   @NotNull
   @SecretReference
   SecretRefData encryptedSshKey;
+  @Override
+  public GitAuthenticationOutcomeDTO toOutcome() {
+    return GitSSHAuthenticationOutcomeDTO.builder().sshKeyRef(this.encryptedSshKey).build();
+  }
 }

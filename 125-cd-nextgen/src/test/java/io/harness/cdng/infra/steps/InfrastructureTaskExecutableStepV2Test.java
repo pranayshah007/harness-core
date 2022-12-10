@@ -13,8 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -26,15 +29,24 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentNGVariableType;
+import io.harness.cdng.customdeployment.CustomDeploymentNumberNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentSecretNGVariable;
+import io.harness.cdng.customdeployment.CustomDeploymentStringNGVariable;
 import io.harness.cdng.execution.ExecutionInfoKey;
 import io.harness.cdng.execution.helper.StageExecutionHelper;
+import io.harness.cdng.expressions.CDExpressionResolver;
 import io.harness.cdng.infra.InfrastructureMapper;
 import io.harness.cdng.infra.InfrastructureValidator;
 import io.harness.cdng.infra.beans.AwsInstanceFilter;
+import io.harness.cdng.infra.beans.CustomDeploymentInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
+import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
@@ -45,6 +57,8 @@ import io.harness.cdng.instance.outcome.InstanceOutcome;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.UUIDGenerator;
@@ -63,29 +77,40 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
 import io.harness.delegate.task.ssh.AwsSshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.AzureSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.EmptyHostDelegateConfig;
 import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
+import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefData;
 import io.harness.exception.AccessDeniedException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.InfrastructureType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.plancreator.customDeployment.StepTemplateRef;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.plan.PrincipalType;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.data.Outcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
@@ -93,9 +118,9 @@ import io.harness.rule.OwnerRule;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.environment.EnvironmentOutcome;
-import io.harness.steps.shellscript.HostsOutput;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.infra.HostConnectionTypeKind;
 
@@ -105,6 +130,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -127,7 +154,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private InfrastructureMapper infrastructureMapper;
   @Mock InfrastructureValidator infrastructureValidator;
   @Mock private InfrastructureStepHelper infrastructureStepHelper;
-  @Mock private CDStepHelper cdStepHelper;
+  @Mock private CDStepHelper cdStepHelper = Mockito.spy(CDStepHelper.class);
   @Mock private StepHelper stepHelper;
   @Mock private StageExecutionHelper stageExecutionHelper;
   @Mock private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -136,6 +163,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
   @Mock private ExecutionSweepingOutputService sweepingOutputService;
   @Mock private KryoSerializer kryoSerializer;
   @Mock private NGLogCallback logCallback;
+  @Mock private CDExpressionResolver resolver;
   @Spy InstanceOutcomeHelper instanceOutcomeHelper;
 
   @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
@@ -163,7 +191,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     doReturn("bytes".getBytes()).when(kryoSerializer).asDeflatedBytes(any());
 
-    doReturn(logCallback).when(infrastructureStepHelper).getInfrastructureLogCallback(any(Ambiance.class));
+    doReturn(logCallback)
+        .when(infrastructureStepHelper)
+        .getInfrastructureLogCallback(any(Ambiance.class), eq(true), eq("Execute"));
 
     // return all the hosts passed as is
     when(stageExecutionHelper.saveAndExcludeHostsWithSameArtifactDeployedIfNeeded(
@@ -171,6 +201,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(3, Set.class));
 
     Mockito.doReturn("taskId").when(delegateGrpcClientWrapper).submitAsyncTask(any(), any());
+
+    doCallRealMethod().when(cdStepHelper).mapTaskRequestToDelegateTaskRequest(any(), any(), anySet());
   }
 
   @After
@@ -325,6 +357,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     assertThat(asyncExecutableResponse.getLogKeys(0))
         .isEqualTo(
             "accountId:ACCOUNT_ID/orgId:ORG_ID/projectId:PROJECT_ID/pipelineId:/runSequence:0/level0:infrastructure-commandUnit:Execute");
+
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
   }
 
   @Test
@@ -362,6 +396,8 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .infraRef(ParameterField.createValueField("infra-id"))
             .build(),
         null);
+
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
 
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
@@ -411,13 +447,13 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
             .build(),
         null);
 
+    verify(resolver, times(1)).updateExpressions(any(Ambiance.class), any(Infrastructure.class));
+
     ArgumentCaptor<DelegateTaskRequest> captor = ArgumentCaptor.forClass(DelegateTaskRequest.class);
     verify(delegateGrpcClientWrapper, times(1)).submitAsyncTask(captor.capture(), eq(Duration.ZERO));
 
     DelegateTaskRequest delegateTaskRequest = captor.getValue();
 
-    //    assertThat(delegateTaskRequest.getUnitsCount()).isEqualTo(1);
-    //    assertThat(delegateTaskRequest.getUnits(0)).isEqualTo("Execute");
     assertThat(delegateTaskRequest.getTaskType()).isEqualTo("NG_AZURE_TASK");
 
     verifyTaskRequest(delegateTaskRequest);
@@ -481,9 +517,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAws"));
 
-    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    Collection<StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
     assertThat(stepOutcomes)
-        .containsAnyOf(StepResponse.StepOutcome.builder()
+        .containsAnyOf(StepOutcome.builder()
                            .outcome(getInstancesOutcome())
                            .name(OutcomeExpressionConstants.INSTANCES)
                            .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
@@ -549,9 +585,9 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
         .addRollbackArtifactToStageOutcomeIfPresent(
             any(Ambiance.class), any(StepResponseBuilder.class), any(ExecutionInfoKey.class), eq("SshWinRmAzure"));
 
-    Collection<StepResponse.StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
+    Collection<StepOutcome> stepOutcomes = stepResponse.getStepOutcomes();
     assertThat(stepOutcomes)
-        .containsAnyOf(StepResponse.StepOutcome.builder()
+        .containsAnyOf(StepOutcome.builder()
                            .outcome(getInstancesOutcome())
                            .name(OutcomeExpressionConstants.INSTANCES)
                            .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
@@ -579,7 +615,7 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
 
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).hasSize(2);
-    Iterator<StepResponse.StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
+    Iterator<StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
     assertThat(iterator.next().getOutcome()).isEqualTo(getInstancesOutcome());
     assertThat(iterator.next().getOutcome())
         .isEqualTo(PdcInfrastructureOutcome.builder()
@@ -591,6 +627,160 @@ public class InfrastructureTaskExecutableStepV2Test extends CategoryTest {
     verify(sweepingOutputService, times(1))
         .consume(any(Ambiance.class), eq("output"), eq(HostsOutput.builder().hosts(Set.of("h1", "h2")).build()),
             eq("STAGE"));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testExceptionInHandleResponse() {
+    // introduce an exception
+    doReturn(null).when(sweepingOutputService).resolve(any(Ambiance.class), any());
+
+    StepResponse stepResponse = step.handleAsyncResponse(buildAmbiance(), null, null);
+
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
+    FailureData failureData = stepResponse.getFailureInfo().getFailureData(0);
+
+    assertThat(failureData.getCode()).isEqualTo("GENERAL_ERROR");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.ANIL)
+  @Category(UnitTests.class)
+  public void testHandleResponseForCustomDeploymentArtifactOutCome() {
+    doReturn(ServiceStepOutcome.builder().type(ServiceSpecType.CUSTOM_DEPLOYMENT).build())
+        .when(outcomeService)
+        .resolve(any(), eq(RefObjectUtils.getOutcomeRefObject("service")));
+
+    doNothing()
+        .when(stageExecutionHelper)
+        .addRollbackArtifactToStageOutcomeIfPresent(eq(ambiance), any(StepResponseBuilder.class),
+            any(ExecutionInfoKey.class), eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
+
+    StepTemplateRef stepTemplateRef = StepTemplateRef.builder().templateRef("openstack").versionLabel("v1").build();
+    List<CustomDeploymentNGVariable> variables = new ArrayList<>();
+    CustomDeploymentNumberNGVariable numberNGVariable = CustomDeploymentNumberNGVariable.builder()
+                                                            .name("number")
+                                                            .type(CustomDeploymentNGVariableType.NUMBER)
+                                                            .value(ParameterField.<Double>builder().value(10.0).build())
+                                                            .build();
+    CustomDeploymentStringNGVariable stringNGVariable =
+        CustomDeploymentStringNGVariable.builder()
+            .name("url")
+            .type(CustomDeploymentNGVariableType.NUMBER)
+            .value(ParameterField.<String>builder().value("url").build())
+            .build();
+
+    CustomDeploymentSecretNGVariable secretNGVariable =
+        CustomDeploymentSecretNGVariable.builder()
+            .name("token")
+            .type(CustomDeploymentNGVariableType.SECRET)
+            .value(ParameterField.<SecretRefData>builder()
+                       .value(SecretRefData.builder().identifier("secretId").scope(Scope.ACCOUNT).build())
+                       .build())
+            .build();
+
+    variables.add(numberNGVariable);
+    variables.add(stringNGVariable);
+    variables.add(secretNGVariable);
+
+    InfrastructureConfig customDeploymentInfra =
+        InfrastructureConfig.builder()
+            .infrastructureDefinitionConfig(InfrastructureDefinitionConfig.builder()
+                                                .type(InfrastructureType.CUSTOM_DEPLOYMENT)
+                                                .spec(CustomDeploymentInfrastructure.builder()
+                                                          .customDeploymentRef(stepTemplateRef)
+                                                          .variables(variables)
+                                                          .build())
+                                                .build())
+            .build();
+
+    InfrastructureEntity entity = InfrastructureEntity.builder()
+                                      .accountId("accountId")
+                                      .orgIdentifier("orgId")
+                                      .projectIdentifier("projectId")
+                                      .identifier("infra-id")
+                                      .envIdentifier("env-id")
+                                      .type(customDeploymentInfra.getInfrastructureDefinitionConfig().getType())
+                                      .yaml(YamlPipelineUtils.writeYamlString(customDeploymentInfra))
+                                      .build();
+
+    doReturn(Optional.ofNullable(entity))
+        .when(infrastructureEntityService)
+        .get(anyString(), anyString(), anyString(), anyString(), anyString());
+
+    CustomDeploymentInfrastructure spec =
+        (CustomDeploymentInfrastructure) customDeploymentInfra.getInfrastructureDefinitionConfig().getSpec();
+    mockInfraTaskExecutableSweepingOutput(
+        CustomDeploymentInfrastructureOutcome.builder()
+            .variables(spec.getVariables().stream().collect(
+                Collectors.toMap(CustomDeploymentNGVariable::getName, CustomDeploymentNGVariable::getCurrentValue)))
+            .instanceFetchScript("echo test")
+            .instanceAttributes(new HashMap<>())
+            .build());
+
+    mockSaveAndGetInstancesOutcomeForTaskStep();
+
+    doReturn(EmptyHostDelegateConfig.builder().hosts(Collections.emptySet()).build())
+        .when(cdStepHelper)
+        .getSshInfraDelegateConfig(any(), any());
+
+    StepResponse stepResponse = step.handleAsyncResponse(ambiance,
+        InfrastructureTaskExecutableStepV2Params.builder()
+            .envRef(ParameterField.createValueField("env-id"))
+            .infraRef(ParameterField.createValueField("infra-id"))
+            .build(),
+        Collections.emptyMap());
+
+    // verify unit progress data
+    assertThat(stepResponse.getUnitProgressList().get(0).getUnitName()).isEqualTo("Execute");
+    assertThat(stepResponse.getUnitProgressList().get(0).getStatus()).isEqualTo(UnitStatus.SUCCESS);
+    assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
+    assertThat(stepResponse.getStepOutcomes()).hasSize(2);
+
+    Iterator<StepOutcome> iterator = stepResponse.getStepOutcomes().iterator();
+    Outcome outcome = iterator.next().getOutcome();
+    assertThat(outcome).isInstanceOf(InstancesOutcome.class);
+    InstancesOutcome customDeploymentInstances = (InstancesOutcome) outcome;
+    assertThat(customDeploymentInstances.getInstances()).isEmpty();
+
+    outcome = iterator.next().getOutcome();
+    assertThat(outcome).isInstanceOf(CustomDeploymentInfrastructureOutcome.class);
+
+    CustomDeploymentInfrastructureOutcome stepOutCome = (CustomDeploymentInfrastructureOutcome) outcome;
+    assertThat(stepOutCome.getInstanceFetchScript()).isEqualTo("echo test");
+    assertThat(stepOutCome.getVariables().size()).isEqualTo(3);
+
+    Map<String, Object> outComeVariables = stepOutCome.getVariables();
+    ParameterField<Double> number = (ParameterField<Double>) outComeVariables.get("number");
+    ParameterField<String> url = (ParameterField<String>) outComeVariables.get("url");
+    ParameterField<SecretRefData> token = (ParameterField<SecretRefData>) outComeVariables.get("token");
+
+    assertThat(number.getValue()).isEqualTo(10.0);
+    assertThat(url.getValue()).isEqualTo("url");
+    assertThat(token.getValue().getIdentifier()).isEqualTo("secretId");
+    assertThat(token.getValue().getScope()).isEqualTo(Scope.ACCOUNT);
+    // verify some more method calls
+    verify(stageExecutionHelper, times(1))
+        .saveStageExecutionInfoAndPublishExecutionInfoKey(
+            any(Ambiance.class), any(ExecutionInfoKey.class), eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
+    verify(stageExecutionHelper, times(1))
+        .addRollbackArtifactToStageOutcomeIfPresent(any(Ambiance.class), any(StepResponseBuilder.class),
+            any(ExecutionInfoKey.class), eq(InfrastructureKind.CUSTOM_DEPLOYMENT));
+
+    ArgumentCaptor<SshInfraDelegateConfigOutput> delegateConfigOutput =
+        ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
+    verify(sweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            delegateConfigOutput.capture(), eq(StepCategory.STAGE.name()));
+
+    SshInfraDelegateConfigOutput delegateConfigOutputValue = delegateConfigOutput.getValue();
+    assertThat(delegateConfigOutputValue).isNotNull();
+    assertThat(delegateConfigOutputValue.getSshInfraDelegateConfig()).isNotNull();
+    SshInfraDelegateConfig sshInfraDelegateConfig = delegateConfigOutputValue.getSshInfraDelegateConfig();
+    assertThat(sshInfraDelegateConfig).isInstanceOf(EmptyHostDelegateConfig.class);
+    EmptyHostDelegateConfig emptyHostDelegateConfig = (EmptyHostDelegateConfig) sshInfraDelegateConfig;
+    assertThat(emptyHostDelegateConfig.getHosts()).isEmpty();
   }
 
   private AwsEC2Instance mockAwsInstance(String id) {

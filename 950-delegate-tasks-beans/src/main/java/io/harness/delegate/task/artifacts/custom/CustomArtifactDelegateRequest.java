@@ -7,6 +7,7 @@
 
 package io.harness.delegate.task.artifacts.custom;
 
+import static io.harness.delegate.task.artifacts.ArtifactSourceType.CUSTOM_ARTIFACT;
 import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -17,7 +18,7 @@ import io.harness.delegate.task.artifacts.ArtifactSourceDelegateRequest;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
-import io.harness.expression.ExpressionReflectionUtils.NestedAnnotationResolver;
+import io.harness.reflection.ExpressionReflectionUtils.NestedAnnotationResolver;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
@@ -68,5 +69,10 @@ public class CustomArtifactDelegateRequest
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     return new ArrayList<>();
+  }
+
+  @Override
+  public ArtifactSourceType getSourceType() {
+    return CUSTOM_ARTIFACT;
   }
 }

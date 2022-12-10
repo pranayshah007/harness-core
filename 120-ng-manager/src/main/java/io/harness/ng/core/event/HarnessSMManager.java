@@ -94,6 +94,8 @@ public class HarnessSMManager {
     ConnectorDTO connectorDTO =
         getConnectorRequestDTO(globalSecretManager, secretScope, accountIdentifier, projectIdentifier, orgIdentifier);
     secretManagerConnectorService.create(connectorDTO, accountIdentifier);
+    log.info(String.format("Created Harness Secret Manager for account- %s org- %s project- %s", accountIdentifier,
+        orgIdentifier, projectIdentifier));
   }
 
   private Scope getSecretScope(@OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
@@ -118,7 +120,7 @@ public class HarnessSMManager {
   public boolean deleteHarnessSecretManager(
       String accountIdentifier, @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier) {
     return secretManagerConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, HARNESS_SECRET_MANAGER_IDENTIFIER);
+        accountIdentifier, orgIdentifier, projectIdentifier, HARNESS_SECRET_MANAGER_IDENTIFIER, false);
   }
 
   public ConnectorDTO getConnectorRequestDTO(SecretManagerConfigDTO secretManagerConfigDTO, Scope secretScope,

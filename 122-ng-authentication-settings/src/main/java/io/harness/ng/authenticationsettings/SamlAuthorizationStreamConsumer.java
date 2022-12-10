@@ -7,14 +7,15 @@
 
 package io.harness.ng.authenticationsettings;
 
-import static io.harness.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.NG_MANAGER;
 import static io.harness.eventsframework.EventsFrameworkConstants.SAML_AUTHORIZATION_ASSERTION;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.eventsframework.samlauthorization.samlauthorizationdata.SamlAuthorizationDTO;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @Slf4j
 @Singleton
-public class SamlAuthorizationStreamConsumer implements Runnable {
+public class SamlAuthorizationStreamConsumer extends RedisTraceConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private final Consumer redisConsumer;
   @Inject private NGSamlUserGroupSync ngSamlUserGroupSync;
@@ -82,19 +83,8 @@ public class SamlAuthorizationStreamConsumer implements Runnable {
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try {
-      processMessage(message);
-      return true;
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private void processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     if (message.hasMessage()) {
       Map<String, String> metadataMap = message.getMessage().getMetadataMap();
       SamlAuthorizationDTO samlAuthorizationDTO;
@@ -107,5 +97,7 @@ public class SamlAuthorizationStreamConsumer implements Runnable {
         throw new IllegalStateException(e);
       }
     }
+
+    return true;
   }
 }

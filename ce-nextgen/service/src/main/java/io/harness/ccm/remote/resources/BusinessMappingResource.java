@@ -19,6 +19,8 @@ import io.harness.ccm.audittrails.events.CostCategoryUpdateEvent;
 import io.harness.ccm.rbac.CCMRbacHelper;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
+import io.harness.ccm.views.service.CEViewService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.outbox.api.OutboxService;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -57,6 +59,7 @@ public class BusinessMappingResource {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private TransactionTemplate transactionTemplate;
   @Inject private OutboxService outboxService;
   @Inject CCMRbacHelper rbacHelper;
+  @Inject CEViewService ceViewService;
 
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_RETRY_POLICY;
 
@@ -67,6 +70,12 @@ public class BusinessMappingResource {
   public RestResponse<BusinessMapping> save(
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
+    if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
+      throw new InvalidRequestException("Cost category name already exists.");
+    }
+    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
+      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
+    }
     BusinessMapping costCategory = businessMappingService.save(businessMapping);
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryCreateEvent(accountId, costCategory.toDTO()));
@@ -103,7 +112,18 @@ public class BusinessMappingResource {
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId, BusinessMapping businessMapping) {
     rbacHelper.checkCostCategoryEditPermission(accountId, null, null);
     BusinessMapping oldCostCategory = businessMappingService.get(businessMapping.getUuid(), accountId);
+    if (!oldCostCategory.getName().equals(businessMapping.getName())) {
+      if (!businessMappingService.isNamePresent(businessMapping.getName(), businessMapping.getAccountId())) {
+        throw new InvalidRequestException("Cost category name already exists.");
+      }
+    }
+    if (businessMappingService.isInvalidBusinessMappingUnallocatedCostLabel(businessMapping)) {
+      throw new InvalidRequestException("Unallocated cost bucket label does not allow Others or Unallocated");
+    }
     BusinessMapping newCostCategory = businessMappingService.update(businessMapping);
+    if (!oldCostCategory.getName().equals(newCostCategory.getName())) {
+      ceViewService.updateBusinessMappingName(accountId, newCostCategory.getUuid(), newCostCategory.getName());
+    }
     Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       outboxService.save(new CostCategoryUpdateEvent(accountId, newCostCategory.toDTO(), oldCostCategory.toDTO()));
       return true;

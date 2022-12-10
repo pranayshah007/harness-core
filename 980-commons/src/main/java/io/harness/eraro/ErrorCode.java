@@ -25,6 +25,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.common.base.Splitter;
+
 /**
  * The enum Error codes.
  */
@@ -648,7 +649,14 @@ public enum ErrorCode {
   AWS_STS_ERROR,
 
   FREEZE_EXCEPTION,
-  DELEGATE_TASK_EXPIRED;
+
+  DELEGATE_TASK_EXPIRED,
+
+  DELEGATE_TASK_VALIDATION_FAILED,
+  MONGO_EXECUTION_TIMEOUT_EXCEPTION,
+  DELEGATE_NOT_REGISTERED(NOT_FOUND),
+  TERRAFORM_VAULT_SECRET_CLEANUP_FAILURE,
+  APPROVAL_REJECTION;
 
   private Status status = BAD_REQUEST;
   private String description;

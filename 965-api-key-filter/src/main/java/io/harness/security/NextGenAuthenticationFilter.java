@@ -9,6 +9,9 @@ package io.harness.security;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_HEADER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.EXPIRED_TOKEN;
+import static io.harness.eraro.ErrorCode.INVALID_REQUEST;
+import static io.harness.eraro.ErrorCode.INVALID_TOKEN;
 import static io.harness.exception.WingsException.USER;
 
 import static javax.ws.rs.Priorities.AUTHENTICATION;
@@ -17,21 +20,27 @@ import static org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder.B
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnauthorizedException;
 import io.harness.ng.core.common.beans.ApiKeyType;
 import io.harness.ng.core.dto.TokenDTO;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.dto.SettingResponseDTO;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.security.annotations.ScimAPI;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServiceAccountPrincipal;
 import io.harness.security.dto.UserPrincipal;
+import io.harness.serviceaccount.ServiceAccountDTO;
 import io.harness.token.remote.TokenClient;
+import io.harness.util.JWTTokenFlowAuthFilterUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -54,7 +63,7 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   public static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String delimiter = "\\.";
 
-  private TokenClient tokenClient;
+  private final TokenClient tokenClient;
   @Context @Setter @VisibleForTesting private ResourceInfo resourceInfo;
 
   public NextGenAuthenticationFilter(Predicate<Pair<ResourceInfo, ContainerRequestContext>> predicate,
@@ -70,17 +79,21 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
       // Predicate testing failed with the current request context
       return;
     }
-
+    boolean isScimCall = isScimAPI();
     Optional<String> apiKeyOptional =
-        isScimAPI() ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
+        isScimCall ? getApiKeyForScim(containerRequestContext) : getApiKeyFromHeaders(containerRequestContext);
 
     if (apiKeyOptional.isPresent()) {
       Optional<String> accountIdentifierOptional = getAccountIdentifierFrom(containerRequestContext);
-      if (!accountIdentifierOptional.isPresent()) {
+      if (accountIdentifierOptional.isEmpty()) {
         throw new InvalidRequestException("Account detail is not present in the request");
       }
       String accountIdentifier = accountIdentifierOptional.get();
-      validateApiKey(accountIdentifier, apiKeyOptional.get());
+      if (isJWTTokenTypeCheck(accountIdentifier, apiKeyOptional.get())) {
+        validateApiKeyForJwt(accountIdentifier, apiKeyOptional.get(), isScimCall);
+      } else {
+        validateApiKey(accountIdentifier, apiKeyOptional.get());
+      }
     } else {
       super.filter(containerRequestContext);
     }
@@ -89,7 +102,6 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private boolean isScimAPI() {
     Class<?> resourceClass = resourceInfo.getResourceClass();
     Method resourceMethod = resourceInfo.getResourceMethod();
-
     return resourceMethod.getAnnotation(ScimAPI.class) != null || resourceClass.getAnnotation(ScimAPI.class) != null;
   }
 
@@ -107,13 +119,24 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
         checkIFRawPasswordMatches(splitToken, tokenId, tokenDTO);
         checkIfApiKeyHasExpired(tokenId, tokenDTO);
         Principal principal = getPrincipal(tokenDTO);
-        SecurityContextBuilder.setContext(principal);
+        io.harness.security.SecurityContextBuilder.setContext(principal);
         SourcePrincipalContextBuilder.setSourcePrincipal(principal);
       } else {
-        throw new InvalidRequestException(String.format("Invalid API token %s: Token not found", tokenId));
+        logAndThrowTokenException(String.format("Invalid API token %s: Token not found", tokenId), INVALID_TOKEN);
       }
     } else {
-      throw new InvalidRequestException("Invalid API token: Token is Empty");
+      logAndThrowTokenException("Invalid API token: Token is Empty", INVALID_TOKEN);
+    }
+  }
+
+  private void validateApiKeyForJwt(String accountIdentifier, String apiKey, boolean isScimCall) {
+    if (isScimCall) {
+      handleSCIMJwtTokenFlow(accountIdentifier, apiKey);
+    } else {
+      logAndThrowTokenException(
+          "NG_SCIM_JWT: Invalid API call: Externally issued JWT token can be only used for making SCIM API calls. Account id for API called: "
+              + accountIdentifier,
+          INVALID_REQUEST);
     }
   }
 
@@ -156,8 +179,8 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
   private Principal getPrincipal(TokenDTO tokenDTO) {
     Principal principal = null;
     if (tokenDTO.getApiKeyType() == ApiKeyType.SERVICE_ACCOUNT) {
-      principal =
-          new ServiceAccountPrincipal(tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername());
+      principal = new ServiceAccountPrincipal(
+          tokenDTO.getParentIdentifier(), tokenDTO.getEmail(), tokenDTO.getUsername(), tokenDTO.getAccountIdentifier());
     }
     if (tokenDTO.getApiKeyType() == ApiKeyType.USER) {
       principal = new UserPrincipal(
@@ -168,16 +191,15 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private void checkIfApiKeyHasExpired(String tokenId, TokenDTO tokenDTO) {
     if (!tokenDTO.isValid()) {
-      throw new InvalidRequestException(
-          "Incoming API token " + tokenDTO.getName() + String.format(" has expired %s", tokenId));
+      logAndThrowTokenException(
+          String.format("Incoming API token %s has expired. Token id: %s", tokenDTO.getName(), tokenId), EXPIRED_TOKEN);
     }
   }
 
   private void checkIfPrefixMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
     if (!tokenDTO.getApiKeyType().getValue().equals(splitToken[0])) {
       String message = "Invalid prefix for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
     }
   }
 
@@ -185,33 +207,35 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
     BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder($2A, 10);
     if (splitToken.length == 3 && !bCryptPasswordEncoder.matches(splitToken[2], tokenDTO.getEncodedPassword())) {
       String message = "Raw password not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
     } else if (splitToken.length == 4 && !bCryptPasswordEncoder.matches(splitToken[3], tokenDTO.getEncodedPassword())) {
       String message = "Raw password not matching for new API token format";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API token %s: %s", tokenId, message));
+      logAndThrowTokenException(String.format("Invalid API token %s: %s", tokenId, message), INVALID_TOKEN);
     }
   }
 
   private void checkIfAccountIdInTokenMatches(String[] splitToken, TokenDTO tokenDTO, String tokenId) {
     if (isNewApiKeyToken(splitToken) && !splitToken[1].equals(tokenDTO.getAccountIdentifier())) {
-      throw new InvalidRequestException(String.format("Invalid accountId in token %s", tokenId));
+      logAndThrowTokenException(String.format("Invalid accountId in token %s", tokenId), INVALID_TOKEN);
     }
   }
 
   private void checkIfAccountIdMatches(String accountIdentifier, TokenDTO tokenDTO, String tokenId) {
     if (!accountIdentifier.equals(tokenDTO.getAccountIdentifier())) {
-      throw new InvalidRequestException(String.format("Invalid account token access %s", tokenId));
+      logAndThrowTokenException(String.format("Invalid account token access %s", tokenId), INVALID_TOKEN);
     }
   }
 
   private void checkIfTokenLengthMatches(String[] splitToken) {
     if (!(isOldApiKeyToken(splitToken) || isNewApiKeyToken(splitToken))) {
       String message = "Token length not matching for API token";
-      log.warn(message);
-      throw new InvalidRequestException(String.format("Invalid API Token: %s", message));
+      logAndThrowTokenException(String.format("Invalid API Token: %s", message), INVALID_TOKEN);
     }
+  }
+
+  private void logAndThrowTokenException(String errorMessage, ErrorCode errorCode) {
+    log.error(errorMessage);
+    throw new InvalidRequestException(errorMessage, errorCode, USER);
   }
 
   private boolean isOldApiKeyToken(String[] splitToken) {
@@ -220,5 +244,49 @@ public class NextGenAuthenticationFilter extends JWTAuthenticationFilter {
 
   private boolean isNewApiKeyToken(String[] splitToken) {
     return splitToken.length == 4;
+  }
+
+  private Principal getPrincipalFromServiceAccountDto(ServiceAccountDTO serviceAccountDto) {
+    return new ServiceAccountPrincipal(serviceAccountDto.getIdentifier(), serviceAccountDto.getEmail(),
+        serviceAccountDto.getEmail(), serviceAccountDto.getAccountIdentifier());
+  }
+
+  private void handleSCIMJwtTokenFlow(String accountIdentifier, String jwtToken) {
+    List<SettingResponseDTO> settingsResponse =
+        JWTTokenFlowAuthFilterUtils.getSettingListResponseByAccountForSCIMAndJWT(accountIdentifier, tokenClient);
+    final Map<String, String> settingValuesMap =
+        JWTTokenFlowAuthFilterUtils.getScimJwtTokenSettingConfigurationValuesFromDTOList(
+            settingsResponse, accountIdentifier);
+
+    String publicKeysJsonString = JWTTokenFlowAuthFilterUtils.getPublicKeysJsonStringFromUrl(accountIdentifier,
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_PUBLIC_KEY_URL_IDENTIFIER));
+    JWTTokenFlowAuthFilterUtils.validateJwtTokenAndMatchClaimKeyValue(jwtToken,
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_KEY_IDENTIFIER),
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_VALUE_IDENTIFIER), publicKeysJsonString,
+        accountIdentifier);
+
+    ServiceAccountDTO serviceAccountDTO = JWTTokenFlowAuthFilterUtils.getServiceAccountByIdAndAccountId(
+        settingValuesMap.get(SettingIdentifiers.SCIM_JWT_TOKEN_CONFIGURATION_SERVICE_PRINCIPAL_IDENTIFIER),
+        accountIdentifier, tokenClient);
+
+    if (null != serviceAccountDTO) {
+      log.info(String.format(
+          "NG_SCIM_JWT: Service account details successfully fetched for account: %s, with ServiceAccount Id: %s",
+          accountIdentifier, serviceAccountDTO.getIdentifier()));
+
+      // set ServicePrincipal in SecurityContext for Harness internal authorization
+      Principal servicePrincipal = getPrincipalFromServiceAccountDto(serviceAccountDTO);
+      io.harness.security.SecurityContextBuilder.setContext(servicePrincipal);
+      SourcePrincipalContextBuilder.setSourcePrincipal(servicePrincipal);
+
+      log.info(String.format(
+          "NG_SCIM_JWT: Security context set with ServicePrincipal id: %s, for SCIM request using externally issued JWT token in account: %s",
+          servicePrincipal.getName(), accountIdentifier));
+    }
+  }
+
+  private boolean isJWTTokenTypeCheck(String accountIdentifier, String token) {
+    String[] splitToken = token.split(delimiter);
+    return splitToken.length == 3 && JWTTokenFlowAuthFilterUtils.isJWTTokenType(splitToken, accountIdentifier);
   }
 }

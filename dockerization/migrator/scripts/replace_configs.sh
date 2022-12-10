@@ -136,6 +136,10 @@ if [[ "" != "$MONGO_SERVER_SELECTION_TIMEOUT" ]]; then
   export MONGO_SERVER_SELECTION_TIMEOUT; yq -i '.cg.mongo.serverSelectionTimeout=env(MONGO_SERVER_SELECTION_TIMEOUT)' $CONFIG_FILE
 fi
 
+if [[ "" != "$MONGO_SOCKET_TIMEOUT" ]]; then
+  export MONGO_SOCKET_TIMEOUT; yq -i '.cg.mongo.socketTimeout=env(MONGO_SOCKET_TIMEOUT)' $CONFIG_FILE
+fi
+
 if [[ "" != "$MAX_CONNECTION_IDLE_TIME" ]]; then
   export MAX_CONNECTION_IDLE_TIME; yq -i '.cg.mongo.maxConnectionIdleTime=env(MAX_CONNECTION_IDLE_TIME)' $CONFIG_FILE
 fi
@@ -633,6 +637,14 @@ if [[ "$TIMESCALEDB_HEALTH_CHECK_NEEDED" == "true" ]]; then
   export TIMESCALEDB_HEALTH_CHECK_NEEDED; yq -i '.cg.timescaledb.isHealthCheckNeeded=env(TIMESCALEDB_HEALTH_CHECK_NEEDED)' $CONFIG_FILE
 fi
 
+if [[ "" != "$TIMESCALEDB_SSL_MODE" ]]; then
+  export TIMESCALEDB_SSL_MODE; yq -i '.timescaledb.sslMode=env(TIMESCALEDB_SSL_MODE)' $CONFIG_FILE
+fi
+
+if [[ "" != "$TIMESCALEDB_SSL_ROOT_CERT" ]]; then
+  export TIMESCALEDB_SSL_ROOT_CERT; yq -i '.timescaledb.sslRootCert=env(TIMESCALEDB_SSL_ROOT_CERT)' $CONFIG_FILE
+fi
+
 if [[ "$MONGO_DEBUGGING_ENABLED" == "true" ]]; then
   yq -i '.logging.loggers.["org.mongodb.morphia.query"]="TRACE"' $CONFIG_FILE
   yq -i '.logging.loggers.connection="TRACE"' $CONFIG_FILE
@@ -678,6 +690,10 @@ if [[ "" != "$REDIS_URL" ]]; then
   export REDIS_URL; yq -i '.cg.redisLockConfig.redisUrl=env(REDIS_URL)' $CONFIG_FILE
   export REDIS_URL; yq -i '.cg.redisAtmosphereConfig.redisUrl=env(REDIS_URL)' $CONFIG_FILE
   export REDIS_URL; yq -i '.singleServerConfig.address=env(REDIS_URL)' $REDISSON_CACHE_FILE
+fi
+
+if [[ "" != "$ATMOSPHERE_REDIS_URL" ]]; then
+  export ATMOSPHERE_REDIS_URL; yq -i '.redisAtmosphereConfig.redisUrl=env(ATMOSPHERE_REDIS_URL)' $CONFIG_FILE
 fi
 
 if [[ "$REDIS_SENTINEL" == "true" ]]; then

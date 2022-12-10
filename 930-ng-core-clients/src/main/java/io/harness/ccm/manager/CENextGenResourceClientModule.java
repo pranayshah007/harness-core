@@ -18,6 +18,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(CE)
 public class CENextGenResourceClientModule extends AbstractModule {
@@ -34,6 +35,7 @@ public class CENextGenResourceClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private CENextGenResourceHttpClientFactory secretManagerHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new CENextGenResourceHttpClientFactory(
         this.httpClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

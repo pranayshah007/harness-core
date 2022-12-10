@@ -10,12 +10,19 @@ package io.harness.ci.utils;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static org.assertj.core.util.Lists.newArrayList;
+import static org.mockito.Mockito.when;
 
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYamlSpec;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.executionplan.CIExecutionTestBase;
+import io.harness.ci.integrationstage.K8InitializeTaskUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,16 +32,24 @@ import com.google.inject.Inject;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 
 public class ValidationUtilsTest extends CIExecutionTestBase {
   @Inject ValidationUtils validationUtils;
+  @Mock private K8InitializeTaskUtils k8InitializeTaskUtils;
 
   @Test(expected = CIStageExecutionException.class)
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
   public void validateWindowsK8Stage() {
+    Infrastructure infrastructure =
+        K8sDirectInfraYaml.builder()
+            .spec(K8sDirectInfraYamlSpec.builder().os(ParameterField.createValueField(OSType.Windows)).build())
+            .build();
     ExecutionElementConfig executionElementConfig = getExecutionWrapperConfig();
-    validationUtils.validateWindowsK8Stage(executionElementConfig);
+    when(k8InitializeTaskUtils.getOS(infrastructure)).thenReturn(OSType.Windows);
+
+    validationUtils.validateStage(executionElementConfig, infrastructure);
   }
 
   private ExecutionElementConfig getExecutionWrapperConfig() {

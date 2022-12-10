@@ -23,6 +23,7 @@ import software.wings.service.impl.analysis.LogMLFeedbackRecord;
 import software.wings.service.impl.elk.ElkQueryType;
 import software.wings.service.impl.splunk.LogMLClusterScores;
 import software.wings.service.impl.splunk.SplunkAnalysisCluster;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.sm.StateType;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import javax.validation.constraints.NotNull;
 /**
  * Created by rsingh on 4/17/17.
  */
-public interface AnalysisService {
+public interface AnalysisService extends OwnedByAccount {
   LogMLAnalysisSummary getAnalysisSummary(String stateExecutionId, String appId, StateType stateType);
 
   void validateConfig(
@@ -66,8 +67,6 @@ public interface AnalysisService {
       String appId, String serviceId, String workflowId, String workflowExecutionId);
 
   List<LogMLFeedbackRecord> get24x7MLFeedback(String cvConfigId);
-
-  List<LogMLFeedbackRecord> getMLFeedback(String accountId, String workflowId);
 
   void cleanUpForLogRetry(String stateExecutionId);
 

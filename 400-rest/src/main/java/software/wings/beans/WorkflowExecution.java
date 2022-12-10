@@ -96,10 +96,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                                           CreatedAtAware, CreatedByAware, KeywordsAware, AccountAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
+        .add(SortCompoundMongoIndex.builder()
                  .name("search")
                  .field(WorkflowExecutionKeys.workflowId)
                  .field(WorkflowExecutionKeys.status)
+                 .descSortField(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("app_pipExecutionId_createdAt")
@@ -200,18 +201,18 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_pipelineExecutionId_startTs")
+                 .name("accountId_startTs_status_pipelineExecutionId")
                  .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.startTs)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .field(WorkflowExecutionKeys.startTs)
                  .build())
         .add(CompoundMongoIndex.builder()
-                 .name("accountId_status_pipelineExecutionId_endTs")
+                 .name("accountId_endTs_status_pipelineExecutionId")
                  .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.endTs)
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.pipelineExecutionId)
-                 .field(WorkflowExecutionKeys.endTs)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("accountId_startTs_serviceIds")
@@ -220,10 +221,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.serviceIds)
                  .build())
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_cdPageCandidate_createdAt")
+                 .name("accountId_cdPageCandidate_createdAt_serviceIds_appId")
                  .field(WorkflowExecutionKeys.accountId)
                  .field(WorkflowExecutionKeys.cdPageCandidate)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.serviceIds)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_1_deployedServices_1_createdAt_-1_appId_1_status_1")
@@ -239,11 +242,11 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(CompoundTextMongoIndex.builder()
-                 .name("accountId_cdPageCandidate_createdAt_keywords")
+                 .name("accountId_cdPageCandidate_keywords_createdAt")
                  .field(WorkflowExecutionKeys.accountId)
                  .field(WorkflowExecutionKeys.cdPageCandidate)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
                  .textField(WorkflowExecutionKeys.keywords)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("appid_workflowid_status_deployedServices_createdat")
@@ -252,6 +255,28 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.status)
                  .field(WorkflowExecutionKeys.deployedServices)
                  .descSortField(WorkflowExecutionKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_cdPageCandidate_workflowId_createdAt")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.cdPageCandidate)
+                 .field(WorkflowExecutionKeys.workflowId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_appId_onDemandRollback_createdAt")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.appId)
+                 .field(WorkflowExecutionKeys.onDemandRollback)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_cdPageCandidate_createdAt_envIds_appId")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .field(WorkflowExecutionKeys.cdPageCandidate)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.envIds)
+                 .rangeField(WorkflowExecutionKeys.appId)
                  .build())
         .build();
   }
@@ -276,12 +301,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private List<String> cloudProviderIds;
   @FdIndex private List<String> serviceIds;
   @FdIndex private List<String> infraMappingIds;
-  @FdIndex private List<String> infraDefinitionIds;
+  private List<String> infraDefinitionIds;
   private String appName;
   private String envName;
   private EnvironmentType envType;
   private WorkflowType workflowType;
-  @FdIndex private ExecutionStatus status;
+  private ExecutionStatus status;
   @Transient private Graph graph;
 
   @Transient private GraphNode executionNode; // used for workflow details.
@@ -427,6 +452,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
         + "displayName";
     public static final String serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid =
         serviceExecutionSummaries + ".instanceStatusSummaries.instanceElement.uuid";
+    public static final String originalExecution_executionId = originalExecution + ".executionId";
   }
 
   @PrePersist

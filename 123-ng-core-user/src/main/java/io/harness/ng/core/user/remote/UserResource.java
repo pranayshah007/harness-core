@@ -43,6 +43,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.dto.UsersCountDTO;
 import io.harness.ng.core.services.ProjectService;
 import io.harness.ng.core.user.AddUsersDTO;
 import io.harness.ng.core.user.AddUsersResponse;
@@ -639,5 +640,48 @@ public class UserResource {
   private boolean isUserExternallyManaged(String userId) {
     Optional<UserInfo> optionalUserInfo = ngUserService.getUserById(userId);
     return optionalUserInfo.map(UserInfo::isExternallyManaged).orElse(false);
+  }
+
+  @GET
+  @Hidden
+  @Path("is-email-in-account")
+  @ApiOperation(value = "Check if email in account", nickname = "checkEmailAccount", hidden = true)
+  @InternalApi
+  public ResponseDTO<Boolean> checkIfEmailInAccount(
+      @Parameter(description = "This is the Email Identifier.", required = true) @QueryParam(
+          NGCommonEntityConstants.EMAIL_KEY) String emailIdentifier,
+      @Parameter(
+          description =
+              "This is the Account Identifier. The membership details within the scope of this Account will be checked.",
+          required = true) @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
+    Optional<UserMetadataDTO> optionalUser = ngUserService.getUserByEmail(emailIdentifier, false);
+    boolean found = optionalUser.isPresent()
+        && ngUserService.isUserAtScope(
+            optionalUser.get().getUuid(), Scope.builder().accountIdentifier(accountIdentifier).build());
+    return ResponseDTO.newResponse(found);
+  }
+
+  @GET
+  @Hidden
+  @Path("users-count")
+  @ApiOperation(
+      value = "Get total count of users present on Harness platform", nickname = "getUsersCount", hidden = true)
+  @Operation(operationId = "getUsersCount", summary = "Get total count of users present on Harness platform",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns count of users present on Harness platform")
+      },
+      hidden = true)
+  @InternalApi
+  public ResponseDTO<UsersCountDTO>
+  getUsersCount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                    NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
+      @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) {
+    return ResponseDTO.newResponse(ngUserService.getUsersCount(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), startInterval, endInterval));
   }
 }

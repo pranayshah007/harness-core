@@ -143,6 +143,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
 
     ngVaultService.processAppRole(connector, null, accountIdentifier, true);
 
+    // Check which type of token is provided
+    ngVaultService.processTokenLookup(connector, accountIdentifier);
+
     if (isDefaultSecretManager(connector.getConnectorInfo())) {
       clearDefaultFlagOfSecretManagers(accountIdentifier, connector.getConnectorInfo().getOrgIdentifier(),
           connector.getConnectorInfo().getProjectIdentifier());
@@ -214,6 +217,9 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
     if (existingConnectorDTO.isPresent()) {
       ConnectorConfigDTO existingConnectorConfigDTO = existingConnectorDTO.get().getConnector().getConnectorConfig();
       ngVaultService.processAppRole(connector, existingConnectorConfigDTO, accountIdentifier, false);
+
+      // Check which type of token is provided
+      ngVaultService.processTokenLookup(connector, accountIdentifier);
       alreadyDefaultSM = isDefaultSecretManager(existingConnectorDTO.get().getConnector());
     } else {
       throw new InvalidRequestException(
@@ -248,17 +254,17 @@ public class SecretManagerConnectorServiceImpl implements ConnectorService {
   }
 
   @Override
-  public boolean delete(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorIdentifier) {
+  public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorIdentifier, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, NONE, forceDelete);
   }
 
   @Override
   public boolean delete(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorIdentifier, ChangeType changeType) {
+      String connectorIdentifier, ChangeType changeType, boolean forceDelete) {
     return defaultConnectorService.delete(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifier, changeType, forceDelete);
   }
 
   @Override

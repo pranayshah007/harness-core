@@ -19,6 +19,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 
 @OwnedBy(PL)
 public class ModulesClientModule extends AbstractModule {
@@ -33,6 +34,7 @@ public class ModulesClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private ModulesHttpClientFactory modulesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new ModulesHttpClientFactory(
         serviceHttpClientConfig, serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

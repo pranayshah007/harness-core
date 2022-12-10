@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRANJAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.RAGHU;
-import static io.harness.rule.OwnerRule.SOWMYA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static software.wings.beans.AwsInfrastructureMapping.Builder.anAwsInfrastructureMapping;
@@ -28,7 +27,6 @@ import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -60,10 +58,8 @@ import software.wings.delegatetasks.cv.DataCollectionException;
 import software.wings.metrics.MetricType;
 import software.wings.metrics.appdynamics.AppdynamicsConstants;
 import software.wings.service.impl.ThirdPartyApiCallLog;
-import software.wings.service.impl.WorkflowExecutionServiceImpl;
 import software.wings.service.impl.analysis.AnalysisContext;
 import software.wings.service.impl.analysis.ContinuousVerificationExecutionMetaData;
-import software.wings.service.impl.appdynamics.AppDynamicsDataCollectionInfoV2;
 import software.wings.service.impl.appdynamics.AppdynamicsDataCollectionInfo;
 import software.wings.service.impl.appdynamics.AppdynamicsTier;
 import software.wings.service.impl.newrelic.NewRelicApplication;
@@ -87,7 +83,6 @@ import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +94,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 /**
@@ -977,151 +971,5 @@ public class AppDynamicsStateTest extends APMStateVerificationTestBase {
     final String resolvedConnectorId = appDynamicsState.getResolvedConnectorId(
         executionContext, AppDynamicsStateKeys.analysisServerConfigId, appDynamicsState.getAnalysisServerConfigId());
     assertThat(resolvedConnectorId).isEqualTo(settingAttribute.getUuid());
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_validCase() {
-    String connectorId = generateUuid();
-    long appId = 4L;
-    long tierId = 4L;
-    AppDynamicsState spyState = Mockito.spy(appDynamicsState);
-    doNothing().when(spyState).updateHostToGroupNameMap(any(), any(), any(), any(), any());
-    doReturn(connectorId).when(spyState).getResolvedConnectorId(any(), any(), any());
-    doReturn(String.valueOf(appId))
-        .when(spyState)
-        .getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.applicationId), any());
-    doReturn(String.valueOf(tierId))
-        .when(spyState)
-        .getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.tierId), any());
-
-    Map<String, String> hostMap = new HashMap<>();
-    hostMap.put("host", "default");
-
-    AppDynamicsDataCollectionInfoV2 dataCollectionInfoV2 =
-        (AppDynamicsDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hostMap);
-
-    assertThat(dataCollectionInfoV2).isNotNull();
-    assertThat(dataCollectionInfoV2.getHostsToGroupNameMap()).isEqualTo(hostMap);
-    assertThat(dataCollectionInfoV2.getConnectorId()).isEqualTo(connectorId);
-    assertThat(dataCollectionInfoV2.getAppDynamicsApplicationId()).isEqualTo(appId);
-    assertThat(dataCollectionInfoV2.getAppDynamicsTierId()).isEqualTo(tierId);
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_expressionWithApplicationNameAndTierName() throws IllegalAccessException {
-    String connectorId = generateUuid();
-    long appId = 4L;
-    long tierId = 4L;
-    String appName = "appName";
-
-    AppDynamicsState spyState = Mockito.spy(appDynamicsState);
-    doNothing().when(spyState).updateHostToGroupNameMap(any(), any(), any(), any(), any());
-
-    WorkflowExecutionServiceImpl spyService = Mockito.spy(WorkflowExecutionServiceImpl.class);
-
-    FieldUtils.writeField(spyState, "workflowExecutionService", spyService, true);
-
-    doReturn(connectorId).when(spyState).getResolvedConnectorId(any(), any(), any());
-    doReturn(appName).when(spyState).getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.applicationId), any());
-    doReturn(String.valueOf(tierId))
-        .when(spyState)
-        .getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.tierId), any());
-
-    doReturn(null).when(appdynamicsService).getAppDynamicsApplication(any(), any());
-    doReturn(String.valueOf(appId))
-        .when(appdynamicsService)
-        .getAppDynamicsApplicationByName(any(), any(), anyString(), anyString());
-    doReturn(null).when(appdynamicsService).getTier(any(), eq(appId), any());
-    doReturn(String.valueOf(tierId))
-        .when(appdynamicsService)
-        .getTierByName(any(), any(), any(), anyString(), anyString(), any());
-    doReturn(true).when(spyService).isTriggerBasedDeployment(any());
-    doReturn(generateUuid()).when(spyState).getWorkflowId(any());
-
-    Map<String, String> hostMap = new HashMap<>();
-    hostMap.put("host", "default");
-
-    AppDynamicsDataCollectionInfoV2 dataCollectionInfoV2 =
-        (AppDynamicsDataCollectionInfoV2) spyState.createDataCollectionInfo(executionContext, hostMap);
-
-    assertThat(dataCollectionInfoV2).isNotNull();
-    assertThat(dataCollectionInfoV2.getHostsToGroupNameMap()).isEqualTo(hostMap);
-    assertThat(dataCollectionInfoV2.getConnectorId()).isEqualTo(connectorId);
-    assertThat(dataCollectionInfoV2.getAppDynamicsApplicationId()).isEqualTo(appId);
-    assertThat(dataCollectionInfoV2.getAppDynamicsTierId()).isEqualTo(tierId);
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_nullTierId() throws IllegalAccessException {
-    String connectorId = generateUuid();
-    long appId = 4L;
-    long tierId = 4L;
-    String appName = "appName";
-
-    AppDynamicsState spyState = Mockito.spy(appDynamicsState);
-
-    WorkflowExecutionServiceImpl spyService = Mockito.spy(WorkflowExecutionServiceImpl.class);
-
-    FieldUtils.writeField(spyState, "workflowExecutionService", spyService, true);
-
-    doReturn(connectorId).when(spyState).getResolvedConnectorId(any(), any(), any());
-    doReturn(appName).when(spyState).getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.applicationId), any());
-    doReturn(String.valueOf(tierId))
-        .when(spyState)
-        .getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.tierId), any());
-
-    doReturn(null).when(appdynamicsService).getAppDynamicsApplication(any(), any());
-    doReturn(String.valueOf(appId))
-        .when(appdynamicsService)
-        .getAppDynamicsApplicationByName(any(), any(), anyString(), anyString());
-    doReturn(null).when(appdynamicsService).getTier(any(), eq(appId), any());
-    doReturn(null).when(appdynamicsService).getTierByName(any(), any(), any(), anyString(), anyString(), any());
-    doReturn(true).when(spyService).isTriggerBasedDeployment(any());
-
-    Map<String, String> hostMap = new HashMap<>();
-    hostMap.put("host", "default");
-
-    assertThatThrownBy(() -> spyState.createDataCollectionInfo(executionContext, hostMap))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("AppDynamics tier is not null");
-  }
-
-  @Test
-  @Owner(developers = SOWMYA)
-  @Category(UnitTests.class)
-  public void testCreateDataCollectionInfo_nullApplicationId() throws IllegalAccessException {
-    String connectorId = generateUuid();
-    long appId = 4L;
-    long tierId = 4L;
-    String appName = "appName";
-
-    AppDynamicsState spyState = Mockito.spy(appDynamicsState);
-
-    WorkflowExecutionServiceImpl spyService = Mockito.spy(WorkflowExecutionServiceImpl.class);
-
-    FieldUtils.writeField(spyState, "workflowExecutionService", spyService, true);
-
-    doReturn(connectorId).when(spyState).getResolvedConnectorId(any(), any(), any());
-    doReturn(appName).when(spyState).getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.applicationId), any());
-    doReturn(String.valueOf(tierId))
-        .when(spyState)
-        .getResolvedFieldValue(any(), eq(AppDynamicsStateKeys.tierId), any());
-
-    doReturn(null).when(appdynamicsService).getAppDynamicsApplication(any(), any());
-    doReturn(null).when(appdynamicsService).getAppDynamicsApplicationByName(any(), any(), anyString(), anyString());
-    doReturn(true).when(spyService).isTriggerBasedDeployment(any());
-
-    Map<String, String> hostMap = new HashMap<>();
-    hostMap.put("host", "default");
-
-    assertThatThrownBy(() -> spyState.createDataCollectionInfo(executionContext, hostMap))
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("AppDynamics application is not valid");
   }
 }

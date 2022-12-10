@@ -24,6 +24,7 @@ import io.harness.batch.processing.pricing.fargatepricing.EcsFargateInstancePric
 import io.harness.batch.processing.pricing.pricingprofile.PricingProfileService;
 import io.harness.batch.processing.pricing.service.intfc.AwsCustomBillingService;
 import io.harness.batch.processing.pricing.service.intfc.AzureCustomBillingService;
+import io.harness.batch.processing.pricing.service.intfc.GcpCustomBillingService;
 import io.harness.batch.processing.pricing.storagepricing.StoragePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.ComputeInstancePricingStrategy;
 import io.harness.batch.processing.pricing.vmpricing.EcsFargatePricingInfo;
@@ -73,6 +74,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
   @Mock private VMPricingServiceImpl vmPricingService;
   @Mock private AwsCustomBillingService awsCustomBillingService;
   @Mock private AzureCustomBillingService azureCustomBillingService;
+
+  @Mock private GcpCustomBillingService gcpCustomBillingService;
   @Mock private InstanceResourceService instanceResourceService;
   @Mock private EcsFargateInstancePricingStrategy ecsFargateInstancePricingStrategy;
   @Mock private CustomBillingMetaDataService customBillingMetaDataService;
@@ -270,9 +273,15 @@ public class BillingCalculationServiceTest extends CategoryTest {
     InstanceData instanceData = getInstance(instanceResource, instanceResource, metaData, INSTANCE_START_TIMESTAMP,
         INSTANCE_STOP_TIMESTAMP, InstanceType.ECS_TASK_EC2);
     BillingAmountBreakup billingAmountForResource =
-        billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
+        billingCalculationService.getBillingAmountBreakupForResource(instanceData,
+            BillingAmountBreakup.builder()
+                .billingAmount(BigDecimal.valueOf(200))
+                .cpuBillingAmount(BigDecimal.valueOf(100))
+                .memoryBillingAmount(BigDecimal.valueOf(100))
+                .build(),
             instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
-    Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("75.000"));
+    Assertions.assertThat(billingAmountForResource.getBillingAmount().intValue())
+        .isEqualTo((new BigDecimal("75.000")).intValue());
   }
 
   @Test
@@ -289,7 +298,12 @@ public class BillingCalculationServiceTest extends CategoryTest {
         INSTANCE_STOP_TIMESTAMP, InstanceType.K8S_POD);
 
     BillingAmountBreakup billingAmountForResource =
-        billingCalculationService.getBillingAmountBreakupForResource(instanceData, BigDecimal.valueOf(200),
+        billingCalculationService.getBillingAmountBreakupForResource(instanceData,
+            BillingAmountBreakup.builder()
+                .billingAmount(BigDecimal.valueOf(200))
+                .cpuBillingAmount(BigDecimal.valueOf(100))
+                .memoryBillingAmount(BigDecimal.valueOf(100))
+                .build(),
             instanceResource.getCpuUnits(), instanceResource.getMemoryMb(), 0, 0, pricingData);
 
     Assertions.assertThat(billingAmountForResource.getBillingAmount()).isEqualTo(new BigDecimal("0.0"));
@@ -423,7 +437,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
     UtilizationData utilizationData = getUtilization(CPU_UTILIZATION, MEMORY_UTILIZATION);
     BillingData billingAmount = billingCalculationService.getInstanceBillingAmount(
         instanceData, utilizationData, 86400.0, INSTANCE_START_TIMESTAMP, INSTANCE_STOP_TIMESTAMP);
-    Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount()).isEqualTo(new BigDecimal("9.60"));
+    Assertions.assertThat(billingAmount.getBillingAmountBreakup().getBillingAmount().intValue())
+        .isEqualTo(BigDecimal.valueOf(9.60).intValue());
     Assertions.assertThat(billingAmount.getIdleCostData().getIdleCost()).isEqualTo(new BigDecimal("4.8"));
     Assertions.assertThat(billingAmount.getIdleCostData().getCpuIdleCost()).isEqualTo(new BigDecimal("2.4"));
     Assertions.assertThat(billingAmount.getIdleCostData().getMemoryIdleCost()).isEqualTo(new BigDecimal("2.4"));
@@ -620,8 +635,8 @@ public class BillingCalculationServiceTest extends CategoryTest {
 
   private ComputeInstancePricingStrategy getComputeInstancePricingStrategy() {
     return new ComputeInstancePricingStrategy(vmPricingService, awsCustomBillingService, azureCustomBillingService,
-        instanceResourceService, ecsFargateInstancePricingStrategy, customBillingMetaDataService,
-        pricingProfileService);
+        gcpCustomBillingService, instanceResourceService, ecsFargateInstancePricingStrategy,
+        customBillingMetaDataService, pricingProfileService);
   }
 
   @Test

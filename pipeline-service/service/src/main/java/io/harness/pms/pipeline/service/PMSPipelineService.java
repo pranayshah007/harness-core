@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineListRepoResponse;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
@@ -28,19 +29,71 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public interface PMSPipelineService {
-  PipelineCRUDResult create(PipelineEntity pipelineEntity);
+  /**
+   * Create pipeline (inline/remote) and do validation - template resolution,
+   * schema validation and governance (opa) checks
+   *
+   * @param pipelineEntity
+   * @param throwExceptionIfGovernanceFails
+   * @return
+   */
+  PipelineCRUDResult validateAndCreatePipeline(PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceFails);
 
-  PipelineCRUDResult createWithoutValidations(PipelineEntity pipelineEntity);
+  /**
+   * Clone pipeline (inline/remote) and do validation - template resolution,
+   * schema validation and governance (opa) checks
+   * @param clonePipelineDTO
+   * @param accountId
+   * @return
+   */
+  PipelineSaveResponse validateAndClonePipeline(ClonePipelineDTO clonePipelineDTO, String accountId);
 
-  PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId);
-
-  Optional<PipelineEntity> get(
+  /**
+   * Get pipeline (inline/remote) and do validation - template resolution,
+   * schema validation and governance (opa) checks
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param identifier
+   * @param deleted
+   * @return
+   */
+  Optional<PipelineEntity> getAndValidatePipeline(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
-  Optional<PipelineEntity> getWithoutPerformingValidations(
-      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
+  //  TODO: the variable loadFromFallbackBranch will be enforced upon to all users and this will be removed: @Adithya
+  Optional<PipelineEntity> getAndValidatePipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean loadFromFallbackBranch, boolean loadFromCache);
 
-  PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
+  /**
+   * Get pipeline whether inline or remote (old/new git exp)
+   *
+   * @param accountId
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param identifier
+   * @param deleted
+   * @param getMetadataOnly
+   * @return
+   */
+  Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly);
+
+  Optional<PipelineEntity> getPipeline(String accountId, String orgIdentifier, String projectIdentifier,
+      String identifier, boolean deleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
+      boolean loadFromCache);
+
+  /**
+   * Update pipeline (inline/remote) after doing validation - template resolution,
+   * schema validation and governance (opa) checks
+   *
+   * @param pipelineEntity
+   * @param changeType
+   * @param throwExceptionIfGovernanceFails
+   * @return
+   */
+  PipelineCRUDResult validateAndUpdatePipeline(
+      PipelineEntity pipelineEntity, ChangeType changeType, boolean throwExceptionIfGovernanceFails);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 
@@ -74,4 +127,8 @@ public interface PMSPipelineService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
   PipelineEntity updateGitFilePath(PipelineEntity pipelineEntity, String newFilePath);
+
+  String pipelineVersion(String accountId, String yaml);
+
+  PMSPipelineListRepoResponse getListOfRepos(String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

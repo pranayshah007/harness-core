@@ -1,0 +1,10 @@
+name: Task duration metrics
+identifier: task_duration_metrics
+metricGroup: verify_step_metric_group
+metrics:
+  - metricName: verification_job_instance_extra_time
+    metricDefinition: Time taken to finish from the time when it becomes elligible to finish.
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m]
+    unit: "ms"
+

@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import com.azure.core.http.rest.Page;
+import com.azure.core.util.IterableStream;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 import lombok.Data;
@@ -20,6 +22,17 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._970_API_SERVICES_BEANS)
-public class AzureListTagsResponse {
+public class AzureListTagsResponse implements Page<TagDetails> {
   private List<TagDetails> value;
+  private String nextLink;
+
+  @Override
+  public IterableStream getElements() {
+    return IterableStream.of(value);
+  }
+
+  @Override
+  public String getContinuationToken() {
+    return nextLink;
+  }
 }

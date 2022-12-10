@@ -17,6 +17,7 @@ import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
@@ -41,6 +42,7 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -61,7 +63,6 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.common.NGSectionStepParameters;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -94,7 +95,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public PlanNode getInfraTaskExecutableStepV2PlanNode(EnvironmentYamlV2 environmentYamlV2,
-      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType) {
+      List<AdviserObtainment> adviserObtainments, ServiceDefinitionType deploymentType,
+      ParameterField<Boolean> skipInstances) {
     ParameterField<String> infraRef;
     ParameterField<Map<String, Object>> infraInputs;
 
@@ -114,9 +116,11 @@ public class InfrastructurePmsPlanCreator {
                                                           .infraRef(infraRef)
                                                           .infraInputs(infraInputs)
                                                           .deploymentType(deploymentType)
+                                                          .skipInstances(skipInstances)
                                                           .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
+        .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .stepType(InfrastructureTaskExecutableStepV2.STEP_TYPE)
@@ -135,38 +139,6 @@ public class InfrastructurePmsPlanCreator {
         || InfrastructureKind.SSH_WINRM_AWS.equals(pipelineInfrastructure.getKind());
   }
 
-  public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
-      String infraStepNodeUuid, InfrastructureDefinitionConfig infrastructureDefinitionConfig,
-      KryoSerializer kryoSerializer, String infraSectionUuid) {
-    InfraSectionStepParameters infraSectionStepParameters =
-        getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
-    LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionUuid);
-    planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
-
-    List<AdviserObtainment> adviserObtainments =
-        getAdviserObtainmentFromMetaDataToExecution(infraSectionNode.getParentNode(), kryoSerializer);
-
-    // adding RC dependency
-    boolean allowSimultaneousDeployments = infrastructureDefinitionConfig.isAllowSimultaneousDeployments();
-
-    if (!allowSimultaneousDeployments) {
-      // Passing infra section parent node since rbac will be created parallel to environment node
-      YamlField rcYamlField = addResourceConstraintDependency(
-          infraSectionNode.getParentNode().getParentNode(), planCreationResponseMap, null);
-      adviserObtainments = getAdviserObtainmentFromMetaDataToResourceConstraint(rcYamlField, kryoSerializer);
-    }
-
-    PlanNode infraSectionPlanNode = planNodeBuilder.adviserObtainments(adviserObtainments).build();
-
-    // adding infraSection
-    planCreationResponseMap.put(infraSectionPlanNode.getUuid(),
-        PlanCreationResponse.builder().node(infraSectionNode.getUuid(), infraSectionPlanNode).build());
-
-    return planCreationResponseMap;
-  }
-
   public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
       EnvironmentPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
     List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
@@ -183,6 +155,16 @@ public class InfrastructurePmsPlanCreator {
         getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
     PlanNodeBuilder planNodeBuilder =
         ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(postServiceSpecUuid, envGroupPlanCreatorConfig);
+    planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
+    return planNodeBuilder.build();
+  }
+
+  public static PlanNode createPlanForGitopsClusters(YamlField envField, String infraSectionUuid,
+      EnvironmentsPlanCreatorConfig envConfig, KryoSerializer kryoSerializer) {
+    List<AdviserObtainment> adviserObtainmentFromMetaDataToExecution =
+        getAdviserObtainmentFromMetaDataToExecution(envField.getNode(), kryoSerializer);
+    PlanNodeBuilder planNodeBuilder =
+        ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(infraSectionUuid, envConfig);
     planNodeBuilder.adviserObtainments(adviserObtainmentFromMetaDataToExecution);
     return planNodeBuilder.build();
   }
@@ -234,8 +216,7 @@ public class InfrastructurePmsPlanCreator {
               .build();
       planCreationResponseMap.put(rcYamlField.getNode().getUuid(),
           PlanCreationResponse.builder()
-              .dependencies(
-                  DependenciesUtils.toDependenciesProto(ImmutableMap.of(rcYamlField.getNode().getUuid(), rcYamlField)))
+              .dependencies(DependenciesUtils.toDependenciesProto(Map.of(rcYamlField.getNode().getUuid(), rcYamlField)))
               .yamlUpdates(yamlUpdates)
               .build());
     } catch (IOException e) {

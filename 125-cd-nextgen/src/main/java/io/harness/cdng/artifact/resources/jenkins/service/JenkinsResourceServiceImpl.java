@@ -86,7 +86,7 @@ public class JenkinsResourceServiceImpl implements JenkinsResourceService {
     List<EncryptedDataDetail> encryptionDetails = getEncryptionDetails(connector, baseNGAccess);
     JenkinsArtifactDelegateRequest jenkinsRequest =
         ArtifactDelegateRequestUtils.getJenkinsDelegateRequest(jenkinsConnectorRef.getIdentifier(), connector,
-            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null);
+            encryptionDetails, ArtifactSourceType.JENKINS, null, parentJobName, null, null, null);
     try {
       ArtifactTaskExecutionResponse artifactTaskExecutionResponse = executeSyncTask(
           jenkinsRequest, ArtifactTaskType.GET_JOBS, baseNGAccess, "Jenkins Get Job task failure due to error");

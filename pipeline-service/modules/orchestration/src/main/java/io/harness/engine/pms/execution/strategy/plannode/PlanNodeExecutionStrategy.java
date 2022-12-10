@@ -40,7 +40,6 @@ import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.execution.NodeExecutionMetadata;
 import io.harness.logging.AutoLogContext;
 import io.harness.plan.PlanNode;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -57,6 +56,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.steps.io.StepResponseNotifyData;
 import io.harness.pms.utils.OrchestrationMapBackwardCompatibilityUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -215,7 +215,8 @@ public class PlanNodeExecutionStrategy extends AbstractNodeExecutionStrategy<Pla
         nodeExecution = Preconditions.checkNotNull(nodeExecutionService.updateStatusWithOpsV2(
             nodeExecutionId, RUNNING, null, EnumSet.noneOf(Status.class), NodeProjectionUtils.fieldsForResume));
       } else {
-        log.warn("NodeExecution with id {} is already in Running status", nodeExecutionId);
+        // This will happen if the node is not in any paused or waiting statuses.
+        log.debug("NodeExecution with id {} is already in Running status", nodeExecutionId);
       }
       resumeHelper.resume(nodeExecution, response, asyncError);
     } catch (Exception exception) {

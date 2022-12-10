@@ -42,7 +42,7 @@ java_library(
         "//200-functional-test/src/test/resources:resource",
     ] + ["//:resource"] + [
         "//260-delegate:module_deploy",
-        "//315-sto-manager:module_deploy.jar",
+        "//315-sto-manager/app:module_deploy.jar",
         "//332-ci-manager/app:module_deploy.jar",
         "//350-event-server:module_deploy.jar",
         "//360-cg-manager:module_deploy.jar",
@@ -69,7 +69,6 @@ java_library(
         "//960-persistence:supporter-test",
         "//970-grpc:module",
         "//990-commons-test:module",
-        "@maven//:com_bertramlabs_plugins_hcl4j",
         "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
         "@maven//:com_google_guava_guava",
         "@maven//:com_icegreen_greenmail",

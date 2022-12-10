@@ -65,7 +65,7 @@ public class EntityIdentifierValidator implements ConstraintValidator<EntityIden
       context
           .buildConstraintViolationWithTemplate(
               "can be 64 characters long and can only contain alphanumeric, underscore and $ characters,"
-              + " and not start with a number")
+              + " and not start with a number or $")
           .addConstraintViolation();
       return false;
     }

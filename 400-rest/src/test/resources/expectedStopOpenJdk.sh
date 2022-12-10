@@ -46,9 +46,28 @@ case "$OSTYPE" in
     ;;
 esac
 
+case "$(uname -m)" in
+  x86_64*)
+    ARCH=x64
+    ;;
+  amd64*)
+    ARCH=x64
+    ;;
+  aarch64*)
+    ARCH=arm64
+    ;;
+  arm64*)
+    ARCH=arm64
+    ;;
+  *)
+    echo "unknown architecture $(uname -m). Proceeding as amd64 arch"
+    ARCH=x64
+    ;;
+esac
+
 DELEGATE_STORAGE_URL=http://localhost:8888
 
-    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
+    JVM_URL=$DELEGATE_STORAGE_URL/jre/openjdk-11.0.14_9/OpenJDK11U-jre_${ARCH}_${OS}_hotspot_11.0.14_9.tar.gz
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink

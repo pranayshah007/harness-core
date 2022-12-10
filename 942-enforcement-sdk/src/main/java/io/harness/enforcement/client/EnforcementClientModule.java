@@ -21,6 +21,7 @@ import io.harness.serializer.kryo.KryoConverterFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.matcher.Matchers;
 
 public class EnforcementClientModule extends AbstractModule {
@@ -48,6 +49,7 @@ public class EnforcementClientModule extends AbstractModule {
   }
 
   @Provides
+  @Singleton
   private EnforcementClientFactory enforcementClientFactory(KryoConverterFactory kryoConverterFactory) {
     return new EnforcementClientFactory(
         this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);

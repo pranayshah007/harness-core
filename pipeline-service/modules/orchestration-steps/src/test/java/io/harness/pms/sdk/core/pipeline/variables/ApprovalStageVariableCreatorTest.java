@@ -9,6 +9,7 @@ package io.harness.pms.sdk.core.pipeline.variables;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SHALINI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -121,5 +122,28 @@ public class ApprovalStageVariableCreatorTest extends CategoryTest {
         .containsAll(Arrays.asList("pipeline.stages.stage1.variables", "pipeline.stages.stage1.identifier",
             "pipeline.stages.stage1.startTs", "pipeline.stages.stage1.endTs", "pipeline.stages.stage1.tags",
             "pipeline.stages.stage1.type"));
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testCreateVariablesForChildrenNodesV2() throws IOException {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    final URL testFile = classLoader.getResource("approval_stage.json");
+    String json = Resources.toString(testFile, Charsets.UTF_8);
+    JsonNode jsonNode = JsonUtils.asObject(json, JsonNode.class);
+    YamlNode approvalYamlNode = new YamlNode("stage", jsonNode);
+    YamlField yamlField = new YamlField(approvalYamlNode);
+    VariableCreationContext variableCreationContext = VariableCreationContext.builder().currentField(yamlField).build();
+    LinkedHashMap<String, VariableCreationResponse> variablesMap =
+        approvalStageVariableCreator.createVariablesForChildrenNodesV2(variableCreationContext, null);
+    assertThat(variablesMap.get(STAGE_ID)).isNotNull();
+    String yamlPath = variablesMap.get(STAGE_ID).getDependencies().getDependenciesMap().get(STAGE_ID);
+    YamlField fullYamlField = YamlUtils.readTree(json);
+    assertThat(fullYamlField).isNotNull();
+    YamlField specYaml = fullYamlField.fromYamlPath(yamlPath);
+    assertThat(yamlField.getNode().getFieldName()).isNotEmpty();
+    assertThat(specYaml.getName()).isEqualTo("execution");
+    assertThat(specYaml.getNode().fetchKeys()).containsExactlyInAnyOrder("steps", "rollbackSteps", "__uuid");
   }
 }

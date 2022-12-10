@@ -32,6 +32,7 @@ public class AccountMapper {
         .isNextGenEnabled(account.isNextGenEnabled())
         .serviceAccountConfig(account.getServiceAccountConfig())
         .isProductLed(account.isProductLed())
+        .isTwoFactorAdminEnforced(account.isTwoFactorAdminEnforced())
         .build();
   }
 

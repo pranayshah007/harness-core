@@ -202,7 +202,6 @@ public class PcfDeployCommandTaskHandler extends PcfCommandTaskHandler {
             cfCommandDeployRequest.isUseCfCLI(), cfCommandDeployRequest.getCfCliVersion()))
         .cfCliVersion(cfCommandDeployRequest.getCfCliVersion())
         .limitPcfThreads(cfCommandDeployRequest.isLimitPcfThreads())
-        .ignorePcfConnectionContextCache(cfCommandDeployRequest.isIgnorePcfConnectionContextCache())
         .build();
   }
 

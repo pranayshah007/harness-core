@@ -8,11 +8,14 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructCommandsList;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommands;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.constructPSScriptWithCommandsBulk;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.executablePSFilePath;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getEncodedScriptFile;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.getScriptExecutingCommand;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.prepareCommandForCopyingToRemoteFile;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.psWrappedCommandWithEncoding;
+import static io.harness.delegate.task.winrm.WinRmExecutorHelper.splitCommandForCopyingToRemoteFile;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
@@ -58,6 +61,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class FileBasedAbstractWinRmExecutor {
   public static final String WINDOWS_TEMPFILE_LOCATION = "%TEMP%";
+
   public static final String NOT_IMPLEMENTED = "Not implemented";
   protected static final String ERROR_WHILE_EXECUTING_COMMAND = "Error while executing command";
   /**
@@ -81,10 +85,7 @@ public abstract class FileBasedAbstractWinRmExecutor {
 
   public FileBasedAbstractWinRmExecutor(LogCallback logCallback, boolean shouldSaveExecutionLogs,
       WinRmSessionConfig config, boolean disableCommandEncoding, boolean winrmScriptCommandSplit) {
-    this.logCallback = logCallback;
-    this.shouldSaveExecutionLogs = shouldSaveExecutionLogs;
-    this.config = config;
-    this.disableCommandEncoding = disableCommandEncoding;
+    this(logCallback, shouldSaveExecutionLogs, config, disableCommandEncoding);
     this.winrmScriptCommandSplit = winrmScriptCommandSplit;
   }
 
@@ -250,9 +251,25 @@ public abstract class FileBasedAbstractWinRmExecutor {
       }
     } else {
       if (winrmScriptCommandSplit) {
-        exitCode = session.executeCommandsListV2(
-            constructCommandsList(command, psScriptFile, getPowershell(), config.getCommandParameters()), outputWriter,
-            errorWriter, false, getScriptExecutingCommand(psScriptFile, getPowershell()), true);
+        String encodedScriptFile = getEncodedScriptFile(config.getWorkingDirectory(), config.getExecutionId());
+        exitCode = session.copyScriptToRemote(splitCommandForCopyingToRemoteFile(command, encodedScriptFile,
+                                                  getPowershell(), config.getCommandParameters()),
+            outputWriter, errorWriter);
+        if (exitCode != 0) {
+          log.error("Transferring encoded script to remote file failed.");
+          return exitCode;
+        }
+
+        String executable = executablePSFilePath(config.getWorkingDirectory(), config.getExecutionId());
+        String psExecutionCommand = prepareCommandForCopyingToRemoteFile(
+            encodedScriptFile, psScriptFile, getPowershell(), config.getCommandParameters(), executable);
+        exitCode = session.executeCommandString(psExecutionCommand, outputWriter, errorWriter, false);
+        if (exitCode != 0) {
+          log.error("Transferring execution script to PowerShell script file FAILED.");
+          return exitCode;
+        }
+        String scriptFileExecutingCommand = getScriptExecutingCommand(psScriptFile, getPowershell());
+        exitCode = session.executeScript(scriptFileExecutingCommand, outputWriter, errorWriter);
       } else {
         exitCode = session.executeCommandsList(
             constructPSScriptWithCommands(command, psScriptFile, getPowershell(), config.getCommandParameters()),

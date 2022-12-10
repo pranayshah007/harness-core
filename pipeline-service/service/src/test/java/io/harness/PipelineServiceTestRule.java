@@ -27,7 +27,6 @@ import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
-import io.harness.gitsync.persistance.testing.GitSyncablePersistenceTestModule;
 import io.harness.gitsync.persistance.testing.NoOpGitAwarePersistenceImpl;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
@@ -211,7 +210,7 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
     modules.add(PrimaryVersionManagerModule.getInstance());
     modules.add(TimeModule.getInstance());
     modules.add(TestMongoModule.getInstance());
-    modules.add(new GitSyncablePersistenceTestModule());
+    modules.add(new PipelinePersistenceTestModule());
     //    modules.add(new SpringPersistenceTestModule());
     modules.add(
         OrchestrationModule.getInstance(OrchestrationModuleConfig.builder()

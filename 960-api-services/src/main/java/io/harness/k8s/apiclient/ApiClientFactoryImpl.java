@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.model.KubernetesClusterAuthType.GCP_OAUTH;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static okhttp3.Protocol.HTTP_1_1;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.exception.runtime.KubernetesApiClientRuntimeException;
@@ -26,14 +27,21 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import io.kubernetes.client.util.credentials.UsernamePasswordAuthentication;
 import java.util.Base64;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 
 @Singleton
 public class ApiClientFactoryImpl implements ApiClientFactory {
+  private static final ConnectionPool connectionPool;
   @Inject OidcTokenRetriever oidcTokenRetriever;
   private static final long READ_TIMEOUT_IN_SECONDS = 120;
   private static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
+
+  static {
+    connectionPool = new ConnectionPool(32, 5L, TimeUnit.MINUTES);
+  }
 
   @Override
   public ApiClient getClient(KubernetesConfig kubernetesConfig) {
@@ -78,7 +86,7 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
         clientBuilder.setAuthentication(new GkeTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier()));
       } else {
         clientBuilder.setAuthentication(
-            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get()));
+            new AccessTokenAuthentication(kubernetesConfig.getServiceAccountTokenSupplier().get().trim()));
       }
     } else if (kubernetesConfig.getUsername() != null && kubernetesConfig.getPassword() != null) {
       clientBuilder.setAuthentication(new UsernamePasswordAuthentication(
@@ -101,6 +109,8 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
             .newBuilder()
             .readTimeout(useNewReadTimeoutForValidation ? READ_TIMEOUT_IN_SECONDS : 0, TimeUnit.SECONDS)
             .connectTimeout(CONNECTION_TIMEOUT_IN_SECONDS, TimeUnit.SECONDS)
+            .connectionPool(connectionPool)
+            .protocols(List.of(HTTP_1_1))
             .build();
     apiClient.setHttpClient(httpClient);
     return apiClient;

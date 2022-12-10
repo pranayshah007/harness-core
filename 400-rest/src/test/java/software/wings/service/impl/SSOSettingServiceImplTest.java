@@ -38,7 +38,6 @@ import static org.mockito.Mockito.when;
 import io.harness.alert.AlertData;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ff.FeatureFlagService;
@@ -289,7 +288,6 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn(null);
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getPasswordType()).isEqualTo(LdapConnectionSettings.SECRET);
   }
@@ -306,7 +304,6 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn(null);
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getPasswordType())
         .isEqualTo(LdapConnectionSettings.INLINE_SECRET);
@@ -324,7 +321,6 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn(null);
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     LdapSettings createdLdapSetting = ssoSettingService.createLdapSettings(ldapSettings);
     assertThat(createdLdapSetting.getConnectionSettings().getBindPassword()).isEqualTo(LdapConstants.MASKED_STRING);
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
@@ -345,7 +341,6 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     ldapSettings.getConnectionSettings().setEncryptedBindPassword("EncryptedBindPassword");
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn(null);
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     ssoSettingService.createLdapSettings(ldapSettings);
     ldapSettings.getConnectionSettings().setBindPassword("randomPassword");
     ldapSettings.getConnectionSettings().setBindSecret("randomuuid".toCharArray());
@@ -367,7 +362,6 @@ public class SSOSettingServiceImplTest extends WingsBaseTest {
     ldapSettings.getConnectionSettings().setEncryptedBindSecret("randomuuid");
     when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
         .thenReturn(null);
-    when(featureFlagService.isEnabled(FeatureName.LDAP_SECRET_AUTH, ldapSettings.getAccountId())).thenReturn(true);
     ssoSettingService.createLdapSettings(ldapSettings);
     ldapSettings.getConnectionSettings().setBindPassword("bindPassword");
     LdapSettings updatedLdapSetting = ssoSettingService.updateLdapSettings(ldapSettings);

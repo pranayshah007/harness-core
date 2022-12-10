@@ -18,6 +18,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_READY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESTART_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_RESUME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SELF_DESTRUCT;
@@ -64,6 +65,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.synchronizedList;
+import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -88,7 +90,6 @@ import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.message.Message;
 import io.harness.delegate.message.MessageService;
-import io.harness.event.client.impl.tailer.ChronicleEventTailer;
 import io.harness.exception.VersionInfoException;
 import io.harness.filesystem.FileIo;
 import io.harness.grpc.utils.DelegateGrpcConfigExtractor;
@@ -155,7 +156,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -206,6 +206,8 @@ public class WatcherServiceImpl implements WatcherService {
     multiVersion = isEmpty(deployMode) || !deployMode.equals("KUBERNETES_ONPREM");
   }
   private static final String DELEGATE_TYPE = System.getenv().get("DELEGATE_TYPE");
+
+  private static final boolean IsShellDelegate = "SHELL_SCRIPT".equals(DELEGATE_TYPE);
   private static final String DELEGATE_SCRIPT = "delegate.sh";
 
   @Inject @Named("inputExecutor") private ScheduledExecutorService inputExecutor;
@@ -219,8 +221,6 @@ public class WatcherServiceImpl implements WatcherService {
   @Inject private MessageService messageService;
   @Inject private ManagerClientV2 managerClient;
 
-  @Nullable @Inject(optional = true) private ChronicleEventTailer chronicleEventTailer;
-
   private final Object waiter = new Object();
   private final AtomicBoolean working = new AtomicBoolean(false);
   private final List<String> runningDelegates = synchronizedList(new ArrayList<>());
@@ -232,6 +232,8 @@ public class WatcherServiceImpl implements WatcherService {
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
   private final AtomicReference<List<String>> cachedDelegateVersion = new AtomicReference<>();
+
+  private final AtomicBoolean frozen = new AtomicBoolean(false);
 
   @Override
   public void run(boolean upgrade) {
@@ -249,28 +251,16 @@ public class WatcherServiceImpl implements WatcherService {
       } else {
         log.info("Delegate is NG. Watcher will run NG delegates.");
       }
-      messageService.writeMessage(WATCHER_STARTED);
       startInputCheck();
+      messageService.writeMessage(WATCHER_STARTED);
 
       generateEcsDelegateSequenceConfigFile();
       if (upgrade) {
-        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5));
+        Message message = messageService.waitForMessage(WATCHER_GO_AHEAD, MINUTES.toMillis(5), true);
         log.info(message != null ? "[New] Got go-ahead. Proceeding"
                                  : "[New] Timed out waiting for go-ahead. Proceeding anyway");
       }
 
-      watchExecutor.submit(() -> {
-        if (chronicleEventTailer != null) {
-          chronicleEventTailer.startAsync().awaitRunning();
-          Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            // needed to satisfy infer since chronicleEventTailer is not final and it's nullable so it could be null
-            // technically when the hook is executed.
-            if (chronicleEventTailer != null) {
-              chronicleEventTailer.stopAsync().awaitTerminated();
-            }
-          }));
-        }
-      });
       messageService.removeData(WATCHER_DATA, NEXT_WATCHER);
 
       log.info(upgrade ? "[New] Watcher upgraded" : "Watcher started");
@@ -302,8 +292,7 @@ public class WatcherServiceImpl implements WatcherService {
         waiter.wait();
       }
 
-      messageService.closeChannel(WATCHER, getProcessId());
-
+      log.info("Got stop message, shutting down now");
     } catch (InterruptedException e) {
       log.error("Interrupted while running watcher", e);
     }
@@ -469,21 +458,28 @@ public class WatcherServiceImpl implements WatcherService {
     runningDelegates.addAll(
         Optional.ofNullable(messageService.getData(WATCHER_DATA, RUNNING_DELEGATES, List.class)).orElse(emptyList()));
 
+    scheduleLocalHeartbeat();
+
     inputExecutor.scheduleWithFixedDelay(
         new Schedulable("Error fetching delegate version from manager", this::watchDelegateVersions), 0,
         DELEGATE_VERSION_CHECK_FREQ_MINS, MINUTES);
     heartbeatExecutor.scheduleWithFixedDelay(
-        new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
-    heartbeatExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while logging-performance", this::logPerformance), 0, 60, TimeUnit.SECONDS);
     watchExecutor.scheduleWithFixedDelay(
         new Schedulable("Error while watching delegate", this::syncWatchDelegate), 0, 10, TimeUnit.SECONDS);
+    upgradeExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while cleaning up garbage", this::cleanupOlderVersions), 1, 5, DAYS);
   }
 
   private void logPerformance() {
     try (AutoLogContext ignore = new AutoLogContext(obtainPerformance(), OVERRIDE_NESTS)) {
       log.info("Current performance");
     }
+  }
+
+  private void scheduleLocalHeartbeat() {
+    heartbeatExecutor.scheduleWithFixedDelay(
+        new Schedulable("Error while heart-beating", this::heartbeat), 0, 10, TimeUnit.SECONDS);
   }
 
   public Map<String, String> obtainPerformance() {
@@ -580,6 +576,7 @@ public class WatcherServiceImpl implements WatcherService {
       }
       Multimap<String, String> runningVersions = LinkedHashMultimap.create();
       List<String> shutdownPendingList = new ArrayList<>();
+      List<String> drainingNeededList = emptyList();
 
       if (isEmpty(runningDelegates)) {
         if (!multiVersion) {
@@ -595,7 +592,7 @@ public class WatcherServiceImpl implements WatcherService {
         List<String> drainingRestartNeededList = new ArrayList<>();
         List<String> upgradeNeededList = new ArrayList<>();
         List<String> shutdownNeededList = new ArrayList<>();
-        List<String> drainingNeededList = new ArrayList<>();
+        drainingNeededList = new ArrayList<>();
         List<String> stopGrpcServerList = new ArrayList<>();
         List<String> startGrpcServerList = new ArrayList<>();
 
@@ -619,7 +616,13 @@ public class WatcherServiceImpl implements WatcherService {
               obsolete.add(delegateProcess);
             } else if (delegateData.containsKey(DELEGATE_SELF_DESTRUCT)
                 && (Boolean) delegateData.get(DELEGATE_SELF_DESTRUCT)) {
-              selfDestruct();
+              // we should self-destruct only for shell delegates and not for containerised delegates since pod will
+              // restart itself again based on liveliness probe
+              if (IsShellDelegate) {
+                selfDestruct();
+              } else {
+                freeze();
+              }
             } else if (delegateData.containsKey(DELEGATE_MIGRATE)) {
               migrate((String) delegateData.get(DELEGATE_MIGRATE));
             } else if (delegateData.containsKey(DELEGATE_SWITCH_STORAGE)
@@ -752,14 +755,6 @@ public class WatcherServiceImpl implements WatcherService {
           }
         }
 
-        if (isNotEmpty(drainingNeededList)) {
-          log.info("Delegate processes {} to be drained.", drainingNeededList);
-          drainingNeededList.forEach(this::drainDelegateProcess);
-          Set<String> allVersions = new HashSet<>(expectedVersions);
-          allVersions.addAll(runningVersions.keySet());
-          removeDelegateVersionsFromCapsule(allVersions);
-          cleanupOldDelegateVersions(allVersions);
-        }
         if (isNotEmpty(shutdownNeededList)) {
           log.warn("Delegate processes {} exceeded grace period. Forcing shutdown", shutdownNeededList);
           shutdownNeededList.forEach(this::shutdownDelegate);
@@ -827,7 +822,7 @@ public class WatcherServiceImpl implements WatcherService {
             log.info("New delegate process for version {} will be started", version);
             downloadRunScripts(version, version, false);
             downloadDelegateJar(version);
-            startDelegateProcess(version, version, emptyList(), "DelegateStartScriptVersioned", getProcessId());
+            startDelegateProcess(version, version, drainingNeededList, "DelegateStartScriptVersioned", getProcessId());
             break;
           } catch (IOException ioe) {
             if (ioe.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE_ERROR)) {
@@ -971,7 +966,13 @@ public class WatcherServiceImpl implements WatcherService {
       }
 
       if ("DELETED".equals(restResponse.getResource())) {
-        selfDestruct();
+        // we should self-destruct only for shell delegates and not for containerised delegates since pod will restart
+        // itself again based on liveliness probe
+        if (IsShellDelegate) {
+          selfDestruct();
+        } else {
+          freeze();
+        }
       }
     } catch (Exception e) {
       // Ignore
@@ -1024,7 +1025,13 @@ public class WatcherServiceImpl implements WatcherService {
         DelegateConfiguration config = restResponse.getResource();
 
         if (config != null && config.getAction() == SELF_DESTRUCT) {
-          selfDestruct();
+          // we should self-destruct only for shell delegates and not for containerised delegates since pod will restart
+          // itself again based on liveliness probe
+          if (IsShellDelegate) {
+            selfDestruct();
+          } else {
+            freeze();
+          }
         }
 
         if (config != null) {
@@ -1208,7 +1215,8 @@ public class WatcherServiceImpl implements WatcherService {
         String newDelegateProcess = null;
 
         if (newDelegate.getProcess().isAlive()) {
-          Message message = messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4));
+          Message message =
+              messageService.waitForMessage(NEW_DELEGATE, MINUTES.toMillis(version == null ? 15 : 4), false);
           if (message != null) {
             newDelegateProcess = message.getParams().get(0);
             log.info("Got process ID from new delegate: {}", newDelegateProcess);
@@ -1226,12 +1234,25 @@ public class WatcherServiceImpl implements WatcherService {
             message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(2));
             if (message != null && message.getMessage().equals(DELEGATE_STARTED)) {
               log.info("Retrieved delegate-started message from new delegate {}", newDelegateProcess);
-              oldDelegateProcesses.forEach(oldDelegateProcess -> {
-                log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
-                messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
-              });
               log.info("Sending new delegate process {} go-ahead message", newDelegateProcess);
               messageService.writeMessageToChannel(DELEGATE, newDelegateProcess, DELEGATE_GO_AHEAD);
+
+              log.info("Waiting for delegate process {} to be ready", newDelegateProcess);
+              message = messageService.readMessageFromChannel(DELEGATE, newDelegateProcess, MINUTES.toMillis(5));
+              if (message != null && message.getMessage().equals(DELEGATE_READY)) {
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info(
+                      "New delegate process ready to acquire task, sending old delegate process {} stop-acquiring message",
+                      oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              } else {
+                log.info("Timed out waiting delegate to come up, proceeding anyway {}", oldDelegateProcesses);
+                oldDelegateProcesses.forEach(oldDelegateProcess -> {
+                  log.info("Sending old delegate process {} stop-acquiring message", oldDelegateProcess);
+                  messageService.writeMessageToChannel(DELEGATE, oldDelegateProcess, DELEGATE_STOP_ACQUIRING);
+                });
+              }
               success = true;
               log.info("Adding new delegate process {} to process map", newDelegateProcess);
               delegateProcessMap.put(newDelegateProcess, newDelegate.getProcess());
@@ -1440,7 +1461,7 @@ public class WatcherServiceImpl implements WatcherService {
       boolean success = false;
 
       if (process.getProcess().isAlive()) {
-        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3));
+        Message message = messageService.waitForMessage(NEW_WATCHER, MINUTES.toMillis(3), true);
         if (message != null) {
           String newWatcherProcess = message.getParams().get(0);
           log.info("[Old] Got process ID from new watcher: " + newWatcherProcess);
@@ -1449,15 +1470,11 @@ public class WatcherServiceImpl implements WatcherService {
           if (message != null && message.getMessage().equals(WATCHER_STARTED)) {
             log.info(
                 "[Old] Retrieved watcher-started message from new watcher {}. Sending go-ahead", newWatcherProcess);
-            watchExecutor.submit(() -> {
-              if (chronicleEventTailer != null) {
-                chronicleEventTailer.stopAsync().awaitTerminated();
-              }
-            });
             messageService.writeMessageToChannel(WATCHER, newWatcherProcess, WATCHER_GO_AHEAD);
-            log.info("[Old] Watcher upgraded. Stopping");
+            log.info("[Old] Watcher upgraded. Cleaning up watcher dirs");
             removeWatcherVersionFromCapsule(version, newVersion);
             cleanupOldWatcherVersionFromBackup(version, newVersion);
+            log.info("[Old] Stopping");
             success = true;
             stop();
           }
@@ -1495,9 +1512,21 @@ public class WatcherServiceImpl implements WatcherService {
     }
   }
 
+  private void cleanupOlderVersions() {
+    synchronized (this) {
+      log.info("Removing older delegate version if any");
+      Set<String> allVersions = new HashSet<>(findExpectedDelegateVersions());
+      allVersions.addAll(runningDelegates);
+      removeDelegateVersionsFromCapsule(allVersions);
+      cleanupOldDelegateVersions(allVersions);
+    }
+  }
+
   private void cleanupOldWatcherVersionFromBackup(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanup(new File(System.getProperty(USER_DIR)), newHashSet(version, newVersion), "watcherBackup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Backup", ex);
     }
@@ -1505,7 +1534,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeWatcherVersionFromCapsule(String version, String newVersion) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(
+            new File(System.getProperty("capsule.dir")).getParentFile(), newHashSet(version, newVersion), "watcher-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean watcher version from Capsule", ex);
     }
@@ -1513,8 +1545,10 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void cleanupOldDelegateVersions(Set<String> keepVersions) {
     try {
-      cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
-      cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      if (isNotEmpty(System.getProperty(USER_DIR))) {
+        cleanupVersionFolders(new File(System.getProperty(USER_DIR)), keepVersions);
+        cleanup(new File(System.getProperty(USER_DIR)), keepVersions, "backup.");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Backup", ex);
     }
@@ -1522,7 +1556,9 @@ public class WatcherServiceImpl implements WatcherService {
 
   private void removeDelegateVersionsFromCapsule(Set<String> keepVersions) {
     try {
-      cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      if (isNotEmpty(System.getProperty("capsule.dir"))) {
+        cleanup(new File(System.getProperty("capsule.dir")).getParentFile(), keepVersions, "delegate-");
+      }
     } catch (Exception ex) {
       log.error("Failed to clean delegate version from Capsule", ex);
     }
@@ -1730,5 +1766,20 @@ public class WatcherServiceImpl implements WatcherService {
     }
 
     System.exit(0);
+  }
+
+  private void freeze() {
+    log.info("Putting watcher in freeze mode...");
+    frozen.set(true);
+
+    // shutdown all the executors
+    inputExecutor.shutdown();
+    heartbeatExecutor.shutdown();
+    executorService.shutdown();
+    watchExecutor.shutdown();
+    upgradeExecutor.shutdown();
+
+    // schedule heartbeat so that delegate pod liveliness probe doesn't fail
+    scheduleLocalHeartbeat();
   }
 }

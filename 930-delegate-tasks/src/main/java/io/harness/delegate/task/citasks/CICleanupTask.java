@@ -16,8 +16,8 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.exception.ngexception.CIStageExecutionException;
 
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ public class CICleanupTask extends AbstractDelegateRunnableTask {
     CICleanupTaskParams.Type type = ciCleanupTaskParams.getType();
     if (type == CICleanupTaskParams.Type.GCP_K8) {
       return ciK8CleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
-    } else if (type == CICleanupTaskParams.Type.VM || type == CICleanupTaskParams.Type.DOCKER) {
+    } else if (type == CICleanupTaskParams.Type.VM) {
       return ciVmCleanupTaskHandler.executeTaskInternal(ciCleanupTaskParams, getTaskId());
     } else {
       throw new CIStageExecutionException(

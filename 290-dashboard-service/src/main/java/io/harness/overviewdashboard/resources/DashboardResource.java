@@ -98,6 +98,8 @@ public class DashboardResource {
   @NGAccessControlCheck(resourceType = ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
   public ResponseDTO<ExecutionResponse<DeploymentsStatsOverview>> getDeploymentStatsSummary(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.GROUP_BY) GroupBy groupBy,
@@ -109,8 +111,27 @@ public class DashboardResource {
                                          .executionMessage(FAILURE_MESSAGE)
                                          .build());
     }
-    return ResponseDTO.newResponse(overviewDashboardService.getDeploymentStatsOverview(
-        accountIdentifier, userId.get(), startInterval, endInterval, groupBy, sortBy));
+    return ResponseDTO.newResponse(overviewDashboardService.getDeploymentStatsOverview(accountIdentifier, orgIdentifier,
+        projectIdentifier, userId.get(), startInterval, endInterval, groupBy, sortBy));
+  }
+
+  @GET
+  @Path("/active-deployments-overview")
+  @ApiOperation(value = "Get active deployments overview", nickname = "getActiveDeploymentsOverview")
+  @NGAccessControlCheck(resourceType = ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
+  public ResponseDTO<ExecutionResponse<DeploymentsStatsOverview>> getActiveDeploymentsOverview(
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) throws Exception {
+    Optional<String> userId = getUserIdentifierFromSecurityContext();
+    if (!userId.isPresent()) {
+      return ResponseDTO.newResponse(ExecutionResponse.<DeploymentsStatsOverview>builder()
+                                         .executionStatus(ExecutionStatus.FAILURE)
+                                         .executionMessage(FAILURE_MESSAGE)
+                                         .build());
+    }
+    return ResponseDTO.newResponse(overviewDashboardService.getActiveDeploymentsOverview(
+        accountIdentifier, orgIdentifier, projectIdentifier, userId.get()));
   }
 
   @GET
@@ -119,6 +140,8 @@ public class DashboardResource {
   @NGAccessControlCheck(resourceType = ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
   public ResponseDTO<ExecutionResponse<CountOverview>> getCounts(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
       @NotNull @QueryParam(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @QueryParam(NGResourceFilterConstants.END_TIME) long endInterval) throws Exception {
     Optional<String> userId = getUserIdentifierFromSecurityContext();
@@ -128,7 +151,7 @@ public class DashboardResource {
                                          .executionMessage(FAILURE_MESSAGE)
                                          .build());
     }
-    return ResponseDTO.newResponse(
-        overviewDashboardService.getCountOverview(accountIdentifier, userId.get(), startInterval, endInterval));
+    return ResponseDTO.newResponse(overviewDashboardService.getCountOverview(
+        accountIdentifier, orgIdentifier, projectIdentifier, userId.get(), startInterval, endInterval));
   }
 }

@@ -17,6 +17,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.beans.PageResponse.getEmptyPageResponse;
 import static io.harness.rule.OwnerRule.KARAN;
 
+import static javax.validation.Validation.buildDefaultValidatorFactory;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertTrue;
@@ -107,19 +108,11 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
   private UserGroupService userGroupService;
   private UserService userService;
   private ServiceAccountService serviceAccountService;
-  private RoleAssignmentDTOMapper roleAssignmentDTOMapper;
-  private RoleDTOMapper roleDTOMapper;
-
-  private RoleAssignmentAggregateMapper roleAssignmentAggregateMapper;
-
   private TransactionTemplate transactionTemplate;
   private HarnessActionValidator<RoleAssignment> actionValidator;
-  private OutboxService outboxService;
   private AccessControlClient accessControlClient;
   private RoleAssignmentResourceImpl roleAssignmentResource;
   private PageRequest pageRequest;
-  private String accountIdentifier;
-  private String orgIdentifier;
   private HarnessScopeParams harnessScopeParams;
   private ResourceScope resourceScope;
 
@@ -137,23 +130,23 @@ public class RoleAssignmentResourceTest extends AccessControlTestBase {
     userGroupService = mock(UserGroupService.class);
     userService = mock(UserService.class);
     serviceAccountService = mock(ServiceAccountService.class);
-    roleAssignmentDTOMapper = mock(RoleAssignmentDTOMapper.class);
-    roleAssignmentAggregateMapper = mock(RoleAssignmentAggregateMapper.class);
-    roleDTOMapper = mock(RoleDTOMapper.class);
     transactionTemplate = mock(TransactionTemplate.class);
     actionValidator = mock(HarnessActionValidator.class);
-    outboxService = mock(OutboxService.class);
     accessControlClient = mock(AccessControlClient.class);
+    RoleAssignmentApiUtils roleAssignmentApiUtils =
+        spy(new RoleAssignmentApiUtils(buildDefaultValidatorFactory().getValidator(), harnessResourceGroupService,
+            harnessUserGroupService, harnessUserService, harnessServiceAccountService, harnessScopeService,
+            scopeService, resourceGroupService, userGroupService, userService, serviceAccountService,
+            mock(RoleAssignmentDTOMapper.class), accessControlClient));
     roleAssignmentResource = spy(new RoleAssignmentResourceImpl(roleAssignmentService, harnessResourceGroupService,
-        harnessUserGroupService, harnessUserService, harnessServiceAccountService, harnessScopeService, scopeService,
-        roleService, resourceGroupService, userGroupService, userService, serviceAccountService,
-        roleAssignmentDTOMapper, roleAssignmentAggregateMapper, roleDTOMapper, transactionTemplate, actionValidator,
-        outboxService, accessControlClient));
+        scopeService, roleService, resourceGroupService, userGroupService, mock(RoleAssignmentDTOMapper.class),
+        mock(RoleAssignmentAggregateMapper.class), mock(RoleDTOMapper.class), transactionTemplate, actionValidator,
+        mock(OutboxService.class), roleAssignmentApiUtils));
     pageRequest = PageRequest.builder().pageIndex(0).pageSize(50).build();
-    accountIdentifier = randomAlphabetic(10);
-    orgIdentifier = randomAlphabetic(10);
-    harnessScopeParams =
-        HarnessScopeParams.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    harnessScopeParams = HarnessScopeParams.builder()
+                             .accountIdentifier(randomAlphabetic(10))
+                             .orgIdentifier(randomAlphabetic(10))
+                             .build();
     resourceScope = ResourceScope.builder()
                         .projectIdentifier(harnessScopeParams.getProjectIdentifier())
                         .orgIdentifier(harnessScopeParams.getOrgIdentifier())

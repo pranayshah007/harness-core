@@ -15,6 +15,7 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.springdata.PersistenceUtils.DEFAULT_RETRY_POLICY;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -38,14 +39,19 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
-import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlAndServiceOverridesMetadata;
-import io.harness.ng.core.environment.beans.EnvironmentInputsetYamlandServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadata;
+import io.harness.ng.core.environment.beans.EnvironmentInputSetYamlAndServiceOverridesMetadataDTO;
+import io.harness.ng.core.environment.beans.EnvironmentInputsMergedResponseDto;
+import io.harness.ng.core.environment.beans.ServiceOverridesMetadata;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.services.impl.InputSetMergeUtility;
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
@@ -79,6 +85,7 @@ import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -103,13 +110,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private final InfrastructureEntityService infrastructureEntityService;
   private final ClusterService clusterService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntityService serviceEntityService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
       InfrastructureEntityService infrastructureEntityService, ClusterService clusterService,
-      ServiceOverrideService serviceOverrideService) {
+      ServiceOverrideService serviceOverrideService, ServiceEntityService serviceEntityService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
@@ -118,6 +126,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     this.infrastructureEntityService = infrastructureEntityService;
     this.clusterService = clusterService;
     this.serviceOverrideService = serviceOverrideService;
+    this.serviceEntityService = serviceEntityService;
   }
 
   @Override
@@ -356,9 +365,17 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public String createEnvironmentInputsYaml(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
-    Map<String, Object> yamlInputs =
-        createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
-
+    Map<String, Object> yamlInputs;
+    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
+    if (environment.isPresent()) {
+      if (EmptyPredicate.isEmpty(environment.get().fetchNonEmptyYaml())) {
+        throw new InvalidRequestException("Environment yaml cannot be empty");
+      }
+      yamlInputs = createEnvironmentInputsYamlInternal(environment.get().fetchNonEmptyYaml());
+    } else {
+      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
+          envIdentifier, projectIdentifier, orgIdentifier));
+    }
     if (isEmpty(yamlInputs)) {
       return null;
     }
@@ -385,29 +402,19 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return attributes;
   }
 
-  public Map<String, Object> createEnvironmentInputsYamlInternal(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+  public Map<String, Object> createEnvironmentInputsYamlInternal(String environmentYaml) {
     Map<String, Object> yamlInputs = new HashMap<>();
-    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
-    if (environment.isPresent()) {
-      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
-        throw new InvalidRequestException("Environment yaml cannot be empty");
+    try {
+      String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environmentYaml, true);
+      if (isEmpty(environmentInputsYaml)) {
+        return null;
       }
-      try {
-        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
-        if (isEmpty(environmentInputsYaml)) {
-          return null;
-        }
-        YamlField environmentYamlField =
-            YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
-        ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
-        yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
-      } catch (IOException e) {
-        throw new InvalidRequestException("Error occurred while creating environment inputs", e);
-      }
-    } else {
-      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
-          envIdentifier, projectIdentifier, orgIdentifier));
+      YamlField environmentYamlField =
+          YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
+      ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
+      yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating environment inputs", e);
     }
     return yamlInputs;
   }
@@ -511,26 +518,72 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return false;
   }
 
-  public EnvironmentInputsetYamlandServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
+  public EnvironmentInputSetYamlAndServiceOverridesMetadataDTO getEnvironmentsInputYamlAndServiceOverridesMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, List<String> envIdentifiers,
       List<String> serviceIdentifiers) {
-    Map<String, EnvironmentInputsetYamlAndServiceOverridesMetadata> environmentYamlMetadataMap = new HashMap<>();
+    List<EnvironmentInputSetYamlAndServiceOverridesMetadata> environmentInputSetYamlAndServiceOverridesMetadataList =
+        new ArrayList<>();
     for (String env : envIdentifiers) {
-      String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
-      Map<String, String> serviceOverridesYaml = new HashMap<>();
-      for (String serviceId : serviceIdentifiers) {
-        String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
-            accountId, orgIdentifier, projectIdentifier, env, serviceId);
-        serviceOverridesYaml.put(serviceId, serviceOverrides);
+      Optional<Environment> environment =
+          environmentRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+              accountId, orgIdentifier, projectIdentifier, env);
+      if (environment.isPresent()) {
+        String inputYaml = createEnvironmentInputsYaml(accountId, orgIdentifier, projectIdentifier, env);
+        List<ServiceOverridesMetadata> serviceOverridesMetadataList = new ArrayList<>();
+        for (String serviceId : serviceIdentifiers) {
+          Optional<ServiceEntity> serviceEntity =
+              serviceEntityService.getService(accountId, orgIdentifier, projectIdentifier, serviceId);
+          if (serviceEntity.isPresent()) {
+            String serviceOverrides = serviceOverrideService.createServiceOverrideInputsYaml(
+                accountId, orgIdentifier, projectIdentifier, env, serviceId);
+            serviceOverridesMetadataList.add(ServiceOverridesMetadata.builder()
+                                                 .serviceRef(serviceId)
+                                                 .serviceOverridesYaml(serviceOverrides)
+                                                 .serviceYaml(serviceEntity.get().getYaml())
+                                                 .serviceRuntimeInputYaml(serviceEntityService.createServiceInputsYaml(
+                                                     serviceEntity.get().getYaml(), serviceId))
+                                                 .build());
+          }
+        }
+        environmentInputSetYamlAndServiceOverridesMetadataList.add(
+            EnvironmentInputSetYamlAndServiceOverridesMetadata.builder()
+                .envRef(env)
+                .envRuntimeInputYaml(inputYaml)
+                .servicesOverrides(serviceOverridesMetadataList)
+                .envYaml(environment.get().getYaml())
+                .build());
       }
-      environmentYamlMetadataMap.put(env,
-          EnvironmentInputsetYamlAndServiceOverridesMetadata.builder()
-              .runtimeInputYaml(inputYaml)
-              .serviceOverridesYaml(serviceOverridesYaml)
-              .build());
     }
-    return EnvironmentInputsetYamlandServiceOverridesMetadataDTO.builder()
-        .environmentsInputYamlAndServiceOverrides(environmentYamlMetadataMap)
+    return EnvironmentInputSetYamlAndServiceOverridesMetadataDTO.builder()
+        .environmentsInputYamlAndServiceOverrides(environmentInputSetYamlAndServiceOverridesMetadataList)
         .build();
+  }
+
+  @Override
+  public EnvironmentInputsMergedResponseDto mergeEnvironmentInputs(
+      String accountId, String orgId, String projectId, String envId, String oldEnvironmentInputsYaml) {
+    Optional<Environment> envEntity = get(accountId, orgId, projectId, envId, false);
+    if (envEntity.isEmpty()) {
+      throw new NotFoundException(
+          format("Environment with identifier [%s] in project [%s], org [%s] not found", envId, projectId, orgId));
+    }
+
+    String environmentYaml = envEntity.get().getYaml();
+    if (isEmpty(environmentYaml)) {
+      return EnvironmentInputsMergedResponseDto.builder().mergedEnvironmentInputsYaml("").environmentYaml("").build();
+    }
+    try {
+      Map<String, Object> yamlInputs = createEnvironmentInputsYamlInternal(environmentYaml);
+
+      String newEnvironmentInputsYaml =
+          isEmpty(yamlInputs) ? StringUtils.EMPTY : YamlPipelineUtils.writeYamlString(yamlInputs);
+      return EnvironmentInputsMergedResponseDto.builder()
+          .mergedEnvironmentInputsYaml(
+              InputSetMergeUtility.mergeInputs(oldEnvironmentInputsYaml, newEnvironmentInputsYaml))
+          .environmentYaml(environmentYaml)
+          .build();
+    } catch (Exception ex) {
+      throw new InvalidRequestException("Error occurred while merging old and new environment inputs", ex);
+    }
   }
 }

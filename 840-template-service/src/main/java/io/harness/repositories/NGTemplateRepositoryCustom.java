@@ -15,6 +15,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.events.TemplateUpdateEventType;
 
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -34,7 +35,7 @@ public interface NGTemplateRepositoryCustom {
 
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndVersionLabelAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, String versionLabel,
-      boolean notDeleted, boolean getMetadataOnly);
+      boolean notDeleted, boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNotForOldGitSync(
@@ -42,7 +43,7 @@ public interface NGTemplateRepositoryCustom {
 
   Optional<TemplateEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsStableAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String templateIdentifier, boolean notDeleted,
-      boolean getMetadataOnly);
+      boolean getMetadataOnly, boolean loadFromCache, boolean loadFromFallbackBranch);
 
   Optional<TemplateEntity>
   findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndIsLastUpdatedAndDeletedNotForOldGitSync(
@@ -85,4 +86,10 @@ public interface NGTemplateRepositoryCustom {
   boolean deleteAllTemplatesInAProject(String accountId, String orgId, String projectId);
 
   boolean deleteAllOrgLevelTemplates(String accountId, String orgId);
+
+  Long countFileInstances(String accountIdentifier, String repoURL, String filePath);
+
+  TemplateEntity importFlowSaveTemplate(TemplateEntity templateEntity, String comments);
+
+  List<String> getListOfRepos(Criteria criteria);
 }

@@ -11,8 +11,9 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.IMMUTABLE_DELEG
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.MUTABLE_DELEGATES;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_ASSIGNED;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_INVALID;
+import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_NON_ASSIGNABLE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_PAUSED;
-import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_TO_REBALANCE;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.PERPETUAL_TASKS_UNASSIGNED;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -48,14 +49,18 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
 
   @VisibleForTesting
   void sendActiveDelegateCountMetrics() {
-    log.info("Starting getting delegate metrics.");
+    if (log.isDebugEnabled()) {
+      log.debug("Starting getting delegate metrics.");
+    }
     long startTime = Instant.now().toEpochMilli();
 
     recordDelegateMetrics();
     recordPerpetualTaskMetrics();
 
-    log.info("Total time taken to collect metrics for active delegates count: {} (ms)",
-        Instant.now().toEpochMilli() - startTime);
+    if (log.isDebugEnabled()) {
+      log.debug("Total time taken to collect metrics for active delegates count: {} (ms)",
+          Instant.now().toEpochMilli() - startTime);
+    }
   }
 
   private void recordDelegateMetrics() {
@@ -99,17 +104,26 @@ public class DelegateMetricsPublisher implements MetricsPublisher {
                                         .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_PAUSED)
                                         .count();
 
+    long nonAssignablePerpetualTaskCount =
+        persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+            .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_NON_ASSIGNABLE)
+            .count();
+
+    long invalidPerpetualTaskCount = persistence.createQuery(PerpetualTaskRecord.class, excludeAuthority)
+                                         .filter(PerpetualTaskRecordKeys.state, PerpetualTaskState.TASK_INVALID)
+                                         .count();
+
     metricService.recordMetric(PERPETUAL_TASKS, perpetualTaskCount);
     metricService.recordMetric(PERPETUAL_TASKS_ASSIGNED, assignedPerpetualTaskCount);
     metricService.recordMetric(PERPETUAL_TASKS_UNASSIGNED, unAssignedPerpetualTaskCount);
-    metricService.recordMetric(PERPETUAL_TASKS_TO_REBALANCE, toRebalancePerpetualTaskCount);
-
+    metricService.recordMetric(PERPETUAL_TASKS_NON_ASSIGNABLE, nonAssignablePerpetualTaskCount);
+    metricService.recordMetric(PERPETUAL_TASKS_INVALID, invalidPerpetualTaskCount);
     metricService.recordMetric(PERPETUAL_TASKS_PAUSED, pausedPerpetualTaskCount);
 
     if (log.isDebugEnabled()) {
-      log.debug("PT metrics, all PTs {}, assigned {}, unassigned {}, to rebalance {}, paused {}", perpetualTaskCount,
-          assignedPerpetualTaskCount, unAssignedPerpetualTaskCount, toRebalancePerpetualTaskCount,
-          pausedPerpetualTaskCount);
+      log.debug("PT metrics, all PTs {}, assigned {}, unassigned {}, non-assignable {}, invalid {}, paused {}",
+          perpetualTaskCount, assignedPerpetualTaskCount, unAssignedPerpetualTaskCount, nonAssignablePerpetualTaskCount,
+          invalidPerpetualTaskCount, pausedPerpetualTaskCount);
     }
   }
 }

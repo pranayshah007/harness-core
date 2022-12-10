@@ -33,9 +33,9 @@ import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -161,7 +161,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  public void shouldTestFinishActiveInstance_InvalidRequestException() {
+  public void shouldTestFinishActiveInstance_Null() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
                                              .releaseEntityType("PLAN")
@@ -174,10 +174,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
     ResourceRestraintInstance savedInstance = resourceRestraintInstanceService.save(instance);
     assertThat(savedInstance).isNotNull();
 
-    assertThatThrownBy(
-        () -> resourceRestraintInstanceService.finishInstance(generateUuid(), savedInstance.getResourceUnit()))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessageStartingWith("Cannot find ResourceRestraintInstance with id");
+    assertThat(resourceRestraintInstanceService.finishInstance(generateUuid(), savedInstance.getResourceUnit()))
+        .isNull();
   }
 
   @Test
@@ -186,7 +184,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   public void shouldUpdateActiveConstraintsForInstance_ForPlan() {
     ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.PIPELINE);
 
-    when(planExecutionService.get(any())).thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).build());
+    when(planExecutionService.getStatus(any())).thenReturn(Status.SUCCEEDED);
 
     boolean isUpdated = resourceRestraintInstanceService.updateActiveConstraintsForInstance(instance);
     assertThat(isUpdated).isTrue();
@@ -202,7 +200,7 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   public void shouldUpdateActiveConstraintsForInstance_ForPlan_InvalidRequestException() {
     ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.PIPELINE);
 
-    when(planExecutionService.get(any())).thenThrow(new InvalidRequestException(""));
+    when(planExecutionService.getStatus(any())).thenThrow(new EntityNotFoundException(""));
 
     boolean isUpdated = resourceRestraintInstanceService.updateActiveConstraintsForInstance(instance);
     assertThat(isUpdated).isFalse();

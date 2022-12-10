@@ -12,7 +12,7 @@ public class MainClass {
 def report_duplicated(**kwargs):
     native.genrule(
         name = "test_duplicated_main",
-        outs = ["test/duplicated/MainClass.java"],
+        outs = ["test_duplicate_output/duplicated/MainClass.java"],
         cmd = """
 cat <<EOF >> $@
 %s

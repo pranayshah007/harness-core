@@ -13,13 +13,17 @@ import static io.harness.NGCommonEntityConstants.PAGE_SIZE;
 import static io.harness.NGCommonEntityConstants.PREVIOUS_REL;
 import static io.harness.NGCommonEntityConstants.SELF_REL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
 import static javax.ws.rs.core.UriBuilder.fromPath;
 
+import io.harness.accesscontrol.acl.api.AccessControlDTO;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
@@ -27,14 +31,16 @@ import io.harness.ng.core.service.yaml.NGServiceConfig;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.rbac.NGResourceType;
 import io.harness.rbac.CDNGRbacPermissions;
-import io.harness.spec.server.ng.model.Service;
-import io.harness.spec.server.ng.model.ServiceRequest;
-import io.harness.spec.server.ng.model.ServiceResponse;
+import io.harness.spec.server.ng.v1.model.Service;
+import io.harness.spec.server.ng.v1.model.ServiceRequest;
+import io.harness.spec.server.ng.v1.model.ServiceResponse;
 
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validator;
@@ -91,7 +97,8 @@ public class ServiceResourceApiUtils {
     return serviceResponse;
   }
 
-  public ServiceEntity getServiceEntity(ServiceRequest sharedRequestBody, String org, String project, String account) {
+  public ServiceEntity mapToServiceEntity(
+      ServiceRequest sharedRequestBody, String org, String project, String account) {
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .identifier(sharedRequestBody.getSlug())
                                       .accountId(account)
@@ -177,5 +184,37 @@ public class ServiceResourceApiUtils {
         property = sort;
     }
     return property + ',' + order;
+  }
+
+  static void validateServiceScope(ServiceRequestDTO requestDTO) {
+    try {
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getOrgIdentifier()),
+          "org identifier must be specified. Services can only be created at Project scope");
+      Preconditions.checkArgument(isNotEmpty(requestDTO.getProjectIdentifier()),
+          "project identifier must be specified. Services can only be created at Project scope");
+    } catch (Exception ex) {
+      throw new InvalidRequestException(ex.getMessage());
+    }
+  }
+
+  public void throwExceptionForNoRequestDTO(ServiceRequest dto) {
+    if (dto == null) {
+      throw new InvalidRequestException(
+          "No request body sent in the API. Following field is required: identifier. Other optional fields: name, orgIdentifier, projectIdentifier, tags, description, version");
+    }
+  }
+
+  public List<ServiceResponse> filterByPermissionAndId(
+      List<AccessControlDTO> accessControlList, List<ServiceResponse> serviceList) {
+    List<ServiceResponse> filteredAccessControlDtoList = new ArrayList<>();
+    for (int i = 0; i < accessControlList.size(); i++) {
+      AccessControlDTO accessControlDTO = accessControlList.get(i);
+      ServiceResponse serviceResponse = serviceList.get(i);
+      if (accessControlDTO.isPermitted()
+          && serviceResponse.getService().getSlug().equals(accessControlDTO.getResourceIdentifier())) {
+        filteredAccessControlDtoList.add(serviceResponse);
+      }
+    }
+    return filteredAccessControlDtoList;
   }
 }

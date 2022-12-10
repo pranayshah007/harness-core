@@ -106,8 +106,20 @@ public class ClusterPlanCreatorUtilsTest {
         EnvGroupPlanCreatorConfig.builder()
             .environmentGroupRef(ParameterField.<String>builder().value("myenvgroup").build())
             .deployToAll(true)
+            .environmentPlanCreatorConfigs(
+                asList(EnvironmentPlanCreatorConfig.builder()
+                           .environmentRef(ParameterField.<String>builder().value("env1").build())
+                           .deployToAll(false)
+                           .gitOpsClusterRefs(asList("c1", "c2"))
+                           .build()))
             .build();
-    StepParameters o1 = ClusterStepParameters.builder().envGroupRef("myenvgroup").deployToAllEnvs(true).build();
+    StepParameters o1 =
+        ClusterStepParameters.builder()
+            .envGroupRef("myenvgroup")
+            .deployToAllEnvs(true)
+            .envClusterRefs(asList(
+                EnvClusterRefs.builder().envRef("env1").deployToAll(false).clusterRefs(Set.of("c1", "c2")).build()))
+            .build();
 
     EnvGroupPlanCreatorConfig i2 =
         EnvGroupPlanCreatorConfig.builder()

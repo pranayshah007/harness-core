@@ -10,8 +10,10 @@ package io.harness.delegate.task.azure.appservice.webapp.handler;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.AZURE_APP_SVC_ARTIFACT_DOWNLOAD_DIR_PATH;
 import static io.harness.azure.model.AzureConstants.REPOSITORY_DIR_PATH;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptySet;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
@@ -34,6 +36,7 @@ import io.harness.delegate.task.azure.common.AutoCloseableWorkingDirectory;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 
 import com.google.inject.Inject;
+import java.util.HashSet;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,6 +83,13 @@ public class AzureWebAppSlotDeploymentRequestHandler
       return AzureWebAppSlotDeploymentResponse.builder()
           .azureAppDeploymentData(azureAppDeploymentData)
           .deploymentProgressMarker(preDeploymentData.getDeploymentProgressMarker())
+          .userAddedAppSettingNames(dockerDeploymentContext.getAppSettingsToAdd() != null
+                  ? new HashSet<>(dockerDeploymentContext.getAppSettingsToAdd().keySet())
+                  : emptySet())
+          .userAddedConnStringNames(dockerDeploymentContext.getConnSettingsToAdd() != null
+                  ? new HashSet<>(dockerDeploymentContext.getConnSettingsToAdd().keySet())
+                  : emptySet())
+          .userChangedStartupCommand(!isEmpty(dockerDeploymentContext.getStartupCommand()))
           .build();
     } catch (Exception e) {
       throw new AzureWebAppSlotDeploymentExceptionData(preDeploymentData.getDeploymentProgressMarker(), e);
@@ -108,6 +118,13 @@ public class AzureWebAppSlotDeploymentRequestHandler
       return AzureWebAppSlotDeploymentResponse.builder()
           .azureAppDeploymentData(azureAppDeploymentData)
           .deploymentProgressMarker(preDeploymentData.getDeploymentProgressMarker())
+          .userAddedAppSettingNames(packageDeploymentContext.getAppSettingsToAdd() != null
+                  ? new HashSet<>(packageDeploymentContext.getAppSettingsToAdd().keySet())
+                  : emptySet())
+          .userAddedConnStringNames(packageDeploymentContext.getConnSettingsToAdd() != null
+                  ? new HashSet<>(packageDeploymentContext.getConnSettingsToAdd().keySet())
+                  : emptySet())
+          .userChangedStartupCommand(!isEmpty(packageDeploymentContext.getStartupCommand()))
           .build();
     } catch (Exception e) {
       throw new AzureWebAppSlotDeploymentExceptionData(preDeploymentData.getDeploymentProgressMarker(), e);

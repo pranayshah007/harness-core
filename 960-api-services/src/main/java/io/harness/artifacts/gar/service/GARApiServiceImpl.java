@@ -23,6 +23,7 @@ import io.harness.artifacts.gar.beans.GarTags;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
@@ -182,9 +183,8 @@ public class GARApiServiceImpl implements GarApiService {
   private boolean isSuccessful(int code, String errormessage) {
     switch (code) {
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException("Please check region, repository name, package fields",
-            "Please verify the values of region, repository name, package",
-            new InvalidArtifactServerException(errormessage, USER));
+        throw new HintException(
+            "Please provide valid values for region, project, repository, package and version fields.");
       case 400:
         return false;
       case 401:

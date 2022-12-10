@@ -34,7 +34,9 @@ import software.wings.api.DeploymentType;
 import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.entityinterface.TagAware;
+import software.wings.ngmigration.CgBasicInfo;
 import software.wings.ngmigration.NGMigrationEntity;
+import software.wings.ngmigration.NGMigrationEntityType;
 import software.wings.yaml.BaseEntityYaml;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -100,6 +102,7 @@ public class Pipeline
   public static final String NAME_KEY = "name";
   public static final String DESCRIPTION_KEY = "description";
 
+  public boolean rollbackPreviousStages;
   @NotNull @EntityName private String name;
   private String description;
   @Valid private List<PipelineStage> pipelineStages = new ArrayList<>();
@@ -129,7 +132,7 @@ public class Pipeline
   public Pipeline(String uuid, String appId, EmbeddedUser createdBy, long createdAt, EmbeddedUser lastUpdatedBy,
       long lastUpdatedAt, String entityYamlPath, String name, String description, List<PipelineStage> pipelineStages,
       Map<String, Long> stateEtaMap, List<Service> services, List<WorkflowExecution> workflowExecutions,
-      List<FailureStrategy> failureStrategies, String accountId, boolean sample) {
+      List<FailureStrategy> failureStrategies, String accountId, boolean sample, boolean rollbackPreviousStages) {
     super(uuid, appId, createdBy, createdAt, lastUpdatedBy, lastUpdatedAt, entityYamlPath);
     this.name = name;
     this.description = description;
@@ -140,6 +143,7 @@ public class Pipeline
     this.failureStrategies = (failureStrategies == null) ? new ArrayList<>() : failureStrategies;
     this.accountId = accountId;
     this.sample = sample;
+    this.rollbackPreviousStages = rollbackPreviousStages;
   }
 
   public Pipeline cloneInternal() {
@@ -172,6 +176,18 @@ public class Pipeline
     return getName();
   }
 
+  @JsonIgnore
+  @Override
+  public CgBasicInfo getCgBasicInfo() {
+    return CgBasicInfo.builder()
+        .id(getUuid())
+        .name(getName())
+        .type(NGMigrationEntityType.PIPELINE)
+        .appId(getAppId())
+        .accountId(getAccountId())
+        .build();
+  }
+
   @Data
   @NoArgsConstructor
   @EqualsAndHashCode(callSuper = true)
@@ -179,12 +195,15 @@ public class Pipeline
     private String description;
     private List<PipelineStage.Yaml> pipelineStages = new ArrayList<>();
     private List<FailureStrategy.Yaml> failureStrategies;
+    private boolean rollbackPreviousStages;
 
     @lombok.Builder
-    public Yaml(String harnessApiVersion, String description, List<PipelineStage.Yaml> pipelineStages) {
+    public Yaml(String harnessApiVersion, String description, List<PipelineStage.Yaml> pipelineStages,
+        boolean rollbackPreviousStages) {
       super(EntityType.PIPELINE.name(), harnessApiVersion);
       this.description = description;
       this.pipelineStages = pipelineStages;
+      this.rollbackPreviousStages = rollbackPreviousStages;
     }
   }
 

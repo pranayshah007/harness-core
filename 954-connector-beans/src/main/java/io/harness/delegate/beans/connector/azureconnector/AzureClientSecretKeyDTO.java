@@ -9,8 +9,9 @@ package io.harness.delegate.beans.connector.azureconnector;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.connector.azureconnector.outcome.AzureClientSecretKeyOutcomeDTO;
 import io.harness.encryption.SecretRefData;
-import io.harness.encryption.SecretReference;
+import io.harness.secret.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -29,4 +30,8 @@ import lombok.EqualsAndHashCode;
 @Schema(name = "AzureClientSecretKey", description = "This contains azure client secret key details")
 public class AzureClientSecretKeyDTO extends AzureAuthCredentialDTO {
   @ApiModelProperty(dataType = "string") @NotNull @JsonProperty("secretRef") @SecretReference SecretRefData secretKey;
+  @Override
+  public AzureClientSecretKeyOutcomeDTO toOutcome() {
+    return AzureClientSecretKeyOutcomeDTO.builder().secretRef(this.secretKey).build();
+  }
 }

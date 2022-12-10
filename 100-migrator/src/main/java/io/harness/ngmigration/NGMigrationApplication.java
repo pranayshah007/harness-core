@@ -7,7 +7,6 @@
 
 package io.harness.ngmigration;
 
-import static io.harness.AuthorizationServiceHeader.MANAGER;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.GLOBAL_DISABLE_HEALTH_CHECK;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
@@ -23,7 +22,6 @@ import static com.google.inject.name.Names.named;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.GraphQLModule;
 import io.harness.cache.CacheModule;
-import io.harness.capability.CapabilityModule;
 import io.harness.ccm.CEPerpetualTaskHandler;
 import io.harness.ccm.KubernetesClusterHandler;
 import io.harness.ccm.cluster.ClusterRecordHandler;
@@ -47,7 +45,6 @@ import io.harness.event.EventsModule;
 import io.harness.event.usagemetrics.EventsModuleHelper;
 import io.harness.eventframework.dms.DmsObserverEventProducer;
 import io.harness.eventframework.manager.ManagerObserverEventProducer;
-import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagConfig;
@@ -98,7 +95,6 @@ import io.harness.stream.StreamModule;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
 import io.harness.timescaledb.TimeScaleDBService;
-import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.tracing.MongoRedisTracer;
 import io.harness.waiter.NotifierScheduledExecutorService;
 
@@ -526,7 +522,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
     modules.add(FiltersModule.getInstance());
     modules.add(new ValidationModule(validatorFactory));
     modules.add(new DelegateServiceModule());
-    modules.add(new CapabilityModule());
     modules.add(MigrationModule.getInstance());
     registerRemoteObserverModule(configuration, modules);
     modules.add(new WingsModule(configuration, StartupMode.MANAGER));
@@ -595,18 +590,6 @@ public class NGMigrationApplication extends Application<MigratorConfig> {
       @Override
       public FeatureFlagConfig featureFlagConfig() {
         return configuration.getFeatureFlagConfig();
-      }
-    });
-
-    modules.add(new AbstractPersistenceTracerModule() {
-      @Override
-      protected EventsFrameworkConfiguration eventsFrameworkConfiguration() {
-        return configuration.getEventsFrameworkConfiguration();
-      }
-
-      @Override
-      protected String serviceIdProvider() {
-        return MANAGER.getServiceId();
       }
     });
   }

@@ -7,6 +7,9 @@
 
 package io.harness.service.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.utils.DelegateServiceConstants.HEARTBEAT_EXPIRY_TIME_FIVE_MINS;
+
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -23,13 +26,17 @@ import io.harness.service.intfc.DelegateCache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import javax.validation.constraints.NotNull;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -99,6 +106,17 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+  private LoadingCache<String, Set<String>> activeDelegateSupportedTaskTypesCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(10, TimeUnit.MINUTES)
+          .build(new CacheLoader<String, Set<String>>() {
+            @Override
+            public Set<String> load(@NotNull String accountId) {
+              return getIntersectionOfSupportedTaskTypes(accountId);
+            }
+          });
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -163,5 +181,38 @@ public class DelegateCacheImpl implements DelegateCache {
       log.warn("Unable to getDelegates from cache based on group id");
       return null;
     }
+  }
+
+  @Override
+  public Set<String> getDelegateSupportedTaskTypes(@NotNull String accountId) {
+    try {
+      return activeDelegateSupportedTaskTypesCache.get(accountId);
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to get supported task types from cache based on account id");
+      return null;
+    }
+  }
+
+  private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {
+    List<Delegate> delegateList = getActiveDelegates(accountId);
+    Set<String> supportedTaskTypes = new HashSet<>();
+    if (isNotEmpty(delegateList)) {
+      supportedTaskTypes = new HashSet<>(delegateList.get(0).getSupportedTaskTypes());
+    }
+    for (Delegate delegate : delegateList) {
+      supportedTaskTypes = Sets.intersection(supportedTaskTypes, new HashSet<>(delegate.getSupportedTaskTypes()));
+    }
+    return supportedTaskTypes;
+  }
+
+  private List<Delegate> getActiveDelegates(String accountId) {
+    return persistence.createQuery(Delegate.class)
+        .filter(DelegateKeys.accountId, accountId)
+        .field(DelegateKeys.lastHeartBeat)
+        .greaterThan(System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME_FIVE_MINS.toMillis())
+        .project(DelegateKeys.uuid, true)
+        .project(DelegateKeys.accountId, true)
+        .project(DelegateKeys.supportedTaskTypes, true)
+        .asList();
   }
 }

@@ -32,7 +32,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.SecretDetail;
 import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.expression.ExpressionFunctor;
+import io.harness.expression.functors.ExpressionFunctor;
 import io.harness.ff.FeatureFlagService;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -48,6 +48,7 @@ import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import javax.cache.Cache;
@@ -75,10 +76,10 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private final ExecutorService expressionEvaluatorExecutor;
   private final boolean evaluateSync;
 
-  @Default private Map<String, String> evaluatedSecrets = new HashMap<>();
-  @Default private Map<String, String> evaluatedDelegateSecrets = new HashMap<>();
+  @Default private Map<String, String> evaluatedSecrets = new ConcurrentHashMap<>();
+  @Default private Map<String, String> evaluatedDelegateSecrets = new ConcurrentHashMap<>();
   @Default private Map<String, EncryptionConfig> encryptionConfigs = new HashMap<>();
-  @Default private Map<String, SecretDetail> secretDetails = new HashMap<>();
+  @Default private Map<String, SecretDetail> secretDetails = new ConcurrentHashMap<>();
 
   DelegateMetricsService delegateMetricsService;
 
@@ -94,7 +95,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
           return expressionEvaluatorExecutor.submit(() -> obtainInternal(secretName));
         }
       }
-      log.warn("Expression evaluation is being processed synchronously");
+      log.debug("Expression evaluation is being processed synchronously");
       return obtainInternal(secretName);
     } catch (Exception ex) {
       throw new FunctorException("Error occurred while evaluating the secret [" + secretName + "]", ex);
@@ -154,6 +155,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   }
 
   private Object obtainInternal(String secretName) {
+    boolean updateSecretUsage = !SecretManagerMode.DRY_RUN.equals(mode);
     if (evaluatedSecrets.containsKey(secretName)) {
       return returnSecretValue(secretName, evaluatedSecrets.get(secretName));
     }
@@ -193,7 +195,8 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     if (isEmpty(encryptedDataDetails)) {
       // Cache miss.
-      encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+      encryptedDataDetails =
+          secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId, updateSecretUsage);
 
       if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
         throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);
@@ -241,7 +244,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
     EncryptedDataDetail encryptedDataDetail = nonLocalEncryptedDetails.get(0);
 
     String encryptionConfigUuid = encryptedDataDetail.getEncryptionConfig().getUuid();
+
     encryptionConfigs.put(encryptionConfigUuid, encryptedDataDetail.getEncryptionConfig());
+    if (isEmpty(encryptionConfigUuid)) {
+      log.warn("Got encryptionConfigUuid as null, name: {}, isGlobalKms {}, type: {}",
+          encryptedDataDetail.getEncryptionConfig().getName(), encryptedDataDetail.getEncryptionConfig().isGlobalKms(),
+          encryptedDataDetail.getEncryptionConfig().getType());
+    }
 
     SecretDetail secretDetail = SecretDetail.builder()
                                     .configUuid(encryptionConfigUuid)

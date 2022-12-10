@@ -162,15 +162,27 @@ public class InputSetErrorsHelper {
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
       if (inputSetFQNs.contains(key)) {
         Object templateValue = templateConfig.getFqnToValueMap().get(key);
-        Object value = inputSetConfig.getFqnToValueMap().get(key);
+        Object valueFromRuntimeInputYaml = inputSetConfig.getFqnToValueMap().get(key);
         if (key.isType() || key.isIdentifierOrVariableName()) {
-          if (!value.toString().equals(templateValue.toString())) {
-            errorMap.put(key,
-                "The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
-                    + "in the pipeline yaml, but the input set has it as " + value.toString());
+          if (!valueFromRuntimeInputYaml.toString().equals(templateValue.toString())) {
+            // if the type is wrong, this means that the whole field for which the type is, is potentially (and most
+            // probably) invalid. Hence, we need to mark all keys that are parallel to type as invalid. Same goes for
+            // name and identifier
+            FQN baseFQNOfCurrKey =
+                FQN.builder().fqnList(key.getFqnList().subList(0, key.getFqnList().size() - 1)).build();
+            // this sub map is of all the keys that are sibling of the `key` and their children. It also contains `key`
+            // as well. All these keys are being marked invalid
+            Map<FQN, Object> invalidSubMap =
+                YamlSubMapExtractor.getFQNToObjectSubMap(templateConfig.getFqnToValueMap(), baseFQNOfCurrKey);
+            // marking all the keys in the sub map as invalid
+            for (FQN subMapKey : invalidSubMap.keySet()) {
+              errorMap.put(subMapKey,
+                  "The value for " + key.getExpressionFqn() + " is " + templateValue
+                      + "in the pipeline yaml, but the input set has it as " + valueFromRuntimeInputYaml);
+            }
           }
         } else {
-          String error = validateStaticValues(templateValue, value);
+          String error = validateStaticValues(templateValue, valueFromRuntimeInputYaml);
           if (EmptyPredicate.isNotEmpty(error)) {
             errorMap.put(key, error);
           }

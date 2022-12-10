@@ -12,13 +12,14 @@ import io.harness.beans.PageResponse;
 
 import software.wings.beans.yaml.Change;
 import software.wings.service.impl.yaml.GitToHarnessErrorCommitStats;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 import software.wings.yaml.errorhandling.GitProcessingError;
 import software.wings.yaml.errorhandling.GitSyncError;
 import software.wings.yaml.gitSync.GitFileActivity;
 
 import java.util.List;
 
-public interface GitSyncErrorService {
+public interface GitSyncErrorService extends OwnedByAccount {
   PageResponse<GitToHarnessErrorCommitStats> listGitToHarnessErrorsCommits(
       PageRequest<GitToHarnessErrorCommitStats> req, String appId, String branchName, Integer numberOfErrorsInSummary);
 

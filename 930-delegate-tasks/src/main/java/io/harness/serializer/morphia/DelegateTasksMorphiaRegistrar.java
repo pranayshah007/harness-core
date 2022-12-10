@@ -8,9 +8,7 @@
 package io.harness.serializer.morphia;
 
 import io.harness.beans.EncryptedData;
-import io.harness.beans.MigrateSecretTask;
 import io.harness.beans.SecretChangeLog;
-import io.harness.beans.SecretKey;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretUsageLog;
 import io.harness.morphia.MorphiaRegistrar;
@@ -137,7 +135,6 @@ import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.beans.yaml.GitFetchFilesFromMultipleRepoResult;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.cv.beans.CustomLogResponseMapper;
-import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.capabilities.ClusterMasterUrlValidationCapability;
 import software.wings.delegatetasks.validation.capabilities.GitConnectionCapability;
 import software.wings.delegatetasks.validation.capabilities.SSHHostValidationCapability;
@@ -188,7 +185,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
     set.add(NewRelicMetricDataRecord.class);
-    set.add(DelegateConnectionResult.class);
     set.add(AwsSecretsManagerConfig.class);
     set.add(AzureVaultConfig.class);
     set.add(GcpKmsConfig.class);
@@ -203,8 +199,6 @@ public class DelegateTasksMorphiaRegistrar implements MorphiaRegistrar {
     set.add(SecretChangeLog.class);
     set.add(EncryptedData.class);
     set.add(SecretUsageLog.class);
-    set.add(MigrateSecretTask.class);
-    set.add(SecretKey.class);
     set.add(EmailData.class);
     set.add(CommandUnit.class);
     set.add(CustomSecretsManagerConfig.class);

@@ -47,6 +47,7 @@ public class ClusterBatchRequest {
   @Data
   public static class ClusterBasicDTO {
     @EntityIdentifier @Schema(description = "identifier of the cluster") String identifier;
+    @Schema(description = "agent identifier of the cluster") String agentIdentifier;
     @Schema(description = "name of the cluster") @EntityName String name;
     @Schema(description = "scope at which the cluster exists in harness gitops, project vs org vs account")
     ScopeLevel scope;

@@ -43,7 +43,7 @@ public class EvaluateVariableResolver extends StrLookup<Object> {
         throw functorException;
       }
       if (expressionEvaluator.getEvaluationMode() == SecretManagerMode.APPLY) {
-        log.error("Encountered error while evaluating secret in APPLY mode ", exception);
+        log.info("Encountered error while evaluating secret with name {} in APPLY mode", variable);
       }
       context.set(name, "${" + variable + "}");
     }

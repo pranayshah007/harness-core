@@ -70,6 +70,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.mongodb.AggregationOptions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,6 +78,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -178,8 +180,12 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
     aggregationPipeline.skip(offset);
     aggregationPipeline.limit(limit);
 
-    Iterator<ServiceInstanceCount> aggregate =
-        HPersistence.retry(() -> aggregationPipeline.aggregate(ServiceInstanceCount.class));
+    Iterator<ServiceInstanceCount> aggregate = HPersistence.retry(
+        ()
+            -> aggregationPipeline.aggregate(ServiceInstanceCount.class,
+                AggregationOptions.builder()
+                    .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
+                    .build()));
     aggregate.forEachRemaining(instanceInfoList::add);
     return constructInstanceSummaryStatsByService(instanceInfoList, offset, limit);
   }
@@ -212,7 +218,10 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
                 "instanceInfoList", grouping("$addToSet", projection("id", "_id"), projection("name", "hostName"))),
             grouping("invocationCount", accumulator("$sum", invocationCountFieldPath)))
         .sort(ascending("_id.envId"), descending(COUNT))
-        .aggregate(ServiceAggregationInfo.class)
+        .aggregate(ServiceAggregationInfo.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(serviceAggregationInfoList::add);
     return constructInstanceStatsForService(serviceId, serviceAggregationInfoList);
   }
@@ -402,7 +411,10 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
         .project(projection("_id").suppress(), projection("entityId", "_id." + entityIdColumn),
             projection("entityName", entityNameColumn), projection(COUNT))
         .sort(descending(COUNT))
-        .aggregate(FlatEntitySummaryStats.class)
+        .aggregate(FlatEntitySummaryStats.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(flatEntitySummaryStats -> {
           EntitySummaryStats entitySummaryStats = getEntitySummaryStats(flatEntitySummaryStats, groupByEntityType);
           entitySummaryStatsList.add(entitySummaryStats);
@@ -429,7 +441,10 @@ public class ServerlessDashboardServiceImpl implements ServerlessDashboardServic
         .createAggregation(ServerlessInstance.class)
         .match(query)
         .group("_id", grouping(COUNT, accumulator("$sum", 1)))
-        .aggregate(InstanceCount.class)
+        .aggregate(InstanceCount.class,
+            AggregationOptions.builder()
+                .maxTime(wingsPersistence.getMaxTimeMs(ServerlessInstance.class), TimeUnit.MILLISECONDS)
+                .build())
         .forEachRemaining(instanceCount -> totalCount.addAndGet(instanceCount.getCount()));
     return totalCount.get();
   }

@@ -33,7 +33,6 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.encryption.Scope;
@@ -57,6 +56,10 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateWithInputsResponseDTO;
 import io.harness.ng.core.template.exception.NGTemplateResolveExceptionV2;
+import io.harness.ng.core.template.refresh.ErrorNodeSummary;
+import io.harness.ng.core.template.refresh.NgManagerRefreshRequestDTO;
+import io.harness.ng.core.template.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.ng.core.template.refresh.v2.InputsValidationResponse;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.project.remote.ProjectClient;
@@ -64,11 +67,10 @@ import io.harness.reconcile.remote.NgManagerReconcileClient;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.PermissionTypes;
-import io.harness.template.beans.refresh.ErrorNodeSummary;
-import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
@@ -96,6 +98,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -205,7 +208,21 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     Call<RestResponse<Boolean>> ffCall = mock(Call.class);
     when(ffCall.execute()).thenReturn(Response.success(new RestResponse<>(false)));
 
-    when(featureFlagHelperService.isEnabled(ACCOUNT_ID, FeatureName.CD_SERVICE_ENV_RECONCILIATION)).thenReturn(false);
+    // default behaviour of validation
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), eq(null), any(NgManagerRefreshRequestDTO.class));
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), eq(null), eq(null), any(NgManagerRefreshRequestDTO.class));
+
+    doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(true).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
   }
 
   @Test
@@ -221,7 +238,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
     Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
@@ -637,8 +654,8 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(createdEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(createdEntity.getVersion()).isEqualTo(0L);
 
-    Optional<TemplateEntity> optionalTemplateEntity =
-        templateService.get(ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+    Optional<TemplateEntity> optionalTemplateEntity = templateService.get(
+        ACCOUNT_ID, ORG_IDENTIFIER, null, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     assertThat(optionalTemplateEntity).isPresent();
     assertThat(optionalTemplateEntity.get().getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(optionalTemplateEntity.get().getOrgIdentifier()).isEqualTo(ORG_IDENTIFIER);
@@ -963,7 +980,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
 
     doReturn(Optional.of(templateEntity))
         .when(templateServiceHelper)
-        .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false);
+        .getTemplateOrThrowExceptionIfInvalid(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, "zxcv", "as", false, false);
     when(templateMergeServiceHelper.createTemplateInputsFromTemplate(yaml)).thenReturn(templateInputs);
 
     TemplateWithInputsResponseDTO templateWithInputsResponseDTO =
@@ -1056,6 +1073,26 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     GitEntityInfo branchInfo = GitEntityInfo.builder().storeType(StoreType.REMOTE).build();
     setupGitContext(branchInfo);
     templateService.create(templateEntity, false, "");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  public void testNGManagerSendsInvalidYamlResponse() throws IOException {
+    Call<ResponseDTO<InputsValidationResponse>> ngManagerReconcileCall = mock(Call.class);
+    doReturn(ngManagerReconcileCall)
+        .when(ngManagerReconcileClient)
+        .validateYaml(anyString(), anyString(), anyString(), any(NgManagerRefreshRequestDTO.class));
+    doReturn(Response.success(ResponseDTO.newResponse(InputsValidationResponse.builder().isValid(false).build())))
+        .when(ngManagerReconcileCall)
+        .execute();
+
+    String stageTemplateIdentifier = "template2";
+    String stageYaml = readFile("service/stage-template-regular.yaml");
+    TemplateEntity stageTemplate = entity.withYaml(stageYaml).withIdentifier(stageTemplateIdentifier);
+    Assertions.assertThatExceptionOfType(NGTemplateResolveExceptionV2.class)
+        .isThrownBy(() -> templateService.create(stageTemplate, false, ""))
+        .withMessageContaining("Exception in resolving template refs in given yaml");
   }
 
   private void setupGitContext(GitEntityInfo branchInfo) {

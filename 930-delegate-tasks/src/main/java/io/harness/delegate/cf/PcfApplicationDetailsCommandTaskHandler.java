@@ -59,18 +59,16 @@ public class PcfApplicationDetailsCommandTaskHandler extends PcfCommandTaskHandl
       secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, isInstanceSync);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
       CfInstanceSyncRequest cfInstanceSyncRequest = (CfInstanceSyncRequest) cfCommandRequest;
-      CfRequestConfig cfRequestConfig =
-          CfRequestConfig.builder()
-              .timeOutIntervalInMins(5)
-              .applicationName(cfInstanceSyncRequest.getPcfApplicationName())
-              .userName(String.valueOf(pcfConfig.getUsername()))
-              .password(String.valueOf(pcfConfig.getPassword()))
-              .endpointUrl(pcfConfig.getEndpointUrl())
-              .orgName(cfCommandRequest.getOrganization())
-              .spaceName(cfCommandRequest.getSpace())
-              .limitPcfThreads(cfCommandRequest.isLimitPcfThreads())
-              .ignorePcfConnectionContextCache(cfCommandRequest.isIgnorePcfConnectionContextCache())
-              .build();
+      CfRequestConfig cfRequestConfig = CfRequestConfig.builder()
+                                            .timeOutIntervalInMins(5)
+                                            .applicationName(cfInstanceSyncRequest.getPcfApplicationName())
+                                            .userName(String.valueOf(pcfConfig.getUsername()))
+                                            .password(String.valueOf(pcfConfig.getPassword()))
+                                            .endpointUrl(pcfConfig.getEndpointUrl())
+                                            .orgName(cfCommandRequest.getOrganization())
+                                            .spaceName(cfCommandRequest.getSpace())
+                                            .limitPcfThreads(cfCommandRequest.isLimitPcfThreads())
+                                            .build();
 
       ApplicationDetail applicationDetail = pcfDeploymentManager.getApplicationByName(cfRequestConfig);
 

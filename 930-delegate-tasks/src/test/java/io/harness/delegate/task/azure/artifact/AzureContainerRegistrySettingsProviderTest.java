@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -105,10 +106,10 @@ public class AzureContainerRegistrySettingsProviderTest extends CategoryTest {
     final AzureContainerArtifactConfig containerArtifactConfig =
         AzureTestUtils.createTestContainerArtifactConfig(AzureTestUtils.createAzureConnectorDTO());
     doReturn(authenticationType).when(azureConfig).getAzureAuthenticationType();
-    doReturn(accessTokenResponse)
-        .when(azureAuthorizationClient)
-        .getUserAccessToken(azureConfig,
-            AzureAuthenticationType.SERVICE_PRINCIPAL_CERT == authenticationType ? AzureUtils.AUTH_SCOPE : null);
+    when(azureAuthorizationClient.getUserAccessToken(azureConfig,
+             AzureUtils.convertToScope(
+                 AzureUtils.getAzureEnvironment(azureConfig.getAzureEnvironmentType()).getManagementEndpoint())))
+        .thenReturn(accessTokenResponse);
     doReturn(refreshToken).when(azureContainerRegistryClient).getAcrRefreshToken(REGISTRY_HOSTNAME, accessToken);
 
     Map<String, AzureAppServiceApplicationSetting> dockerSettings =

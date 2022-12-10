@@ -10,11 +10,14 @@ package io.harness.ng.core.api.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.RAGHAV_MURALI;
 import static io.harness.rule.OwnerRule.TEJAS;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.EncryptionType.VAULT;
 
@@ -46,6 +49,7 @@ import io.harness.connector.services.NGConnectorSecretManagerService;
 import io.harness.delegate.beans.ci.pod.SecretVariableDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefParsedData;
 import io.harness.encryptors.CustomEncryptorsRegistry;
 import io.harness.encryptors.KmsEncryptorsRegistry;
 import io.harness.encryptors.VaultEncryptor;
@@ -54,6 +58,7 @@ import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
+import io.harness.ng.core.AdditionalMetadataValidationHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
@@ -69,6 +74,7 @@ import io.harness.secretmanagerclient.dto.VaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.remote.SecretManagerClient;
 import io.harness.secrets.SecretsFileService;
+import io.harness.security.encryption.AdditionalMetadata;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
@@ -81,7 +87,9 @@ import software.wings.service.impl.security.NGEncryptorService;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Rule;
@@ -94,8 +102,6 @@ import org.mockito.Mock;
 
 @OwnedBy(PL)
 public class NGEncryptedDataServiceImplTest extends CategoryTest {
-  public static final String FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR =
-      "Fully-qualified path expression [%s] has illegal format.";
   public static final String HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX = "hashicorpvault://";
   public static final String SECRET_RELATIVE_PATH = "/this/is/some/path#key";
   private NGEncryptedDataServiceImpl ngEncryptedDataService;
@@ -112,11 +118,14 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
   @Mock private CustomSecretManagerHelper customSecretManagerHelper;
   @Mock private NGEncryptorService ngEncryptorService;
   @Mock private LocalEncryptor localEncryptor;
+  @Mock private AdditionalMetadataValidationHelper additionalMetadataValidationHelper;
+  @Mock private DynamicSecretReferenceHelper dynamicSecretReferenceHelper;
   public static final String HTTP_VAULT_URL = "http://vault.com";
   private String accountIdentifier = randomAlphabetic(10);
   private String orgIdentifier = randomAlphabetic(10);
   private String projectIdentifier = randomAlphabetic(10);
   private String identifier = randomAlphabetic(10);
+  private String encryptedValue = randomAlphabetic(10);
 
   @Rule public ExpectedException exceptionRule = ExpectedException.none();
 
@@ -127,7 +136,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ngEncryptedDataService =
         spy(new NGEncryptedDataServiceImpl(encryptedDataDao, kmsEncryptorsRegistry, vaultEncryptorsRegistry,
             secretsFileService, secretManagerClient, globalEncryptDecryptClient, ngConnectorSecretManagerService,
-            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService));
+            ngFeatureFlagHelperService, customEncryptorsRegistry, customSecretManagerHelper, ngEncryptorService,
+            additionalMetadataValidationHelper, dynamicSecretReferenceHelper));
     when(vaultEncryptorsRegistry.getVaultEncryptor(any())).thenReturn(vaultEncryptor);
     when(kmsEncryptorsRegistry.getKmsEncryptor(any())).thenReturn(localEncryptor);
   }
@@ -167,7 +177,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -215,7 +225,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -259,7 +269,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -298,7 +309,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(false);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -338,7 +350,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture()))
         .thenThrow(new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Delete on remote failed", USER));
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(false);
@@ -376,7 +389,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(1)).isEnabled(any(), any());
     BaseVaultConfig vaultConfig = (BaseVaultConfig) argumentCaptor.getValue();
     assertThat(vaultConfig.getRenewAppRoleToken()).isEqualTo(true);
@@ -433,7 +447,7 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(vaultConfigDTO);
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
-    when(vaultEncryptor.createSecret(any(), any(), any(), argumentCaptor.capture()))
+    when(vaultEncryptor.createSecret(any(), any(), argumentCaptor.capture()))
         .thenReturn(NGEncryptedData.builder()
                         .name("name")
                         .encryptedValue("encryptedValue".toCharArray())
@@ -476,7 +490,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     ArgumentCaptor<SecretManagerConfig> argumentCaptor = ArgumentCaptor.forClass(SecretManagerConfig.class);
     when(vaultEncryptor.deleteSecret(any(), any(), argumentCaptor.capture())).thenReturn(true);
     when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
-    boolean deleted = ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
     verify(ngFeatureFlagHelperService, times(0)).isEnabled(any(), any());
     SecretManagerConfig secretManagerConfig = argumentCaptor.getValue();
     assertThat(secretManagerConfig instanceof AzureVaultConfig).isEqualTo(true);
@@ -492,6 +507,12 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     String projectIdentifier = randomAlphabetic(10);
     String secretManagerIdentifier = randomAlphabetic(16);
     String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX + secretManagerIdentifier + SECRET_RELATIVE_PATH;
+    when(dynamicSecretReferenceHelper.validateAndGetSecretRefParsedData(anyString()))
+        .thenReturn(SecretRefParsedData.builder()
+                        .encryptionType(VAULT)
+                        .relativePath(SECRET_RELATIVE_PATH)
+                        .secretManagerIdentifier(secretManagerIdentifier)
+                        .build());
     NGEncryptedData ngEncryptedData = ngEncryptedDataService.getFromReferenceExpression(
         accountIdentifier, orgIdentifier, projectIdentifier, identifier);
     assertThat(ngEncryptedData.getAccountIdentifier()).isEqualTo(accountIdentifier);
@@ -503,82 +524,48 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertThat(ngEncryptedData.getPath()).isEqualTo(SECRET_RELATIVE_PATH);
     assertThat(ngEncryptedData.getSecretManagerIdentifier()).isEqualTo(secretManagerIdentifier);
     assertThat(ngEncryptedData.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
+    assertThat(ngEncryptedData.getAdditionalMetadata()).isNull();
+    assertThat(ngEncryptedData.getId()).isNotBlank();
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  public void testGetFromReferenceExpressionForInvalidFormat() {
+  public void testGetFromReferenceExpressionWithAdditionalMetadata() {
     String accountIdentifier = randomAlphabetic(10);
     String orgIdentifier = randomAlphabetic(10);
     String projectIdentifier = randomAlphabetic(10);
     String secretManagerIdentifier = randomAlphabetic(16);
-    String identifier = "hashicorpvault//" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
-    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetFromReferenceExpressionForUnsupportedEncryptionType() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String secretManagerIdentifier = randomAlphabetic(16);
-    String encryptionTypeName = randomAlphabetic(10);
-    String identifier = encryptionTypeName + "://" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(
-        String.format("Encryption type [%s] is not supported in fully-qualified path expression.", encryptionTypeName));
-    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetFromReferenceExpressionForInvalidFormatMissingRootPrefix() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String secretManagerIdentifier = randomAlphabetic(16);
-    String identifier = "hashicorpvault:/" + secretManagerIdentifier + SECRET_RELATIVE_PATH;
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
-    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetFromReferenceExpressionForInvalidFormatMissingSecretManagerIdentifier() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX;
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
-    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
-  }
-
-  @Test
-  @Owner(developers = NISHANT)
-  @Category(UnitTests.class)
-  public void testGetFromReferenceExpressionForInvalidFormatMissingSecretRelativePath() {
-    String accountIdentifier = randomAlphabetic(10);
-    String orgIdentifier = randomAlphabetic(10);
-    String projectIdentifier = randomAlphabetic(10);
-    String secretManagerIdentifier = randomAlphabetic(16);
-    String identifier = HASHICORP_VAULT_ENCRYPTION_TYPE_PREFIX + secretManagerIdentifier;
-    exceptionRule.expect(SecretManagementException.class);
-    exceptionRule.expectMessage(String.format(FULLY_QUALIFIED_PATH_EXPRESSION_FORMAT_ERROR, identifier));
-    ngEncryptedDataService.getFromReferenceExpression(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    String secretName = randomAlphabetic(16);
+    String version = "5";
+    String identifier = "gcpsecretsmanager://" + secretManagerIdentifier + "/" + secretName + "/" + version;
+    AdditionalMetadata additionalMetadata = AdditionalMetadata.builder().value("version", version).build();
+    when(dynamicSecretReferenceHelper.validateAndGetSecretRefParsedData(anyString()))
+        .thenReturn(SecretRefParsedData.builder()
+                        .encryptionType(GCP_SECRETS_MANAGER)
+                        .relativePath(secretName)
+                        .secretManagerIdentifier(secretManagerIdentifier)
+                        .additionalMetadata(additionalMetadata)
+                        .build());
+    NGEncryptedData ngEncryptedData = ngEncryptedDataService.getFromReferenceExpression(
+        accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+    assertThat(ngEncryptedData.getAccountIdentifier()).isEqualTo(accountIdentifier);
+    assertThat(ngEncryptedData.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(ngEncryptedData.getProjectIdentifier()).isEqualTo(projectIdentifier);
+    assertThat(ngEncryptedData.getIdentifier()).isEqualTo(identifier);
+    assertThat(ngEncryptedData.getName()).isEqualTo(identifier);
+    assertThat(ngEncryptedData.getType()).isEqualTo(SettingVariableTypes.SECRET_TEXT);
+    assertThat(ngEncryptedData.getPath()).isEqualTo(secretName);
+    assertThat(ngEncryptedData.getSecretManagerIdentifier()).isEqualTo(secretManagerIdentifier);
+    assertThat(ngEncryptedData.getEncryptionType()).isEqualTo(GCP_SECRETS_MANAGER);
+    assertThat(ngEncryptedData.getAdditionalMetadata()).isEqualTo(additionalMetadata);
+    assertThat(ngEncryptedData.getId()).isNotBlank();
   }
 
   public Map<String, Boolean> getDataForTestGetEncryptionDetailsForGettingNGEncryptedData() {
+    Set<EncryptionType> supportedTypes = EnumSet.of(VAULT, AZURE_VAULT, AWS_SECRETS_MANAGER, GCP_SECRETS_MANAGER);
     return Arrays.stream(EncryptionType.values())
-        .collect(Collectors.toMap(EncryptionType::getYamlName, type -> type.equals(VAULT)));
+        .collect(Collectors.toMap(EncryptionType::getYamlName, type -> supportedTypes.contains(type)));
   }
 
   @Test
@@ -626,6 +613,8 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
             .build();
     when(ngFeatureFlagHelperService.isEnabled(anyString(), eq(FeatureName.PL_ACCESS_SECRET_DYNAMICALLY_BY_PATH)))
         .thenReturn(featureEnabled);
+    when(dynamicSecretReferenceHelper.validateAndGetSecretRefParsedData(anyString()))
+        .thenReturn(SecretRefParsedData.builder().build());
     ngEncryptedDataService.getEncryptionDetails(ngAccess, secretVariableDTO);
     verify(ngEncryptedDataService, times(expectedDBCall ? 1 : 0))
         .get(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifier);
@@ -753,5 +742,47 @@ public class NGEncryptedDataServiceImplTest extends CategoryTest {
     assertEquals(decryptedSecretValue.getAccountIdentifier(), accountIdentifier);
     assertEquals(decryptedSecretValue.getOrgIdentifier(), orgIdentifier);
     assertEquals(decryptedSecretValue.getProjectIdentifier(), projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_whenSMIsDeleted_forceDeleteFalse() {
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier))
+        .thenReturn(encryptedDataDTO);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean())).thenReturn(null);
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, false);
+    assertThat(deleted).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDeleteSecret_whenSMIsDeleted_forceDeleteTrue() {
+    NGEncryptedData encryptedDataDTO = NGEncryptedData.builder()
+                                           .accountIdentifier(accountIdentifier)
+                                           .orgIdentifier(orgIdentifier)
+                                           .projectIdentifier(projectIdentifier)
+                                           .type(SettingVariableTypes.SECRET_TEXT)
+                                           .encryptedValue(encryptedValue.toCharArray())
+                                           .secretManagerIdentifier(identifier)
+                                           .build();
+    when(encryptedDataDao.get(any(), any(), any(), any())).thenReturn(encryptedDataDTO);
+    when(ngConnectorSecretManagerService.getUsingIdentifier(any(), any(), any(), any(), anyBoolean())).thenReturn(null);
+    when(encryptedDataDao.delete(any(), any(), any(), any())).thenReturn(true);
+    boolean deleted =
+        ngEncryptedDataService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier, true);
+    assertThat(deleted).isEqualTo(true);
   }
 }

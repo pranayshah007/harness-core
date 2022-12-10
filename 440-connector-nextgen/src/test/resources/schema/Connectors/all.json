@@ -1839,7 +1839,9 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -1874,7 +1876,9 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -1911,7 +1915,9 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -2008,9 +2014,11 @@
             "Jenkins",
             "OciHelmRepo",
             "CustomSecretManager",
-            "ELK",
+            "ElasticSearch",
             "GcpSecretManager",
-            "AzureArtifacts"
+            "AzureArtifacts",
+            "Tas",
+            "Spot"
           ]
         }
       },
@@ -2324,7 +2332,7 @@
           "if": {
             "properties": {
               "type": {
-                "const": "ELK"
+                "const": "ElasticSearch"
               }
             }
           },
@@ -2676,6 +2684,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Spot"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SpotConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "SumoLogic"
               }
             }
@@ -2684,6 +2708,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/SumoLogicConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Tas"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasConnector"
               }
             }
           }
@@ -3132,7 +3172,9 @@
                 "enum": [
                   "BILLING",
                   "OPTIMIZATION",
-                  "VISIBILITY"
+                  "VISIBILITY",
+                  "GOVERNANCE",
+                  "COMMITMENT_ORCHESTRATOR"
                 ]
               },
               "minLength": 1
@@ -5302,6 +5344,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ServiceNowAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/ServiceNowUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
     "ServiceNowConnector": {
       "allOf": [
         {
@@ -5310,10 +5390,13 @@
         {
           "type": "object",
           "required": [
-            "passwordRef",
+            "auth",
             "serviceNowUrl"
           ],
           "properties": {
+            "auth": {
+              "$ref": "#/definitions/ServiceNowAuthenticationDTO"
+            },
             "delegateSelectors": {
               "type": "array",
               "uniqueItems": true,
@@ -5325,6 +5408,31 @@
               "type": "string"
             },
             "serviceNowUrl": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ServiceNowAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
               "type": "string"
             },
             "username": {
@@ -5389,6 +5497,111 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SpotConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credential"
+          ],
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/SpotCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SpotCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "PermanentTokenConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "PermanentTokenConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SpotPermanentTokenConfigSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "SpotCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "SpotPermanentTokenConfigSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/SpotCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "apiTokenRef"
+          ],
+          "properties": {
+            "apiTokenRef": {
+              "type": "string"
+            },
+            "spotAccountId": {
+              "type": "string"
+            },
+            "spotAccountIdRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "spotAccountId"
+              ]
+            },
+            {
+              "required": [
+                "spotAccountIdRef"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "SumoLogicConnectorDTO": {
       "allOf": [
         {
@@ -5416,6 +5629,102 @@
               }
             },
             "url": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "credential"
+          ],
+          "properties": {
+            "credential": {
+              "$ref": "#/definitions/TasCredential"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "executeOnDelegate": {
+              "type": "boolean"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasCredential": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "ManualConfig"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "ManualConfig"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/TasManualDetails"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "TasCredentialSpec": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "TasManualDetails": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/TasCredentialSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "endpointUrl",
+            "passwordRef"
+          ],
+          "properties": {
+            "endpointUrl": {
+              "type": "string",
+              "readOnly": true
+            },
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
               "type": "string"
             }
           }

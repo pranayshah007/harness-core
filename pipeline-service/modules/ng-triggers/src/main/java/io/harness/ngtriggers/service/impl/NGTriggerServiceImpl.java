@@ -7,10 +7,13 @@
 
 package io.harness.ngtriggers.service.impl;
 
+import static io.harness.NGConstants.X_API_KEY;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
+import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION;
+import static io.harness.ngtriggers.Constants.MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.ARTIFACT;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.MANIFEST;
 import static io.harness.ngtriggers.beans.source.NGTriggerType.WEBHOOK;
@@ -21,8 +24,12 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.HeaderConfig;
 import io.harness.common.NGExpressionUtils;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.connector.ConnectorResourceClient;
@@ -34,9 +41,10 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
-import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.expression.common.ExpressionConstants;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.WebhookEventProcessingDetails;
@@ -74,13 +82,13 @@ import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pipeline.remote.PipelineServiceClient;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.PollingItem;
@@ -90,6 +98,7 @@ import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.repositories.spring.TriggerWebhookEventRepository;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.PmsFeatureFlagService;
 
 import com.cronutils.model.Cron;
 import com.cronutils.model.CronType;
@@ -124,6 +133,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.util.CollectionUtils;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -134,6 +144,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public static final int WEBHOOK_POLLING_UNSUBSCRIBE = 0;
   public static final int WEBHOOOk_POLLING_MIN_INTERVAL = 2;
   public static final int WEBHOOOk_POLLING_MAX_INTERVAL = 60;
+
+  private final AccessControlClient accessControlClient;
+  private final NGSettingsClient settingsClient;
   private final NGTriggerRepository ngTriggerRepository;
   private final TriggerWebhookEventRepository webhookEventQueueRepository;
   private final TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -162,7 +175,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   public NGTriggerEntity create(NGTriggerEntity ngTriggerEntity) {
     try {
       NGTriggerEntity savedNgTriggerEntity = ngTriggerRepository.save(ngTriggerEntity);
-      performPostUpsertFlow(savedNgTriggerEntity);
+      performPostUpsertFlow(savedNgTriggerEntity, false);
       outboxService.save(new TriggerCreateEvent(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
           ngTriggerEntity.getProjectIdentifier(), savedNgTriggerEntity));
       return savedNgTriggerEntity;
@@ -172,13 +185,13 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity) {
+  private void performPostUpsertFlow(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     NGTriggerEntity validatedTrigger = validateTrigger(ngTriggerEntity);
     registerWebhookAsync(validatedTrigger);
-    registerPollingAsync(validatedTrigger);
+    registerPollingAsync(validatedTrigger, isUpdate);
   }
 
-  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity) {
+  private void registerPollingAsync(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     if (checkForValidationFailure(ngTriggerEntity)) {
       log.warn(
           String.format("Trigger Validation Failed for Trigger: %s, Skipping Polling Framework subscription request",
@@ -191,10 +204,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       return;
     }
 
-    executorService.submit(() -> { subscribePolling(ngTriggerEntity); });
+    executorService.submit(() -> { subscribePolling(ngTriggerEntity, isUpdate); });
   }
 
-  private void subscribePolling(NGTriggerEntity ngTriggerEntity) {
+  private void subscribePolling(NGTriggerEntity ngTriggerEntity, boolean isUpdate) {
     PollingItem pollingItem = pollingSubscriptionHelper.generatePollingItem(ngTriggerEntity);
 
     try {
@@ -209,6 +222,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           && executePollingUnSubscription(ngTriggerEntity, pollingItemBytes).equals(Boolean.TRUE)) {
         updatePollingRegistrationStatus(ngTriggerEntity, null, StatusResult.SUCCESS);
       } else {
+        if (isUpdate) {
+          executePollingUnSubscription(ngTriggerEntity, pollingItemBytes);
+        }
+
         ResponseDTO<PollingResponseDTO> responseDTO = executePollingSubscription(ngTriggerEntity, pollingItemBytes);
         PollingDocument pollingDocument =
             (PollingDocument) kryoSerializer.asObject(responseDTO.getData().getPollingResponse());
@@ -310,7 +327,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
             ngTriggerEntity.getIdentifier(), webhookId, pollInterval));
         return;
       }
-      subscribePolling(ngTriggerEntity);
+      subscribePolling(ngTriggerEntity, false);
     }
   }
 
@@ -340,7 +357,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
     }
 
-    performPostUpsertFlow(updatedEntity);
+    performPostUpsertFlow(updatedEntity, true);
     return updatedEntity;
   }
 
@@ -480,8 +497,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @Override
   public WebhookEventProcessingDetails fetchTriggerEventHistory(String accountId, String eventId) {
-    TriggerEventHistory triggerEventHistory =
+    List<TriggerEventHistory> triggerEventHistoryList =
         triggerEventHistoryRepository.findByAccountIdAndEventCorrelationId(accountId, eventId);
+    if (triggerEventHistoryList.size() == 0) {
+      throw new InvalidRequestException(String.format("Trigger event history %s does not exist", eventId));
+    }
+    TriggerEventHistory triggerEventHistory = triggerEventHistoryList.get(0);
+    String warningMsg = null;
+    if (triggerEventHistoryList.size() > 1) {
+      warningMsg =
+          "There are multiple trigger events generated from this eventId. This response contains only one of them.";
+    }
     WebhookEventProcessingDetailsBuilder builder =
         WebhookEventProcessingDetails.builder().eventId(eventId).accountIdentifier(accountId);
     if (triggerEventHistory == null) {
@@ -496,7 +522,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
           .status(triggerEventHistory.getFinalStatus())
           .message(triggerEventHistory.getMessage())
           .payload(triggerEventHistory.getPayload())
-          .eventCreatedAt(triggerEventHistory.getCreatedAt());
+          .eventCreatedAt(triggerEventHistory.getCreatedAt())
+          .warningMsg(warningMsg);
 
       if (triggerEventHistory.getTargetExecutionSummary() != null) {
         builder.pipelineExecutionId(triggerEventHistory.getTargetExecutionSummary().getPlanExecutionId())
@@ -619,7 +646,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
     }
 
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
@@ -686,7 +716,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
     if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
-      validatePipelineRef(triggerDetails);
+      Map<String, Map<String, String>> errorMap = validatePipelineRef(triggerDetails);
+      if (!CollectionUtils.isEmpty(errorMap)) {
+        throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+      }
       return null;
     } else {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
@@ -707,8 +740,10 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
   }
 
-  private void validatePipelineRef(TriggerDetails triggerDetails) {
+  @Override
+  public Map<String, Map<String, String>> validatePipelineRef(TriggerDetails triggerDetails) {
     Optional<String> pipelineYmlOptional = validationHelper.fetchPipelineForTrigger(triggerDetails);
+    Map<String, Map<String, String>> errorMap = new HashMap<>();
     if (pipelineYmlOptional.isPresent()) {
       String pipelineYaml = pipelineYmlOptional.get();
       String templateYaml = createRuntimeInputForm(pipelineYaml);
@@ -716,17 +751,17 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       String triggerPipelineYml = getPipelineComponent(triggerYaml);
       Map<FQN, String> invalidFQNs = getInvalidFQNsInTrigger(templateYaml, triggerPipelineYml);
       if (EmptyPredicate.isEmpty(invalidFQNs)) {
-        return;
+        return errorMap;
       }
-      Map<String, Map<String, String>> errorMap = new HashMap<>();
+
       for (Map.Entry<FQN, String> entry : invalidFQNs.entrySet()) {
         Map<String, String> innerMap = new HashMap<>();
         innerMap.put("fieldName", entry.getKey().getFieldName());
         innerMap.put("message", entry.getValue());
         errorMap.put(entry.getKey().getExpressionFqn(), innerMap);
       }
-      throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
     }
+    return errorMap;
   }
 
   private String getPipelineComponent(String triggerYml) {
@@ -755,10 +790,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     YamlConfig triggerConfig = new YamlConfig(triggerPipelineCompYaml);
     Set<FQN> triggerFQNs = new LinkedHashSet<>(triggerConfig.getFqnToValueMap().keySet());
     if (EmptyPredicate.isEmpty(templateYaml)) {
-      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
+      triggerFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains runtime input"));
       return errorMap;
     }
     YamlConfig templateConfig = new YamlConfig(templateYaml);
+
+    if (CollectionUtils.isEmpty(triggerFQNs)) {
+      templateConfig.getFqnToValueMap().keySet().forEach(
+          fqn -> errorMap.put(fqn, "Trigger does not contain pipeline runtime input"));
+      return errorMap;
+    }
 
     // Make sure everything in trigger exist in pipeline
     templateConfig.getFqnToValueMap().keySet().forEach(key -> {
@@ -949,8 +990,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
 
   @VisibleForTesting
   public boolean isBranchExpr(String pipelineBranch) {
-    return pipelineBranch.startsWith(EngineExpressionEvaluator.EXPR_START)
-        && pipelineBranch.endsWith(EngineExpressionEvaluator.EXPR_END);
+    return pipelineBranch.startsWith(ExpressionConstants.EXPR_START)
+        && pipelineBranch.endsWith(ExpressionConstants.EXPR_END);
   }
 
   public Object fetchExecutionSummaryV2(String planExecutionId, String accountId, String orgId, String projectId) {
@@ -960,5 +1001,32 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   @Override
   public List<TriggerCatalogItem> getTriggerCatalog(String accountIdentifier) {
     return triggerCatalogHelper.getTriggerTypeToCategoryMapping(accountIdentifier);
+  }
+
+  @Override
+  public void checkAuthorization(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, List<HeaderConfig> headerConfigs) {
+    boolean hasApiKey = false;
+    for (HeaderConfig headerConfig : headerConfigs) {
+      if (headerConfig.getKey().equalsIgnoreCase(X_API_KEY)) {
+        hasApiKey = true;
+        break;
+      }
+    }
+    if (!hasApiKey && pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.NG_SETTINGS)) {
+      String mandatoryAuth = NGRestUtils
+                                 .getResponse(settingsClient.getSetting(MANDATE_CUSTOM_WEBHOOK_AUTHORIZATION,
+                                     accountIdentifier, orgIdentifier, projectIdentifier))
+                                 .getValue();
+      if (mandatoryAuth.equals(MANDATE_CUSTOM_WEBHOOK_TRUE_VALUE)) {
+        throw new InvalidRequestException(String.format(
+            "Authorization is mandatory for custom triggers in %s:%s:%s. Please add %s header in the request",
+            accountIdentifier, orgIdentifier, projectIdentifier, X_API_KEY));
+      }
+    }
+    if (hasApiKey) {
+      accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+          Resource.of("PIPELINE", pipelineIdentifier), PipelineRbacPermissions.PIPELINE_EXECUTE);
+    }
   }
 }

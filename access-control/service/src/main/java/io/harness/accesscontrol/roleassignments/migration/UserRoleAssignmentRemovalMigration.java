@@ -1,16 +1,14 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.roleassignments.migration;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
-import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
-import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
-import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
-import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
-import static io.harness.accesscontrol.principals.PrincipalType.USER;
-import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE;
-import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.NGConstants;
 import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO.RoleAssignmentDBOKeys;
@@ -24,16 +22,25 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.CGRestUtils;
 import io.harness.security.SecurityContextBuilder;
 import io.harness.security.dto.ServicePrincipal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.query.Criteria;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.query.Criteria;
+
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.ORGANIZATION_VIEWER_ROLE;
+import static io.harness.NGConstants.PROJECT_VIEWER_ROLE;
+import static io.harness.accesscontrol.principals.PrincipalType.USER;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
+import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE;
+import static io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE_ONLY;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 @Slf4j
 @Singleton

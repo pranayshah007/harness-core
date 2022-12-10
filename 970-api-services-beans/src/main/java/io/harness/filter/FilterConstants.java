@@ -26,4 +26,5 @@ public class FilterConstants {
   public static final String CCM_RECOMMENDATION_FILTER = "CCMRecommendation";
   public static final String ANOMALY_FILTER = "Anomaly";
   public static final String ENVIRONMENT = "Environment";
+  public static final String EXECUTION_FILTER = "RuleExecution";
 }

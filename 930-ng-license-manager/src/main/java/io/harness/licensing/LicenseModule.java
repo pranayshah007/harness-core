@@ -11,6 +11,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
+import io.harness.configuration.DeployMode;
 import io.harness.licensing.checks.LicenseComplianceResolver;
 import io.harness.licensing.checks.LicenseEditionChecker;
 import io.harness.licensing.checks.impl.DefaultLicenseComplianceResolver;
@@ -20,21 +21,34 @@ import io.harness.licensing.checks.impl.TeamChecker;
 import io.harness.licensing.interfaces.ModuleLicenseImpl;
 import io.harness.licensing.interfaces.ModuleLicenseInterface;
 import io.harness.licensing.interfaces.clients.ModuleLicenseClient;
+import io.harness.licensing.jobs.LicenseValidationTask;
+import io.harness.licensing.jobs.SMPLicenseValidationJob;
+import io.harness.licensing.jobs.SMPLicenseValidationJobImpl;
+import io.harness.licensing.jobs.SMPLicenseValidationTask;
+import io.harness.licensing.jobs.SMPLicenseValidationTaskFactory;
 import io.harness.licensing.mappers.LicenseObjectConverter;
 import io.harness.licensing.mappers.LicenseObjectMapper;
 import io.harness.licensing.services.DefaultLicenseServiceImpl;
 import io.harness.licensing.services.LicenseService;
+import io.harness.licensing.services.SMPLicenseServiceImpl;
+import io.harness.smp.license.SMPLicenseModule;
+import io.harness.user.remote.UserClient;
 import io.harness.version.VersionInfoManager;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import javax.cache.Cache;
 import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.Duration;
+import jodd.util.concurrent.ThreadFactoryBuilder;
 
 @OwnedBy(HarnessTeam.GTM)
 public class LicenseModule extends AbstractModule {
@@ -52,6 +66,9 @@ public class LicenseModule extends AbstractModule {
 
   @Override
   protected void configure() {
+    install(new SMPLicenseModule());
+    requireBinding(UserClient.class);
+
     MapBinder<ModuleType, LicenseObjectMapper> objectMapperMapBinder =
         MapBinder.newMapBinder(binder(), ModuleType.class, LicenseObjectMapper.class);
     MapBinder<ModuleType, ModuleLicenseClient> interfaceMapBinder =
@@ -70,8 +87,21 @@ public class LicenseModule extends AbstractModule {
 
     bind(LicenseObjectConverter.class);
     bind(ModuleLicenseInterface.class).to(ModuleLicenseImpl.class);
-    bind(LicenseService.class).to(DefaultLicenseServiceImpl.class);
+    if (DeployMode.isOnPrem(System.getenv(DeployMode.DEPLOY_MODE))) {
+      bind(LicenseService.class).to(SMPLicenseServiceImpl.class);
+    } else {
+      bind(LicenseService.class).to(DefaultLicenseServiceImpl.class);
+    }
     bind(LicenseComplianceResolver.class).to(DefaultLicenseComplianceResolver.class);
+
+    bind(SMPLicenseValidationJob.class).to(SMPLicenseValidationJobImpl.class);
+    bind(ScheduledExecutorService.class)
+        .annotatedWith(Names.named("SMP_EXECUTOR_SERVICE"))
+        .toInstance(
+            new ScheduledThreadPoolExecutor(1, new ThreadFactoryBuilder().setNameFormat("smp-validation-pool").get()));
+    install(new FactoryModuleBuilder()
+                .implement(LicenseValidationTask.class, SMPLicenseValidationTask.class)
+                .build(SMPLicenseValidationTaskFactory.class));
   }
 
   @Provides

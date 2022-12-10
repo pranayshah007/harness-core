@@ -8,15 +8,20 @@
 package software.wings.service;
 
 import static io.harness.ng.core.account.AuthenticationMechanism.USER_PASSWORD;
+import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,18 +35,24 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Account;
 import software.wings.beans.Event;
+import software.wings.beans.Service;
 import software.wings.beans.sso.SamlSettings;
+import software.wings.dl.WingsPersistence;
 import software.wings.service.impl.AuditServiceHelper;
 import software.wings.service.intfc.AccountService;
 import software.wings.service.intfc.SSOSettingService;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.inject.Inject;
+import java.util.Iterator;
 import javax.validation.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mongodb.morphia.query.FieldEnd;
+import org.mongodb.morphia.query.MorphiaIterator;
+import org.mongodb.morphia.query.Query;
 
 @TargetModule(HarnessModule._950_NG_AUTHENTICATION_SERVICE)
 public class SSOSettingServiceTest extends WingsBaseTest {
@@ -180,14 +191,14 @@ public class SSOSettingServiceTest extends WingsBaseTest {
         .isInstanceOf(InvalidRequestException.class);
 
     // Mocking the userGroupService to return true when existsLinkedUserGroup is checked.
-    when(userGroupService.existsLinkedUserGroup(samlSettings.getUuid())).thenReturn(true);
+    when(userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())).thenReturn(true);
 
     // Because there is a linked user group with this SsoId, the deleteSamlSetting should not succeed.
     assertThatThrownBy(() -> ssoSettingService.deleteSamlSettings("TestAccountID"))
         .isInstanceOf(InvalidRequestException.class);
 
     // Mocking the userGroupService to return false when existsLinkedUserGroup is checked.
-    when(userGroupService.existsLinkedUserGroup(samlSettings.getUuid())).thenReturn(false);
+    when(userGroupService.existsLinkedUserGroup(samlSettings.getAccountId(), samlSettings.getUuid())).thenReturn(false);
 
     assertThat(ssoSettingService.deleteSamlSettings("TestAccountID")).isTrue();
     assertThat(ssoSettingService.getSamlSettingsByAccountId("TestAccountID")).isNull();
@@ -205,5 +216,25 @@ public class SSOSettingServiceTest extends WingsBaseTest {
     } catch (javax.validation.ConstraintViolationException e) {
       assertThat(e.getConstraintViolations().size()).isEqualTo(5);
     }
+  }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testGetSamlSettingsIteratorByOrigin() {
+    Query<SamlSettings> query = mock(Query.class);
+    WingsPersistence wingsPersistence = mock(WingsPersistence.class);
+    final String accountId = "testAccountId";
+
+    MorphiaIterator<SamlSettings, SamlSettings> mockHIterator = mock(MorphiaIterator.class);
+    lenient().when(wingsPersistence.createQuery(SamlSettings.class, excludeAuthority)).thenReturn(query);
+    FieldEnd<Service> fieldEnd = mock(FieldEnd.class);
+    lenient().doReturn(fieldEnd).when(query).field(anyString());
+    lenient().doReturn(query).when(fieldEnd).equal(any());
+    lenient().when(query.fetch()).thenReturn(mockHIterator);
+    when(mockHIterator.hasNext()).thenReturn(false);
+    Iterator<SamlSettings> testOriginIterator =
+        ssoSettingService.getSamlSettingsIteratorByOrigin("testOrigin", accountId);
+    assertThat(testOriginIterator).isNotNull();
   }
 }

@@ -31,11 +31,12 @@ import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
-import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
+import io.harness.springdata.SpringDataMongoUtils;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
@@ -44,7 +45,6 @@ import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.Resour
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -56,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 @Slf4j
@@ -88,14 +89,17 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
 
   @Override
   public ResourceRestraintInstance finishInstance(String uuid, String resourceUnit) {
-    ResourceRestraintInstance instance =
-        restraintInstanceRepository
-            .findByUuidAndResourceUnitAndStateIn(uuid, resourceUnit, Lists.newArrayList(ACTIVE, BLOCKED))
-            .orElseThrow(
-                () -> new InvalidRequestException("Cannot find ResourceRestraintInstance with id [" + uuid + "]."));
+    Query query = query(where(ResourceRestraintInstanceKeys.uuid).is(uuid))
+                      .addCriteria(where(ResourceRestraintInstanceKeys.state).in(EnumSet.of(ACTIVE, BLOCKED)));
+    Update update = new Update().set(ResourceRestraintInstanceKeys.state, FINISHED);
+    ResourceRestraintInstance modified = mongoTemplate.findAndModify(
+        query, update, SpringDataMongoUtils.returnNewOptions, ResourceRestraintInstance.class);
 
-    instance.setState(FINISHED);
-    return save(instance);
+    if (modified == null || modified.getState() != FINISHED) {
+      log.error("Cannot unblock constraint" + uuid);
+      return null;
+    }
+    return modified;
   }
 
   @Override
@@ -107,8 +111,14 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
       switch (scope) {
         case PLAN:
         case PIPELINE:
-          PlanExecution planExecution = planExecutionService.get(releaseEntityId);
-          finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());
+          Status status;
+          try {
+            status = planExecutionService.getStatus(releaseEntityId);
+            finished = StatusUtils.finalStatuses().contains(status);
+          } catch (Exception e) {
+            log.warn("Plan Execution doesn't for the releaseEntityId - " + releaseEntityId);
+            finished = false;
+          }
           break;
         case STAGE:
           NodeExecution nodeExecution =

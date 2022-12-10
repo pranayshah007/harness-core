@@ -205,9 +205,23 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthType;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowAuthenticationDTO;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
+import io.harness.delegate.beans.connector.servicenow.ServiceNowUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialSpecDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotCredentialType;
+import io.harness.delegate.beans.connector.spotconnector.SpotPermanentTokenConfigSpecDTO;
 import io.harness.delegate.beans.connector.sumologic.SumoLogicConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialSpecDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasCredentialType;
+import io.harness.delegate.beans.connector.tasconnector.TasManualDetailsDTO;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
 import io.harness.serializer.KryoRegistrar;
 
@@ -404,6 +418,12 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureSystemAssignedMSIAuthDTO.class, 19809);
     kryo.register(AzureMSIAuthUADTO.class, 19810);
     kryo.register(AzureMSIAuthSADTO.class, 19811);
+    kryo.register(SpotConnectorDTO.class, 21001);
+    kryo.register(SpotCredentialDTO.class, 21002);
+    kryo.register(SpotCredentialSpecDTO.class, 21003);
+    kryo.register(SpotCredentialType.class, 21004);
+    kryo.register(SpotPermanentTokenConfigSpecDTO.class, 21005);
+
     kryo.register(JenkinsAuthCredentialsDTO.class, 29112);
     kryo.register(JenkinsAuthenticationDTO.class, 29113);
     kryo.register(JenkinsAuthType.class, 29114);
@@ -427,5 +447,15 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureArtifactsAuthenticationType.class, 10000103);
     kryo.register(AzureArtifactsAuthenticationDTO.class, 10000109);
     kryo.register(AzureArtifactsTokenDTO.class, 10000111);
+    kryo.register(ServiceNowAuthenticationDTO.class, 10000112);
+    kryo.register(ServiceNowAuthType.class, 10000113);
+    kryo.register(ServiceNowAuthCredentialsDTO.class, 10000114);
+    kryo.register(ServiceNowUserNamePasswordDTO.class, 10000115);
+
+    kryo.register(TasConnectorDTO.class, 10000201);
+    kryo.register(TasCredentialDTO.class, 10000202);
+    kryo.register(TasCredentialSpecDTO.class, 10000203);
+    kryo.register(TasCredentialType.class, 10000204);
+    kryo.register(TasManualDetailsDTO.class, 10000205);
   }
 }

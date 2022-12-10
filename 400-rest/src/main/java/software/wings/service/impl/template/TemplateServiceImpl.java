@@ -866,7 +866,6 @@ public class TemplateServiceImpl implements TemplateService {
 
   @Override
   public void loadDefaultTemplates(TemplateType templateType, String accountId, String accountName) {
-    log.info("Loading default templates for template type {}", templateType);
     AbstractTemplateProcessor abstractTemplateProcessor = getTemplateProcessor(templateType.name());
     abstractTemplateProcessor.loadDefaultTemplates(accountId, accountName);
     log.info("Loading default templates for template type {} success", templateType);
@@ -925,7 +924,6 @@ public class TemplateServiceImpl implements TemplateService {
     }
     final List<Template> templates = batchGet(templateUuids, accountId);
 
-    log.info("To be deleted linked template uuids {}", templateUuids);
     // Since the template folder will be deleted only if all the folder inside it are deleted. Hence validating linkage
     // beforehand. Verify if Service Commands contains the given ids
     String errorMessage = String.format("Template Folder : [%s] couldn't be deleted", templateFolder.getName());
@@ -990,6 +988,20 @@ public class TemplateServiceImpl implements TemplateService {
         .field(Template.ID_KEY2)
         .in(templateUuids)
         .asList();
+  }
+
+  @Override
+  public List<Template> listAccountLevelTemplates(String accountId) {
+    Query<Template> templateQuery = wingsPersistence.createQuery(Template.class)
+                                        .filter(TemplateKeys.accountId, accountId)
+                                        .filter(TemplateKeys.appId, GLOBAL_APP_ID);
+    List<Template> templates = templateQuery.asList();
+    if (isNotEmpty(templates)) {
+      for (Template template : templates) {
+        setDetailsOfTemplate(template, null);
+      }
+    }
+    return templates;
   }
 
   private String getImportedTemplateVersion(ImportedTemplateDetails importedTemplateDetails, String accountId) {
@@ -1417,7 +1429,6 @@ public class TemplateServiceImpl implements TemplateService {
     // First
     templateFiles.forEach(templatePath -> {
       try {
-        log.info("Loading url file {} for the account {} ", templatePath, accountId);
         loadAndSaveTemplate(templatePath, accountId, accountName);
       } catch (WingsException exception) {
         String msg = "Failed to save template from file [" + templatePath + "] for the account [" + accountId
@@ -1489,8 +1500,9 @@ public class TemplateServiceImpl implements TemplateService {
   }
 
   private void deleteTemplate(Template template) {
-    wingsPersistence.delete(
-        wingsPersistence.createQuery(VersionedTemplate.class).filter(TEMPLATE_ID_KEY, template.getUuid()));
+    wingsPersistence.delete(wingsPersistence.createQuery(VersionedTemplate.class)
+                                .filter(VersionedTemplate.ACCOUNT_ID_KEY2, template.getAccountId())
+                                .filter(TEMPLATE_ID_KEY, template.getUuid()));
     wingsPersistence.delete(
         wingsPersistence.createQuery(TemplateVersion.class).filter(TEMPLATE_UUID_KEY, template.getUuid()));
     wingsPersistence.delete(template);

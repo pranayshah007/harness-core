@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
@@ -23,6 +24,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -130,6 +132,19 @@ public class InfrastructurePlanCreatorHelper {
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         ecsInfrastructure.setInfraName(infraName);
         ecsInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        elastigroupInfrastructure.setInfraName(infraName);
+        elastigroupInfrastructure.setInfraIdentifier(infraIdentifier);
+        return;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        tanzuApplicationServiceInfrastructure.setInfraName(infraName);
+        tanzuApplicationServiceInfrastructure.setInfraIdentifier(infraIdentifier);
         return;
 
       default:

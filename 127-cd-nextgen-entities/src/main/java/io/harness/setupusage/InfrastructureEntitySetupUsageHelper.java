@@ -49,12 +49,12 @@ public class InfrastructureEntitySetupUsageHelper {
 
   public void deleteSetupUsages(@NonNull InfrastructureEntity entity) {
     EntityDetailProtoDTO entityDetailProtoDTO = buildInfraDefRefBasedEntityDetailProtoDTO(entity);
-    setupUsageHelper.deleteSetupUsages(entityDetailProtoDTO, entity.getAccountId());
+    setupUsageHelper.deleteInfraSetupUsages(entityDetailProtoDTO, entity.getAccountId());
   }
 
   private void publishEntitySetupUsage(InfrastructureEntity entity, Set<EntityDetailProtoDTO> referredEntities) {
     EntityDetailProtoDTO entityDetail = buildInfraDefRefBasedEntityDetailProtoDTO(entity);
-    setupUsageHelper.publishEntitySetupUsage(entityDetail, referredEntities, entity.getAccountId());
+    setupUsageHelper.publishInfraEntitySetupUsage(entityDetail, referredEntities, entity.getAccountId());
   }
 
   private EntityDetailProtoDTO buildInfraDefRefBasedEntityDetailProtoDTO(@NonNull InfrastructureEntity entity) {

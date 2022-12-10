@@ -71,31 +71,28 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
   @Deprecated private final String activityId;
   private ScheduledFuture scheduledFuture;
   private final ITaskProgressClient taskProgressClient;
-  private String primaryLogKey;
 
   @Default private final Map<String, List<LogLine>> logCache = new HashMap<>();
 
   @Override
   public void openStream(String baseLogKeySuffix) {
-    primaryLogKey = getLogKey(baseLogKeySuffix);
+    String logKey = getLogKey(baseLogKeySuffix);
 
     try {
-      SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, primaryLogKey));
+      SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
-      log.error("Unable to open log stream for account {} and key {}", accountId, primaryLogKey, ex);
+      log.error("Unable to open log stream for account {} and key {}", accountId, logKey, ex);
     }
     scheduledFuture = scheduledExecutorService.scheduleAtFixedRate(this::dispatchLogs, 0, 100, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public void closeStream(String baseLogKeySuffix) {
-    String logKeyExpected = getLogKey(baseLogKeySuffix);
-    if (!logKeyExpected.equals(primaryLogKey)) {
-      log.warn("Log key is not as expected, actual: {} and expected: {}", primaryLogKey, logKeyExpected);
-    }
+    String logKey = getLogKey(baseLogKeySuffix);
+
     synchronized (logCache) {
       // We can mark this task to be completed. Log upload can happen asynchronously.
-      scheduledExecutorService.submit(() -> closeStreamAsync(logKeyExpected));
+      scheduledExecutorService.submit(() -> closeStreamAsync(logKey));
     }
   }
 
@@ -135,19 +132,16 @@ public class LogStreamingTaskClient implements ILogStreamingTaskClient {
       throw new InvalidArgumentsException("Log line parameter is mandatory.");
     }
 
-    String logKeyExpected = getLogKey(baseLogKeySuffix);
+    String logKey = getLogKey(baseLogKeySuffix);
 
-    if (!logKeyExpected.equals(primaryLogKey)) {
-      log.error("Log key is not as expected, actual: {} and expected: {}", primaryLogKey, logKeyExpected);
-    }
     logStreamingSanitizer.sanitizeLogMessage(logLine);
     colorLog(logLine);
 
     synchronized (logCache) {
-      if (!logCache.containsKey(logKeyExpected)) {
-        logCache.put(logKeyExpected, new ArrayList<>());
+      if (!logCache.containsKey(logKey)) {
+        logCache.put(logKey, new ArrayList<>());
       }
-      logCache.get(logKeyExpected).add(logLine);
+      logCache.get(logKey).add(logLine);
     }
   }
 

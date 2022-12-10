@@ -82,6 +82,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
     })
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
+@Deprecated
 public class ServiceResource {
   private final ServiceEntityService serviceEntityService;
   private final ServiceEntityManagementService serviceEntityManagementService;
@@ -107,6 +108,7 @@ public class ServiceResource {
   @ApiOperation(value = "Create a Service", nickname = "createService")
   public ResponseDTO<ServiceResponseDTO> create(
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity serviceEntity = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     ServiceEntity createdService = serviceEntityService.create(serviceEntity);
     return ResponseDTO.newResponse(
@@ -120,7 +122,10 @@ public class ServiceResource {
       @QueryParam("accountId") String accountId, @NotNull @Valid List<ServiceRequestDTO> serviceRequestDTOs) {
     List<ServiceEntity> serviceEntities =
         serviceRequestDTOs.stream()
-            .map(serviceRequestDTO -> ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO))
+            .map(serviceRequestDTO -> {
+              ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
+              return ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
+            })
             .collect(Collectors.toList());
     Page<ServiceEntity> createdServices = serviceEntityService.bulkCreate(accountId, serviceEntities);
     return ResponseDTO.newResponse(getNGPageResponse(createdServices.map(ServiceElementMapper::writeDTO)));
@@ -141,6 +146,7 @@ public class ServiceResource {
   @ApiOperation(value = "Update a service by identifier", nickname = "updateService")
   public ResponseDTO<ServiceResponseDTO> update(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity updatedService = serviceEntityService.update(requestService);
@@ -153,6 +159,7 @@ public class ServiceResource {
   @ApiOperation(value = "Upsert a service by identifier", nickname = "upsertService")
   public ResponseDTO<ServiceResponseDTO> upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @QueryParam("accountId") String accountId, @NotNull @Valid ServiceRequestDTO serviceRequestDTO) {
+    ServiceResourceApiUtils.validateServiceScope(serviceRequestDTO);
     ServiceEntity requestService = ServiceElementMapper.toServiceEntity(accountId, serviceRequestDTO);
     requestService.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     ServiceEntity upsertedService = serviceEntityService.upsert(requestService, UpsertOptions.DEFAULT);

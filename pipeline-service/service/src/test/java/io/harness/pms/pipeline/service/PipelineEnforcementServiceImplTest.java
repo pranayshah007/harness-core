@@ -287,9 +287,10 @@ public class PipelineEnforcementServiceImplTest extends PipelineServiceTestBase 
 
     ArgumentCaptor<List<FeatureRestrictionName>> argCaptor = ArgumentCaptor.forClass(List.class);
     verify(enforcementClientService).getAvailabilityForRemoteFeatures(argCaptor.capture(), eq("ACCOUNT_ID"));
-    assertThat(argCaptor.getValue()).hasSize(2);
+    assertThat(argCaptor.getValue()).hasSize(3);
     assertThat(argCaptor.getValue())
-        .containsExactlyInAnyOrder(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, FeatureRestrictionName.BUILDS);
+        .containsExactlyInAnyOrder(FeatureRestrictionName.DEPLOYMENTS_PER_MONTH, FeatureRestrictionName.BUILDS,
+            FeatureRestrictionName.MAX_BUILDS_PER_DAY);
   }
 
   private Map<String, String> getStageTypeCache() {

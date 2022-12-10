@@ -128,6 +128,8 @@ public class AddDeploymentTypeToInfrastructureEntityMigration implements NGMigra
         return ServiceDefinitionType.AZURE_WEBAPP;
       case CUSTOM_DEPLOYMENT:
         return ServiceDefinitionType.CUSTOM_DEPLOYMENT;
+      case TAS:
+        return ServiceDefinitionType.TAS;
       default:
         return null;
     }

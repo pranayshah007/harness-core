@@ -68,6 +68,11 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 rbacServiceConfig:
   baseUrl: http://localhost:7457/api/
   connectTimeOutSeconds: 15
@@ -86,6 +91,7 @@ notificationServiceConfig:
     uri: mongodb://localhost:27017/notification
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -112,6 +118,7 @@ auditServiceConfig:
     uri: mongodb://localhost:27017/ng-audits
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO
@@ -165,6 +172,7 @@ resourceGroupServiceConfig:
     uri: mongodb://localhost:27017/resourcegroup
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
     indexManagerMode: AUTO

@@ -11,6 +11,9 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.timescaledb.data.AddAccountNameInAccountTable;
 import io.harness.migrations.timescaledb.data.AddIndexToCERecommendation;
+import io.harness.migrations.timescaledb.data.AddNewAndRemoveUnusedIndexesFromDeployment;
+import io.harness.migrations.timescaledb.data.AddNotificationSentStatusToAnomalies;
+import io.harness.migrations.timescaledb.data.AddOnDemandRollbackDetailsToDeployment;
 import io.harness.migrations.timescaledb.data.AddParentPipelineDataToDeployment;
 import io.harness.migrations.timescaledb.data.AddWorkflowExecutionFailureDetails;
 import io.harness.migrations.timescaledb.data.MigrateWorkflowsToTimeScaleDB;
@@ -41,6 +44,11 @@ public class TimescaleDBDataMigrationList {
         .add(Pair.of(9, AddWorkflowExecutionFailureDetails.class))
         .add(Pair.of(10, AddParentPipelineDataToDeployment.class))
         .add(Pair.of(11, AddIndexToCERecommendation.class))
+        .add(Pair.of(12, BaseTimeScaleDBDataMigration.class))
+        .add(Pair.of(13, AddNotificationSentStatusToAnomalies.class))
+        .add(Pair.of(14, BaseTimeScaleDBDataMigration.class))
+        .add(Pair.of(15, AddNewAndRemoveUnusedIndexesFromDeployment.class))
+        .add(Pair.of(16, AddOnDemandRollbackDetailsToDeployment.class))
         .build();
   }
 }

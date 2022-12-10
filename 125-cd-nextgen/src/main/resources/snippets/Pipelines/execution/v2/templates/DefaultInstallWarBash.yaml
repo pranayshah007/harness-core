@@ -1,0 +1,54 @@
+template:
+  name: Default Install War Bash
+  identifier: Default_Install_War_Bash
+  description: Default Templated Step provided by Harness for Install War Artifact using Bash script
+  versionLabel: v1
+  type: Step
+  tags:
+    script: bash
+    command: install
+    artifactType: war
+    author: Harness
+  spec:
+    type: Command
+    timeout: 10m
+    spec:
+      onDelegate: false
+      environmentVariables:
+        - name: DestinationDirectory
+          type: String
+          value: <+input>
+      outputVariables: []
+      commandUnits:
+        - identifier: Setup_Runtime_Paths
+          name: Setup Runtime Paths
+          type: Script
+          spec:
+            shell: Bash
+            source:
+              type: Inline
+              spec:
+                script: |-
+                  # Execute as root and pass environment variables
+                  # su -p -
+
+                  # Execute as root via user credentials (with root privileges)
+                  # sudo -E su -p -
+
+                  # Creating runtime, backup and staging folders:
+
+                  mkdir -p "$DestinationDirectory/runtime"
+                  mkdir -p "$DestinationDirectory/backup"
+                  mkdir -p "$DestinationDirectory/staging"
+        - identifier: Copy_Artifact
+          name: Copy Artifact
+          type: Copy
+          spec:
+            sourceType: Artifact
+            destinationPath: $DestinationDirectory
+        - identifier: Copy_Config
+          name: Copy Config
+          type: Copy
+          spec:
+            sourceType: Config
+            destinationPath: $DestinationDirectory

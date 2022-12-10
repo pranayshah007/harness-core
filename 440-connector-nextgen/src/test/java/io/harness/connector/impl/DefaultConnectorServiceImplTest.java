@@ -21,12 +21,14 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
@@ -50,15 +52,19 @@ import io.harness.delegate.beans.connector.k8Connector.KubernetesCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesUserNamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
-import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.gitsync.clients.YamlGitConfigClient;
 import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.ng.core.accountsetting.dto.AccountSettingType;
-import io.harness.ng.core.accountsetting.services.NGAccountSettingService;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
+import io.harness.ngsettings.SettingIdentifiers;
+import io.harness.ngsettings.SettingValueType;
+import io.harness.ngsettings.client.remote.NGSettingsClient;
+import io.harness.ngsettings.dto.SettingValueResponseDTO;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.ConnectorRepository;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -79,6 +85,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import retrofit2.Call;
@@ -90,13 +97,19 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Mock KubernetesConnectionValidator kubernetesConnectionValidator;
   @Inject ConnectorRepository connectorRepository;
   @Mock private Map<String, ConnectionValidator> connectionValidatorMap;
-  @Mock EntitySetupUsageClient entitySetupUsageClient;
+  @Mock EntitySetupUsageService entitySetupUsageService;
   @Mock SecretRefInputValidationHelper secretRefInputValidationHelper;
   @Mock ConnectorEntityReferenceHelper connectorEntityReferenceHelper;
   @Mock GitSyncSdkService gitSyncSdkService;
   @Mock YamlGitConfigClient yamlGitConfigClient;
-  @Mock NGAccountSettingService accountSettingService;
-  @Inject @InjectMocks DefaultConnectorServiceImpl connectorService;
+  @Mock NGSettingsClient settingsClient;
+  @Mock Call<ResponseDTO<SettingValueResponseDTO>> request;
+  @Mock AccountClient accountClient;
+
+  @Mock Call<RestResponse<Boolean>> featureFlagCall1;
+  @Mock Call<RestResponse<Boolean>> featureFlagCall2;
+
+  @Spy @Inject @InjectMocks private DefaultConnectorServiceImpl connectorService;
   @Inject MongoTemplate mongoTemplate;
 
   String userName = "userName";
@@ -116,7 +129,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   String updatedPasswordIdentifier = "updatedPasswordIdentifier";
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     MockitoAnnotations.initMocks(this);
     secretRefDataCACert = SecretRefData.builder().identifier(cacertIdentifier).scope(Scope.ACCOUNT).build();
     passwordSecretRef = SecretRefData.builder().identifier(passwordIdentifier).scope(Scope.ACCOUNT).build();
@@ -254,7 +267,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.DEEPAK)
   @Category({UnitTests.class})
-  public void testList() {
+  public void testList() throws IOException {
     String connectorIdentifier1 = "connectorIdentifier1";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -262,6 +275,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
     ArgumentCaptor<Page> connectorsListArgumentCaptor = ArgumentCaptor.forClass(Page.class);
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
@@ -363,15 +384,127 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDelete() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOff_settingsFFOFF() {
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(false);
+    createConnector(identifier, name);
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(false)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
     }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFOFF() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFON_settingsFFON_settingsDisabled() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsDisabled() {
+    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(false).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_forceDeleteTrue_forceDeleteFFOFF_settingsFFON_settingsEnabled() {
+    doReturn(false).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    try {
+      connectorService.delete(accountIdentifier, null, null, identifier, true);
+    } catch (InvalidRequestException e) {
+      assertThat(e.getMessage())
+          .isEqualTo(
+              "Parameter forcedDelete cannot be true. Force Delete is not enabled for account [accountIdentifier]");
+    }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    doNothing()
+        .when(connectorEntityReferenceHelper)
+        .deleteExistingSetupUsages(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
+    verify(entitySetupUsageService, times(0)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    assertThat(deleted).isTrue();
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MEENAKSHI)
+  @Category(UnitTests.class)
+  public void testDelete_withForceDeleteAsTrue_throwsException() {
+    doReturn(true).when(connectorService).isForceDeleteFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isNgSettingsFFEnabled(accountIdentifier);
+    doReturn(true).when(connectorService).isForceDeleteFFEnabledViaSettings(accountIdentifier);
+    createConnector(identifier, name);
+    doThrow(RuntimeException.class)
+        .when(connectorEntityReferenceHelper)
+        .deleteExistingSetupUsages(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, true);
     assertThat(deleted).isTrue();
   }
 
@@ -380,27 +513,21 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Category(UnitTests.class)
   public void testDeleteWithEntitiesReferenced_throwsException() {
     createConnector(identifier, name);
-    Call<ResponseDTO<Boolean>> request = mock(Call.class);
+    when(entitySetupUsageService.isEntityReferenced(any(), any(), any())).thenReturn(false);
     try {
-      when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(true)));
-    } catch (IOException ex) {
-      log.info("Encountered exception ", ex);
-    }
-    when(entitySetupUsageClient.isEntityReferenced(any(), any(), any())).thenReturn(request);
-    try {
-      connectorService.delete(accountIdentifier, null, null, identifier);
+      connectorService.delete(accountIdentifier, null, null, identifier, false);
     } catch (ReferencedEntityException e) {
       assertThat(e.getMessage())
           .isEqualTo("Could not delete the connector identifier as it is referenced by other entities");
     }
-    verify(entitySetupUsageClient, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
+    verify(entitySetupUsageService, times(1)).isEntityReferenced(anyString(), anyString(), any(EntityType.class));
   }
 
   @Test(expected = InvalidRequestException.class)
   @Owner(developers = OwnerRule.DEEPAK)
   @Category(UnitTests.class)
   public void testDeleteWhenConnectorDoesNotExists() {
-    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier);
+    boolean deleted = connectorService.delete(accountIdentifier, null, null, identifier, false);
     assertThat(deleted).isFalse();
   }
 
@@ -476,7 +603,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.ABHINAV)
   @Category({UnitTests.class})
-  public void testListWithBranchesFlag() {
+  public void testListWithBranchesFlag() throws IOException {
     String connectorIdentifier1 = "connectorIdentifier1";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -484,6 +611,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
     doReturn(true).when(gitSyncSdkService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, true);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);
@@ -505,13 +640,17 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category({UnitTests.class})
-  public void testListWhenDefaultSMIsDisabled() {
-    doReturn(true)
-        .when(accountSettingService)
-        .getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+  public void testListWhenDefaultSMIsDisabled() throws IOException {
     String connectorIdentifier1 = "harnessSecretManger";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
+
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("true").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
 
     final Connector connector = LocalConnector.builder().harnessManaged(true).isDefault(false).build();
     connector.setAccountIdentifier(accountIdentifier);
@@ -524,6 +663,8 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     mongoTemplate.save(connector);
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(2);
@@ -539,10 +680,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
   @Test
   @Owner(developers = OwnerRule.MEENAKSHI)
   @Category({UnitTests.class})
-  public void testListWhenDefaultSMIsEnabled() {
-    doReturn(false)
-        .when(accountSettingService)
-        .getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
+  public void testListWhenDefaultSMIsEnabled() throws IOException {
     String connectorIdentifier1 = "harnessSecretManger";
     String connectorIdentifier2 = "connectorIdentifier2";
     String connectorIdentifier3 = "connectorIdentifier3";
@@ -557,6 +695,14 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
     mongoTemplate.save(connector);
     createConnector(connectorIdentifier2, name + "2");
     createConnector(connectorIdentifier3, name + "3");
+    mockStatic(CGRestUtils.class);
+    when(CGRestUtils.getResponse(any())).thenReturn(true);
+    when(settingsClient.getSetting(
+             SettingIdentifiers.DISABLE_HARNESS_BUILT_IN_SECRET_MANAGER, accountIdentifier, null, null))
+        .thenReturn(request);
+    SettingValueResponseDTO settingValueResponseDTO =
+        SettingValueResponseDTO.builder().value("false").valueType(SettingValueType.BOOLEAN).build();
+    when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(settingValueResponseDTO)));
     Page<ConnectorResponseDTO> connectorSummaryDTOSList =
         connectorService.list(0, 100, accountIdentifier, null, null, null, "", "", false, false);
     assertThat(connectorSummaryDTOSList.getTotalElements()).isEqualTo(3);

@@ -38,7 +38,7 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.GitOperationContext;
 import software.wings.beans.HostConnectionAttributes;
-import software.wings.beans.SettingAttribute;
+import software.wings.beans.dto.SettingAttribute;
 import software.wings.beans.yaml.GitCommitAndPushResult;
 import software.wings.beans.yaml.GitCommitRequest;
 import software.wings.beans.yaml.GitCommitResult;
@@ -98,6 +98,7 @@ public class GitServiceImpl implements GitService {
                                                       .authRequest(authRequest)
                                                       .accountId(gitConfig.getAccountId())
                                                       .connectorId(gitOperationContext.getGitConnectorId())
+                                                      .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
                                                       .build());
   }
 
@@ -313,6 +314,7 @@ public class GitServiceImpl implements GitService {
         .authRequest(getAuthRequest(gitConfig))
         .repoType(gitConfig.getGitRepoType())
         .branch(gitConfig.getBranch())
+        .disableUserGitConfig(gitConfig.getDisableUserGitConfig())
         .connectorId(connectorId)
         .commitId(commitId);
   }

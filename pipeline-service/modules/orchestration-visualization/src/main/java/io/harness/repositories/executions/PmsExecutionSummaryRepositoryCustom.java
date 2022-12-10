@@ -25,7 +25,13 @@ public interface PmsExecutionSummaryRepositoryCustom {
   PipelineExecutionSummaryEntity update(Query query, Update update);
   UpdateResult deleteAllExecutionsWhenPipelineDeleted(Query query, Update update);
   Page<PipelineExecutionSummaryEntity> findAll(Criteria criteria, Pageable pageable);
-  PipelineExecutionSummaryEntity findFirst(Criteria criteria);
+  List<PipelineExecutionSummaryEntity> findAllWithRequiredProjection(
+      Criteria criteria, Pageable pageable, List<String> projections);
+
+  long getCountOfExecutionSummary(Criteria criteria);
   String fetchRootRetryExecutionId(String planExecutionId);
   List<PipelineExecutionSummaryEntity> fetchPipelineSummaryEntityFromRootParentId(String rootParentId);
+
+  List<String> findListOfUniqueBranches(Criteria criteria);
+  List<String> findListOfUniqueRepositories(Criteria criteria);
 }

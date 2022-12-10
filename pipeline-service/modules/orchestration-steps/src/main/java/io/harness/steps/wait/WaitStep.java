@@ -10,11 +10,14 @@ package io.harness.steps.wait;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.common.NGTimeConversionHelper;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.AsyncExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
@@ -40,7 +43,14 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     String correlationId = UUIDGenerator.generateUuid();
     WaitStepParameters waitStepParameters = (WaitStepParameters) stepParameters.getSpec();
-    int duration = (int) waitStepParameters.duration.getValue().getTimeoutInMillis();
+    int duration = 0;
+    if (waitStepParameters.getDuration() != null && waitStepParameters.getDuration().getValue() != null) {
+      duration =
+          (int) NGTimeConversionHelper.convertTimeStringToMilliseconds(waitStepParameters.getDuration().getValue());
+    }
+    if (duration <= 0) {
+      throw new InvalidRequestException("Invalid input for duration of wait step, Duration should be greater than 0");
+    }
     waitStepService.save(WaitStepInstance.builder()
                              .waitStepInstanceId(correlationId)
                              .duration(duration)
@@ -61,7 +71,10 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
             WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_FAIL).build();
         sdkGraphVisualizationDataService.publishStepDetailInformation(
             ambiance, waitStepDetailsInfo, "waitStepActionTaken");
-        return StepResponse.builder().status(Status.FAILED).build();
+        return StepResponse.builder()
+            .status(Status.FAILED)
+            .failureInfo(FailureInfo.newBuilder().setErrorMessage("User marked this step as failed").build())
+            .build();
       } else {
         WaitStepDetailsInfo waitStepDetailsInfo =
             WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.MARKED_AS_SUCCESS).build();
@@ -70,10 +83,7 @@ public class WaitStep implements AsyncExecutable<StepElementParameters> {
         return StepResponse.builder().status(Status.SUCCEEDED).build();
       }
     } else {
-      WaitStepDetailsInfo waitStepDetailsInfo =
-          WaitStepDetailsInfo.builder().actionTaken(WaitStepStatus.TIMED_OUT).build();
-      sdkGraphVisualizationDataService.publishStepDetailInformation(
-          ambiance, waitStepDetailsInfo, "waitStepActionTaken");
+      waitStepService.updatePlanStatus(ambiance.getPlanExecutionId(), nodeExecutionId);
       return StepResponse.builder().status(Status.SUCCEEDED).build();
     }
   }

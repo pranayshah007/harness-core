@@ -37,6 +37,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.CustomDeploymentInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -45,9 +46,13 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.cdng.instance.InstanceOutcomeHelper;
 import io.harness.cdng.instance.outcome.InstancesOutcome;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
+import io.harness.cdng.ssh.output.HostsOutput;
+import io.harness.cdng.ssh.output.SshInfraDelegateConfigOutput;
+import io.harness.cdng.ssh.output.WinRmInfraDelegateConfigOutput;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.services.ConnectorService;
@@ -56,6 +61,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
+import io.harness.delegate.beans.connector.spotconnector.SpotConnectorDTO;
+import io.harness.delegate.beans.connector.tasconnector.TasConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.delegate.task.ssh.WinRmInfraDelegateConfig;
@@ -92,10 +99,7 @@ import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
-import io.harness.steps.shellscript.HostsOutput;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
-import io.harness.steps.shellscript.WinRmInfraDelegateConfigOutput;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -190,16 +194,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                                                .build()));
 
     String infrastructureKind = infrastructure.getKind();
-    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-          ambiance, executionInfoKey, infrastructureKind);
-      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
-        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
-            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
-      }
-    }
+    ExecutionInfoKey executionInfoKey =
+        ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
     if (logCallback != null) {
       logCallback.saveExecutionLog(
@@ -367,6 +367,23 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             ConnectorType.AWS.name()));
       }
     }
+
+    if (InfrastructureKind.ELASTIGROUP.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof SpotConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.SPOT.name()));
+      }
+    }
+
+    if (InfrastructureKind.TAS.equals(infrastructure.getKind())) {
+      if (!(connectorInfo.get(0).getConnectorConfig() instanceof TasConnectorDTO)) {
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.get(0).getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.TAS.name()));
+      }
+    }
+
     saveExecutionLogSafely(logCallback, color("Connector validated", Green));
   }
 
@@ -455,11 +472,24 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
             azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
         break;
 
+      case InfrastructureKind.ELASTIGROUP:
+        ElastigroupInfrastructure elastigroupInfrastructure = (ElastigroupInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(elastigroupInfrastructure.getConnectorRef());
+        break;
+
       case InfrastructureKind.ECS:
         EcsInfrastructure ecsInfrastructure = (EcsInfrastructure) infrastructure;
         infrastructureStepHelper.validateExpression(
             ecsInfrastructure.getConnectorRef(), ecsInfrastructure.getCluster(), ecsInfrastructure.getRegion());
         break;
+
+      case InfrastructureKind.TAS:
+        TanzuApplicationServiceInfrastructure tanzuApplicationServiceInfrastructure =
+            (TanzuApplicationServiceInfrastructure) infrastructure;
+        infrastructureStepHelper.validateExpression(tanzuApplicationServiceInfrastructure.getConnectorRef(),
+            tanzuApplicationServiceInfrastructure.getOrganization(), tanzuApplicationServiceInfrastructure.getSpace());
+        break;
+
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
     }

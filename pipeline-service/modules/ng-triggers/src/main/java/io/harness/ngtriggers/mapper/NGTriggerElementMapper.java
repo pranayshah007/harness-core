@@ -85,11 +85,11 @@ import io.harness.ngtriggers.exceptions.InvalidTriggerYamlException;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
 import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
+import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.webhook.WebhookConfigProvider;
 import io.harness.webhook.WebhookHelper;
@@ -489,9 +489,10 @@ public class NGTriggerElementMapper {
         .payload(payload);
   }
 
-  public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(
-      NGTriggerEntity ngTriggerEntity, boolean includeYaml, boolean throwExceptionIfYamlConversionFails) {
+  public NGTriggerDetailsResponseDTO toNGTriggerDetailsResponseDTO(NGTriggerEntity ngTriggerEntity, boolean includeYaml,
+      boolean throwExceptionIfYamlConversionFails, boolean isPipelineInputOutdated) {
     String webhookUrl = EMPTY;
+    String webhookCurlCommand = EMPTY;
     if (ngTriggerEntity.getType() == WEBHOOK) {
       WebhookMetadata webhookMetadata = ngTriggerEntity.getMetadata().getWebhook();
       if (webhookMetadata.getGit() != null) {
@@ -500,6 +501,7 @@ public class NGTriggerElementMapper {
         webhookUrl = WebhookHelper.generateCustomWebhookUrl(webhookConfigProvider, ngTriggerEntity.getAccountId(),
             ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
             ngTriggerEntity.getTargetIdentifier(), ngTriggerEntity.getIdentifier());
+        webhookCurlCommand = WebhookHelper.generateCustomWebhookCurlCommand(webhookUrl);
       }
     }
 
@@ -514,7 +516,9 @@ public class NGTriggerElementMapper {
             .tags(TagMapper.convertToMap(ngTriggerEntity.getTags()))
             .enabled(ngTriggerEntity.getEnabled() == null || ngTriggerEntity.getEnabled())
             .triggerStatus(ngTriggerEntity.getTriggerStatus())
-            .webhookUrl(webhookUrl);
+            .isPipelineInputOutdated(isPipelineInputOutdated)
+            .webhookUrl(webhookUrl)
+            .webhookCurlCommand(webhookCurlCommand);
 
     // Webhook Details
     if (ngTriggerEntity.getType() == WEBHOOK) {

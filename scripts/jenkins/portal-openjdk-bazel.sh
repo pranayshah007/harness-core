@@ -33,8 +33,6 @@ cp ../../270-delegate-service-app/cert.pem .
 cp ../../270-delegate-service-app/delegate-service-config.yml .
 cp ../../270-delegate-service-app/src/main/resources/redisson-jcache.yaml .
 
-cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -53,19 +51,16 @@ cd ../..
 mkdir -p dist/cv-nextgen ;
 cd dist/cv-nextgen
 
-cp ${HOME}/.bazel-dirs/bin/300-cv-nextgen/module_deploy.jar cv-nextgen-capsule.jar
-cp ../../300-cv-nextgen/keystore.jks .
-cp ../../300-cv-nextgen/cv-nextgen-config.yml .
-cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
-cp ../../300-cv-nextgen/src/main/resources/enterprise-redisson-jcache.yaml .
+cp ${HOME}/.bazel-dirs/bin/srm-service/modules/cv-nextgen-service/service/module_deploy.jar cv-nextgen-capsule.jar
+cp ../../srm-service/config/keystore.jks .
+cp ../../srm-service/config/cv-nextgen-config.yml .
+cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/redisson-jcache.yaml .
+cp ../../srm-service/modules/cv-nextgen-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
-
-cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/cv-nextgen/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
+cp ../../srm-service/build/container/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
-cp -R ../../dockerization/cv-nextgen/scripts/ .
+cp -R ../../srm-service/build/container/scripts/ .
 
 cp ../../protocol.info .
 echo ${JDK} > jdk.txt
@@ -86,8 +81,6 @@ cp ${HOME}/.bazel-dirs/bin/270-verification/module_deploy.jar verification-capsu
 cp ../../270-verification/keystore.jks .
 cp ../../270-verification/verification-config.yml .
 
-cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -110,8 +103,6 @@ cp ${HOME}/.bazel-dirs/bin/210-command-library-server/module_deploy.jar command-
 cp ../../210-command-library-server/keystore.jks .
 cp ../../210-command-library-server/command-library-server-config.yml .
 
-cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/command-library-server/Dockerfile-command-library-server-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -195,9 +186,6 @@ cp ../../332-ci-manager/config/cert.pem .
 cp ../../332-ci-manager/service/src/main/resources/redisson-jcache.yaml .
 cp ../../332-ci-manager/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
-cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -222,8 +210,6 @@ cp ../../platform-service/config/config.yml .
 cp ../../platform-service/config/keystore.jks .
 cp ../../platform-service/config/key.pem .
 cp ../../platform-service/config/cert.pem .
-cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/platform-service/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -250,8 +236,6 @@ cp ../../pipeline-service/config/cert.pem .
 cp ../../pipeline-service/service/src/main/resources/redisson-jcache.yaml .
 cp ../../pipeline-service/service/src/main/resources/enterprise-redisson-jcache.yaml .
 
-cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -274,8 +258,6 @@ cp ${HOME}/.bazel-dirs/bin/debezium-service/service/module_deploy.jar debezium-s
 cp ../../debezium-service/config/config.yml .
 cp ../../debezium-service/service/src/main/resources/redisson-jcache.yaml .
 
-cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/debezium-service/Dockerfile-debezium-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/debezium-service/Dockerfile-debezium-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -300,8 +282,6 @@ cp ../../840-template-service/key.pem .
 cp ../../840-template-service/cert.pem .
 cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
 
-cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/template-service/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -322,8 +302,6 @@ cd dist/eventsapi-monitor
 cp ${HOME}/.bazel-dirs/bin/950-events-framework-monitor/module_deploy.jar eventsapi-monitor-capsule.jar
 cp ../../950-events-framework-monitor/config.yml .
 cp ../../950-events-framework-monitor/redis/* .
-cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-cie-jdk ./Dockerfile-cie-jdk
 cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
 cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
@@ -349,9 +327,13 @@ cp ../../360-cg-manager/cert.pem .
 cp ../../360-cg-manager/newrelic.yml .
 cp ../../100-migrator/config.yml .
 cp ../../400-rest/src/main/resources/redisson-jcache.yaml .
+cp ../../400-rest/src/main/resources/jfr/default.jfc .
+cp ../../400-rest/src/main/resources/jfr/profile.jfc .
 
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/migrator/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/base-images/apm/inject-onprem-apm-bins-into-dockerimage.sh .
+cp ../../dockerization/base-images/apm/inject-saas-apm-bins-into-dockerimage.sh .
 cp -r ../../dockerization/migrator/scripts/ .
 mv scripts/start_process_bazel.sh scripts/start_process.sh
 

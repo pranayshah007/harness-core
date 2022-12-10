@@ -19,12 +19,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Event;
 import io.harness.beans.Event.EventsKeys;
 import io.harness.beans.EventStatus;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
-import io.harness.iterator.PersistenceIterator;
+import io.harness.iterator.IteratorExecutionHandler;
+import io.harness.iterator.IteratorPumpModeHandler;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.metrics.HarnessMetricRegistry;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
@@ -41,8 +42,10 @@ import software.wings.service.intfc.PermitService;
 
 import com.codahale.metrics.InstrumentedExecutorService;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
@@ -52,7 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDC)
 @Singleton
 @Slf4j
-public class EventDeliveryHandler implements Handler<Event> {
+public class EventDeliveryHandler extends IteratorPumpModeHandler implements Handler<Event> {
   public static final String GROUP = "EVENT_TELEMETRY_CRON_GROUP";
 
   @Inject private AccountService accountService;
@@ -62,30 +65,45 @@ public class EventDeliveryHandler implements Handler<Event> {
   @Inject private MorphiaPersistenceRequiredProvider<Event> persistenceProvider;
   @Inject private EventDeliveryService eventDeliveryService;
 
-  // TODO: check the order
-  public void registerIterators(ScheduledThreadPoolExecutor eventDeliveryExecutor) {
+  @Override
+  protected void createAndStartIterator(
+      PersistenceIteratorFactory.PumpExecutorOptions executorOptions, Duration targetInterval) {
+    String threadName = "Iterator-Event-Delivery";
+    final ScheduledThreadPoolExecutor eventDeliveryExecutor = new ScheduledThreadPoolExecutor(
+        executorOptions.getPoolSize(), new ThreadFactoryBuilder().setNameFormat(threadName).build());
     InstrumentedExecutorService instrumentedExecutorService = new InstrumentedExecutorService(
-        eventDeliveryExecutor, harnessMetricRegistry.getThreadPoolMetricRegistry(), "Iterator-Event-Delivery");
-    PersistenceIterator iterator = persistenceIteratorFactory.createIterator(EventDeliveryHandler.class,
-        MongoPersistenceIterator.<Event, MorphiaFilterExpander<Event>>builder()
-            .mode(ProcessMode.PUMP)
-            .iteratorName("EventDelivery")
-            .clazz(Event.class)
-            .fieldName(EventsKeys.nextIteration)
-            .targetInterval(ofSeconds(5))
-            .acceptableNoAlertDelay(ofSeconds(30))
-            .executorService(instrumentedExecutorService)
-            .semaphore(new Semaphore(25))
-            .handler(this)
-            .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
-            .schedulingType(REGULAR)
-            .filterExpander(query -> query.field(EventsKeys.status).equal(EventStatus.QUEUED))
-            .persistenceProvider(persistenceProvider)
-            .redistribute(true));
+        eventDeliveryExecutor, harnessMetricRegistry.getThreadPoolMetricRegistry(), threadName);
+    iterator =
+        (MongoPersistenceIterator<Event, MorphiaFilterExpander<Event>>) persistenceIteratorFactory.createIterator(
+            EventDeliveryHandler.class,
+            MongoPersistenceIterator.<Event, MorphiaFilterExpander<Event>>builder()
+                .mode(ProcessMode.PUMP)
+                .iteratorName(iteratorName)
+                .clazz(Event.class)
+                .fieldName(EventsKeys.nextIteration)
+                .targetInterval(targetInterval)
+                .acceptableNoAlertDelay(ofSeconds(30))
+                .executorService(instrumentedExecutorService)
+                .semaphore(new Semaphore(executorOptions.getPoolSize()))
+                .handler(this)
+                .entityProcessController(new AccountStatusBasedEntityProcessController<>(accountService))
+                .schedulingType(REGULAR)
+                .filterExpander(query -> query.field(EventsKeys.status).equal(EventStatus.QUEUED))
+                .persistenceProvider(persistenceProvider)
+                .redistribute(true));
 
     if (iterator != null) {
       eventDeliveryExecutor.scheduleAtFixedRate(() -> iterator.process(), 0, 10, TimeUnit.SECONDS);
     }
+  }
+
+  // TODO: check the order
+  @Override
+  public void registerIterator(IteratorExecutionHandler iteratorExecutionHandler) {
+    iteratorName = "EventDelivery";
+
+    // Register the iterator with the iterator config handler.
+    iteratorExecutionHandler.registerIteratorHandler(iteratorName, this);
   }
 
   @Override

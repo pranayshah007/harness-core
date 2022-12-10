@@ -13,6 +13,7 @@ import static io.harness.delegate.utils.DelegateRingConstants.LATEST_UPGRADER_IM
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_1;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_2;
 import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_3;
+import static io.harness.delegate.utils.DelegateRingConstants.RING_NAME_4;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateRing;
@@ -42,6 +43,11 @@ public class DelegateRingGenerator {
                          .build());
     persistence.save(DelegateRing.builder()
                          .ringName(RING_NAME_3)
+                         .delegateImageTag(LATEST_DELEGATE_IMAGE)
+                         .upgraderImageTag(LATEST_UPGRADER_IMAGE)
+                         .build());
+    persistence.save(DelegateRing.builder()
+                         .ringName(RING_NAME_4)
                          .delegateImageTag(LATEST_DELEGATE_IMAGE)
                          .upgraderImageTag(LATEST_UPGRADER_IMAGE)
                          .build());

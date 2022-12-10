@@ -7,6 +7,10 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
+import static io.harness.pms.rbac.PipelineRbacPermissions.PIPELINE_EXECUTE;
+import static io.harness.pms.utils.PmsConstants.PIPELINE;
+
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.AccountIdentifier;
@@ -19,6 +23,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.retry.RetryHistoryResponseDto;
 import io.harness.engine.executions.retry.RetryInfo;
 import io.harness.engine.executions.retry.RetryLatestExecutionResponseDto;
@@ -68,6 +73,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final OrchestrationEventLogRepository orchestrationEventLogRepository;
   @Inject private final AccessControlClient accessControlClient;
+  @Inject PlanExecutionService planExecutionService;
+
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
@@ -77,7 +84,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> runPipelineWithInputSetPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, boolean notifyOnlyUser, String inputSetPipelineYaml) {
@@ -90,7 +97,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> runPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
@@ -103,7 +110,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> runStagesWithRuntimeInputYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, RunStageRequestDTO runStageRequestDTO) {
     return ResponseDTO.newResponse(pipelineExecutor.runStagesWithRuntimeInputYaml(
@@ -114,7 +121,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> rerunStagesWithRuntimeInputYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType,
       @ResourceIdentifier @NotEmpty String pipelineIdentifier,
       @NotNull
 
@@ -128,8 +135,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> rerunPipelineWithInputSetPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
-      @NotNull String originalExecutionId,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
@@ -143,8 +149,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> rerunPipelineWithInputSetPipelineYamlV2(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
-      @NotNull String originalExecutionId,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String originalExecutionId,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, String inputSetPipelineYaml) {
@@ -169,7 +174,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> runPipelineWithInputSetIdentifierList(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @Parameter(description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
+      @Parameter(description = PlanExecutionResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo,
       boolean useFQNIfErrorResponse, @NotNull @Valid MergeInputSetRequestDTOPMS mergeInputSetRequestDTO) {
@@ -185,8 +190,7 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<PlanExecutionResponseDto> rerunPipelineWithInputSetIdentifierList(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
       @NotNull @ProjectIdentifier String projectIdentifier,
-      @NotNull @Parameter(
-          description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE, required = true) String moduleType,
+      @Parameter(description = PipelineResourceConstants.MODULE_TYPE_PARAM_MESSAGE) String moduleType,
       @NotNull @Parameter(description = PipelineResourceConstants.ORIGINAL_EXECUTION_ID_PARAM_MESSAGE,
           required = true) String originalExecutionId,
       @Parameter(description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE, required = true) @ResourceIdentifier
@@ -236,6 +240,10 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   public ResponseDTO<InterruptDTO> handleManualInterventionInterrupt(@NotNull String accountId, @NotNull String orgId,
       @NotNull String projectId, @NotNull PlanExecutionInterruptType executionInterruptType,
       @NotNull String planExecutionId, @NotNull String nodeExecutionId) {
+    String pipelineIdentifier =
+        planExecutionService.getExecutionMetadataFromPlanExecution(planExecutionId).getPipelineIdentifier();
+    accessControlClient.checkForAccessOrThrow(
+        ResourceScope.of(accountId, orgId, projectId), Resource.of(PIPELINE, pipelineIdentifier), PIPELINE_EXECUTE);
     return ResponseDTO.newResponse(
         pmsExecutionService.registerInterrupt(executionInterruptType, planExecutionId, nodeExecutionId));
   }
@@ -267,16 +275,17 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
       @NotNull @OrgIdentifier String orgIdentifier, @NotNull @ProjectIdentifier String projectIdentifier,
       @NotNull @ResourceIdentifier @NotEmpty String pipelineIdentifier, GitEntityFindInfoDTO gitEntityBasicInfo) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (!optionalPipelineEntity.isPresent()) {
       throw new InvalidRequestException(format("Pipeline [%s] under Project[%s], Organization [%s] doesn't exist.",
           pipelineIdentifier, projectIdentifier, orgIdentifier));
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     String yaml = pipelineEntity.getYaml();
-    if (Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
+    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       yaml = pipelineTemplateHelper
-                 .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
+                 .resolveTemplateRefsInPipeline(
+                     accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml(), BOOLEAN_FALSE_VALUE)
                  .getMergedPipelineYaml();
     }
     boolean shouldAllowStageExecutions;
@@ -299,8 +308,8 @@ public class PlanExecutionResourceImpl implements PlanExecutionResource {
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   public ResponseDTO<PlanExecutionResponseDto> retryPipelineWithInputSetPipelineYaml(
       @NotNull @AccountIdentifier String accountId, @NotNull @OrgIdentifier String orgIdentifier,
-      @NotNull @ProjectIdentifier String projectIdentifier, @NotNull String moduleType,
-      @NotNull String previousExecutionId, @NotNull List<String> retryStagesIdentifier, boolean runAllStages,
+      @NotNull @ProjectIdentifier String projectIdentifier, String moduleType, @NotNull String previousExecutionId,
+      @NotNull List<String> retryStagesIdentifier, boolean runAllStages,
 
       @ResourceIdentifier @NotEmpty String pipelineIdentifier, String inputSetPipelineYaml) {
     if (retryStagesIdentifier.size() == 0) {

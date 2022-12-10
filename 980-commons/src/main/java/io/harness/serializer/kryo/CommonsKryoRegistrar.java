@@ -9,8 +9,15 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FileData;
 import io.harness.beans.KeyValuePair;
+import io.harness.context.GlobalContext;
+import io.harness.context.GlobalContextData;
+import io.harness.context.MdcGlobalContextData;
 import io.harness.encryption.Scope;
+import io.harness.eraro.ErrorCode;
+import io.harness.eraro.Level;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ArtifactoryRegistryException;
 import io.harness.exception.ArtifactoryServerException;
@@ -29,16 +36,22 @@ import io.harness.exception.DelegateNotAvailableException;
 import io.harness.exception.EngineExpressionEvaluationException;
 import io.harness.exception.EngineFunctorException;
 import io.harness.exception.ExceptionHandlerNotFoundException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.FailureType;
+import io.harness.exception.FunctorException;
 import io.harness.exception.GcpServerException;
 import io.harness.exception.GeneralException;
 import io.harness.exception.GitOperationException;
+import io.harness.exception.HintException;
 import io.harness.exception.HttpResponseException;
 import io.harness.exception.IllegalArgumentException;
 import io.harness.exception.ImageNotFoundException;
 import io.harness.exception.InterruptedRuntimeException;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidCredentialsException;
 import io.harness.exception.InvalidIdentifierRefException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidTagException;
 import io.harness.exception.InvalidThirdPartyCredentialsException;
 import io.harness.exception.InvalidYamlException;
@@ -54,8 +67,11 @@ import io.harness.exception.SecretNotFoundException;
 import io.harness.exception.ServiceNowException;
 import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
+import io.harness.exception.UnauthorizedException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.VerificationOperationException;
+import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.AzureARMTaskException;
 import io.harness.exception.ngexception.AzureAppServiceTaskException;
 import io.harness.exception.ngexception.AzureBPTaskException;
@@ -65,6 +81,7 @@ import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.logging.LogLevel;
+import io.harness.rest.RestResponse;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.SourcePrincipalContextData;
@@ -80,12 +97,35 @@ import software.wings.beans.NameValuePairWithDefault;
 import software.wings.beans.appmanifest.StoreType;
 
 import com.esotericsoftware.kryo.Kryo;
+import java.net.SocketException;
 import java.time.ZonedDateTime;
 
 @OwnedBy(HarnessTeam.PL)
 public class CommonsKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(FileData.class, 1201);
+    kryo.register(GlobalContext.class, 1202);
+    kryo.register(GlobalContextData.class, 1203);
+    kryo.register(SocketException.class, 1204);
+    kryo.register(FailureType.class, 1205);
+    kryo.register(MdcGlobalContextData.class, 1206);
+
+    kryo.register(ErrorCode.class, 5233);
+    kryo.register(Level.class, 5590);
+    kryo.register(ResponseMessage.class, 5316);
+    kryo.register(RestResponse.class, 5224);
+
+    kryo.register(ExplanationException.class, 5324);
+    kryo.register(FunctorException.class, 5589);
+    kryo.register(HintException.class, 5325);
+    kryo.register(InvalidArgumentsException.class, 5326);
+    kryo.register(InvalidRequestException.class, 5327);
+    kryo.register(UnauthorizedException.class, 5329);
+    kryo.register(UnexpectedException.class, 5330);
+    kryo.register(WingsException.ReportTarget.class, 5348);
+    kryo.register(WingsException.class, 5174);
+
     kryo.register(VerificationOperationException.class, 3001);
     kryo.register(ServiceNowException.class, 3002);
     kryo.register(Scope.class, 3004);

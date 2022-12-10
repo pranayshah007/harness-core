@@ -19,12 +19,12 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.delegate.task.TaskLogContext;
+import io.harness.delegate.task.tasklogging.TaskLogContext;
+import io.harness.exception.ExceptionLogger;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
-import io.harness.logging.ExceptionLogger;
 import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.persistence.HIterator;
 import io.harness.persistence.HPersistence;
@@ -92,6 +92,8 @@ public class DelegateQueueTask implements Runnable {
     }
   }
 
+  // TODO Fix this iterator so that all managers work on different set of tasks
+
   @VisibleForTesting
   protected void rebroadcastUnassignedTasks() {
     // Re-broadcast queued tasks not picked up by any Delegate and not in process of validation
@@ -157,23 +159,41 @@ public class DelegateQueueTask implements Runnable {
         delegateTask = persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
         // update failed, means this was broadcast by some other manager
         if (delegateTask == null) {
-          log.info("Cannot find delegate task, update failed on broadcast");
+          log.debug("Cannot find delegate task, update failed on broadcast");
           continue;
         }
         delegateTask.setBroadcastToDelegateIds(broadcastToDelegates);
         delegateSelectionLogsService.logBroadcastToDelegate(Sets.newHashSet(broadcastToDelegates), delegateTask);
 
-        try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
-                 TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
-             AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
-          log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ",
-              delegateTask.getUuid(), delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(),
-              delegateTask.getBroadcastToDelegateIds());
-          delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
-          broadcastHelper.rebroadcastDelegateTask(delegateTask);
-          count++;
+        if (delegateTask.getTaskDataV2() != null) {
+          rebroadcastDelegateTaskUsingTaskDataV2(delegateTask);
+        } else {
+          rebroadcastDelegateTaskUsingTaskData(delegateTask);
         }
+        count++;
       }
+    }
+  }
+
+  private void rebroadcastDelegateTaskUsingTaskData(DelegateTask delegateTask) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getData().getTaskType(),
+             TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
+          delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
+      broadcastHelper.rebroadcastDelegateTask(delegateTask);
+    }
+  }
+
+  private void rebroadcastDelegateTaskUsingTaskDataV2(DelegateTask delegateTask) {
+    try (AutoLogContext ignore1 = new TaskLogContext(delegateTask.getUuid(), delegateTask.getTaskDataV2().getTaskType(),
+             TaskType.valueOf(delegateTask.getTaskDataV2().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(delegateTask.getAccountId(), OVERRIDE_ERROR)) {
+      log.info("ST: Rebroadcast queued task id {} on broadcast attempt: {} on round {} to {} ", delegateTask.getUuid(),
+          delegateTask.getBroadcastCount(), delegateTask.getBroadcastRound(), delegateTask.getBroadcastToDelegateIds());
+      delegateMetricsService.recordDelegateTaskMetrics(delegateTask, DELEGATE_TASK_REBROADCAST);
+      broadcastHelper.rebroadcastDelegateTaskV2(delegateTask);
     }
   }
 }

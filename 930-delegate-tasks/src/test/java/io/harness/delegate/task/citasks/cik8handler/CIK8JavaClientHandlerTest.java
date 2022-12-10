@@ -53,6 +53,7 @@ import io.kubernetes.client.openapi.models.V1StatusBuilder;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -133,7 +134,7 @@ public class CIK8JavaClientHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = SHUBHAM)
   @Category(UnitTests.class)
-  public void createRegistrySecretWithRegistry() throws ApiException {
+  public void createRegistrySecretWithRegistry() throws ApiException, IOException {
     ImageDetails imageDetails = ImageDetails.builder().name(imageName).tag(tag).build();
     ImageDetailsWithConnector imageDetailsWithConnector =
         ImageDetailsWithConnector.builder().imageDetails(imageDetails).build();

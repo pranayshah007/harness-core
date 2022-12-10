@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
@@ -78,8 +79,8 @@ public class ValidateAndMergeHelper {
 
     String pipelineYaml;
     try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-      Optional<PipelineEntity> pipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       if (pipelineEntity.isPresent()) {
         pipelineYaml = pipelineEntity.get().getYaml();
       } else {
@@ -98,12 +99,16 @@ public class ValidateAndMergeHelper {
       GitSyncBranchContext branchContext =
           GitSyncBranchContext.builder().gitBranchInfo(GitEntityInfo.builder().branch(baseBranch).build()).build();
       try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(branchContext, true)) {
-        optionalPipelineEntity =
-            pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
       }
     } else {
-      optionalPipelineEntity =
-          pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      long start = System.currentTimeMillis();
+      optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+          accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+      log.info(
+          "[PMS_ValidateMerger] fetching and validating pipeline when update to new branch is false, took {}ms for projectId {}, orgId {}, accountId {}",
+          System.currentTimeMillis() - start, projectIdentifier, orgIdentifier, accountId);
     }
     if (optionalPipelineEntity.isPresent()) {
       StoreType storeTypeInContext = GitAwareContextHelper.getGitRequestParamsInfo().getStoreType();
@@ -120,8 +125,8 @@ public class ValidateAndMergeHelper {
 
   public InputSetTemplateResponseDTOPMS getInputSetTemplateResponseDTO(String accountId, String orgIdentifier,
       String projectIdentifier, String pipelineIdentifier, List<String> stageIdentifiers) {
-    Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+    Optional<PipelineEntity> optionalPipelineEntity = pmsPipelineService.getAndValidatePipeline(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (optionalPipelineEntity.isPresent()) {
       String template;
       List<String> replacedExpressions = null;
@@ -157,7 +162,7 @@ public class ValidateAndMergeHelper {
         && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       // returning resolved yaml
       return pipelineTemplateHelper
-          .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineYaml)
+          .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineYaml, BOOLEAN_FALSE_VALUE)
           .getMergedPipelineYaml();
     }
     return pipelineYaml;
@@ -166,7 +171,7 @@ public class ValidateAndMergeHelper {
   public String getPipelineTemplate(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, List<String> stageIdentifiers) {
     Optional<PipelineEntity> optionalPipelineEntity =
-        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.getPipeline(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false, false);
     if (optionalPipelineEntity.isPresent()) {
       String pipelineYaml = optionalPipelineEntity.get().getYaml();
       if (EmptyPredicate.isEmpty(stageIdentifiers)) {

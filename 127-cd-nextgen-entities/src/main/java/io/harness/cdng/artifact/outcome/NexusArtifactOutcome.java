@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.artifact.NexusArtifactSummary;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -55,6 +56,11 @@ public class NexusArtifactOutcome implements ArtifactOutcome {
   String imagePullSecret;
 
   String registryHostname;
+
+  String displayName;
+
+  /** Artifact Metadata. */
+  Map<String, String> metadata;
 
   @Override
   public ArtifactSummary getArtifactSummary() {

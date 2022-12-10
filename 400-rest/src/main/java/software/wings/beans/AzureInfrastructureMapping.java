@@ -40,6 +40,7 @@ public class AzureInfrastructureMapping extends InfrastructureMapping {
   private String hostConnectionAttrs;
   private String winRmConnectionAttributes;
   private boolean usePublicDns;
+  private boolean usePrivateIp;
 
   public String getWinRmConnectionAttributes() {
     return winRmConnectionAttributes;
@@ -81,6 +82,13 @@ public class AzureInfrastructureMapping extends InfrastructureMapping {
   }
   public void setUsePublicDns(boolean usePublicDns) {
     this.usePublicDns = usePublicDns;
+  }
+
+  public boolean isUsePrivateIp() {
+    return this.usePrivateIp;
+  }
+  public void setUsePrivateIp(boolean usePrivateIp) {
+    this.usePrivateIp = usePrivateIp;
   }
 
   @SchemaIgnore
@@ -126,6 +134,7 @@ public class AzureInfrastructureMapping extends InfrastructureMapping {
     private String hostConnectionAttrs;
     private String winRmConnectionAttributes;
     private boolean usePublicDns;
+    private boolean usePrivateIp;
 
     private Builder() {}
 
@@ -253,6 +262,11 @@ public class AzureInfrastructureMapping extends InfrastructureMapping {
       return this;
     }
 
+    public AzureInfrastructureMapping.Builder withUsePrivateIp(boolean usePrivateIp) {
+      this.usePrivateIp = usePrivateIp;
+      return this;
+    }
+
     public AzureInfrastructureMapping build() {
       AzureInfrastructureMapping azureInfrastructureMapping = new AzureInfrastructureMapping();
       azureInfrastructureMapping.setSubscriptionId(subscriptionId);
@@ -279,6 +293,7 @@ public class AzureInfrastructureMapping extends InfrastructureMapping {
       azureInfrastructureMapping.setHostConnectionAttrs(hostConnectionAttrs);
       azureInfrastructureMapping.setWinRmConnectionAttributes(winRmConnectionAttributes);
       azureInfrastructureMapping.setUsePublicDns(usePublicDns);
+      azureInfrastructureMapping.setUsePrivateIp(usePrivateIp);
       return azureInfrastructureMapping;
     }
   }

@@ -72,6 +72,7 @@ import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateSta
 import software.wings.helpers.ext.cloudformation.request.CloudFormationCreateStackRequest.CloudFormationCreateStackRequestBuilder;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCreateStackResponse;
+import software.wings.helpers.ext.cloudformation.response.CloudFormationRollbackInfo;
 import software.wings.helpers.ext.cloudformation.response.ExistingStackInfo;
 import software.wings.service.impl.GitConfigHelperService;
 import software.wings.service.impl.GitFileConfigHelperService;
@@ -481,8 +482,8 @@ public class CloudFormationCreateStackState extends CloudFormationState {
     CloudFormationCreateStackResponse createStackResponse = (CloudFormationCreateStackResponse) commandResponse;
     if (CommandExecutionStatus.SUCCESS == commandResponse.getCommandExecutionStatus()) {
       updateInfraMappings(commandResponse, context, provisionerId);
-      saveCloudFormationRollbackConfig(
-          createStackResponse.getRollbackInfo(), (ExecutionContextImpl) context, fetchResolvedAwsConfigId(context));
+      CloudFormationRollbackInfo rollbackInfo = createStackResponse.getRollbackInfo();
+      saveCloudFormationRollbackConfig(rollbackInfo, (ExecutionContextImpl) context, fetchResolvedAwsConfigId(context));
       Map<String, Object> outputs = ((CloudFormationCreateStackResponse) commandResponse).getCloudFormationOutputMap();
       CloudFormationOutputInfoElement outputElement =
           context.getContextElement(ContextElementType.CLOUD_FORMATION_PROVISION);
@@ -526,6 +527,8 @@ public class CloudFormationCreateStackState extends CloudFormationState {
                                                 .getStackStatusesToMarkAsSuccess())
               .oldStackBody(context.renderExpression(existingStackInfo.getOldStackBody()))
               .oldStackParameters(renderedOldStackParams)
+              .tags(rollbackInfo.getTags())
+              .capabilities(rollbackInfo.getCapabilities())
               .build();
       return Arrays.asList(rollbackElement, outputElement);
     }
@@ -540,7 +543,7 @@ public class CloudFormationCreateStackState extends CloudFormationState {
     } else if (responseData instanceof FetchS3FilesExecutionResponse) {
       return handleFetchS3FilesExecutionResponse(response, context);
     } else {
-      saveCompletionFlag(context);
+      saveCreateStackCompletionFlag(context);
       return super.handleAsyncResponse(context, response);
     }
   }
@@ -642,13 +645,15 @@ public class CloudFormationCreateStackState extends CloudFormationState {
     return executeInternal(context, ((ScriptStateExecutionData) context.getStateExecutionData()).getActivityId());
   }
 
-  private void saveCompletionFlag(ExecutionContext context) {
-    CloudFormationCompletionFlag cloudFormationCompletionFlag = getCloudFormationCompletionFlag(context);
-    if (cloudFormationCompletionFlag == null) {
-      sweepingOutputService.save(context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
-                                     .name(getCompletionStatusFlagSweepingOutputName())
-                                     .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
-                                     .build());
+  private void saveCreateStackCompletionFlag(ExecutionContext context) {
+    SweepingOutputInstance cloudFormationCompletionFlag =
+        getCloudFormationCompletionFlag(context, CLOUDFORMATION_COMPLETION_FLAG);
+    if (cloudFormationCompletionFlag == null || cloudFormationCompletionFlag.getValue() == null) {
+      sweepingOutputService.save(
+          context.prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW)
+              .name(getCompletionStatusFlagSweepingOutputName(CLOUDFORMATION_COMPLETION_FLAG, context))
+              .value(CloudFormationCompletionFlag.builder().createStackCompleted(true).build())
+              .build());
     }
   }
 

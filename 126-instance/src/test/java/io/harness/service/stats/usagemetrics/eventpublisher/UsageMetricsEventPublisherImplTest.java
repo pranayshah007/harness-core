@@ -9,7 +9,7 @@ package io.harness.service.stats.usagemetrics.eventpublisher;
 
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
 
-import static org.mockito.Matchers.any;
+import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -19,11 +19,20 @@ import io.harness.dtos.InstanceDTO;
 import io.harness.entities.InstanceType;
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
+import io.harness.eventsframework.schemas.instancestatstimeseriesevent.DataPoint;
+import io.harness.eventsframework.schemas.instancestatstimeseriesevent.TimeseriesBatchEventInfo;
+import io.harness.models.constants.TimescaleConstants;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.rule.Owner;
 
-import java.util.Arrays;
+import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
 public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
@@ -44,7 +53,7 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void publishInstanceStatsTimeSeriesTest() {
+  public void publishInstanceStatsTimeSeriesTest() throws InvalidProtocolBufferException {
     UsageMetricsEventPublisherImpl usageMetricsEventPublisher = new UsageMetricsEventPublisherImpl(eventProducer);
     InstanceDTO instanceDTO1 = InstanceDTO.builder()
                                    .accountIdentifier(ACCOUNT_ID_1)
@@ -62,12 +71,44 @@ public class UsageMetricsEventPublisherImplTest extends InstancesTestBase {
                                    .projectIdentifier(PROJECT_IDENTIFIER)
                                    .serviceIdentifier(SERVICE_IDENTIFIER)
                                    .envIdentifier(ENVIRONMENT_IDENTIFIER)
-                                   .infrastructureMappingId(INFRASTRUCTURE_ID_2)
+                                   .infrastructureKind(InfrastructureKind.GITOPS)
                                    .connectorRef(CONNECTOR_REF)
                                    .instanceType(InstanceType.K8S_INSTANCE)
                                    .build();
     usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
-        ACCOUNT_ID, TIMESTAMP, Arrays.asList(instanceDTO1, instanceDTO2));
-    verify(eventProducer, times(1)).send(any(Message.class));
+        ACCOUNT_ID, TIMESTAMP, Collections.singletonList(instanceDTO1));
+    usageMetricsEventPublisher.publishInstanceStatsTimeSeries(
+        ACCOUNT_ID, TIMESTAMP, Collections.singletonList(instanceDTO2));
+
+    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(eventProducer, times(2)).send(messageArgumentCaptor.capture());
+    List<Message> messages = messageArgumentCaptor.getAllValues();
+    assertEquals(2, messages.size());
+
+    TimeseriesBatchEventInfo eventInfo = TimeseriesBatchEventInfo.parseFrom(messages.get(0).getData());
+    List<DataPoint> dataPoints = eventInfo.getDataPointListList();
+    assertEquals(1, dataPoints.size());
+    verifyDataPoint(instanceDTO1, 1, dataPoints.get(0));
+
+    eventInfo = TimeseriesBatchEventInfo.parseFrom(messages.get(1).getData());
+    dataPoints = eventInfo.getDataPointListList();
+    assertEquals(1, dataPoints.size());
+    verifyDataPoint(instanceDTO2, 1, dataPoints.get(0));
+  }
+
+  private void verifyDataPoint(InstanceDTO instance, int count, DataPoint dataPoint) {
+    Map<String, String> data = dataPoint.getDataMap();
+    assertEquals(instance.getAccountIdentifier(), data.get(TimescaleConstants.ACCOUNT_ID.getKey()));
+    assertEquals(instance.getOrgIdentifier(), data.get(TimescaleConstants.ORG_ID.getKey()));
+    assertEquals(instance.getProjectIdentifier(), data.get(TimescaleConstants.PROJECT_ID.getKey()));
+    assertEquals(instance.getServiceIdentifier(), data.get(TimescaleConstants.SERVICE_ID.getKey()));
+    assertEquals(instance.getEnvIdentifier(), data.get(TimescaleConstants.ENV_ID.getKey()));
+    assertEquals(instance.getInstanceType().toString(), data.get(TimescaleConstants.INSTANCE_TYPE.getKey()));
+    assertEquals(String.valueOf(count), data.get(TimescaleConstants.INSTANCECOUNT.getKey()));
+    if (instance.getConnectorRef() != null) {
+      assertEquals(instance.getConnectorRef(), data.get(TimescaleConstants.CLOUDPROVIDER_ID.getKey()));
+    } else {
+      assertEquals(StringUtils.EMPTY, data.get(TimescaleConstants.CLOUDPROVIDER_ID.getKey()));
+    }
   }
 }

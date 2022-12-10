@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.EcsInfrastructure;
+import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -22,6 +23,7 @@ import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
+import io.harness.cdng.infra.yaml.TanzuApplicationServiceInfrastructure;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
@@ -74,7 +76,15 @@ public class InfrastructureValidator {
         validateEcsInfrastructure((EcsInfrastructure) infrastructure);
         break;
 
+      case InfrastructureKind.ELASTIGROUP:
+        validateElastigroupInfrastructure((ElastigroupInfrastructure) infrastructure);
+        break;
+
       case InfrastructureKind.CUSTOM_DEPLOYMENT:
+        break;
+
+      case InfrastructureKind.TAS:
+        validateTanzuApplicationServiceInfrastructure((TanzuApplicationServiceInfrastructure) infrastructure);
         break;
 
       default:
@@ -219,6 +229,30 @@ public class InfrastructureValidator {
     }
     if (!hasValueOrExpression(infrastructure.getRegion())) {
       throw new InvalidArgumentsException(Pair.of("region", "cannot be empty"));
+    }
+  }
+
+  private void validateElastigroupInfrastructure(ElastigroupInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (null == infrastructure.getConfiguration()) {
+      throw new InvalidArgumentsException(Pair.of("configuration", "cannot be empty"));
+    }
+  }
+
+  private void validateTanzuApplicationServiceInfrastructure(TanzuApplicationServiceInfrastructure infrastructure) {
+    if (!hasValueOrExpression(infrastructure.getConnectorRef())) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getOrganization())) {
+      throw new InvalidArgumentsException(Pair.of("Organization", "cannot be empty"));
+    }
+
+    if (!hasValueOrExpression(infrastructure.getSpace())) {
+      throw new InvalidArgumentsException(Pair.of("Space", "cannot be empty"));
     }
   }
 

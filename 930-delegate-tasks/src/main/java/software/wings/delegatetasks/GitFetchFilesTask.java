@@ -29,8 +29,8 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
-import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.common.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.git.GitFetchFilesTaskHelper;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -190,11 +190,11 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
         filePathsToFetch.add(gitFileConfig.getServiceSpecFilePath());
       }
       executionLogCallback.saveExecutionLog("\nFetching following Task and Service Spec files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, true);
     } else if (EmptyPredicate.isNotEmpty(gitFileConfig.getFilePathList())) {
       filePathsToFetch = gitFileConfig.getFilePathList();
       executionLogCallback.saveExecutionLog("\nFetching following Files :");
-      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback);
+      gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(filePathsToFetch, executionLogCallback, true);
     } else {
       executionLogCallback.saveExecutionLog("\nFetching " + gitFileConfig.getFilePath());
       String filePath = isBlank(gitFileConfig.getFilePath()) ? "" : gitFileConfig.getFilePath();
@@ -215,8 +215,8 @@ public class GitFetchFilesTask extends AbstractDelegateRunnableTask {
       }
     }
 
-    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(
-        executionLogCallback, gitFetchFilesResult == null ? Collections.emptyList() : gitFetchFilesResult.getFiles());
+    gitFetchFilesTaskHelper.printFileNamesInExecutionLogs(executionLogCallback,
+        gitFetchFilesResult == null ? Collections.emptyList() : gitFetchFilesResult.getFiles(), true);
 
     return gitFetchFilesResult;
   }

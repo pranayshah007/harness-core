@@ -57,7 +57,8 @@ serviceScheduler:
   enabled: true
   #mongoUri: mongodb://localhost:27017/service_scheduler
 
-enableIterators: true
+enableIterators: ${ENABLE_ITERATORS:-true}
+iteratorConfigPath: ${ITERATOR_CONFIG_PATH:-""}
 trialRegistrationAllowed: true
 eventsFrameworkAvailableInOnPrem: false
 trialRegistrationAllowedForBugathon: false
@@ -253,6 +254,8 @@ timescaledb:
   deploymentDataMigrationRowLimit: 1000
   deploymentDataMigrationQueryBatchSize: 100
   isHealthCheckNeeded: false
+  sslMode: disable
+  sslRootCert: ""
 
 grpcServerConfig:
   connectors:
@@ -289,6 +292,7 @@ mongo:
   #locksUri: mongodb://localhost:27017/impermanent
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -307,6 +311,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -330,7 +335,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: e3ee71bd
+scmVersion: 9ddfb2b9
 
 ngAuthUIEnabled: false
 
@@ -380,6 +385,8 @@ cfClientConfig:
   configUrl: "https://config.feature-flags.uat.harness.io/api/1.0"
   eventUrl: "https://event.feature-flags.uat.harness.io/api/1.0"
   analyticsEnabled: true
+  streamEnabled: true
+  sseReadTimeout: 5
   connectionTimeout: 10000
   readTimeout: 45000
   bufferSize: 10240
@@ -653,9 +660,13 @@ eventListenersCountConfig:
   deploymentEventListenerCount: ${DEPLOYMENT_EVENT_LISTENER_COUNT:-2}
   instanceEventListenerCount: ${INSTANCE_EVENT_LISTENER_COUNT:-2}
   deploymentTimeSeriesEventListenerCount: ${DEPLOYMENT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  deploymentStepTimeSeriesEventListenerCount: ${DEPLOYMENT_STEP_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
+  executionInterruptTimeSeriesEventListenerCount: ${EXECUTION_INTERRUPT_TIME_SERIES_EVENT_LISTENER_COUNT:-2}
   executionEventListenerCount: ${EXECUTION_EVENT_LISTENER_COUNT:-3}
   generalNotifyEventListenerCount: ${GENERAL_NOTIFY_EVENT_LISTENER_COUNT:-5}
   orchestrationNotifyEventListenerCount: ${ORCHESTRATION_NOTIFY_EVENT_LISTENER_COUNT:-5}
+  notifyConsumerCount: ${NOTIFY_CONSUMER_COUNT:-2}
+  generalConsumerCount: ${GENERAL_CONSUMER_COUNT:-2}
 
 iteratorsConfig:
   resourceConstraintBackupIteratorConfig:
@@ -676,16 +687,22 @@ iteratorsConfig:
     threadPoolSize: ${BLOCKING_CAPABILITY_PERMISSIONS_RECORD_ITERATOR_THREAD_COUNT:-5}
   vaultSecretManagerRenewalIteratorConfig:
     threadPoolSize: ${VAULT_SECRET_MANAGER_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskExpiryCheckIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_EXPIRY_CHECK_ITERATOR_THREAD_COUNT:-5}
-  perpetualTaskRebalanceIteratorConfig:
-    threadPoolSize: ${PERPETUAL_TASK_REBALANCE_ITERATOR_THREAD_COUNT:-5}
+  delegateDisconnectDetectorIteratorConfig:
+    threadPoolSize: ${DELEGATE_DISCONNECT_DETECTOR_CHECK_ITERATOR_THREAD_COUNT:-2}
   perpetualTaskAssignmentIteratorConfig:
     threadPoolSize: ${PERPETUAL_TASK_ASSIGNMENT_ITERATOR_THREAD_COUNT:-5}
-  delegateTaskRebroadcastIteratorConfig:
-    threadPoolSize: ${DELEGATE_TASK_REBROADCAST_ITERATOR_THREAD_COUNT:-2}
   failDelegateTaskIteratorConfig:
       threadPoolSize: ${FAIL_DELEGATE_TASK_ITERATOR_THREAD_COUNT:-2}
+  gitSyncPollingIteratorConfig:
+      threadPoolSize: ${GIT_SYNC_POLLING_ITERATOR_THREAD_COUNT:-2}
+
+executorsConfig:
+  dataReconciliationExecutorConfig:
+    corePoolSize: ${DATA_RECONCILIATION_CORE_SIZE:-1}
+    maxPoolSize: ${DATA_RECONCILIATION_MAX_SIZE:-5}
+    idleTime: ${DATA_RECONCILIATION_IDLE_TIME:-10}
+    timeUnit: ${DATA_RECONCILIATION_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 
 disableDelegateMgmtInManager: false
 
@@ -694,7 +711,7 @@ secretsConfiguration:
   gcpSecretManagerProject: harness-playground
 
 ldapSyncJobConfig:
-  poolSize: 3
+  poolSize: 8
   syncInterval: 15
   defaultCronExpression: "0 0/15 * 1/1 * ? *"
 
@@ -703,3 +720,9 @@ useGlobalKMSAsBaseAlgo: false
 cdTsDbRetentionPeriodMonths: 7
 
 enableOpentelemetry: false
+
+disableInstanceSyncIterator: ${DISABLE_INSTANCE_SYNC_ITERATOR:-false}
+
+redisNotifyEvent: ${REDIS_NOTIFY_EVENT:-false}
+
+lockNotifyResponseCleanup: ${LOCK_NOTIFY_RESPONSE_CLEANUP:-false}

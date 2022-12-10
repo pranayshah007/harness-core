@@ -32,4 +32,5 @@ public class TemplateMergeResponseDTO {
   // which has step template ref, then it returns only stage template.
   List<TemplateReferenceSummary> templateReferenceSummaries;
   String mergedPipelineYamlWithTemplateRef;
+  CacheResponseMetadataDTO cacheResponseMetadata;
 }

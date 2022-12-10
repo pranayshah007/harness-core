@@ -14,6 +14,7 @@ import io.harness.beans.build.BuildUpdateType;
 import io.harness.beans.build.CIPipelineDetails;
 import io.harness.beans.build.PublishedArtifact;
 import io.harness.beans.dependencies.ServiceDependency;
+import io.harness.beans.environment.ConnectorConversionInfo;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.environment.VmBuildJobInfo;
 import io.harness.beans.environment.pod.PodSetupInfo;
@@ -94,7 +95,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(DependencyOutcome.class, 100072);
     kryo.register(ServiceDependency.class, 100073);
     kryo.register(ServiceDependency.Status.class, 100074);
-    kryo.register(K8BuildJobEnvInfo.ConnectorConversionInfo.class, 100085);
+    kryo.register(ConnectorConversionInfo.class, 100085);
     kryo.register(PodCleanupDetails.class, 100087);
     kryo.register(CustomExecutionSource.class, 100088);
     kryo.register(LiteEnginePodDetailsOutcome.class, 100089);

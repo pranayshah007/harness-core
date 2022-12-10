@@ -23,6 +23,7 @@ public class TemplateCrudHelperFactory {
   public TemplateCrudHelper getCrudHelperForTemplateType(TemplateEntityType templateEntityType) {
     switch (templateEntityType) {
       case STEP_TEMPLATE:
+      case STEPGROUP_TEMPLATE:
       case STAGE_TEMPLATE:
       case PIPELINE_TEMPLATE:
         return pipelineTemplateCrudHelper;

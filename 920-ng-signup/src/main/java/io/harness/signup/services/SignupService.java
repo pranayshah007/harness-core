@@ -26,9 +26,9 @@ public interface SignupService {
 
   boolean createSignupInvite(SignupDTO dto, String captchaToken);
 
-  UserInfo completeSignupInvite(String token, String referer);
+  UserInfo completeSignupInvite(String token, @Nullable String referer, @Nullable String gaClientId);
 
-  UserInfo oAuthSignup(OAuthSignupDTO dto, String referer) throws WingsException;
+  UserInfo oAuthSignup(OAuthSignupDTO dto) throws WingsException;
 
   VerifyTokenResponseDTO verifyToken(String token);
 

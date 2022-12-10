@@ -29,6 +29,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -118,6 +119,37 @@ public class AwsASGDelegateTaskHelperTest extends CategoryTest {
     AwsListEC2InstancesTaskResponse response = (AwsListEC2InstancesTaskResponse) service.getInstances(request);
 
     assertThat(response.getInstances().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getAllASGsTest() throws IOException {
+    Instance instance = (new Instance()).withInstanceId("id");
+    AutoScalingGroup autoScalingGroup = (new AutoScalingGroup()).withInstances(instance);
+    DescribeAutoScalingGroupsResult describeAutoScalingGroupsResult =
+        (new DescribeAutoScalingGroupsResult()).withAutoScalingGroups(autoScalingGroup);
+
+    doReturn(describeAutoScalingGroupsResult).when(amazonAutoScalingClient).describeAutoScalingGroups(any());
+
+    List<AutoScalingGroup> autoScalingGroups = service.getAllASGs(generateRequest());
+    assertThat(autoScalingGroups.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void getAllASGNamesTest() throws IOException {
+    Instance instance = (new Instance()).withInstanceId("id");
+    AutoScalingGroup autoScalingGroup =
+        (new AutoScalingGroup()).withInstances(instance).withAutoScalingGroupName("asg-name");
+    DescribeAutoScalingGroupsResult describeAutoScalingGroupsResult =
+        (new DescribeAutoScalingGroupsResult()).withAutoScalingGroups(autoScalingGroup);
+
+    doReturn(describeAutoScalingGroupsResult).when(amazonAutoScalingClient).describeAutoScalingGroups(any());
+
+    AwsListASGNamesTaskResponse response = service.getASGNames(generateRequest());
+    assertThat(response.getNames().get(0)).isEqualTo("asg-name");
   }
 
   private AwsListASGInstancesTaskParamsRequest generateRequest() {

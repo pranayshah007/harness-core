@@ -18,7 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.consumer.Message;
-import io.harness.logging.AutoLogContext;
+import io.harness.eventsframework.impl.redis.RedisTraceConsumer;
 import io.harness.queue.QueueController;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -31,7 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @Slf4j
-public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener> implements PmsRedisConsumer {
+public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListener>
+    extends RedisTraceConsumer implements PmsRedisConsumer {
   private static final int WAIT_TIME_IN_SECONDS = 10;
   private static final String CACHE_KEY = "%s_%s";
   private final Consumer redisConsumer;
@@ -104,19 +105,8 @@ public abstract class PmsAbstractRedisConsumer<T extends PmsAbstractMessageListe
     }
   }
 
-  private boolean handleMessage(Message message) {
-    try (AutoLogContext autoLogContext = new AutoLogContext(
-             message.getMessage().getMetadataMap(), AutoLogContext.OverrideBehavior.OVERRIDE_NESTS)) {
-      return processMessage(message);
-    } catch (Exception ex) {
-      // This is not evicted from events framework so that it can be processed
-      // by other consumer if the error is a runtime error
-      log.error(String.format("Error occurred in processing message with id %s", message.getId()), ex);
-      return false;
-    }
-  }
-
-  private boolean processMessage(Message message) {
+  @Override
+  protected boolean processMessage(Message message) {
     AtomicBoolean success = new AtomicBoolean(true);
     if (messageListener.isProcessable(message) && !isAlreadyProcessed(message)) {
       log.debug("Read message with message id {} from redis", message.getId());

@@ -9,9 +9,12 @@ package io.harness.delegate.task.shell;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.when;
@@ -29,7 +32,10 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryUsern
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsIRSASpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsInheritFromDelegateSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
@@ -42,10 +48,12 @@ import io.harness.delegate.task.winrm.ArtifactoryArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.AwsS3ArtifactDownloadHandler;
 import io.harness.delegate.task.winrm.JenkinsArtifactDownloadHandler;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.ScriptType;
 
+import software.wings.beans.AWSTemporaryCredentials;
 import software.wings.beans.AwsConfig;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.intfc.security.EncryptionService;
@@ -94,8 +102,8 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
             .secretKeyRef(SecretRefData.builder().identifier("secret").build())
             .build();
     when(secretDecryptionService.decrypt(any(AwsManualConfigSpecDTO.class), any())).thenReturn(awsManualConfigSpecDTO);
-    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
-        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+    //    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+    //        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
   }
 
   @Test
@@ -281,6 +289,9 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void testS3GetCommandString_POWERSHELL() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
     when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
     AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
     AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
@@ -308,8 +319,198 @@ public class ArtifactDownloadHandlerTest extends CategoryTest {
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void testS3GetCommandString_BASH() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
     when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
     AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString).contains("curl --fail \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" \\\n");
+    assertThat(commandString).contains("-H \"Authorization: AWS4-HMAC-SHA256 Credential=accessKey/");
+    assertThat(commandString).contains(" -o \"testdestination/name\"");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandStringNullScriptType() {
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder().build();
+    assertThatThrownBy(() -> s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "", null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Unknown script type.");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_BASH_IamCredentials() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().useEc2IamCredentials(true).build());
+    when(awsHelperService.getCredentialsForIAMROleOnDelegate(anyString(), any()))
+        .thenReturn(
+            AWSTemporaryCredentials.builder().accessKeyId("accessKey").secretKey("secretKey").token("qwerty").build());
+
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString).contains("curl --fail \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" \\\n");
+    assertThat(commandString).contains("-H \"Authorization: AWS4-HMAC-SHA256 Credential=accessKey/");
+    assertThat(commandString).contains(" -o \"testdestination/name\"");
+    assertThat(commandString).contains("token: qwerty");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_BucketNameNull() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+
+    assertThatThrownBy(() -> s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "", ScriptType.BASH))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Bucket name needs to be defined");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_ArtifactPathNull() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucketName")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+
+    assertThatThrownBy(() -> s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "", ScriptType.BASH))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Artifact path needs to be defined");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_INHERIT_FROM_DELEGATE() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    connectorDTO.setCredential(
+        AwsCredentialDTO.builder()
+            .awsCredentialType(AwsCredentialType.INHERIT_FROM_DELEGATE)
+            .config(AwsInheritFromDelegateSpecDTO.builder().delegateSelectors(Collections.EMPTY_SET).build())
+            .build());
+
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString).contains("curl --fail \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" \\\n");
+    assertThat(commandString).contains("-H \"Authorization: AWS4-HMAC-SHA256 Credential=accessKey/");
+    assertThat(commandString).contains(" -o \"testdestination/name\"");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_IRSA() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    connectorDTO.setCredential(AwsCredentialDTO.builder()
+                                   .awsCredentialType(AwsCredentialType.IRSA)
+                                   .config(AwsIRSASpecDTO.builder().build())
+                                   .build());
+
+    AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
+                                                       .bucketName("bucket")
+                                                       .artifactPath("artifact/name")
+                                                       .identifier("S3delegateConfig")
+                                                       .accountId("accountId")
+                                                       .region("us-east-2")
+                                                       .certValidationRequired(false)
+                                                       .encryptionDetails(Collections.emptyList())
+                                                       .awsConnector(connectorDTO)
+                                                       .build();
+    String commandString =
+        s3ArtifactDownloadHandler.getCommandString(s3DelegateConfig, "testdestination", ScriptType.BASH);
+
+    assertThat(commandString).contains("curl --fail \"https://bucket.s3-us-east-2.amazonaws.com/artifact/name\" \\\n");
+    assertThat(commandString).contains("-H \"Authorization: AWS4-HMAC-SHA256 Credential=accessKey/");
+    assertThat(commandString).contains(" -o \"testdestination/name\"");
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testS3GetCommandString_CrossAccountAccess() {
+    when(encryptionService.decrypt(any(AwsConfig.class), any(), anyBoolean()))
+        .thenReturn(AwsConfig.builder().accessKey("accessKey".toCharArray()).secretKey("secret".toCharArray()).build());
+
+    when(awsHelperService.getBucketRegion(any(), any(), any())).thenReturn("us-east-2");
+    AwsConnectorDTO connectorDTO = getS3ConnectorInfoDTO();
+    connectorDTO.setCredential(
+        AwsCredentialDTO.builder()
+            .awsCredentialType(AwsCredentialType.IRSA)
+            .config(AwsIRSASpecDTO.builder().build())
+            .crossAccountAccess(CrossAccountAccessDTO.builder().crossAccountRoleArn("role").externalId("id").build())
+            .build());
+
     AwsS3ArtifactDelegateConfig s3DelegateConfig = AwsS3ArtifactDelegateConfig.builder()
                                                        .bucketName("bucket")
                                                        .artifactPath("artifact/name")
