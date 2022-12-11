@@ -91,6 +91,7 @@ import software.wings.beans.sso.SSOSettings;
 import software.wings.beans.sso.SSOType;
 import software.wings.security.authentication.SSOConfig;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -649,7 +650,8 @@ public class UserGroupServiceImpl implements UserGroupService {
     return criteria;
   }
 
-  private Criteria createUserGroupFilterCriteria(String accountIdentifier, String orgIdentifier,
+  @VisibleForTesting
+  protected Criteria createUserGroupFilterCriteria(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String searchTerm, UserGroupFilterType filterType) {
     Criteria criteria;
     if (filterType == INCLUDE_INHERITED_GROUPS) {
