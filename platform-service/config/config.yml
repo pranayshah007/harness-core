@@ -68,7 +68,7 @@ rbacServiceConfig:
   readTimeOutSeconds: 15
 
 accessControlClient:
-  enableAccessControl: false
+  enableAccessControl: true
   accessControlServiceConfig:
     baseUrl: http://localhost:9006/api/
     connectTimeOutSeconds: 15

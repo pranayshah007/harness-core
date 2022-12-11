@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
@@ -63,6 +64,7 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
   private ResourceGroupServiceImpl resourceGroupService;
   private ResourceGroupServiceImpl resourceGroupServiceMockRepo;
   private PageRequest pageRequest;
+  AccessControlClient accessControlClient;
 
   @Before
   public void setup() {
@@ -70,6 +72,7 @@ public class ResourceGroupServiceImplTest extends ResourceGroupTestBase {
     resourceGroupV1ServiceMock = mock(io.harness.resourcegroup.framework.v1.service.ResourceGroupService.class);
     outboxService = mock(OutboxService.class);
     transactionTemplate = mock(TransactionTemplate.class);
+
     resourceGroupService = spy(new ResourceGroupServiceImpl(resourceGroupV2Repository, resourceGroupValidatorImpl,
         outboxService, transactionTemplate, accessControlClient));
     resourceGroupServiceMockRepo = spy(new ResourceGroupServiceImpl(resourceGroupV2RepositoryMock,

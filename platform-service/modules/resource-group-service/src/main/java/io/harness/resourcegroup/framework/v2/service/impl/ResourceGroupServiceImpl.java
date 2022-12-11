@@ -195,6 +195,21 @@ public class ResourceGroupServiceImpl implements ResourceGroupService {
   @Override
   public Page<ResourceGroupResponse> list(ResourceGroupFilterDTO resourceGroupFilterDTO, PageRequest pageRequest) {
     Criteria criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+
+    if (!accessControlClient.hasAccess(
+            ResourceScope.of(resourceGroupFilterDTO.getAccountIdentifier(), resourceGroupFilterDTO.getOrgIdentifier(),
+                resourceGroupFilterDTO.getProjectIdentifier()),
+            Resource.of(RESOURCE_GROUP, null), VIEW_RESOURCEGROUP_PERMISSION)) {
+      List<ResourceGroup> resourceGroups = resourceGroupV2Repository.findAll(criteria, Pageable.unpaged()).getContent();
+
+      resourceGroups = getPermittedResourceGroups(resourceGroups);
+      if (isEmpty(resourceGroups)) {
+        return Page.empty();
+      }
+      resourceGroupFilterDTO.setIdentifierFilter(
+          resourceGroups.stream().map(ResourceGroup::getIdentifier).collect(Collectors.toSet()));
+      criteria = getResourceGroupFilterCriteria(resourceGroupFilterDTO);
+    }
     return resourceGroupV2Repository.findAll(criteria, getPageRequest(pageRequest))
         .map(ResourceGroupMapper::toResponseWrapper);
   }
