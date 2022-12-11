@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.GARVIT;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
@@ -41,9 +41,9 @@ import io.harness.exception.ConstraintViolationExceptionMapper;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactView;
 import software.wings.exception.WingsExceptionMapper;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.intfc.AlertService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.ArtifactService;

@@ -26,7 +26,6 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Stream;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
@@ -86,11 +85,11 @@ public class InlineStoreDownloadServiceTest extends CategoryTest {
                   InlineFileConfig.builder().name("file2-${UUID}.tfvars").content("file2-content").build()))
               .build();
 
-      List<String> files = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
-      assertThat(files.size()).isEqualTo(2);
-      Stream<String> filesContent = files.stream().map(this::sneakyReadFileString);
+      FetchFilesResult result = downloadService.fetchFiles(storeDelegateConfig, ACCOUNT_ID, OUTPUT_DIR, logCallback);
+      assertThat(result.getFiles().size()).isEqualTo(2);
+      Stream<String> filesContent = result.getFiles().stream().map(this::sneakyReadFileString);
       assertThat(filesContent).containsExactlyInAnyOrder("file1-content", "file2-content");
-      assertThat(files).doesNotContain("file1-${UUID}.tfvars", "file2-${UUID}.tfvars");
+      assertThat(result.getFiles()).doesNotContain("file1-${UUID}.tfvars", "file2-${UUID}.tfvars");
     } finally {
       FileIo.deleteDirectoryAndItsContentIfExists(OUTPUT_DIR);
     }

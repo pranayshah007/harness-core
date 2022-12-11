@@ -22,6 +22,7 @@ import io.harness.cimanager.stages.IntegrationStageConfig;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filters.WithConnectorRef;
 import io.harness.plancreator.execution.ExecutionElementConfig;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -152,5 +153,10 @@ public class InitializeStepInfo implements CIStepInfo, WithConnectorRef {
     }
 
     return connectorRefMap;
+  }
+
+  @Override
+  public ExpressionMode getExpressionMode() {
+    return ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED;
   }
 }

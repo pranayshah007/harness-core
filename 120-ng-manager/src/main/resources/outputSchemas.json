@@ -1,0 +1,513 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+  ],
+  "totalResults": 5,
+  "Resources": [
+    {
+      "id": "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig",
+      "name": "Service Provider Configuration",
+      "description": "Schema for representing the service provider's configuration",
+      "attributes": [
+        {
+          "name": "patch",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "supported",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value specifying whether or not the operation is supported.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "A complex type that specifies PATCH configuration options.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "bulk",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "supported",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value specifying whether or not the operation is supported.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "maxOperations",
+              "type": "integer",
+              "multiValued": false,
+              "description": "An integer value specifying the maximum number of operations.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "maxPayloadSize",
+              "type": "integer",
+              "multiValued": false,
+              "description": "An integer value specifying the maximum payload size in bytes.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "A complex type that specifies bulk configuration options.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "filter",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "supported",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value specifying whether or not the operation is supported.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "maxResults",
+              "type": "integer",
+              "multiValued": false,
+              "description": "An integer value specifying the maximum number of resources returned in a response.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "A complex type that specifies FILTER options.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "changePassword",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "supported",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value specifying whether or not the operation is supported.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "A complex type that specifies configuration options related to changing a password.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "sort",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "supported",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value specifying whether or not the operation is supported.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "A complex type that specifies sort result options.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "scimAuthenticationSchemes",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "name",
+              "type": "string",
+              "multiValued": false,
+              "description": "The common authentication scheme name,e.g., HTTP Basic.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "description",
+              "type": "string",
+              "multiValued": false,
+              "description": "A description of the authentication scheme.sic.",
+              "required": true,
+              "caseExact": false,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": true,
+          "description": "A complex type that specifies supported authentication scheme properties.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "server"
+        }
+      ]
+    },
+    {
+      "id": "urn:ietf:params:scim:schemas:core:2.0:ResourceType",
+      "name": "ResourceType",
+      "description": "Specifies the schema that describes a SCIM resource type",
+      "attributes": [
+        {
+          "name": "name",
+          "type": "string",
+          "multiValued": false,
+          "description": "The resource type name. When applicable, service providers MUST specify the name, e.g., 'User'.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "endpoint",
+          "type": "reference",
+          "multiValued": false,
+          "description": "The resource type's HTTP-addressable endpoint relative to the Base URL, e.g., '/Users'.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "referenceTypes": [
+            "uri"
+          ]
+        },
+        {
+          "name": "schema",
+          "type": "reference",
+          "multiValued": false,
+          "description": "The resource type's primary/base schema URI.",
+          "required": true,
+          "caseExact": true,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "referenceTypes": [
+            "uri"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "urn:ietf:params:scim:schemas:core:2.0:Schema",
+      "name": "Schema",
+      "description": "Specifies the schema that describes a SCIM schema",
+      "attributes": [
+        {
+          "name": "id",
+          "type": "string",
+          "multiValued": false,
+          "description": "The unique URI of the schema. When applicable, service providers MUST specify the URI.",
+          "required": true,
+          "caseExact": true,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "multiValued": false,
+          "description": "The schema's human-readable name. When applicable, service providers MUST specify the name, e.g., 'User'.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "attributes",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "name",
+              "type": "string",
+              "multiValued": true,
+              "description": "The attribute's name.",
+              "required": true,
+              "caseExact": true,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "type",
+              "type": "string",
+              "multiValued": false,
+              "description": "The attribute's data type. Valid values include 'string', 'complex', 'boolean', 'decimal', 'integer','dateTime', 'reference'.",
+              "required": true,
+              "canonicalValues": [
+                "string",
+                "complex",
+                "boolean",
+                "decimal",
+                "integer",
+                "dateTime",
+                "reference"
+              ],
+              "caseExact": true,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "multiValued",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value indicating an attribute's plurality.",
+              "required": true,
+              "caseExact": true,
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": true,
+          "description": "A complex attribute that includes the attributes of a schema.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ]
+    },
+    {
+      "id": "urn:ietf:params:scim:schemas:core:2.0:User",
+      "name": "User",
+      "description": "User Account",
+      "attributes": [
+        {
+          "name": "userName",
+          "type": "string",
+          "multiValued": false,
+          "description": "Unique identifier for the User, typically used bythe user to directly authenticate to the service provider.Each User MUST include a non-empty userName value. This identifier MUST be unique across the service provider's entire set of Users.REQUIRED",
+          "required": true,
+          "caseExact": true,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "server"
+        },
+        {
+          "name": "externalId",
+          "type": "string",
+          "multiValued": false,
+          "description": "Unique identifier for the User, typicallyused by the user to directly authenticate to the service provider.Each User MUST include a non-empty userName value. This identifier MUST be unique across the service provider's entire set of Users.REQUIRED.",
+          "required": true,
+          "caseExact": true,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "server"
+        },
+        {
+          "name": "name",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "givenName",
+              "type": "string",
+              "multiValued": false,
+              "description": "The given name of the User, or first name in most Western languages (e.g., 'Barbara' given the full name 'Ms. Barbara J Jensen, III')",
+              "required": false,
+              "caseExact": false,
+              "mutability": "readWrite",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "familyName",
+              "type": "string",
+              "multiValued": false,
+              "description": "The family name of the User, or last name in most Western languages (e.g., 'Jensen' given the full name 'Ms. Barbara J Jensen, III').",
+              "required": false,
+              "caseExact": false,
+              "mutability": "readWrite",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": false,
+          "description": "The components of the user's real name.Providers MAY return just the full name as a single string in theformatted subattribute, or they MAY return just the individual component attributes using the other sub-attributes, or they MAY return both. If both variants are returned, they SHOULD bedescribing the same name, with the formatted name indicating how the component attributes should be combined.",
+          "required": false,
+          "caseExact": true,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "displayName",
+          "type": "string",
+          "multiValued": false,
+          "description": "The name of the User, suitable for display to endusers. The name SHOULD be the full name of the User being described, if known.",
+          "required": false,
+          "caseExact": true,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "multiValued": false,
+          "description": "A Boolean value indicating the User's administrative status..",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "emails",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "value",
+              "type": "string",
+              "multiValued": false,
+              "description": "Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other",
+              "required": false,
+              "caseExact": false,
+              "mutability": "readWrite",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "primary",
+              "type": "boolean",
+              "multiValued": false,
+              "description": "A Boolean value indicating the 'primary' or preferred attribute value for this attribute, e.g., the preferred mailing address or primary email address. The primary attribute value 'true' MUST appear no more than once.",
+              "required": false,
+              "caseExact": false,
+              "mutability": "readWrite",
+              "returned": "default",
+              "uniqueness": "none"
+            }
+          ],
+          "multiValued": true,
+          "description": "Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other'.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ]
+    },
+    {
+      "id": "urn:ietf:params:scim:schemas:core:2.0:Group",
+      "name": "Group",
+      "description": "Group",
+      "attributes": [
+        {
+          "name": "displayName",
+          "type": "string",
+          "multiValued": false,
+          "description": "A human-readable name for the Group. REQUIRED.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        },
+        {
+          "name": "members",
+          "type": "complex",
+          "subAttributes": [
+            {
+              "name": "value",
+              "type": "string",
+              "multiValued": false,
+              "description": "Identifier of the member of this Group.",
+              "required": false,
+              "caseExact": false,
+              "mutability": "immutable",
+              "returned": "default",
+              "uniqueness": "none"
+            },
+            {
+              "name": "ref",
+              "type": "reference",
+              "multiValued": false,
+              "description": "The URI corresponding to a SCIM resource that is a member of this Group.",
+              "required": false,
+              "caseExact": false,
+              "mutability": "immutable",
+              "returned": "default",
+              "uniqueness": "none",
+              "referenceTypes": [
+                "User",
+                "Group"
+              ]
+            }
+          ],
+          "multiValued": true,
+          "description": "A list of members of the Group.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none"
+        }
+      ]
+    }
+  ],
+  "startIndex": 0,
+  "itemsPerPage": 5
+}

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -38,7 +39,6 @@ import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.FreezeStatus;
 import io.harness.freeze.beans.FreezeType;
-import io.harness.freeze.beans.PermissionTypes;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.beans.yaml.FreezeConfig;
 import io.harness.freeze.beans.yaml.FreezeInfoConfig;
@@ -58,6 +58,8 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.sdk.core.data.ExecutionSweepingOutput;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.data.Outcome;
@@ -544,8 +546,8 @@ public class ServiceStepV3Test {
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
@@ -575,8 +577,8 @@ public class ServiceStepV3Test {
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(ResourceScope.of(anyString(), anyString(), anyString()),
-             Resource.of("DEPLOYMENTFREEZE", null), PermissionTypes.DEPLOYMENT_FREEZE_MANAGE_PERMISSION))
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
         .thenReturn(false);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
@@ -592,13 +594,15 @@ public class ServiceStepV3Test {
   @Test
   @Owner(developers = OwnerRule.ABHINAV_MITTAL)
   @Category(UnitTests.class)
-  public void testExecuteFreezePartIfOverrideFreezE() {
+  public void testExecuteFreezePartIfOverrideFreeze() {
     doReturn(true).when(ngFeatureFlagHelperService).isEnabled(anyString(), any());
     List<FreezeSummaryResponseDTO> freezeSummaryResponseDTOList = Lists.newArrayList(createGlobalFreezeResponse());
     doReturn(freezeSummaryResponseDTOList)
         .when(freezeEvaluateService)
         .anyGlobalFreezeActive(anyString(), anyString(), anyString());
-    when(accessControlClient.hasAccess(any(ResourceScope.class), any(Resource.class), anyString())).thenReturn(true);
+    when(
+        accessControlClient.hasAccess(any(Principal.class), any(ResourceScope.class), any(Resource.class), anyString()))
+        .thenReturn(true);
     Map<FreezeEntityType, List<String>> entityMap = new HashMap<>();
 
     ChildrenExecutableResponse childrenExecutableResponse = step.executeFreezePart(buildAmbiance(), entityMap);
@@ -758,6 +762,12 @@ public class ServiceStepV3Test {
             Map.of("accountId", "ACCOUNT_ID", "projectIdentifier", "PROJECT_ID", "orgIdentifier", "ORG_ID"))
         .addAllLevels(levels)
         .setExpressionFunctorToken(1234L)
+        .setMetadata(ExecutionMetadata.newBuilder()
+                         .setPrincipalInfo(ExecutionPrincipalInfo.newBuilder()
+                                               .setPrincipal("prinicipal")
+                                               .setPrincipalType(io.harness.pms.contracts.plan.PrincipalType.USER)
+                                               .build())
+                         .build())
         .build();
   }
 

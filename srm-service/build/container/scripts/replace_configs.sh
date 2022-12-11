@@ -260,6 +260,9 @@ replace_key_value accessControlClientConfig.enableAccessControl "$ACCESS_CONTROL
 replace_key_value accessControlClientConfig.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
 replace_key_value accessControlClientConfig.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
 
+replace_key_value errorTrackingClientConfig.errorTrackingServiceConfig.baseUrl "$ET_SERVICE_BASE_URL"
+replace_key_value errorTrackingClientConfig.errorTrackingServiceSecret "$ET_SERVICE_SECRET"
+
 replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
 replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
 

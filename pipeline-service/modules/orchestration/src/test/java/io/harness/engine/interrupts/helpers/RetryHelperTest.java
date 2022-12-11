@@ -10,8 +10,11 @@ package io.harness.engine.interrupts.helpers;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SHALINI;
 
+import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -32,7 +35,9 @@ import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
+import io.harness.pms.contracts.execution.ForMetadata;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.TaskExecutableResponse;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.interrupts.InterruptConfig;
@@ -53,10 +58,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class RetryHelperTest extends OrchestrationTestBase {
@@ -65,7 +72,7 @@ public class RetryHelperTest extends OrchestrationTestBase {
   @Mock PlanService planService;
   @Mock ExecutorService executorService;
   @Mock ExecutionInputService executionInputService;
-  @Inject @InjectMocks RetryHelper retryHelper;
+  @Spy @Inject @InjectMocks RetryHelper retryHelper;
 
   @Before
   public void setup() {
@@ -238,5 +245,77 @@ public class RetryHelperTest extends OrchestrationTestBase {
     assertThat(clonedInstance.getMergedInputTemplate()).isEqualTo(executionInputInstance.getMergedInputTemplate());
     assertThat(clonedInstance.getTemplate()).isEqualTo(executionInputInstance.getTemplate());
     assertThat(clonedInstance.getUserInput()).isEqualTo(executionInputInstance.getUserInput());
+  }
+
+  @Test
+  @Owner(developers = SHALINI)
+  @Category(UnitTests.class)
+  public void testFinalAmbianceShouldHaveStrategyMetadata() {
+    String nodeExecutionId = generateUuid();
+    String nodeId = generateUuid();
+    String planId = generateUuid();
+    String interruptId = generateUuid();
+    PlanNode planNode = PlanNode.builder()
+                            .uuid(nodeId)
+                            .identifier("DUMMY")
+                            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+                            .serviceName("CD")
+                            .build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.newBuilder()
+                                            .setForMetadata(ForMetadata.newBuilder().setValue("hostName").build())
+                                            .setCurrentIteration(1)
+                                            .setTotalIterations(1)
+                                            .build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .setPlanId(planId)
+                            .addLevels(PmsLevelUtils.buildLevelFromNode(nodeExecutionId, planNode, strategyMetadata))
+                            .build();
+
+    NodeExecution nodeExecution =
+        NodeExecution.builder()
+            .uuid(nodeExecutionId)
+            .ambiance(ambiance)
+            .status(Status.FAILED)
+            .mode(ExecutionMode.TASK)
+            .nodeId(nodeId)
+            .identifier("DUMMY")
+            .stepType(StepType.newBuilder().setType("DUMMY").setStepCategory(StepCategory.STEP).build())
+            .module("CD")
+            .skipGraphType(SkipType.NOOP)
+            .stageFqn(generateUuid())
+            .group("STEP")
+            .executableResponse(ExecutableResponse.newBuilder()
+                                    .setTask(TaskExecutableResponse.newBuilder()
+                                                 .setTaskId(generateUuid())
+                                                 .setTaskCategory(TaskCategory.UNKNOWN_CATEGORY)
+                                                 .build())
+                                    .build())
+            .interruptHistories(new ArrayList<>())
+            .startTs(System.currentTimeMillis())
+            .build();
+
+    InterruptConfig interruptConfig =
+        InterruptConfig.newBuilder()
+            .setIssuedBy(IssuedBy.newBuilder()
+                             .setManualIssuer(ManualIssuer.newBuilder().setIdentifier("admin@admin").build())
+                             .build())
+            .build();
+
+    when(nodeExecutionService.get(nodeExecutionId)).thenReturn(nodeExecution);
+    when(nodeExecutionService.save(any())).thenReturn(nodeExecution);
+    when(nodeExecutionService.updateRelationShipsForRetryNode(any(), any())).thenReturn(true);
+    when(nodeExecutionService.markRetried(any())).thenReturn(true);
+    when(planService.fetchNode(planId, nodeId)).thenReturn(planNode);
+
+    doReturn(ExecutionInputInstance.builder().build())
+        .when(executionInputService)
+        .getExecutionInputInstance(nodeExecutionId);
+    retryHelper.retryNodeExecution(nodeExecution.getUuid(), interruptId, interruptConfig);
+    ambiance.getLevels(0).toBuilder().setRetryIndex(1);
+    ArgumentCaptor<Ambiance> captor = ArgumentCaptor.forClass(Ambiance.class);
+    verify(retryHelper).cloneForRetry(any(), anyString(), captor.capture(), any(), anyString());
+    assertEquals(captor.getValue().getLevels(0).getStrategyMetadata(), strategyMetadata);
+    verify(executorService).submit(any(Runnable.class));
   }
 }

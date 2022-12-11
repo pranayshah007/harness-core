@@ -48,6 +48,7 @@ import org.junit.experimental.categories.Category;
 
 public class ChangeEventResourceTest extends CvNextGenTestBase {
   private static ChangeEventResource changeEventResource = new ChangeEventResource();
+  private static ChangeEventNgResource changeEventNgResource = new ChangeEventNgResource();
   @Inject private Injector injector;
   @Inject private HPersistence hPersistence;
   @Inject private MonitoredServiceService monitoredServiceService;
@@ -55,11 +56,14 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
 
   @ClassRule
   public static final ResourceTestRule RESOURCES = ResourceTestRule.builder().addResource(changeEventResource).build();
-
+  @ClassRule
+  public static final ResourceTestRule NGRESOURCES =
+      ResourceTestRule.builder().addResource(changeEventNgResource).build();
   @SneakyThrows
   @Before
   public void setup() {
     injector.injectMembers(changeEventResource);
+    injector.injectMembers(changeEventNgResource);
     monitoredServiceService.createDefault(builderFactory.getProjectParams(),
         builderFactory.getContext().getServiceIdentifier(), builderFactory.getContext().getEnvIdentifier());
   }
@@ -69,7 +73,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetPaginated() {
     hPersistence.save(getActivities());
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()))
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
@@ -101,7 +105,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetPaginatedWithMonitoredServiceIdentifier() {
     hPersistence.save(getActivities());
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()))
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("monitoredServiceIdentifiers",
@@ -133,7 +137,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetPaginatedInvalidQueryParams() {
     hPersistence.save(getActivities());
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()))
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("monitoredServiceIdentifiers",
@@ -171,7 +175,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
             .eventTime(Instant.ofEpochSecond(300))
             .build()));
 
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/summary")
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
@@ -217,7 +221,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
             .eventTime(Instant.ofEpochSecond(300))
             .build()));
 
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/timeline")
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
@@ -356,7 +360,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetChangeEventDetail_forK8_withDependentService() {
     hPersistence.save(getActivities());
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()))
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
@@ -374,7 +378,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
         response.readEntity(new GenericType<RestResponse<PageResponse<ChangeEventDTO>>>() {}).getResource();
 
     String activityId = firstPage.getContent().get(0).getId();
-    response = RESOURCES.client()
+    response = NGRESOURCES.client()
                    .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/" + activityId)
                    .request(MediaType.APPLICATION_JSON_TYPE)
                    .get();
@@ -406,7 +410,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
                 .relatedAppServices(Arrays.asList())
                 .eventTime(Instant.ofEpochSecond(300))
                 .build()));
-    Response response = RESOURCES.client()
+    Response response = NGRESOURCES.client()
                             .target(getChangeEventPath(builderFactory.getContext().getProjectParams()))
                             .queryParam("accountId", builderFactory.getContext().getAccountId())
                             .queryParam("serviceIdentifiers", builderFactory.getContext().getServiceIdentifier())
@@ -424,7 +428,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
         response.readEntity(new GenericType<RestResponse<PageResponse<ChangeEventDTO>>>() {}).getResource();
 
     String activityId = firstPage.getContent().get(0).getId();
-    response = RESOURCES.client()
+    response = NGRESOURCES.client()
                    .target(getChangeEventPath(builderFactory.getContext().getProjectParams()) + "/" + activityId)
                    .request(MediaType.APPLICATION_JSON_TYPE)
                    .get();

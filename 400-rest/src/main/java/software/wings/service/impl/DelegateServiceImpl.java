@@ -124,10 +124,10 @@ import io.harness.delegate.beans.FileMetadata;
 import io.harness.delegate.beans.K8sConfigDetails;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateRegisterEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.DelegateLogContext;
@@ -2402,11 +2402,11 @@ public class DelegateServiceImpl implements DelegateService {
         : null;
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
-            .delegateGroupId(delegateGroupId)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(DelegateSetupDetails.builder()
                                       .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
                                       .description(delegateGroup.getDescription())
@@ -2469,11 +2469,11 @@ public class DelegateServiceImpl implements DelegateService {
     log.info("Delegate group: {} and all belonging delegates have been deleted.", delegateGroupUuid);
 
     outboxService.save(
-        DelegateGroupDeleteEvent.builder()
+        DelegateDeleteEvent.builder()
             .accountIdentifier(accountId)
             .orgIdentifier(orgId)
             .projectIdentifier(projectId)
-            .delegateGroupId(delegateGroupUuid)
+            .delegateGroupIdentifier(delegateGroup.getIdentifier())
             .delegateSetupDetails(
                 DelegateSetupDetails.builder()
                     .delegateConfigurationId(delegateGroup.getDelegateConfigurationId())
@@ -4237,11 +4237,6 @@ public class DelegateServiceImpl implements DelegateService {
                                             .findFirst()
                                             .orElse(null);
 
-      // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-      DelegateGroup delegateGroup =
-          upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-      sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
-
       ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
           this.finalizeTemplateParametersWithMtlsIfRequired(
               TemplateParameters.builder()
@@ -4319,10 +4314,6 @@ public class DelegateServiceImpl implements DelegateService {
                                           .filter(size -> size.getSize() == delegateSetupDetails.getSize())
                                           .findFirst()
                                           .orElse(null);
-
-    // TODO: ARPIT remove creating delegate group here after UI starts using the createDelegteGroup method
-    DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
-    sendNewDelegateGroupAuditEvent(delegateSetupDetails, delegateGroup, accountId);
 
     ImmutableMap<String, String> scriptParams = getJarAndScriptRunTimeParamMap(
         TemplateParameters.builder()
@@ -4541,11 +4532,11 @@ public class DelegateServiceImpl implements DelegateService {
       DelegateSetupDetails delegateSetupDetails, DelegateGroup delegateGroup, String accountId) {
     if (delegateGroup.isNg()) {
       outboxService.save(
-          DelegateGroupUpsertEvent.builder()
+          DelegateUpsertEvent.builder()
               .accountIdentifier(accountId)
               .orgIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getOrgIdentifier() : null)
               .projectIdentifier(delegateSetupDetails != null ? delegateSetupDetails.getProjectIdentifier() : null)
-              .delegateGroupId(delegateGroup.getUuid())
+              .delegateGroupIdentifier(delegateGroup.getIdentifier())
               .delegateSetupDetails(delegateSetupDetails)
               .build());
     } else {

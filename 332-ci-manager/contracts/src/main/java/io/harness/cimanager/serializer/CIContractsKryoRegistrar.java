@@ -162,7 +162,7 @@ public class CIContractsKryoRegistrar implements KryoRegistrar {
     kryo.register(ArchType.class, 110140);
     kryo.register(OSType.class, 110141);
     kryo.register(BooleanNode.class, 110142);
-    kryo.register(NullNode.class, 110143);
-    kryo.register(DockerInfraSpec.class, 110144);
+    kryo.register(NullNode.class, 110145);
+    kryo.register(DockerInfraSpec.class, 110146);
   }
 }

@@ -85,7 +85,14 @@ public class BudgetAlertsServiceImpl {
   private static final String BUDGET_DETAILS_URL_FORMAT = "/account/%s/continuous-efficiency/budget/%s";
   private static final String BUDGET_DETAILS_URL_FORMAT_NG = "/account/%s/ce/budget/%s/%s";
   private static final String ACTUAL_COST_BUDGET = "cost";
+  private static final String SUBJECT_ACTUAL_COST_BUDGET = "Spent so far";
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
+  private static final String SUBJECT_FORECASTED_COST_BUDGET = "Forecasted cost";
+  private static final String DAY = "day";
+  private static final String WEEK = "week";
+  private static final String MONTH = "month";
+  private static final String QUARTER = "quarter";
+  private static final String YEAR = "year";
 
   public void sendBudgetAlerts() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
@@ -174,9 +181,11 @@ public class BudgetAlertsServiceImpl {
         break;
       }
       String costType = ACTUAL_COST_BUDGET;
+      String subjectCostType = SUBJECT_ACTUAL_COST_BUDGET;
       try {
         if (alertThreshold.getBasedOn() == FORECASTED_COST) {
           costType = FORECASTED_COST_BUDGET;
+          subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
         }
         log.info("{} has been spent under the budget with id={} ", cost, budget.getUuid());
       } catch (Exception e) {
@@ -192,7 +201,7 @@ public class BudgetAlertsServiceImpl {
           log.error("Notification via slack not send : ", e);
         }
         sendBudgetAlertMail(budget.getAccountId(), emailAddresses, budget.getUuid(), budget.getName(), alertThreshold,
-            cost, costType, budget.isNgBudget());
+            cost, costType, budget.isNgBudget(), subjectCostType, getBudgetPeriodForEmailAlert(budget));
         // insert in timescale table
         budgetTimescaleQueryHelper.insertAlertEntryInTable(data, budget.getAccountId());
         break;
@@ -259,7 +268,8 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void sendBudgetAlertMail(String accountId, List<String> emailAddresses, String budgetId, String budgetName,
-      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget) {
+      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget, String subjectCostType,
+      String period) {
     List<String> uniqueEmailAddresses = new ArrayList<>(new HashSet<>(emailAddresses));
 
     try {
@@ -271,6 +281,8 @@ public class BudgetAlertsServiceImpl {
       templateModel.put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()));
       templateModel.put("CURRENT_COST", String.format("%.2f", currentCost));
       templateModel.put("COST_TYPE", costType);
+      templateModel.put("SUBJECT_COST_TYPE", subjectCostType);
+      templateModel.put("PERIOD", period);
 
       uniqueEmailAddresses.forEach(emailAddress -> {
         templateModel.put("name", emailAddress.substring(0, emailAddress.lastIndexOf('@')));
@@ -360,5 +372,27 @@ public class BudgetAlertsServiceImpl {
       return -1;
     }
     return monthDiff;
+  }
+
+  // We don't have monthly here as one of the period in cases
+  // We have placed it in default itself
+  private String getBudgetPeriodForEmailAlert(Budget budget) {
+    switch (budget.getPeriod()) {
+      case DAILY:
+        return DAY;
+      case WEEKLY:
+        return WEEK;
+      case QUARTERLY:
+        return QUARTER;
+      case YEARLY:
+        if (budget.getBudgetMonthlyBreakdown() != null
+            && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          return MONTH;
+        } else {
+          return YEAR;
+        }
+      default:
+        return MONTH;
+    }
   }
 }

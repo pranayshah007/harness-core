@@ -29,7 +29,8 @@ public enum InfrastructureType {
   @JsonProperty(InfrastructureKind.CUSTOM_DEPLOYMENT) CUSTOM_DEPLOYMENT(InfrastructureKind.CUSTOM_DEPLOYMENT),
   @JsonProperty(InfrastructureKind.ECS) ECS(InfrastructureKind.ECS),
   @JsonProperty(InfrastructureKind.ELASTIGROUP) ELASTIGROUP(InfrastructureKind.ELASTIGROUP),
-  @JsonProperty(InfrastructureKind.TAS) TAS(InfrastructureKind.TAS);
+  @JsonProperty(InfrastructureKind.TAS) TAS(InfrastructureKind.TAS),
+  @JsonProperty(InfrastructureKind.ASG) ASG(InfrastructureKind.ASG);
 
   private final String displayName;
 

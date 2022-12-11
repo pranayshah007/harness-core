@@ -611,3 +611,6 @@ io.harness.cdng.manifest.yaml.VarsManifestOutcome
 io.harness.cdng.manifest.yaml.TasManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.VarsManifest
 io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
+io.harness.cdng.infra.beans.AsgInfraMapping
+io.harness.cdng.infra.beans.AsgInfrastructureOutcome
+io.harness.cdng.infra.yaml.AsgInfrastructure

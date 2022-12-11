@@ -8,14 +8,13 @@
 package io.harness.delegate.task.winrm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.winrm.WinRmExecutorHelper.PARTITION_SIZE_IN_BYTES;
 import static io.harness.delegate.utils.TaskExceptionUtils.calcPercentage;
+import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.RUNNING;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.windows.CmdUtils.escapeEnvValueSpecialChars;
-import static io.harness.winrm.WinRmHelperUtils.buildErrorDetailsFromWinRmClientException;
 
 import static java.lang.String.format;
 
@@ -26,7 +25,6 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.clienttools.ClientTool;
 import io.harness.delegate.clienttools.HarnessPywinrmVersion;
 import io.harness.delegate.clienttools.InstallUtils;
-import io.harness.eraro.ResponseMessage;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.LogCallback;
@@ -52,8 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 
@@ -65,10 +61,6 @@ public class WinRmSession implements AutoCloseable {
   @VisibleForTesting static final String FILE_CACHE_TYPE = "FILE";
   @VisibleForTesting static final String KERBEROS_CACHE_NAME_ENV = "KRB5CCNAME";
   @VisibleForTesting static final String COMMAND_PLACEHOLDER = "%s %s";
-  private static final String START_OF_ERROR_TAG = "<S S=\"Error\">";
-  private static final String END_OF_ERROR_TAG = "</S>";
-  private static final Pattern ERROR_PATTERN = Pattern.compile(START_OF_ERROR_TAG + ".*?" + END_OF_ERROR_TAG);
-  private static final String START_OF_XML_RESPONSE = "#< CLIXML";
 
   private final ShellCommand shell;
   private final WinRmTool winRmTool;
@@ -78,7 +70,6 @@ public class WinRmSession implements AutoCloseable {
   private WinRmClientContext context;
   private PyWinrmArgs args;
   private Path cacheFilePath;
-  private final AuthenticationScheme authenticationScheme;
 
   public WinRmSession(WinRmSessionConfig config, LogCallback logCallback) throws JSchException {
     Map<String, String> processedEnvironmentMap = new HashMap<>();
@@ -88,9 +79,8 @@ public class WinRmSession implements AutoCloseable {
       }
     }
     this.logCallback = logCallback;
-    this.authenticationScheme = config.getAuthenticationScheme();
     Map<String, String> generateTGTEnv = new HashMap<>();
-    if (authenticationScheme == AuthenticationScheme.KERBEROS) {
+    if (config.getAuthenticationScheme() == AuthenticationScheme.KERBEROS) {
       if (config.isUseKerberosUniqueCacheFile()) {
         this.cacheFilePath = config.getSessionCacheFilePath();
         String cache = String.format("%s:%s", FILE_CACHE_TYPE, cacheFilePath);
@@ -125,7 +115,7 @@ public class WinRmSession implements AutoCloseable {
     WinRmClientBuilder clientBuilder =
         WinRmClient.builder(getEndpoint(config.getHostname(), config.getPort(), config.isUseSSL()))
             .disableCertificateChecks(config.isSkipCertChecks())
-            .authenticationScheme(getAuthSchemeString(authenticationScheme))
+            .authenticationScheme(getAuthSchemeString(config.getAuthenticationScheme()))
             .credentials(config.getDomain(), config.getUsername(), config.getPassword())
             .workingDirectory(config.getWorkingDirectory())
             .environment(processedEnvironmentMap)
@@ -139,7 +129,7 @@ public class WinRmSession implements AutoCloseable {
 
     winRmTool = WinRmTool.Builder.builder(config.getHostname(), config.getUsername(), config.getPassword())
                     .disableCertificateChecks(config.isSkipCertChecks())
-                    .authenticationScheme(getAuthSchemeString(authenticationScheme))
+                    .authenticationScheme(getAuthSchemeString(config.getAuthenticationScheme()))
                     .workingDirectory(config.getWorkingDirectory())
                     .environment(processedEnvironmentMap)
                     .port(config.getPort())
@@ -150,33 +140,29 @@ public class WinRmSession implements AutoCloseable {
 
   public int executeCommandString(String command, Writer output, Writer error, boolean isOutputWriter) {
     if (args != null) {
-      return executeCommandWithKerberos(command, output, isOutputWriter);
+      String commandFilePath = null;
+      try {
+        File commandFile = File.createTempFile("winrm-kerberos-command", null);
+        commandFilePath = commandFile.getPath();
+        byte[] buff = command.getBytes(StandardCharsets.UTF_8);
+        Files.write(Paths.get(commandFilePath), buff);
+
+        return SshHelperUtils.executeLocalCommand(
+                   format(COMMAND_PLACEHOLDER,
+                       InstallUtils.getPath(ClientTool.HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4),
+                       args.getArgs(commandFile.getAbsolutePath())),
+                   logCallback, output, isOutputWriter, args.getEnvironmentMap())
+            ? 0
+            : 1;
+      } catch (IOException e) {
+        log.error(format("Error while creating temporary file: %s", e));
+        logCallback.saveExecutionLog("Error while creating temporary file");
+        return 1;
+      } finally {
+        deleteSilently(commandFilePath);
+      }
     }
     return shell.execute(command, output, error);
-  }
-
-  public int executeCommandWithKerberos(String command, Writer output, boolean isOutputWriter) {
-    String commandFilePath = null;
-    try {
-      File commandFile = File.createTempFile("winrm-kerberos-command", null);
-      commandFilePath = commandFile.getPath();
-      byte[] buff = command.getBytes(StandardCharsets.UTF_8);
-      Files.write(Paths.get(commandFilePath), buff);
-
-      return SshHelperUtils.executeLocalCommand(
-                 format(COMMAND_PLACEHOLDER,
-                     InstallUtils.getPath(ClientTool.HARNESS_PYWINRM, HarnessPywinrmVersion.V0_4),
-                     args.getArgs(commandFile.getAbsolutePath())),
-                 logCallback, output, isOutputWriter, args.getEnvironmentMap())
-          ? 0
-          : 1;
-    } catch (IOException e) {
-      log.error(format("Error while creating temporary file: %s", e));
-      logCallback.saveExecutionLog("Error while creating temporary file");
-      return 1;
-    } finally {
-      deleteSilently(commandFilePath);
-    }
   }
 
   private void deleteSilently(String path) {
@@ -210,7 +196,13 @@ public class WinRmSession implements AutoCloseable {
     } else {
       for (List<String> list : commandList) {
         winRmToolResponse = winRmTool.executeCommand(list);
-        writeLogs(winRmToolResponse, output, error);
+        if (!winRmToolResponse.getStdOut().isEmpty()) {
+          output.write(winRmToolResponse.getStdOut());
+        }
+
+        if (!winRmToolResponse.getStdErr().isEmpty()) {
+          error.write(winRmToolResponse.getStdErr());
+        }
         statusCode = winRmToolResponse.getStatusCode();
         if (statusCode != 0) {
           return statusCode;
@@ -224,129 +216,59 @@ public class WinRmSession implements AutoCloseable {
     return statusCode;
   }
 
-  public int copyScriptToRemote(List<String> commandList, Writer output, Writer error) throws IOException {
+  public int executeCommandsListV2(List<String> commandList, Writer output, Writer error, boolean isOutputWriter,
+      String scriptExecCommand, boolean isScriptFileExecution) {
     if (commandList.isEmpty()) {
       return -1;
     }
-    if (authenticationScheme == AuthenticationScheme.KERBEROS) {
-      return executeCopyCommandsWithKerberos(commandList, output);
-    } else {
-      return executeCopyCommands(commandList, output, error);
-    }
-  }
-
-  public int executeScript(String scriptExecCommand, Writer output, Writer error) {
-    try {
-      if (authenticationScheme == AuthenticationScheme.KERBEROS) {
-        return executeCommandWithKerberos(scriptExecCommand, output, false);
-      } else {
-        // adding output format at the end because there is a bug in powershell 5.1 and bellow which is fixed in 6.1.
-        // https://github.com/PowerShell/PowerShell/issues/5912
-        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(scriptExecCommand + " -OutputFormat Text");
-        writeLogs(winRmToolResponse, output, error);
-        return hasError(winRmToolResponse) ? 1 : winRmToolResponse.getStatusCode();
+    int statusCode;
+    if (args != null) {
+      if (isNotEmpty(scriptExecCommand)) {
+        commandList.add(scriptExecCommand);
       }
-    } catch (Exception e) {
-      ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
-      log.error("Script execution failed.", e);
-      logCallback.saveExecutionLog(details.getMessage(), INFO, RUNNING);
-      return 1;
-    }
-  }
-
-  private int executeCopyCommands(List<String> commandList, Writer output, Writer error) {
-    try {
-      int statusCode = 0;
-      int chunkNumber = 1;
-      int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
-      logCallback.saveExecutionLog(
-          format("Transferring encoded script to a remote file. File size: %s Bytes, Chunk size: %s Bytes\n",
-              fileLength, PARTITION_SIZE_IN_BYTES),
-          INFO, RUNNING);
-      for (String command : commandList) {
-        WinRmToolResponse winRmToolResponse = winRmTool.executeCommand(command);
-        writeLogs(winRmToolResponse, output, error);
-        statusCode = winRmToolResponse.getStatusCode();
-        if (statusCode != 0) {
-          logCallback.saveExecutionLog("Transferring encoded script data to remote file FAILED.", INFO, RUNNING);
-          return statusCode;
-        }
-        logCallback.saveExecutionLog(format("Transferred %s data to remote file...\n",
-                                         calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
-            INFO, RUNNING);
-        chunkNumber++;
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
+      if (statusCode != 0) {
+        log.warn("Transferring script data to PowerShell script file failed.");
       }
       return statusCode;
-    } catch (IOException e) {
-      log.error("Transferring encoded script data to remote file FAILED.", e);
-      logCallback.saveExecutionLog("Transferring encoded script data to remote file FAILED.", INFO, RUNNING);
-      return 1;
-    } catch (Exception e) {
-      ResponseMessage details = buildErrorDetailsFromWinRmClientException(e);
-      log.error("Transferring encoded script data to remote file FAILED.", e);
-      logCallback.saveExecutionLog(
-          "Transferring encoded script data to remote file FAILED.\n\n" + details.getMessage(), INFO, RUNNING);
-      return 1;
-    }
-  }
-
-  private int executeCopyCommandsWithKerberos(List<String> commandList, Writer output) {
-    int statusCode = 0;
-    int chunkNumber = 1;
-    int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
-    logCallback.saveExecutionLog(
-        format("Transferring encoded script to a remote file. File size: %s Bytes, Chunk size: %s Bytes\n", fileLength,
-            PARTITION_SIZE_IN_BYTES),
-        INFO, RUNNING);
-    for (String command : commandList) {
-      statusCode = executeCommandWithKerberos(command, output, false);
+    } else {
+      statusCode = executeAllCommands(commandList, output, error, isOutputWriter, isScriptFileExecution);
       if (statusCode != 0) {
-        logCallback.saveExecutionLog("Transferring encoded script data to remote file FAILED.", INFO, RUNNING);
+        log.warn("Transferring script data to PowerShell script file failed.");
         return statusCode;
       }
-      logCallback.saveExecutionLog(format("Transferred %s data to remote file...\n",
-                                       calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
-          INFO, RUNNING);
-      chunkNumber++;
+      if (isNotEmpty(scriptExecCommand)) {
+        statusCode = shell.execute(scriptExecCommand, output, error);
+      }
     }
+
     return statusCode;
   }
 
-  private void writeLogs(WinRmToolResponse winRmToolResponse, Writer output, Writer error) throws IOException {
-    if (!winRmToolResponse.getStdOut().isEmpty()) {
-      output.write(winRmToolResponse.getStdOut());
+  private int executeAllCommands(
+      List<String> commandList, Writer output, Writer error, boolean isOutputWriter, boolean isScriptFileExecution) {
+    int statusCode = 0;
+    int chunkNumber = 1;
+    if (isScriptFileExecution) {
+      logCallback.saveExecutionLog(
+          format("Transferring script to a remote file. Chunk size: %s Bytes\n", PARTITION_SIZE_IN_BYTES), INFO,
+          RUNNING);
     }
-
-    if (!winRmToolResponse.getStdErr().isEmpty()) {
-      if (isXmlResponse(winRmToolResponse)) {
-        writeLogsFromXmlResponse(error, winRmToolResponse);
-      } else {
-        error.write(winRmToolResponse.getStdErr());
+    for (String command : commandList) {
+      int fileLength = commandList.stream().mapToInt(c -> c.getBytes().length).sum();
+      statusCode = executeCommandString(command, output, error, isOutputWriter);
+      if (statusCode != 0) {
+        logCallback.saveExecutionLog("Transferring script data to PowerShell script file failed.", INFO, FAILURE);
+        return statusCode;
       }
+      if (isScriptFileExecution) {
+        logCallback.saveExecutionLog(format("Transferred %s data to PowerShell script file...\n",
+                                         calcPercentage(chunkNumber * PARTITION_SIZE_IN_BYTES, fileLength)),
+            INFO, RUNNING);
+      }
+      chunkNumber++;
     }
-  }
-
-  private boolean isXmlResponse(WinRmToolResponse winRmToolResponse) {
-    return winRmToolResponse.getStdErr() != null && winRmToolResponse.getStdErr().startsWith(START_OF_XML_RESPONSE);
-  }
-
-  private boolean hasError(WinRmToolResponse winRmToolResponse) {
-    return (isXmlResponse(winRmToolResponse) && ERROR_PATTERN.matcher(winRmToolResponse.getStdErr()).find())
-        || (!isXmlResponse(winRmToolResponse)) && !isEmpty(winRmToolResponse.getStdErr());
-  }
-
-  private void writeLogsFromXmlResponse(Writer error, WinRmToolResponse winRmToolResponse) throws IOException {
-    // There is a bug in powershell versions 5.1 and bellow to display output and error in XML format because we are
-    // calling powershell from powershell. The solution is to avoid writing this XML message in execution logs. We
-    // are searching for the error tags in this XML and writing them into execution logs.
-    Matcher matcher = ERROR_PATTERN.matcher(winRmToolResponse.getStdErr());
-    while (matcher.find()) {
-      final String errorString = winRmToolResponse.getStdErr()
-                                     .substring(matcher.start(), matcher.end())
-                                     .replaceFirst(START_OF_ERROR_TAG, "")
-                                     .replaceFirst(END_OF_ERROR_TAG, "");
-      error.write(errorString + "\n");
-    }
+    return statusCode;
   }
 
   private static String getEndpoint(String hostname, int port, boolean useHttps) {

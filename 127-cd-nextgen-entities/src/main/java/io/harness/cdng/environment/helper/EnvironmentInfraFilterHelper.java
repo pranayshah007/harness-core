@@ -33,6 +33,7 @@ import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.utils.RetryUtils;
 
@@ -77,18 +78,18 @@ public class EnvironmentInfraFilterHelper {
       Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
   public boolean areAllTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
-    // Safety check, the list is
+    // Safety check, if list is empty
     if (isEmpty(entityTags)) {
       return false;
     }
 
     int count = 0;
-    for (NGTag tag : entityTags) {
-      if (tagsInFilter.contains(tag)) {
+    for (NGTag tag : tagsInFilter) {
+      if (entityTags.contains(tag)) {
         count++;
       }
     }
-    return count != 0 && count == entityTags.size();
+    return count != 0 && count == tagsInFilter.size();
   }
 
   public boolean areAnyTagFiltersMatching(List<NGTag> entityTags, List<NGTag> tagsInFilter) {
@@ -142,8 +143,11 @@ public class EnvironmentInfraFilterHelper {
   }
 
   private boolean applyMatchAllFilter(List<NGTag> entityTags, TagsFilter tagsFilter) {
+    Map<String, String> tagsMap = tagsFilter.getTags().getValue();
+    // Remove UUID from tags
+    TagUtils.removeUuidFromTags(tagsMap);
     return tagsFilter.getMatchType().getValue().name().equals(TAGFILTER_MATCHTYPE_ALL)
-        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsFilter.getTags().getValue()));
+        && areAllTagFiltersMatching(entityTags, TagMapper.convertToList(tagsMap));
   }
 
   /**
@@ -370,11 +374,15 @@ public class EnvironmentInfraFilterHelper {
   }
 
   public boolean areFiltersPresent(EnvironmentsYaml environmentsYaml) {
-    return isNotEmpty(environmentsYaml.getFilters().getValue())
+    return (ParameterField.isNotNull(environmentsYaml.getFilters())
+               && isNotEmpty(environmentsYaml.getFilters().getValue()))
         || areFiltersSetOnIndividualEnvironments(environmentsYaml);
   }
 
   public boolean areFiltersSetOnIndividualEnvironments(EnvironmentsYaml environmentsYaml) {
+    if (ParameterField.isNull(environmentsYaml.getValues())) {
+      return false;
+    }
     List<EnvironmentYamlV2> envV2YamlsWithFilters = getEnvV2YamlsWithFilters(environmentsYaml);
     return isNotEmpty(envV2YamlsWithFilters);
   }
