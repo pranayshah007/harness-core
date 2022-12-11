@@ -150,3 +150,5 @@ Ce1.sh
 Ce3.sh
 Ce4.sh
 PEKA.sh
+nurkinan
+Gasn
