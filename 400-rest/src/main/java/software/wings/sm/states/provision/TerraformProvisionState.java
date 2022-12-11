@@ -61,6 +61,7 @@ import static io.harness.provision.TerraformConstants.TF_VAR_FILES_GIT_USE_BRANC
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_CONFIG_ID_KEY;
 import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_URI_KEY;
+import static io.harness.provision.TerraformConstants.TF_VAR_FILES_S3_URI_LIST_KEY;
 import static io.harness.provision.TerraformConstants.VARIABLES_KEY;
 import static io.harness.provision.TerraformConstants.WORKSPACE_KEY;
 import static io.harness.validation.Validator.notNullCheck;
@@ -696,6 +697,7 @@ public abstract class TerraformProvisionState extends State {
           S3FileConfig s3FileConfig = ((TfVarS3Source) tfVarSource).getS3FileConfig();
           others.put(TF_VAR_FILES_S3_CONFIG_ID_KEY, s3FileConfig.getAwsConfigId());
           others.put(TF_VAR_FILES_S3_URI_KEY, s3FileConfig.getS3URI());
+          others.put(TF_VAR_FILES_S3_URI_LIST_KEY, s3FileConfig.getS3URIList());
         }
       }
 
@@ -1273,6 +1275,18 @@ public abstract class TerraformProvisionState extends State {
                     .repoName((String) fileMetadata.getMetadata().get(TF_VAR_FILES_GIT_REPO_NAME_KEY))
                     .build();
             setTfVarGitFileConfig(gitFileConfig);
+          }
+
+          String tfVarS3FileConfigId = (String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_CONFIG_ID_KEY);
+          if (isNotEmpty(tfVarS3FileConfigId)) {
+            S3FileConfig s3FileConfig =
+                S3FileConfig.builder()
+                    .awsConfigId(tfVarS3FileConfigId)
+                    .s3URI((String) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_KEY))
+                    .s3URIList((List<String>) fileMetadata.getMetadata().get(TF_VAR_FILES_S3_URI_LIST_KEY))
+                    .build();
+
+            setTfVarS3FileConfig(s3FileConfig);
           }
         }
       }

@@ -238,6 +238,7 @@ public class TerraformRollbackState extends TerraformProvisionState {
     executionLogCallback.saveExecutionLog(rollbackMessage.toString());
 
     setTfVarGitFileConfig(configParameter.getTfVarGitFileConfig());
+    setTfVarS3FileConfig(configParameter.getTfVarS3FileConfig());
     setTfVarFiles(configParameter.getTfVarFiles());
 
     String fileId =
