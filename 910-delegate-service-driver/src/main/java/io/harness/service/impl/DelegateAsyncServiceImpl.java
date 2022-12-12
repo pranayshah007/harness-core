@@ -98,7 +98,10 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData;
         if (disableDeserialization) {
-          responseData = BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build();
+          responseData = BinaryResponseData.builder()
+                             .data(lockedAsyncTaskResponse.getResponseData())
+                             .usingKryoWithoutReference(lockedAsyncTaskResponse.isUsingKryoWithoutReference())
+                             .build();
         } else {
           ResponseData data = lockedAsyncTaskResponse.isUsingKryoWithoutReference()
               ? (ResponseData) referenceFalseKryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData())
