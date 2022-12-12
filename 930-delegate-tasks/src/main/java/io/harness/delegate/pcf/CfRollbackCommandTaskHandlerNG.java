@@ -32,6 +32,7 @@ import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfDeployCommandResult;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
 import io.harness.delegate.beans.pcf.CfInternalInstanceElement;
+import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfServiceData;
 import io.harness.delegate.beans.pcf.TasApplicationInfo;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
@@ -40,6 +41,7 @@ import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponseNG;
+import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
@@ -47,6 +49,7 @@ import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.Misc;
+import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
@@ -75,6 +78,7 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   @Inject TasNgConfigMapper tasNgConfigMapper;
   @Inject CfDeploymentManager cfDeploymentManager;
   @Inject protected CfCommandTaskHelperNG cfCommandTaskHelperNG;
+  public static final String INTERIM_DELIMITER = "__INTERIM";
   @Override
   protected CfCommandResponseNG executeTaskInternal(CfCommandRequestNG cfCommandRequestNG,
       ILogStreamingTaskClient iLogStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) throws Exception {
@@ -84,11 +88,11 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     }
     CfInBuiltVariablesUpdateValues updateValues = CfInBuiltVariablesUpdateValues.builder().build();
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
-        iLogStreamingTaskClient, cfCommandRequestNG.getCommandName(), true, commandUnitsProgress);
+        iLogStreamingTaskClient, CfCommandUnitConstants.Upsize, true, commandUnitsProgress);
     executionLogCallback.saveExecutionLog(color("--------- Starting Rollback deployment", White, Bold));
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
-    CfDeployCommandResult cfDeployCommandResult = CfDeployCommandResult.builder().build();
-    CfDeployCommandResponseNG cfDeployCommandResponseNG = CfDeployCommandResponseNG.builder().build();
+    CfRollbackCommandResult cfRollbackCommandResult = CfRollbackCommandResult.builder().build();
+    CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfRollbackCommandRequestNG) cfCommandRequestNG;
 
@@ -112,21 +116,18 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
                       : 10)
               .build();
       // get Upsize Instance data
-      List<CfServiceData> upsizeList = cfCommandTaskHelperNG.getUpsizeListForRollback(cfRollbackCommandRequestNG);
-
-      // get Downsize Instance data
-      List<CfServiceData> downSizeList =
-          cfRollbackCommandRequestNG.getInstanceData()
-              .stream()
-              .filter(cfServiceData -> cfServiceData.getDesiredCount() < cfServiceData.getPreviousCount())
-              .collect(toList());
-
       List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
       // During rollback, always upsize old ones
+
+
+      updateNewAppName(cfRollbackCommandRequestNG.getNewApplicationDetails(), cfRequestConfig, executionLogCallback);
+      renameOldApp(cfRollbackCommandRequestNG.getOldApplicationDetails(), cfRequestConfig, executionLogCallback);
       cfCommandTaskHelperNG.upsizeListOfInstancesAndRestoreRoutes(executionLogCallback, cfDeploymentManager,
-          cfServiceDataUpdated, cfRequestConfig, upsizeList, cfInstanceElements, cfRollbackCommandRequestNG);
+              cfRollbackCommandRequestNG.getOldApplicationDetails(), cfRequestConfig, cfRollbackCommandRequestNG);
       // Enable autoscalar for older app, if it was disabled during deploy
-      cfCommandTaskHelperNG.enableAutoscalerIfNeeded(upsizeList, autoscalarRequestData, executionLogCallback);
+
+      //todo : ask about autoscaler
+   //   cfCommandTaskHelperNG.enableAutoscalerIfNeeded(cfRollbackCommandRequestNG.getOldApplicationDetails(), autoscalarRequestData, executionLogCallback);
       executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
 
       executionLogCallback =
@@ -134,17 +135,13 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       // Downsizing
       cfCommandTaskHelperNG.downSizeListOfInstancesAndUnmapRoutes(executionLogCallback, cfServiceDataUpdated,
-          cfRequestConfig, updateNewAppName(cfRequestConfig, cfRollbackCommandRequestNG, downSizeList),
+          cfRequestConfig, cfRollbackCommandRequestNG.getNewApplicationDetails(),
           cfRollbackCommandRequestNG, autoscalarRequestData);
-
-      cfDeployCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-      cfDeployCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
-      cfDeployCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
+      //todo: different resopnse
+      cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
 
       if (isRollbackCompleted(cfRollbackCommandRequestNG, cfRequestConfig)) {
         cfCommandTaskHelperNG.deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
-        updateValues = renameApps(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
-        cfDeployCommandResult.setUpdatedValues(updateValues);
         executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback completed successfully", INFO, SUCCESS);
       } else {
         executionLogCallback.saveExecutionLog("\n\n--------- CF Rollback is not completed", INFO, FAILURE);
@@ -153,9 +150,9 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     } catch (Exception e) {
       exception = e;
       logExceptionMessage(executionLogCallback, cfRollbackCommandRequestNG, exception);
-      cfDeployCommandResponseNG.setCommandExecutionStatus(FAILURE);
-      cfDeployCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
-      cfDeployCommandResponseNG.setErrorMessage(ExceptionUtils.getMessage(exception));
+      cfRollbackCommandResponseNG.setCommandExecutionStatus(FAILURE);
+      cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
+      cfRollbackCommandResponseNG.setErrorMessage(ExceptionUtils.getMessage(exception));
 
     } finally {
       executionLogCallback =
@@ -170,8 +167,26 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         }
       }
     }
-    cfDeployCommandResponseNG.setCfDeployCommandResult(cfDeployCommandResult);
-    return cfDeployCommandResponseNG;
+    cfRollbackCommandResponseNG.setCfRollbackCommandResult(cfRollbackCommandResult);
+    return cfRollbackCommandResponseNG;
+  }
+
+  private void renameOldApp(TasApplicationInfo oldApplicationDetails, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+    String oldName = oldApplicationDetails.getOldName();
+    CfRenameRequest cfRenameRequest = new CfRenameRequest(cfRequestConfig, oldApplicationDetails.getApplicationGuid(),
+            oldApplicationDetails.getApplicationName(),
+            oldName);
+    cfDeploymentManager.renameApplication(cfRenameRequest, executionLogCallback);
+    oldApplicationDetails.setApplicationName(oldName);
+  }
+
+  private void updateNewAppName(TasApplicationInfo newApplicationDetails, CfRequestConfig cfRequestConfig, LogCallback executionLogCallback) throws PivotalClientApiException {
+    String newName = newApplicationDetails.getApplicationName() + INTERIM_DELIMITER;
+    CfRenameRequest cfRenameRequest = new CfRenameRequest(cfRequestConfig, newApplicationDetails.getApplicationGuid(),
+            newApplicationDetails.getApplicationName(),
+            newName);
+   cfDeploymentManager.renameApplication(cfRenameRequest, executionLogCallback);
+    newApplicationDetails.setApplicationName(newName);
   }
 
   private CfRequestConfig buildCfRequestConfig(
@@ -191,24 +206,12 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         .build();
   }
 
-  private List<CfServiceData> updateNewAppName(CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG commandRollbackRequest, List<CfServiceData> downSizeList)
-      throws PivotalClientApiException {
-    String cfAppNamePrefix = commandRollbackRequest.getCfAppNamePrefix();
-
-    for (CfServiceData data : downSizeList) {
-      List<String> apps = cfCommandTaskHelperNG.getAppNameBasedOnGuid(cfRequestConfig, cfAppNamePrefix, data.getId());
-      data.setName(isEmpty(apps) ? data.getName() : apps.get(0));
-    }
-    return downSizeList;
-  }
-
   private boolean isRollbackCompleted(CfRollbackCommandRequestNG commandRollbackRequest,
       CfRequestConfig cfRequestConfig) throws PivotalClientApiException {
     // app downsized - to be deleted
     TasApplicationInfo newApp = commandRollbackRequest.getNewApplicationDetails();
     boolean rollbackCompleted =
-        instanceCountMatches(newApp.getApplicationName(), newApp.getRunningCount(), cfRequestConfig);
+        instanceCountMatches(newApp.getApplicationName(), 0, cfRequestConfig);
     // app upsized - to be renamed
     TasApplicationInfo prevActiveApp = commandRollbackRequest.getOldApplicationDetails();
     if (!isNull(prevActiveApp)) {
@@ -224,28 +227,6 @@ public class CfRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     cfRequestConfig.setApplicationName(applicationName);
     ApplicationDetail application = cfDeploymentManager.getApplicationByName(cfRequestConfig);
     return null != application && application.getInstances().equals(expectedInstanceCount);
-  }
-
-  private CfInBuiltVariablesUpdateValues renameApps(CfRequestConfig cfRequestConfig,
-      CfRollbackCommandRequestNG commandRollbackRequest, LogCallback logCallback) throws PivotalClientApiException {
-    CfInBuiltVariablesUpdateValues updateValues = CfInBuiltVariablesUpdateValues.builder().build();
-
-    logCallback.saveExecutionLog("\n# Reverting app names");
-    // app upsized - to be renamed
-    TasApplicationInfo prevActiveApp = commandRollbackRequest.getOldApplicationDetails();
-
-    if (!isNull(prevActiveApp)) {
-      String newName = commandRollbackRequest.getCfAppNamePrefix();
-      cfDeploymentManager.renameApplication(new CfRenameRequest(cfRequestConfig, prevActiveApp.getApplicationGuid(),
-                                                prevActiveApp.getApplicationName(), newName),
-          logCallback);
-      updateValues.setOldAppGuid(prevActiveApp.getApplicationGuid());
-      updateValues.setOldAppName(newName);
-      updateValues.setActiveAppName(newName);
-    }
-
-    logCallback.saveExecutionLog("# App names reverted successfully");
-    return updateValues;
   }
 
   private void logExceptionMessage(
