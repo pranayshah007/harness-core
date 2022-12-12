@@ -528,7 +528,7 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
         .build();
   }
 
-  private CountChangeDetails getExecutionsCount(ExecutionsCount executionsCount) {
+  private static CountChangeDetails getExecutionsCount(ExecutionsCount executionsCount) {
     return CountChangeDetails.builder()
         .countChangeAndCountChangeRateInfo(
             CountChangeAndCountChangeRateInfo.builder().countChange(executionsCount.getNewCount()).build())
@@ -664,7 +664,7 @@ public class OverviewDashboardServiceImpl implements OverviewDashboardService {
                                     accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
                                 .requestType(OverviewDashboardRequestType.GET_PIPELINES_COUNT)
                                 .build());
-    restCallRequestList.add(RestCallRequest.<PipelinesCount>builder()
+    restCallRequestList.add(RestCallRequest.<ExecutionsCount>builder()
                                 .request(pmsLandingDashboardResourceClient.getExecutionsCount(
                                     accountIdentifier, startInterval, endInterval, landingDashboardRequestPMS))
                                 .requestType(OverviewDashboardRequestType.GET_EXECUTIONS_COUNT)

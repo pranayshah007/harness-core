@@ -23,6 +23,7 @@ import io.harness.beans.version.Version;
 import io.harness.cli.CliHelper;
 import io.harness.cli.CliResponse;
 import io.harness.cli.LogCallbackOutputStream;
+import io.harness.cli.TerraformCliErrorLogOutputStream;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.serializer.JsonUtils;
@@ -176,7 +177,7 @@ public class TerragruntClientImpl implements TerragruntClient {
     logCallback.saveExecutionLog(color(command, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
     return cliHelper.executeCliCommand(command, cliRequest.getTimeoutInMillis(), cliRequest.getEnvVars(),
         cliRequest.getWorkingDirectory(), logCallback, command, outputStream,
-        logLine -> isNotEmpty(logLine) && !TF_LOG_LINE_PATTERN.matcher(logLine).find());
+        new TerraformCliErrorLogOutputStream(logCallback));
   }
 
   private Set<String> parseWorkspaceList(String workspaceOutput) {

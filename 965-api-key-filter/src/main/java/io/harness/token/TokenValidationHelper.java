@@ -23,7 +23,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class TokenValidationHelper {
-  private static final String delimiterRegex = "\\.";
+  public static final String apiKeyOrTokenDelimiterRegex = "\\.";
 
   private void checkIfApiKeyHasExpired(String tokenId, TokenDTO tokenDTO) {
     if (!tokenDTO.isValid()) {
@@ -80,7 +80,7 @@ public class TokenValidationHelper {
   }
 
   private String[] getApiKeyTokenComponents(String apiKey) {
-    return apiKey.split(delimiterRegex);
+    return apiKey.split(apiKeyOrTokenDelimiterRegex);
   }
 
   private boolean isOldApiKeyToken(String[] splitToken) {

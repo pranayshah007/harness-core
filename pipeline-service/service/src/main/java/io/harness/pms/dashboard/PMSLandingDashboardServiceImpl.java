@@ -29,6 +29,8 @@ import org.jooq.impl.DSL;
 
 public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardService {
   @Inject private DSLContext dsl;
+  private static String ORG_ID = "orgId";
+  private static String PROJECT_ID = "projectId";
 
   @Override
   public PipelinesCount getPipelinesCount(String accountIdentifier, List<OrgProjectIdentifier> orgProjectIdentifiers,
@@ -62,12 +64,11 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
     return dsl.select(DSL.count())
         .from(PIPELINE_EXECUTION_SUMMARY)
         .where(PIPELINE_EXECUTION_SUMMARY.ACCOUNTID.eq(accountIdentifier))
-        .andExists(
-            dsl.selectOne()
-                .from(orgProjectTable)
-                .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
-                           .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
-                               (Field<String>) orgProjectTable.field("projectId")))))
+        .andExists(dsl.selectOne()
+                       .from(orgProjectTable)
+                       .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field(ORG_ID))
+                                  .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
+                                      (Field<String>) orgProjectTable.field(PROJECT_ID)))))
         .fetchInto(Integer.class)
         .get(0);
   }
@@ -80,8 +81,8 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
         .andExists(
             dsl.selectOne()
                 .from(orgProjectTable)
-                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
-                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field("projectId")))))
+                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field(ORG_ID))
+                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field(PROJECT_ID)))))
         .fetchInto(Integer.class)
         .get(0);
   }
@@ -97,8 +98,8 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
         .andExists(
             dsl.selectOne()
                 .from(orgProjectTable)
-                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
-                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field("projectId")))))
+                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field(ORG_ID))
+                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field(PROJECT_ID)))))
         .fetchInto(Integer.class)
         .get(0);
   }
@@ -110,12 +111,11 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
         .where(PIPELINE_EXECUTION_SUMMARY.ACCOUNTID.eq(accountIdentifier))
         .and(PIPELINE_EXECUTION_SUMMARY.STARTTS.greaterOrEqual(startInterval))
         .and(PIPELINE_EXECUTION_SUMMARY.STARTTS.lessThan(endInterval))
-        .andExists(
-            dsl.selectOne()
-                .from(orgProjectTable)
-                .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
-                           .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
-                               (Field<String>) orgProjectTable.field("projectId")))))
+        .andExists(dsl.selectOne()
+                       .from(orgProjectTable)
+                       .where(PIPELINE_EXECUTION_SUMMARY.ORGIDENTIFIER.eq((Field<String>) orgProjectTable.field(ORG_ID))
+                                  .and(PIPELINE_EXECUTION_SUMMARY.PROJECTIDENTIFIER.eq(
+                                      (Field<String>) orgProjectTable.field(PROJECT_ID)))))
         .fetchInto(Integer.class)
         .get(0);
   }
@@ -132,8 +132,8 @@ public class PMSLandingDashboardServiceImpl implements PMSLandingDashboardServic
         .andExists(
             dsl.selectOne()
                 .from(orgProjectTable)
-                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field("orgId"))
-                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field("projectId")))))
+                .where(PIPELINES.ORG_IDENTIFIER.eq((Field<String>) orgProjectTable.field(ORG_ID))
+                           .and(PIPELINES.PROJECT_IDENTIFIER.eq((Field<String>) orgProjectTable.field(PROJECT_ID)))))
         .fetchInto(Integer.class)
         .get(0);
   }

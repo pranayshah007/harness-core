@@ -42,6 +42,10 @@ public class GitFileCacheTTLHelper {
     return Date.from(Instant.ofEpochMilli(currentTime + GitFileCacheTTL.MAX_CACHE_DURATION.getDurationInMs()));
   }
 
+  public Date getFormattedValidUntilTime(long validUntilTime) {
+    return Date.from(Instant.ofEpochMilli(validUntilTime));
+  }
+
   private boolean isExpiredCache(long validUntil, long currentTime) {
     return validUntil - currentTime < 0;
   }

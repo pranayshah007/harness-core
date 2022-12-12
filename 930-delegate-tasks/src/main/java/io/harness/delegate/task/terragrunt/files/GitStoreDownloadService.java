@@ -66,7 +66,7 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
 
     log.info("Downloading files {} from git to {}", gitStoreConfig.getPaths(), outputDirectory);
     logCallback.saveExecutionLog(format("Downloading files %s from git %s to directory %s", gitStoreConfig.getPaths(),
-        getLoggableGitSrc(gitStoreConfig), getLoggablePath(outputDirectory)));
+        getLoggableGitSrc(gitStoreConfig), outputDirectory));
     String commitReference = gitClient.cloneRepoAndCopyToDestDir(
         DownloadFilesRequest.builder()
             .branch(gitStoreConfig.getBranch())
@@ -99,7 +99,7 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
     }
 
     logCallback.saveExecutionLog(format("Fetching files %s from git %s to directory %s", gitStoreConfig.getPaths(),
-        getLoggableGitSrc(gitStoreConfig), getLoggablePath(outputDirectory)));
+        getLoggableGitSrc(gitStoreConfig), outputDirectory));
     if (gitStoreConfig.isOptimizedFilesFetch()) {
       log.info("Fetching files {} using scm to {}", gitStoreConfig.getPaths(), outputDirectory);
       return fetchFilesUsingScm(storeConfig, outputDirectory, logCallback);
@@ -180,7 +180,7 @@ public class GitStoreDownloadService implements FileStoreDownloadService {
     return filePaths;
   }
 
-  private static String getLoggableGitSrc(GitStoreDelegateConfig storeDelegateConfig) {
+  private String getLoggableGitSrc(GitStoreDelegateConfig storeDelegateConfig) {
     StringBuilder gitSource = new StringBuilder();
     if (isNotEmpty(storeDelegateConfig.getCommitId())) {
       gitSource.append("commit id: ").append(storeDelegateConfig.getCommitId());

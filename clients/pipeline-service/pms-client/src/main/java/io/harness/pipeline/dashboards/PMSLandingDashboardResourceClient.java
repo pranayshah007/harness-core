@@ -13,6 +13,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.dashboards.ExecutionsCount;
 import io.harness.pms.dashboards.LandingDashboardRequestPMS;
 import io.harness.pms.dashboards.PipelinesCount;
 
@@ -34,7 +35,7 @@ public interface PMSLandingDashboardResourceClient {
       @NotNull @Body LandingDashboardRequestPMS landingDashboardRequestPMS);
 
   @POST(LANDING_DASHBOARDS_ENDPOINT + "/executionsCount")
-  Call<ResponseDTO<PipelinesCount>> getExecutionsCount(
+  Call<ResponseDTO<ExecutionsCount>> getExecutionsCount(
       @NotNull @Query(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @Query(NGResourceFilterConstants.START_TIME) long startInterval,
       @NotNull @Query(NGResourceFilterConstants.END_TIME) long endInterval,
