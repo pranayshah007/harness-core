@@ -782,10 +782,14 @@
         {
           "type": "object",
           "required": [
+            "command",
             "infrastructure",
             "resources"
           ],
           "properties": {
+            "command": {
+              "type": "string"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -847,6 +851,21 @@
             "metadata": {
               "type": "string"
             },
+            "outputVariables": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/OutputNGVariable"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "privileged": {
               "oneOf": [
                 {
@@ -886,6 +905,24 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "shell": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Sh",
+                    "Bash",
+                    "Powershell",
+                    "Pwsh"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>((\\.)((executionInput\\(\\))|(allowedValues|default|regex)\\(.+?\\)))*$",
+                  "minLength": 1
                 }
               ]
             },
@@ -2433,6 +2470,19 @@
               "$ref": "#/definitions/StepGroupFailureActionConfig"
             }
           ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OutputNGVariable": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"

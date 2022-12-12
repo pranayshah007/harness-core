@@ -7,14 +7,18 @@
 
 package io.harness.cvng.servicelevelobjective;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.VARSHA_LALWANI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -39,6 +43,7 @@ import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
@@ -46,9 +51,12 @@ import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricE
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
+import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
+import io.harness.cvng.servicelevelobjective.entities.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
+import io.harness.cvng.statemachine.services.api.OrchestrationService;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
@@ -60,7 +68,10 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -82,12 +93,19 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject private MonitoredServiceService monitoredServiceService;
   private String monitoredServiceIdentifier;
 
+  private Instant startTime;
+
+  private Instant endTime;
+
   @Before
   @SneakyThrows
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
     monitoredServiceIdentifier = "monitoredServiceIdentifier";
     createMonitoredService();
+    clock = Clock.fixed(TIME_FOR_TESTS, ZoneOffset.UTC);
+    startTime = TIME_FOR_TESTS.minus(5, ChronoUnit.MINUTES);
+    endTime = TIME_FOR_TESTS;
   }
 
   @Test
@@ -257,6 +275,40 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     assertThat(Collections.singletonList(serviceLevelIndicatorDTO)).isEqualTo(serviceLevelIndicatorDTOList);
   }
 
+  @Test
+  @Owner(developers = VARSHA_LALWANI)
+  @Category(UnitTests.class)
+  public void testUpdate_queueAnalysis_success() throws IllegalAccessException {
+    OrchestrationService orchestrationService = mock(OrchestrationService.class);
+    FieldUtils.writeField(serviceLevelIndicatorService, "orchestrationService", orchestrationService, true);
+    ServiceLevelIndicatorDTO serviceLevelIndicatorDTO = createServiceLevelIndicator(SLIMetricType.THRESHOLD);
+    ProjectParams projectParams = builderFactory.getProjectParams();
+    String serviceLevelObjectiveIdentifier = generateUuid();
+    String healthSourceIdentifier = generateUuid();
+    List<String> serviceLevelIndicatorIdentifiers =
+        serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+            serviceLevelObjectiveIdentifier, monitoredServiceIdentifier, healthSourceIdentifier);
+    List<SLIRecord.SLIState> sliStateList = Arrays.asList(SLIRecord.SLIState.GOOD, SLIRecord.SLIState.GOOD,
+        SLIRecord.SLIState.BAD, SLIRecord.SLIState.NO_DATA, SLIRecord.SLIState.BAD);
+    String sliId =
+        serviceLevelIndicatorService
+            .getServiceLevelIndicator(builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0))
+            .getUuid();
+    createSLIRecords(sliId, sliStateList);
+    serviceLevelIndicatorService.update(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
+        serviceLevelObjectiveIdentifier, serviceLevelIndicatorIdentifiers, monitoredServiceIdentifier,
+        healthSourceIdentifier,
+        TimePeriod.builder()
+            .startDate(LocalDate.ofInstant(clock.instant().minus(21, ChronoUnit.DAYS), ZoneOffset.UTC))
+            .endDate(LocalDate.ofInstant(clock.instant().plus(9, ChronoUnit.DAYS), ZoneOffset.UTC))
+            .build(),
+        TimePeriod.builder()
+            .startDate(LocalDate.ofInstant(clock.instant().minus(7, ChronoUnit.DAYS), ZoneOffset.UTC))
+            .endDate(LocalDate.ofInstant(clock.instant(), ZoneOffset.UTC))
+            .build());
+    verify(orchestrationService, times(1)).queueAnalysis(sliId, startTime, endTime);
+  }
+
   private void createMonitoredService() {
     MonitoredServiceDTO monitoredServiceDTO =
         builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
@@ -301,6 +353,28 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
                             .thresholdType(ThresholdType.GREATER_THAN)
                             .build())
                   .build())
+        .sliMissingDataType(SLIMissingDataType.GOOD)
         .build();
+  }
+
+  private List<SLIRecord> createSLIRecords(String sliId, List<SLIRecord.SLIState> states) {
+    int index = 0;
+    List<SLIRecord> sliRecords = new ArrayList<>();
+    for (Instant instant = startTime; instant.isBefore(endTime); instant = instant.plus(1, ChronoUnit.MINUTES)) {
+      SLIRecord sliRecord = SLIRecord.builder()
+                                .verificationTaskId(sliId)
+                                .sliId(sliId)
+                                .version(0)
+                                .sliState(states.get(index))
+                                .runningBadCount(0)
+                                .runningGoodCount(1)
+                                .sliVersion(0)
+                                .timestamp(instant)
+                                .build();
+      sliRecords.add(sliRecord);
+      index++;
+    }
+    hPersistence.save(sliRecords);
+    return sliRecords;
   }
 }

@@ -5404,7 +5404,16 @@
                 "type": "string"
               }
             },
+            "passwordRef": {
+              "type": "string"
+            },
             "serviceNowUrl": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
               "type": "string"
             }
           }

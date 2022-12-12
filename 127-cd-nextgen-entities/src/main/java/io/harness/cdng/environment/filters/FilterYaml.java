@@ -20,7 +20,7 @@ import io.harness.walktree.visitor.Visitable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.EnumSet;
+import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -41,7 +41,7 @@ public class FilterYaml implements Visitable {
 
   @NotNull @JsonProperty("type") FilterType type;
 
-  @NotNull private EnumSet<Entity> entities;
+  @NotNull private Set<Entity> entities;
 
   @NotNull
   @JsonProperty("spec")

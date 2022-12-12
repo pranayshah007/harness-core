@@ -232,15 +232,20 @@ public class InstanceDashboardServiceImpl implements InstanceDashboardService {
    * @param envId
    * @param buildIds
    * @param timestampInMs
+   * @param infraId
+   * @param clusterId
+   * @param pipelineExecutionId
+   * @param lastDeployedAt
    * @return List of buildId and instances
    */
   @Override
   public List<InstanceDetailsByBuildId> getActiveInstancesByServiceIdEnvIdAndBuildIds(String accountIdentifier,
       String orgIdentifier, String projectIdentifier, String serviceId, String envId, List<String> buildIds,
-      long timestampInMs) {
+      long timestampInMs, String infraId, String clusterId, String pipelineExecutionId, long lastDeployedAt) {
     AggregationResults<InstancesByBuildId> buildIdAndInstancesAggregationResults =
         instanceService.getActiveInstancesByServiceIdEnvIdAndBuildIds(accountIdentifier, orgIdentifier,
-            projectIdentifier, serviceId, envId, buildIds, timestampInMs, InstanceSyncConstants.INSTANCE_LIMIT);
+            projectIdentifier, serviceId, envId, buildIds, timestampInMs, InstanceSyncConstants.INSTANCE_LIMIT, infraId,
+            clusterId, pipelineExecutionId, lastDeployedAt);
     List<InstanceDetailsByBuildId> buildIdAndInstancesList = new ArrayList<>();
 
     buildIdAndInstancesAggregationResults.getMappedResults().forEach(buildIdAndInstances -> {

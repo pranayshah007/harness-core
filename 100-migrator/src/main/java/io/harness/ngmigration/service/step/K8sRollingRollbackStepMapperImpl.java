@@ -31,10 +31,8 @@ public class K8sRollingRollbackStepMapperImpl implements StepMapper {
   public AbstractStepNode getSpec(StepYaml stepYaml) {
     K8sRollingRollbackStepNode k8sRollingStepNode = new K8sRollingRollbackStepNode();
     baseSetup(stepYaml, k8sRollingStepNode);
-    k8sRollingStepNode.setK8sRollingRollbackStepInfo(K8sRollingRollbackStepInfo.infoBuilder()
-                                                         .skipDryRun(ParameterField.createValueField(false))
-                                                         .pruningEnabled(ParameterField.createValueField(false))
-                                                         .build());
+    k8sRollingStepNode.setK8sRollingRollbackStepInfo(
+        K8sRollingRollbackStepInfo.infoBuilder().pruningEnabled(ParameterField.createValueField(false)).build());
     return k8sRollingStepNode;
   }
 

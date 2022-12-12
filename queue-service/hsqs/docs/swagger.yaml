@@ -41,9 +41,7 @@ definitions:
       metadata:
         $ref: '#/definitions/store.DequeueItemMetadata'
       payload:
-        items:
-          type: integer
-        type: array
+        type: string
       queueKey:
         type: string
       timeStamp:
@@ -52,9 +50,7 @@ definitions:
   store.EnqueueRequest:
     properties:
       payload:
-        items:
-          type: integer
-        type: array
+        type: string
       producerName:
         type: string
       subTopic:

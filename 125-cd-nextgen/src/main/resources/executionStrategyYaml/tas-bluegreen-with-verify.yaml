@@ -1,0 +1,52 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          name: "App Setup Step"
+          identifier: setupStep
+          type: TasAppSetup
+          timeout: 10m
+          spec:
+            instanceCount: FromManifest
+            existingVersionToKepp: 3
+            additionalRoutes: ""
+            tempRoutes: ""
+      - step:
+          type: Verify
+          name: Verify
+          identifier: Verify
+          timeout: 2h
+          spec: {}
+      - step:
+          name: "Deploy Step"
+          identifier: deployStep
+          type: TasAppResize
+          timeout: 10m
+          spec:
+            newAppInstances:
+              type: Count
+              value: 2
+            oldAppInstances:
+              type: Percentage
+              value: 10
+      - step:
+          name: "Swap Route"
+          identifier: swapRoute
+          type: TasSwapRoute
+          timeout: 10m
+          spec:
+            downSizeOldApplication: true
+      rollbackSteps:
+        - step:
+            name: "Swap Rollback"
+            identifier: swapRollback
+            type: TasSwapRollback
+            timeout: 10m
+            spec:
+              upsizeInActiveApp: true

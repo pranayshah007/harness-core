@@ -216,7 +216,7 @@ public class ArtifactConfigToDelegateReqMapper {
       }
     }
 
-    if (artifactConfig.getTimeout().getValue() != null
+    if (artifactConfig.getTimeout() != null && artifactConfig.getTimeout().getValue() != null
         && isNotEmpty(artifactConfig.getTimeout().getValue().toString())) {
       timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
     }

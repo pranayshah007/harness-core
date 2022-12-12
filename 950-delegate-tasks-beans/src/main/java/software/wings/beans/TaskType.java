@@ -413,6 +413,7 @@ public enum TaskType {
 
   SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task"),
 
+  CONTAINER_INITIALIZATION(TaskGroup.CONTAINER_PMS, "Run task container initialization"),
   ELASTIGROUP_DEPLOY(TaskGroup.ELASTIGROUP, "Elastigroup Deploy Task"),
   ELASTIGROUP_PARAMETERS_FETCH_RUN_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup Parameters Fetch Task"),
   ELASTIGROUP_BG_STAGE_SETUP_COMMAND_TASK_NG(TaskGroup.ELASTIGROUP, "Elastigroup BG Stage Setup Command Task"),

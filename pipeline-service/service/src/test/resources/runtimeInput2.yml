@@ -1,0 +1,12 @@
+pipeline:
+  identifier: "Test_Pipline11"
+  stages:
+  - stage:
+      identifier: "qaStage"
+      spec:
+        execution:
+          steps:
+          - step:
+              identifier: "httpStep1"
+              spec:
+                url: www.google.com

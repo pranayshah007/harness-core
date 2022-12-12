@@ -9,7 +9,7 @@ package software.wings.graphql.datafetcher.artifact;
 
 import static io.harness.rule.OwnerRule.PRABU;
 
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.persistence.artifact.Artifact.Builder.anArtifact;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -22,13 +22,13 @@ import io.harness.rule.Owner;
 
 import software.wings.beans.Service;
 import software.wings.beans.User;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.BambooArtifactStream;
 import software.wings.graphql.datafetcher.AbstractDataFetcherTestBase;
 import software.wings.graphql.schema.query.QLArtifactQueryParameters;
 import software.wings.graphql.schema.type.artifact.QLArtifact;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.intfc.ArtifactService;
 import software.wings.service.intfc.ArtifactStreamService;

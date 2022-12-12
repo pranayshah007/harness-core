@@ -119,8 +119,14 @@ public class ConfigFileMigrationService extends NgMigrationService {
 
   private NGYamlFile getYamlFileForConfigFile(
       ConfigFile configFile, MigrationInputDTO inputDTO, Map<CgEntityId, CgEntityNode> entities) {
-    byte[] fileContent = configService.getFileContent(configFile.getAppId(), configFile);
-    if (isEmpty(fileContent)) {
+    byte[] fileContent;
+    try {
+      fileContent = configService.getFileContent(configFile.getAppId(), configFile);
+      if (isEmpty(fileContent)) {
+        return null;
+      }
+    } catch (Exception e) {
+      log.error(String.format("There was an error with reading contents of config file %s", configFile.getUuid()), e);
       return null;
     }
     CgEntityNode serviceNode = null;
@@ -142,7 +148,7 @@ public class ConfigFileMigrationService extends NgMigrationService {
       serviceName = service.getName();
     }
     if (environmentNode != null && environmentNode.getEntity() != null) {
-      Environment environment = (Environment) serviceNode.getEntity();
+      Environment environment = (Environment) environmentNode.getEntity();
       envName = environment.getName();
     }
     return getYamlFile(inputDTO, configFile, fileContent, envName, serviceName);
@@ -215,9 +221,13 @@ public class ConfigFileMigrationService extends NgMigrationService {
     List<ConfigFileWrapper> configWrappers = new ArrayList<>();
     for (CgEntityId configEntityId : configFileIds) {
       CgEntityNode configNode = entities.get(configEntityId);
-      ConfigFile configFile = (ConfigFile) configNode.getEntity();
-      NGYamlFile file = getYamlFileForConfigFile(configFile, inputDTO, entities);
-      configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+      if (configNode != null) {
+        ConfigFile configFile = (ConfigFile) configNode.getEntity();
+        NGYamlFile file = getYamlFileForConfigFile(configFile, inputDTO, entities);
+        if (file != null) {
+          configWrappers.add(getConfigFileWrapper(configFile, migratedEntities, file));
+        }
+      }
     }
     return configWrappers;
   }

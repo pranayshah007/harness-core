@@ -453,7 +453,11 @@ public enum EntityType {
       EntityYamlRootNames.ELASTIGROUP_BG_STAGE_SETUP),
   @JsonProperty(EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE)
   ELASTIGROUP_SWAP_ROUTE_STEP(ModuleType.CD, EntityTypeConstants.ELASTIGROUP_SWAP_ROUTE, IdentifierRef.class,
-      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE);
+      EntityYamlRootNames.ELASTIGROUP_SWAP_ROUTE),
+
+  @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
+  CONTAINER_STEP(
+      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

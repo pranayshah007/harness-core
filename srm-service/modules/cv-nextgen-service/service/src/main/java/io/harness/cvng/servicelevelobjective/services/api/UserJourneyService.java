@@ -17,7 +17,6 @@ import java.util.List;
 
 public interface UserJourneyService {
   UserJourneyResponse create(ProjectParams projectParams, UserJourneyDTO userJourneyDTO);
-
   List<UserJourney> get(ProjectParams projectParams);
   PageResponse<UserJourneyResponse> getUserJourneys(ProjectParams projectParams, Integer offset, Integer pageSize);
 }

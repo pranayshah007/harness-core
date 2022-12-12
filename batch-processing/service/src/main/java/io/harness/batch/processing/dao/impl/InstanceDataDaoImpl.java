@@ -204,7 +204,9 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
                                     .field(InstanceDataKeys.instanceState)
                                     .in(instanceState)
                                     .field(InstanceDataKeys.usageStartTime)
-                                    .lessThanOrEq(startTime);
+                                    .lessThanOrEq(startTime)
+                                    .project(InstanceDataKeys.instanceId, true)
+                                    .project(InstanceDataKeys.usageStopTime, true);
     try (HIterator<InstanceData> instanceItr = new HIterator<>(query.fetch())) {
       for (InstanceData instanceData : instanceItr) {
         if (null == instanceData.getUsageStopTime()) {

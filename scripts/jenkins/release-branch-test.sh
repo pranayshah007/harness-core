@@ -20,12 +20,12 @@ check_file_present $PROJFILE
 PROJECTS=$(<$PROJFILE)
 
 git log --remotes=origin/release/* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq | tr '[:lower:]' '[:upper:]' > release.txt
-git log --remotes=origin/develop* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq | tr '[:lower:]' '[:upper:]' > master.txt
-NOT_MERGED=`comm -23 release.txt master.txt | tr '\n' ' '`
+git log --remotes=origin/develop* --pretty=oneline --abbrev-commit | grep -iE "\[(${PROJECTS})-[0-9]+]:" -o | sort | uniq | tr '[:lower:]' '[:upper:]' > develop.txt
+NOT_MERGED=`comm -23 release.txt develop.txt | tr '\n' ' '`
 
 if [ -z "$NOT_MERGED" ]
 then
-      echo "All Hotfix changes are reflected in Master as well" > envvars
+      echo "All Hotfix changes are reflected in Develop as well" > envvars
 else
       echo NOT_MERGED="${NOT_MERGED}" > envvars
 fi

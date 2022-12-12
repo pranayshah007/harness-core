@@ -7,6 +7,8 @@
 
 package io.harness.delegate.events;
 
+import static io.harness.delegate.utils.DelegateOutboxEventConstants.DELEGATE_REGISTER_EVENT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.ResourceTypeConstants;
@@ -29,7 +31,6 @@ import lombok.experimental.SuperBuilder;
 public class DelegateRegisterEvent extends AbstractDelegateConfigurationEvent {
   private String hostName;
   private DelegateSetupDetails delegateSetupDetails;
-  public static final String DELEGATE_REGISTER_EVENT = "DelegateRegisterEvent";
 
   @Override
   public Resource getResource() {

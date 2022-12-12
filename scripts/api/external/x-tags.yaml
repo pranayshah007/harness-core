@@ -1,0 +1,53 @@
+- name: Organization
+  tags:
+    - Organization
+- name: Project
+  tags:
+    - Org Project
+- name: Secret
+  tags:
+    - Account Secret
+    - Org Secret
+    - Project Secret
+- name: Connector
+  tags:
+    - Account Connector
+    - Org Connector
+    - Project Connector
+- name: Pipelines
+  tags:
+    - Pipelines
+    - Input Sets
+- name: Templates
+  tags:
+    - Account Template
+    - Org Template
+    - Project Template
+- name: Services
+  tags:
+    - Account Services
+    - Org Services
+    - Project Services
+- name: Roles
+  tags:
+    - Account Roles
+    - Organization Roles
+    - Project Roles
+- name: Resource Groups
+  tags:
+    - Account Resource Groups
+    - Organization Resource Groups
+    - Project Resource Groups
+    - Filter Resource Groups
+- name: Audit Streaming
+  tags:
+    - Streaming Destinations
+- name: Role Assignments
+  tags:
+    - Account Role Assignments
+    - Org Role Assignments
+    - Project Role Assignments
+- name: Error Models
+  tags:
+    - Error Response
+    - Governance Metadata

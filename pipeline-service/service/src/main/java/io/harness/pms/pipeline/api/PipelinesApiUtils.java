@@ -14,6 +14,7 @@ import static javax.ws.rs.core.UriBuilder.fromPath;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.NodeErrorInfo;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
@@ -22,6 +23,8 @@ import io.harness.filter.FilterType;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.governance.PolicyMetadata;
+import io.harness.governance.PolicySetMetadata;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.pms.contracts.plan.TriggerType;
 import io.harness.pms.execution.ExecutionStatus;
@@ -32,6 +35,10 @@ import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.mappers.CacheStateMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.validation.async.beans.PipelineValidationEvent;
+import io.harness.spec.server.commons.model.GovernanceMetadata;
+import io.harness.spec.server.commons.model.GovernanceStatus;
+import io.harness.spec.server.commons.model.Policy;
+import io.harness.spec.server.commons.model.PolicySet;
 import io.harness.spec.server.pipeline.v1.model.CacheResponseMetadataDTO;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo;
 import io.harness.spec.server.pipeline.v1.model.ExecutorInfo.TriggerTypeEnum;
@@ -442,5 +449,47 @@ public class PipelinesApiUtils {
 
   public static PipelineValidationResponseBody buildPipelineValidationResponseBody(PipelineValidationEvent event) {
     return new PipelineValidationResponseBody().status(event.getStatus().name());
+  }
+
+  public static GovernanceMetadata buildGovernanceMetadataFromProto(
+      io.harness.governance.GovernanceMetadata protoMetadata) {
+    return new GovernanceMetadata()
+        .deny(protoMetadata.getDeny())
+        .message(protoMetadata.getMessage())
+        .status(GovernanceStatus.fromValue(protoMetadata.getStatus().toUpperCase()))
+        .policySets(buildPolicySetMetadata(protoMetadata.getDetailsList()));
+  }
+
+  private static List<PolicySet> buildPolicySetMetadata(List<PolicySetMetadata> detailsList) {
+    if (EmptyPredicate.isEmpty(detailsList)) {
+      return null;
+    }
+    return detailsList.stream()
+        .map(policySet
+            -> new PolicySet()
+                   .identifier(policySet.getIdentifier())
+                   .name(policySet.getPolicySetName())
+                   .org(policySet.getOrgId())
+                   .project(policySet.getProjectId())
+                   .status(GovernanceStatus.fromValue(policySet.getStatus().toUpperCase()))
+                   .policies(buildPoliciesMetadata(policySet.getPolicyMetadataList())))
+        .collect(Collectors.toList());
+  }
+
+  private static List<Policy> buildPoliciesMetadata(List<PolicyMetadata> policyMetadataList) {
+    if (EmptyPredicate.isEmpty(policyMetadataList)) {
+      return null;
+    }
+    return policyMetadataList.stream()
+        .map(policy
+            -> new Policy()
+                   .identifier(policy.getIdentifier())
+                   .name(policy.getPolicyName())
+                   .org(policy.getOrgId())
+                   .project(policy.getProjectId())
+                   .evaluationError(policy.getError())
+                   .denyMessages(policy.getDenyMessagesList())
+                   .status(GovernanceStatus.fromValue(policy.getStatus().toUpperCase())))
+        .collect(Collectors.toList());
   }
 }

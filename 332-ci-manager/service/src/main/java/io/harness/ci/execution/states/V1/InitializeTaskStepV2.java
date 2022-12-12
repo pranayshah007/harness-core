@@ -27,6 +27,7 @@ import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
 import io.harness.EntityType;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
@@ -80,6 +81,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -99,6 +101,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.remote.client.CGRestUtils;
 import io.harness.repositories.CIAccountExecutionMetadataRepository;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepUtils;
@@ -130,7 +133,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CI)
 public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElementParameters> {
   @Inject private ExceptionManager exceptionManager;
-
+  @Inject private AccountClient accountClient;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
 
   @Inject private ConnectorUtils connectorUtils;
@@ -184,6 +187,11 @@ public class InitializeTaskStepV2 implements AsyncExecutableWithRbac<StepElement
       log.info("Created params for build task: {}", buildSetupTaskParams);
     }
     if (buildSetupTaskParams.getType() == DLITE_VM) {
+      AccountDTO accountDTO =
+          CGRestUtils.getResponse(accountClient.getAccountDTO(AmbianceUtils.getAccountId(ambiance)));
+      if (accountDTO == null) {
+        throw new CIStageExecutionException("Account does not exist, contact Harness support team.");
+      }
       HostedVmInfraYaml hostedVmInfraYaml = (HostedVmInfraYaml) initializeStepInfo.getInfrastructure();
       String platformSelector = vmInitializeTaskParamsBuilder.getHostedPoolId(
           hostedVmInfraYaml.getSpec().getPlatform(), AmbianceUtils.getAccountId(ambiance));

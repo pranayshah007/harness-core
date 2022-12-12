@@ -55,25 +55,26 @@ public class PMSPipelineTemplateHelper {
   private final TemplateResourceClient templateResourceClient;
   private final PipelineEnforcementService pipelineEnforcementService;
 
-  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(PipelineEntity pipelineEntity) {
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(PipelineEntity pipelineEntity, String loadFromCache) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml());
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), loadFromCache);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
       PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences) {
     return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false,
-        getMergedTemplateWithTemplateReferences);
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false, getMergedTemplateWithTemplateReferences,
+        BOOLEAN_FALSE_VALUE);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      String accountId, String orgId, String projectId, String yaml) {
-    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false);
+      String accountId, String orgId, String projectId, String yaml, String loadFromCache) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false, loadFromCache);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
-      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
+      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences,
+      String loadFromCache) {
     if (TemplateRefHelper.hasTemplateRef(yaml)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
@@ -83,7 +84,7 @@ public class PMSPipelineTemplateHelper {
         if (gitEntityInfo != null) {
           return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
               gitEntityInfo.getBranch(), gitEntityInfo.getYamlGitConfigId(), true, getConnectorRef(), getRepoName(),
-              accountId, orgId, projectId, BOOLEAN_FALSE_VALUE,
+              accountId, orgId, projectId, loadFromCache,
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
@@ -91,7 +92,7 @@ public class PMSPipelineTemplateHelper {
                   .build()));
         }
         return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYamlV2(accountId, orgId, projectId,
-            null, null, null, null, null, null, null, null, BOOLEAN_FALSE_VALUE,
+            null, null, null, null, null, null, null, null, loadFromCache,
             TemplateApplyRequestDTO.builder()
                 .originalEntityYaml(yaml)
                 .checkForAccess(checkForTemplateAccess)

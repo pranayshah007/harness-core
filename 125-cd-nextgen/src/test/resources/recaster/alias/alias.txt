@@ -570,10 +570,10 @@ io.harness.cdng.elastigroup.ElastigroupSetupStepNode
 io.harness.cdng.elastigroup.ElastigroupFixedInstances
 io.harness.cdng.elastigroup.beans.ElastigroupStartupScriptFetchPassThroughData
 io.harness.cdng.environment.yaml.EnvironmentsPlanCreatorConfig
-io.harness.beans.yaml.extended.ImagePullPolicy
 io.harness.cdng.environment.filters.TagsFilter
 io.harness.cdng.environment.filters.FilterYaml
 io.harness.cdng.environment.filters.AllowAllFilter
+io.harness.cdng.environment.filters.Entity
 io.harness.cdng.gitops.steps.GitOpsEnvOutCome
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepInfo
 io.harness.cdng.gitops.beans.FetchLinkedAppsStepNode
@@ -611,6 +611,9 @@ io.harness.cdng.manifest.yaml.VarsManifestOutcome
 io.harness.cdng.manifest.yaml.TasManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.VarsManifest
 io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
+io.harness.cdng.infra.beans.AsgInfraMapping
+io.harness.cdng.infra.beans.AsgInfrastructureOutcome
+io.harness.cdng.infra.yaml.AsgInfrastructure
 io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepInfo
 io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepParameters
 io.harness.cdng.elastigroup.ElastigroupBGStageSetupStepNode

@@ -17,11 +17,11 @@ import static software.wings.service.impl.artifact.ArtifactCollectionUtils.getAr
 import io.harness.migrations.Migration;
 import io.harness.persistence.HIterator;
 
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.service.intfc.ArtifactService;
 

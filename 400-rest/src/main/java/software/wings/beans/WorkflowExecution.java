@@ -47,10 +47,10 @@ import software.wings.beans.ExecutionArgs.ExecutionArgsKeys;
 import software.wings.beans.NameValuePair.NameValuePairKeys;
 import software.wings.beans.PipelineExecution.PipelineExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.concurrency.ConcurrencyStrategy;
 import software.wings.beans.entityinterface.KeywordsAware;
 import software.wings.beans.execution.WorkflowExecutionInfo;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateMachine;
 
@@ -126,11 +126,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.infraMappingIds)
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_createdAt2")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
         .add(CompoundMongoIndex.builder()
                  .name("workflowExecutionMonitor")
                  .field(WorkflowExecutionKeys.status)
@@ -185,11 +180,6 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .field(WorkflowExecutionKeys.workflowId)
                  .field(WorkflowExecutionKeys.infraMappingIds)
                  .descSortField(WorkflowExecutionKeys.createdAt)
-                 .build())
-        .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_endTs")
-                 .field(WorkflowExecutionKeys.accountId)
-                 .descSortField(WorkflowExecutionKeys.endTs)
                  .build())
         .add(SortCompoundMongoIndex.builder()
                  .name("accountId_appId_cdPageCandidate_pipelineSummary.pipelineId_envIds_createdAt")
@@ -264,6 +254,12 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
                  .descSortField(WorkflowExecutionKeys.createdAt)
                  .build())
         .add(SortCompoundMongoIndex.builder()
+                 .name("accountId_1_createdAt_-1_rejectedByFreezeWindowIds_1")
+                 .field(WorkflowExecutionKeys.accountId)
+                 .descSortField(WorkflowExecutionKeys.createdAt)
+                 .rangeField(WorkflowExecutionKeys.rejectedByFreezeWindowIds)
+                 .build())
+        .add(SortCompoundMongoIndex.builder()
                  .name("accountId_appId_onDemandRollback_createdAt")
                  .field(WorkflowExecutionKeys.accountId)
                  .field(WorkflowExecutionKeys.appId)
@@ -301,7 +297,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   private List<String> cloudProviderIds;
   @FdIndex private List<String> serviceIds;
   @FdIndex private List<String> infraMappingIds;
-  @FdIndex private List<String> infraDefinitionIds;
+  private List<String> infraDefinitionIds;
   private String appName;
   private String envName;
   private EnvironmentType envType;
@@ -391,6 +387,9 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
   @Transient private String failedStepNames;
   @Transient private String failedStepTypes;
 
+  private List<String> rejectedByFreezeWindowIds;
+  private List<String> rejectedByFreezeWindowNames;
+
   // Making this consistent with data retention default of 183 days instead of "6 months"
   @Default
   @JsonIgnore
@@ -452,6 +451,7 @@ public class WorkflowExecution implements PersistentRegularIterable, AccountData
         + "displayName";
     public static final String serviceExecutionSummaries_instanceStatusSummaries_instanceElement_uuid =
         serviceExecutionSummaries + ".instanceStatusSummaries.instanceElement.uuid";
+    public static final String originalExecution_executionId = originalExecution + ".executionId";
   }
 
   @PrePersist

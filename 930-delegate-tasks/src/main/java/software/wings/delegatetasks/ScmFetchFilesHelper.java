@@ -14,7 +14,6 @@ import static io.harness.delegate.beans.connector.scm.GitConnectionType.REPO;
 import static io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType.USERNAME_AND_TOKEN;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.TOKEN;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.logging.LogLevel.ERROR;
 
 import static software.wings.beans.GitConfig.ProviderType.BITBUCKET;
@@ -39,12 +38,11 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.task.git.ScmFetcherUtils;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GitClientException;
-import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
-import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitFile;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -59,12 +57,9 @@ import software.wings.beans.yaml.GitFetchFilesResult;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.io.IOException;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -137,9 +132,11 @@ public class ScmFetchFilesHelper {
         getFileContentBatchResponseByFolder(gitFileConfig, scmConnector);
 
     boolean relativize = !ROOT_DIRECTORY_PATHS.contains(gitFileConfig.getFilePath());
+    boolean useBase64 = true;
     if (isEmpty(fileBatchContentResponse.getFileBatchContentResponse().getFileContentsList())) {
       fileBatchContentResponse = getFileContentBatchResponseByFilePath(gitFileConfig, scmConnector);
       relativize = false;
+      useBase64 = false;
     }
 
     List<FileContent> fileContents = fileBatchContentResponse.getFileBatchContentResponse()
@@ -162,7 +159,7 @@ public class ScmFetchFilesHelper {
 
     try {
       for (FileContent fileContent : fileContents) {
-        writeFile(directoryPath, fileContent, gitFileConfig.getFilePath(), relativize);
+        ScmFetcherUtils.writeFile(directoryPath, fileContent, gitFileConfig.getFilePath(), relativize, useBase64);
       }
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(ExceptionUtils.getMessage(ex), ERROR, CommandExecutionStatus.FAILURE);
@@ -227,28 +224,6 @@ public class ScmFetchFilesHelper {
                           .build())
                 .build())
         .build();
-  }
-
-  private void writeFile(String directoryPath, FileContent fileContent, String basePath, boolean relativize)
-      throws IOException {
-    String filePath;
-    if (relativize) {
-      filePath = Paths.get(basePath).relativize(Paths.get(fileContent.getPath())).toString();
-      if (isEmpty(filePath)) {
-        filePath = Paths.get(fileContent.getPath()).getFileName().toString();
-      }
-    } else {
-      filePath = fileContent.getPath();
-    }
-
-    Path finalPath = Paths.get(directoryPath, filePath);
-    Path parent = finalPath.getParent();
-    if (parent == null) {
-      throw new WingsException("Failed to create file at path " + finalPath.toString());
-    }
-
-    createDirectoryIfDoesNotExist(parent.toString());
-    FileIo.writeFile(finalPath.toString(), Base64.getDecoder().decode(fileContent.getContent()));
   }
 
   private void throwFailedToFetchFileException(GitFileConfig gitFileConfig, FileContent fileContent) {

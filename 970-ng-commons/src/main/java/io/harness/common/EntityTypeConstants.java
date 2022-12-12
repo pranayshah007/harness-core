@@ -180,4 +180,5 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String ELASTIGROUP_BG_STAGE_SETUP = "ElastigroupBGStageSetup";
   String ELASTIGROUP_SWAP_ROUTE = "ElastigroupSwapRoute";
+  String CONTAINER_STEP = "Container";
 }

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.cdng.environment.filters.FilterYaml;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigVisitorHelper;
 import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.data.validator.EntityIdentifier;
@@ -67,4 +68,5 @@ public class EnvironmentPlanCreatorConfig implements Visitable {
   boolean deployToAll;
   List<InfrastructurePlanCreatorConfig> infrastructureDefinitions;
   List<String> gitOpsClusterRefs;
+  ParameterField<List<FilterYaml>> filters;
 }
