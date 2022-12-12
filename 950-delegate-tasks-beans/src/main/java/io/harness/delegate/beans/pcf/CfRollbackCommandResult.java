@@ -12,6 +12,5 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 public class CfRollbackCommandResult {
   private List<CfServiceData> instanceDataUpdated;
-  private List<CfInternalInstanceElement> cfInstanceElements;
   private CfInBuiltVariablesUpdateValues updatedValues;
 }
