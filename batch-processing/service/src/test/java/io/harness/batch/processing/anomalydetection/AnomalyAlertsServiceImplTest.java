@@ -24,6 +24,7 @@ import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.anomaly.AnomalyDataStub;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.ccm.currency.Currency;
@@ -59,6 +60,7 @@ public class AnomalyAlertsServiceImplTest extends CategoryTest {
   @InjectMocks private AnomalyAlertsServiceImpl alertsService;
   @Mock private AnomalyService anomalyService;
   @Mock private SlackMessageGenerator slackMessageGenerator;
+  @Mock private CEMetadataRecordDao ceMetadataRecordDao;
 
   private static final String ACCOUNT_ID = AnomalyDataStub.accountId;
 
@@ -91,6 +93,7 @@ public class AnomalyAlertsServiceImplTest extends CategoryTest {
     when(slackMessageGenerator.generateDailyReport(Arrays.asList(AnomalyDataStub.getClusterAnomaly()), Currency.USD))
         .thenReturn(Collections.emptyList());
     when(slack.send(anyString(), (Payload) anyObject())).thenReturn(WebhookResponse.builder().code(200).build());
+    when(ceMetadataRecordDao.getDestinationCurrency(anyString())).thenReturn(Currency.USD);
   }
 
   @Test

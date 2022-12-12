@@ -99,4 +99,6 @@ public interface CloudToHarnessMappingService {
   ClusterRecord getClusterRecord(String clusterId);
 
   List<Delegate> obtainDelegateDetails(String accountId, List<String> delegateIds);
+
+  List<ClusterRecord> listCeEnabledClusters(String accountId);
 }
