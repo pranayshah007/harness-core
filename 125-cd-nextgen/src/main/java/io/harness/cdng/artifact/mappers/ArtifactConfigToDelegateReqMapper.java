@@ -35,7 +35,10 @@ import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryMavenConfig
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNpmConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryNugetConfig;
 import io.harness.cdng.artifact.bean.yaml.nexusartifact.NexusRegistryRawConfig;
-import io.harness.data.structure.EmptyPredicate;
+import io.harness.cdng.expressionEvaluator.CustomScriptSecretExpressionEvaluator;
+import io.harness.cdng.expressionEvaluator.NgCustomSecretExpressionEvaluator;
+import io.harness.data.algorithm.HashGenerator;
+import io.harness.delegate.beans.SecretDetail;
 import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
@@ -64,14 +67,23 @@ import io.harness.delegate.task.artifacts.s3.S3ArtifactDelegateRequest;
 import io.harness.eraro.Level;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.common.ExpressionMode;
+import io.harness.metrics.intfc.DelegateMetricsService;
+import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptionConfig;
 import io.harness.yaml.utils.NGVariablesUtils;
 
+import software.wings.expression.NgSecretManagerFunctor;
+
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
 
@@ -79,6 +91,7 @@ import org.apache.commons.lang3.StringUtils;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ArtifactConfigToDelegateReqMapper {
   private final String ACCEPT_ALL_REGEX = "\\*";
+  private final long TIME_OUT = 600000L;
 
   public DockerArtifactDelegateRequest getDockerDelegateRequest(DockerHubArtifactConfig artifactConfig,
       DockerConnectorDTO connectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
@@ -201,37 +214,89 @@ public class ArtifactConfigToDelegateReqMapper {
   }
   public CustomArtifactDelegateRequest getCustomDelegateRequest(
       CustomArtifactConfig artifactConfig, Ambiance ambiance) {
-    long timeout = 600000L;
-    CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
-                                                            .getFetchAllArtifacts()
-                                                            .getShellScriptBaseStepInfo()
-                                                            .getSource()
-                                                            .getSpec();
-    if (EmptyPredicate.isNotEmpty(customScriptInlineSource.getScript().getValue())) {
-      if (isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue())) {
-        throw new InvalidArtifactServerException("Artifacts Array Path is missing", Level.ERROR, USER);
-      }
-      if (isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue())) {
-        throw new InvalidArtifactServerException("Version Path is missing", Level.ERROR, USER);
-      }
-    }
+    CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
+    long timeout = TIME_OUT;
 
     if (artifactConfig.getTimeout() != null && artifactConfig.getTimeout().getValue() != null
         && isNotEmpty(artifactConfig.getTimeout().getValue().toString())) {
       timeout = artifactConfig.getTimeout().getValue().getTimeoutInMillis();
     }
 
+    String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
     return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
-        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
         artifactConfig.getVersionRegex().getValue(),
         artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
         ArtifactSourceType.CUSTOM_ARTIFACT,
-        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(),
-        customScriptInlineSource.getScript().fetchFinalValue().toString(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
         NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
         NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
         ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "", timeout,
         AmbianceUtils.getAccountId(ambiance));
+  }
+
+  public CustomArtifactDelegateRequest getCustomDelegateRequest(CustomArtifactConfig artifactConfig, Ambiance ambiance,
+      DelegateMetricsService delegateMetricsService, SecretManagerClientService ngSecretService) {
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    int secretFunctorToken = HashGenerator.generateIntegerHash();
+    CustomScriptInlineSource customScriptInlineSource = getCustomScriptInlineSource(artifactConfig);
+    String script = customScriptInlineSource.getScript().fetchFinalValue().toString();
+    script = resolveNGSecretExpression(script, secretFunctorToken);
+    NgCustomSecretExpressionEvaluator ngCustomSecretExpressionEvaluator =
+        new NgCustomSecretExpressionEvaluator(ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(),
+            ngAccess.getProjectIdentifier(), secretFunctorToken, delegateMetricsService, ngSecretService);
+    script = ngCustomSecretExpressionEvaluator.substitute(script, Collections.emptyMap());
+    NgSecretManagerFunctor ngSecretManagerFunctor =
+        (NgSecretManagerFunctor) ngCustomSecretExpressionEvaluator.getExpressionFunctor();
+    Map<String, EncryptionConfig> encryptionConfigs = ngSecretManagerFunctor.getEncryptionConfigs();
+    Map<String, SecretDetail> secretDetails = ngSecretManagerFunctor.getSecretDetails();
+
+    return ArtifactDelegateRequestUtils.getCustomDelegateRequest(
+        artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().fetchFinalValue().toString(),
+        artifactConfig.getVersionRegex().getValue(),
+        artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getType(),
+        ArtifactSourceType.CUSTOM_ARTIFACT,
+        artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue(), script,
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getScripts().getFetchAllArtifacts().getAttributes(), 0L),
+        NGVariablesUtils.getStringMapVariables(artifactConfig.getInputs(), 0L), artifactConfig.getVersion().getValue(),
+        ambiance != null ? AmbianceUtils.obtainCurrentRuntimeId(ambiance) : "",
+        artifactConfig.getTimeout() != null ? artifactConfig.getTimeout().getValue().getTimeoutInMillis() : TIME_OUT,
+        AmbianceUtils.getAccountId(ambiance), encryptionConfigs, secretDetails,
+        ngSecretManagerFunctor.getExpressionFunctorToken());
+  }
+
+  private String resolveNGSecretExpression(String script, int secretFunctor) {
+    CustomScriptSecretExpressionEvaluator customScriptSecretExpressionEvaluator =
+        new CustomScriptSecretExpressionEvaluator(script, secretFunctor);
+    return customScriptSecretExpressionEvaluator.renderExpression(
+        script, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+  }
+
+  public CustomScriptInlineSource getCustomScriptInlineSource(CustomArtifactConfig artifactConfig) {
+    if (artifactConfig.getScripts() != null && artifactConfig.getScripts().getFetchAllArtifacts() != null
+        && artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo() != null
+        && artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource() != null
+        && artifactConfig.getScripts().getFetchAllArtifacts().getShellScriptBaseStepInfo().getSource().getSpec()
+            != null) {
+      CustomScriptInlineSource customScriptInlineSource = (CustomScriptInlineSource) artifactConfig.getScripts()
+                                                              .getFetchAllArtifacts()
+                                                              .getShellScriptBaseStepInfo()
+                                                              .getSource()
+                                                              .getSpec();
+      if (customScriptInlineSource != null && customScriptInlineSource.getScript() != null
+          && isNotEmpty(customScriptInlineSource.getScript().getValue())) {
+        if (artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath() == null
+            || isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getArtifactsArrayPath().getValue())) {
+          throw new InvalidArtifactServerException("Artifacts Array Path is missing", Level.ERROR, USER);
+        }
+        if (artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath() == null
+            || isEmpty(artifactConfig.getScripts().getFetchAllArtifacts().getVersionPath().getValue())) {
+          throw new InvalidArtifactServerException("Version Path is missing", Level.ERROR, USER);
+        }
+      }
+      return customScriptInlineSource;
+    }
+    throw new InvalidArtifactServerException("Invalid Custom Artifact Yaml", Level.ERROR, USER);
   }
 
   public GcrArtifactDelegateRequest getGcrDelegateRequest(GcrArtifactConfig gcrArtifactConfig,
@@ -334,6 +399,7 @@ public class ArtifactConfigToDelegateReqMapper {
       NexusConnectorDTO nexusConnectorDTO, List<EncryptedDataDetail> encryptedDataDetails, String connectorRef) {
     // If both are empty, regex is latest among all docker artifacts.
     String tagRegex = artifactConfig.getTagRegex() != null ? artifactConfig.getTagRegex().getValue() : "";
+
     String tag = artifactConfig.getTag() != null ? artifactConfig.getTag().getValue() : "";
     if (isEmpty(tag) && isEmpty(tagRegex)) {
       tagRegex = ACCEPT_ALL_REGEX;
