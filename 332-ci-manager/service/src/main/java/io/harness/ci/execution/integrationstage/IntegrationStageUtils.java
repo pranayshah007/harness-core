@@ -91,6 +91,7 @@ import io.harness.git.GitClientHelper;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.k8s.model.ImageDetails;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -792,7 +793,8 @@ public class IntegrationStageUtils {
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
+        || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL) {
       return CIConstants.STAGE_MAX_TTL_SECS_HOSTED_FREE;
     }
     return CIConstants.STAGE_MAX_TTL_SECS;

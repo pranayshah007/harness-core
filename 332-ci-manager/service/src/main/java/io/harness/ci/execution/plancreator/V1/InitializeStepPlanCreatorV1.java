@@ -31,6 +31,7 @@ import io.harness.cimanager.stages.V1.IntegrationStageConfigImplV1;
 import io.harness.cimanager.stages.V1.IntegrationStageNodeV1;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.plancreator.execution.ExecutionElementConfig;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
@@ -77,7 +78,9 @@ public class InitializeStepPlanCreatorV1 extends CIPMSStepPlanCreatorV2<Initiali
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
     Optional<Integer> maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT));
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null
+        && (licensesWithSummaryDTO.getEdition() == Edition.FREE
+            || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
       maxExpansionLimit = Optional.of(Integer.valueOf(MAXIMUM_EXPANSION_LIMIT_FREE_ACCOUNT));
     }
 
