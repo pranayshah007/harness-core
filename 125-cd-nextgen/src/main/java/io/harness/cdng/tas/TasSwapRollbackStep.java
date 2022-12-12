@@ -166,7 +166,6 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .tempRouteMaps(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
-            .appDetailsToBeDownsized(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .instanceData(instanceData)
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
             .build();
