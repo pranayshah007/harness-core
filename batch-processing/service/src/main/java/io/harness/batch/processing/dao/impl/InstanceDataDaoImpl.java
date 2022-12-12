@@ -273,4 +273,20 @@ public class InstanceDataDaoImpl implements InstanceDataDao {
         .in(instanceTypes)
         .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.activeInstanceIterator);
   }
+
+  public List<InstanceData> getInstanceDataListsOfTypesAndClusterId(String accountId, int batchSize, Instant startTime,
+      Instant endTime, List<InstanceType> instanceTypes, String clusterId) {
+    Query<InstanceData> query = hPersistence.createQuery(InstanceData.class, excludeCount)
+                                    .filter(InstanceDataKeys.accountId, accountId)
+                                    .filter(InstanceDataKeys.clusterId, clusterId)
+                                    .field(InstanceDataKeys.activeInstanceIterator)
+                                    .greaterThanOrEq(startTime)
+                                    .field(InstanceDataKeys.usageStartTime)
+                                    .lessThanOrEq(endTime)
+                                    .field(InstanceDataKeys.instanceType)
+                                    .in(instanceTypes)
+                                    .order(InstanceDataKeys.accountId + "," + InstanceDataKeys.clusterId + ","
+                                        + InstanceDataKeys.activeInstanceIterator);
+    return query.asList(new FindOptions().limit(batchSize));
+  }
 }
