@@ -56,7 +56,7 @@ Example available in file end_to_end_handler_test.go
 
 Using net/http library
 
-```
+```go
 enqueueRequest := store.EnqueueRequest{
 			Topic:        topic,
 			SubTopic:     "ACCOUNT1",
@@ -89,7 +89,7 @@ pipelineServiceClientConfig:
 
 You can use the hsqs retrofit client present inside clients/queue-service/java-client
 
-```
+```java
 Gson gson = new GsonBuilder()
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
                 .create();
