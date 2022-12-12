@@ -411,7 +411,8 @@ public enum TaskType {
   CF_COMMAND_TASK_NG(TaskGroup.TAS, "Command task for tanzu application service"),
   ECS_S3_FETCH_TASK_NG(TaskGroup.ECS, "ECS S3 Fetch Task"),
   SERVERLESS_S3_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Serverless S3 Fetch File Task"),
-  CONTAINER_INITIALIZATION(TaskGroup.CONTAINER_PMS, "Run task container initialization");
+  CONTAINER_INITIALIZATION(TaskGroup.CONTAINER_PMS, "Run task container initialization"),
+  AWS_ASG_COMMAND_TASK_NG(TaskGroup.AWS, "AWS ASG Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

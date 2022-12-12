@@ -200,7 +200,9 @@ public enum NGStepType {
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_DESTROY),
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
-      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK);
+      "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
+  ASG_CANARY_DELETE(
+      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "Asg", StepSpecTypeConstants.ASG_CANARY_DELETE);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

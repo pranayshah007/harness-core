@@ -10,6 +10,7 @@ package io.harness.cdng.pipeline;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo;
 import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo;
@@ -23,7 +24,6 @@ import io.harness.cdng.ecs.EcsCanaryDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingDeployStepInfo;
 import io.harness.cdng.ecs.EcsRollingRollbackStepInfo;
 import io.harness.cdng.ecs.EcsRunTaskStepInfo;
-import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.elastigroup.ElastigroupSetupStepInfo;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepInfo;
@@ -84,11 +84,11 @@ import io.swagger.annotations.ApiModel;
         JenkinsBuildStepInfo.class, AzureCreateARMResourceStepInfo.class, AzureCreateBPStepInfo.class,
         AzureARMRollbackStepInfo.class, EcsRollingDeployStepInfo.class, EcsRollingRollbackStepInfo.class,
         EcsCanaryDeployStepInfo.class, EcsCanaryDeleteStepInfo.class, EcsBlueGreenCreateServiceStepInfo.class,
-        EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class, AsgCanaryDeleteStepInfo.class,
+        EcsBlueGreenSwapTargetGroupsStepInfo.class, EcsBlueGreenRollbackStepInfo.class,
         FetchInstanceScriptStepInfo.class, ShellScriptProvisionStepInfo.class, UpdateReleaseRepoStepInfo.class,
         EcsRunTaskStepInfo.class, ElastigroupDeployStepInfo.class, ElastigroupRollbackStepInfo.class,
         ElastigroupSetupStepInfo.class, TerragruntPlanStepInfo.class, TerragruntApplyStepInfo.class,
-        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class})
+        TerragruntDestroyStepInfo.class, TerragruntRollbackStepInfo.class, AsgCanaryDeleteStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

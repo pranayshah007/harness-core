@@ -89,14 +89,14 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(asgCanaryDeleteResponse.getUnitProgressData().getUnitProgresses());
 
-     // stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
+     stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
     } catch (Exception e) {
       log.error("Error while processing asg canary delete response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
     }
     return stepResponse;
   }
-/*
+
   private StepResponse generateStepResponse(
       Ambiance ambiance, AsgCanaryDeleteResponse asgCanaryDeleteResponse, StepResponseBuilder stepResponseBuilder) {
     StepResponse stepResponse;
@@ -128,8 +128,8 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
     }
     return stepResponse;
   }
-  */
-/*
+
+ */
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
@@ -187,7 +187,7 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
         .getTaskRequest();
 
   }
-*/
+
   private TaskRequest skipTaskRequestOrThrowException(Ambiance ambiance) {
     if (StepUtils.isStepInRollbackSection(ambiance)) {
       return TaskRequest.newBuilder()
