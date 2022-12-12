@@ -35,6 +35,7 @@ import io.harness.tasks.ErrorResponseData;
 import io.harness.tasks.ResponseData;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -48,6 +49,7 @@ public class TriggerWebhookConfirmationHelper {
   private final DelegateServiceGrpcClient delegateServiceGrpcClient;
   private final Supplier<DelegateCallbackToken> delegateCallbackTokenSupplier;
   private final KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   public WebhookEventProcessingResult handleTriggerWebhookConfirmationEvent(TriggerWebhookEvent event) {
     try {
@@ -117,7 +119,9 @@ public class TriggerWebhookConfirmationHelper {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = binaryResponseData.isUsingKryoWithoutReference()
+          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof AwsCodeCommitApiTaskResponse) {
         return (AwsCodeCommitApiTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {
