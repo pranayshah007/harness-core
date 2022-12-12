@@ -136,14 +136,13 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
         CfSwapRollbackCommandRequestNG.builder()
             .accountId(accountId)
-            .existingApplicationDetails(tasSetupDataOutcome.getAppDetailsToBeDownsized())
             .commandName(TAS_SWAP_ROLLBACK)
             .cfAppNamePrefix(tasSetupDataOutcome.getCfAppNamePrefix())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
-            .timeoutIntervalInMin(10)
+            .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .downsizeOldApps(downsizeOldApplication)
             .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
@@ -151,6 +150,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .tempRouteMaps(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
+            .existingApplicationDetails(Collections.singletonList(
+                tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails()))
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
             .build();
 

@@ -189,12 +189,12 @@ public class EntityYamlRootNames {
   public static final String TERRAGRUNT_APPLY = "TerragruntApply";
   public static final String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   public static final String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
-  public static final String TAS_CANARY_APP_SETUP_STEP = "TasCanaryAppSetup";
-  public static final String TAS_BG_APP_SETUP_STEP = "TasBGAppSetup";
-  public static final String TAS_BASIC_APP_SETUP_STEP = "TasBasicAppSetupStep";
-  public static final String TAS_APP_RESIZE_STEP = "TasAppResizeStep";
-  public static final String TAS_ROLLBACK_STEP = "TasRollbackStep";
-  public static final String TAS_SWAP_ROUTES_STEP = "TasSwapRoutesStep";
+  public static final String TAS_CANARY_APP_SETUP_STEP = "CanaryAppSetup";
+  public static final String TAS_BG_APP_SETUP_STEP = "BGAppSetup";
+  public static final String TAS_BASIC_APP_SETUP_STEP = "BasicAppSetup";
+  public static final String TAS_APP_RESIZE_STEP = "AppResize";
+  public static final String TAS_ROLLBACK_STEP = "AppRollback";
+  public static final String TAS_SWAP_ROUTES_STEP = "SwapRoutes";
   public static final String TAS_SWAP_ROLLBACK_STEP = "SwapRollback";
   public static final String TANZU_COMMAND_STEP = "TanzuCommand";
 }

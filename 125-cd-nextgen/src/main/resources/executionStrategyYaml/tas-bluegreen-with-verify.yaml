@@ -42,11 +42,11 @@ spec:
           timeout: 10m
           spec:
             downSizeOldApplication: true
-      rollbackSteps:
-        - step:
-            name: "Swap Rollback"
-            identifier: swapRollback
-            type: TasSwapRollback
-            timeout: 10m
-            spec:
-              upsizeInActiveApp: true
+    rollbackSteps:
+      - step:
+          name: "Swap Rollback"
+          identifier: swapRollback
+          type: TasSwapRollback
+          timeout: 10m
+          spec:
+            upsizeInActiveApp: true

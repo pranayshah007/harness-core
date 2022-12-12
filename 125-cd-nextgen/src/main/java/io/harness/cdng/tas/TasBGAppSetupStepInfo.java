@@ -7,8 +7,7 @@
 
 package io.harness.cdng.tas;
 
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
-import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
@@ -57,7 +56,7 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @NotNull
-  @YamlSchemaTypes({string, list})
+  @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")

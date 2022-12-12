@@ -880,44 +880,60 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
 
     StepInfo tasCanaryAppSetup =
         StepInfo.newBuilder()
-            .setName(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+            .setName("Canary App Setup")
             .setType(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
     StepInfo tasBGAppSetup =
         StepInfo.newBuilder()
-            .setName(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+            .setName("BG App Setup")
             .setType(StepSpecTypeConstants.TAS_BG_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
     StepInfo tasBasicAppSetup =
         StepInfo.newBuilder()
-            .setName(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+            .setName("Basic App Setup")
             .setType(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
     StepInfo tasAppResize = StepInfo.newBuilder()
-                                .setName(StepSpecTypeConstants.TAS_APP_RESIZE)
+                                .setName("App Resize")
                                 .setType(StepSpecTypeConstants.TAS_APP_RESIZE)
                                 .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
                                 .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
                                 .build();
     StepInfo tasSwapRoutes =
         StepInfo.newBuilder()
-            .setName(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+            .setName("Swap Routes")
             .setType(StepSpecTypeConstants.TAS_SWAP_ROUTES)
             .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
             .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
             .build();
     StepInfo tasRollback = StepInfo.newBuilder()
-                               .setName(StepSpecTypeConstants.TAS_ROLLBACK)
+                               .setName("App Rollback")
                                .setType(StepSpecTypeConstants.TAS_ROLLBACK)
                                .setStepMetaData(StepMetaData.newBuilder().addCategory(TAS).addFolderPaths(TAS).build())
                                .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
                                .build();
+    StepInfo tasSwapRollback =
+        StepInfo.newBuilder()
+            .setName("Swap Rollback")
+            .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
+    StepInfo tanzuCommand =
+        StepInfo.newBuilder()
+            .setName("Tanzu Command")
+            .setType(StepSpecTypeConstants.TANZU_COMMAND)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
+            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
+            .build();
+
     StepInfo shellScriptProvision = StepInfo.newBuilder()
                                         .setName("Shell Script Provision")
                                         .setType(StepSpecTypeConstants.SHELL_SCRIPT_PROVISION)
@@ -1006,21 +1022,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                       .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
 
-    StepInfo tasSwapRollback =
-        StepInfo.newBuilder()
-            .setName("Tas Swap Rollback")
-            .setType(StepSpecTypeConstants.SWAP_ROLLBACK)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
-            .build();
-
-    StepInfo tanzuCommand =
-        StepInfo.newBuilder()
-            .setName("Tanzu Command")
-            .setType(StepSpecTypeConstants.TANZU_COMMAND)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("TAS").setFolderPath("TAS").build())
-            .setFeatureFlag(FeatureName.CDS_TAS_NG.name())
-            .build();
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);

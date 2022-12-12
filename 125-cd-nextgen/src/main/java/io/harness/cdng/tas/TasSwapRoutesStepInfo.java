@@ -1,10 +1,16 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.tas;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
-import io.harness.cdng.visitor.helpers.cdstepinfo.TasAppResizeStepInfoVisitorHelper;
 import io.harness.cdng.visitor.helpers.cdstepinfo.TasSwapRoutesStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -45,9 +51,9 @@ public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements 
 
   @Builder(builderMethodName = "infoBuilder")
   public TasSwapRoutesStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Boolean> downSizeOldApplication, String tasBGSetupFqn, String tasBasicSetupFqn,
-      String tasCanarySetupFqn) {
-    super(delegateSelectors, downSizeOldApplication, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
+      ParameterField<Boolean> downSizeOldApplication, String tasResizeFqn, String tasBGSetupFqn,
+      String tasBasicSetupFqn, String tasCanarySetupFqn) {
+    super(delegateSelectors, downSizeOldApplication, tasResizeFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn);
   }
 
   @Override
@@ -64,6 +70,7 @@ public class TasSwapRoutesStepInfo extends TasSwapRoutesBaseStepInfo implements 
   public SpecParameters getSpecParameters() {
     return TasSwapRoutesStepParameters.infoBuilder()
         .downSizeOldApplication(downSizeOldApplication)
+        .tasResizeFqn(tasResizeFqn)
         .tasBasicSetupFqn(tasBasicSetupFqn)
         .tasCanarySetupFqn(tasCanarySetupFqn)
         .tasBGSetupFqn(tasBGSetupFqn)

@@ -676,6 +676,7 @@ import io.harness.delegate.task.pcf.request.CfInstanceSyncRequest;
 import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequest;
 import io.harness.delegate.task.pcf.request.CfRunPluginCommandRequestNG;
+import io.harness.delegate.task.pcf.request.CfSwapRoutesRequestNG;
 import io.harness.delegate.task.pcf.response.CfBasicSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfBlueGreenSetupResponseNG;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
@@ -688,6 +689,7 @@ import io.harness.delegate.task.pcf.response.CfInstanceSyncResponse;
 import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.delegate.task.pcf.response.CfSetupCommandResponse;
+import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.delegate.task.pcf.response.TasRunPluginResponse;
 import io.harness.delegate.task.scm.GitFileTaskResponseData;
@@ -1397,6 +1399,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CfDeployCommandResult.class, 10000228);
     kryo.register(TasContainerArtifactConfig.class, 10000229);
     kryo.register(TasApplicationInfo.class, 10000230);
+    kryo.register(CfSwapRoutesRequestNG.class, 10000231);
+    kryo.register(CfSwapRouteCommandResponseNG.class, 10000232);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);

@@ -133,20 +133,31 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
             .build();
       }
       TasExecutionPassThroughData tasExecutionPassThroughData = (TasExecutionPassThroughData) passThroughData;
+      TasBGAppSetupStepParameters tasBGAppSetupStepParameters = (TasBGAppSetupStepParameters) stepParameters.getSpec();
 
+      List<String> routeMaps = applyVarsYmlSubstitutionIfApplicable(
+          tasStepHelper.getRouteMaps(tasExecutionPassThroughData.getPcfManifestsPackage().getManifestYml(),
+              getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
+          tasExecutionPassThroughData.getPcfManifestsPackage());
       executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.TAS_APP_SETUP_OUTCOME,
           TasSetupDataOutcome.builder()
-              .routeMaps(response.getNewApplicationInfo().getAttachedRoutes())
+              .routeMaps(routeMaps)
+              .tempRouteMap(response.getNewApplicationInfo().getAttachedRoutes())
               .cfCliVersion(tasStepHelper.cfCliVersionNGMapper(tasExecutionPassThroughData.getCfCliVersion()))
               .timeoutIntervalInMinutes(CDStepHelper.getTimeoutInMin(stepParameters))
-              .resizeStrategy(ResizeStrategy.DOWNSIZE_OLD_FIRST)
+              .resizeStrategy(ResizeStrategy.RESIZE_NEW_FIRST)
               .maxCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .useAppAutoscalar(
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .oldApplicationDetails(response.getInActiveApplicationInfo())
+              .oldApplicationDetails(isNull(response.getInActiveApplicationInfo().getApplicationName())
+                      ? null
+                      : response.getInActiveApplicationInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
+              .existingApplicationDetails(response.getActiveApplicationInfo())
+              .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())
+              .isBlueGreen(true)
               .build(),
           StepCategory.STEP.name());
       return StepResponse.builder()
@@ -181,17 +192,13 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
     if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
     }
-    List<String> routeMaps = applyVarsYmlSubstitutionIfApplicable(
-        tasStepHelper.getRouteMaps(executionPassThroughData.getPcfManifestsPackage().getManifestYml(),
-            getParameterFieldValue(tasBGAppSetupStepParameters.getAdditionalRoutes())),
-        executionPassThroughData.getPcfManifestsPackage());
     Integer olderActiveVersionCountToKeep =
         new BigDecimal(getParameterFieldValue(tasBGAppSetupStepParameters.getExistingVersionToKeep())).intValueExact();
     TaskParameters taskParameters =
         CfBlueGreenSetupRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .cfCommandTypeNG(CfCommandTypeNG.TAS_BG_SETUP)
-            .commandName(CfCommandTypeNG.TAS_BG_SETUP.toString())
+            .commandName(CfCommandUnitConstants.PcfSetup)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .releaseNamePrefix(executionPassThroughData.getApplicationName())
             .isPackageArtifact(tasStepHelper.isPackageArtifactType(artifactOutcome))
@@ -204,7 +211,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepParameters))
             .olderActiveVersionCountToKeep(olderActiveVersionCountToKeep)
             .maxCount(maxCount)
-            .routeMaps(routeMaps)
+            .routeMaps(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()))
             .useAppAutoscalar(!isNull(executionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
             .tempRoutes(getParameterFieldValue(tasBGAppSetupStepParameters.getTempRoutes()))
             .build();
@@ -217,7 +224,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                             .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        List.of(CfCommandUnitConstants.PcfSetup), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
+        executionPassThroughData.getCommandUnits(), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()

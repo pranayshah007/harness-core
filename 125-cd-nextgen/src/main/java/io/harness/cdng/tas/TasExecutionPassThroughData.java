@@ -40,5 +40,6 @@ public class TasExecutionPassThroughData implements PassThroughData {
   String repoRoot;
   CfCliVersionNG cfCliVersion;
   String rawScript;
+  List<String> commandUnits;
   List<String> pathsFromScript;
 }

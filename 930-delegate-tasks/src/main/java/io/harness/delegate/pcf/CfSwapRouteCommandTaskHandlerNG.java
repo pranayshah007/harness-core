@@ -11,14 +11,15 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_NON_VERSION;
 import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.NON_VERSION_TO_VERSION;
-import static io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition.ROLLBACK_OPERATOR;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.pcf.CfCommandUnitConstants.Wrapup;
 import static io.harness.pcf.PcfUtils.encodeColor;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
-
-import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,20 +28,14 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.pcf.CfAppSetupTimeDetails;
 import io.harness.delegate.beans.pcf.CfInBuiltVariablesUpdateValues;
-import io.harness.delegate.beans.pcf.CfRollbackCommandResult;
 import io.harness.delegate.beans.pcf.CfRouteUpdateRequestConfigData;
 import io.harness.delegate.beans.pcf.CfSwapRouteCommandResult;
-import io.harness.delegate.cf.apprenaming.AppNamingStrategy;
 import io.harness.delegate.cf.apprenaming.AppRenamingOperator.NamingTransition;
 import io.harness.delegate.task.cf.CfCommandTaskHelperNG;
 import io.harness.delegate.task.pcf.TasTaskHelperBase;
 import io.harness.delegate.task.pcf.request.CfCommandRequestNG;
-import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
-import io.harness.delegate.task.pcf.request.CfRollbackCommandRequestNG;
-import io.harness.delegate.task.pcf.request.CfSwapRollbackCommandRequestNG;
 import io.harness.delegate.task.pcf.request.CfSwapRoutesRequestNG;
 import io.harness.delegate.task.pcf.response.CfCommandResponseNG;
-import io.harness.delegate.task.pcf.response.CfRollbackCommandResponseNG;
 import io.harness.delegate.task.pcf.response.CfSwapRouteCommandResponseNG;
 import io.harness.delegate.task.pcf.response.TasInfraConfig;
 import io.harness.exception.InvalidArgumentsException;
@@ -48,7 +43,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
@@ -60,6 +54,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
@@ -85,7 +80,7 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     if (!(cfCommandRequestNG instanceof CfSwapRoutesRequestNG)) {
       throw new InvalidArgumentsException(Pair.of("cfCommandRequest", "Must be instance of CfSwapRoutesRequestNG"));
     }
-    CfInBuiltVariablesUpdateValues updateValues = CfInBuiltVariablesUpdateValues.builder().build();
+    CfInBuiltVariablesUpdateValues updateValues = null;
     LogCallback executionLogCallback = tasTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, cfCommandRequestNG.getCommandName(), true, commandUnitsProgress);
     CfSwapRouteCommandResult cfSwapRouteCommandResult = CfSwapRouteCommandResult.builder().build();
@@ -115,12 +110,14 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .cfHomeDirPath(workingDirectory.getAbsolutePath())
               .cfCliPath(cfCommandTaskHelperNG.getCfCliPathOnDelegate(true, cfSwapRoutesRequestNG.getCfCliVersion()))
               .cfCliVersion(cfSwapRoutesRequestNG.getCfCliVersion())
+              .useCFCLI(true)
               .build();
 
       CfRouteUpdateRequestConfigData pcfRouteUpdateConfigData =
           CfRouteUpdateRequestConfigData.builder()
               .isRollback(true)
-              .existingApplicationDetails(cfSwapRoutesRequestNG.getExistingApplicationDetails())
+              .existingApplicationDetails(
+                  Collections.singletonList(cfSwapRoutesRequestNG.getExistingApplicationDetails()))
               .cfAppNamePrefix(cfSwapRoutesRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfSwapRoutesRequestNG.isDownsizeOldApplication())
               .existingApplicationNames(cfSwapRoutesRequestNG.getExistingApplicationNames())
@@ -143,23 +140,30 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
 
       cfSwapRouteCommandResult.setUpdatedValues(updateValues);
       executionLogCallback.saveExecutionLog(
-          "\n--------- PCF Route Update completed successfully", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+          "\n--------- PCF Route Update completed successfully", INFO, CommandExecutionStatus.SUCCESS);
       cfSwapRouteCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
+      cfSwapRouteCommandResponseNG.setNewApplicationName(cfSwapRoutesRequestNG.getCfAppNamePrefix());
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception in processing PCF Route Update task", sanitizedException);
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
-      executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage());
+      executionLogCallback.saveExecutionLog(
+          "# Error: " + sanitizedException.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       cfSwapRouteCommandResponseNG.setErrorMessage(sanitizedException.getMessage());
       cfSwapRouteCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
     } finally {
+      LogCallback logCallback =
+          tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Wrapup, true, commandUnitsProgress);
       try {
         if (workingDirectory != null) {
+          logCallback.saveExecutionLog("#--------- Removing any temporary files created");
           FileIo.deleteDirectoryAndItsContentIfExists(workingDirectory.getAbsolutePath());
         }
       } catch (IOException e) {
         log.warn("Failed to delete temp directory created for CF CLI login", e);
+      } finally {
+        logCallback.saveExecutionLog("#----------  Cleaning up temporary files completed", INFO, SUCCESS);
       }
     }
     return cfSwapRouteCommandResponseNG;
@@ -278,19 +282,11 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         cfRequestConfig, data.getCfAppNamePrefix(), newApplicationDetails.getApplicationGuid());
     data.setNewApplicationName(isEmpty(newApps) ? data.getNewApplicationName() : newApps.get(0));
 
+    updateRoutesForNewApplication(cfRequestConfig, executionLogCallback, data);
     updateRoutesForExistingApplication(cfRequestConfig, executionLogCallback, data);
     if (data.isUpSizeInActiveApp()) {
       updateRoutesForInActiveApplication(cfRequestConfig, executionLogCallback, data);
     }
-    clearRoutesAndEnvVariablesForNewApplication(
-        cfRequestConfig, executionLogCallback, data.getNewApplicationName(), data.getFinalRoutes());
-  }
-
-  private void clearRoutesAndEnvVariablesForNewApplication(CfRequestConfig cfRequestConfig,
-      LogCallback executionLogCallback, String appName, List<String> routeList) throws PivotalClientApiException {
-    cfCommandTaskHelperNG.unmapRouteMaps(appName, routeList, cfRequestConfig, executionLogCallback);
-    cfRequestConfig.setApplicationName(appName);
-    cfDeploymentManager.unsetEnvironmentVariableForAppStatus(cfRequestConfig, executionLogCallback);
   }
 
   private void updateRoutesForInActiveApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
@@ -328,8 +324,8 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
   private void updateRoutesForExistingApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
       CfRouteUpdateRequestConfigData data) throws PivotalClientApiException {
     if (isNotEmpty(data.getExistingApplicationNames())) {
-      List<String> mapRouteForExistingApp = data.getFinalRoutes();
-      List<String> unmapRouteForExistingApp = data.getTempRoutes();
+      List<String> mapRouteForExistingApp = data.getTempRoutes();
+      List<String> unmapRouteForExistingApp = data.getFinalRoutes();
       for (String existingAppName : data.getExistingApplicationNames()) {
         cfCommandTaskHelperNG.mapRouteMaps(
             existingAppName, mapRouteForExistingApp, cfRequestConfig, executionLogCallback);
@@ -338,6 +334,18 @@ public class CfSwapRouteCommandTaskHandlerNG extends CfCommandTaskNGHandler {
         updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, existingAppName, true);
       }
     }
+  }
+
+  private void updateRoutesForNewApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,
+      CfRouteUpdateRequestConfigData data) throws PivotalClientApiException {
+    List<String> mapRouteForNewApp = data.getFinalRoutes();
+    List<String> unmapRouteForNewApp = data.getTempRoutes();
+    cfCommandTaskHelperNG.mapRouteMaps(
+        data.getNewApplicationName(), mapRouteForNewApp, cfRequestConfig, executionLogCallback);
+    cfCommandTaskHelperNG.unmapRouteMaps(
+        data.getNewApplicationName(), unmapRouteForNewApp, cfRequestConfig, executionLogCallback);
+    // mark new app as ACTIVE if not rollback, STAGE if rollback
+    updateEnvVariableForApplication(cfRequestConfig, executionLogCallback, data.getNewApplicationName(), true);
   }
 
   private void updateEnvVariableForApplication(CfRequestConfig cfRequestConfig, LogCallback executionLogCallback,

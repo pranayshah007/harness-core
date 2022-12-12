@@ -39,6 +39,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.UnitProgress;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.pcf.CfCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -66,6 +67,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -141,7 +143,8 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .oldApplicationDetails(response.getCurrentProdInfo())
+              .oldApplicationDetails(
+                  isNull(response.getCurrentProdInfo().getApplicationName()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
               .build(),
           StepCategory.STEP.name());
@@ -189,7 +192,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
         CfBasicSetupRequestNG.builder()
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .cfCommandTypeNG(CfCommandTypeNG.TAS_BASIC_SETUP)
-            .commandName(CfCommandTypeNG.TAS_BASIC_SETUP.toString())
+            .commandName(CfCommandUnitConstants.PcfSetup)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .releaseNamePrefix(executionPassThroughData.getApplicationName())
             .isPackageArtifact(tasStepHelper.isPackageArtifactType(artifactOutcome))
@@ -212,11 +215,14 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
                             .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
                             .async(true)
                             .build();
-
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        List.of(CfCommandUnitConstants.PcfSetup), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
-        TaskSelectorYaml.toTaskSelector(tasBasicAppSetupStepParameters.getDelegateSelectors()),
-        stepHelper.getEnvironmentType(ambiance));
+    List<String> units =
+        unitProgressData.getUnitProgresses().stream().map(UnitProgress::getUnitName).collect(Collectors.toList());
+    units.add(CfCommandUnitConstants.PcfSetup);
+    units.add(CfCommandUnitConstants.Wrapup);
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, units, TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
+            TaskSelectorYaml.toTaskSelector(tasBasicAppSetupStepParameters.getDelegateSelectors()),
+            stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
         .taskRequest(taskRequest)
         .chainEnd(true)

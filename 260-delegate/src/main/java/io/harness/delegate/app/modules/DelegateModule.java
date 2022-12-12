@@ -152,6 +152,7 @@ import io.harness.delegate.pcf.CfDataFetchCommandTaskHandlerNG;
 import io.harness.delegate.pcf.CfDeployCommandTaskHandlerNG;
 import io.harness.delegate.pcf.CfRollbackCommandTaskHandlerNG;
 import io.harness.delegate.pcf.CfSwapRollbackCommandTaskHandlerNG;
+import io.harness.delegate.pcf.CfSwapRouteCommandTaskHandlerNG;
 import io.harness.delegate.pcf.TasBasicSetupTaskHandler;
 import io.harness.delegate.pcf.TasBlueGreenSetupTaskHandler;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
@@ -1979,6 +1980,7 @@ public class DelegateModule extends AbstractModule {
     MapBinder<String, CfCommandTaskNGHandler> cfTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, CfCommandTaskNGHandler.class);
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.DATA_FETCH.name()).to(CfDataFetchCommandTaskHandlerNG.class);
+    cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.SWAP_ROUTES.name()).to(CfSwapRouteCommandTaskHandlerNG.class);
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.SWAP_ROLLBACK.name())
         .to(CfSwapRollbackCommandTaskHandlerNG.class);
     cfTaskTypeToTaskHandlerMap.addBinding(CfCommandTypeNG.TAS_BASIC_SETUP.name()).to(TasBasicSetupTaskHandler.class);
