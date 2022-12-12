@@ -8,14 +8,14 @@ spec:
   execution:
     steps:
       - step:
-          name: "Basic Setup Step"
+          name: "Basic App Setup"
           identifier: basicSetupStep
           type: BasicAppSetup
           timeout: 10m
           spec:
             instanceCount: FromManifest
-            existingVersionToKepp: 3
-            additionalRoutes: ""
+            existingVersionToKeep: 3
+            additionalRoutes: []
       - step:
           type: Verify
           name: Verify

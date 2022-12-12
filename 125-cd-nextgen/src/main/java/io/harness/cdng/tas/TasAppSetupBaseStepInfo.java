@@ -7,7 +7,9 @@
 
 package io.harness.cdng.tas;
 
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
@@ -35,12 +37,10 @@ import org.springframework.data.annotation.TypeAlias;
 public class TasAppSetupBaseStepInfo {
   @NotNull TasInstanceCountType tasInstanceCountType;
   @NotNull
-  @ApiModelProperty(dataType = STRING_CLASSPATH)
-  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
   ParameterField<String> existingVersionToKeep;
-  @YamlSchemaTypes({string, list})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> additionalRoutes;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<List<String>> additionalRoutes;
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;

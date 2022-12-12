@@ -8,17 +8,18 @@ spec:
   execution:
     steps:
       - step:
-          name: "BG Setup Step"
-          identifier: BGsetupStep
+          name: "BG App Setup"
+          identifier: BGAppSetup
           type: BGAppSetup
           timeout: 10m
           spec:
             instanceCount: FromManifest
-            existingVersionToKepp: 3
-            additionalRoutes: ""
+            existingVersionToKeep: 3
+            additionalRoutes: []
+            tempRoute
       - step:
-          name: "Deploy Step"
-          identifier: deployStep
+          name: "App Resize"
+          identifier: AppResize
           type: AppResize
           timeout: 10m
           spec:
@@ -31,7 +32,7 @@ spec:
               spec:
                 value: 0
       - step:
-          name: "Swap Route"
+          name: "Swap Routes"
           identifier: SwapRoutes
           type: SwapRoutes
           timeout: 10m
@@ -40,7 +41,7 @@ spec:
     rollbackSteps:
       - step:
           name: "Swap Rollback"
-          identifier: swapRollback
+          identifier: SwapRollback
           type: SwapRollback
           timeout: 10m
           spec:
