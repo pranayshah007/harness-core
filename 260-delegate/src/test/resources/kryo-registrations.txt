@@ -2386,6 +2386,7 @@
 643308:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecManualConfigDTO
 643310:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeIAMDTO
 643311:io.harness.delegate.beans.connector.awssecretmanager.AwsSMCredentialSpecAssumeSTSDTO
+673567:java.util.concurrent.ConcurrentHashMap
 930001:io.harness.licensing.beans.modules.CDModuleLicenseDTO
 930002:io.harness.licensing.beans.modules.CEModuleLicenseDTO
 930003:io.harness.licensing.beans.modules.CFModuleLicenseDTO
