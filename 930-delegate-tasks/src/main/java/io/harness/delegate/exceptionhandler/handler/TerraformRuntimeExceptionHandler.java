@@ -48,6 +48,7 @@ import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.runtime.TerraformCliRuntimeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
@@ -137,11 +138,12 @@ public class TerraformRuntimeExceptionHandler implements ExceptionHandler {
     }
 
     if (hints.isEmpty() && explanations.isEmpty()) {
-      return new TerraformCommandExecutionException(
-          cleanError(cliRuntimeException.getCliError()), WingsException.USER_SRE);
+      return ExceptionMessageSanitizer.sanitizeException(new TerraformCommandExecutionException(
+          cleanError(cliRuntimeException.getCliError()), WingsException.USER_SRE));
     }
 
-    return getFinalException(explanations, hints, structuredErrors, cliRuntimeException);
+    return ExceptionMessageSanitizer.sanitizeException(
+        getFinalException(explanations, hints, structuredErrors, cliRuntimeException));
   }
 
   private void handleConfigDirectoryNotExistError(
