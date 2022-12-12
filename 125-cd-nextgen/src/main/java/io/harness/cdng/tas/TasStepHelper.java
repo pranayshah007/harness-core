@@ -233,6 +233,7 @@ public class TasStepHelper {
     tasStepPassThroughData.setShouldCloseFetchFilesStream(false);
     tasStepPassThroughData.setShouldOpenFetchFilesStream(
         shouldOpenFetchFilesStream(tasStepPassThroughData.getShouldOpenFetchFilesStream()));
+    tasStepPassThroughData.setCommandUnits(getCommandUnits(tasStepPassThroughData));
 
     return prepareManifests(tasStepExecutor, ambiance, stepElementParameters, tasStepPassThroughData);
   }
@@ -369,18 +370,18 @@ public class TasStepHelper {
   private TaskChainResponse prepareManifests(TasStepExecutor tasStepExecutor, Ambiance ambiance,
       StepElementParameters stepElementParameters, TasStepPassThroughData tasStepPassThroughData) {
     Map<String, List<TasManifestFileContents>> localStoreFileMapContents = new HashMap<>();
-    logCallback = cdStepHelper.getLogCallback(
-        CfCommandUnitConstants.FetchFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
-    logCallback.saveExecutionLog("Starting manifest Fetch from Harness Store ", INFO);
-    UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
-                                            .setStartTime(System.currentTimeMillis())
-                                            .setUnitName(CfCommandUnitConstants.FetchFiles);
     if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
+      logCallback = cdStepHelper.getLogCallback(
+          CfCommandUnitConstants.FetchFiles, ambiance, tasStepPassThroughData.getShouldOpenFetchFilesStream());
+      logCallback.saveExecutionLog("Starting manifest Fetch from Harness Store ", INFO);
+      UnitProgress.Builder unitProgress = UnitProgress.newBuilder()
+                                              .setStartTime(System.currentTimeMillis())
+                                              .setUnitName(CfCommandUnitConstants.FetchFiles);
       fetchFilesFromLocalStore(localStoreFileMapContents, ambiance, tasStepPassThroughData, logCallback);
+      unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
+      tasStepPassThroughData.getUnitProgresses().add(unitProgress.build());
+      logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     }
-    unitProgress.setEndTime(System.currentTimeMillis()).setStatus(UnitStatus.SUCCESS);
-    tasStepPassThroughData.getUnitProgresses().add(unitProgress.build());
-    logCallback.saveExecutionLog("Fetched all manifests from Harness Store ", INFO, CommandExecutionStatus.SUCCESS);
     TasStepPassThroughData updatedTasStepPassThroughData =
         tasStepPassThroughData.toBuilder().localStoreFileMapContents(localStoreFileMapContents).build();
 
@@ -743,9 +744,10 @@ public class TasStepHelper {
 
     String taskName = TaskType.CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer, getCommandUnits(),
-        taskName, TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
-        stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest =
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, tasStepPassThroughData.getCommandUnits(), taskName,
+            TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(delegateSelectors)),
+            stepHelper.getEnvironmentType(ambiance));
 
     return TaskChainResponse.builder()
         .chainEnd(false)
@@ -797,7 +799,7 @@ public class TasStepHelper {
     }
 
     final TaskRequest taskRequest =
-        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, getCommandUnits(), taskName,
+        prepareCDTaskRequest(ambiance, taskData, kryoSerializer, tasStepPassThroughData.getCommandUnits(), taskName,
             TaskSelectorYaml.toTaskSelector(CollectionUtils.emptyIfNull(getParameterFieldValue(stepLevelSelectors))),
             stepHelper.getEnvironmentType(ambiance));
 
@@ -808,9 +810,19 @@ public class TasStepHelper {
         .build();
   }
 
-  public List<String> getCommandUnits() {
-    return new ArrayList<>(Arrays.asList(CfCommandUnitConstants.FetchFiles, CfCommandUnitConstants.FetchCustomFiles,
-        K8sCommandUnitConstants.FetchFiles, CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
+  public List<String> getCommandUnits(TasStepPassThroughData tasStepPassThroughData) {
+    List<String> commandUnits = new ArrayList<>();
+    if (tasStepPassThroughData.getShouldExecuteHarnessStoreFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchFiles);
+    }
+    if (tasStepPassThroughData.getShouldExecuteCustomFetch()) {
+      commandUnits.add(CfCommandUnitConstants.FetchCustomFiles);
+    }
+    if (tasStepPassThroughData.getShouldExecuteGitStoreFetch()) {
+      commandUnits.add(K8sCommandUnitConstants.FetchFiles);
+    }
+    commandUnits.addAll(Arrays.asList(CfCommandUnitConstants.PcfSetup, CfCommandUnitConstants.Wrapup));
+    return commandUnits;
   }
 
   protected TaskChainResponse prepareGitFetchTaskChainResponse(Ambiance ambiance,
@@ -966,6 +978,7 @@ public class TasStepHelper {
             .cfCliVersion(tasStepPassThroughData.getTasManifestOutcome().getCfCliVersion())
             .pathsFromScript(tasStepPassThroughData.getPathsFromScript())
             .allFilesFetched(allFilesFetched)
+            .commandUnits(tasStepPassThroughData.getCommandUnits())
             .build(),
         tasStepPassThroughData.getShouldOpenFetchFilesStream(),
         UnitProgressData.builder().unitProgresses(tasStepPassThroughData.getUnitProgresses()).build());

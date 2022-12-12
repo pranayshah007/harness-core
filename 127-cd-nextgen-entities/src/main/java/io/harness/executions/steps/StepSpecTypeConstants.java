@@ -65,12 +65,14 @@ public interface StepSpecTypeConstants {
   String DEPLOYMENT_TYPE_CUSTOM_DEPLOYMENT = "CustomDeployment";
   String CUSTOM_DEPLOYMENT_FETCH_INSTANCE_SCRIPT = "FetchInstanceScript";
 
-  String TAS_CANARY_APP_SETUP = "TasCanaryAppSetup";
-  String TAS_BG_APP_SETUP = "TasBGAppSetup";
-  String TAS_APP_RESIZE = "TasAppResize";
-  String TAS_ROLLBACK = "TasRollback";
-  String TAS_SWAP_ROUTES = "TasSwapRoutes";
-  String TAS_BASIC_APP_SETUP = "TasBasicAppSetup";
+  String TAS_CANARY_APP_SETUP = "CanaryAppSetup";
+  String TAS_BG_APP_SETUP = "BGAppSetup";
+  String TAS_APP_RESIZE = "AppResize";
+  String TAS_ROLLBACK = "AppRollback";
+  String TAS_SWAP_ROUTES = "SwapRoutes";
+  String TAS_BASIC_APP_SETUP = "BasicAppSetup";
+  String SWAP_ROLLBACK = "SwapRollback";
+  String TANZU_COMMAND = "TanzuCommand";
 
   String ECS_ROLLING_DEPLOY = "EcsRollingDeploy";
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
@@ -87,7 +89,4 @@ public interface StepSpecTypeConstants {
 
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
-
-  String SWAP_ROLLBACK = "SwapRollback";
-  String TANZU_COMMAND = "TanzuCommand";
 }

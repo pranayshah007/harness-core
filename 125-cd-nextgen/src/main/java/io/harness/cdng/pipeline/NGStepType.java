@@ -196,11 +196,25 @@ public enum NGStepType {
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.SWAP_ROLLBACK)
-  SWAP_ROLLBACK("TAS Swap Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS",
-          StepSpecTypeConstants.SWAP_ROLLBACK),
+  SWAP_ROLLBACK("Swap Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.SWAP_ROLLBACK),
+  @JsonProperty(StepSpecTypeConstants.TAS_BASIC_APP_SETUP)
+  TAS_BASIC_APP_SETUP(
+      "Basic App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BASIC_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_BG_APP_SETUP)
+  TAS_BG_APP_SETUP(
+      "BG App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_BG_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_CANARY_APP_SETUP)
+  TAS_CANARY_APP_SETUP(
+      "Canary App Setup", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_CANARY_APP_SETUP),
+  @JsonProperty(StepSpecTypeConstants.TAS_APP_RESIZE)
+  TAS_APP_RESIZE("App Resize", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_APP_RESIZE),
+  @JsonProperty(StepSpecTypeConstants.TAS_SWAP_ROUTES)
+  TAS_SWAP_ROUTES(
+      "Swap Routes", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_SWAP_ROUTES),
+  @JsonProperty(StepSpecTypeConstants.TAS_ROLLBACK)
+  TAS_ROLLBACK("App Rollback", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TAS_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.TANZU_COMMAND)
-  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS",
-          StepSpecTypeConstants.TANZU_COMMAND);
+  TANZU_COMMAND("Tanzu Command", Arrays.asList(ServiceDefinitionType.TAS), "TAS", StepSpecTypeConstants.TANZU_COMMAND);
 
   private String displayName;
   private List<ServiceDefinitionType> serviceDefinitionTypes;

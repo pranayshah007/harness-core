@@ -51,6 +51,7 @@ public class TasStepPassThroughData implements PassThroughData {
   Map<String, Collection<CustomSourceFile>> customFetchContent;
   String zippedManifestFileId;
   @Setter @NonFinal List<UnitProgress> unitProgresses;
+  @Setter @NonFinal List<String> commandUnits;
 
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteCustomFetch = Boolean.FALSE;
   @Setter @NonFinal @Builder.Default Boolean shouldExecuteHarnessStoreFetch = Boolean.FALSE;

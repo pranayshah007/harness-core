@@ -64,6 +64,8 @@ public interface YamlTypes {
   String TAS_APP_RESIZE = StepSpecTypeConstants.TAS_APP_RESIZE;
   String TAS_SWAP_ROUTES = StepSpecTypeConstants.TAS_SWAP_ROUTES;
   String TAS_ROLLBACK = StepSpecTypeConstants.TAS_ROLLBACK;
+  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
+  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 
   String ECS_ROLLING_DEPLOY = StepSpecTypeConstants.ECS_ROLLING_DEPLOY;
   String ECS_ROLLING_ROLLBACK = StepSpecTypeConstants.ECS_ROLLING_ROLLBACK;
@@ -177,7 +179,4 @@ public interface YamlTypes {
 
   String ORG = "organization";
   String SPACE = "space";
-
-  String SWAP_ROLLBACK = StepSpecTypeConstants.SWAP_ROLLBACK;
-  String TANZU_COMMAND = StepSpecTypeConstants.TANZU_COMMAND;
 }

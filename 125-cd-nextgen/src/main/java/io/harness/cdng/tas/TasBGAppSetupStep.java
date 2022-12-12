@@ -224,7 +224,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                             .build();
 
     final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        tasStepHelper.getCommandUnits(), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
+        executionPassThroughData.getCommandUnits(), TaskType.CF_COMMAND_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(tasBGAppSetupStepParameters.getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
     return TaskChainResponse.builder()
