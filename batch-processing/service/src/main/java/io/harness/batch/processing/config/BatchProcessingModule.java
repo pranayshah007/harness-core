@@ -23,6 +23,9 @@ import io.harness.batch.processing.metrics.ProductMetricsServiceImpl;
 import io.harness.batch.processing.svcmetrics.BatchProcessingMetricsPublisher;
 import io.harness.batch.processing.tasklet.util.ClusterHelper;
 import io.harness.batch.processing.tasklet.util.ClusterHelperImpl;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelperImpl;
+import io.harness.ccm.CENGGraphQLModule;
 import io.harness.ccm.anomaly.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.bigQuery.BigQueryService;
@@ -41,6 +44,8 @@ import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.graphql.core.budget.BudgetCostServiceImpl;
 import io.harness.ccm.graphql.core.budget.BudgetService;
 import io.harness.ccm.graphql.core.budget.BudgetServiceImpl;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceService;
+import io.harness.ccm.graphql.core.currency.CurrencyPreferenceServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
@@ -177,8 +182,11 @@ public class BatchProcessingModule extends AbstractModule {
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
     bind(BudgetService.class).to(BudgetServiceImpl.class);
     bind(PerspectiveAnomalyService.class).to(PerspectiveAnomalyServiceImpl.class);
+    bind(CurrencyPreferenceService.class).to(CurrencyPreferenceServiceImpl.class);
+    bind(CurrencyPreferenceHelper.class).to(CurrencyPreferenceHelperImpl.class);
 
     install(new MetricsModule());
+    install(new CENGGraphQLModule(batchMainConfig.getCurrencyPreferencesConfig()));
     bind(MetricsPublisher.class).to(BatchProcessingMetricsPublisher.class).in(Scopes.SINGLETON);
 
     bindPricingServices();

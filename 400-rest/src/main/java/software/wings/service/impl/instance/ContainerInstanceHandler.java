@@ -65,8 +65,6 @@ import software.wings.beans.EcsInfrastructureMapping;
 import software.wings.beans.HelmExecutionSummary;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
-import software.wings.beans.artifact.Artifact.ArtifactKeys;
 import software.wings.beans.container.Label;
 import software.wings.beans.infrastructure.instance.ContainerDeploymentInfo;
 import software.wings.beans.infrastructure.instance.Instance;
@@ -86,6 +84,8 @@ import software.wings.beans.infrastructure.instance.key.deployment.K8sDeployment
 import software.wings.dl.WingsPersistence;
 import software.wings.helpers.ext.k8s.response.K8sInstanceSyncResponse;
 import software.wings.helpers.ext.k8s.response.K8sTaskExecutionResponse;
+import software.wings.persistence.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact.ArtifactKeys;
 import software.wings.service.ContainerInstanceSyncPerpetualTaskCreator;
 import software.wings.service.InstanceSyncPerpetualTaskCreator;
 import software.wings.service.impl.ContainerMetadata;

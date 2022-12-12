@@ -15,8 +15,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.settings.SettingVariableTypes;
 
 import java.util.HashMap;

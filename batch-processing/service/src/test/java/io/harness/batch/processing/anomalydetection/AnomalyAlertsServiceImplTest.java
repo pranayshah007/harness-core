@@ -26,6 +26,7 @@ import io.harness.ccm.anomaly.AnomalyDataStub;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
+import io.harness.ccm.currency.Currency;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
@@ -87,7 +88,7 @@ public class AnomalyAlertsServiceImplTest extends CategoryTest {
 
     when(ceSlackWebhookService.getByAccountId(ACCOUNT_ID)).thenReturn(ceSlackWebhook);
     when(anomalyService.list(ACCOUNT_ID, date)).thenReturn(Arrays.asList(AnomalyDataStub.getClusterAnomaly()));
-    when(slackMessageGenerator.generateDailyReport(Arrays.asList(AnomalyDataStub.getClusterAnomaly())))
+    when(slackMessageGenerator.generateDailyReport(Arrays.asList(AnomalyDataStub.getClusterAnomaly()), Currency.USD))
         .thenReturn(Collections.emptyList());
     when(slack.send(anyString(), (Payload) anyObject())).thenReturn(WebhookResponse.builder().code(200).build());
   }

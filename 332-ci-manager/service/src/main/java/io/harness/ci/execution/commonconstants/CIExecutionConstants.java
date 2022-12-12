@@ -47,7 +47,6 @@ public class CIExecutionConstants extends ContainerExecutionConstants {
 
   // entry point constants
   public static final String TMP_PATH_ARG_PREFIX = "--tmppath";
-  public static final String TMP_PATH = "/addon/tmp/";
   public static final String SERVICE_ARG_COMMAND = "service";
   public static final String IMAGE_PREFIX = "--image";
   public static final String ID_PREFIX = "--id";

@@ -193,9 +193,7 @@ public class GARApiServiceImpl implements GarApiService {
             "Please check connector's permission and credentials",
             new InvalidArtifactServerException(errormessage, USER));
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(
-            "Connector provided does not have access to project provided", "Please check project field",
-            new InvalidArtifactServerException(errormessage, USER));
+        throw new HintException("Connector provided does not have access to project. Please check the project field.");
       default:
         throw NestedExceptionUtils.hintWithExplanationException(
             "The server could have failed authenticate ,Please check your credentials",

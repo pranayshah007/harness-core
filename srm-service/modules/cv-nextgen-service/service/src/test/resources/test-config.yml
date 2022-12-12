@@ -144,6 +144,13 @@ accessControlClientConfig:
     readTimeOutSeconds: 15
     connectTimeOutSeconds: 15
 
+errorTrackingClientConfig:
+  errorTrackingServiceConfig:
+    baseUrl: http://localhost:9191/api/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  errorTrackingServiceSecret: LocalTestErrorTrackingServiceSecretLocalTestErrorTrackingServiceSecretLocalTestE
+
 auditClientConfig:
   baseUrl: http://localhost:9005/api/
   connectTimeOutSeconds: 15

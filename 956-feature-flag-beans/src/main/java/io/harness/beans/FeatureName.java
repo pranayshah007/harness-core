@@ -258,7 +258,6 @@ public enum FeatureName {
   CV_FAIL_ON_EMPTY_NODES,
   SHOW_REFINER_FEEDBACK,
   SHOW_NG_REFINER_FEEDBACK,
-  NG_NEXUS_ARTIFACTORY,
   HELM_VERSION_3_8_0,
   DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST("Enable dynamic handling of task request", HarnessTeam.DEL),
   YAML_GIT_CONNECTOR_NAME,
@@ -455,6 +454,8 @@ public enum FeatureName {
       "This feature flag enforces maximum time range for workflow execution queries without appId", HarnessTeam.SPG),
   SPG_REDUCE_KEYWORDS_PERSISTENCE_ON_EXECUTIONS(
       "Gradually reducing the amount of keywords being stored on workflow executions", HarnessTeam.SPG),
+  SPG_CG_END_OF_LIFE_BANNER(
+      "Shows the user a banner notifying about the End of Life of CG CD new features", HarnessTeam.SPG),
   SYNC_GIT_CLONE_AND_COPY_TO_DEST_DIR(
       "This feature flag helps in synchronizing the git clone of repo and copying the files then to destination directory",
       HarnessTeam.CDP),
@@ -499,6 +500,11 @@ public enum FeatureName {
   SPG_OPTIMIZE_PIPELINE_QUERY_ON_AUTH("Optimizes auth on pipelines making the query more efficient.", HarnessTeam.SPG),
   GITOPS_FETCH_LINKED_APPS("Fetch Linked Apps Step and new Manifest in GitOps", HarnessTeam.GITOPS),
   SRM_SUMO("Will enable Sumologic health source in SRM", HarnessTeam.CV),
+  SPG_SAVE_REJECTED_BY_FREEZE_WINDOWS(
+      "Flag that enables populating WorkflowExecution with ids of freeze windows that rejected the execution",
+      HarnessTeam.SPG),
+  SPG_INSTANCE_ENABLE_HINT_ON_GET_INSTANCES(
+      "Enable db hint on getInstancesForAccount for performance stability", HarnessTeam.SPG),
   TERRAGRUNT_PROVISION_NG("FF to enable Terragrunt provision in NG", HarnessTeam.CDP),
   LANDING_OVERVIEW_PAGE_V2("Supports new entities for landing overview page", HarnessTeam.SPG),
   CDS_STEPGROUP_TEMPLATE("Added support for Step group templates", HarnessTeam.CDC),
@@ -512,7 +518,11 @@ public enum FeatureName {
       HarnessTeam.CDP),
   DISABLE_WINRM_COMMAND_ENCODING_NG(
       "To disable Base64 encoding done to WinRM command script which is sent to remote server for execution",
-      HarnessTeam.CDP);
+      HarnessTeam.CDP),
+  PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
+  SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
+  PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
+  CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE);
 
   @Deprecated
   FeatureName() {

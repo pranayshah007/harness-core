@@ -36,6 +36,9 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_E
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.USER_SCOPE_RECONCILIATION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.VARIABLE_ENTITY;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY;
+import static io.harness.ng.core.api.utils.JWTTokenFlowAuthFilterUtils.JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.lang.Boolean.TRUE;
@@ -56,6 +59,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
 import io.harness.audit.ResourceTypeConstants;
 import io.harness.audit.client.remote.AuditClientModule;
+import io.harness.cache.HarnessCacheManager;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -144,6 +148,9 @@ import io.harness.ng.core.api.NGModulesService;
 import io.harness.ng.core.api.NGSecretServiceV2;
 import io.harness.ng.core.api.TokenService;
 import io.harness.ng.core.api.UserGroupService;
+import io.harness.ng.core.api.cache.JwtTokenPublicKeysJsonData;
+import io.harness.ng.core.api.cache.JwtTokenScimAccountSettingsData;
+import io.harness.ng.core.api.cache.JwtTokenServiceAccountData;
 import io.harness.ng.core.api.impl.ApiKeyServiceImpl;
 import io.harness.ng.core.api.impl.DefaultUserGroupServiceImpl;
 import io.harness.ng.core.api.impl.NGModulesServiceImpl;
@@ -289,6 +296,7 @@ import io.harness.timescaledb.retention.RetentionManagerImpl;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
+import io.harness.version.VersionInfoManager;
 import io.harness.version.VersionModule;
 import io.harness.waiter.AbstractWaiterModule;
 import io.harness.waiter.AsyncWaitEngineImpl;
@@ -324,6 +332,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import javax.cache.Cache;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.validation.Validation;
 import javax.validation.ValidatorFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -485,6 +497,36 @@ public class NextGenModule extends AbstractModule {
   @Named("cdTsDbRetentionPeriodMonths")
   public String cdTsDbRetentionPeriodMonths() {
     return String.format(RETENTION_PERIOD_FORMAT, this.appConfig.getCdTsDbRetentionPeriodMonths());
+  }
+
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY)
+  Cache<String, JwtTokenPublicKeysJsonData> getJwtTokenValidationJwtConsumerCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_PUBLIC_KEYS_JSON_DATA_CACHE_KEY, String.class,
+        JwtTokenPublicKeysJsonData.class, AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY)
+  Cache<String, JwtTokenServiceAccountData> getJwtTokenServiceAccountCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_SERVICE_ACCOUNT_DATA_CACHE_KEY, String.class,
+        JwtTokenServiceAccountData.class, AccessedExpiryPolicy.factoryOf(new Duration(TimeUnit.DAYS, 5)),
+        versionInfoManager.getVersionInfo().getBuildNo());
+  }
+
+  @Provides
+  @Singleton
+  @Named(JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY)
+  Cache<String, JwtTokenScimAccountSettingsData> getJwtTokenScimSettingsCache(
+      HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
+    return harnessCacheManager.getCache(JWT_TOKEN_SCIM_SETTINGS_DATA_CACHE_KEY, String.class,
+        JwtTokenScimAccountSettingsData.class, CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.MINUTES, 2)),
+        versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Override

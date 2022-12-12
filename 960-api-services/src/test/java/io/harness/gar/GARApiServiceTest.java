@@ -168,6 +168,6 @@ public class GARApiServiceTest extends CategoryTest {
                                                     .build();
     assertThatThrownBy(() -> garApiServiceImpl.verifyBuildNumber(modiifedInternalConfig1, "package"))
         .extracting(ex -> ((WingsException) ex).getParams().get("message"))
-        .isEqualTo("Connector provided does not have access to project provided"); // 403
+        .isEqualTo("Connector provided does not have access to project. Please check the project field."); // 403
   }
 }

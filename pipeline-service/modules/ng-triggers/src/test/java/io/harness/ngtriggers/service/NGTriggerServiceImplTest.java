@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.SRIDHAR;
 import static io.harness.rule.OwnerRule.VINICIUS;
 
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
 import static junit.framework.TestCase.assertTrue;
 import static junit.framework.TestCase.fail;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngsettings.client.remote.NGSettingsClient;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
+import io.harness.ngtriggers.beans.dto.TriggerYamlDiffDTO;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.metadata.NGTriggerMetadata;
 import io.harness.ngtriggers.beans.entity.metadata.WebhookMetadata;
@@ -80,6 +82,10 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.utils.PmsFeatureFlagService;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.common.io.Resources;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
@@ -481,5 +487,102 @@ public class NGTriggerServiceImplTest extends CategoryTest {
                            -> ngTriggerServiceImpl.checkAuthorization(
                                ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, headerConfigs))
         .isInstanceOf(AccessDeniedException.class);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithExtraInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-extra-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithMissingInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-missing-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithNoInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-no-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithRightInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-right-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-with-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffTriggerWithWrongInputFormat() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml",
+        "trigger-yaml-diff-trigger-wrong-input-format.yaml", "trigger-yaml-diff-expected-new-trigger-with-input.yaml",
+        true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffWhenPipelineHasNoInput() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-no-input.yaml", "trigger-yaml-diff-trigger-extra-input.yaml",
+        "trigger-yaml-diff-expected-new-trigger-no-input.yaml", true);
+  }
+
+  @Test
+  @Owner(developers = VINICIUS)
+  @Category(UnitTests.class)
+  public void testGetTriggerYamlDiffWhenTriggerForRemotePipeline() throws IOException {
+    checkTriggerYamlDiff("trigger-yaml-diff-pipeline-with-input.yaml", "trigger-yaml-diff-trigger-with-input-set.yaml",
+        "trigger-yaml-diff-trigger-with-input-set.yaml", false);
+  }
+
+  private void checkTriggerYamlDiff(String filenamePipeline, String filenameTrigger, String filenameNewTrigger,
+      Boolean useNullPipelineBranchName) throws IOException {
+    String newTriggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameNewTrigger)), StandardCharsets.UTF_8);
+    String triggerYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameTrigger)), StandardCharsets.UTF_8);
+    NGTriggerEntity ngTriggerEntity = NGTriggerEntity.builder()
+                                          .accountId(ACCOUNT_ID)
+                                          .orgIdentifier(ORG_IDENTIFIER)
+                                          .projectIdentifier(PROJ_IDENTIFIER)
+                                          .targetIdentifier(PIPELINE_IDENTIFIER)
+                                          .identifier(IDENTIFIER)
+                                          .name(NAME)
+                                          .targetType(TargetType.PIPELINE)
+                                          .type(NGTriggerType.WEBHOOK)
+                                          .metadata(ngTriggerMetadata)
+                                          .yaml(triggerYaml)
+                                          .version(0L)
+                                          .build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder()
+            .ngTriggerEntity(ngTriggerEntity)
+            .ngTriggerConfigV2(NGTriggerConfigV2.builder()
+                                   .inputSetRefs(Collections.emptyList())
+                                   .pipelineBranchName(useNullPipelineBranchName ? null : "pipelineBranchName")
+                                   .build())
+            .build();
+    String pipelineYaml =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenamePipeline)), StandardCharsets.UTF_8);
+    when(validationHelper.fetchPipelineForTrigger(any())).thenReturn(Optional.ofNullable(pipelineYaml));
+    ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory()
+                                                     .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
+                                                     .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
+                                                     .disable(USE_NATIVE_TYPE_ID));
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    when(ngTriggerElementMapper.getObjectMapper()).thenReturn(objectMapper);
+    TriggerYamlDiffDTO yamlDiffResponse = ngTriggerServiceImpl.getTriggerYamlDiff(triggerDetails);
+    assertThat(yamlDiffResponse.getNewYAML().replace("<+input>", "1")).isEqualTo(newTriggerYaml);
   }
 }

@@ -104,7 +104,9 @@ import static org.joda.time.Months.monthsBetween;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.service.intf.EntityMetadataService;
+import io.harness.ccm.currency.Currency;
 import io.harness.ccm.views.businessMapping.entities.BusinessMapping;
 import io.harness.ccm.views.businessMapping.entities.CostTarget;
 import io.harness.ccm.views.businessMapping.entities.SharedCost;
@@ -217,11 +219,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   @Inject private BusinessMappingService businessMappingService;
   @Inject private AwsAccountFieldHelper awsAccountFieldHelper;
   @Inject private BusinessMappingDataSourceHelper businessMappingDataSourceHelper;
+  @Inject private CEMetadataRecordDao ceMetadataRecordDao;
 
   private static final String OTHERS = "Others";
   private static final String COST_DESCRIPTION = "of %s - %s";
   private static final String OTHER_COST_DESCRIPTION = "%s of total";
-  private static final String COST_VALUE = "$%s";
+  private static final String COST_VALUE = "%s%s";
   private static final String TOTAL_COST_LABEL = "Total Cost";
   private static final String TOTAL_CLUSTER_COST_LABEL = "Total Cluster Cost";
   private static final String FORECAST_COST_LABEL = "Forecasted Cost";
@@ -539,15 +542,25 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     if (isClusterTableQuery) {
       efficiencyScoreStats = viewsQueryHelper.getEfficiencyScoreStats(costData, prevCostData);
     }
+    Currency currency = getDestinationCurrency(queryParams.getAccountId());
 
     return QLCEViewTrendData.builder()
-        .totalCost(getCostBillingStats(costData, prevCostData, timeFilters, trendStartInstant, isClusterTableQuery))
-        .idleCost(getOtherCostBillingStats(costData, IDLE_COST_LABEL))
-        .unallocatedCost(getOtherCostBillingStats(costData, UNALLOCATED_COST_LABEL))
-        .systemCost(getOtherCostBillingStats(costData, SYSTEM_COST_LABEL))
-        .utilizedCost(getOtherCostBillingStats(costData, UTILIZED_COST_LABEL))
+        .totalCost(
+            getCostBillingStats(costData, prevCostData, timeFilters, trendStartInstant, isClusterTableQuery, currency))
+        .idleCost(getOtherCostBillingStats(costData, IDLE_COST_LABEL, currency))
+        .unallocatedCost(getOtherCostBillingStats(costData, UNALLOCATED_COST_LABEL, currency))
+        .systemCost(getOtherCostBillingStats(costData, SYSTEM_COST_LABEL, currency))
+        .utilizedCost(getOtherCostBillingStats(costData, UTILIZED_COST_LABEL, currency))
         .efficiencyScoreStats(efficiencyScoreStats)
         .build();
+  }
+
+  private Currency getDestinationCurrency(String accountId) {
+    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
+    if (Currency.NONE.equals(currency)) {
+      currency = Currency.USD;
+    }
+    return currency;
   }
 
   @Override
@@ -1329,7 +1342,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   private QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
-      List<QLCEViewTimeFilter> filters, Instant trendFilterStartTime, boolean isClusterTableQuery) {
+      List<QLCEViewTimeFilter> filters, Instant trendFilterStartTime, boolean isClusterTableQuery, Currency currency) {
     Instant startInstant = Instant.ofEpochMilli(viewsQueryHelper.getTimeFilter(filters, AFTER).getValue().longValue());
     Instant endInstant = Instant.ofEpochMilli(costData.getMaxStartTime() / 1000);
     if (costData.getMaxStartTime() == 0) {
@@ -1341,8 +1354,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     String startInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(startInstant, isYearRequired);
     String endInstantFormat = viewsQueryHelper.getTotalCostFormattedDate(endInstant, isYearRequired);
     String totalCostDescription = format(COST_DESCRIPTION, startInstantFormat, endInstantFormat);
-    String totalCostValue =
-        format(COST_VALUE, viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(costData.getCost())));
+    String totalCostValue = format(COST_VALUE, currency.getSymbol(),
+        viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(costData.getCost())));
 
     double forecastCost = viewsQueryHelper.getForecastCost(ViewCostData.builder()
                                                                .cost(costData.getCost())
@@ -1362,7 +1375,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .build();
   }
 
-  protected QLCEViewTrendInfo getOtherCostBillingStats(ViewCostData costData, String costLabel) {
+  protected QLCEViewTrendInfo getOtherCostBillingStats(ViewCostData costData, String costLabel, Currency currency) {
     if (costData == null) {
       return null;
     }
@@ -1387,8 +1400,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         return null;
     }
     if (otherCost != null) {
-      otherCostValue =
-          String.format(COST_VALUE, viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(otherCost)));
+      otherCostValue = String.format(COST_VALUE, currency.getSymbol(),
+          viewsQueryHelper.formatNumber(viewsQueryHelper.getRoundedDoubleValue(otherCost)));
       if (totalCost != 0) {
         double percentageOfTotalCost = viewsQueryHelper.getRoundedDoublePercentageValue(otherCost / totalCost);
         otherCostDescription = String.format(OTHER_COST_DESCRIPTION, percentageOfTotalCost + "%");

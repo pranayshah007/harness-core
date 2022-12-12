@@ -23,4 +23,5 @@ public interface ClusterRecordService {
   ClusterRecord getByCEK8sIdentifier(String accountId, String ceK8sConnectorIdentifier);
   List<ClusterRecord> getByCEK8sIdentifierList(String accountId, List<String> ceK8sConnectorIdentifier);
   ClusterRecord attachTask(ClusterRecord clusterRecord, String taskId);
+  List<ClusterRecord> getByAccountId(String accountId);
 }
