@@ -361,7 +361,7 @@ public class InstanceBillingDataTasklet implements Tasklet {
           instanceDataList, startTime.toString(), endTime.toString(), firstInstanceData.getAccountId(),
           firstInstanceData.getSettingId(), firstInstanceData.getClusterId());
 
-      List<InstanceData> parentInstanceDataList = instanceDataDao.fetchInstanceData(parentInstanceIds);
+      List<InstanceData> parentInstanceDataList = instanceDataDao.fetchInstanceData(accountId, parentInstanceIds);
       Map<String, Double> parentInstanceActiveSecondMap =
           billingCalculationService.getInstanceActiveSeconds(parentInstanceDataList, startTime, endTime);
 
