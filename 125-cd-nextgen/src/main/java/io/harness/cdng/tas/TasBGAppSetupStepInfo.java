@@ -60,10 +60,10 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<String>> tempRoutes;
   @Builder(builderMethodName = "infoBuilder")
-  public TasBGAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
+  public TasBGAppSetupStepInfo(TasInstanceCountType tasInstanceCountType, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       ParameterField<List<String>> tempRoutes) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
+    super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.tempRoutes = tempRoutes;
   }
 
@@ -80,7 +80,7 @@ public class TasBGAppSetupStepInfo extends TasAppSetupBaseStepInfo implements CD
   @Override
   public SpecParameters getSpecParameters() {
     return TasBGAppSetupStepParameters.infoBuilder()
-        .instanceCount(this.instanceCount)
+        .tasInstanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .tempRoutes(this.tempRoutes)

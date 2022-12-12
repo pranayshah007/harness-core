@@ -51,9 +51,10 @@ public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @Builder(builderMethodName = "infoBuilder")
-  public TasBasicAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
-      ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
+  public TasBasicAppSetupStepInfo(TasInstanceCountType tasInstanceCountType,
+      ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
   }
 
   @Override
@@ -69,7 +70,7 @@ public class TasBasicAppSetupStepInfo extends TasAppSetupBaseStepInfo implements
   @Override
   public SpecParameters getSpecParameters() {
     return TasBasicAppSetupStepParameters.infoBuilder()
-        .instanceCount(this.instanceCount)
+        .instanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .delegateSelectors(this.getDelegateSelectors())

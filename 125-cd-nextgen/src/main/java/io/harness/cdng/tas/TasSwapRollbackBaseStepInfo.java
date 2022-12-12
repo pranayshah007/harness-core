@@ -28,8 +28,6 @@ public class TasSwapRollbackBaseStepInfo {
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
-  @JsonIgnore String tasRollbackFqn;
   @JsonIgnore String tasSwapRoutesFqn;
   @JsonIgnore String tasBGSetupFqn;
   @JsonIgnore String tasBasicSetupFqn;

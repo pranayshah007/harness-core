@@ -53,10 +53,10 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
   @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCount, ParameterField<String> existingVersionToKeep,
+  public TasCanaryAppSetupStepInfo(TasInstanceCountType instanceCountType, ParameterField<String> existingVersionToKeep,
       ParameterField<List<String>> additionalRoutes, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       TasResizeStrategyType resizeStrategy) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
+    super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }
 
@@ -73,7 +73,7 @@ public class TasCanaryAppSetupStepInfo extends TasAppSetupBaseStepInfo implement
   @Override
   public SpecParameters getSpecParameters() {
     return TasCanaryAppSetupStepParameters.infoBuilder()
-        .instanceCount(this.instanceCount)
+        .tasInstanceCountType(this.tasInstanceCountType)
         .existingVersionToKeep(this.existingVersionToKeep)
         .additionalRoutes(this.additionalRoutes)
         .resizeStrategy(this.resizeStrategy)

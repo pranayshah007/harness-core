@@ -32,9 +32,9 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.TasBasicAppSetupStepParameters")
 public class TasBasicAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasBasicAppSetupStepParameters(TasInstanceCountType instanceCount,
+  public TasBasicAppSetupStepParameters(TasInstanceCountType instanceCountType,
       ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
+    super(instanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
   }
 }

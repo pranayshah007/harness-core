@@ -140,7 +140,7 @@ public class TasCanaryAppSetupStep extends TaskChainExecutableWithRollbackAndRba
     TasInfraConfig tasInfraConfig = cdStepHelper.getTasInfraConfig(infrastructureOutcome, ambiance);
     Integer maxCount;
     boolean isWebProcessCountZero = false;
-    if (tasCanaryAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
+    if (tasCanaryAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.FROM_MANIFEST)) {
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
       isWebProcessCountZero = maxCount == 0;
     }
