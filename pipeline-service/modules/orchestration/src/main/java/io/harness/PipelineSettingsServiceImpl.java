@@ -13,6 +13,7 @@ import static io.harness.licensing.Edition.TEAM;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.remote.client.NGRestUtils;
@@ -53,7 +54,9 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     List<ModuleLicenseDTO> moduleLicenseDTOS = moduleLicensesCache.get(accountId);
     Edition edition = FREE;
     for (ModuleLicenseDTO moduleLicenseDTO : moduleLicenseDTOS) {
-      if (moduleLicenseDTO.getEdition() == ENTERPRISE || moduleLicenseDTO.getEdition() == TEAM) {
+      // If it is trial then we will treat them as free only in terms of execution
+      if (moduleLicenseDTO.getLicenseType() != LicenseType.TRIAL
+          && (moduleLicenseDTO.getEdition() == ENTERPRISE || moduleLicenseDTO.getEdition() == TEAM)) {
         edition = moduleLicenseDTO.getEdition();
       }
     }
@@ -138,6 +141,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
           }
           return 20;
         case ENTERPRISE:
+
           if (orchestrationRestrictionConfiguration.isUseRestrictionForEnterprise()) {
             if (childCount
                 > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getEnterprise()) {
