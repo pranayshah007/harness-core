@@ -189,10 +189,6 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
       logCallback.saveExecutionLog(color("\n# Creating new Application", White, Bold));
 
-      // Update pcfRequestConfig with details to create application
-      // TODO - instead of updating create new object of CfRequestConfig
-      //      updatePcfRequestConfig(cfCommandSetupRequest, cfRequestConfig, newReleaseName);
-
       ApplicationDetail newApplication = createAppAndPrintDetails(logCallback, requestData);
 
       CfBlueGreenSetupResponseNG cfSetupCommandResponse =
