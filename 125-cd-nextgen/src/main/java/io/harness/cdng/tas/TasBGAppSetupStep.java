@@ -151,7 +151,9 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .oldApplicationDetails(response.getInActiveApplicationInfo())
+              .oldApplicationDetails(isNull(response.getInActiveApplicationInfo().getApplicationName())
+                      ? null
+                      : response.getInActiveApplicationInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
               .existingApplicationDetails(response.getActiveApplicationInfo())
               .cfAppNamePrefix(tasExecutionPassThroughData.getApplicationName())

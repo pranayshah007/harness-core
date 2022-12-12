@@ -143,7 +143,8 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
                   !isNull(tasExecutionPassThroughData.getPcfManifestsPackage().getAutoscalarManifestYml()))
               .desiredActualFinalCount(((TasExecutionPassThroughData) passThroughData).getMaxCount())
               .newReleaseName(response.getNewApplicationInfo().getApplicationName())
-              .oldApplicationDetails(response.getCurrentProdInfo())
+              .oldApplicationDetails(
+                  isNull(response.getCurrentProdInfo().getApplicationName()) ? null : response.getCurrentProdInfo())
               .newApplicationDetails(response.getNewApplicationInfo())
               .build(),
           StepCategory.STEP.name());

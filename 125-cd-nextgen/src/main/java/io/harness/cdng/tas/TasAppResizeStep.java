@@ -219,7 +219,9 @@ public class TasAppResizeStep extends TaskExecutableWithRollbackAndRbac<CfComman
             .commandName(TAS_APP_RESIZE)
             .commandUnitsProgress(CommandUnitsProgress.builder().build())
             .cfCliVersion(tasSetupDataOutcome.getCfCliVersion())
-            .downsizeAppDetail(tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
+            .downsizeAppDetail(isNull(tasSetupDataOutcome.getOldApplicationDetails())
+                    ? null
+                    : tasSetupDataOutcome.getOldApplicationDetails().toCfAppSetupTimeDetails())
             .upsizeCount(upsizeCount)
             .downSizeCount(downsizeCount)
             .instanceData(tasSetupDataOutcome.getInstanceData())
