@@ -13,6 +13,7 @@ import io.harness.ci.license.CILicenseService;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
@@ -55,7 +56,9 @@ public class CIStagePlanCreationUtils {
       CIAccountExecutionMetadataRepository accountExecutionMetadataRepository, CILicenseService ciLicenseService,
       String accountId) {
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE) {
+    if (licensesWithSummaryDTO != null
+        && (licensesWithSummaryDTO.getEdition() == Edition.FREE
+            || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
       Optional<CIAccountExecutionMetadata> accountExecutionMetadata =
           accountExecutionMetadataRepository.findByAccountId(accountId);
 
@@ -65,7 +68,7 @@ public class CIStagePlanCreationUtils {
         String day = yearMonth + "-" + startDate.getDayOfMonth();
         Map<String, Long> countPerDay = accountExecutionMetadata.get().getAccountExecutionInfo().getCountPerDay();
         if (countPerDay != null) {
-          if (countPerDay.getOrDefault(day, 0L) >= 100) {
+          if (countPerDay.getOrDefault(day, 0L) >= 5) {
             log.error("Daily stage execution rate limit for free plan has reached for accountId {}", accountId);
             throw new CIStageExecutionException(
                 "Execution limit has reached for the day, Please reach out to Harness support");
