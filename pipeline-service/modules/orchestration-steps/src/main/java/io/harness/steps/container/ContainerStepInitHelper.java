@@ -98,11 +98,7 @@ public class ContainerStepInitHelper {
   public CIK8InitializeTaskParams getK8InitializeTaskParams(
       ContainerStepInfo containerStepInfo, Ambiance ambiance, String logPrefix) {
     ContainerK8sInfra infrastructure = (ContainerK8sInfra) containerStepInfo.getInfrastructure();
-    //        Optional<Level> stage = ambiance.getLevelsList().stream().filter(l ->
-    //        l.getGroup().equals("STAGE")).findFirst(); String stageId = ambiance.getStageExecutionId();
-    //        if(stage.isPresent()){
-    //            stageId = stage.get().getIdentifier();
-    //        }
+
     if (infrastructure == null) {
       throw new ContainerStepExecutionException("Input infrastructure can not be empty");
     }
@@ -137,8 +133,7 @@ public class ContainerStepInitHelper {
   private CIK8PodParams<CIK8ContainerParams> getK8DirectPodParams(ContainerStepInfo containerStepInfo,
       ContainerDetailsSweepingOutput k8PodDetails, ContainerK8sInfra k8sDirectInfraYaml, Ambiance ambiance,
       String logPrefix) {
-    String stageExecutionId = ambiance.getStageExecutionId();
-    String podName = getPodName(ambiance, stageExecutionId);
+    String podName = getPodName(ambiance, containerStepInfo.getIdentifier().toLowerCase());
     Map<String, String> buildLabels = k8sPodInitUtils.getLabels(ambiance, containerStepInfo.getIdentifier());
     Map<String, String> annotations = ExpressionResolverUtils.resolveMapParameter(
         "annotations", "ContainerStep", "stepSetup", k8sDirectInfraYaml.getSpec().getAnnotations(), false);
@@ -329,16 +324,6 @@ public class ContainerStepInitHelper {
     Set<Integer> usedPorts = new HashSet<>();
     PortFinder portFinder = PortFinder.builder().startingPort(PORT_STARTING_RANGE).usedPorts(usedPorts).build();
 
-    //        IntegrationStageNode stageNode =
-    //                IntegrationStageNode.builder()
-    //                        .type(IntegrationStageNode.StepType.CI)
-    //                        .identifier(initializeStepInfo.getIdentifier())
-    //                        .variables(initializeStepInfo.getVariables())
-    //                        .integrationStageConfig((IntegrationStageConfigImpl)
-    //                        initializeStepInfo.getStageElementConfig()) .build();
-
-    //        List<ContainerDefinitionInfo> serviceCtrDefinitionInfos =
-    //                k8InitializeServiceUtils.createServiceContainerDefinitions(stageNode, portFinder, os);
     ContainerDefinitionInfo stepCtrDefinitionInfos =
         createStepContainerDefinitions(initializeStepInfo, portFinder, AmbianceUtils.getAccountId(ambiance), os);
 
@@ -362,16 +347,6 @@ public class ContainerStepInitHelper {
   }
 
   private String getPodName(Ambiance ambiance, String stageId) {
-    //        OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-    //                ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
-    //        if (optionalSweepingOutput.isFound()) {
-    //            StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
-    //            StageInfraDetails.Type type = stageInfraDetails.getType();
-    //            if (type == StageInfraDetails.Type.K8) {
-    //                K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
-    //                return k8StageInfraDetails.getPodName();
-    //            }
-    //        }
     return k8sPodInitUtils.generatePodName(stageId);
   }
 
@@ -393,10 +368,9 @@ public class ContainerStepInitHelper {
     }
     String identifier = runStepInfo.getIdentifier();
     Integer port = portFinder.getNextPort();
-    String containerName = format("%s", STEP_PREFIX);
+    String containerName = format("%s%s", STEP_PREFIX, runStepInfo.getIdentifier().toLowerCase());
 
     Map<String, String> stepEnvVars = new HashMap<>();
-    //        stepEnvVars.putAll(getEnvVariables(stageNode));
     Map<String, String> envvars = ExpressionResolverUtils.resolveMapParameter(
         "envVariables", "Run", identifier, runStepInfo.getEnvVariables(), false);
     if (!isEmpty(envvars)) {

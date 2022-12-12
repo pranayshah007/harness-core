@@ -656,7 +656,7 @@ public class PipelineResourceTest extends CategoryTest {
     pipelineResource.validatePipelineByYAML(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml);
     verify(pmsPipelineServiceHelper, times(1))
         .resolveTemplatesAndValidatePipeline(
-            PMSPipelineDtoMapper.toPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml));
+            PMSPipelineDtoMapper.toPipelineEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, yaml), false);
   }
 
   @Test
@@ -675,7 +675,7 @@ public class PipelineResourceTest extends CategoryTest {
         .when(pmsPipelineService)
         .getAndValidatePipeline(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
     pipelineResource.validatePipelineByIdentifier(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER);
-    verify(pmsPipelineServiceHelper, times(0)).resolveTemplatesAndValidatePipeline(entity, false);
+    verify(pmsPipelineServiceHelper, times(0)).resolveTemplatesAndValidatePipeline(entity, false, false);
   }
 
   @Test

@@ -8,6 +8,7 @@
 package io.harness.delegate.ecs;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
@@ -26,6 +27,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
@@ -36,10 +38,14 @@ import io.harness.delegate.task.ecs.response.EcsS3FetchResponse;
 import io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.ecs.EcsCommandUnitConstants;
-import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ExceptionUtils;
+import io.harness.exception.HintException;
+import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
@@ -89,10 +95,10 @@ public class EcsS3FetchCommandTaskHandler {
   private DelegateResponseData getEcsS3FetchResponse(EcsS3FetchRequest ecsS3FetchRequest,
       CommandUnitsProgress commandUnitsProgress, ILogStreamingTaskClient iLogStreamingTaskClient) {
     log.info("Running Ecs S3 Fetch Task for activityId {}", ecsS3FetchRequest.getActivityId());
+    LogCallback executionLogCallback =
+        ecsTaskHelperBase.getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.fetchManifests.toString(),
+            ecsS3FetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
     try {
-      LogCallback executionLogCallback =
-          ecsTaskHelperBase.getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.fetchManifests.toString(),
-              ecsS3FetchRequest.isShouldOpenLogStream(), commandUnitsProgress);
       executionLogCallback.saveExecutionLog(
           format("Started Fetching S3 Manifest files... ", LogColor.White, LogWeight.Bold));
 
@@ -135,23 +141,32 @@ public class EcsS3FetchCommandTaskHandler {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
-      log.error(format("error while fetching s3 manifest for Ecs"), e);
-      return EcsS3FetchResponse.builder()
-          .taskStatus(TaskStatus.FAILURE)
-          .errorMessage(e.getMessage())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error(format("error while fetching s3 manifest for Ecs"), sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          color(format("%n File fetch failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      if (e instanceof HintException) {
+        throw new TaskNGDataException(
+            UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+      } else {
+        return EcsS3FetchResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      }
     }
   }
 
   private DelegateResponseData getRunTaskS3FetchResponse(EcsS3FetchRunTaskRequest ecsS3FetchRunTaskRequest,
       CommandUnitsProgress commandUnitsProgress, ILogStreamingTaskClient iLogStreamingTaskClient) {
     log.info("Running Ecs S3 Fetch Task for activityId {}", ecsS3FetchRunTaskRequest.getActivityId());
+    LogCallback executionLogCallback =
+        ecsTaskHelperBase.getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.fetchManifests.toString(),
+            ecsS3FetchRunTaskRequest.isShouldOpenLogStream(), commandUnitsProgress);
     try {
-      LogCallback executionLogCallback =
-          ecsTaskHelperBase.getLogCallback(iLogStreamingTaskClient, EcsCommandUnitConstants.fetchManifests.toString(),
-              ecsS3FetchRunTaskRequest.isShouldOpenLogStream(), commandUnitsProgress);
-
       executionLogCallback.saveExecutionLog(
           format("Started Fetching Run Task S3 Manifest files... ", LogColor.White, LogWeight.Bold));
 
@@ -178,16 +193,27 @@ public class EcsS3FetchCommandTaskHandler {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
-      log.error(format("error while fetching s3 manifest for Ecs Run Task"), e);
-      return EcsS3FetchRunTaskResponse.builder()
-          .taskStatus(TaskStatus.FAILURE)
-          .errorMessage(e.getMessage())
-          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
-          .build();
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error(format("error while fetching s3 manifest for Ecs Run Task"), sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          color(format("%n File fetch failed with error: %s", ExceptionUtils.getMessage(sanitizedException)),
+              LogColor.Red, LogWeight.Bold),
+          LogLevel.ERROR, CommandExecutionStatus.FAILURE);
+      if (e instanceof HintException) {
+        throw new TaskNGDataException(
+            UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), sanitizedException);
+      } else {
+        return EcsS3FetchResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      }
     }
   }
 
-  private String fetchS3ManifestsContent(EcsS3FetchFileConfig ecsS3FetchFileConfig, LogCallback executionLogCallback) {
+  private String fetchS3ManifestsContent(EcsS3FetchFileConfig ecsS3FetchFileConfig, LogCallback executionLogCallback)
+      throws IOException {
     executionLogCallback.saveExecutionLog(format("Fetching %s config file with identifier: %s",
         ecsS3FetchFileConfig.getManifestType(), ecsS3FetchFileConfig.getIdentifier(), White, Bold));
     S3StoreDelegateConfig s3StoreConfig = ecsS3FetchFileConfig.getS3StoreDelegateConfig();
@@ -197,14 +223,8 @@ public class EcsS3FetchCommandTaskHandler {
 
     decrypt(s3StoreConfig);
     AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(s3StoreConfig.getAwsConnector());
-    try {
-      return getS3Content(awsConfig, s3StoreConfig.getRegion(), s3StoreConfig.getBucketName(), filePath);
-    } catch (Exception ex) {
-      throw new InvalidRequestException(
-          format("Error while fetching file content from s3 bucket [%s] with filePath [%s] in region [%s]",
-              s3StoreConfig.getBucketName(), filePath, s3StoreConfig.getRegion()),
-          ex);
-    }
+    return getS3Content(
+        awsConfig, s3StoreConfig.getRegion(), s3StoreConfig.getBucketName(), filePath, executionLogCallback);
   }
 
   private void decrypt(S3StoreDelegateConfig s3StoreConfig) {
@@ -218,9 +238,25 @@ public class EcsS3FetchCommandTaskHandler {
     }
   }
 
-  private String getS3Content(AwsInternalConfig awsConfig, String region, String bucketName, String key)
-      throws IOException {
-    S3Object object = awsApiHelperService.getObjectFromS3(awsConfig, region, bucketName, key);
+  private String getS3Content(AwsInternalConfig awsConfig, String region, String bucketName, String key,
+      LogCallback executionLogCallback) throws IOException {
+    S3Object object = null;
+    try {
+      object = awsApiHelperService.getObjectFromS3(awsConfig, region, bucketName, key);
+    } catch (Exception e) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Failure in fetching file from S3", sanitizedException);
+      executionLogCallback.saveExecutionLog(
+          "Failed to download manifest file from S3. " + ExceptionUtils.getMessage(sanitizedException), ERROR);
+      throw NestedExceptionUtils.hintWithExplanationException(
+          format("Please check the following Harness S3 Manifest Inputs\n"
+              + " Aws Credentials\n"
+              + " S3 Bucket Name\n"
+              + " Region\n"
+              + " File Path"),
+          format("Failed while fetching the file [%s] from S3 bucket [%s] in region [%s]", key, bucketName, region),
+          new ServerlessCommandExecutionException("Failed while fetching files from S3", sanitizedException));
+    }
     InputStream inputStream = object.getObjectContent();
     return IOUtils.toString(inputStream, StandardCharsets.UTF_8);
   }

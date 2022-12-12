@@ -8,6 +8,7 @@
 package io.harness.ccm.commons.entities.batch;
 
 import io.harness.annotations.StoreIn;
+import io.harness.ccm.commons.beans.currency.CurrencyPreferenceRecord;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
@@ -53,4 +54,5 @@ public final class CEMetadataRecord implements PersistentEntity, UuidAware, Acco
   private Boolean segmentModuleInterfaceLoadedEventSent;
   private long lastUpdatedAt;
   private Boolean dataGeneratedForCloudProvider;
+  private CurrencyPreferenceRecord currencyPreference;
 }

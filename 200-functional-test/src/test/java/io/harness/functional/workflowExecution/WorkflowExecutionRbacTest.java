@@ -28,7 +28,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;

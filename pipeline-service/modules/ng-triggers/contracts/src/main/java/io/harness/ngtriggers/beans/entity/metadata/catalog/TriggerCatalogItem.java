@@ -12,7 +12,7 @@ import io.harness.ngtriggers.Constants;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.Set;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,5 +30,5 @@ import lombok.experimental.FieldDefaults;
 @Schema(description = "This has details of the Trigger Catalog.")
 public class TriggerCatalogItem {
   @Schema(description = Constants.TRIGGER_CATEGORY) TriggerCategory category;
-  @Schema(description = Constants.TRIGGER_TYPE_LIST_BY_CATEGORY) Set<TriggerCatalogType> triggerCatalogType;
+  @Schema(description = Constants.TRIGGER_TYPE_LIST_BY_CATEGORY) List<TriggerCatalogType> triggerCatalogType;
 }

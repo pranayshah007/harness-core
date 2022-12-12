@@ -14,5 +14,4 @@ import io.harness.annotations.dev.OwnedBy;
 public interface FreezeEventTypeConstants {
   String FREEZE_WINDOW_ENABLED = "FreezeWindowEnabled";
   String DEPLOYMENT_REJECTED_DUE_TO_FREEZE = "DeploymentRejectedDueToFreeze";
-  String TRIGGER_INVOCATION_REJECTED_DUE_TO_FREEZE = "TriggerInvocationRejectedDueToFreeze";
 }

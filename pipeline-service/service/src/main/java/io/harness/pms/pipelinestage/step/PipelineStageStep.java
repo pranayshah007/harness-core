@@ -120,11 +120,12 @@ public class PipelineStageStep implements AsyncExecutableWithRbac<PipelineStageS
     return AsyncExecutableResponse.newBuilder().addCallbackIds(responseDto.getPlanExecution().getUuid()).build();
   }
 
-  private PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
+  public PipelineStageInfo prepareParentStageInfo(Ambiance ambiance, PipelineStageStepParameters stepParameters) {
     return PipelineStageInfo.newBuilder()
         .setExecutionId(ambiance.getPlanExecutionId())
-        .setStageNodeExecutionId(ambiance.getStageExecutionId())
+        .setStageNodeId(stepParameters.getStageNodeId())
         .setHasParentPipeline(true)
+        .setRunSequence(ambiance.getMetadata().getRunSequence())
         .setIdentifier(ambiance.getMetadata().getPipelineIdentifier())
         .setProjectId(ambiance.getSetupAbstractions().get("projectIdentifier"))
         .setOrgId(ambiance.getSetupAbstractions().get("orgIdentifier"))

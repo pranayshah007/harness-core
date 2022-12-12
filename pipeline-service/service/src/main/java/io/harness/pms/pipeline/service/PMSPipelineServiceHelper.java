@@ -184,9 +184,9 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity) {
+  public void resolveTemplatesAndValidatePipelineEntity(PipelineEntity pipelineEntity, boolean loadFromCache) {
     long start = System.currentTimeMillis();
-    GovernanceMetadata governanceMetadata = resolveTemplatesAndValidatePipeline(pipelineEntity);
+    GovernanceMetadata governanceMetadata = resolveTemplatesAndValidatePipeline(pipelineEntity, loadFromCache);
     log.info("[PMS_PipelineService] validating pipeline took {}ms for projectId {}, orgId {}, accountId {}",
         System.currentTimeMillis() - start, pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getAccountIdentifier());
@@ -252,12 +252,12 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public GovernanceMetadata resolveTemplatesAndValidatePipeline(PipelineEntity pipelineEntity) {
-    return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true);
+  public GovernanceMetadata resolveTemplatesAndValidatePipeline(PipelineEntity pipelineEntity, boolean loadFromCache) {
+    return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, true, loadFromCache);
   }
 
   public GovernanceMetadata resolveTemplatesAndValidatePipeline(
-      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -269,10 +269,12 @@ public class PMSPipelineServiceHelper {
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
+          return resolveTemplatesAndValidatePipelineYaml(
+              pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
         }
       } else {
-        return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails);
+        return resolveTemplatesAndValidatePipelineYaml(
+            pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
@@ -327,7 +329,7 @@ public class PMSPipelineServiceHelper {
   }
 
   GovernanceMetadata resolveTemplatesAndValidatePipelineYaml(
-      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails) {
+      PipelineEntity pipelineEntity, boolean throwExceptionIfGovernanceRulesFails, boolean loadFromCache) {
     switch (pipelineEntity.getHarnessVersion()) {
       case PipelineVersion.V1:
         return GovernanceMetadata.newBuilder().setDeny(false).build();
@@ -336,7 +338,7 @@ public class PMSPipelineServiceHelper {
             pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
         // Apply all the templateRefs(if any) then check for schema validation.
         TemplateMergeResponseDTO templateMergeResponseDTO = pipelineTemplateHelper.resolveTemplateRefsInPipeline(
-            pipelineEntity, getMergedTemplateWithTemplateReferences);
+            pipelineEntity, getMergedTemplateWithTemplateReferences, loadFromCache);
         // Add Template Module Info temporarily to Pipeline Entity
         pipelineEntity.setTemplateModules(pipelineTemplateHelper.getTemplatesModuleInfo(templateMergeResponseDTO));
         return validateYaml(pipelineEntity, templateMergeResponseDTO, throwExceptionIfGovernanceRulesFails)

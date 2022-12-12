@@ -258,6 +258,16 @@ public class ArtifactResponseToOutcomeMapper {
 
   private DockerArtifactOutcome getDockerArtifactOutcome(DockerHubArtifactConfig dockerConfig,
       DockerArtifactDelegateResponse dockerDelegateResponse, boolean useDelegateResponse) {
+    Map<String, String> metadata = null;
+    String displayName = null;
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getMetadata() != null) {
+      metadata = dockerDelegateResponse.getBuildDetails().getMetadata();
+    }
+    if (useDelegateResponse && dockerDelegateResponse != null && dockerDelegateResponse.getBuildDetails() != null
+        && dockerDelegateResponse.getBuildDetails().getUiDisplayName() != null) {
+      displayName = dockerDelegateResponse.getBuildDetails().getUiDisplayName();
+    }
     return DockerArtifactOutcome.builder()
         .image(getImageValue(dockerDelegateResponse))
         .connectorRef(dockerConfig.getConnectorRef().getValue())
@@ -270,8 +280,10 @@ public class ArtifactResponseToOutcomeMapper {
         .identifier(dockerConfig.getIdentifier())
         .type(ArtifactSourceType.DOCKER_REGISTRY.getDisplayName())
         .primaryArtifact(dockerConfig.isPrimaryArtifact())
+        .displayName(displayName)
         .imagePullSecret(createImagePullSecret(ArtifactUtils.getArtifactKey(dockerConfig)))
         .label(getLabels(dockerDelegateResponse))
+        .metadata(metadata)
         .build();
   }
 

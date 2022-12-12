@@ -18,10 +18,10 @@ import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionC
 import static software.wings.beans.ServiceInstance.Builder.aServiceInstance;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.beans.command.CommandUnitType.SCP;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
+import static software.wings.persistence.artifact.ArtifactFile.Builder.anArtifactFile;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ENV_ID;
@@ -37,11 +37,9 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.AppContainer;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.SettingAttribute;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.command.ExecCommandUnit;
 import software.wings.beans.command.ScpCommandUnit;
@@ -49,6 +47,8 @@ import software.wings.beans.command.ScpCommandUnit.ScpFileCategory;
 import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.AppContainer;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.rules.Integration;
 import software.wings.service.intfc.FileService;
 import software.wings.service.intfc.ServiceCommandExecutorService;
@@ -144,7 +144,7 @@ public class CommandExecutionIntegrationTest extends WingsBaseTest {
     String uuid = fileService.saveFile(anArtifactFile().withName("app").build(),
         new ByteArrayInputStream("echo 'hello world'".getBytes(StandardCharsets.UTF_8)), ARTIFACTS);
     ArtifactFile artifactFile = anArtifactFile().withFileUuid(uuid).withName("service").build();
-    context.setArtifactFiles(asList(artifactFile));
+    context.setArtifactFiles(asList(artifactFile.toDTO()));
   }
 
   /**

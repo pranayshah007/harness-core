@@ -138,8 +138,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
         pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+        pipelineEntity, throwExceptionIfGovernanceFails, false);
     try {
       if (governanceMetadata.getDeny()) {
         return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
@@ -263,7 +263,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
               .build();
       throw new io.harness.yaml.validator.InvalidYamlException(errorMessage, errorWrapperDTO);
     }
-    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity);
+    pmsPipelineServiceHelper.resolveTemplatesAndValidatePipelineEntity(pipelineEntity, loadFromCache);
     return optionalPipelineEntity;
   }
 
@@ -317,8 +317,8 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     }
     PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
         pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier());
-    GovernanceMetadata governanceMetadata =
-        pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(pipelineEntity, throwExceptionIfGovernanceFails);
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.resolveTemplatesAndValidatePipeline(
+        pipelineEntity, throwExceptionIfGovernanceFails, false);
     if (governanceMetadata.getDeny()) {
       return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
     }

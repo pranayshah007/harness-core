@@ -15,18 +15,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.anySet;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -43,6 +43,11 @@ import io.harness.cdng.artifact.bean.yaml.GcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.PrimaryArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifact;
 import io.harness.cdng.artifact.bean.yaml.SidecarArtifactWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptInfo;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScriptSourceWrapper;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomArtifactScripts;
+import io.harness.cdng.artifact.bean.yaml.customartifact.CustomScriptInlineSource;
+import io.harness.cdng.artifact.bean.yaml.customartifact.FetchAllArtifacts;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.artifact.utils.ArtifactStepHelper;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
@@ -62,6 +67,7 @@ import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.delegate.task.artifacts.ArtifactTaskType;
+import io.harness.delegate.task.artifacts.custom.CustomArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
@@ -70,9 +76,11 @@ import io.harness.delegate.task.artifacts.response.ArtifactTaskExecutionResponse
 import io.harness.delegate.task.artifacts.response.ArtifactTaskResponse;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
@@ -143,6 +151,11 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
   private final ArtifactStepHelper stepHelper = new ArtifactStepHelper();
   @Mock private ConnectorService connectorService;
   @Mock private SecretManagerClientService secretManagerClientService;
+
+  @Mock private DelegateMetricsService delegateMetricsService;
+
+  @Mock private SecretManagerClientService ngSecretService;
+  @Mock ExceptionManager exceptionManager;
 
   private final EmptyStepParameters stepParameters = new EmptyStepParameters();
   private final StepInputPackage inputPackage = StepInputPackage.builder().build();
@@ -973,5 +986,68 @@ public class ArtifactsStepV2Test extends CDNGTestBase {
     assertThat(abstractions).hasSize(3);
     assertThat(abstractions.get(SetupAbstractionKeys.projectIdentifier)).isNull();
     assertThat(abstractions.get(SetupAbstractionKeys.owner)).isEqualTo("orgId");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.SHIVAM)
+  @Category(UnitTests.class)
+  public void testForCustomDelegateRequest() {
+    CustomArtifactConfig customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .version(ParameterField.createValueField("v1"))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .build();
+    CustomArtifactDelegateRequest artifactSourceDelegateRequest =
+        (CustomArtifactDelegateRequest) stepHelper.toSourceDelegateRequest(
+            customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(artifactSourceDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT);
+    assertThat(artifactSourceDelegateRequest.getExpressionFunctorToken()).isEqualTo(0);
+
+    customArtifactConfig =
+        CustomArtifactConfig.builder()
+            .identifier("test")
+            .primaryArtifact(true)
+            .isFromTrigger(true)
+            .version(ParameterField.createValueField(null))
+            .versionRegex(ParameterField.createValueField("regex"))
+            .scripts(CustomArtifactScripts.builder()
+                         .fetchAllArtifacts(
+                             FetchAllArtifacts.builder()
+                                 .artifactsArrayPath(ParameterField.createValueField("results"))
+                                 .versionPath(ParameterField.createValueField("version"))
+                                 .shellScriptBaseStepInfo(
+                                     CustomArtifactScriptInfo.builder()
+                                         .source(CustomArtifactScriptSourceWrapper.builder()
+                                                     .type("Inline")
+                                                     .spec(CustomScriptInlineSource.builder()
+                                                               .script(ParameterField.createValueField("echo test"))
+                                                               .build())
+                                                     .build())
+                                         .build())
+                                 .build())
+                         .build())
+            .build();
+    artifactSourceDelegateRequest = (CustomArtifactDelegateRequest) stepHelper.toSourceDelegateRequest(
+        customArtifactConfig, Ambiance.newBuilder().build());
+    assertThat(artifactSourceDelegateRequest.getSourceType()).isEqualTo(ArtifactSourceType.CUSTOM_ARTIFACT);
+    assertThat(artifactSourceDelegateRequest.getExpressionFunctorToken()).isNotEqualTo(0);
   }
 }

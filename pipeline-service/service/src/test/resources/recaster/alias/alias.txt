@@ -175,3 +175,5 @@ io.harness.beans.environment.pod.container.ContainerDefinitionInfo
 io.harness.beans.quantity.CpuQuantity
 io.harness.beans.quantity.StorageQuantity
 io.harness.beans.yaml.extended.ImagePullPolicy
+io.harness.beans.outcomes.LiteEnginePodDetailsOutcome
+io.harness.beans.yaml.extended.CIShellType

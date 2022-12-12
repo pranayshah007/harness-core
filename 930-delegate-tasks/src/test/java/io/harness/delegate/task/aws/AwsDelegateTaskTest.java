@@ -10,6 +10,7 @@ package io.harness.delegate.task.aws;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
 
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.aws.AwsClient;
 import io.harness.aws.AwsConfig;
 import io.harness.category.element.UnitTests;
@@ -52,6 +54,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTask
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -454,5 +458,27 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(result).isNotNull();
     assertThat(result).isInstanceOf(AwsListElbListenerRulesTaskResponse.class);
     assertThat(result).isEqualTo(response);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldPutAuditBatchToBucket() {
+    AwsPutAuditBatchToBucketTaskParamsRequest awsTaskParams =
+        AwsPutAuditBatchToBucketTaskParamsRequest.builder().awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET).build();
+    AwsPutAuditBatchToBucketTaskResponse response =
+        AwsPutAuditBatchToBucketTaskResponse.builder()
+            .commandExecutionStatus(SUCCESS)
+            .putObjectResultResponse(PutObjectResultResponse.builder().build())
+            .build();
+
+    doReturn(response).when(awsS3DelegateTaskHelper).putAuditBatchToBucket(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsPutAuditBatchToBucketTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+
+    verify(awsS3DelegateTaskHelper, times(1)).putAuditBatchToBucket(eq(awsTaskParams));
   }
 }

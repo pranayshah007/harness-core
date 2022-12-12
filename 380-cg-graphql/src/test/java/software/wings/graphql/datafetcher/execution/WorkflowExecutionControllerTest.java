@@ -67,7 +67,6 @@ import software.wings.beans.WorkflowExecution;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.deployment.DeploymentMetadata;
@@ -90,6 +89,7 @@ import software.wings.graphql.schema.mutation.execution.payload.QLStartExecution
 import software.wings.graphql.schema.query.QLServiceInputsForExecutionParams;
 import software.wings.graphql.schema.type.QLExecutionStatus;
 import software.wings.infra.InfrastructureDefinition;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.ArtifactService;
@@ -206,7 +206,8 @@ public class WorkflowExecutionControllerTest extends WingsBaseTest {
 
     when(workflowExecutionService.triggerEnvExecution(eq(APP_ID), eq(ENV_ID), captor.capture(), eq(null)))
         .thenThrow(new DeploymentFreezeException(ErrorCode.DEPLOYMENT_GOVERNANCE_ERROR, Level.INFO, WingsException.USER,
-            ACCOUNT_ID, Collections.singletonList(FREEZE_WINDOW_ID), "FREEZE_NAME", false, false));
+            ACCOUNT_ID, Collections.singletonList(FREEZE_WINDOW_ID), Collections.singletonList("FREEZE_NAME"),
+            "FREEZE_NAME", false, false));
     when(workflowService.fetchDeploymentMetadata(
              eq(APP_ID), eq(workflow), any(), eq(null), any(), eq(DeploymentMetadata.Include.ARTIFACT_SERVICE)))
         .thenReturn(DeploymentMetadata.builder().build());
