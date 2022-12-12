@@ -18,7 +18,7 @@ import java.util.Map;
 @OwnedBy(CE)
 public interface InstanceDataService {
   InstanceData get(String instanceId);
-  List<InstanceData> fetchInstanceDataForGivenInstances(List<String> instanceIds);
+  List<InstanceData> fetchInstanceDataForGivenInstances(String accountId, List<String> instanceIds);
   List<InstanceData> fetchInstanceDataForGivenInstances(String accountId, String clusterId, List<String> instanceIds);
   Map<String, Map<String, String>> fetchLabelsForGivenInstances(String accountId, List<String> instanceIds);
 }
