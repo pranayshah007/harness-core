@@ -124,7 +124,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
               .existingApplicationDetails(cfRollbackCommandRequestNG.getExistingApplicationDetails())
               .cfAppNamePrefix(cfRollbackCommandRequestNG.getCfAppNamePrefix())
               .downsizeOldApplication(cfRollbackCommandRequestNG.isDownsizeOldApps())
-              .existingApplicationNames(cfRollbackCommandRequestNG.getAppDetailsToBeDownsized()
+              .existingApplicationNames(cfRollbackCommandRequestNG.getExistingApplicationDetails()
                                             .stream()
                                             .map(CfAppSetupTimeDetails::getApplicationName)
                                             .collect(toList()))

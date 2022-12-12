@@ -18,7 +18,6 @@ import lombok.experimental.SuperBuilder;
 @OwnedBy(HarnessTeam.CDP)
 public class CfSwapRollbackCommandRequestNG extends CfRollbackCommandRequestNG {
   List<CfAppSetupTimeDetails> existingApplicationDetails;
-  List<CfAppSetupTimeDetails> appDetailsToBeDownsized;
 
   public CfSwapRollbackCommandRequestNG(String accountId, CfCommandTypeNG pcfCommandType, String commandName,
       CommandUnitsProgress commandUnitsProgress, Integer timeoutIntervalInMin, TasInfraConfig tasInfraConfig,
@@ -27,12 +26,11 @@ public class CfSwapRollbackCommandRequestNG extends CfRollbackCommandRequestNG {
       Integer activeAppRevision, CfAppSetupTimeDetails existingInActiveApplicationDetails, CfCliVersion cfCliVersion,
       boolean enforceSslValidation, boolean useAppAutoscalar, boolean swapRouteOccured, boolean limitPcfThreads,
       String existingAppNamingStrategy, boolean upsizeInActiveApp, boolean downsizeOldApps,
-      List<CfAppSetupTimeDetails> existingApplicationDetails, List<CfAppSetupTimeDetails> appDetailsToBeDownsized) {
+      List<CfAppSetupTimeDetails> existingApplicationDetails) {
     super(accountId, pcfCommandType, commandName, commandUnitsProgress, timeoutIntervalInMin, tasInfraConfig,
         instanceData, routeMaps, tempRouteMaps, oldApplicationDetails, newApplicationDetails, cfAppNamePrefix,
         activeAppRevision, existingInActiveApplicationDetails, cfCliVersion, enforceSslValidation, useAppAutoscalar,
         swapRouteOccured, existingAppNamingStrategy, upsizeInActiveApp, downsizeOldApps);
     this.existingApplicationDetails = existingApplicationDetails;
-    this.appDetailsToBeDownsized = appDetailsToBeDownsized;
   }
 }
