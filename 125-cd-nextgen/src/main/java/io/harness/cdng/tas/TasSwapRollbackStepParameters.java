@@ -20,10 +20,10 @@ import lombok.NoArgsConstructor;
 @RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepParameters")
 public class TasSwapRollbackStepParameters extends TasSwapRollbackBaseStepInfo implements SpecParameters {
   @Builder(builderMethodName = "infoBuilder")
-  public TasSwapRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors, String tasRollbackFqn,
+  public TasSwapRollbackStepParameters(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
       String tasSwapRoutesFqn, String tasBGSetupFqn, String tasBasicSetupFqn, String tasCanarySetupFqn,
       String tasResizeFqn, ParameterField<Boolean> upsizeInActiveApp) {
-    super(delegateSelectors, tasRollbackFqn, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn,
+    super(delegateSelectors, tasSwapRoutesFqn, tasBGSetupFqn, tasBasicSetupFqn, tasCanarySetupFqn,
         tasResizeFqn, upsizeInActiveApp);
   }
 }
