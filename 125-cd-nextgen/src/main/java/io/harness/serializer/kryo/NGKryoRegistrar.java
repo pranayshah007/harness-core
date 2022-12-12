@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo;
 import io.harness.cdng.azure.webapp.ApplicationSettingsParameters;
 import io.harness.cdng.azure.webapp.ConnectionStringsParameters;
 import io.harness.cdng.azure.webapp.StartupCommandParameters;
@@ -209,5 +210,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(TerragruntApplyStepInfo.class, 12623);
     kryo.register(TerragruntDestroyStepInfo.class, 12624);
     kryo.register(TerragruntRollbackStepInfo.class, 12625);
+
+    kryo.register(AsgCanaryDeleteStepInfo.class, 12626);
   }
 }

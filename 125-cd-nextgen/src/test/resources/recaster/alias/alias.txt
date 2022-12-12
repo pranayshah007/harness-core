@@ -33,12 +33,6 @@ io.harness.yaml.core.properties.NGProperties
 io.harness.cdng.k8s.beans.K8sRollingReleaseOutput
 io.harness.cdng.k8s.DeleteResourcesWrapper
 io.harness.cdng.service.steps.ServiceConfigStepOutcome
-io.harness.cdng.service.beans.AsgServiceSpec
-io.harness.cdng.aws.asg.AsgExecutionPassThroughData
-io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData
-io.harness.cdng.aws.asg.AsgCanaryDeployStepNode
-io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
-io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo
 io.harness.cdng.provision.terraform.TerraformPlanStepParameters
 io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome
 io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData
@@ -631,3 +625,14 @@ io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchPassThroughData
 io.harness.cdng.elastigroup.beans.ElastigroupParametersFetchFailurePassThroughData
 io.harness.cdng.elastigroup.beans.ElastigroupPreFetchOutcome
 io.harness.cdng.elastigroup.beans.ElastigroupSwapRouteDataOutcome
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepInfo
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepParameters
+io.harness.cdng.aws.asg.AsgCanaryDeleteStepNode
+io.harness.cdng.aws.asg.AsgCanaryDeleteOutcome
+io.harness.cdng.aws.asg.AsgCanaryDeleteDataOutcome
+io.harness.cdng.service.beans.AsgServiceSpec
+io.harness.cdng.aws.asg.AsgExecutionPassThroughData
+io.harness.cdng.aws.asg.AsgPrepareRollbackDataPassThroughData
+io.harness.cdng.aws.asg.AsgCanaryDeployStepNode
+io.harness.cdng.aws.asg.AsgCanaryDeployStepParameters
+io.harness.cdng.aws.asg.AsgCanaryDeployStepInfo

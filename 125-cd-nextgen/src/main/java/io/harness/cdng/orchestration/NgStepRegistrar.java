@@ -15,6 +15,7 @@ import io.harness.cdng.artifact.steps.ArtifactSyncStep;
 import io.harness.cdng.artifact.steps.ArtifactsStep;
 import io.harness.cdng.artifact.steps.ArtifactsStepV2;
 import io.harness.cdng.artifact.steps.SidecarsStep;
+import io.harness.cdng.aws.asg.AsgCanaryDeleteStep;
 import io.harness.cdng.aws.asg.AsgCanaryDeployStep;
 import io.harness.cdng.azure.webapp.ApplicationSettingsStep;
 import io.harness.cdng.azure.webapp.AzureServiceSettingsStep;
@@ -188,9 +189,6 @@ public class NgStepRegistrar {
     engineSteps.put(EcsBlueGreenRollbackStep.STEP_TYPE, EcsBlueGreenRollbackStep.class);
     engineSteps.put(EcsRunTaskStep.STEP_TYPE, EcsRunTaskStep.class);
 
-    // ASG
-    engineSteps.put(AsgCanaryDeployStep.STEP_TYPE, AsgCanaryDeployStep.class);
-
     engineSteps.put(AzureCreateARMResourceStep.STEP_TYPE, AzureCreateARMResourceStep.class);
     engineSteps.put(MultiDeploymentSpawnerStep.STEP_TYPE, MultiDeploymentSpawnerStep.class);
     engineSteps.put(AzureCreateBPStep.STEP_TYPE, AzureCreateBPStep.class);
@@ -208,6 +206,10 @@ public class NgStepRegistrar {
     engineSteps.put(TerragruntApplyStep.STEP_TYPE, TerragruntApplyStep.class);
     engineSteps.put(TerragruntDestroyStep.STEP_TYPE, TerragruntDestroyStep.class);
     engineSteps.put(TerragruntRollbackStep.STEP_TYPE, TerragruntRollbackStep.class);
+
+    // Asg
+    engineSteps.put(AsgCanaryDeployStep.STEP_TYPE, AsgCanaryDeployStep.class);
+    engineSteps.put(AsgCanaryDeleteStep.STEP_TYPE, AsgCanaryDeleteStep.class);
 
     return engineSteps;
   }
