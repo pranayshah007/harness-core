@@ -25,6 +25,7 @@ import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResultWithStatus;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 public class NotificationHelperTest extends CategoryTest {
   @InjectMocks NotificationHelper notificationHelper;
   @Mock NotificationClient notificationClient;
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   private final String ACCOUNT_ID = "accountId";
   private final String ORG_IDENTIFIER = "oId";
@@ -75,6 +77,7 @@ public class NotificationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testsendNotification() throws IOException {
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
     notificationHelper.sendNotification(yaml, true, true, null, ACCOUNT_ID, "", "", false);
     verify(notificationClient, times(6)).sendNotificationAsync(any());
   }
