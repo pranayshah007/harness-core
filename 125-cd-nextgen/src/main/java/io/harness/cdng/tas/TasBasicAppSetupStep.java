@@ -23,7 +23,7 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.beans.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -178,7 +178,7 @@ public class TasBasicAppSetupStep extends TaskChainExecutableWithRollbackAndRbac
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     Integer maxCount = null;
-    if (tasBasicAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
+    if (tasBasicAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.FROM_MANIFEST)) {
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
     }
     List<String> routeMaps =

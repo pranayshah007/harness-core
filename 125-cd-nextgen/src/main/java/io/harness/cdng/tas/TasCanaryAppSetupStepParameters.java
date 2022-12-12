@@ -34,10 +34,10 @@ import org.springframework.data.annotation.TypeAlias;
 public class TasCanaryAppSetupStepParameters extends TasAppSetupBaseStepInfo implements SpecParameters {
   @NotNull TasResizeStrategyType resizeStrategy;
   @Builder(builderMethodName = "infoBuilder")
-  public TasCanaryAppSetupStepParameters(TasInstanceCountType instanceCount,
+  public TasCanaryAppSetupStepParameters(TasInstanceCountType tasInstanceCountType,
       ParameterField<String> existingVersionToKeep, ParameterField<List<String>> additionalRoutes,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, TasResizeStrategyType resizeStrategy) {
-    super(instanceCount, existingVersionToKeep, additionalRoutes, delegateSelectors);
+    super(tasInstanceCountType, existingVersionToKeep, additionalRoutes, delegateSelectors);
     this.resizeStrategy = resizeStrategy;
   }
 }

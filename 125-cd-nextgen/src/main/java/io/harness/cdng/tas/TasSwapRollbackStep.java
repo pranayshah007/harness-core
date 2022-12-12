@@ -18,8 +18,8 @@ import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.TanzuApplicationServiceInfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.beans.TasSetupDataOutcome;
-import io.harness.cdng.tas.beans.TasSwapRouteDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSwapRouteDataOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
@@ -94,13 +94,6 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     TasSwapRollbackStepParameters tasSwapRollbackStepParameters =
         (TasSwapRollbackStepParameters) stepParameters.getSpec();
 
-    if (EmptyPredicate.isEmpty(tasSwapRollbackStepParameters.getTasRollbackFqn())) {
-      return TaskRequest.newBuilder()
-          .setSkipTaskRequest(
-              SkipTaskRequest.newBuilder().setMessage("Tas rollback Step was not executed. Skipping .").build())
-          .build();
-    }
-
     OptionalSweepingOutput tasSetupDataOptional =
         tasEntityHelper.getSetupOutcome(ambiance, tasSwapRollbackStepParameters.getTasBGSetupFqn(),
             tasSwapRollbackStepParameters.getTasBasicSetupFqn(), tasSwapRollbackStepParameters.getTasCanarySetupFqn(),
@@ -113,9 +106,24 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
           .build();
     }
     TasSetupDataOutcome tasSetupDataOutcome =
-        (io.harness.cdng.tas.beans.TasSetupDataOutcome) tasSetupDataOptional.getOutput();
+        (io.harness.cdng.tas.outcome.TasSetupDataOutcome) tasSetupDataOptional.getOutput();
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
+
+    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
+        RefObjectUtils.getSweepingOutputRefObject(
+            tasSwapRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
+
+    TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
+    List<CfServiceData> instanceData = new ArrayList<>();
+    if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
+      tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
+        Integer temp = cfServiceData.getDesiredCount();
+        cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
+        cfServiceData.setPreviousCount(temp);
+        instanceData.add(cfServiceData);
+      });
+    }
 
     boolean swapRouteOccurred = false;
     boolean downsizeOldApplication = false;
@@ -127,8 +135,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     }
 
     if (tasSwapRouteDataOptional.isFound()) {
-      TasSwapRouteDataOutcome tasSwapRouteDataOutcome =
-          (io.harness.cdng.tas.beans.TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
+      TasSwapRouteDataOutcome tasSwapRouteDataOutcome = (TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
       swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
       downsizeOldApplication = tasSwapRouteDataOutcome.isDownsizeOldApplication();
     }
@@ -144,12 +151,14 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
             .downsizeOldApps(downsizeOldApplication)
+            .timeoutIntervalInMin(10)
             .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
             .newApplicationDetails(tasSetupDataOutcome.getNewApplicationDetails())
             .tempRouteMaps(tasSetupDataOutcome.getTempRouteMap())
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
+            .instanceData(instanceData)
             .existingApplicationDetails(Collections.singletonList(
                 tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails()))
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())

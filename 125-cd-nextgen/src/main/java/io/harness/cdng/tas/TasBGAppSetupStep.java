@@ -25,7 +25,7 @@ import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.cdng.tas.beans.TasSetupDataOutcome;
+import io.harness.cdng.tas.outcome.TasSetupDataOutcome;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
@@ -189,7 +189,7 @@ public class TasBGAppSetupStep extends TaskChainExecutableWithRollbackAndRbac im
         () -> new InvalidArgumentsException(Pair.of("artifacts", "Primary artifact is required for PCF")));
     InfrastructureOutcome infrastructureOutcome = cdStepHelper.getInfrastructureOutcome(ambiance);
     Integer maxCount = null;
-    if (tasBGAppSetupStepParameters.getInstanceCount().equals(TasInstanceCountType.FROM_MANIFEST)) {
+    if (tasBGAppSetupStepParameters.getTasInstanceCountType().equals(TasInstanceCountType.FROM_MANIFEST)) {
       maxCount = tasStepHelper.fetchMaxCountFromManifest(executionPassThroughData.getPcfManifestsPackage());
     }
     Integer olderActiveVersionCountToKeep =
