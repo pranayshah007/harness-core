@@ -25,10 +25,12 @@ spec:
           spec:
             newAppInstances:
               type: Percentage
-              value: 100
+              spec:
+                value: 100
             oldAppInstances:
               type: Count
-              value: 0
+              spec:
+                value: 0
     rollbackSteps:
       - step:
           name: "App Rollback"
