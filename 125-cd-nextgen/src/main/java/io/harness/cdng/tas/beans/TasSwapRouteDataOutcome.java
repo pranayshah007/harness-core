@@ -26,5 +26,4 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.tas.beans.TasSwapRouteDataOutcome")
 public class TasSwapRouteDataOutcome implements Outcome, ExecutionSweepingOutput {
   boolean swapRouteOccurred;
-  boolean downsizeOldApplication;
 }

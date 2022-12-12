@@ -46,7 +46,6 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.logging.LogLevel;
 import io.harness.pcf.CfDeploymentManager;
 import io.harness.pcf.PivotalClientApiException;
 import io.harness.pcf.model.CfAppAutoscalarRequestData;
@@ -91,7 +90,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfSwapRollbackCommandRequestNG) cfCommandRequestNG;
-    executionLogCallback.saveExecutionLog(color("--------- Starting Swap Rollback Task", White, Bold));
+    executionLogCallback.saveExecutionLog(color("--------- Starting Rollback deployment", White, Bold));
     File workingDirectory = null;
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
 
@@ -102,6 +101,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(
           tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
+      executionLogCallback.saveExecutionLog(color("--------- Starting PCF Route Update\n", White, Bold));
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
@@ -151,18 +151,63 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
             cfRollbackCommandRequestNG, cfRequestConfig, pcfRouteUpdateConfigData);
       }
 
+      //      cfRollbackCommandResult.setUpdatedValues(updateValues);
+      //      executionLogCallback.saveExecutionLog(
+      //          "--------- PCF Route Update completed successfully", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      //      cfRollbackCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
+      //      cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
+
+      // Will be used if app autoscalar is configured
+      CfAppAutoscalarRequestData autoscalarRequestData =
+          CfAppAutoscalarRequestData.builder()
+              .cfRequestConfig(cfRequestConfig)
+              .configPathVar(workingDirectory.getAbsolutePath())
+              .timeoutInMins(cfRollbackCommandRequestNG.getTimeoutIntervalInMin() != null
+                      ? cfRollbackCommandRequestNG.getTimeoutIntervalInMin()
+                      : 10)
+              .build();
+
+      // get Upsize Instance data
+      List<CfServiceData> upsizeList = cfCommandTaskHelperNG.getUpsizeListForRollback(cfRollbackCommandRequestNG);
+
+      // get Downsize Instance data
+      List<CfServiceData> downSizeList =
+          cfRollbackCommandRequestNG.getInstanceData()
+              .stream()
+              .filter(cfServiceData -> cfServiceData.getDesiredCount() < cfServiceData.getPreviousCount())
+              .collect(toList());
+
+      List<CfInternalInstanceElement> cfInstanceElements = new ArrayList<>();
+      // During rollback, always upsize old ones
+      cfCommandTaskHelperNG.upsizeListOfInstances(executionLogCallback, cfDeploymentManager, cfServiceDataUpdated,
+          cfRequestConfig, upsizeList, cfInstanceElements, cfRollbackCommandRequestNG);
+      // Enable autoscalar for older app, if it was disabled during deploy
+      cfCommandTaskHelperNG.enableAutoscalerIfNeeded(upsizeList, autoscalarRequestData, executionLogCallback);
+      executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
+
+      executionLogCallback =
+          tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
+
+      // Downsizing
+      cfCommandTaskHelperNG.downSizeListOfInstances(executionLogCallback, cfServiceDataUpdated, cfRequestConfig,
+          updateNewAppName(cfRequestConfig, cfRollbackCommandRequestNG, downSizeList), cfRollbackCommandRequestNG,
+          autoscalarRequestData);
+
       // Deleting
       cfCommandTaskHelperNG.deleteNewApp(cfRequestConfig, cfRollbackCommandRequestNG, executionLogCallback);
 
-      executionLogCallback.saveExecutionLog(
-                        "--------- Swap Rollback completed successfully", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
       cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
       cfRollbackCommandResult.setUpdatedValues(updateValues);
       cfRollbackCommandResult.setInstanceDataUpdated(cfServiceDataUpdated);
+      if (cfRollbackCommandResult.getCfInstanceElements() != null) {
+        cfRollbackCommandResult.getCfInstanceElements().addAll(cfInstanceElements);
+      } else {
+        cfRollbackCommandResult.setCfInstanceElements(cfInstanceElements);
+      }
 
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
-      log.error("Exception in processing Swap Rollback task", sanitizedException);
+      log.error("Exception in processing PCF Route Update task", sanitizedException);
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
       executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage());
       cfRollbackCommandResponseNG.setErrorMessage(sanitizedException.getMessage());
