@@ -9,7 +9,7 @@ package io.harness.ci.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.pms.PmsCommonConstants.AUTO_ABORT_PIPELINE_THROUGH_TRIGGER;
-import static io.harness.pms.contracts.execution.Status.QUEUED;
+import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
@@ -283,7 +283,7 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
         && (licensesWithSummaryDTO.getEdition() == Edition.FREE
             || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
       if (level != null && serviceName.equalsIgnoreCase(SERVICE_NAME_CI)
-          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == QUEUED)) {
+          && level.getStepType().getStepCategory() == StepCategory.STAGE && (status == RUNNING)) {
         ciAccountExecutionMetadataRepository.updateCIDailyBuilds(accountId, level.getStartTs());
       }
     }

@@ -793,8 +793,9 @@ public class IntegrationStageUtils {
     }
 
     LicensesWithSummaryDTO licensesWithSummaryDTO = ciLicenseService.getLicenseSummary(accountId);
-    if (licensesWithSummaryDTO != null && licensesWithSummaryDTO.getEdition() == Edition.FREE
-        || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL) {
+    if (licensesWithSummaryDTO != null
+        && (licensesWithSummaryDTO.getEdition() == Edition.FREE
+            || licensesWithSummaryDTO.getLicenseType() == LicenseType.TRIAL)) {
       return CIConstants.STAGE_MAX_TTL_SECS_HOSTED_FREE;
     }
     return CIConstants.STAGE_MAX_TTL_SECS;
