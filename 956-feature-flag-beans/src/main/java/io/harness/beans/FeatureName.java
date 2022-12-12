@@ -522,6 +522,7 @@ public enum FeatureName {
   PURGE_DANGLING_APP_ENV_REFS("Explicitly purge dangling references of app/env", HarnessTeam.SPG),
   SPG_FETCH_ARTIFACT_FROM_DB("Fetch artifact from database if available in artifact collection step", HarnessTeam.SPG),
   PL_SUPPORT_JWT_TOKEN_SCIM_API("Enable support for external OAuth JWT token for SCIM API calls", HarnessTeam.PL),
+  CDC_SEND_NOTIFICATION_FOR_FREEZE("Send notifications for deployment freeze", HarnessTeam.CDC),
   CCM_INSTANCE_DATA_CLUSTERID_FILTER("Query from instanceData collection based on clusterId", HarnessTeam.CE);
 
   @Deprecated

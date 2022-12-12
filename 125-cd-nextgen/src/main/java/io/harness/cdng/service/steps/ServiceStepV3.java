@@ -20,6 +20,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.common.VariablesSweepingOutput;
+import io.harness.cdng.NgExpressionHelper;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.creator.plan.environment.EnvironmentMapper;
@@ -39,6 +40,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
+import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -60,10 +62,12 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -114,6 +118,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
   public static final String SERVICE_MANIFESTS_SWEEPING_OUTPUT = "serviceManifestsSweepingOutput";
   public static final String SERVICE_CONFIG_FILES_SWEEPING_OUTPUT = "serviceConfigFilesSweepingOutput";
+  public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private ServiceStepsHelper serviceStepsHelper;
@@ -124,6 +129,9 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
   @Inject private ServiceStepOverrideHelper serviceStepOverrideHelper;
   @Inject private FreezeEvaluateService freezeEvaluateService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Inject private NotificationHelper notificationHelper;
+  @Inject private EngineExpressionService engineExpressionService;
+  @Inject NgExpressionHelper ngExpressionHelper;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
 
   @Override
@@ -624,6 +632,11 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
                 .build(),
             "");
         log.info("Adding Children as empty.");
+        String executionUrl = engineExpressionService.renderExpression(
+            ambiance, PIPELINE_EXECUTION_EXPRESSION, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
+        notificationHelper.sendNotificationForFreezeConfigs(
+            manualFreezeConfigs, globalFreezeConfigs, ambiance, executionUrl, baseUrl);
         return ChildrenExecutableResponse.newBuilder()
             .addAllLogKeys(CollectionUtils.emptyIfNull(
                 StepUtils.generateLogKeys(StepUtils.generateLogAbstractions(ambiance), Collections.emptyList())))
