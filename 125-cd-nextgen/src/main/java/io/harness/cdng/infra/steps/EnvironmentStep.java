@@ -13,6 +13,7 @@ import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.NgExpressionHelper;
 import io.harness.cdng.freeze.FreezeOutcome;
 import io.harness.cdng.infra.InfraStepUtils;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -21,6 +22,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.freeze.beans.FreezeEntityType;
 import io.harness.freeze.beans.response.FreezeSummaryResponseDTO;
 import io.harness.freeze.helpers.FreezeRBACHelper;
+import io.harness.freeze.notifications.NotificationHelper;
 import io.harness.freeze.service.FreezeEvaluateService;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -28,9 +30,11 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.plan.ExpressionMode;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -62,7 +66,11 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
   @Inject private EnvironmentService environmentService;
   @Inject private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Inject private FreezeEvaluateService freezeEvaluateService;
+  @Inject NotificationHelper notificationHelper;
+  @Inject private EngineExpressionService engineExpressionService;
+  @Inject NgExpressionHelper ngExpressionHelper;
   public static final String FREEZE_SWEEPING_OUTPUT = "freezeSweepingOutput";
+  public static final String PIPELINE_EXECUTION_EXPRESSION = "<+pipeline.execution.url>";
 
   @Override
   public void validateResources(Ambiance ambiance, InfraSectionStepParameters stepParameters) {
@@ -120,6 +128,11 @@ public class EnvironmentStep implements SyncExecutableWithRbac<InfraSectionStepP
                              .outcome(freezeOutcome)
                              .group(StepCategory.STAGE.name())
                              .build());
+        String executionUrl = engineExpressionService.renderExpression(
+            ambiance, PIPELINE_EXECUTION_EXPRESSION, ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED);
+        String baseUrl = ngExpressionHelper.getBaseUrl(AmbianceUtils.getAccountId(ambiance));
+        notificationHelper.sendNotificationForFreezeConfigs(freezeOutcome.getManualFreezeConfigs(),
+            freezeOutcome.getGlobalFreezeConfigs(), ambiance, executionUrl, baseUrl);
         return StepResponse.builder()
             .stepOutcomes(stepOutcomes)
             .failureInfo(FailureInfo.newBuilder()

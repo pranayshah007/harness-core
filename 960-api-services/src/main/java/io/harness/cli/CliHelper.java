@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
@@ -35,13 +34,11 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Singleton
 @OwnedBy(CDP)
 public class CliHelper {
-  private static final Predicate<String> NOOP_CLI_ERROR_PREDICATE = errorLine -> true;
-
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback) throws IOException, InterruptedException, TimeoutException {
     return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, command,
-        new EmptyLogOutputStream(), NOOP_CLI_ERROR_PREDICATE);
+        new EmptyLogOutputStream(), new DefaultErrorLogOutputStream(executionLogCallback));
   }
 
   @Nonnull
@@ -49,16 +46,15 @@ public class CliHelper {
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream)
       throws IOException, InterruptedException, TimeoutException {
     return executeCliCommand(command, timeoutInMillis, envVariables, directory, executionLogCallback, loggingCommand,
-        logOutputStream, NOOP_CLI_ERROR_PREDICATE);
+        logOutputStream, new DefaultErrorLogOutputStream(executionLogCallback));
   }
 
   @Nonnull
   public CliResponse executeCliCommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String directory, LogCallback executionLogCallback, String loggingCommand, LogOutputStream logOutputStream,
-      Predicate<String> cliErrorPredicate) throws IOException, InterruptedException, TimeoutException {
+      ErrorLogOutputStream errorLogOutputStream) throws IOException, InterruptedException, TimeoutException {
     executionLogCallback.saveExecutionLog(loggingCommand, LogLevel.INFO, RUNNING);
 
-    StringBuilder errorLogs = new StringBuilder();
     ProcessExecutor processExecutor = new ProcessExecutor()
                                           .timeout(timeoutInMillis, TimeUnit.MILLISECONDS)
                                           .command("/bin/sh", "-c", command)
@@ -66,16 +62,7 @@ public class CliHelper {
                                           .environment(CollectionUtils.emptyIfNull(envVariables))
                                           .directory(new File(directory))
                                           .redirectOutput(logOutputStream)
-                                          .redirectError(new LogOutputStream() {
-                                            @Override
-                                            protected void processLine(String line) {
-                                              executionLogCallback.saveExecutionLog(line, LogLevel.ERROR);
-                                              if (cliErrorPredicate.test(line)) {
-                                                log.error(line);
-                                                errorLogs.append(' ').append(line);
-                                              }
-                                            }
-                                          });
+                                          .redirectError(errorLogOutputStream);
 
     ProcessResult processResult = processExecutor.execute();
     CommandExecutionStatus status = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
@@ -83,7 +70,7 @@ public class CliHelper {
         .command(command)
         .commandExecutionStatus(status)
         .output(processResult.outputUTF8())
-        .error(errorLogs.toString().trim())
+        .error(errorLogOutputStream.getError())
         .exitCode(processResult.getExitValue())
         .build();
   }

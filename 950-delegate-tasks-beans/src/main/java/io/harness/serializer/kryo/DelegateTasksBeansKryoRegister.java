@@ -976,6 +976,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
 import com.google.protobuf.UnknownFieldSet;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.SneakyThrows;
 import org.eclipse.jgit.api.GitCommand;
 import org.json.JSONArray;
@@ -2029,7 +2030,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
     kryo.register(TerragruntCommandType.class, 573568);
+
     kryo.register(TerragruntApplyTaskResponse.class, 573558);
     kryo.register(TfVarS3Source.class, 573570);
+
+    kryo.register(ConcurrentHashMap.class, 673567);
+
   }
 }

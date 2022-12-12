@@ -30,6 +30,7 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.time.Duration;
 import lombok.AllArgsConstructor;
 
@@ -39,6 +40,7 @@ import lombok.AllArgsConstructor;
 public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
   private TaskExecutionUtils taskExecutionUtils;
   private KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public ScmPathFilterEvaluationTaskResponse execute(FilterRequestData filterRequestData,
@@ -73,7 +75,9 @@ public class SCMFilePathEvaluatorOnDelegate extends SCMFilePathEvaluator {
 
     if (BinaryResponseData.class.isAssignableFrom(responseData.getClass())) {
       BinaryResponseData binaryResponseData = (BinaryResponseData) responseData;
-      Object object = kryoSerializer.asInflatedObject(binaryResponseData.getData());
+      Object object = binaryResponseData.isUsingKryoWithoutReference()
+          ? referenceFalseKryoSerializer.asInflatedObject(binaryResponseData.getData())
+          : kryoSerializer.asInflatedObject(binaryResponseData.getData());
       if (object instanceof ScmPathFilterEvaluationTaskResponse) {
         return (ScmPathFilterEvaluationTaskResponse) object;
       } else if (object instanceof ErrorResponseData) {
