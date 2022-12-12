@@ -7,10 +7,15 @@
 
 package io.harness.notification;
 
-import static io.harness.logging.LoggingInitializer.initializeLogging;
-
-import static com.google.common.collect.ImmutableMap.of;
-
+import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import io.dropwizard.Application;
+import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
+import io.dropwizard.configuration.SubstitutingSourceProvider;
+import io.dropwizard.setup.Bootstrap;
+import io.dropwizard.setup.Environment;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.metrics.MetricRegistryModule;
 import io.harness.ng.core.CorrelationFilter;
@@ -22,23 +27,17 @@ import io.harness.notification.notificationclient.NotificationClientImpl;
 import io.harness.notification.templates.PredefinedTemplate;
 import io.harness.queue.QueueListenerController;
 import io.harness.remote.CharsetResponseFilter;
-
-import com.codahale.metrics.MetricRegistry;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import io.dropwizard.Application;
-import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
-import io.dropwizard.configuration.SubstitutingSourceProvider;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
 import io.serializer.HObjectMapper;
-import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jetty.servlets.CrossOriginFilter;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
+
+import javax.servlet.DispatcherType;
+import javax.servlet.FilterRegistration;
+import java.util.EnumSet;
+
+import static com.google.common.collect.ImmutableMap.of;
+import static io.harness.logging.LoggingInitializer.initializeLogging;
 
 @Slf4j
 public class NotificationClientApplication extends Application<NotificationClientApplicationConfiguration> {

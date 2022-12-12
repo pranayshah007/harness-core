@@ -7,17 +7,17 @@
 
 package io.harness.audit.beans;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.Action;
-
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
 import org.hibernate.validator.constraints.NotBlank;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 @Getter

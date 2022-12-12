@@ -7,14 +7,6 @@
 
 package io.harness.notification;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
-import io.harness.annotation.HarnessRepo;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.mongo.MongoConfig;
-import io.harness.mongo.metrics.HarnessConnectionPoolListener;
-import io.harness.springdata.HMongoTemplate;
-
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -22,8 +14,11 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoClientURI;
 import com.mongodb.ReadPreference;
-import java.util.Collection;
-import java.util.Collections;
+import io.harness.annotation.HarnessRepo;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.mongo.MongoConfig;
+import io.harness.mongo.metrics.HarnessConnectionPoolListener;
+import io.harness.springdata.HMongoTemplate;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +32,11 @@ import org.springframework.data.mongodb.core.convert.DefaultDbRefResolver;
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+
+import java.util.Collection;
+import java.util.Collections;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 @Configuration

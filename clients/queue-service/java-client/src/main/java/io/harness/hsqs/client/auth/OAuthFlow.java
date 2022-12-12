@@ -7,8 +7,8 @@
 
 package io.harness.hsqs.client.auth;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 import io.harness.annotations.dev.OwnedBy;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @OwnedBy(PIPELINE) public enum OAuthFlow { accessCode, implicit, password, application }

@@ -7,19 +7,19 @@
 
 package io.harness.buildcleaner.proto;
 
-import static io.harness.buildcleaner.common.PatternMatcher.findMatches;
-import static io.harness.buildcleaner.common.PatternMatcher.findOnlyMatch;
-
-import io.harness.buildcleaner.proto.ProtoFile.ProtoFileBuilder;
-
 import com.google.common.collect.ImmutableList;
+import io.harness.buildcleaner.proto.ProtoFile.ProtoFileBuilder;
+import lombok.experimental.UtilityClass;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import lombok.experimental.UtilityClass;
+
+import static io.harness.buildcleaner.common.PatternMatcher.findMatches;
+import static io.harness.buildcleaner.common.PatternMatcher.findOnlyMatch;
 
 @UtilityClass
 public class ProtoFileParser {

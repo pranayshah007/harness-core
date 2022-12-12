@@ -7,18 +7,17 @@
 
 package io.harness.ngsettings.client.remote;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
-
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 @FieldDefaults(level = AccessLevel.PRIVATE)

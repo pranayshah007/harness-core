@@ -13,8 +13,6 @@ import io.harness.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.variable.dto.VariableRequestDTO;
 import io.harness.ng.core.variable.dto.VariableResponseDTO;
-
-import java.util.List;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
@@ -23,6 +21,8 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+
+import java.util.List;
 
 public interface VariableClient {
   String INCLUDE_VARIABLES_FROM_EVERY_SUB_SCOPE = "includeVariablesFromEverySubScope";

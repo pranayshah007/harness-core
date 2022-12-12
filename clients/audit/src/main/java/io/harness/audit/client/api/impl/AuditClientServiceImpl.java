@@ -7,15 +7,8 @@
 
 package io.harness.audit.client.api.impl;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.audit.AuditCommonConstants.CORRELATION_ID;
-import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
-import static io.harness.context.MdcGlobalContextData.MDC_ID;
-import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
-import static io.harness.remote.client.NGRestUtils.getResponse;
-import static io.harness.request.RequestContextData.REQUEST_CONTEXT;
-import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
-
+import com.google.common.collect.ImmutableMap;
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEntry;
 import io.harness.audit.beans.AuditEventDTO;
@@ -33,10 +26,16 @@ import io.harness.request.RequestMetadata;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.Principal;
 import io.harness.security.dto.ServicePrincipal;
-
-import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.audit.AuditCommonConstants.CORRELATION_ID;
+import static io.harness.audit.beans.AuthenticationInfoDTO.fromSecurityPrincipal;
+import static io.harness.context.MdcGlobalContextData.MDC_ID;
+import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
+import static io.harness.remote.client.NGRestUtils.getResponse;
+import static io.harness.request.RequestContextData.REQUEST_CONTEXT;
+import static io.harness.security.PrincipalContextData.PRINCIPAL_CONTEXT;
 
 @Slf4j
 @OwnedBy(PL)

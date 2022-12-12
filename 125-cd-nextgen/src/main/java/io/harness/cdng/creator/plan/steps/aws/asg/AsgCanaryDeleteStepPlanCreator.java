@@ -20,18 +20,18 @@ import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public class AsgCanaryDeleteStepPlanCreator extends CDPMSStepPlanCreatorV2<AsgCanaryDeleteStepNode> {
-    @Override
-    public Set<String> getSupportedStepTypes() {
-        return Sets.newHashSet(StepSpecTypeConstants.ASG_CANARY_DELETE);
-    }
+  @Override
+  public Set<String> getSupportedStepTypes() {
+    return Sets.newHashSet(StepSpecTypeConstants.ASG_CANARY_DELETE);
+  }
 
-    @Override
-    public Class<AsgCanaryDeleteStepNode> getFieldClass() {
-        return AsgCanaryDeleteStepNode.class;
-    }
+  @Override
+  public Class<AsgCanaryDeleteStepNode> getFieldClass() {
+    return AsgCanaryDeleteStepNode.class;
+  }
 
-    @Override
-    public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AsgCanaryDeleteStepNode stepElement) {
-        return super.createPlanForField(ctx, stepElement);
-    }
+  @Override
+  public PlanCreationResponse createPlanForField(PlanCreationContext ctx, AsgCanaryDeleteStepNode stepElement) {
+    return super.createPlanForField(ctx, stepElement);
+  }
 }

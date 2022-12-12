@@ -7,6 +7,11 @@
 
 package io.harness.notification.module;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Scopes;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.harness.govern.ProviderModule;
 import io.harness.mongo.queue.NGMongoQueuePublisher;
 import io.harness.notification.NotificationClientBackendConfiguration;
@@ -22,14 +27,9 @@ import io.harness.queue.QueuePublisher;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
-
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Scopes;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import java.util.ArrayList;
 import org.springframework.data.mongodb.core.MongoTemplate;
+
+import java.util.ArrayList;
 
 public class NotificationClientModule extends AbstractModule {
   private final NotificationClientConfiguration notificationClientConfiguration;

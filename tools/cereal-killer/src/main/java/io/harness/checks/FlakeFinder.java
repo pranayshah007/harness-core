@@ -10,6 +10,8 @@ package io.harness.checks;
 import io.harness.checks.buildpulse.client.BuildPulseClient;
 import io.harness.checks.buildpulse.dto.TestFlakiness;
 import io.harness.checks.buildpulse.dto.TestFlakinessList;
+import lombok.extern.slf4j.Slf4j;
+import retrofit2.Response;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,8 +22,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import retrofit2.Response;
 
 @Slf4j
 public class FlakeFinder {

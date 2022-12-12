@@ -7,15 +7,14 @@
 
 package io.harness.audit.client.remote;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.audit.beans.AuditEventDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 public interface AuditClient {

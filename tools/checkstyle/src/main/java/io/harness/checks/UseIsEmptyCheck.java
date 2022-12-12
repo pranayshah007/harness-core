@@ -7,14 +7,14 @@
 
 package io.harness.checks;
 
+import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
+import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 import io.harness.checks.mixin.FieldMixin;
 import io.harness.checks.mixin.GeneralMixin;
 import io.harness.checks.mixin.MethodMixin;
 import io.harness.checks.mixin.OperationMixin;
 
-import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
-import com.puppycrawl.tools.checkstyle.api.DetailAST;
-import com.puppycrawl.tools.checkstyle.api.TokenTypes;
 import java.util.List;
 
 public class UseIsEmptyCheck extends AbstractCheck {

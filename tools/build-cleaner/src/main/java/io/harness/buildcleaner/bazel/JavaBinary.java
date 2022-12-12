@@ -7,11 +7,12 @@
 
 package io.harness.buildcleaner.bazel;
 
-import static io.harness.buildcleaner.bazel.WriteUtil.INDENTATION;
-
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSortedSet;
+
 import java.util.Set;
+
+import static io.harness.buildcleaner.bazel.WriteUtil.INDENTATION;
 
 public class JavaBinary {
   private final String name;

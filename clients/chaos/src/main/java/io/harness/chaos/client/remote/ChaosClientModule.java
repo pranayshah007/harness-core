@@ -7,14 +7,13 @@
 
 package io.harness.chaos.client.remote;
 
-import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.security.ServiceTokenGenerator;
-import io.harness.serializer.kryo.KryoConverterFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.Singleton;
+import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.security.ServiceTokenGenerator;
+import io.harness.serializer.kryo.KryoConverterFactory;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)

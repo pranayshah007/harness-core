@@ -103,7 +103,8 @@ public enum QLTaskGroup implements QLEnum {
   ELASTIGROUP,
   TAS,
   GITOPS,
-  CONTAINER_PMS;
+  CONTAINER_PMS,
+  ASG;
 
   @Override
   public String getStringValue() {

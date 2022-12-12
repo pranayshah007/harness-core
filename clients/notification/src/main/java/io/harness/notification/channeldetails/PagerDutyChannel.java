@@ -7,22 +7,22 @@
 
 package io.harness.notification.channeldetails;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
-
-import com.google.inject.Inject;
-import java.util.List;
-import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 @OwnedBy(PL)
 @Data

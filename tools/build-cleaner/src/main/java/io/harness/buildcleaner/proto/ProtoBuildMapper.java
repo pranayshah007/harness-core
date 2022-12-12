@@ -10,6 +10,7 @@ package io.harness.buildcleaner.proto;
 import io.harness.buildcleaner.bazel.HarnessGrpcLibrary;
 import io.harness.buildcleaner.common.PatternMatcher;
 import io.harness.buildcleaner.common.SymbolDependencyMap;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.FileSystems;
@@ -22,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class ProtoBuildMapper {

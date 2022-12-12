@@ -7,14 +7,14 @@
 
 package io.harness.hsqs.client.auth;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import com.squareup.okhttp.Credentials;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.hsqs.client.Pair;
 
-import com.squareup.okhttp.Credentials;
 import java.util.List;
 import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @OwnedBy(PIPELINE)
 public class HttpBasicAuth implements Authentication {

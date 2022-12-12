@@ -7,16 +7,15 @@
 
 package io.harness.buildcleaner;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.google.common.collect.ImmutableSet;
 import io.harness.buildcleaner.bazel.BuildFile;
 import io.harness.buildcleaner.bazel.JavaLibrary;
 import io.harness.buildcleaner.bazel.LoadStatement;
 import io.harness.buildcleaner.common.SymbolDependencyMap;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
-import com.google.common.collect.ImmutableSet;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,9 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class BuildCleanerTest {
   private static final String PACKAGE_ROOT = "io.harness";

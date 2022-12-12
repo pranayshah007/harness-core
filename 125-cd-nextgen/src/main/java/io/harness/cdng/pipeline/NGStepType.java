@@ -141,11 +141,6 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.ECS_RUN_TASK)
   ECS_RUN_TASK("ECS Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
 
-  // asg steps
-  @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
-  ASG_CANARY_DELETE(
-      "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "ASG", StepSpecTypeConstants.ASG_CANARY_DELETE),
-
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
@@ -201,6 +196,9 @@ public enum NGStepType {
   @JsonProperty(StepSpecTypeConstants.TERRAGRUNT_ROLLBACK)
   TERRAGRUNT_ROLLBACK("Terragrunt Rollback", Arrays.asList(ServiceDefinitionType.values()),
       "Infrastructure Provisioners/Terragrunt", StepSpecTypeConstants.TERRAGRUNT_ROLLBACK),
+
+  // asg steps
+  @JsonProperty(StepSpecTypeConstants.ASG_CANARY_DELETE)
   ASG_CANARY_DELETE(
       "Asg Canary Delete", Arrays.asList(ServiceDefinitionType.ASG), "Asg", StepSpecTypeConstants.ASG_CANARY_DELETE);
 

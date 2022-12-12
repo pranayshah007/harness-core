@@ -7,12 +7,11 @@
 
 package io.harness.hsqs.client.model;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.Builder;
 import lombok.Value;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 /**
  * DequeueRequest object for dequeuing a batch of request from the particular queue

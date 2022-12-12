@@ -7,10 +7,10 @@
 
 package io.harness.buildcleaner.proto;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.common.collect.ImmutableList;
 import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProtoFileTest {
   @Test

@@ -7,12 +7,11 @@
 
 package io.harness.hsqs.client.model;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 import io.harness.annotations.dev.OwnedBy;
-
 import lombok.Builder;
 import lombok.Value;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 /**
  * UnAckRequest Object used for block listing subTopic from processing or marking a message processing is failed

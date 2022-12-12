@@ -7,9 +7,10 @@
 
 package io.harness.buildcleaner.bazel;
 
-import io.harness.buildcleaner.common.PatternMatcher;
-
 import com.google.common.collect.ImmutableSortedSet;
+import io.harness.buildcleaner.common.PatternMatcher;
+import lombok.Data;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -18,7 +19,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import lombok.Data;
 
 @Data
 public class HarnessGrpcLibrary {

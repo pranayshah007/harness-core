@@ -2748,6 +2748,10 @@
 573566:io.harness.delegate.task.ecs.request.EcsS3FetchRunTaskRequest
 573567:io.harness.delegate.task.ecs.response.EcsS3FetchRunTaskResponse
 573568:io.harness.delegate.beans.terragrunt.request.TerragruntCommandType
+573569:io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest
+573570:io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse
+573571:io.harness.delegate.beans.aws.asg.AsgCanaryDeleteResult
+573572:io.harness.delegate.task.aws.asg.AsgCommandTypeNG
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO

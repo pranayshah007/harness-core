@@ -7,14 +7,14 @@
 
 package io.harness.checks;
 
-import io.harness.checks.mixin.AnnotationMixin;
-import io.harness.checks.mixin.ModifierMixin;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import io.harness.checks.mixin.AnnotationMixin;
+import io.harness.checks.mixin.ModifierMixin;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;

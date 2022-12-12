@@ -96,6 +96,8 @@ import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.DelegateConfigurationServiceProvider;
 import io.harness.delegate.DelegatePropertiesServiceProvider;
 import io.harness.delegate.app.DelegateApplication;
+import io.harness.delegate.asg.AsgCanaryDeleteCommandTaskHandler;
+import io.harness.delegate.asg.AsgCommandTaskNGHandler;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.cf.PcfApplicationDetailsCommandTaskHandler;
@@ -212,6 +214,7 @@ import io.harness.delegate.task.aws.AwsCodeCommitApiDelegateTask;
 import io.harness.delegate.task.aws.AwsCodeCommitDelegateTask;
 import io.harness.delegate.task.aws.AwsDelegateTask;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
+import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
@@ -1245,6 +1248,12 @@ public class DelegateModule extends AbstractModule {
         .to(EcsDeployRollbackDataFetchCommandHandler.class);
     ecsCommandTaskTypeToTaskHandlerMap.addBinding(EcsCommandType.ECS_RUN_TASK_DEPLOY.name())
         .to(EcsRunTaskDeployCommandHandler.class);
+
+    // Asg Command Tasks
+    MapBinder<String, AsgCommandTaskNGHandler> asgTaskTypeToTaskHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, AsgCommandTaskNGHandler.class);
+    asgTaskTypeToTaskHandlerMap.addBinding(AsgCommandTypeNG.ASG_CANARY_DELETE.name())
+        .to(AsgCanaryDeleteCommandTaskHandler.class);
 
     MapBinder<String, K8sTaskHandler> k8sCommandTaskTypeToTaskHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, K8sTaskHandler.class);

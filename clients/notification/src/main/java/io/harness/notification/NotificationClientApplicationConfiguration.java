@@ -7,17 +7,17 @@
 
 package io.harness.notification;
 
-import io.harness.mongo.MongoConfig;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.Lists;
 import io.dropwizard.Configuration;
-import java.util.Collection;
-import java.util.List;
-import javax.ws.rs.Path;
+import io.harness.mongo.MongoConfig;
 import lombok.Getter;
 import org.reflections.Reflections;
+
+import javax.ws.rs.Path;
+import java.util.Collection;
+import java.util.List;
 
 @Getter
 @JsonIgnoreProperties(ignoreUnknown = true)

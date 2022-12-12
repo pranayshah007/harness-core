@@ -7,23 +7,6 @@
 
 package io.harness.audit.client.api.impl;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
-import static io.harness.rule.OwnerRule.KARAN;
-import static io.harness.rule.OwnerRule.NISHANT;
-
-import static java.util.Collections.singletonMap;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNotNull;
-import static junit.framework.TestCase.assertNull;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import io.harness.CategoryTest;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
@@ -42,14 +25,30 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.security.PrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
-
-import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
 import retrofit2.Call;
 import retrofit2.Response;
+
+import java.io.IOException;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.core.CorrelationContext.getCorrelationIdKey;
+import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.NISHANT;
+import static java.util.Collections.singletonMap;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @OwnedBy(PL)
 public class AuditClientServiceImplTest extends CategoryTest {

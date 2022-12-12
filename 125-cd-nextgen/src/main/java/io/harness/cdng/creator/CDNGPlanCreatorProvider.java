@@ -349,8 +349,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new EcsBlueGreenRollbackStepPlanCreator());
     planCreators.add(new EcsRunTaskStepPlanCreator());
 
-    planCreators.add(new AsgCanaryDeleteStepPlanCreator());
-
     planCreators.add(new AzureCreateARMResourceStepPlanCreator());
     planCreators.add(new AzureCreateBPResourceStepPlanCreator());
 
@@ -370,6 +368,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new TerragruntApplyStepPlanCreator());
     planCreators.add(new TerragruntDestroyStepPlanCreator());
     planCreators.add(new TerragruntRollbackStepPlanCreator());
+
+    // Asg
+    planCreators.add(new AsgCanaryDeleteStepPlanCreator());
 
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -455,8 +456,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new EcsBlueGreenRollbackStepVariableCreator());
     variableCreators.add(new EcsRunTaskStepVariableCreator());
 
-    variableCreators.add(new AsgCanaryDeleteStepVariableCreator());
-
     variableCreators.add(new AzureCreateARMResourceStepVariableCreator());
     variableCreators.add(new AzureCreateBPStepVariableCreator());
     variableCreators.add(new AzureARMRollbackStepVariableCreator());
@@ -473,6 +472,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new TerragruntApplyStepVariableCreator());
     variableCreators.add(new TerragruntDestroyStepVariableCreator());
     variableCreators.add(new TerragruntRollbackStepVariableCreator());
+
+    // Asg
+    variableCreators.add(new AsgCanaryDeleteStepVariableCreator());
 
     return variableCreators;
   }
@@ -729,14 +731,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.NG_SVC_ENV_REDESIGN.name())
             .build();
 
-    StepInfo asgCanaryDelete =
-        StepInfo.newBuilder()
-            .setName("Asg Canary Delete")
-            .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
-            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
-            .setFeatureFlag(FeatureName.ASG_NG.name())
-            .build();
-
     StepInfo createStack = StepInfo.newBuilder()
                                .setName("CloudFormation Create Stack")
                                .setType(StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK)
@@ -943,6 +937,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                       .setFeatureFlag(FeatureName.TERRAGRUNT_PROVISION_NG.name())
                                       .build();
 
+    StepInfo asgCanaryDelete =
+        StepInfo.newBuilder()
+            .setName("Asg Canary Delete")
+            .setType(StepSpecTypeConstants.ASG_CANARY_DELETE)
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Asg").setFolderPath("Asg").build())
+            .setFeatureFlag(FeatureName.ASG_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
@@ -980,7 +982,6 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(ecsCanaryDeploy);
     stepInfos.add(ecsCanaryDelete);
     stepInfos.add(ecsRunTask);
-    stepInfos.add(asgCanaryDelete);
     stepInfos.add(azureCreateARMResources);
     stepInfos.add(azureCreateBPResources);
     stepInfos.add(azureARMRollback);
@@ -997,6 +998,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(terragruntApply);
     stepInfos.add(terragruntDestroy);
     stepInfos.add(terragruntRollback);
+    stepInfos.add(asgCanaryDelete);
 
     return stepInfos;
   }

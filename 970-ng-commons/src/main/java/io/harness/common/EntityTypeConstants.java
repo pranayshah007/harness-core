@@ -156,7 +156,6 @@ public interface EntityTypeConstants {
   String ECS_ROLLING_ROLLBACK = "EcsRollingRollback";
   String ECS_CANARY_DEPLOY = "EcsCanaryDeploy";
   String ECS_CANARY_DELETE = "EcsCanaryDelete";
-  String ASG_CANARY_DELETE = "AsgCanaryDelete";
   String AZURE_CREATE_ARM_RESOURCE_STEP = "AzureCreateARMResource";
   String AZURE_CREATE_BP_RESOURCE_STEP = "AzureCreateBPResource";
   String AZURE_ROLLBACK_ARM_RESOURCE_STEP = "AzureARMRollback";
@@ -180,4 +179,5 @@ public interface EntityTypeConstants {
   String TERRAGRUNT_DESTROY = "TerragruntDestroy";
   String TERRAGRUNT_ROLLBACK = "TerragruntRollback";
   String CONTAINER_STEP = "Container";
+  String ASG_CANARY_DELETE = "AsgCanaryDelete";
 }

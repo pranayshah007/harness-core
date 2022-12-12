@@ -58,6 +58,7 @@ import io.harness.delegate.beans.artifactory.ArtifactoryFetchImagePathResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchRepositoriesResponse;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskParams;
 import io.harness.delegate.beans.artifactory.ArtifactoryTaskResponse;
+import io.harness.delegate.beans.aws.asg.AsgCanaryDeleteResult;
 import io.harness.delegate.beans.aws.codecommit.AwsCodeCommitApiConfirmSubParams;
 import io.harness.delegate.beans.aws.codecommit.AwsCodeCommitApiParams;
 import io.harness.delegate.beans.aws.codecommit.AwsCodeCommitApiResult;
@@ -419,6 +420,9 @@ import io.harness.delegate.task.aws.AwsLoadBalancerDetails;
 import io.harness.delegate.task.aws.LbDetailsForAlbTrafficShift;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.aws.LoadBalancerType;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteRequest;
+import io.harness.delegate.task.aws.asg.AsgCanaryDeleteResponse;
+import io.harness.delegate.task.aws.asg.AsgCommandTypeNG;
 import io.harness.delegate.task.azure.AzureTaskExecutionResponse;
 import io.harness.delegate.task.azure.AzureTaskParameters;
 import io.harness.delegate.task.azure.AzureTaskResponse;
@@ -2031,5 +2035,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
     kryo.register(TerragruntCommandType.class, 573568);
     kryo.register(ConcurrentHashMap.class, 673567);
+
+
+    // Asg
+    kryo.register(AsgCanaryDeleteRequest.class, 573569);
+    kryo.register(AsgCanaryDeleteResponse.class, 573570);
+    kryo.register(AsgCanaryDeleteResult.class, 573571);
+    kryo.register(AsgCommandTypeNG.class, 573572);
   }
 }

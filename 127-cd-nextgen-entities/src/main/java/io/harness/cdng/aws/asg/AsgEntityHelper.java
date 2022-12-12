@@ -30,8 +30,6 @@ import io.harness.delegate.task.aws.asg.AsgInfraConfig;
 import io.harness.delegate.task.aws.asg.AsgInfraType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
-import io.harness.pms.contracts.ambiance.Ambiance;
-import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -75,19 +73,6 @@ public class AsgEntityHelper {
     }
   }
 
-  public void getAsgInfraDelegateConfig(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    switch (infrastructureOutcome.getKind()) {
-      case ASG:
-        ConnectorInfoDTO connectorDTO = getConnectorInfoDTO(infrastructureOutcome.getConnectorRef(), ngAccess);
-        AsgInfrastructureOutcome asgInfrastructureOutcome = (AsgInfrastructureOutcome) infrastructureOutcome;
-        // todo: return asgInfraConfig based on infra request schema for delegate task
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            format("Unsupported Infrastructure type: [%s]", infrastructureOutcome.getKind()));
-    }
-  }
 
   // todo: refactor it
   public ConnectorInfoDTO getConnectorInfoDTO(String connectorId, NGAccess ngAccess) {

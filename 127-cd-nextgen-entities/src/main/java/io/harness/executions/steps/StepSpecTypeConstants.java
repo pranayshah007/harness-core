@@ -74,12 +74,12 @@ public interface StepSpecTypeConstants {
   String ECS_BLUE_GREEN_SWAP_TARGET_GROUPS = "EcsBlueGreenSwapTargetGroups";
   String ECS_BLUE_GREEN_ROLLBACK = "EcsBlueGreenRollback";
 
-  String ASG_CANARY_DELETE = "AsgCanaryDelete";
-
   String SHELL_SCRIPT_PROVISION = "ShellScriptProvision";
 
   String CHAOS_STEP = "Chaos";
 
   String ELASTIGROUP_SETUP = "ElastigroupSetup";
   String GITOPS_FETCH_LINKED_APPS = "GitOpsFetchLinkedApps";
+
+  String ASG_CANARY_DELETE = "AsgCanaryDelete";
 }

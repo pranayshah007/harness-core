@@ -8,10 +8,10 @@
 package io.harness.chaos.client.beans;
 
 import io.harness.data.structure.EmptyPredicate;
-
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class ChaosRerunResponse {

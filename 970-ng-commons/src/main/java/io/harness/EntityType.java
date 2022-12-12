@@ -371,9 +371,6 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.ECS_CANARY_DELETE)
   ECS_CANARY_DELETE_STEP(
       ModuleType.CD, EntityTypeConstants.ECS_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ECS_CANARY_DELETE),
-  @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
-  ASG_CANARY_DELETE_STEP(
-          ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE),
   @JsonProperty(EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP)
   AZURE_CREATE_ARM_RESOURCE_STEP(ModuleType.CD, EntityTypeConstants.AZURE_CREATE_ARM_RESOURCE_STEP, IdentifierRef.class,
       EntityYamlRootNames.AZURE_CREATE_ARM_RESOURCE_STEP),
@@ -452,7 +449,10 @@ public enum EntityType {
   IACM(ModuleType.CI, EntityTypeConstants.IACM, IdentifierRef.class, EntityYamlRootNames.IACM),
   @JsonProperty(EntityTypeConstants.CONTAINER_STEP)
   CONTAINER_STEP(
-      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP);
+      ModuleType.PMS, EntityTypeConstants.CONTAINER_STEP, IdentifierRef.class, EntityYamlRootNames.CONTAINER_STEP),
+  @JsonProperty(EntityTypeConstants.ASG_CANARY_DELETE)
+  ASG_CANARY_DELETE_STEP(
+      ModuleType.CD, EntityTypeConstants.ASG_CANARY_DELETE, IdentifierRef.class, EntityYamlRootNames.ASG_CANARY_DELETE);
 
   private final ModuleType moduleType;
   String yamlName;

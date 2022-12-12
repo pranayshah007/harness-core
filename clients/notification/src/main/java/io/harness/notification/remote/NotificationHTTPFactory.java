@@ -7,13 +7,12 @@
 
 package io.harness.notification.remote;
 
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import io.harness.remote.client.AbstractHttpClientFactory;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.kryo.KryoConverterFactory;
-
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 

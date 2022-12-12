@@ -7,8 +7,7 @@
 
 package io.harness.hsqs.client.api;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
+import com.google.gson.reflect.TypeToken;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.hsqs.client.ApiCallback;
 import io.harness.hsqs.client.ApiClient;
@@ -27,13 +26,14 @@ import io.harness.hsqs.client.model.EnqueueResponse;
 import io.harness.hsqs.client.model.UnAckRequest;
 import io.harness.hsqs.client.model.UnAckResponse;
 
-import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @OwnedBy(PIPELINE)
 public class DefaultApi {

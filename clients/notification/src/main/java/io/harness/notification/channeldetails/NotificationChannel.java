@@ -7,22 +7,22 @@
 
 package io.harness.notification.channeldetails;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.notification.NotificationRequest;
-import io.harness.notification.Team;
-
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.inject.Inject;
-import java.util.List;
-import java.util.Map;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 @Getter

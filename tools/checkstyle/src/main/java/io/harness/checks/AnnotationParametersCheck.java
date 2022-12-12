@@ -7,18 +7,17 @@
 
 package io.harness.checks;
 
-import static io.harness.checks.AnnotationParametersCheck.Expectation.Type.EXISTS;
-import static io.harness.checks.AnnotationParametersCheck.Expectation.Type.EXISTS_REGEX_MATCH;
-
-import static java.util.Arrays.asList;
-
-import io.harness.checks.mixin.AnnotationMixin;
-
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import io.harness.checks.mixin.AnnotationMixin;
+
 import java.util.List;
 import java.util.Map;
+
+import static io.harness.checks.AnnotationParametersCheck.Expectation.Type.EXISTS;
+import static io.harness.checks.AnnotationParametersCheck.Expectation.Type.EXISTS_REGEX_MATCH;
+import static java.util.Arrays.asList;
 
 public class AnnotationParametersCheck extends AbstractCheck {
   private static final String MSG_KEY = "annotation.parameter.expectation.not.met";

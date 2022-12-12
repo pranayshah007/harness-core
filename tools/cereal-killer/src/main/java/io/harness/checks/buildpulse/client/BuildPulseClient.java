@@ -8,7 +8,6 @@
 package io.harness.checks.buildpulse.client;
 
 import io.harness.checks.buildpulse.dto.TestFlakinessList;
-
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;

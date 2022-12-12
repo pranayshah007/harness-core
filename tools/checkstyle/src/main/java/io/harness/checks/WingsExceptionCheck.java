@@ -11,6 +11,7 @@ import com.google.common.collect.ImmutableMap;
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+
 import java.util.Map;
 
 public class WingsExceptionCheck extends AbstractCheck {

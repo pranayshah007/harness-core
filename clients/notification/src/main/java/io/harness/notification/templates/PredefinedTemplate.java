@@ -7,9 +7,9 @@
 
 package io.harness.notification.templates;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-
 import io.harness.annotations.dev.OwnedBy;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
 
 @OwnedBy(PL)
 public enum PredefinedTemplate {

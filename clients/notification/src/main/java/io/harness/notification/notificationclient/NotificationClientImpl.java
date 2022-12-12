@@ -7,8 +7,9 @@
 
 package io.harness.notification.notificationclient;
 
-import static io.harness.remote.client.NGRestUtils.getResponse;
-
+import com.google.common.io.Resources;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.notification.NotificationRequest;
@@ -20,14 +21,6 @@ import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
-
-import com.google.common.io.Resources;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import java.io.IOException;
-import java.net.URL;
-import java.util.List;
-import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import retrofit2.Response;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static io.harness.remote.client.NGRestUtils.getResponse;
 
 @Getter
 @Setter

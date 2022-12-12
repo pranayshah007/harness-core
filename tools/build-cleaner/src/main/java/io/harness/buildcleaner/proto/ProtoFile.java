@@ -7,13 +7,14 @@
 
 package io.harness.buildcleaner.proto;
 
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.collect.ImmutableList;
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NonNull;
+
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
 
 @Data
 @Builder

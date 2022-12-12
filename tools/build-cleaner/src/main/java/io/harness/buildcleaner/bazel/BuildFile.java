@@ -7,7 +7,8 @@
 
 package io.harness.buildcleaner.bazel;
 
-import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,13 +17,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 public class BuildFile {
   private static final Pattern JAVA_BINARY_DEPS_PATTERN =

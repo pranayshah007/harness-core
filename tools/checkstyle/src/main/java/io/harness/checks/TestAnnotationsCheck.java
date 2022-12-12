@@ -7,11 +7,10 @@
 
 package io.harness.checks;
 
-import io.harness.checks.mixin.AnnotationMixin;
-
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import io.harness.checks.mixin.AnnotationMixin;
 
 public class TestAnnotationsCheck extends AbstractCheck {
   private static final String MISSING_CATEGORY_MSG_KEY = "code.best.practice.test.missing_category";

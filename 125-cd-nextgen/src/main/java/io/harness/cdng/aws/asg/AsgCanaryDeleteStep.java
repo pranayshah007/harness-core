@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteDataOutcome;
 import io.harness.cdng.aws.asg.beans.AsgCanaryDeleteOutcome;
+import io.harness.cdng.aws.asg.beans.AsgExecutionPassThroughData;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -69,7 +70,7 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
 
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private OutcomeService outcomeService;
- // @Inject private AsgStepCommonHelper asgStepCommonHelper;
+  @Inject private AsgStepCommonHelper asgStepCommonHelper;
   @Inject private AccountService accountService;
   @Inject private StepHelper stepHelper;
 
@@ -89,7 +90,7 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
       StepResponseBuilder stepResponseBuilder =
           StepResponse.builder().unitProgressList(asgCanaryDeleteResponse.getUnitProgressData().getUnitProgresses());
 
-     stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
+      stepResponse = generateStepResponse(ambiance, asgCanaryDeleteResponse, stepResponseBuilder);
     } catch (Exception e) {
       log.error("Error while processing asg canary delete response: {}", ExceptionUtils.getMessage(e), e);
       throw e;
@@ -129,7 +130,6 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
     return stepResponse;
   }
 
- */
   @Override
   public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
@@ -183,9 +183,8 @@ public abstract class AsgCanaryDeleteStep extends TaskExecutableWithRollbackAndR
 
     return asgStepCommonHelper
         .queueAsgTask(stepElementParameters, asgCanaryDeleteRequest, ambiance,
-            EcsExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
+            AsgExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
         .getTaskRequest();
-
   }
 
   private TaskRequest skipTaskRequestOrThrowException(Ambiance ambiance) {

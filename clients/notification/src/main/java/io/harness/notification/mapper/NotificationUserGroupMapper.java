@@ -7,17 +7,17 @@
 
 package io.harness.notification.mapper;
 
-import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.dtos.UserGroup;
 import io.harness.notification.dtos.UserGroup.UserGroupBuilder;
+import lombok.experimental.UtilityClass;
 
 import java.util.ArrayList;
 import java.util.List;
-import lombok.experimental.UtilityClass;
+
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 @OwnedBy(PL)
 @UtilityClass

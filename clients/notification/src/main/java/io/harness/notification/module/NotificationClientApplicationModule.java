@@ -7,6 +7,11 @@
 
 package io.harness.notification.module;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import io.harness.govern.ProviderModule;
 import io.harness.mongo.AbstractMongoModule;
 import io.harness.mongo.MongoConfig;
@@ -18,16 +23,11 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
+import org.mongodb.morphia.converters.TypeConverter;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import org.mongodb.morphia.converters.TypeConverter;
 
 public class NotificationClientApplicationModule extends AbstractModule {
   private final NotificationClientApplicationConfiguration appConfig;

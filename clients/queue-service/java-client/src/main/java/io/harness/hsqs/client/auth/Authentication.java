@@ -7,13 +7,13 @@
 
 package io.harness.hsqs.client.auth;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.hsqs.client.Pair;
 
 import java.util.List;
 import java.util.Map;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @OwnedBy(PIPELINE)
 public interface Authentication {

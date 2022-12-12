@@ -7,10 +7,6 @@
 
 package io.harness.ngsettings.client.remote;
 
-import io.harness.remote.client.ClientMode;
-import io.harness.remote.client.ServiceHttpClientConfig;
-import io.harness.security.ServiceTokenGenerator;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Key;
 import com.google.inject.Provides;
@@ -18,6 +14,9 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
+import io.harness.remote.client.ClientMode;
+import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.security.ServiceTokenGenerator;
 
 public class NGSettingsClientModule extends AbstractModule {
   private final ServiceHttpClientConfig ngSettingsClientConfig;

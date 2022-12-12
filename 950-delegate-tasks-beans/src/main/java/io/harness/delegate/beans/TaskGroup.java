@@ -105,5 +105,6 @@ public enum TaskGroup {
   ELASTIGROUP,
   GITOPS,
   TAS,
-  CONTAINER_PMS;
+  CONTAINER_PMS,
+  ASG;
 }

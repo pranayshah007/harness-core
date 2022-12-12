@@ -7,6 +7,8 @@
 
 package io.harness.checks.mixin;
 
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
+
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_CLASS;
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_INTERFACE;
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_NATIVE;
@@ -17,8 +19,6 @@ import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_STATIC;
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_SYNCHRONIZED;
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_TRANSIENT;
 import static com.puppycrawl.tools.checkstyle.api.TokenTypes.LITERAL_VOLATILE;
-
-import com.puppycrawl.tools.checkstyle.api.DetailAST;
 
 public class ModifierMixin {
   public static boolean isModifier(DetailAST ast) {

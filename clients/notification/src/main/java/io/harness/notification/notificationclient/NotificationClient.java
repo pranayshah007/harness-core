@@ -15,10 +15,10 @@ import io.harness.notification.remote.dto.EmailDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 import io.harness.notification.templates.PredefinedTemplate;
+import retrofit2.Response;
 
 import java.io.IOException;
 import java.util.List;
-import retrofit2.Response;
 
 public interface NotificationClient {
   NotificationResult sendNotificationAsync(NotificationChannel notificationChannel);
