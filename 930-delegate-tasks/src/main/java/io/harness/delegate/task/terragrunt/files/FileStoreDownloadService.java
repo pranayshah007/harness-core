@@ -14,13 +14,12 @@ import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.logging.LogCallback;
 
 import java.io.IOException;
-import java.util.List;
 
 @OwnedBy(CDP)
 public interface FileStoreDownloadService {
-  void download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory, LogCallback logCallback)
-      throws IOException;
+  DownloadResult download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+      LogCallback logCallback) throws IOException;
 
-  List<String> fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+  FetchFilesResult fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException;
 }

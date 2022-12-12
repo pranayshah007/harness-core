@@ -24,6 +24,7 @@ import io.harness.delegate.beans.connector.newrelicconnector.NewRelicCapabilityH
 import io.harness.delegate.beans.connector.pagerduty.PagerDutyCapabilityHelper;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusCapabilityHelper;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkCapabilityHelper;
+import io.harness.delegate.beans.connector.sumologicconnector.SumoLogicCapabilityHelper;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.exception.InvalidRequestException;
@@ -123,6 +124,9 @@ public abstract class DataCollectionRequest<T extends ConnectorConfigDTO> implem
       case AWS:
         return AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
             connectorInfoDTO.getConnectorConfig(), maskingEvaluator);
+      case SUMOLOGIC:
+        return SumoLogicCapabilityHelper.fetchRequiredExecutionCapabilities(
+            maskingEvaluator, connectorInfoDTO.getConnectorConfig());
       default:
         throw new InvalidRequestException("Connector capability not found");
     }

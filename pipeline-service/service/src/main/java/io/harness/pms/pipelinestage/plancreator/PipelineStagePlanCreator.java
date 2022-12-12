@@ -60,11 +60,13 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
         YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.PIPELINE_STAGE));
   }
 
-  public PipelineStageStepParameters getStepParameter(PipelineStageConfig config, YamlField pipelineInputs) {
+  public PipelineStageStepParameters getStepParameter(
+      PipelineStageConfig config, YamlField pipelineInputs, String stageNodeId) {
     return PipelineStageStepParameters.builder()
         .pipeline(config.getPipeline())
         .org(config.getOrg())
         .project(config.getProject())
+        .stageNodeId(stageNodeId)
         .inputSetReferences(config.getInputSetReferences())
         .outputs(ParameterField.createValueField(PipelineStageOutputs.getMapOfString(config.getOutputs())))
         .pipelineInputs(pipelineStageHelper.getInputSetYaml(pipelineInputs))
@@ -85,9 +87,13 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
     }
     pipelineStageHelper.validateNestedChainedPipeline(childPipelineEntity.get());
 
+    // Here planNodeId is used to support strategy. Same node id will be passed to child execution for navigation to
+    // parent execution
+    String planNodeId = StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid());
+
     PlanNodeBuilder builder =
         PlanNode.builder()
-            .uuid(StrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
+            .uuid(planNodeId)
             .name(stageNode.getName())
             .identifier(stageNode.getIdentifier())
             .group(StepCategory.STAGE.name())
@@ -97,7 +103,8 @@ public class PipelineStagePlanCreator implements PartialPlanCreator<PipelineStag
                     .getNode()
                     .getField(YAMLFieldNameConstants.SPEC)
                     .getNode()
-                    .getField(YAMLFieldNameConstants.INPUTS)))
+                    .getField(YAMLFieldNameConstants.INPUTS),
+                planNodeId))
             .skipCondition(SkipInfoUtils.getSkipCondition(stageNode.getSkipCondition()))
             .whenCondition(RunInfoUtils.getRunCondition(stageNode.getWhen()))
             .facilitatorObtainment(

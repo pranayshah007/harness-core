@@ -302,7 +302,7 @@ public class FreezeCRUDServiceImpl implements FreezeCRUDService {
             .freezeInfoConfig(FreezeInfoConfig.builder()
                                   .identifier("_GLOBAL_")
                                   .name("Global Freeze")
-                                  .description(ParameterField.<String>builder().value("Descrito").build())
+                                  .description(ParameterField.<String>builder().value("Global Freeze").build())
                                   .status(FreezeStatus.DISABLED)
                                   .build())
             .build();

@@ -7,7 +7,7 @@
 
 package software.wings.beans;
 
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

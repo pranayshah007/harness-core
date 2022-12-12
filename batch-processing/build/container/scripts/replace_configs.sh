@@ -280,3 +280,5 @@ replace_key_value awsCurBilling "$AWS_CUR_BILLING"
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
+
+replace_key_value currencyPreferences.historicalUpdateMonthsCount "$CURRENCY_PREFERENCE_HISTORICAL_UPDATE_MONTHS_COUNT"

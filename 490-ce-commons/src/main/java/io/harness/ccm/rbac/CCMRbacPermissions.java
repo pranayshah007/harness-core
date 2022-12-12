@@ -25,4 +25,7 @@ public interface CCMRbacPermissions {
   String COST_CATEGORY_DELETE = "ccm_costCategory_delete";
 
   String COST_OVERVIEW_VIEW = "ccm_overview_view";
+
+  String CURRENCY_PREFERENCE_SET_AND_EDIT = "ccm_currencyPreference_edit";
+  String CURRENCY_PREFERENCE_VIEW = "ccm_currencyPreference_view";
 }

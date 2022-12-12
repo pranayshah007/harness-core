@@ -62,7 +62,7 @@ public class InputsValidator {
       String accountId, String orgId, String projectId, TemplateEntityGetResponse templateEntityGetResponse) {
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     InputsValidationResponse inputsValidationResponse =
-        validateInputsInternal(accountId, orgId, projectId, templateEntity.getYaml(), new HashMap<>());
+        validateInputsInternal(accountId, orgId, projectId, templateEntity.getYaml(), new HashMap<>(), false);
 
     TemplateNodeErrorSummary templateNodeErrorSummary =
         TemplateNodeErrorSummary.builder()
@@ -79,18 +79,18 @@ public class InputsValidator {
 
   public ValidateInputsResponseDTO validateInputsForYaml(
       String accountId, String orgId, String projectId, String yaml) {
-    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, new HashMap<>());
+    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, new HashMap<>(), false);
   }
 
-  public ValidateInputsResponseDTO validateInputsForYaml(
-      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
-    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, templateCacheMap);
+  public ValidateInputsResponseDTO validateInputsForYaml(String accountId, String orgId, String projectId, String yaml,
+      Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+    return validateInputsForYamlInternal(accountId, orgId, projectId, yaml, templateCacheMap, loadFromCache);
   }
 
-  private ValidateInputsResponseDTO validateInputsForYamlInternal(
-      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
+  private ValidateInputsResponseDTO validateInputsForYamlInternal(String accountId, String orgId, String projectId,
+      String yaml, Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
     InputsValidationResponse inputsValidationResponse =
-        validateInputsInternal(accountId, orgId, projectId, yaml, templateCacheMap);
+        validateInputsInternal(accountId, orgId, projectId, yaml, templateCacheMap, loadFromCache);
 
     NodeErrorSummary errorNodeSummary = UnknownNodeErrorSummary.builder()
                                             .nodeInfo(getRootNodeInfo(validateAndGetYamlNode(yaml)))
@@ -102,20 +102,20 @@ public class InputsValidator {
         .build();
   }
 
-  private InputsValidationResponse validateInputsInternal(
-      String accountId, String orgId, String projectId, String yaml, Map<String, TemplateEntity> templateCacheMap) {
-    return validateInputsInternal(accountId, orgId, projectId, yaml, templateCacheMap, 0);
+  private InputsValidationResponse validateInputsInternal(String accountId, String orgId, String projectId, String yaml,
+      Map<String, TemplateEntity> templateCacheMap, boolean loadFromCache) {
+    return validateInputsInternal(accountId, orgId, projectId, yaml, templateCacheMap, 0, loadFromCache);
   }
 
   private InputsValidationResponse validateInputsInternal(String accountId, String orgId, String projectId, String yaml,
-      Map<String, TemplateEntity> templateCacheMap, int depth) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache) {
     YamlNode yamlNode = validateAndGetYamlNode(yaml);
     InputsValidationResponse templateInputsValidationResponse =
-        validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth);
+        validateTemplateInputs(accountId, orgId, projectId, yamlNode, templateCacheMap, depth, loadFromCache);
     String resolvedTemplatesYaml = yaml;
     if (TemplateRefHelper.hasTemplateRef(yaml)) {
       Map<String, Object> resolvedTemplatesMap = templateMergeServiceHelper.mergeTemplateInputsInObject(
-          accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+          accountId, orgId, projectId, yamlNode, templateCacheMap, 0, loadFromCache);
       resolvedTemplatesYaml = YamlPipelineUtils.writeYamlString(resolvedTemplatesMap);
     }
     InputsValidationResponse ngManagerInputsValidationResponse =
@@ -165,19 +165,22 @@ public class InputsValidator {
   }
 
   private InputsValidationResponse validateTemplateInputs(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth, boolean loadFromCache) {
     InputsValidationResponse inputsValidationResponse =
         InputsValidationResponse.builder().isValid(true).childrenErrorNodes(new ArrayList<>()).build();
     if (yamlNode.isObject()) {
-      validateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap, depth, inputsValidationResponse);
+      validateInputsInObject(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, depth, inputsValidationResponse, loadFromCache);
     } else if (yamlNode.isArray()) {
-      validateInputsInArray(accountId, orgId, projectId, yamlNode, templateCacheMap, depth, inputsValidationResponse);
+      validateInputsInArray(
+          accountId, orgId, projectId, yamlNode, templateCacheMap, depth, inputsValidationResponse, loadFromCache);
     }
     return inputsValidationResponse;
   }
 
   private void validateInputsInObject(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse inputsValidationResponse) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse inputsValidationResponse,
+      boolean loadFromCache) {
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
       YamlNode currentYamlNode = childYamlField.getNode();
@@ -189,52 +192,54 @@ public class InputsValidator {
         if (depth >= MAX_DEPTH) {
           throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
         }
-        validateTemplateInputs(
-            accountId, orgId, projectId, currentYamlNode, templateCacheMap, depth, inputsValidationResponse);
+        validateTemplateInputs(accountId, orgId, projectId, currentYamlNode, templateCacheMap, depth,
+            inputsValidationResponse, loadFromCache);
         depth--;
         continue;
       }
 
       if (value.isArray() && !YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
         // Value -> Array
-        validateInputsInArray(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, inputsValidationResponse);
+        validateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth,
+            inputsValidationResponse, loadFromCache);
       } else if (value.isObject()) {
         // Value -> Object
-        validateInputsInObject(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth, inputsValidationResponse);
+        validateInputsInObject(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth,
+            inputsValidationResponse, loadFromCache);
       }
     }
   }
 
   private void validateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse childrenNodeErrorSummary) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse childrenNodeErrorSummary,
+      boolean loadFromCache) {
     // Iterate over the array
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (arrayElement.isArray()) {
         // Value -> Array
-        validateInputsInArray(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, childrenNodeErrorSummary);
+        validateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, depth,
+            childrenNodeErrorSummary, loadFromCache);
       } else if (arrayElement.isObject()) {
         // Value -> Object
-        validateInputsInObject(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, childrenNodeErrorSummary);
+        validateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth,
+            childrenNodeErrorSummary, loadFromCache);
       }
     }
   }
 
   private void validateTemplateInputs(String accountId, String orgId, String projectId, YamlNode templateNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse inputsValidationResponse) {
+      Map<String, TemplateEntity> templateCacheMap, int depth, InputsValidationResponse inputsValidationResponse,
+      boolean loadFromCache) {
     JsonNode templateNodeValue = templateNode.getCurrJsonNode();
     // Template YAML corresponding to the TemplateRef and Version Label
     TemplateEntityGetResponse templateEntityGetResponse = templateMergeServiceHelper.getLinkedTemplateEntity(
-        accountId, orgId, projectId, templateNodeValue, templateCacheMap);
+        accountId, orgId, projectId, templateNodeValue, templateCacheMap, loadFromCache);
     TemplateEntity templateEntity = templateEntityGetResponse.getTemplateEntity();
     String templateYaml = templateEntity.getYaml();
 
     // verify template inputs of child template.
     InputsValidationResponse childValidationResponse =
-        validateInputsInternal(accountId, orgId, projectId, templateYaml, templateCacheMap, depth);
+        validateInputsInternal(accountId, orgId, projectId, templateYaml, templateCacheMap, depth, loadFromCache);
 
     // if childrenErrorNodes are not empty, then current node is also an error node
     if (!childValidationResponse.isValid()) {

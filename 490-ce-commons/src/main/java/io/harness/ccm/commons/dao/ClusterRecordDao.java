@@ -108,4 +108,10 @@ public class ClusterRecordDao {
         persistence.createUpdateOperations(ClusterRecord.class).set(ClusterRecordKeys.perpetualTaskId, taskId);
     return persistence.findAndModify(query, updateOperations, returnNewOptions);
   }
+
+  public List<ClusterRecord> getByAccountId(String accountId) {
+    Query<ClusterRecord> query =
+        persistence.createQuery(ClusterRecord.class).field(ClusterRecordKeys.accountId).equal(accountId);
+    return query.asList();
+  }
 }

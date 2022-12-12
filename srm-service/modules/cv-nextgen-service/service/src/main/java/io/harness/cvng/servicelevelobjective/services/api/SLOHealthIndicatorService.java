@@ -23,6 +23,7 @@ public interface SLOHealthIndicatorService {
   SLOHealthIndicator getBySLOEntity(ServiceLevelObjective serviceLevelObjective);
   List<SLOHealthIndicator> getBySLOIdentifiers(
       ProjectParams projectParams, List<String> serviceLevelObjectiveIdentifiers);
+  List<SLOHealthIndicator> getBySLOIdentifiers(String accountId, List<String> serviceLevelObjectiveIdentifiers);
   void upsert(ServiceLevelIndicator serviceLevelIndicator);
   void upsert(AbstractServiceLevelObjective serviceLevelObjective);
   void delete(ProjectParams projectParams, String serviceLevelObjectiveIdentifier);

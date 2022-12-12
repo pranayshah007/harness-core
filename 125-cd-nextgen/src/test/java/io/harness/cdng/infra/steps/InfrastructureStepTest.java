@@ -14,6 +14,7 @@ import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.LOVISH_BANSAL;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -60,6 +61,7 @@ import io.harness.cdng.infra.beans.host.HostFilter;
 import io.harness.cdng.infra.beans.host.HostNamesFilter;
 import io.harness.cdng.infra.beans.host.dto.AllHostsFilterDTO;
 import io.harness.cdng.infra.beans.host.dto.HostFilterDTO;
+import io.harness.cdng.infra.yaml.AsgInfrastructure;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.ElastigroupInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
@@ -850,6 +852,23 @@ public class InfrastructureStepTest extends CategoryTest {
                     .store(StoreConfigWrapper.builder().type(StoreConfigType.INLINE).spec(storeConfig).build())
                     .build())
             .build();
+    Ambiance ambiance = Mockito.mock(Ambiance.class);
+    doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .isInstanceOf(InvalidRequestException.class);
+    doNothing().when(infrastructureStepHelper).validateExpression(any());
+    assertThatCode(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))
+        .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = LOVISH_BANSAL)
+  @Category(UnitTests.class)
+  public void testValidateAsgInfrastructure() {
+    AsgInfrastructure infrastructure = AsgInfrastructure.builder()
+                                           .connectorRef(ParameterField.createValueField(""))
+                                           .region(ParameterField.createValueField("region"))
+                                           .build();
     Ambiance ambiance = Mockito.mock(Ambiance.class);
     doThrow(InvalidRequestException.class).when(infrastructureStepHelper).validateExpression(any());
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, ambiance))

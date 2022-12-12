@@ -55,7 +55,7 @@ public class EnvironmentsYaml implements Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();
-    if (!values.isExpression()) {
+    if (ParameterField.isNotNull(values) && !values.isExpression()) {
       for (EnvironmentYamlV2 environmentYamlV2 : values.getValue()) {
         children.add(VisitableChild.builder().value(environmentYamlV2).fieldName("values").build());
       }

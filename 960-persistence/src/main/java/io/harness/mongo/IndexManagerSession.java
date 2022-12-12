@@ -596,7 +596,7 @@ public class IndexManagerSession {
         // verification service
         "timeSeriesAnomaliesRecords", "timeSeriesCumulativeSums",
         // telemetry
-        "ciTelemetrySentStatus", "ciAccountExecutionMetadata",
+        "ciTelemetrySentStatus", "ciAccountExecutionMetadata", "pluginMetadataConfig", "pluginMetadataStatus",
         // cd-telemetry
         "cdTelemetrySentStatus", "cdAccountExecutionMetadata");
 

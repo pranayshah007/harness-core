@@ -203,7 +203,7 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     String pipelineYaml = readFile(filename);
 
     when(templateServiceHelper.getTemplateOrThrowExceptionIfInvalid(
-             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "", false))
+             ACCOUNT_ID, ORG_ID, PROJECT_ID, "approvalTemplate", "", false, false))
         .thenReturn(Optional.of(TemplateEntity.builder().identifier("approvalTemplate").versionLabel("1").build()));
 
     List<EntitySetupUsageDTO> setupUsages =

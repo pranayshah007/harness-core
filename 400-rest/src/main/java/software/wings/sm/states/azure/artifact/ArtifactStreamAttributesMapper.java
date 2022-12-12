@@ -18,10 +18,10 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.exception.InvalidRequestException;
 
 import software.wings.annotation.EncryptableSetting;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.persistence.artifact.Artifact;
 
 import java.util.List;
 import java.util.Optional;

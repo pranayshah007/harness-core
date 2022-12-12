@@ -44,6 +44,7 @@ import io.harness.cvng.cdng.services.impl.CVNGFilterCreationResponseMerger;
 import io.harness.cvng.cdng.services.impl.CVNGModuleInfoProvider;
 import io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener;
 import io.harness.cvng.cdng.services.impl.CVNGPipelineServiceInfoProvider;
+import io.harness.cvng.client.ErrorTrackingClientModule;
 import io.harness.cvng.client.NextGenClientModule;
 import io.harness.cvng.client.VerificationManagerClientModule;
 import io.harness.cvng.core.entities.CVConfig;
@@ -426,6 +427,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     modules.add(new MetricRegistryModule(metricRegistry));
     modules.add(new VerificationManagerClientModule(configuration.getManagerClientConfig().getBaseUrl()));
     modules.add(new NextGenClientModule(configuration.getNgManagerServiceConfig()));
+    modules.add(new ErrorTrackingClientModule(configuration.getErrorTrackingClientConfig()));
     modules.add(new SecretNGManagerClientModule(
         ServiceHttpClientConfig.builder().baseUrl(configuration.getNgManagerServiceConfig().getNgManagerUrl()).build(),
         configuration.getNgManagerServiceConfig().getManagerServiceSecret(), "NextGenManager"));

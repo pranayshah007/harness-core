@@ -32,7 +32,6 @@ import io.harness.pcf.model.CfCliVersion;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.AllowedValueYaml;
-import software.wings.beans.AppContainer;
 import software.wings.beans.Application;
 import software.wings.beans.EntityType;
 import software.wings.beans.NameValuePair;
@@ -43,6 +42,7 @@ import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariable.ServiceVariableBuilder;
 import software.wings.beans.ServiceVariableType;
 import software.wings.beans.yaml.ChangeContext;
+import software.wings.persistence.AppContainer;
 import software.wings.service.impl.yaml.handler.ArtifactVariableYamlHelper;
 import software.wings.service.impl.yaml.handler.BaseYamlHandler;
 import software.wings.service.impl.yaml.handler.ServiceVariableYamlHelper;

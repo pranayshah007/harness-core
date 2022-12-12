@@ -20,7 +20,7 @@ import io.harness.beans.EmbeddedUser;
 import io.harness.beans.WorkflowType;
 
 import software.wings.beans.appmanifest.HelmChart;
-import software.wings.beans.artifact.Artifact;
+import software.wings.persistence.artifact.Artifact;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;

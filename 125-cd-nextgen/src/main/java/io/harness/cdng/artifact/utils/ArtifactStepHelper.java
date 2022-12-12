@@ -66,6 +66,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidConnectorTypeException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -98,6 +99,9 @@ import java.util.stream.Collectors;
 public class ArtifactStepHelper {
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
+  @Inject private DelegateMetricsService delegateMetricsService;
+
+  @Inject @Named("PRIVILEGED") private SecretManagerClientService ngSecretService;
 
   @Inject private CDExpressionResolver cdExpressionResolver;
 
@@ -333,6 +337,15 @@ public class ArtifactStepHelper {
             encryptedDataDetails, jenkinsArtifactConfig.getConnectorRef().getValue());
       case CUSTOM_ARTIFACT:
         CustomArtifactConfig customArtifactConfig = (CustomArtifactConfig) artifactConfig;
+        /*
+        We will be checking here if the request is from custom Triggers or from custom artifact source.
+        Version will be null in CustomArtifactConfig if the request is from custom trigger.
+        In Case of trigger, We will be resolving the expression in Ng Manager.
+         */
+        if (customArtifactConfig.isFromTrigger()) {
+          return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(
+              customArtifactConfig, ambiance, delegateMetricsService, ngSecretService);
+        }
         return ArtifactConfigToDelegateReqMapper.getCustomDelegateRequest(customArtifactConfig, ambiance);
       default:
         throw new UnsupportedOperationException(

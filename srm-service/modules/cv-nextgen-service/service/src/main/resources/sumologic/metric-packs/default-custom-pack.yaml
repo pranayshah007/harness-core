@@ -1,0 +1,8 @@
+identifier: Custom
+category: Errors
+metrics:
+  - name: Custom
+    identifier: custom
+    type: ERROR
+    path: defaultPath
+    included: false

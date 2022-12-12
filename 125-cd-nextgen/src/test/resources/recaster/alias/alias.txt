@@ -602,6 +602,8 @@ io.harness.cdng.provision.terragrunt.TerragruntStepConfiguration
 io.harness.cdng.provision.terragrunt.TerragruntStepConfigurationParameters
 io.harness.cdng.provision.terragrunt.InlineTerragruntBackendConfigSpec
 io.harness.cdng.provision.terragrunt.RemoteTerragruntBackendConfigSpec
+io.harness.cdng.provision.terragrunt.outcome.TerragruntPlanOutcome
+io.harness.cdng.provision.terragrunt.TerragruntInheritOutput
 io.harness.cdng.serverless.beans.ServerlessS3FetchFailurePassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchPassThroughData
 io.harness.cdng.ecs.beans.EcsS3FetchFailurePassThroughData
@@ -611,3 +613,6 @@ io.harness.cdng.manifest.yaml.VarsManifestOutcome
 io.harness.cdng.manifest.yaml.TasManifestOutcome
 io.harness.cdng.manifest.yaml.kinds.VarsManifest
 io.harness.cdng.manifest.yaml.kinds.AutoScalerManifest
+io.harness.cdng.infra.beans.AsgInfraMapping
+io.harness.cdng.infra.beans.AsgInfrastructureOutcome
+io.harness.cdng.infra.yaml.AsgInfrastructure

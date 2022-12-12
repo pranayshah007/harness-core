@@ -7,6 +7,7 @@
 
 package io.harness.pms.approval.custom;
 
+import static io.harness.rule.OwnerRule.ASHISHSANODIA;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.steps.approval.step.custom.evaluation.CustomApprovalCriteriaEvaluator.evaluateCriteria;
 
@@ -88,6 +89,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Mock private KryoSerializer kryoSerializer;
+  @Mock private KryoSerializer referenceFalseKryoSerializer;
   @Mock private ShellScriptHelperService shellScriptHelperService;
   @Mock private CustomApprovalInstanceHandler customApprovalInstanceHandler;
   @Mock private ApprovalInstanceService approvalInstanceService;
@@ -108,6 +110,7 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     customApprovalCallback = spy(CustomApprovalCallback.builder().approvalInstanceId(APPROVAL_INSTANCE_ID).build());
     on(customApprovalCallback).set("logStreamingStepClientFactory", logStreamingStepClientFactory);
     on(customApprovalCallback).set("kryoSerializer", kryoSerializer);
+    on(customApprovalCallback).set("referenceFalseKryoSerializer", referenceFalseKryoSerializer);
     on(customApprovalCallback).set("shellScriptHelperService", shellScriptHelperService);
     on(customApprovalCallback).set("customApprovalInstanceHandler", customApprovalInstanceHandler);
     on(customApprovalCallback).set("approvalInstanceService", approvalInstanceService);
@@ -182,6 +185,29 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testCallbackWithErrorUsingKryoWithoutReference() {
+    CustomApprovalInstance instance = CustomApprovalInstance.builder()
+                                          .shellType(ShellType.Bash)
+                                          .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+                                          .scriptTimeout(ParameterField.createValueField(Timeout.fromString("1m")))
+                                          .build();
+    instance.setId(APPROVAL_INSTANCE_ID);
+    instance.setType(ApprovalType.CUSTOM_APPROVAL);
+    instance.setAmbiance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    ErrorNotifyResponseData errorNotifyResponseData =
+        ErrorNotifyResponseData.builder().errorMessage("Script failed!").build();
+    when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(errorNotifyResponseData);
+    when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
+    customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
+    verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), nullable(TicketNG.class));
+    verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
+    verify(customApprovalInstanceHandler).wakeup();
+  }
+
+  @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackApproved() {
@@ -221,6 +247,51 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
+    verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
+    verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
+    verify(customApprovalInstanceHandler).wakeup();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testCallbackApprovedUsingKryoWithoutReference() {
+    Map<String, Object> outputVars = Map.of("Status", ParameterField.createValueField("status"));
+    CustomApprovalInstance instance =
+        CustomApprovalInstance.builder()
+            .shellType(ShellType.Bash)
+            .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+            .scriptTimeout(ParameterField.createValueField(Timeout.fromString("1m")))
+            .outputVariables(outputVars)
+            .approvalCriteria(
+                CriteriaSpecWrapperDTO.builder()
+                    .type(CriteriaSpecType.KEY_VALUES)
+                    .criteriaSpecDTO(
+                        KeyValuesCriteriaSpecDTO.builder()
+                            .matchAnyCondition(false)
+                            .conditions(Collections.singletonList(
+                                ConditionDTO.builder().key("Status").operator(Operator.EQ).value("APPROVED").build()))
+                            .build())
+                    .build())
+            .build();
+    instance.setId(APPROVAL_INSTANCE_ID);
+    instance.setType(ApprovalType.CUSTOM_APPROVAL);
+    instance.setAmbiance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, String> sweepingOutput = Map.of("status", "APPROVED");
+    ShellScriptTaskResponseNG response =
+        ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.SUCCESS)
+            .executeCommandResponse(
+                ExecuteCommandResponse.builder()
+                    .commandExecutionData(
+                        ShellExecutionData.builder().sweepingOutputEnvVariables(sweepingOutput).build())
+                    .build())
+            .build();
+
+    when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
+    customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.APPROVED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
     verify(customApprovalInstanceHandler).wakeup();
@@ -270,6 +341,49 @@ public class CustomApprovalCallbackTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testCallbackFatalExceptionUsignKryoReferenceFalse() {
+    Map<String, Object> outputVars = Map.of("Status", ParameterField.createValueField("status"));
+    CustomApprovalInstance instance =
+        CustomApprovalInstance.builder()
+            .shellType(ShellType.Bash)
+            .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+            .scriptTimeout(ParameterField.createValueField(Timeout.fromString("1m")))
+            .outputVariables(outputVars)
+            .approvalCriteria(
+                CriteriaSpecWrapperDTO.builder()
+                    .type(CriteriaSpecType.KEY_VALUES)
+                    .criteriaSpecDTO(
+                        KeyValuesCriteriaSpecDTO.builder().matchAnyCondition(false).conditions(null).build())
+                    .build())
+            .build();
+    instance.setId(APPROVAL_INSTANCE_ID);
+    instance.setType(ApprovalType.CUSTOM_APPROVAL);
+    instance.setAmbiance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, String> sweepingOutput = Map.of("status", "APPROVED");
+    ShellScriptTaskResponseNG response =
+        ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.SUCCESS)
+            .executeCommandResponse(
+                ExecuteCommandResponse.builder()
+                    .commandExecutionData(
+                        ShellExecutionData.builder().sweepingOutputEnvVariables(sweepingOutput).build())
+                    .build())
+            .build();
+
+    when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(shellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars)))
+        .thenReturn(ShellScriptOutcome.builder().outputVariables(Map.of("Status", "APPROVED")).build());
+    when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
+    customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
+    verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.FAILED), anyString());
+    verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
+    verify(customApprovalInstanceHandler).wakeup();
+  }
+
+  @Test
   @Owner(developers = DEEPAK_PUTHRAYA)
   @Category(UnitTests.class)
   public void testCallbackNonFatalException() {
@@ -309,6 +423,55 @@ public class CustomApprovalCallbackTest extends CategoryTest {
             (Answer<ShellScriptOutcome>) invocation -> ShellScriptOutcome.builder().outputVariables(null).build());
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     assertThatThrownBy(() -> customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build())))
+        .isInstanceOf(HarnessCustomApprovalException.class)
+        .hasMessageContaining("Error while evaluating approval/rejection criteria");
+    verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), any(TicketNG.class));
+    verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
+    verify(customApprovalInstanceHandler).wakeup();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testCallbackNonFatalExceptionUsingKryoWithoutReference() {
+    mockStatic(ShellScriptHelperService.class);
+    Map<String, Object> outputVars = Map.of("Status", "status");
+    CustomApprovalInstance instance =
+        CustomApprovalInstance.builder()
+            .shellType(ShellType.Bash)
+            .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+            .scriptTimeout(ParameterField.createValueField(Timeout.fromString("1m")))
+            .outputVariables(outputVars)
+            .approvalCriteria(
+                CriteriaSpecWrapperDTO.builder()
+                    .type(CriteriaSpecType.KEY_VALUES)
+                    .criteriaSpecDTO(
+                        KeyValuesCriteriaSpecDTO.builder().matchAnyCondition(false).conditions(null).build())
+                    .build())
+            .build();
+    instance.setId(APPROVAL_INSTANCE_ID);
+    instance.setType(ApprovalType.CUSTOM_APPROVAL);
+    instance.setAmbiance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, String> sweepingOutput = new HashMap<>();
+    ShellScriptTaskResponseNG response =
+        ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.SUCCESS)
+            .executeCommandResponse(
+                ExecuteCommandResponse.builder()
+                    .commandExecutionData(
+                        ShellExecutionData.builder().sweepingOutputEnvVariables(sweepingOutput).build())
+                    .build())
+            .build();
+
+    when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(ShellScriptHelperService.prepareShellScriptOutcome(eq(sweepingOutput), eq(outputVars), eq(null)))
+        .thenAnswer(
+            (Answer<ShellScriptOutcome>) invocation -> ShellScriptOutcome.builder().outputVariables(null).build());
+    when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
+    assertThatThrownBy(()
+                           -> customApprovalCallback.push(
+                               Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build())))
         .isInstanceOf(HarnessCustomApprovalException.class)
         .hasMessageContaining("Error while evaluating approval/rejection criteria");
     verify(approvalInstanceService, never()).finalizeStatus(anyString(), any(), any(TicketNG.class));
@@ -366,6 +529,61 @@ public class CustomApprovalCallbackTest extends CategoryTest {
     when(kryoSerializer.asInflatedObject(any())).thenReturn(response);
     when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
     customApprovalCallback.push(ImmutableMap.of("xyz", BinaryResponseData.builder().build()));
+    verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));
+    verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
+    verify(customApprovalInstanceHandler).wakeup();
+  }
+
+  @Test
+  @Owner(developers = ASHISHSANODIA)
+  @Category(UnitTests.class)
+  public void testCallbackRejectedUsingKryoWithoutReference() {
+    Map<String, Object> outputVars = Map.of("Status", ParameterField.createValueField("status"));
+    CustomApprovalInstance instance =
+        CustomApprovalInstance.builder()
+            .shellType(ShellType.Bash)
+            .retryInterval(ParameterField.createValueField(Timeout.fromString("1m")))
+            .scriptTimeout(ParameterField.createValueField(Timeout.fromString("1m")))
+            .outputVariables(outputVars)
+            .approvalCriteria(
+                CriteriaSpecWrapperDTO.builder()
+                    .type(CriteriaSpecType.KEY_VALUES)
+                    .criteriaSpecDTO(
+                        KeyValuesCriteriaSpecDTO.builder()
+                            .matchAnyCondition(false)
+                            .conditions(Collections.singletonList(
+                                ConditionDTO.builder().key("Status").operator(Operator.EQ).value("APPROVED").build()))
+                            .build())
+                    .build())
+            .rejectionCriteria(
+                CriteriaSpecWrapperDTO.builder()
+                    .type(CriteriaSpecType.KEY_VALUES)
+                    .criteriaSpecDTO(
+                        KeyValuesCriteriaSpecDTO.builder()
+                            .matchAnyCondition(false)
+                            .conditions(Collections.singletonList(
+                                ConditionDTO.builder().key("Status").operator(Operator.EQ).value("REJECTED").build()))
+                            .build())
+                    .build())
+            .build();
+    instance.setId(APPROVAL_INSTANCE_ID);
+    instance.setType(ApprovalType.CUSTOM_APPROVAL);
+    instance.setAmbiance(ambiance);
+    instance.setDeadline(Long.MAX_VALUE);
+    Map<String, String> sweepingOutput = Map.of("status", "REJECTED");
+    ShellScriptTaskResponseNG response =
+        ShellScriptTaskResponseNG.builder()
+            .status(CommandExecutionStatus.SUCCESS)
+            .executeCommandResponse(
+                ExecuteCommandResponse.builder()
+                    .commandExecutionData(
+                        ShellExecutionData.builder().sweepingOutputEnvVariables(sweepingOutput).build())
+                    .build())
+            .build();
+
+    when(referenceFalseKryoSerializer.asInflatedObject(any())).thenReturn(response);
+    when(approvalInstanceService.get(eq(APPROVAL_INSTANCE_ID))).thenReturn(instance);
+    customApprovalCallback.push(Map.of("xyz", BinaryResponseData.builder().usingKryoWithoutReference(true).build()));
     verify(approvalInstanceService).finalizeStatus(anyString(), eq(ApprovalStatus.REJECTED), any(TicketNG.class));
     verify(approvalInstanceService).resetNextIterations(eq(APPROVAL_INSTANCE_ID), any());
     verify(customApprovalInstanceHandler).wakeup();

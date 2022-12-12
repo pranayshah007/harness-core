@@ -27,6 +27,12 @@ public class BudgetDao {
       BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetMonthlyAmount;
   private static final String BUDGET_MONTHLY_BREAKDOWN_BUDGET_BREAKDOWN =
       BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.budgetBreakdown;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.actualMonthlyCost;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.forecastMonthlyCost;
+  private static final String BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST =
+      BudgetKeys.budgetMonthlyBreakdown + "." + BudgetMonthlyBreakdownKeys.yearlyLastPeriodCost;
 
   public String save(Budget budget) {
     return persistence.save(budget);
@@ -115,6 +121,21 @@ public class BudgetDao {
         && null != budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()) {
       updateOperations.set(
           BUDGET_MONTHLY_BREAKDOWN_BUDGET_MONTHLY_AMOUNT, budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getActualMonthlyCost()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_ACTUAL_MONTHLY_COST, budget.getBudgetMonthlyBreakdown().getActualMonthlyCost());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost()) {
+      updateOperations.set(
+          BUDGET_MONTHLY_BREAKDOWN_FORECAST_MONTHLY_COST, budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost());
+    }
+    if (null != budget.getBudgetMonthlyBreakdown()
+        && null != budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost()) {
+      updateOperations.set(BUDGET_MONTHLY_BREAKDOWN_YEARLY_LAST_PERIOD_COST,
+          budget.getBudgetMonthlyBreakdown().getYearlyLastPeriodCost());
     }
     persistence.update(query, updateOperations);
   }
