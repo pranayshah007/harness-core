@@ -25,7 +25,7 @@ import io.harness.cdng.manifest.steps.ManifestsStepV2;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceUseFromStageV2;
 import io.harness.cdng.service.beans.ServiceYamlV2;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.service.steps.ServiceStepV3Parameters;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.visitor.YamlTypes;
@@ -169,7 +169,7 @@ public class ServiceAllInOnePlanCreatorUtils {
     final PlanNode node =
         PlanNode.builder()
             .uuid(serviceNodeId)
-            .stepType(ServiceStepV3.STEP_TYPE)
+            .stepType(ServiceStepV2.STEP_TYPE)
             .expressionMode(ExpressionMode.RETURN_ORIGINAL_EXPRESSION_IF_UNRESOLVED)
             .name(PlanCreatorConstants.SERVICE_NODE_NAME)
             .identifier(YamlTypes.SERVICE_ENTITY)

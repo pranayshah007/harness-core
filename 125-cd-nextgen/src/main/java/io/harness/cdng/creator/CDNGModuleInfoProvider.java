@@ -42,7 +42,7 @@ import io.harness.cdng.pipeline.steps.RollbackOptionalChildChainStep;
 import io.harness.cdng.service.steps.ServiceConfigStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.freeze.mappers.NGFreezeDtoMapper;
@@ -138,7 +138,7 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
     return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
                || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE)
-               || Objects.equals(stepType, ServiceStepV3.STEP_TYPE))
+               || Objects.equals(stepType, ServiceStepV2.STEP_TYPE))
         && StatusUtils.isFinalStatus(status);
   }
 

@@ -98,7 +98,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class ServiceStepV3Test {
+public class ServiceStepV2Test {
   @Mock private ServiceEntityService serviceEntityService;
   @Mock private EnvironmentService environmentService;
   @Mock private ServiceStepsHelper serviceStepsHelper;
@@ -118,7 +118,7 @@ public class ServiceStepV3Test {
   private static final String ORG_ID = "orgId";
 
   private AutoCloseable mocks;
-  @InjectMocks private ServiceStepV3 step = new ServiceStepV3();
+  @InjectMocks private ServiceStepV2 step = new ServiceStepV2();
 
   @Before
   public void setUp() throws Exception {
@@ -465,7 +465,7 @@ public class ServiceStepV3Test {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -490,7 +490,7 @@ public class ServiceStepV3Test {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT)));
 
     // outputs from children steps
     doReturn(OptionalSweepingOutput.builder().found(true).output(new ManifestsOutcome()).build())
@@ -535,7 +535,7 @@ public class ServiceStepV3Test {
     Environment environment = testEnvEntity();
     doReturn(ServiceSweepingOutput.builder().finalServiceYaml(service.getYaml()).build())
         .when(sweepingOutputService)
-        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT)));
+        .resolve(any(Ambiance.class), eq(RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT)));
 
     StepResponse stepResponse = step.handleChildrenResponse(buildAmbiance(),
         ServiceStepV3Parameters.builder()
@@ -765,7 +765,7 @@ public class ServiceStepV3Test {
     levels.add(Level.newBuilder()
                    .setRuntimeId(UUIDGenerator.generateUuid())
                    .setSetupId(UUIDGenerator.generateUuid())
-                   .setStepType(ServiceStepV3.STEP_TYPE)
+                   .setStepType(ServiceStepV2.STEP_TYPE)
                    .build());
     return Ambiance.newBuilder()
         .setPlanExecutionId(UUIDGenerator.generateUuid())

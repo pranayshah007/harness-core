@@ -16,7 +16,7 @@ import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
 import io.harness.cdng.configfile.validator.IndividualConfigFileStepValidator;
 import io.harness.cdng.expressions.CDExpressionResolver;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.steps.EmptyStepParameters;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -96,7 +96,7 @@ public class ConfigFilesStepV2 extends AbstractConfigFileStep implements SyncExe
 
   private NgConfigFilesMetadataSweepingOutput fetchConfigFilesMetadataFromSweepingOutput(Ambiance ambiance) {
     final OptionalSweepingOutput resolveOptional = sweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_CONFIG_FILES_SWEEPING_OUTPUT));
     if (!resolveOptional.isFound()) {
       log.info("Could not find configFileSweepingOutput for the stage.");
     }

@@ -101,7 +101,7 @@ import io.harness.cdng.service.steps.ServiceDefinitionStep;
 import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
-import io.harness.cdng.service.steps.ServiceStepV3;
+import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.ssh.CommandStep;
 import io.harness.cdng.tas.TasAppResizeStep;
 import io.harness.cdng.tas.TasBGAppSetupStep;
@@ -141,7 +141,7 @@ public class NgStepRegistrar {
     engineSteps.put(ServiceConfigStep.STEP_TYPE, ServiceConfigStep.class);
     engineSteps.put(ServiceSectionStep.STEP_TYPE, ServiceSectionStep.class);
     engineSteps.put(ServiceStep.STEP_TYPE, ServiceStep.class);
-    engineSteps.put(ServiceStepV3.STEP_TYPE, ServiceStepV3.class);
+    engineSteps.put(ServiceStepV2.STEP_TYPE, ServiceStepV2.class);
     engineSteps.put(ServiceDefinitionStep.STEP_TYPE, ServiceDefinitionStep.class);
     engineSteps.put(ServiceSpecStep.STEP_TYPE, ServiceSpecStep.class);
     engineSteps.put(ArtifactsStep.STEP_TYPE, ArtifactsStep.class);

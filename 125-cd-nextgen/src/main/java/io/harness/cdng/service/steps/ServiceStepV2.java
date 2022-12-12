@@ -116,7 +116,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
 @Slf4j
-public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters> {
+public class ServiceStepV2 implements ChildrenExecutable<ServiceStepV3Parameters> {
   public static final StepType STEP_TYPE =
       StepType.newBuilder().setType(ExecutionNodeType.SERVICE_V3.getName()).setStepCategory(StepCategory.STEP).build();
   public static final String SERVICE_SWEEPING_OUTPUT = "serviceSweepingOutput";
@@ -462,7 +462,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
 
     final ServiceSweepingOutput serviceSweepingOutput = (ServiceSweepingOutput) sweepingOutputService.resolve(
-        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.SERVICE_SWEEPING_OUTPUT));
+        ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV2.SERVICE_SWEEPING_OUTPUT));
 
     NGServiceConfig ngServiceConfig = null;
     if (serviceSweepingOutput != null) {
@@ -719,7 +719,7 @@ public class ServiceStepV3 implements ChildrenExecutable<ServiceStepV3Parameters
     final List<StepResponse.StepOutcome> stepOutcomes = new ArrayList<>();
     if (ngFeatureFlagHelperService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_DEPLOYMENT_FREEZE)) {
       final OptionalSweepingOutput freezeOutcomeOptional = sweepingOutputService.resolveOptional(
-          ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV3.FREEZE_SWEEPING_OUTPUT));
+          ambiance, RefObjectUtils.getOutcomeRefObject(ServiceStepV2.FREEZE_SWEEPING_OUTPUT));
 
       if (freezeOutcomeOptional.isFound()) {
         FreezeOutcome freezeOutcome = (FreezeOutcome) freezeOutcomeOptional.getOutput();

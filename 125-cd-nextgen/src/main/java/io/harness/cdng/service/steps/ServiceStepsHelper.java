@@ -136,7 +136,7 @@ public class ServiceStepsHelper {
       Level level = levels.get(i);
       if (ServiceConfigStep.STEP_TYPE.equals(level.getStepType())
           || ServiceSectionStep.STEP_TYPE.equals(level.getStepType())
-          || ServiceStepV3.STEP_TYPE.equals(level.getStepType())) {
+          || ServiceStepV2.STEP_TYPE.equals(level.getStepType())) {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }
