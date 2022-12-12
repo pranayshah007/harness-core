@@ -269,10 +269,12 @@ public class PMSPipelineServiceHelper {
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails, false);
+          return resolveTemplatesAndValidatePipelineYaml(
+              pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
         }
       } else {
-        return resolveTemplatesAndValidatePipelineYaml(pipelineEntity, throwExceptionIfGovernanceRulesFails, false);
+        return resolveTemplatesAndValidatePipelineYaml(
+            pipelineEntity, throwExceptionIfGovernanceRulesFails, loadFromCache);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
