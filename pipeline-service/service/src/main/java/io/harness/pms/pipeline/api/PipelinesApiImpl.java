@@ -125,7 +125,8 @@ public class PipelinesApiImpl implements PipelinesApi {
     PipelineGetResponseBody pipelineGetResponseBody = new PipelineGetResponseBody();
     try {
       pipelineEntity = pmsPipelineService.getAndValidatePipeline(account, org, project, pipeline, false,
-          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
+          Boolean.TRUE.equals(loadFromFallbackBranch),
+          PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (PolicyEvaluationFailureException pe) {
       pipelineGetResponseBody.setPipelineYaml(pe.getYaml());
       pipelineGetResponseBody.setGitDetails(

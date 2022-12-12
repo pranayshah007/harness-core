@@ -9,17 +9,23 @@ package io.harness.delegate.task.aws;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ACASIAN;
+import static io.harness.rule.OwnerRule.KAPIL;
 import static io.harness.rule.OwnerRule.VED;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.dtos.AuditBatchDTO;
+import io.harness.audit.streaming.dtos.AuditRecordDTO;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -27,6 +33,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -35,12 +43,16 @@ import io.harness.delegate.beans.connector.awsconnector.S3BuildsResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.request.HttpRequestInfo;
+import io.harness.request.RequestMetadata;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 import software.wings.service.impl.AwsApiHelperService;
 
+import com.amazonaws.AmazonServiceException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -547,5 +559,103 @@ public class AwsS3DelegateTaskHelperTest extends CategoryTest {
     verify(secretDecryptionService, times(1)).decrypt(any(), any());
 
     verify(awsApiHelperService, times(1)).listBuilds(any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testPutAuditBatchToBucket() {
+    AwsConnectorDTO awsConnectorDTO =
+        AwsConnectorDTO.builder()
+            .credential(
+                AwsCredentialDTO.builder()
+                    .awsCredentialType(AwsCredentialType.MANUAL_CREDENTIALS)
+                    .config(AwsManualConfigSpecDTO.builder()
+                                .accessKey("test-access-key")
+                                .secretKeyRef(SecretRefData.builder().decryptedValue("secret".toCharArray()).build())
+                                .build())
+                    .build())
+            .build();
+
+    AwsPutAuditBatchToBucketTaskParamsRequest awsTaskParams =
+        AwsPutAuditBatchToBucketTaskParamsRequest.builder()
+            .awsTaskType(AwsTaskType.PUT_AUDIT_BATCH_TO_BUCKET)
+            .awsConnector(awsConnectorDTO)
+            .encryptionDetails(Collections.emptyList())
+            .region("region")
+            .bucketName("bucketName")
+            .auditBatch(AuditBatchDTO.builder()
+                            .batchId("123")
+                            .accountIdentifier("accID123")
+                            .policyIdentifier("polID123")
+                            .startTime(System.currentTimeMillis())
+                            .endTime(System.currentTimeMillis())
+                            .numberOfRecords(10)
+                            .auditRecords(Arrays.asList(
+                                AuditRecordDTO.builder()
+                                    .auditId("audId123")
+                                    .insertId("insId123")
+                                    .httpRequestInfo(HttpRequestInfo.builder().requestMethod("PUT").build())
+                                    .requestMetadata(RequestMetadata.builder().clientIP("192.168.1.1").build())
+                                    .timestamp(Instant.EPOCH)
+                                    .module(ModuleType.CV)
+                                    .createdAt(System.currentTimeMillis())
+                                    .build()))
+                            .status(AuditBatchDTO.BatchStatus.builder()
+                                        .state(AuditBatchDTO.BatchState.SUCCESS)
+                                        .message("none")
+                                        .build())
+                            .retryCount(5)
+                            .build())
+            .build();
+
+    ArgumentCaptor<AwsInternalConfig> internalConfigArgumentCaptor = ArgumentCaptor.forClass(AwsInternalConfig.class);
+    ArgumentCaptor<String> regionArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> bucketNameArgumentCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<AuditBatchDTO> auditBatchArgumentCaptor = ArgumentCaptor.forClass(AuditBatchDTO.class);
+
+    PutObjectResultResponse putObjectResultResponse =
+        PutObjectResultResponse.builder().contentMd5("MD5").eTag("eTag").build();
+
+    doReturn(null).when(secretDecryptionService).decrypt(any(), any());
+    doReturn(putObjectResultResponse)
+        .when(awsApiHelperService)
+        .putAuditBatchToBucket(internalConfigArgumentCaptor.capture(), regionArgumentCaptor.capture(),
+            bucketNameArgumentCaptor.capture(), auditBatchArgumentCaptor.capture());
+
+    DelegateResponseData responseData = taskHelper.putAuditBatchToBucket(awsTaskParams);
+    assertThat(responseData).isNotNull();
+    assertThat(responseData).isInstanceOf(AwsPutAuditBatchToBucketTaskResponse.class);
+    AwsPutAuditBatchToBucketTaskResponse awsPutAuditBatchToBucketTaskResponse =
+        (AwsPutAuditBatchToBucketTaskResponse) responseData;
+    assertThat(awsPutAuditBatchToBucketTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(awsPutAuditBatchToBucketTaskResponse.getPutObjectResultResponse()).isNotNull();
+    assertThat(awsPutAuditBatchToBucketTaskResponse.getPutObjectResultResponse().getContentMd5()).isEqualTo("MD5");
+    assertThat(awsPutAuditBatchToBucketTaskResponse.getPutObjectResultResponse().getETag()).isEqualTo("eTag");
+
+    AwsInternalConfig awsInternalConfig = internalConfigArgumentCaptor.getValue();
+    assertThat(awsInternalConfig.getAccessKey()).isEqualTo("test-access-key".toCharArray());
+    assertThat(awsInternalConfig.getSecretKey()).isEqualTo("secret".toCharArray());
+
+    String region = regionArgumentCaptor.getValue();
+    assertThat(region).isEqualTo("region");
+    String bucketName = bucketNameArgumentCaptor.getValue();
+    assertThat(bucketName).isEqualTo("bucketName");
+
+    verify(secretDecryptionService, times(1)).decrypt(any(), any());
+    verify(awsApiHelperService, times(1)).putAuditBatchToBucket(any(), any(), any(), any());
+
+    doThrow(new AmazonServiceException("Exception while writing to S3 bucket"))
+        .when(awsApiHelperService)
+        .putAuditBatchToBucket(internalConfigArgumentCaptor.capture(), regionArgumentCaptor.capture(),
+            bucketNameArgumentCaptor.capture(), auditBatchArgumentCaptor.capture());
+
+    responseData = taskHelper.putAuditBatchToBucket(awsTaskParams);
+    assertThat(responseData).isNotNull();
+    assertThat(responseData).isInstanceOf(AwsPutAuditBatchToBucketTaskResponse.class);
+    awsPutAuditBatchToBucketTaskResponse = (AwsPutAuditBatchToBucketTaskResponse) responseData;
+    assertThat(awsPutAuditBatchToBucketTaskResponse.getCommandExecutionStatus())
+        .isEqualTo(CommandExecutionStatus.FAILURE);
   }
 }

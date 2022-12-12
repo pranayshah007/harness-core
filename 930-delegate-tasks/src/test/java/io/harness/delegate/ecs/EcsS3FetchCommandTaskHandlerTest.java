@@ -24,6 +24,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
+import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.ecs.EcsS3FetchFileConfig;
 import io.harness.delegate.task.ecs.EcsTaskHelperBase;
@@ -157,10 +158,10 @@ public class EcsS3FetchCommandTaskHandlerTest extends CategoryTest {
     assertThat(ecsS3FetchRunTaskResponse.getRunTaskRequestDefinitionFileContent()).isEqualTo(content);
   }
 
-  @Test
+  @Test(expected = TaskNGDataException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void getS3FetchResponseExceptionTest() throws Exception {
+  public void getS3FetchResponseExceptionTest() {
     AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
     AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
     S3StoreDelegateConfig s3StoreConfig = S3StoreDelegateConfig.builder()
@@ -193,20 +194,13 @@ public class EcsS3FetchCommandTaskHandlerTest extends CategoryTest {
 
     Mockito.when(awsApiHelperService.getObjectFromS3(any(), eq(region), eq(bucket), eq(filePath))).thenThrow(e);
 
-    EcsS3FetchResponse ecsS3FetchResponse = (EcsS3FetchResponse) ecsS3FetchCommandTaskHandler.getS3FetchResponse(
-        ecsS3FetchRequest, iLogStreamingTaskClient);
-
-    assertThat(ecsS3FetchResponse.getTaskStatus()).isEqualTo(TaskStatus.FAILURE);
-    assertThat(ecsS3FetchResponse.getErrorMessage()).contains(bucket);
-    assertThat(ecsS3FetchResponse.getErrorMessage()).contains(region);
-    assertThat(ecsS3FetchResponse.getErrorMessage()).contains(filePath);
-    assertThat(ecsS3FetchResponse.getUnitProgressData()).isEqualTo(ecsS3FetchResponse.getUnitProgressData());
+    ecsS3FetchCommandTaskHandler.getS3FetchResponse(ecsS3FetchRequest, iLogStreamingTaskClient);
   }
 
-  @Test
+  @Test(expected = TaskNGDataException.class)
   @Owner(developers = ALLU_VAMSI)
   @Category(UnitTests.class)
-  public void getS3FetchRunTaskResponseExceptionTest() throws Exception {
+  public void getS3FetchRunTaskResponseExceptionTest() {
     AwsCredentialDTO awsCredentialDTO = AwsCredentialDTO.builder().build();
     AwsConnectorDTO awsConnectorDTO = AwsConnectorDTO.builder().credential(awsCredentialDTO).build();
     S3StoreDelegateConfig s3StoreConfig = S3StoreDelegateConfig.builder()
@@ -238,15 +232,6 @@ public class EcsS3FetchCommandTaskHandlerTest extends CategoryTest {
 
     Mockito.when(awsApiHelperService.getObjectFromS3(any(), eq(region), eq(bucket), eq(filePath))).thenThrow(e);
 
-    EcsS3FetchRunTaskResponse ecsS3FetchRunTaskResponse =
-        (EcsS3FetchRunTaskResponse) ecsS3FetchCommandTaskHandler.getS3FetchResponse(
-            ecsS3FetchRunTaskRequest, iLogStreamingTaskClient);
-
-    assertThat(ecsS3FetchRunTaskResponse.getTaskStatus()).isEqualTo(TaskStatus.FAILURE);
-    assertThat(ecsS3FetchRunTaskResponse.getErrorMessage()).contains(bucket);
-    assertThat(ecsS3FetchRunTaskResponse.getErrorMessage()).contains(region);
-    assertThat(ecsS3FetchRunTaskResponse.getErrorMessage()).contains(filePath);
-    assertThat(ecsS3FetchRunTaskResponse.getUnitProgressData())
-        .isEqualTo(ecsS3FetchRunTaskResponse.getUnitProgressData());
+    ecsS3FetchCommandTaskHandler.getS3FetchResponse(ecsS3FetchRunTaskRequest, iLogStreamingTaskClient);
   }
 }

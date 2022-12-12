@@ -16,6 +16,7 @@ import io.harness.batch.processing.ccm.CCMJobConstants;
 import io.harness.batch.processing.pricing.banzai.BanzaiRecommenderClient;
 import io.harness.batch.processing.pricing.vmpricing.VMPricingService;
 import io.harness.batch.processing.tasklet.util.ClusterHelper;
+import io.harness.batch.processing.tasklet.util.CurrencyPreferenceHelper;
 import io.harness.ccm.commons.beans.JobConstants;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 import io.harness.ccm.commons.beans.recommendation.K8sServiceProvider;
@@ -23,19 +24,25 @@ import io.harness.ccm.commons.beans.recommendation.NodePoolId;
 import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.commons.beans.recommendation.RecommendationUtils;
 import io.harness.ccm.commons.beans.recommendation.TotalResourceUsage;
+import io.harness.ccm.commons.beans.recommendation.models.ClusterRecommendationAccuracy;
 import io.harness.ccm.commons.beans.recommendation.models.ErrorResponse;
+import io.harness.ccm.commons.beans.recommendation.models.NodePool;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendClusterRequest;
 import io.harness.ccm.commons.beans.recommendation.models.RecommendationResponse;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.dao.recommendation.K8sRecommendationDAO;
 import io.harness.ccm.commons.dao.recommendation.RecommendationCrudService;
+import io.harness.ccm.currency.Currency;
+import io.harness.ccm.graphql.dto.common.CloudServiceProvider;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pricing.dto.cloudinfo.ProductDetails;
 
 import com.google.gson.Gson;
+import io.fabric8.utils.Lists;
 import java.net.ConnectException;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Objects;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -55,6 +62,7 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
   @Autowired private BanzaiRecommenderClient banzaiRecommenderClient;
   @Autowired private VMPricingService vmPricingService;
   @Autowired private ClusterHelper clusterHelper;
+  @Autowired private CurrencyPreferenceHelper currencyPreferenceHelper;
 
   @Override
   public RepeatStatus execute(StepContribution stepContribution, ChunkContext chunkContext) throws Exception {
@@ -113,11 +121,23 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
     K8sServiceProvider serviceProvider = getCurrentNodePoolConfiguration(jobConstants, nodePoolId);
     log.info("serviceProvider: {}", serviceProvider);
 
+    final Double conversionFactor =
+        currencyPreferenceHelper.getDestinationCurrencyConversionFactor(jobConstants.getAccountId(),
+            CloudServiceProvider.valueOf(serviceProvider.getCloudProvider().name()), Currency.USD);
+    log.info("Conversion factor from {} to destination currency is {} for account {}", Currency.USD, conversionFactor,
+        jobConstants.getAccountId());
+
+    updateK8sServiceProvider(serviceProvider, conversionFactor);
+    log.info("Updated serviceProvider: {}", serviceProvider);
+
     RecommendClusterRequest request = RecommendationUtils.constructNodeRecommendationRequest(totalResourceUsage);
     log.info("RecommendClusterRequest: {}", request);
 
     RecommendationResponse recommendation = getRecommendation(serviceProvider, request);
     log.info("RecommendationResponse: {}", recommendation);
+
+    updateRecommendationResponse(recommendation, conversionFactor);
+    log.info("Updated RecommendationResponse: {}", recommendation);
 
     String mongoEntityId = k8sRecommendationDAO.insertNodeRecommendationResponse(
         jobConstants, nodePoolId, request, serviceProvider, recommendation, totalResourceUsage);
@@ -127,6 +147,50 @@ public class K8sNodeRecommendationTasklet implements Tasklet {
 
     final String clusterName = clusterHelper.fetchClusterName(nodePoolId.getClusterid());
     recommendationCrudService.upsertNodeRecommendation(mongoEntityId, jobConstants, nodePoolId, clusterName, stats);
+  }
+
+  private void updateK8sServiceProvider(@NonNull K8sServiceProvider serviceProvider, @NonNull Double conversionFactor) {
+    serviceProvider.setCostPerVmPerHr(serviceProvider.getCostPerVmPerHr() * conversionFactor);
+    serviceProvider.setSpotCostPerVmPerHr(serviceProvider.getSpotCostPerVmPerHr() * conversionFactor);
+  }
+
+  private void updateRecommendationResponse(
+      @NonNull RecommendationResponse recommendation, @NonNull Double conversionFactor) {
+    updateAccuracyPrices(recommendation.getAccuracy(), conversionFactor);
+    updateVMPrices(recommendation.getNodePools(), conversionFactor);
+  }
+
+  private void updateAccuracyPrices(
+      ClusterRecommendationAccuracy clusterRecommendationAccuracy, @NonNull Double conversionFactor) {
+    if (Objects.nonNull(clusterRecommendationAccuracy)) {
+      if (Objects.nonNull(clusterRecommendationAccuracy.getSpotPrice())) {
+        clusterRecommendationAccuracy.setSpotPrice(clusterRecommendationAccuracy.getSpotPrice() * conversionFactor);
+      }
+      if (Objects.nonNull(clusterRecommendationAccuracy.getWorkerPrice())) {
+        clusterRecommendationAccuracy.setWorkerPrice(clusterRecommendationAccuracy.getWorkerPrice() * conversionFactor);
+      }
+      if (Objects.nonNull(clusterRecommendationAccuracy.getRegularPrice())) {
+        clusterRecommendationAccuracy.setRegularPrice(
+            clusterRecommendationAccuracy.getRegularPrice() * conversionFactor);
+      }
+      if (Objects.nonNull(clusterRecommendationAccuracy.getMasterPrice())) {
+        clusterRecommendationAccuracy.setMasterPrice(clusterRecommendationAccuracy.getMasterPrice() * conversionFactor);
+      }
+      if (Objects.nonNull(clusterRecommendationAccuracy.getTotalPrice())) {
+        clusterRecommendationAccuracy.setTotalPrice(clusterRecommendationAccuracy.getTotalPrice() * conversionFactor);
+      }
+    }
+  }
+
+  private void updateVMPrices(List<NodePool> nodePools, @NonNull Double conversionFactor) {
+    if (!Lists.isNullOrEmpty(nodePools)) {
+      for (NodePool nodePool : nodePools) {
+        if (Objects.nonNull(nodePool.getVm())) {
+          nodePool.getVm().setAvgPrice(nodePool.getVm().getAvgPrice() * conversionFactor);
+          nodePool.getVm().setOnDemandPrice(nodePool.getVm().getOnDemandPrice() * conversionFactor);
+        }
+      }
+    }
   }
 
   private K8sServiceProvider getCurrentNodePoolConfiguration(

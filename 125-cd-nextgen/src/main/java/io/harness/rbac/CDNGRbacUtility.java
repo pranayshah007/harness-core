@@ -10,13 +10,18 @@ package io.harness.rbac;
 import static io.harness.accesscontrol.acl.api.ResourceScope.ResourceScopeBuilder;
 
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
+import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.service.dto.ServiceResponse;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 
 import lombok.experimental.UtilityClass;
 
@@ -70,5 +75,19 @@ public class CDNGRbacUtility {
                            .build())
         .resourceType(NGResourceType.ENVIRONMENT)
         .build();
+  }
+
+  public Principal constructPrincipalFromAmbiance(Ambiance ambiance) {
+    if (ambiance.getMetadata() == null || ambiance.getMetadata().getPrincipalInfo() == null) {
+      return null;
+    }
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+    if (EmptyPredicate.isEmpty(principal)) {
+      return null;
+    }
+    PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+        executionPrincipalInfo.getPrincipalType());
+    return Principal.of(principalType, principal);
   }
 }

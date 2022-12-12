@@ -10,6 +10,9 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.audit.streaming.dtos.AuditBatchDTO;
+import io.harness.audit.streaming.dtos.AuditRecordDTO;
+import io.harness.audit.streaming.dtos.PutObjectResultResponse;
 import io.harness.capability.AwsRegionParameters;
 import io.harness.capability.CapabilityParameters;
 import io.harness.capability.CapabilitySubjectPermission.PermissionResult;
@@ -182,6 +185,8 @@ import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTask
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsPutAuditBatchToBucketTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -354,6 +359,7 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3StoreDelegateConfig;
 import io.harness.delegate.beans.terragrunt.request.AbstractTerragruntTaskParameters;
+import io.harness.delegate.beans.terragrunt.request.TerragruntCommandType;
 import io.harness.delegate.beans.terragrunt.request.TerragruntPlanTaskParameters;
 import io.harness.delegate.beans.terragrunt.request.TerragruntRunConfiguration;
 import io.harness.delegate.beans.terragrunt.request.TerragruntTaskRunType;
@@ -984,6 +990,7 @@ import software.wings.yaml.gitSync.YamlGitConfig;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.esotericsoftware.kryo.Kryo;
 import com.google.protobuf.UnknownFieldSet;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.SneakyThrows;
 import org.eclipse.jgit.api.GitCommand;
 import org.json.JSONArray;
@@ -1386,21 +1393,21 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CfInfraMappingDataResponseNG.class, 10000215);
     kryo.register(CfInfraMappingDataResult.class, 10000216);
     kryo.register(CfCommandResponseNG.class, 10000217);
-    kryo.register(CfBasicSetupRequestNG.class, 10000218);
-    kryo.register(CfBasicSetupResponseNG.class, 10000219);
-    kryo.register(CfBlueGreenSetupRequestNG.class, 10000220);
-    kryo.register(CfBlueGreenSetupResponseNG.class, 10000221);
-    kryo.register(CfDeployCommandRequestNG.class, 10000222);
-    kryo.register(CfDeployCommandResponseNG.class, 10000223);
-    kryo.register(CfRollbackCommandRequestNG.class, 10000224);
-    kryo.register(CfRollbackCommandResponseNG.class, 10000225);
-    kryo.register(CfRunPluginCommandRequestNG.class, 10000226);
-    kryo.register(TasRunPluginResponse.class, 10000227);
-    kryo.register(CfDeployCommandResult.class, 10000228);
-    kryo.register(TasContainerArtifactConfig.class, 10000229);
-    kryo.register(TasApplicationInfo.class, 10000230);
-    kryo.register(CfSwapRoutesRequestNG.class, 10000231);
-    kryo.register(CfSwapRouteCommandResponseNG.class, 10000232);
+    kryo.register(CfBasicSetupRequestNG.class, 10000230);
+    kryo.register(CfBasicSetupResponseNG.class, 10000231);
+    kryo.register(CfBlueGreenSetupRequestNG.class, 10000232);
+    kryo.register(CfBlueGreenSetupResponseNG.class, 10000233);
+    kryo.register(CfDeployCommandRequestNG.class, 10000234);
+    kryo.register(CfDeployCommandResponseNG.class, 10000235);
+    kryo.register(CfRollbackCommandRequestNG.class, 10000236);
+    kryo.register(CfRollbackCommandResponseNG.class, 10000237);
+    kryo.register(CfRunPluginCommandRequestNG.class, 10000238);
+    kryo.register(TasRunPluginResponse.class, 10000239);
+    kryo.register(CfDeployCommandResult.class, 10000240);
+    kryo.register(TasContainerArtifactConfig.class, 10000241);
+    kryo.register(TasApplicationInfo.class, 10000242);
+    kryo.register(CfSwapRoutesRequestNG.class, 10000243);
+    kryo.register(CfSwapRouteCommandResponseNG.class, 10000244);
 
     kryo.register(SecretType.class, 543214);
     kryo.register(ValueType.class, 543215);
@@ -1549,6 +1556,13 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
 
     kryo.register(K8sClusterInfo.class, 543361);
     kryo.register(K8sServiceAccountInfoResponse.class, 543362);
+    kryo.register(AwsPutAuditBatchToBucketTaskResponse.class, 543363);
+    kryo.register(AwsPutAuditBatchToBucketTaskParamsRequest.class, 543364);
+    kryo.register(AuditBatchDTO.class, 543365);
+    kryo.register(AuditRecordDTO.class, 543366);
+    kryo.register(AuditBatchDTO.BatchStatus.class, 543367);
+    kryo.register(AuditBatchDTO.BatchState.class, 543368);
+    kryo.register(PutObjectResultResponse.class, 543369);
 
     kryo.register(CfDeployCommandResponse.class, 543401);
     kryo.register(CfInfraMappingDataResponse.class, 543402);
@@ -2045,5 +2059,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsS3FetchFileConfig.class, 573565);
     kryo.register(EcsS3FetchRunTaskRequest.class, 573566);
     kryo.register(EcsS3FetchRunTaskResponse.class, 573567);
+    kryo.register(TerragruntCommandType.class, 573568);
+    kryo.register(ConcurrentHashMap.class, 673567);
   }
 }

@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasBGAppSetupStepNode")
 @RecasterAlias("io.harness.cdng.tas.TasBGAppSetupStepNode")
 public class TasBGAppSetupStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasBGAppSetupStepNode.StepType type = StepType.TasBGAppSetup;
+  @JsonProperty("type") @NotNull TasBGAppSetupStepNode.StepType type = StepType.BGAppSetup;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class TasBGAppSetupStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TasBGAppSetup(StepSpecTypeConstants.TAS_BG_APP_SETUP);
+    BGAppSetup(StepSpecTypeConstants.TAS_BG_APP_SETUP);
     @Getter String name;
     StepType(String name) {
       this.name = name;

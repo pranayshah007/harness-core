@@ -370,7 +370,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
 
     user = userService.get(USER_ID);
 
@@ -398,7 +398,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(any())).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);
@@ -457,7 +457,7 @@ public class UserServiceTest extends WingsBaseTest {
     when(wingsPersistence.get(User.class, USER_ID)).thenReturn(user);
     when(harnessUserGroupService.isHarnessSupportUser(USER_ID)).thenReturn(true);
     List<Account> accountList = Arrays.asList(account2);
-    when(harnessUserGroupService.listAllowedSupportAccounts(any())).thenReturn(accountList);
+    when(harnessUserGroupService.listAllowedSupportAccounts(any(), any())).thenReturn(accountList);
     when(accountService.getAccountsWithDisabledHarnessUserGroupAccess())
         .thenReturn(Sets.newHashSet(accountId3, accountId1));
     when(accountService.get(accountId3)).thenReturn(account3);

@@ -10,7 +10,7 @@ spec:
       - step:
           name: "Canary Setup Step"
           identifier: canarySetupStep
-          type: TasCanaryAppSetup
+          type: CanaryAppSetup
           timeout: 10m
           spec:
             instanceCount: FromManifest
@@ -26,18 +26,20 @@ spec:
       - step:
           name: "Deploy Step"
           identifier: deployStep
-          type: TasAppResize
+          type: AppResize
           timeout: 10m
             newAppInstances:
-              type: Count
-              value: 2
-            oldAppInstances:
               type: Percentage
-              value: 10
+              spec:
+                value: 100
+            oldAppInstances:
+              type: Count
+              spec:
+                value: 0
     rollbackSteps:
       - step:
           name: "App Rollback"
           identifier: appRollback
-          type: TasRollback
+          type: AppRollback
           timeout: 10m
           spec: {}

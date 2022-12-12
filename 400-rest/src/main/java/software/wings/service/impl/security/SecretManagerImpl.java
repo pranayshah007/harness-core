@@ -344,7 +344,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
 
   private SecretManagerConfig updateRuntimeParametersAndGetConfig(
       String workflowExecutionId, SecretManagerConfig encryptionConfig) {
-    Optional<SecretManagerRuntimeParameters> secretManagerRuntimeParametersOptional =
+    Optional<software.wings.beans.dto.SecretManagerRuntimeParameters> secretManagerRuntimeParametersOptional =
         getSecretManagerRuntimeCredentialsForExecution(workflowExecutionId, encryptionConfig.getUuid());
     if (!secretManagerRuntimeParametersOptional.isPresent()) {
       String errorMessage = String.format(
@@ -743,8 +743,8 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
-  public Optional<SecretManagerRuntimeParameters> getSecretManagerRuntimeCredentialsForExecution(
-      String executionId, String secretManagerId) {
+  public Optional<software.wings.beans.dto.SecretManagerRuntimeParameters>
+  getSecretManagerRuntimeCredentialsForExecution(String executionId, String secretManagerId) {
     SecretManagerRuntimeParameters secretManagerRuntimeParameters =
         wingsPersistence.createQuery(SecretManagerRuntimeParameters.class)
             .field(SecretManagerRuntimeParametersKeys.executionId)
@@ -757,7 +757,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
           wingsPersistence.get(EncryptedData.class, secretManagerRuntimeParameters.getRuntimeParameters());
       secretManagerRuntimeParameters.setRuntimeParameters(
           String.valueOf(secretService.fetchSecretValue(encryptedData)));
-      return Optional.of(secretManagerRuntimeParameters);
+      return Optional.of(secretManagerRuntimeParameters.toDto());
     }
     return Optional.empty();
   }
@@ -768,7 +768,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
   }
 
   @Override
-  public SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
+  public software.wings.beans.dto.SecretManagerRuntimeParameters configureSecretManagerRuntimeCredentialsForExecution(
       String accountId, String kmsId, String executionId, Map<String, String> runtimeParameters) {
     String runtimeParametersString = JsonUtils.asJson(runtimeParameters);
     EncryptedData encryptedData = encryptLocal(runtimeParametersString.toCharArray());
@@ -783,7 +783,7 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                                                         .runtimeParameters(encryptedDataId)
                                                                         .build();
     wingsPersistence.save(secretManagerRuntimeParameters);
-    return secretManagerRuntimeParameters;
+    return secretManagerRuntimeParameters.toDto();
   }
 
   @Override

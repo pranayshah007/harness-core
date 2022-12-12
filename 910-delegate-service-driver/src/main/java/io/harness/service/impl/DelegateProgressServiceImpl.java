@@ -69,7 +69,10 @@ public class DelegateProgressServiceImpl implements DelegateProgressService {
         log.info("Process won the task progress response {}.", lockedTaskProgressResponse.getUuid());
         ProgressData data;
         if (disableDeserialization) {
-          data = BinaryResponseData.builder().data(lockedTaskProgressResponse.getProgressData()).build();
+          data = BinaryResponseData.builder()
+                     .data(lockedTaskProgressResponse.getProgressData())
+                     .usingKryoWithoutReference(lockedTaskProgressResponse.isUsingKryoWithoutReference())
+                     .build();
         } else {
           data = lockedTaskProgressResponse.isUsingKryoWithoutReference()
               ? (ProgressData) referenceFalseKryoSerializer.asInflatedObject(

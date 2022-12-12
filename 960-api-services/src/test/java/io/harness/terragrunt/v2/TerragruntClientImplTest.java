@@ -31,6 +31,7 @@ import io.harness.rule.Owner;
 import io.harness.terragrunt.v2.request.AbstractTerragruntCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntCliArgs;
 import io.harness.terragrunt.v2.request.TerragruntCliRequest;
+import io.harness.terragrunt.v2.request.TerragruntPlanCliRequest;
 import io.harness.terragrunt.v2.request.TerragruntRunType;
 import io.harness.terragrunt.v2.request.TerragruntShowCliRequest;
 
@@ -133,19 +134,20 @@ public class TerragruntClientImplTest extends CategoryTest {
   public void testPlanRunModule() {
     final TerragruntClient tgClient = createClient();
     final String expectedCommand = TerragruntCommandUtils.plan(
-        "-target=\"module.module-a\"", " -var-file=\"var-files/file1.var\"  -var-file=\"var-files/file2.var\" ");
-    final TerragruntCliRequest request = TerragruntCliRequest.builder()
-                                             .timeoutInMillis(60000L)
-                                             .runType(TerragruntRunType.RUN_MODULE)
-                                             .args(TerragruntCliArgs.builder()
-                                                       .targets(singletonList("module.module-a"))
-                                                       .varFiles(asList("var-files/file1.var", "var-files/file2.var"))
-                                                       .build())
-                                             .build();
+        "-target=\"module.module-a\"", " -var-file=\"var-files/file1.var\"  -var-file=\"var-files/file2.var\" ", false);
+    final TerragruntPlanCliRequest request =
+        TerragruntPlanCliRequest.builder()
+            .timeoutInMillis(60000L)
+            .runType(TerragruntRunType.RUN_MODULE)
+            .args(TerragruntCliArgs.builder()
+                      .targets(singletonList("module.module-a"))
+                      .varFiles(asList("var-files/file1.var", "var-files/file2.var"))
+                      .build())
+            .build();
 
     setupCliResponse(CommandExecutionStatus.SUCCESS, "output", expectedCommand, request);
 
-    CliResponse response = tgClient.plan(request, logOutputStream, logCallback);
+    CliResponse response = tgClient.plan(request, logCallback);
     verifyCommandExecuted(expectedCommand, request);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
@@ -158,13 +160,13 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testPlanRunAll() {
     final TerragruntClient tgClient = createClient();
-    final String expectedCommand = TerragruntCommandUtils.runAllPlan("", "");
-    final TerragruntCliRequest request =
-        TerragruntCliRequest.builder().timeoutInMillis(60000L).runType(TerragruntRunType.RUN_ALL).build();
+    final String expectedCommand = TerragruntCommandUtils.runAllPlan("", "", false);
+    final TerragruntPlanCliRequest request =
+        TerragruntPlanCliRequest.builder().timeoutInMillis(60000L).runType(TerragruntRunType.RUN_ALL).build();
 
     setupCliResponse(CommandExecutionStatus.FAILURE, "plan run-all error", expectedCommand, request);
 
-    CliResponse response = tgClient.plan(request, logOutputStream, logCallback);
+    CliResponse response = tgClient.plan(request, logCallback);
     verifyCommandExecuted(expectedCommand, request);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);

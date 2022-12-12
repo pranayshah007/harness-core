@@ -530,4 +530,9 @@ public class CloudToHarnessMappingServiceImpl implements CloudToHarnessMappingSe
         .in(delegateIds)
         .asList();
   }
+
+  @Override
+  public List<ClusterRecord> listCeEnabledClusters(String accountId) {
+    return clusterRecordDao.listCeEnabledClusters(accountId);
+  }
 }

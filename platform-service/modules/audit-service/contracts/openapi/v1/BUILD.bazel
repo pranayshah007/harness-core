@@ -1,0 +1,20 @@
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "openapi_stub_generator")
+
+openapi_stub_generator(
+    name = "audit-server-spec-gen",
+)
+
+java_library(
+    name = "audit-server-spec-module",
+    srcs = [":audit-server-spec-gen"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+    ],
+)

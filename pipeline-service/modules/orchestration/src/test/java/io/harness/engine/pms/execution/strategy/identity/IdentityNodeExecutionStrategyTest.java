@@ -27,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.OrchestrationStepTypes;
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -47,6 +48,7 @@ import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.ExecutableResponse;
 import io.harness.pms.contracts.execution.ExecutionMode;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
@@ -62,10 +64,13 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -420,9 +425,42 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void testHandleLeafNodes() {
     doNothing().when(executionStrategy).processAdviserResponse(any(), any());
-    executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().build(),
-        NodeExecution.builder().status(Status.ABORTED).build());
+    String nodeUuid = generateUuid();
+    executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().uuid(nodeUuid).build(),
+        NodeExecution.builder()
+            .status(Status.ABORTED)
+            .planNode(IdentityPlanNode.builder().stepType(TEST_STEP_TYPE).build())
+            .build());
     verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
     verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
+    verify(nodeExecutionService, times(1))
+        .updateStatusWithOps(nodeUuid, Status.ABORTED, null, EnumSet.noneOf(Status.class));
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testHandleLeafNodesWithPipelineStageNode() {
+    StepType pipelineStageStepType =
+        StepType.newBuilder().setType(OrchestrationStepTypes.PIPELINE_STAGE).setStepCategory(StepCategory.STEP).build();
+    String nodeUuid = generateUuid();
+    List<ExecutableResponse> executableResponse = Arrays.asList(ExecutableResponse.newBuilder().build());
+    doNothing().when(executionStrategy).processAdviserResponse(any(), any());
+    executionStrategy.handleLeafNodes(Ambiance.newBuilder().build(), NodeExecution.builder().uuid(nodeUuid).build(),
+        NodeExecution.builder()
+            .status(Status.ABORTED)
+            .planNode(IdentityPlanNode.builder().stepType(pipelineStageStepType).build())
+            .executableResponses(executableResponse)
+            .build());
+    verify(executionStrategy, times(1)).processAdviserResponse(any(), any());
+    verify(identityNodeExecutionStrategyHelper, times(1)).copyNodeExecutionsForRetriedNodes(any(), any());
+    ArgumentCaptor<String> captureUuid = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<Status> captorStatus = ArgumentCaptor.forClass(Status.class);
+    ArgumentCaptor<Consumer> updateCapture = ArgumentCaptor.forClass(Consumer.class);
+    verify(nodeExecutionService, times(1))
+        .updateStatusWithOps(captureUuid.capture(), captorStatus.capture(), updateCapture.capture(), any());
+
+    assertThat(captureUuid.getValue()).isEqualTo(nodeUuid);
+    assertThat(updateCapture.getValue()).isNotNull();
   }
 }

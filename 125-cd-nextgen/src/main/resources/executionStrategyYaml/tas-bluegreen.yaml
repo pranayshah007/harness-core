@@ -10,7 +10,7 @@ spec:
       - step:
           name: "BG Setup Step"
           identifier: BGsetupStep
-          type: TasBGAppSetup
+          type: BGAppSetup
           timeout: 10m
           spec:
             instanceCount: FromManifest
@@ -19,19 +19,21 @@ spec:
       - step:
           name: "Deploy Step"
           identifier: deployStep
-          type: TasAppResize
+          type: AppResize
           timeout: 10m
           spec:
             newAppInstances:
-              type: Count
-              value: 2
-            oldAppInstances:
               type: Percentage
-              value: 10
+              spec:
+                value: 100
+            oldAppInstances:
+              type: Count
+              spec:
+                value: 0
       - step:
           name: "Swap Route"
-          identifier: swapRoute
-          type: TasSwapRoute
+          identifier: SwapRoutes
+          type: SwapRoutes
           timeout: 10m
           spec:
             downSizeOldApplication: true
@@ -39,7 +41,7 @@ spec:
       - step:
           name: "Swap Rollback"
           identifier: swapRollback
-          type: TasSwapRollback
+          type: SwapRollback
           timeout: 10m
           spec:
             upsizeInActiveApp: true

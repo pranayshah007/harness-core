@@ -13,6 +13,7 @@ import static io.harness.licensing.Edition.TEAM;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.licensing.Edition;
+import io.harness.licensing.LicenseType;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.remote.client.NGRestUtils;
@@ -53,6 +54,10 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
     List<ModuleLicenseDTO> moduleLicenseDTOS = moduleLicensesCache.get(accountId);
     Edition edition = FREE;
     for (ModuleLicenseDTO moduleLicenseDTO : moduleLicenseDTOS) {
+      // Checking if account is license type is trial, then don't consider its license edition
+      if (moduleLicenseDTO.getLicenseType() == LicenseType.TRIAL) {
+        continue;
+      }
       if (moduleLicenseDTO.getEdition() == ENTERPRISE || moduleLicenseDTO.getEdition() == TEAM) {
         edition = moduleLicenseDTO.getEdition();
       }
@@ -131,7 +136,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
           if (orchestrationRestrictionConfiguration.isUseRestrictionForFree()) {
             if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()) {
               throw new InvalidRequestException(String.format(
-                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to team or reduce concurrency",
+                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to Team (Paid) or reduce concurrency",
                   orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getFree()));
             }
             return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getFree();
@@ -152,7 +157,7 @@ public class PipelineSettingsServiceImpl implements PipelineSettingsService {
           if (orchestrationRestrictionConfiguration.isUseRestrictionForTeam()) {
             if (childCount > orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()) {
               throw new InvalidRequestException(String.format(
-                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to enterprise or reduce concurrency",
+                  "Trying to run more than %s concurrent stages/steps. Please upgrade your plan to Enterprise (Paid) or reduce concurrency",
                   orchestrationRestrictionConfiguration.getTotalParallelismStopRestriction().getTeam()));
             }
             return (int) orchestrationRestrictionConfiguration.getMaxConcurrencyRestriction().getTeam();

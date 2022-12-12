@@ -85,20 +85,18 @@ public class PipelineMetadataV2RepositoryCustomImpl implements PipelineMetadataV
   @Override
   public Optional<PipelineMetadataV2> cloneFromPipelineMetadata(
       String accountId, String orgId, String projectIdentifier, String identifier) {
-    Update update = new Update();
-    Criteria criteria = Criteria.where(PipelineMetadataV2Keys.accountIdentifier)
+    Criteria criteria = Criteria.where(PipelineMetadataKeys.accountIdentifier)
                             .is(accountId)
-                            .and(PipelineMetadataV2Keys.orgIdentifier)
+                            .and(PipelineMetadataKeys.orgIdentifier)
                             .is(orgId)
-                            .and(PipelineMetadataV2Keys.projectIdentifier)
+                            .and(PipelineMetadataKeys.projectIdentifier)
                             .is(projectIdentifier)
-                            .and(PipelineMetadataV2Keys.identifier)
+                            .and(PipelineMetadataKeys.identifier)
                             .is(identifier);
-    update.inc(PipelineMetadataV2Keys.runSequence);
     Query query = new Query(criteria);
     query.fields().include(PipelineMetadataKeys.runSequence);
     PipelineMetadata pipelineMetadata = mongoTemplate.findOne(
-        query.with(Sort.by(Sort.Direction.DESC, PipelineMetadataV2Keys.runSequence)), PipelineMetadata.class);
+        query.with(Sort.by(Sort.Direction.DESC, PipelineMetadataKeys.runSequence)), PipelineMetadata.class);
     if (pipelineMetadata == null) {
       return Optional.of(mongoTemplate.save(PipelineMetadataV2.builder()
                                                 .accountIdentifier(accountId)
