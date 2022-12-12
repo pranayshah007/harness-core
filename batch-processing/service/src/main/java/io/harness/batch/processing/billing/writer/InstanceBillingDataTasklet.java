@@ -41,7 +41,9 @@ import io.harness.batch.processing.service.intfc.CustomBillingMetaDataService;
 import io.harness.batch.processing.service.intfc.InstanceDataService;
 import io.harness.batch.processing.tasklet.util.InstanceMetaDataUtils;
 import io.harness.batch.processing.writer.constants.K8sCCMConstants;
+import io.harness.beans.FeatureName;
 import io.harness.ccm.HarnessServiceInfoNG;
+import io.harness.ccm.cluster.entities.ClusterRecord;
 import io.harness.ccm.commons.beans.HarnessServiceInfo;
 import io.harness.ccm.commons.beans.InstanceState;
 import io.harness.ccm.commons.beans.InstanceType;
@@ -50,6 +52,10 @@ import io.harness.ccm.commons.beans.Resource;
 import io.harness.ccm.commons.constants.CloudProvider;
 import io.harness.ccm.commons.constants.InstanceMetaDataConstants;
 import io.harness.ccm.commons.entities.batch.InstanceData;
+import io.harness.ccm.commons.service.intf.ClusterRecordService;
+import io.harness.ff.FeatureFlagService;
+
+import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -69,6 +75,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -90,6 +97,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
   @Autowired private CustomBillingMetaDataService customBillingMetaDataService;
   @Autowired private InstanceDataDao instanceDataDao;
   @Autowired private BatchMainConfig config;
+  @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
+  @Autowired private ClusterRecordService eventsClusterRecordService;
+  @Autowired private FeatureFlagService featureFlagService;
 
   private static final String CLAIM_REF_SEPARATOR = "/";
   private int batchSize;
@@ -102,22 +112,45 @@ public class InstanceBillingDataTasklet implements Tasklet {
     Instant endTime = Instant.ofEpochMilli(jobConstants.getJobEndTime());
     batchSize = config.getBatchQueryConfig().getInstanceDataBatchSize();
 
+    Set<String> clusterIds = new HashSet<>();
+    boolean isClusterQueryEnabled = isClusterIdFilterQueryEnabled(accountId);
+    if (isClusterQueryEnabled) {
+      clusterIds = getClusterIdsFromClusterRecords(accountId, startTime);
+    }
+
     BatchJobType batchJobType = CCMJobConstants.getBatchJobTypeFromJobParams(
         chunkContext.getStepContext().getStepExecution().getJobParameters());
     // bill PV first
-    List<InstanceBillingData> pvInstanceBillingDataList = billPVInstances(batchJobType, accountId, startTime, endTime);
+    List<InstanceBillingData> pvInstanceBillingDataList =
+        billPVInstances(batchJobType, accountId, startTime, endTime, clusterIds, isClusterQueryEnabled);
+
     Map<String, InstanceBillingData> claimRefToPVInstanceBillingData =
         pvInstanceBillingDataList.stream().collect(Collectors.toMap(e
             -> e.getNamespace() + CLAIM_REF_SEPARATOR + e.getWorkloadName(),
             e -> e, (e1, e2) -> e1.getStartTimestamp() > e2.getStartTimestamp() ? e1 : e2));
 
-    Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
+    Map<String, MutableInt> pvcClaimCount =
+        getPvcClaimCount(accountId, startTime, endTime, clusterIds, isClusterQueryEnabled);
+    if (isClusterQueryEnabled) {
+      for (String clusterId : clusterIds) {
+        billAllInstances(
+            accountId, startTime, endTime, batchJobType, claimRefToPVInstanceBillingData, pvcClaimCount, clusterId);
+      }
+    } else {
+      billAllInstances(
+          accountId, startTime, endTime, batchJobType, claimRefToPVInstanceBillingData, pvcClaimCount, null);
+    }
+    return null;
+  }
+
+  private void billAllInstances(String accountId, Instant startTime, Instant endTime, BatchJobType batchJobType,
+      Map<String, InstanceBillingData> claimRefToPVInstanceBillingData, Map<String, MutableInt> pvcClaimCount,
+      String clusterId) {
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId,
+    InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId, clusterId,
         ImmutableList.of(
             ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
         startTime, endTime, batchSize);
-
     do {
       instanceDataLists = instanceDataReader.getNext();
       try {
@@ -128,14 +161,54 @@ public class InstanceBillingDataTasklet implements Tasklet {
         throw ex;
       }
     } while (instanceDataLists.size() == batchSize);
-    return null;
   }
 
-  private Map<String, MutableInt> getPvcClaimCount(String accountId, Instant startTime, Instant endTime) {
-    List<InstanceData> instanceDataLists;
+  private boolean isClusterIdFilterQueryEnabled(String accountId) {
+    return featureFlagService.isEnabled(FeatureName.CCM_INSTANCE_DATA_CLUSTERID_FILTER, accountId);
+  }
+
+  @NotNull
+  private Set<String> getClusterIdsFromClusterRecords(String accountId, Instant startTime) {
+    List<ClusterRecord> clusterRecords = cloudToHarnessMappingService.listCeEnabledClusters(accountId);
+    List<io.harness.ccm.commons.entities.ClusterRecord> eventsClusterRecords =
+        eventsClusterRecordService.getByAccountId(accountId);
+    Set<String> clusterIds = new HashSet<>();
+
+    for (ClusterRecord clusterRecord : clusterRecords) {
+      if (billingDataGenerationValidator.shouldGenerateBillingData(accountId, clusterRecord.getUuid(), startTime)) {
+        clusterIds.add(clusterRecord.getUuid());
+      }
+    }
+
+    for (io.harness.ccm.commons.entities.ClusterRecord eventsClusterRecord : eventsClusterRecords) {
+      if (billingDataGenerationValidator.shouldGenerateBillingData(
+              accountId, eventsClusterRecord.getUuid(), startTime)) {
+        clusterIds.add(eventsClusterRecord.getUuid());
+      }
+    }
+    log.info("Total clusterIds: {} for accountId: {}", clusterIds.size(), accountId);
+    return clusterIds;
+  }
+
+  private Map<String, MutableInt> getPvcClaimCount(
+      String accountId, Instant startTime, Instant endTime, Set<String> clusterIds, boolean isClusterQueryEnabled) {
     Map<String, MutableInt> result = new HashMap<>();
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
+    if (isClusterQueryEnabled) {
+      for (String clusterId : clusterIds) {
+        fetchPvcClaimCount(accountId, startTime, endTime, result, clusterId);
+      }
+    } else {
+      fetchPvcClaimCount(accountId, startTime, endTime, result, null);
+    }
+
+    return result;
+  }
+
+  private void fetchPvcClaimCount(
+      String accountId, Instant startTime, Instant endTime, Map<String, MutableInt> result, String clusterId) {
+    List<InstanceData> instanceDataLists;
+    InstanceDataReader instanceDataReader = new InstanceDataReader(
+        instanceDataDao, accountId, clusterId, ImmutableList.of(K8S_POD), startTime, endTime, batchSize);
     do {
       // TODO change here
       instanceDataLists = instanceDataReader.getNext();
@@ -149,16 +222,26 @@ public class InstanceBillingDataTasklet implements Tasklet {
         }
       }
     } while (instanceDataLists.size() == batchSize);
-
-    return result;
   }
 
-  private List<InstanceBillingData> billPVInstances(
-      BatchJobType batchJobType, String accountId, Instant startTime, Instant endTime) {
+  private List<InstanceBillingData> billPVInstances(BatchJobType batchJobType, String accountId, Instant startTime,
+      Instant endTime, Set<String> clusterIds, boolean isClusterQueryEnabled) {
     List<InstanceBillingData> instanceBillingDataList = new ArrayList<>();
+    if (isClusterQueryEnabled) {
+      for (String clusterId : clusterIds) {
+        getPvInstanceBillingData(batchJobType, accountId, startTime, endTime, instanceBillingDataList, clusterId);
+      }
+    } else {
+      getPvInstanceBillingData(batchJobType, accountId, startTime, endTime, instanceBillingDataList, null);
+    }
+    return instanceBillingDataList;
+  }
+
+  private void getPvInstanceBillingData(BatchJobType batchJobType, String accountId, Instant startTime, Instant endTime,
+      List<InstanceBillingData> instanceBillingDataList, String clusterId) {
     List<InstanceData> instanceDataLists;
-    InstanceDataReader instanceDataReader =
-        new InstanceDataReader(instanceDataDao, accountId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
+    InstanceDataReader instanceDataReader = new InstanceDataReader(
+        instanceDataDao, accountId, clusterId, ImmutableList.of(K8S_PV), startTime, endTime, batchSize);
     do {
       instanceDataLists = instanceDataReader.getNext();
       try {
@@ -169,7 +252,6 @@ public class InstanceBillingDataTasklet implements Tasklet {
         throw ex;
       }
     } while (instanceDataLists.size() == batchSize);
-    return instanceBillingDataList;
   }
 
   List<InstanceBillingData> createBillingData(String accountId, Instant startTime, Instant endTime,

@@ -89,9 +89,11 @@ import java.nio.file.StandardCopyOption;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -1096,7 +1098,7 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void downloadFiles(DownloadFilesRequest request) throws IOException {
+  public String downloadFiles(DownloadFilesRequest request) throws IOException {
     cleanup(request);
     validateRequiredArgs(request);
 
@@ -1137,7 +1139,13 @@ public class GitClientV2Impl implements GitClientV2 {
           }
         }
 
+        String commitReference = null;
+        if (request.isTrackCommitReference()) {
+          commitReference = getLatestCommitReference(repoPath);
+        }
+
         resetWorkingDir(request);
+        return commitReference;
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;
@@ -1161,7 +1169,8 @@ public class GitClientV2Impl implements GitClientV2 {
   }
 
   @Override
-  public void cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
+  @Nullable
+  public String cloneRepoAndCopyToDestDir(DownloadFilesRequest request) {
     final File lockFile = gitClientHelper.getLockObject(request.getConnectorId());
     synchronized (lockFile) {
       log.info("Trying to acquire lock on {}", lockFile);
@@ -1169,12 +1178,14 @@ public class GitClientV2Impl implements GitClientV2 {
            FileLock ignored = fileOutputStream.getChannel().lock()) {
         log.info("Successfully acquired lock on {}", lockFile);
         ensureRepoLocallyClonedAndUpdated(request);
-        String repoPath = gitClientHelper.getFileDownloadRepoDirectory(request);
+        String repoPath = gitClientHelper.getRepoDirectory(request);
         File src = new File(repoPath);
         File dest = new File(request.getDestinationDirectory());
         deleteDirectoryAndItsContentIfExists(dest.getAbsolutePath());
         FileUtils.copyDirectory(src, dest);
         FileIo.waitForDirectoryToBeAccessibleOutOfProcess(dest.getPath(), 10);
+
+        return getLatestCommitReference(repoPath);
       } catch (WingsException e) {
         tryResetWorkingDir(request);
         throw e;
@@ -1414,5 +1425,20 @@ public class GitClientV2Impl implements GitClientV2 {
       SystemReader.setInstance(null);
     }
     return Git.open(repoDir);
+  }
+
+  private String getLatestCommitReference(String repoDir) {
+    try (Git git = Git.open(new File(repoDir))) {
+      Iterator<RevCommit> commits = git.log().call().iterator();
+      if (commits.hasNext()) {
+        RevCommit firstCommit = commits.next();
+
+        return firstCommit.toString().split(" ")[1];
+      }
+    } catch (IOException | GitAPIException e) {
+      log.error("Failed to extract the commit id from the cloned repo.", e);
+    }
+
+    return null;
   }
 }

@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.DINESH;
 import static io.harness.rule.OwnerRule.RAMA;
 
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.command.ServiceCommand.Builder.aServiceCommand;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 import static software.wings.utils.ArtifactType.JAR;
 import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;

@@ -90,9 +90,9 @@ import io.harness.delegate.beans.K8sPermissionType;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.TaskDataV2;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.events.DelegateGroupDeleteEvent;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateDeleteEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.task.http.HttpTaskParameters;
@@ -1126,17 +1126,17 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(outboxEvent.getResourceScope().equals(new ProjectScope(ACCOUNT_ID, ORG_ID, PROJECT_ID))).isTrue();
     assertThat(outboxEvent.getResource())
         .isEqualTo(Resource.builder()
-                       .type(ResourceTypeConstants.DELEGATE_GROUPS)
-                       .identifier(delegateGroup)
+                       .type(ResourceTypeConstants.DELEGATE)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
                        .labels(Collections.singletonMap("resourceName", "testDelegateGroupName"))
                        .build());
-    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateGroupUpsertEvent.builder().build().getEventType());
-    DelegateGroupUpsertEvent delegateGroupUpsertEvent =
-        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateGroupUpsertEvent.class);
-    assertThat(delegateGroupUpsertEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
-    assertThat(delegateGroupUpsertEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
-    assertThat(delegateGroupUpsertEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
-    assertThat(delegateGroupUpsertEvent.getDelegateSetupDetails())
+    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateUpsertEvent.builder().build().getEventType());
+    DelegateUpsertEvent delegateUpsertEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateUpsertEvent.class);
+    assertThat(delegateUpsertEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateUpsertEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(delegateUpsertEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(delegateUpsertEvent.getDelegateSetupDetails())
         .isEqualTo(DelegateSetupDetails.builder()
                        .name(TEST_DELEGATE_GROUP_NAME)
                        .orgIdentifier(ORG_ID)
@@ -1158,17 +1158,17 @@ public class DelegateServiceImplTest extends WingsBaseTest {
     assertThat(outboxEvent.getResourceScope().equals(new ProjectScope(ACCOUNT_ID, ORG_ID, PROJECT_ID))).isTrue();
     assertThat(outboxEvent.getResource())
         .isEqualTo(Resource.builder()
-                       .type(ResourceTypeConstants.DELEGATE_GROUPS)
-                       .identifier(delegateGroup)
+                       .type(ResourceTypeConstants.DELEGATE)
+                       .identifier(DELEGATE_GROUP_IDENTIFIER)
                        .labels(Collections.singletonMap("resourceName", "testDelegateGroupName"))
                        .build());
-    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateGroupDeleteEvent.builder().build().getEventType());
-    DelegateGroupDeleteEvent delegateGroupDeleteEvent =
-        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateGroupDeleteEvent.class);
-    assertThat(delegateGroupDeleteEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
-    assertThat(delegateGroupDeleteEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
-    assertThat(delegateGroupDeleteEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
-    assertThat(delegateGroupDeleteEvent.getDelegateSetupDetails())
+    assertThat(outboxEvent.getEventType()).isEqualTo(DelegateDeleteEvent.builder().build().getEventType());
+    DelegateDeleteEvent delegateDeleteEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), DelegateDeleteEvent.class);
+    assertThat(delegateDeleteEvent.getAccountIdentifier()).isEqualTo(ACCOUNT_ID);
+    assertThat(delegateDeleteEvent.getOrgIdentifier()).isEqualTo(ORG_ID);
+    assertThat(delegateDeleteEvent.getProjectIdentifier()).isEqualTo(PROJECT_ID);
+    assertThat(delegateDeleteEvent.getDelegateSetupDetails())
         .isEqualTo(DelegateSetupDetails.builder()
                        .orgIdentifier(ORG_ID)
                        .name("testDelegateGroupName")

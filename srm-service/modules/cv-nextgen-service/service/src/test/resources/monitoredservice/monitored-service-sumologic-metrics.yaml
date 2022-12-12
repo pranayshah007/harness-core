@@ -1,0 +1,27 @@
+---
+orgIdentifier: cvng_org_gc5qeLWq1W
+projectIdentifier: cvng_proj_fve79nRfOe
+identifier: MSIdentifier
+name: promeTest
+type: Application
+description: ''
+serviceRef: cvng_service_UxrHvd7oNa
+environmentRef: cvng_env_prod_NWceMzD9XM
+tags: {}
+sources:
+  healthSources:
+    - name: test
+      identifier: test
+      type: SumologicMetrics
+      spec:
+        connectorRef: sumologic
+        feature: SumologicMetrics
+        metricDefinitions:
+          - query: metric=Mem_UsedPercent | quantize to 1m using avg
+            identifier: sumologic_response_time
+            groupName: sumologicMetricGroup
+            metricName: sumologic response time
+            sli:
+              enabled: true
+  changeSources: []
+dependencies: []

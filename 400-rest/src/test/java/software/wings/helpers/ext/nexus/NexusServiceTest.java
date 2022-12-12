@@ -51,13 +51,13 @@ import io.harness.nexus.NexusThreeClientImpl;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.delegatetasks.DelegateFileManager;
 import software.wings.delegatetasks.collect.artifacts.ArtifactCollectionTaskHelper;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.persistence.artifact.ArtifactFile;
 import software.wings.utils.RepositoryFormat;
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
@@ -1234,8 +1234,9 @@ public class NexusServiceTest extends WingsBaseTest {
     when(delegateFileManager.upload(any(), any())).thenReturn(delegateFile);
     nexusService.downloadArtifacts(
         nexusConfig, artifactStreamAttributes, artifactMetadata, null, null, null, listNotifyResponseData);
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo("FILE_ID");
-    assertThat(((ArtifactFile) listNotifyResponseData.getData().get(0)).getName()).isEqualTo("rest-client-3.0.jar");
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getFileUuid()).isEqualTo("FILE_ID");
+    assertThat(ArtifactFile.fromDTO(listNotifyResponseData.getData().get(0)).getName())
+        .isEqualTo("rest-client-3.0.jar");
   }
 
   @Test

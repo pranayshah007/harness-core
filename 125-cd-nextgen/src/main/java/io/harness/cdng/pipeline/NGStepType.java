@@ -128,18 +128,18 @@ public enum NGStepType {
   // ecs steps
   @JsonProperty(StepSpecTypeConstants.ECS_ROLLING_DEPLOY)
   ECS_ROLLING_DEPLOY(
-      "Ecs Rolling Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_ROLLING_DEPLOY),
+      "ECS Rolling Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_ROLLING_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.ECS_ROLLING_ROLLBACK)
-  ECS_ROLLING_ROLLBACK("Ecs Rolling Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+  ECS_ROLLING_ROLLBACK("ECS Rolling Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_ROLLING_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DEPLOY)
   ECS_CANARY_DEPLOY(
-      "Ecs Canary Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DEPLOY),
+      "ECS Canary Deploy", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DEPLOY),
   @JsonProperty(StepSpecTypeConstants.ECS_CANARY_DELETE)
   ECS_CANARY_DELETE(
-      "Ecs Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
+      "ECS Canary Delete", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_CANARY_DELETE),
   @JsonProperty(StepSpecTypeConstants.ECS_RUN_TASK)
-  ECS_RUN_TASK("Ecs Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
+  ECS_RUN_TASK("ECS Run Task", Arrays.asList(ServiceDefinitionType.ECS), "ECS", StepSpecTypeConstants.ECS_RUN_TASK),
   // ssh steps
   @JsonProperty(StepSpecTypeConstants.COMMAND)
   COMMAND("Command", Arrays.asList(ServiceDefinitionType.SSH, ServiceDefinitionType.WINRM), "Command",
@@ -160,13 +160,13 @@ public enum NGStepType {
       "Infrastructure Provisioners/Azure ARM", StepSpecTypeConstants.AZURE_ROLLBACK_ARM_RESOURCE),
 
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE)
-  ECS_BLUE_GREEN_CREATE_SERVICE("Ecs Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+  ECS_BLUE_GREEN_CREATE_SERVICE("ECS Blue Green Create Service", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_CREATE_SERVICE),
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS)
-  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS("Ecs Blue Green Swap Target Group", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+  ECS_BLUE_GREEN_SWAP_TARGET_GROUPS("ECS Blue Green Swap Target Group", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_SWAP_TARGET_GROUPS),
   @JsonProperty(StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK)
-  ECS_BLUE_GREEN_ROLLBACK("Ecs Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
+  ECS_BLUE_GREEN_ROLLBACK("ECS Blue Green Rollback", Arrays.asList(ServiceDefinitionType.ECS), "ECS",
       StepSpecTypeConstants.ECS_BLUE_GREEN_ROLLBACK),
   @JsonProperty(StepSpecTypeConstants.GITOPS_UPDATE_RELEASE_REPO)
   GITOPS_UPDATE_RELEASE_REPO("Update Release Repo", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",

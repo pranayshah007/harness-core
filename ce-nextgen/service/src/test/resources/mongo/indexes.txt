@@ -52,6 +52,7 @@ instanceData {"name": "accountId_clusterId_instanceType_nodePoolName", "backgrou
 instanceData {"name": "accountId_instancetype_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "instanceType": 1, "usageStartTime": 1, "usageStopTime": 1}
 instanceData {"name": "accountId_usageStartTime_usageStopTime", "background": true} {"accountId": 1, "usageStartTime": 1, "usageStopTime": 1}
 instanceData {"name": "instanceId_1", "background": true} {"instanceId": 1}
+instanceData {"name": "accountId_clusterId_activeInstanceIterator_instanceType_usageStartTime", "background": true} {"accountId": 1, "clusterId": 1, "activeInstanceIterator":1, "instanceType": 1, "usageStartTime": 1}
 instanceData {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sNodeRecommendation {"name": "unique_accountId_clusterid_nodepoolname", "unique": true} {"accountId": 1, "nodePoolId.clusterid": 1, "nodePoolId.nodepoolname": 1}
 k8sNodeRecommendation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}

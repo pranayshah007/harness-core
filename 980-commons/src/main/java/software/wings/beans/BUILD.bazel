@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/data/validator:module",
+        "//980-commons/src/main/java/io/harness/expression/common:module",
+        "//980-commons/src/main/java/io/harness/yaml:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:javax_validation_validation_api",
+        "@maven//:org_hibernate_validator_hibernate_validator",
+    ],
+)
+
+run_analysis_per_module()

@@ -416,7 +416,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetails() {
+  public void testGetTriggerDetails() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
@@ -424,8 +425,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
-
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
     when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
         .thenReturn(ngTriggerDetailsResponseDTO);
 
@@ -444,7 +445,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdated() {
+  public void testGetTriggerDetailsPipelineOutdated() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
         NGTriggerDetailsResponseDTO.builder()
             .name(NAME)
@@ -459,7 +461,7 @@ public class NGTriggerResourceImplTest extends CategoryTest {
                                              .build())
             .webhookDetails(WebhookDetails.builder().webhookSourceRepo("Github").build())
             .enabled(true)
-            .isPipelineInputOutdated(false)
+            .isPipelineInputOutdated(true)
             .build();
 
     doReturn(Optional.of(ngTriggerEntity))
@@ -469,10 +471,11 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     doReturn(Optional.of(ngTriggerEntity))
         .when(ngTriggerService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
-    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
+    when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, true))
         .thenReturn(ngTriggerDetailsResponse);
 
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
 
     doReturn(triggerDetails)
         .when(ngTriggerService)
@@ -491,13 +494,14 @@ public class NGTriggerResourceImplTest extends CategoryTest {
             .getTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, IDENTIFIER, PIPELINE_IDENTIFIER)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerDetailsResponse);
-    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(false);
+    assertThat(responseDTO.isPipelineInputOutdated()).isEqualTo(true);
   }
 
   @Test
   @Owner(developers = SRIDHAR)
   @Category(UnitTests.class)
-  public void testGetTriggerDetailsPipelineOutdatedFalse() {
+  public void testGetTriggerDetailsPipelineOutdatedFalse() throws IOException {
+    NGTriggerConfigV2 ngTriggerConfigV2 = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     NGTriggerDetailsResponseDTO ngTriggerDetailsResponse =
         NGTriggerDetailsResponseDTO.builder()
             .name(NAME)
@@ -525,7 +529,8 @@ public class NGTriggerResourceImplTest extends CategoryTest {
     when(ngTriggerElementMapper.toNGTriggerDetailsResponseDTO(ngTriggerEntity, true, true, false))
         .thenReturn(ngTriggerDetailsResponse);
 
-    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+    TriggerDetails triggerDetails =
+        TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).ngTriggerConfigV2(ngTriggerConfigV2).build();
 
     doReturn(triggerDetails)
         .when(ngTriggerService)

@@ -30,10 +30,10 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class FreezeTimeUtils {
-  DateTimeFormatter dtf = new DateTimeFormatterBuilder()
-                              .parseCaseInsensitive()
-                              .appendPattern("yyyy-MM-dd hh:mm a")
-                              .toFormatter(Locale.ENGLISH);
+  public DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+                                     .parseCaseInsensitive()
+                                     .appendPattern("yyyy-MM-dd hh:mm a")
+                                     .toFormatter(Locale.ENGLISH);
   LocalDateTime now = LocalDateTime.now();
 
   private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;

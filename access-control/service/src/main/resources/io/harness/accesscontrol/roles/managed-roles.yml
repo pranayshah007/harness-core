@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 37
+version: 38
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -555,6 +555,8 @@ roles:
         - ccm_folder_view
         - ccm_folder_edit
         - ccm_folder_delete
+        - ccm_currencyPreference_view
+        - ccm_currencyPreference_edit
         - core_deploymentfreeze_manage
         - core_deploymentfreeze_override
         - core_deploymentfreeze_global
@@ -620,6 +622,7 @@ roles:
         - ccm_autoStoppingRule_view
         - ccm_loadBalancer_view
         - ccm_folder_view
+        - ccm_currencyPreference_view
       allowedScopeLevels:
         - account
       managed: true
@@ -772,6 +775,8 @@ roles:
         - ccm_loadBalancer_edit
         - ccm_loadBalancer_delete
         - ccm_overview_view
+        - ccm_currencyPreference_view
+        - ccm_currencyPreference_edit
       managed: true
       allowedScopeLevels:
         - account
@@ -786,6 +791,7 @@ roles:
         - ccm_folder_view
         - ccm_loadBalancer_view
         - ccm_overview_view
+        - ccm_currencyPreference_view
       managed: true
       allowedScopeLevels:
         - account

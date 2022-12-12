@@ -167,7 +167,9 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       if (isNotEmpty(encryptedDataDetailsToCache)) {
         EncryptedDataDetails objectToCache =
             EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetailsToCache).build();
-        secretsCache.put(String.valueOf(keyHash), objectToCache);
+        if (secretsCache != null) {
+          secretsCache.put(String.valueOf(keyHash), objectToCache);
+        }
         delegateMetricsService.recordDelegateMetricsPerAccount(accountId, SECRETS_CACHE_INSERTS);
       }
     }

@@ -16,12 +16,12 @@ import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RUSHABH;
 import static io.harness.rule.OwnerRule.UTKARSH;
 
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
 import static software.wings.beans.Environment.Builder.anEnvironment;
 import static software.wings.beans.LocalEncryptionConfig.HARNESS_DEFAULT_SECRET_MANAGER;
 import static software.wings.beans.ServiceTemplate.Builder.aServiceTemplate;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 import static software.wings.settings.SettingVariableTypes.CONFIG_FILE;
 import static software.wings.settings.SettingVariableTypes.SECRET_TEXT;
 import static software.wings.utils.ArtifactType.JAR;

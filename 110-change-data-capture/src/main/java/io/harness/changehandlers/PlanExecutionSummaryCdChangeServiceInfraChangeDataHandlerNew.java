@@ -282,7 +282,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return nodeMap;
   }
 
-  public boolean dbOperation(String query) {
+  private boolean dbOperation(String query) {
     boolean successfulOperation = false;
     log.trace("In dbOperation, Query: {}", query);
     if (timeScaleDBService.isValid()) {
@@ -303,7 +303,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return successfulOperation;
   }
 
-  public static String insertSQL(String tableName, Map<String, String> columnValueMappingForInsert) {
+  private static String insertSQL(String tableName, Map<String, String> columnValueMappingForInsert) {
     StringBuilder insertSQLBuilder = new StringBuilder();
 
     // Removing column that holds NULL value or Blank value...
@@ -344,7 +344,7 @@ public class PlanExecutionSummaryCdChangeServiceInfraChangeDataHandlerNew implem
     return insertSQLBuilder.toString();
   }
 
-  public static String updateSQL(String tableName, Map<String, String> columnValueMappingForSet,
+  private static String updateSQL(String tableName, Map<String, String> columnValueMappingForSet,
       Map<String, String> columnValueMappingForCondition) {
     StringBuilder updateQueryBuilder = new StringBuilder(2048);
 
