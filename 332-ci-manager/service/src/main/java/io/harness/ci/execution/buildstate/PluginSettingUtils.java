@@ -10,6 +10,7 @@ package io.harness.ci.buildstate;
 import static io.harness.beans.serializer.RunTimeInputHandler.UNRESOLVED_PARAMETER;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveArchiveFormat;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveBooleanParameter;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveJsonNodeMapParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveListParameter;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
@@ -68,6 +69,31 @@ import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToGCSStepInfo;
 import io.harness.beans.steps.stepinfo.UploadToS3StepInfo;
+import io.harness.beans.steps.stepinfo.security.BlackDuckStepInfo;
+import io.harness.beans.steps.stepinfo.security.BurpStepInfo;
+import io.harness.beans.steps.stepinfo.security.CheckmarxStepInfo;
+import io.harness.beans.steps.stepinfo.security.FortifyOnDemandStepInfo;
+import io.harness.beans.steps.stepinfo.security.PrismaCloudStepInfo;
+import io.harness.beans.steps.stepinfo.security.SnykStepInfo;
+import io.harness.beans.steps.stepinfo.security.SonarqubeStepInfo;
+import io.harness.beans.steps.stepinfo.security.VeracodeStepInfo;
+import io.harness.beans.steps.stepinfo.security.ZapStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOGenericStepInfo;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAdvancedSettings;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlArgs;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlAuth;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlBlackduckToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlCheckmarxToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlFODToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlImage;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlIngestion;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlInstance;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlJavaParameters;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlLog;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlSonarqubeToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlTarget;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlVeracodeToolData;
+import io.harness.beans.steps.stepinfo.security.shared.STOYamlZapToolData;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ArchiveFormat;
 import io.harness.ci.integrationstage.BuildEnvironmentUtils;
@@ -86,6 +112,12 @@ import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.PRBuildSpec;
 import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
+import io.harness.yaml.sto.variables.STOYamlAuthType;
+import io.harness.yaml.sto.variables.STOYamlGenericConfig;
+import io.harness.yaml.sto.variables.STOYamlImageType;
+import io.harness.yaml.sto.variables.STOYamlLogLevel;
+import io.harness.yaml.sto.variables.STOYamlScanMode;
+import io.harness.yaml.sto.variables.STOYamlTargetType;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
@@ -525,12 +557,371 @@ public class PluginSettingUtils {
     return map;
   }
 
+  private static String getSTOKey(String value) {
+    return SECURITY_ENV_PREFIX + value.toUpperCase();
+  }
+
+  private static Map<String, String> processSTOAuthFields(STOYamlAuth authData, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (authData != null) {
+      STOYamlAuthType authType = authData.getType();
+
+      map.put(getSTOKey("product_auth_type"),
+          authType != null ? authType.getYamlName() : STOYamlAuthType.REPOSITORY.getYamlName());
+      map.put(getSTOKey("product_domain"),
+          resolveStringParameter("auth.domain", stepType, identifier, authData.getDomain(), false));
+      map.put(getSTOKey("product_api_version"),
+          resolveStringParameter("image.region", stepType, identifier, authData.getVersion(), false));
+      map.put(getSTOKey("product_access_id"),
+          resolveStringParameter("image.access_id", stepType, identifier, authData.getAccessId(), false));
+      map.put(getSTOKey("product_access_token"),
+          resolveStringParameter("image.access_token", stepType, identifier, authData.getAccessToken(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOImageFields(STOYamlImage imageData, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (imageData != null) {
+      STOYamlImageType imageType = imageData.getType();
+
+      map.put(getSTOKey("container_type"),
+          imageType != null ? imageType.getYamlName() : STOYamlImageType.DOCKER_V2.getYamlName());
+      map.put(getSTOKey("container_domain"),
+          resolveStringParameter("image.domain", stepType, identifier, imageData.getDomain(), false));
+      map.put(getSTOKey("container_region"),
+          resolveStringParameter("image.region", stepType, identifier, imageData.getRegion(), false));
+      map.put(getSTOKey("container_access_id"),
+          resolveStringParameter("image.access_id", stepType, identifier, imageData.getAccessId(), false));
+      map.put(getSTOKey("container_access_token"),
+          resolveStringParameter("image.access_token", stepType, identifier, imageData.getAccessToken(), false));
+      map.put(getSTOKey("container_image_name"),
+          resolveStringParameter("image.name", stepType, identifier, imageData.getName(), false));
+      map.put(getSTOKey("container_image_tag"),
+          resolveStringParameter("image.tag", stepType, identifier, imageData.getTag(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOInstanceFields(
+      STOYamlInstance instanceData, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (instanceData != null) {
+      map.put(getSTOKey("instance_domain"),
+          resolveStringParameter("instance.domain", stepType, identifier, instanceData.getDomain(), false));
+      map.put(getSTOKey("instance_path"),
+          resolveStringParameter("instance.path", stepType, identifier, instanceData.getPath(), false));
+      map.put(getSTOKey("instance_protocol"),
+          resolveStringParameter("instance.protocol", stepType, identifier, instanceData.getProtocol(), false));
+      map.put(getSTOKey("instance_port"), String.valueOf(resolveIntegerParameter(instanceData.getPort(), 80)));
+      map.put(getSTOKey("instance_access_id"),
+          resolveStringParameter("instance.access_id", stepType, identifier, instanceData.getAccessId(), false));
+      map.put(getSTOKey("instance_access_token"),
+          resolveStringParameter("instance.access_token", stepType, identifier, instanceData.getAccessToken(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOTargetFields(STOYamlTarget target, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (target != null) {
+      Boolean targetSsl = resolveBooleanParameter(target.getSsl(), Boolean.TRUE);
+
+      map.put(getSTOKey("workspace"),
+          resolveStringParameter("target.workspace", stepType, identifier, target.getWorkspace(), false));
+      map.put(getSTOKey("bypass_ssl_check"), String.valueOf(!targetSsl));
+
+      STOYamlTargetType targetType = target.getType();
+      map.put(getSTOKey("scan_type"),
+          targetType != null ? targetType.getYamlName() : STOYamlTargetType.REPOSITORY.getYamlName());
+
+      String targetName = resolveStringParameter("target.name", stepType, identifier, target.getName(), true);
+      String targetVariant = resolveStringParameter("target.variant", stepType, identifier, target.getVariant(), true);
+
+      switch (target.getType()) {
+        case INSTANCE:
+          map.put(getSTOKey("instance_identifier"), targetName);
+          map.put(getSTOKey("instance_environment"), targetVariant);
+          break;
+        case REPOSITORY:
+          map.put(getSTOKey("repository_project"), targetName);
+          map.put(getSTOKey("repository_branch"), targetVariant);
+          break;
+        case CONTAINER:
+          map.put(getSTOKey("container_project"), targetName);
+          map.put(getSTOKey("container_tag"), targetVariant);
+          break;
+        case CONFIGURATION:
+          map.put(getSTOKey("configuration_type"), targetName);
+          map.put(getSTOKey("configuration_environment"), targetVariant);
+          break;
+        default:
+          break;
+      }
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOAdvancedSettings(
+      STOYamlAdvancedSettings advancedSettings, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (advancedSettings != null) {
+      STOYamlLog logData = advancedSettings.getLog();
+      if (logData != null) {
+        STOYamlLogLevel logLevel = logData.getLevel();
+
+        map.put(getSTOKey("log_level"), logLevel != null ? logLevel.getYamlName() : STOYamlLogLevel.INFO.getYamlName());
+        map.put(getSTOKey("log_serializer"),
+            resolveStringParameter("log.serializer", stepType, identifier, logData.getSerializer(), false));
+      }
+
+      STOYamlArgs argsData = advancedSettings.getArgs();
+      if (argsData != null) {
+        map.put(
+            getSTOKey("tool_args"), resolveStringParameter("args.cli", stepType, identifier, argsData.getCli(), false));
+        map.put(getSTOKey("tool_passthrough"),
+            resolveStringParameter("args.passthrough", stepType, identifier, argsData.getPassthrough(), false));
+      }
+
+      map.put(getSTOKey("fail_on_severity"),
+          String.valueOf(resolveIntegerParameter(advancedSettings.getFailOnSeverity(), 0)));
+      map.put(getSTOKey("include_raw"),
+          String.valueOf(resolveBooleanParameter(advancedSettings.getIncludeRaw(), Boolean.TRUE)));
+
+      Boolean advancedSsl = resolveBooleanParameter(advancedSettings.getSsl(), Boolean.TRUE);
+      map.put(getSTOKey("verify_ssl"), String.valueOf(!advancedSsl));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOIngestionFields(
+      STOYamlIngestion ingestion, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    if (ingestion != null) {
+      map.put(getSTOKey("ingestion_file"),
+          resolveStringParameter("ingestion.file", stepType, identifier, ingestion.getFile(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOBlackDuckFields(
+      BlackDuckStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlBlackduckToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_project_name"),
+          resolveStringParameter("tool.project_name", stepType, identifier, toolData.getProjectName(), false));
+      map.put(getSTOKey("product_project_version"),
+          resolveStringParameter("tool.project_version", stepType, identifier, toolData.getProjectVersion(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOBurpFields(BurpStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOCheckmarxFields(
+      CheckmarxStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlCheckmarxToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_team_name"),
+          resolveStringParameter("tool.team_name", stepType, identifier, toolData.getTeamName(), false));
+      map.put(getSTOKey("product_project_name"),
+          resolveStringParameter("tool.project_name", stepType, identifier, toolData.getProjectName(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOFODFields(
+      FortifyOnDemandStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    STOYamlFODToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_ap_name"),
+          resolveStringParameter("tool.app_name", stepType, identifier, toolData.getAppName(), false));
+      map.put(getSTOKey("product_audit_type"),
+          resolveStringParameter("tool.audit_type", stepType, identifier, toolData.getAuditType(), false));
+      map.put(getSTOKey("product_data_center"),
+          resolveStringParameter("tool.data_center", stepType, identifier, toolData.getDataCenter(), false));
+      map.put(getSTOKey("product_lookup_type"),
+          resolveStringParameter("tool.lookup_type", stepType, identifier, toolData.getLoookupType(), false));
+      map.put(getSTOKey("product_release_name"),
+          resolveStringParameter("tool.release_name", stepType, identifier, toolData.getReleaseName(), false));
+      map.put(getSTOKey("product_entitlement"),
+          resolveStringParameter("tool.entitlement", stepType, identifier, toolData.getEntitlement(), false));
+      map.put(getSTOKey("product_owner_id"),
+          resolveStringParameter("tool.owner_id", stepType, identifier, toolData.getOwnerId(), false));
+      map.put(getSTOKey("product_scan_settings"),
+          resolveStringParameter("tool.scan_settings", stepType, identifier, toolData.getScanSettings(), false));
+      map.put(getSTOKey("product_scan_type"),
+          resolveStringParameter("tool.scan_type", stepType, identifier, toolData.getScanType(), false));
+      map.put(getSTOKey("product_target_language"),
+          resolveStringParameter("tool.target_language", stepType, identifier, toolData.getTargetLanguage(), false));
+      map.put(getSTOKey("product_target_language_version"),
+          resolveStringParameter(
+              "tool.target_language_version", stepType, identifier, toolData.getTargetLanguageVersion(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOPrismaCloudFields(
+      PrismaCloudStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOSonarqubeFields(
+      SonarqubeStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+
+    STOYamlSonarqubeToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_exclude"),
+          resolveStringParameter("tool.exclude", stepType, identifier, toolData.getExclude(), false));
+      map.put(getSTOKey("product_include"),
+          resolveStringParameter("tool.include", stepType, identifier, toolData.getInclude(), false));
+
+      STOYamlJavaParameters javaParameters = toolData.getJava();
+
+      if (javaParameters != null) {
+        map.put(getSTOKey("product_java_binaries"),
+            resolveStringParameter("tool.java.binaries", stepType, identifier, javaParameters.getBinaries(), false));
+        map.put(getSTOKey("product_java_libraries"),
+            resolveStringParameter("tool.java.libraries", stepType, identifier, javaParameters.getLibraries(), false));
+      }
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOSnykFields(SnykStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+    map.putAll(processSTOImageFields(stepInfo.getImage(), stepType, identifier));
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOVeracodeFields(
+      VeracodeStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOAuthFields(stepInfo.getAuth(), stepType, identifier));
+
+    STOYamlVeracodeToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_app_id"),
+          resolveStringParameter("tool.app_id", stepType, identifier, toolData.getAppId(), false));
+      map.put(getSTOKey("product_project_name"),
+          resolveStringParameter("tool.project_name", stepType, identifier, toolData.getProjectName(), false));
+    }
+
+    return map;
+  }
+
+  private static Map<String, String> processSTOZapFields(ZapStepInfo stepInfo, String stepType, String identifier) {
+    Map<String, String> map = new HashMap<>();
+
+    map.putAll(processSTOInstanceFields(stepInfo.getInstance(), stepType, identifier));
+
+    STOYamlZapToolData toolData = stepInfo.getTool();
+
+    if (toolData != null) {
+      map.put(getSTOKey("product_context"),
+          resolveStringParameter("tool.context", stepType, identifier, toolData.getContext(), false));
+      map.put(getSTOKey("zap_custom_port"), String.valueOf(resolveIntegerParameter(toolData.getPort(), 8080)));
+    }
+
+    return map;
+  }
+
   private static Map<String, String> getSecurityStepInfoEnvVariables(SecurityStepInfo stepInfo, String identifier) {
     Map<String, String> map = new HashMap<>();
 
     Map<String, JsonNode> settings =
         resolveJsonNodeMapParameter("settings", "Security", identifier, stepInfo.getSettings(), false);
 
+    if (stepInfo instanceof STOGenericStepInfo) {
+      String stepType = stepInfo.getStepType().getType();
+      STOGenericStepInfo stepData = (STOGenericStepInfo) stepInfo;
+
+      STOYamlGenericConfig config = stepData.getConfig();
+      STOYamlScanMode scanMode = stepData.getMode();
+
+      map.put(getSTOKey("product_config_name"),
+          config != null ? config.getYamlName() : STOYamlGenericConfig.DEFAULT.getYamlName());
+      map.put(getSTOKey("policy_type"),
+          scanMode != null ? scanMode.getYamlName() : STOYamlScanMode.ORCHESTRATION.getYamlName());
+
+      map.putAll(processSTOTargetFields(stepData.getTarget(), stepType, identifier));
+      map.putAll(processSTOAdvancedSettings(stepData.getAdvanced(), stepType, identifier));
+      map.putAll(processSTOIngestionFields(stepData.getIngestion(), stepType, identifier));
+
+      if (stepInfo instanceof BlackDuckStepInfo) {
+        map.putAll(processSTOBlackDuckFields((BlackDuckStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof BurpStepInfo) {
+        map.putAll(processSTOBurpFields((BurpStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof CheckmarxStepInfo) {
+        map.putAll(processSTOCheckmarxFields((CheckmarxStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof FortifyOnDemandStepInfo) {
+        map.putAll(processSTOFODFields((FortifyOnDemandStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof PrismaCloudStepInfo) {
+        map.putAll(processSTOPrismaCloudFields((PrismaCloudStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof SonarqubeStepInfo) {
+        map.putAll(processSTOSonarqubeFields((SonarqubeStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof SnykStepInfo) {
+        map.putAll(processSTOSnykFields((SnykStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof VeracodeStepInfo) {
+        map.putAll(processSTOVeracodeFields((VeracodeStepInfo) stepInfo, stepType, identifier));
+      } else if (stepInfo instanceof ZapStepInfo) {
+        map.putAll(processSTOZapFields((ZapStepInfo) stepInfo, stepType, identifier));
+      }
+    }
     if (!isEmpty(settings)) {
       for (Map.Entry<String, JsonNode> entry : settings.entrySet()) {
         String key = SECURITY_ENV_PREFIX + entry.getKey().toUpperCase();
@@ -718,17 +1109,18 @@ public class PluginSettingUtils {
     Map<String, String> map = new HashMap<>();
 
     final String connectorRef = stepInfo.getConnectorRef().getValue();
-    String repoName = stepInfo.getRepoName().getValue();
-    Pair<String, String> buildEnvVar = getBuildEnvVar(stepInfo);
+    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
 
+    String repoName = stepInfo.getRepoName().getValue();
     // Overwrite all codebase env variables by setting to blank
     map.putAll(getBlankCodebaseEnvVars());
 
     map.putAll(getSslVerifyEnvVars(stepInfo.getSslVerify()));
-    map.putAll(getGitEnvVars(connectorRef, repoName, ambiance));
-    map.putAll(getBuildEnvVars(buildEnvVar));
+    map.putAll(getGitEnvVars(gitConnector, repoName));
+    map.putAll(getBuildEnvVars(ambiance, gitConnector, stepInfo));
     map.putAll(getCloneDirEnvVars(stepInfo.getCloneDirectory(), repoName, map.get(DRONE_REMOTE_URL), identifier));
-    map.putAll(getPluginDepthEnvVars(stepInfo.getDepth(), buildEnvVar));
+    map.putAll(getPluginDepthEnvVars(stepInfo.getDepth()));
 
     return map;
   }
@@ -751,22 +1143,34 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private Map<String, String> getGitEnvVars(String connectorRef, String repoName, Ambiance ambiance) {
-    // Get the Git Connector
-    final NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    final ConnectorDetails gitConnector = codebaseUtils.getGitConnector(ngAccess, connectorRef);
-
+  private Map<String, String> getGitEnvVars(ConnectorDetails gitConnector, String repoName) {
     // Get the Git Connector Reference environment variables
     return codebaseUtils.getGitEnvVariables(gitConnector, repoName);
   }
 
-  private static Map<String, String> getBuildEnvVars(Pair<String, String> buildEnvVar) {
+  private Map<String, String> getBuildEnvVars(
+      Ambiance ambiance, ConnectorDetails gitConnector, GitCloneStepInfo gitCloneStepInfo) {
+    final String identifier = gitCloneStepInfo.getIdentifier();
+    final String type = gitCloneStepInfo.getStepType().getType();
+    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
+    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
     Map<String, String> map = new HashMap<>();
-    if (buildEnvVar != null) {
-      String type = buildEnvVar.getKey();
-      setMandatoryEnvironmentVariable(map, type, buildEnvVar.getValue());
-      if (DRONE_TAG.equals(type)) {
-        setMandatoryEnvironmentVariable(map, DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
+
+    if (buildTypeAndValue != null) {
+      switch (buildTypeAndValue.getKey()) {
+        case BRANCH:
+          setMandatoryEnvironmentVariable(map, DRONE_COMMIT_BRANCH, buildTypeAndValue.getValue());
+          break;
+        case TAG:
+          setMandatoryEnvironmentVariable(map, DRONE_TAG, buildTypeAndValue.getValue());
+          setMandatoryEnvironmentVariable(map, DRONE_BUILD_EVENT, TAG_BUILD_EVENT);
+          break;
+        case PR:
+          map.putAll(codebaseUtils.getRuntimeCodebaseVars(ambiance, gitConnector));
+          break;
+        default:
+          throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
+              buildTypeAndValue.getKey(), type, identifier));
       }
     } else {
       throw new CIStageExecutionException("Build environment variables are null");
@@ -811,60 +1215,17 @@ public class PluginSettingUtils {
     return map;
   }
 
-  private static Map<String, String> getPluginDepthEnvVars(
-      ParameterField<Integer> depthParameter, Pair<String, String> buildEnvVar) {
+  private static Map<String, String> getPluginDepthEnvVars(ParameterField<Integer> depthParameter) {
     Map<String, String> map = new HashMap<>();
-    Integer depth = null;
+    Integer depth = GIT_CLONE_MANUAL_DEPTH;
     if (depthParameter != null && depthParameter.getValue() != null) {
       depth = depthParameter.getValue();
-    } else {
-      if (buildEnvVar != null && isNotEmpty(buildEnvVar.getValue())) {
-        depth = GIT_CLONE_MANUAL_DEPTH;
-      }
     }
     if (depth != null && depth != 0) {
       String pluginDepthKey = PLUGIN_ENV_PREFIX + GIT_CLONE_DEPTH_ATTRIBUTE.toUpperCase();
       map.put(pluginDepthKey, depth.toString());
     }
     return map;
-  }
-
-  /**
-   * Get Build Env variable - branch or tag
-   *
-   * @param gitCloneStepInfo gitCloneStepInfo
-   * @return a pair containing whether the build is configured for a branch or tag, and the value of the branch or tag
-   */
-  private static Pair<String, String> getBuildEnvVar(GitCloneStepInfo gitCloneStepInfo) {
-    final String identifier = gitCloneStepInfo.getIdentifier();
-    final String type = gitCloneStepInfo.getStepType().getType();
-    Pair<String, String> buildEnvVar = null;
-    Build build = RunTimeInputHandler.resolveBuild(gitCloneStepInfo.getBuild());
-
-    final Pair<BuildType, String> buildTypeAndValue = getBuildTypeAndValue(build);
-    if (buildTypeAndValue != null) {
-      final String buildValue = buildTypeAndValue.getValue();
-      switch (buildTypeAndValue.getKey()) {
-        case BRANCH:
-          if (isNotEmpty(buildValue)) {
-            buildEnvVar = new ImmutablePair<>(DRONE_COMMIT_BRANCH, buildValue);
-          } else {
-            throw new CIStageExecutionException("Branch should not be empty for branch build type");
-          }
-          break;
-        case TAG:
-          if (isNotEmpty(buildValue)) {
-            buildEnvVar = new ImmutablePair<>(DRONE_TAG, buildValue);
-          } else {
-            throw new CIStageExecutionException("Tag should not be empty for tag build type");
-          }
-          break;
-        default:
-          throw new CIStageExecutionException(format("%s is not a valid build type in step type %s with identifier %s",
-              buildTypeAndValue.getKey(), type, identifier));
-      }
-    }
-    return buildEnvVar;
   }
 
   private static Pair<BuildType, String> getBuildTypeAndValue(Build build) {

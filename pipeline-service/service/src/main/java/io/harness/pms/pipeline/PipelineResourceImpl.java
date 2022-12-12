@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 
 import static java.lang.Long.parseLong;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -154,7 +155,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity).getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
+            .getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse =
         variableCreatorMergeService.createVariablesResponses(resolveTemplateRefsInPipeline, false);
 
@@ -171,7 +173,8 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     // Apply all the templateRefs(if any) then check for variables.
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity).getMergedPipelineYaml();
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, BOOLEAN_FALSE_VALUE)
+            .getMergedPipelineYaml();
     VariableMergeServiceResponse variablesResponse = variableCreatorMergeService.createVariablesResponsesV2(
         accountId, orgId, projectId, resolveTemplateRefsInPipeline);
     return ResponseDTO.newResponse(variablesResponse);
@@ -181,14 +184,14 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
   public ResponseDTO<PMSPipelineResponseDTO> getPipelineByIdentifier(@NotNull @AccountIdentifier String accountId,
       @NotNull @OrgIdentifier String orgId, @NotNull @ProjectIdentifier String projectId,
       @ResourceIdentifier String pipelineId, GitEntityFindInfoDTO gitEntityBasicInfo,
-      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, boolean loadFromCache) {
+      boolean getTemplatesResolvedPipeline, boolean loadFromFallbackBranch, String loadFromCache) {
     log.info(String.format("Retrieving pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
 
     Optional<PipelineEntity> pipelineEntity;
     try {
-      pipelineEntity = pmsPipelineService.getAndValidatePipeline(
-          accountId, orgId, projectId, pipelineId, false, loadFromFallbackBranch, loadFromCache);
+      pipelineEntity = pmsPipelineService.getAndValidatePipeline(accountId, orgId, projectId, pipelineId, false,
+          loadFromFallbackBranch, PMSPipelineDtoMapper.parseLoadFromCacheHeaderParam(loadFromCache));
     } catch (PolicyEvaluationFailureException pe) {
       return ResponseDTO.newResponse(
           PMSPipelineResponseDTO.builder()
@@ -230,7 +233,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
       try {
         String templateResolvedPipelineYaml = "";
         TemplateMergeResponseDTO templateMergeResponseDTO =
-            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get());
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), loadFromCache);
         templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
         pipeline.setResolvedTemplatesPipelineYaml(templateResolvedPipelineYaml);
       } catch (Exception e) {
@@ -466,7 +469,7 @@ public class PipelineResourceImpl implements YamlSchemaResource, PipelineResourc
     String pipelineYaml = pipelineEntity.get().getYaml();
 
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get());
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.get(), BOOLEAN_FALSE_VALUE);
     String templateResolvedPipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
     TemplatesResolvedPipelineResponseDTO templatesResolvedPipelineResponseDTO =
         TemplatesResolvedPipelineResponseDTO.builder()

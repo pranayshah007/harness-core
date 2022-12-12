@@ -1,0 +1,39 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis_per_module")
+
+java_library(
+    name = "module",
+    srcs = glob(["*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:lombok",
+        "//980-commons/src/main/java/io/harness/data/structure:module",
+        "//980-commons/src/main/java/io/harness/reflection:module",
+        "//980-commons/src/main/java/io/harness/testing:module",
+        "//999-annotations/src/main/java/io/harness/annotations/dev:module",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_guava",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jdk8",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jsr310",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_google_protobuf_protobuf_java",
+        "@maven//:com_jayway_jsonpath_json_path",
+        "@maven//:de_javakaffee_kryo_serializers",
+        "@maven//:net_sf_json_lib_json_lib_jdk15",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_objenesis_objenesis",
+        "@maven//:org_reflections_reflections",
+        "@maven//:stax_stax_api",
+        "@maven//:xml_apis_xml_apis",
+    ],
+)
+
+run_analysis_per_module()

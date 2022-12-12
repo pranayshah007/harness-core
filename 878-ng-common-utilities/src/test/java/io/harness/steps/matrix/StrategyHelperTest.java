@@ -7,6 +7,7 @@
 
 package io.harness.steps.matrix;
 
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.SAHIL;
 
@@ -23,11 +24,13 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.assertj.core.util.Lists;
@@ -481,6 +484,33 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
           .isEqualTo(variableBValues.get(current) + "_" + appendValues.get(current));
       current++;
     }
+
+    // Testing the matrix with objects configuration.
+    jsonNodes = strategyHelper
+                    .expandJsonNodes(approvalStageYamlField.getNode()
+                                         .getField("spec")
+                                         .getNode()
+                                         .getField("execution")
+                                         .getNode()
+                                         .getField("steps")
+                                         .getNode()
+                                         .asArray()
+                                         .get(2)
+                                         .getField("step")
+                                         .getNode()
+                                         .getCurrJsonNode(),
+                        Optional.empty())
+                    .getExpandedJsonNodes();
+
+    current = 0;
+    List<String> images = Arrays.asList("linux", "window");
+    List<String> tags = Arrays.asList("stable", "latest");
+    for (JsonNode jsonNode : jsonNodes) {
+      assertThat(jsonNode.get("spec").get("image").asText()).isEqualTo(images.get(current));
+      assertThat(jsonNode.get("spec").get("tag").asText()).isEqualTo(tags.get(current));
+      assertThat(jsonNode.get("identifier").asText()).isEqualTo("google_again_" + current);
+      current++;
+    }
   }
 
   @Test
@@ -780,5 +810,17 @@ public class StrategyHelperTest extends NGCommonUtilitiesTestBase {
         assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData().containsKey(uuid)).isFalse();
       }
     }
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void nullStepTest() throws IOException {
+    JsonNode step = NullNode.getInstance();
+    ExecutionWrapperConfig executionWrapperConfig = ExecutionWrapperConfig.builder().step(step).build();
+    ExpandedExecutionWrapperInfo expandedExecutionWrapperInfo =
+        strategyHelper.expandExecutionWrapperConfig(executionWrapperConfig, Optional.of(10));
+    assertThat(expandedExecutionWrapperInfo.getUuidToStrategyExpansionData()).isEmpty();
+    assertThat(expandedExecutionWrapperInfo.getExpandedExecutionConfigs().get(0).getUuid()).isNull();
   }
 }

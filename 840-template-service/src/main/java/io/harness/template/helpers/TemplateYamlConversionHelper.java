@@ -56,6 +56,10 @@ public class TemplateYamlConversionHelper {
     YamlField rootFieldYamlField = new YamlField(rootFieldYamlNode);
     addAdditionalFieldsToYaml(templateEntityType, yamlConversionHandler, rootFieldYamlField);
 
+    // Removing stageType from yaml Node only for stepGroup Templates.
+    if (templateEntity.getTemplateEntityType().equals(TemplateEntityType.STEPGROUP_TEMPLATE)) {
+      rootFieldYamlField.getNode().removePath("stepGroup/stageType");
+    }
     return YamlUtils.write(rootFieldYamlField.getNode().getCurrJsonNode()).replace("---\n", "");
   }
 

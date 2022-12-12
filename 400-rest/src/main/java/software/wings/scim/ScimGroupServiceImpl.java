@@ -69,6 +69,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
   @Override
   public ScimListResponse<ScimGroup> searchGroup(String filter, String accountId, Integer count, Integer startIndex) {
     startIndex = startIndex == null ? 0 : startIndex;
+    Integer tempStartIndex = startIndex == 0 ? 0 : startIndex - 1;
     count = count == null ? MAX_RESULT_COUNT : count;
     ScimListResponse<ScimGroup> searchGroupResponse = new ScimListResponse<>();
     log.info("SCIM: Searching groups in account {} with filter: {}", accountId, filter);
@@ -89,7 +90,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
     List<ScimGroup> groupList = new ArrayList<>();
 
     try {
-      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, startIndex);
+      groupList = searchUserGroupByGroupName(accountId, searchQuery, count, tempStartIndex);
       groupList.forEach(searchGroupResponse::resource);
     } catch (WingsException ex) {
       log.info("SCIM: Search in account {} for group , query: {}", accountId, searchQuery, ex);
@@ -199,7 +200,8 @@ public class ScimGroupServiceImpl implements ScimGroupService {
   public Response updateGroup(String groupId, String accountId, PatchRequest patchRequest) {
     String operation = isNotEmpty(patchRequest.getOperations()) ? patchRequest.getOperations().toString() : null;
     String schemas = isNotEmpty(patchRequest.getSchemas()) ? patchRequest.getSchemas().toString() : null;
-    log.info("Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
+    log.info(
+        "SCIM: Updating Group: Patch Request Logging\nOperations {}\n, Schemas {}\n,External Id {}\n, Meta {}, for accountId {}",
         operation, schemas, patchRequest.getExternalId(), patchRequest.getMeta(), accountId);
     UserGroup existingGroup = userGroupService.get(accountId, groupId);
 
@@ -286,8 +288,7 @@ public class ScimGroupServiceImpl implements ScimGroupService {
     }
 
     if (!"members".equals(patchOperation.getPath())) {
-      log.error(
-          "SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
+      log.warn("SCIM: Expect operation only on the members. Received it in path: {}, for accountId: {}, for GroupId {}",
           patchOperation.getPath(), accountId, groupId);
       return Collections.emptySet();
     }

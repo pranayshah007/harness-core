@@ -72,4 +72,16 @@ public class CustomArtifactTaskHandlerTest extends CategoryTest {
     verify(customArtifactService).getLastSuccessfulBuild(customArtifactDelegateRequest);
     verify(customArtifactService, times(1)).getLastSuccessfulBuild(any());
   }
+
+  @Test
+  @Owner(developers = SHIVAM)
+  @Category(UnitTests.class)
+  public void testDecryptRequestDTOs() {
+    CustomArtifactDelegateRequest customArtifactDelegateRequest = CustomArtifactDelegateRequest.builder()
+                                                                      .artifactsArrayPath("results")
+                                                                      .versionPath("version")
+                                                                      .script("script")
+                                                                      .build();
+    customArtifactTaskHandler.decryptRequestDTOs(customArtifactDelegateRequest);
+  }
 }

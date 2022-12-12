@@ -24,4 +24,12 @@ public class GitFileCacheObjectMapper {
         .commitId(gitFileObject.getCommitId())
         .build();
   }
+
+  public GitFileObject toEntity(GitFileCacheObject gitFileCacheObject) {
+    return GitFileObject.builder()
+        .fileContent(gitFileCacheObject.getFileContent())
+        .objectId(gitFileCacheObject.getObjectId())
+        .commitId(gitFileCacheObject.getCommitId())
+        .build();
+  }
 }

@@ -19,6 +19,7 @@ import com.google.inject.name.Named;
 import javax.cache.Cache;
 import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
+import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
@@ -36,6 +37,8 @@ public class DeploymentReconRecordRepository {
     if (deploymentReconRecord != null) {
       return deploymentReconRecord;
     }
+    FindOptions findOptions = new FindOptions();
+    findOptions.modifier("$hint", "accountId_entityClass_durationEndTs_sorted");
     try (HIterator<DeploymentReconRecord> iterator =
              new HIterator<>(persistence.createQuery(DeploymentReconRecord.class)
                                  .field(DeploymentReconRecordKeys.accountId)
@@ -43,7 +46,7 @@ public class DeploymentReconRecordRepository {
                                  .field(DeploymentReconRecordKeys.entityClass)
                                  .equal(entityClass)
                                  .order(Sort.descending(DeploymentReconRecordKeys.durationEndTs))
-                                 .fetch())) {
+                                 .fetch(findOptions))) {
       if (!iterator.hasNext()) {
         return null;
       }

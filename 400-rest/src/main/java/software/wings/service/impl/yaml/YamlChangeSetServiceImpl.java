@@ -257,6 +257,10 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
     if (headChangeSet != null && isFullSync(headChangeSet)) {
       selectedYamlChangeSet = headChangeSet;
     }
+    YamlChangeSet fullSyncChangeset = getAnyFullSyncChangeset(accountId, queueKey);
+    if (fullSyncChangeset != null) {
+      selectedYamlChangeSet = fullSyncChangeset;
+    }
 
     if (selectedYamlChangeSet == null) {
       final YamlChangeSet oldestGitToHarnessChangeSet = getOldestGitToHarnessChangeSet(accountId, queueKey);
@@ -313,6 +317,15 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
                .filter(YamlChangeSetKeys.status, Status.RUNNING)
                .count()
         > 0;
+  }
+
+  private YamlChangeSet getAnyFullSyncChangeset(String accountId, String queueKey) {
+    return wingsPersistence.createQuery(YamlChangeSet.class)
+        .filter(YamlChangeSetKeys.accountId, accountId)
+        .filter(YamlChangeSetKeys.queueKey, queueKey)
+        .filter(YamlChangeSetKeys.status, Status.QUEUED)
+        .filter(YamlChangeSetKeys.fullSync, true)
+        .get();
   }
 
   @Override
@@ -606,5 +619,11 @@ public class YamlChangeSetServiceImpl implements YamlChangeSetService {
   private CriteriaContainer getHarnessToGitChangeSetCriteria(Query<YamlChangeSet> query, String appId) {
     return query.and(query.criteria(YamlChangeSetKeys.gitToHarness).equal(Boolean.FALSE),
         query.criteria(ApplicationKeys.appId).equal(appId));
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(
+        wingsPersistence.createQuery(YamlChangeSet.class).filter(YamlChangeSetKeys.accountId, accountId));
   }
 }

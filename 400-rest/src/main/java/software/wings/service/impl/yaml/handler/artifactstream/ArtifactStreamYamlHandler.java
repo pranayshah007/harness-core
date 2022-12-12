@@ -16,7 +16,9 @@ import static software.wings.service.impl.ArtifactStreamServiceImpl.ARTIFACT_STR
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 
 import software.wings.beans.Application;
 import software.wings.beans.Service;
@@ -47,6 +49,7 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
   @Inject ArtifactStreamService artifactStreamService;
   @Inject YamlHelper yamlHelper;
   @Inject private TemplateService templateService;
+  @Inject FeatureFlagService featureFlagService;
 
   protected String getSettingId(String accountId, String appId, String settingName) {
     SettingAttribute settingAttribute = settingsService.getByName(accountId, appId, settingName);
@@ -105,7 +108,9 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
 
     yaml.setTemplateUri(templateUri);
     yaml.setTemplateVariables(TemplateHelper.convertToTemplateVariables(bean.getTemplateVariables()));
-    yaml.setCollectionEnabled(bean.getCollectionEnabled());
+    if (featureFlagService.isEnabled(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE, bean.getAccountId())) {
+      yaml.setCollectionEnabled(bean.getCollectionEnabled());
+    }
   }
 
   @Override

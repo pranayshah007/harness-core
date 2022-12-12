@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
+import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.PHOENIKX;
 import static io.harness.rule.OwnerRule.VITALIE;
 
@@ -34,6 +35,9 @@ import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryption.SecretRefData;
+import io.harness.exception.DelegateServiceDriverException;
+import io.harness.exception.HintException;
+import io.harness.exception.exceptionmanager.exceptionhandler.DocumentLinksConstants;
 import io.harness.ng.core.api.NGSecretActivityService;
 import io.harness.ng.core.dto.secrets.SSHCredentialType;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
@@ -74,8 +78,10 @@ import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.Optional;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.mockito.ArgumentCaptor;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -91,6 +97,9 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
   private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   private TransactionTemplate transactionTemplate;
   private AccessControlClient accessControlClient;
+
+  @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
   private ArgumentCaptor<SecretForceDeleteEvent> secretForceDeleteEventArgumentCaptor;
   private ArgumentCaptor<SecretDeleteEvent> secretDeleteEventArgumentCaptor;
 
@@ -316,6 +325,33 @@ public class NGSecretServiceV2ImplTest extends CategoryTest {
     SecretValidationResultDTO resultDTO =
         secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
     assertThat(resultDTO.isSuccess()).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NISHANT)
+  @Category(UnitTests.class)
+  public void testValidationForSSHWithKeyReferenceNoDelegateException() {
+    Secret secret = getSecret();
+    secret.setSecretSpec(SSHExecutionCredentialSpec.builder()
+                             .port(22)
+                             .auth(SSHAuth.builder()
+                                       .type(SSHAuthScheme.SSH)
+                                       .sshSpec(SSHConfig.builder()
+                                                    .credentialType(SSHCredentialType.KeyReference)
+                                                    .spec(SSHKeyCredential.builder()
+                                                              .userName("username")
+                                                              .key(SecretRefData.builder().build())
+                                                              .build())
+                                                    .build())
+                                       .build())
+                             .build());
+    doReturn(Optional.of(secret)).when(secretServiceV2Spy).get(any(), any(), any(), any());
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenThrow(new DelegateServiceDriverException("No eligible delegate(s) found in the account."));
+    exceptionRule.expect(HintException.class);
+    exceptionRule.expectMessage(
+        String.format(HintException.DELEGATE_NOT_AVAILABLE, DocumentLinksConstants.DELEGATE_INSTALLATION_LINK));
+    secretServiceV2Spy.validateSecret("account", null, null, "identifier", getMetadata());
   }
 
   @Test

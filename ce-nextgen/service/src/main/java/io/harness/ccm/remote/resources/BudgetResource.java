@@ -26,6 +26,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.audittrails.events.BudgetCreateEvent;
 import io.harness.ccm.audittrails.events.BudgetDeleteEvent;
 import io.harness.ccm.audittrails.events.BudgetUpdateEvent;
+import io.harness.ccm.budget.BudgetBreakdown;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.commons.entities.budget.BudgetData;
 import io.harness.ccm.graphql.core.budget.BudgetService;
@@ -336,7 +337,10 @@ public class BudgetResource {
   public ResponseDTO<BudgetData>
   getCostDetails(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
-      @Parameter(required = true, description = "Unique identifier for the Budget") @PathParam("id") String budgetId) {
-    return ResponseDTO.newResponse(budgetService.getBudgetTimeSeriesStats(budgetService.get(budgetId, accountId)));
+      @Parameter(required = true, description = "Unique identifier for the Budget") @PathParam("id") String budgetId,
+      @Parameter(description = "MONTHLY/YEARLY breakdown. The default value is YEARLY") @QueryParam(
+          "breakdown") BudgetBreakdown breakdown) {
+    return ResponseDTO.newResponse(budgetService.getBudgetTimeSeriesStats(
+        budgetService.get(budgetId, accountId), breakdown == null ? BudgetBreakdown.YEARLY : breakdown));
   }
 }

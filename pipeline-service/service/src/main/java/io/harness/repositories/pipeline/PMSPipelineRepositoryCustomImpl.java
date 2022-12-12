@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.SCM_BAD_REQUEST;
 
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
@@ -204,7 +205,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly, boolean loadFromFallbackBranch,
       boolean loadFromCache) {
     PipelineEntity savedEntity =
-        getPipelineEntityMetadata(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
+        getPipelineEntity(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted, getMetadataOnly);
     if (savedEntity == null) {
       return Optional.empty();
     }
@@ -225,13 +226,15 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     return Optional.of(savedEntity);
   }
 
-  private PipelineEntity getPipelineEntityMetadata(
-      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted) {
+  private PipelineEntity getPipelineEntity(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, boolean notDeleted, boolean metadataOnly) {
     Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     Query query = new Query(criteria);
-    for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
-      query.fields().exclude(nonMetadataField);
+    if (metadataOnly) {
+      for (String nonMetadataField : PMSPipelineFilterHelper.getPipelineNonMetadataFields()) {
+        query.fields().exclude(nonMetadataField);
+      }
     }
     return mongoTemplate.findOne(query, PipelineEntity.class);
   }
@@ -276,6 +279,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
             .filePath(savedEntity.getFilePath())
             .repoName(savedEntity.getRepo())
             .loadFromCache(loadFromCache)
+            .entityType(EntityType.PIPELINES)
             .build(),
         Collections.emptyMap());
   }

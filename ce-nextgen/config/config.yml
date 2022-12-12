@@ -50,6 +50,7 @@ events-mongo:
   uri: mongodb://localhost:27017/events
   connectTimeout: 30000
   serverSelectionTimeout: 90000
+  socketTimeout: 360000
   maxConnectionIdleTime: 600000
   connectionsPerHost: 300
   indexManagerMode: AUTO
@@ -148,7 +149,7 @@ awsConfig:
   accessKey: accessKey_placeholder
   secretKey: secretKey_placeholder
   destinationBucket: destinationBucket_placeholder
-  destinationBucketsCount : 1
+  destinationBucketsCount : 2
   harnessAwsAccountId: 108817434118
   awsConnectorTemplate: https://continuous-efficiency-templates.s3.amazonaws.com/templateOptimOnly.yaml
 
@@ -176,6 +177,7 @@ notificationClient:
     uri: mongodb://localhost:27017/notificationChannel
     connectTimeout: 30000
     serverSelectionTimeout: 90000
+    socketTimeout: 360000
     maxConnectionIdleTime: 600000
     connectionsPerHost: 300
   httpClient:
@@ -251,3 +253,6 @@ governanceConfig:
   packsInEnforcement: 30
   policiesInEnforcement: 30
   policiesInPack: 30
+
+currencyPreferences:
+  historicalUpdateMonthsCount: 6

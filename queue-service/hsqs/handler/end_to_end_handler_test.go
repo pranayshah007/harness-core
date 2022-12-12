@@ -8,16 +8,17 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/golang-jwt/jwt"
-	jwt4 "github.com/golang-jwt/jwt/v4"
-	"github.com/harness/harness-core/queue-service/hsqs/config"
-	"github.com/harness/harness-core/queue-service/hsqs/store"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/golang-jwt/jwt"
+	jwt4 "github.com/golang-jwt/jwt/v4"
+	"github.com/harness/harness-core/queue-service/hsqs/config"
+	"github.com/harness/harness-core/queue-service/hsqs/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type harnessClaims struct {
@@ -30,9 +31,9 @@ type harnessClaims struct {
 
 const (
 	url      = "http://localhost:9091"
-	topic    = "PIPELINE"
-	producer = "PMS"
-	consumer = "PMS"
+	topic    = "PMS"
+	producer = "PIPELINE"
+	consumer = "PIPELINE"
 )
 
 // Test to Insert data into a single Queue and SubTopic, and dequeued afterwards from the same queue
@@ -42,7 +43,7 @@ func Test_EnqueueThenDequeueSingleTopicSingleQueue(t *testing.T) {
 		enqueueRequest := store.EnqueueRequest{
 			Topic:        topic,
 			SubTopic:     "ACCOUNT1",
-			Payload:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			Payload:      "PAYLOAD1",
 			ProducerName: producer,
 		}
 
@@ -56,22 +57,6 @@ func Test_EnqueueThenDequeueSingleTopicSingleQueue(t *testing.T) {
 
 	}
 
-	// registering Topic with multiple queues
-	registerTopicMetadata := store.RegisterTopicMetadata{
-		Topic:                  topic,
-		MaxRetries:             1,
-		MaxProcessingTime:      1,
-		MaxUnProcessedMessages: 1,
-	}
-
-	requestBody, _ := json.Marshal(registerTopicMetadata)
-	req, _ := http.NewRequest("POST", url+"/v1/register", bytes.NewBuffer(requestBody))
-	resp, err := call(req)
-	if err != nil {
-		panic(err)
-	}
-	assert.Equal(t, "200 OK", resp.Status)
-
 	// dequeue request
 	dequeueRequest := store.DequeueRequest{
 		Topic:           topic,
@@ -80,9 +65,9 @@ func Test_EnqueueThenDequeueSingleTopicSingleQueue(t *testing.T) {
 		MaxWaitDuration: 10,
 	}
 
-	requestBody, _ = json.Marshal(dequeueRequest)
-	req, _ = http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
-	resp, err = call(req)
+	requestBody, _ := json.Marshal(dequeueRequest)
+	req, _ := http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
+	resp, err := call(req)
 	if err != nil {
 		panic(err)
 	}
@@ -105,29 +90,13 @@ func Test_EnqueueThenDequeueMultipleTopicMultipleQueue(t *testing.T) {
 		enqueueRequest := store.EnqueueRequest{
 			Topic:        "PMS" + strconv.Itoa(i),
 			SubTopic:     "ACCOUNT",
-			Payload:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			Payload:      "PAYLOAD1",
 			ProducerName: producer,
 		}
 
 		requestBody, _ := json.Marshal(enqueueRequest)
 		req, _ := http.NewRequest("POST", url+"/v1/queue", bytes.NewBuffer(requestBody))
 		resp, err := call(req)
-		if err != nil {
-			panic(err)
-		}
-		assert.Equal(t, "200 OK", resp.Status)
-
-		// registering Topic with multiple queues
-		registerTopicMetadata := store.RegisterTopicMetadata{
-			Topic:                  "PMS" + strconv.Itoa(i),
-			MaxRetries:             1,
-			MaxProcessingTime:      1,
-			MaxUnProcessedMessages: 1,
-		}
-
-		requestBody, _ = json.Marshal(registerTopicMetadata)
-		req, _ = http.NewRequest("POST", url+"/v1/register", bytes.NewBuffer(requestBody))
-		resp, err = call(req)
 		if err != nil {
 			panic(err)
 		}
@@ -171,7 +140,7 @@ func Test_EnqueueThenDequeueMoreMessagesThanAvailable(t *testing.T) {
 		enqueueRequest := store.EnqueueRequest{
 			Topic:        topic,
 			SubTopic:     "ACCOUNT1",
-			Payload:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			Payload:      "PAYLOAD1",
 			ProducerName: producer,
 		}
 
@@ -185,22 +154,6 @@ func Test_EnqueueThenDequeueMoreMessagesThanAvailable(t *testing.T) {
 
 	}
 
-	// registering Topic with multiple queues
-	registerTopicMetadata := store.RegisterTopicMetadata{
-		Topic:                  topic,
-		MaxRetries:             1,
-		MaxProcessingTime:      1,
-		MaxUnProcessedMessages: 1,
-	}
-
-	requestBody, _ := json.Marshal(registerTopicMetadata)
-	req, _ := http.NewRequest("POST", url+"/v1/register", bytes.NewBuffer(requestBody))
-	resp, err := call(req)
-	if err != nil {
-		panic(err)
-	}
-	assert.Equal(t, "200 OK", resp.Status)
-
 	// dequeue request
 	dequeueRequest := store.DequeueRequest{
 		Topic:           topic,
@@ -209,9 +162,9 @@ func Test_EnqueueThenDequeueMoreMessagesThanAvailable(t *testing.T) {
 		MaxWaitDuration: 10,
 	}
 
-	requestBody, _ = json.Marshal(dequeueRequest)
-	req, _ = http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
-	resp, err = call(req)
+	requestBody, _ := json.Marshal(dequeueRequest)
+	req, _ := http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
+	resp, err := call(req)
 	if err != nil {
 		panic(err)
 	}
@@ -234,7 +187,7 @@ func Test_EnqueueThenMultipleDequeueWithPartialAcknowledgement(t *testing.T) {
 		enqueueRequest := store.EnqueueRequest{
 			Topic:        topic,
 			SubTopic:     "ACCOUNT1",
-			Payload:      []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			Payload:      "PAYLOAD1",
 			ProducerName: producer,
 		}
 
@@ -248,22 +201,6 @@ func Test_EnqueueThenMultipleDequeueWithPartialAcknowledgement(t *testing.T) {
 
 	}
 
-	// registering Topic with multiple queues
-	registerTopicMetadata := store.RegisterTopicMetadata{
-		Topic:                  topic,
-		MaxRetries:             1,
-		MaxProcessingTime:      1,
-		MaxUnProcessedMessages: 1,
-	}
-
-	requestBody, _ := json.Marshal(registerTopicMetadata)
-	req, _ := http.NewRequest("POST", url+"/v1/register", bytes.NewBuffer(requestBody))
-	resp, err := call(req)
-	if err != nil {
-		panic(err)
-	}
-	assert.Equal(t, "200 OK", resp.Status)
-
 	// dequeue request
 	dequeueRequest := store.DequeueRequest{
 		Topic:           topic,
@@ -272,9 +209,9 @@ func Test_EnqueueThenMultipleDequeueWithPartialAcknowledgement(t *testing.T) {
 		MaxWaitDuration: 10,
 	}
 
-	requestBody, _ = json.Marshal(dequeueRequest)
-	req, _ = http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
-	resp, err = call(req)
+	requestBody, _ := json.Marshal(dequeueRequest)
+	req, _ := http.NewRequest("POST", url+"/v1/dequeue", bytes.NewBuffer(requestBody))
+	resp, err := call(req)
 	if err != nil {
 		panic(err)
 	}
@@ -358,7 +295,6 @@ func GenerateJWTToken(jwtSecret string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	return signedJwt, nil
 }
 

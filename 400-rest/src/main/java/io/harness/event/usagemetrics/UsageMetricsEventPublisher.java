@@ -23,8 +23,8 @@ import software.wings.api.ExecutionInterruptTimeSeriesEvent;
 import software.wings.api.InstanceEvent;
 import software.wings.beans.EnvSummary;
 import software.wings.beans.WorkflowExecution;
-import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
+import software.wings.persistence.artifact.Artifact;
 import software.wings.service.impl.WorkflowExecutionServiceHelper;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo;
 import software.wings.service.impl.event.timeseries.TimeSeriesBatchEventInfo.DataPoint;
@@ -345,6 +345,15 @@ public class UsageMetricsEventPublisher {
 
     objectData.put(
         EventProcessor.TAGS, workflowExecutionService.getDeploymentTags(accountId, workflowExecution.getTags()));
+
+    List<String> infraDefinitionIds = workflowExecution.getInfraDefinitionIds();
+    if (!Lists.isNullOrEmpty(infraDefinitionIds)) {
+      listData.put(EventProcessor.INFRA_DEFINITIONS, infraDefinitionIds);
+    }
+    List<String> infraMappingIds = workflowExecution.getInfraMappingIds();
+    if (!Lists.isNullOrEmpty(infraMappingIds)) {
+      listData.put(EventProcessor.INFRA_MAPPINGS, infraMappingIds);
+    }
 
     TimeSeriesEventInfo eventInfo = TimeSeriesEventInfo.builder()
                                         .accountId(accountId)

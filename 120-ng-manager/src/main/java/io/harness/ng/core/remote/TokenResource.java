@@ -267,6 +267,8 @@ public class TokenResource {
   public ResponseDTO<TokenDTO>
   validateToken(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(ACCOUNT_KEY)
                 @AccountIdentifier String accountIdentifier, @NotNull String apiKey) {
+    log.info(String.format(
+        "API_KEY_NG_VALIDATE: Validate token for API key or JWT token called for account id: %s", accountIdentifier));
     TokenDTO tokenDTO = tokenService.validateToken(accountIdentifier, apiKey);
     return ResponseDTO.newResponse(tokenDTO);
   }

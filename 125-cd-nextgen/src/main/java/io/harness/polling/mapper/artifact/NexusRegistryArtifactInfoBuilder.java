@@ -30,6 +30,7 @@ public class NexusRegistryArtifactInfoBuilder implements PollingInfoBuilder {
         .packageName(pollingPayloadData.getNexus3RegistryPayload().getPackageName())
         .classifier(pollingPayloadData.getNexus3RegistryPayload().getClassifier())
         .extension(pollingPayloadData.getNexus3RegistryPayload().getExtension())
+        .group(pollingPayloadData.getNexus3RegistryPayload().getGroup())
         .build();
   }
 }

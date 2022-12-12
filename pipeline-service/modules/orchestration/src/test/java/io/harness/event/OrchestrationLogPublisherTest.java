@@ -58,16 +58,14 @@ public class OrchestrationLogPublisherTest extends OrchestrationTestBase {
 
   @Mock private OrchestrationEventLogRepository repository;
   @Mock private Producer producer;
+  @InjectMocks private OrchestrationLogPublisher publisher;
   @Mock Cache<String, Long> orchestrationLogCache;
   @Mock OrchestrationLogConfiguration orchestrationLogConfiguration;
-  ;
-  @InjectMocks private OrchestrationLogPublisher publisher;
 
   @Before
   public void setUp() throws IllegalAccessException {
     FieldUtils.writeField(publisher, "producer", producer, true);
     FieldUtils.writeField(publisher, "orchestrationEventLogRepository", repository, true);
-
     when(producer.send(any())).thenReturn(null);
     when(orchestrationLogCache.get(any())).thenReturn(5L);
     when(orchestrationLogConfiguration.getOrchestrationLogBatchSize()).thenReturn(1);

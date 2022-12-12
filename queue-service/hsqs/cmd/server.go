@@ -17,10 +17,12 @@ import (
 	"github.com/harness/harness-core/queue-service/hsqs/config"
 	_ "github.com/harness/harness-core/queue-service/hsqs/docs"
 	"github.com/harness/harness-core/queue-service/hsqs/handler"
+	"github.com/harness/harness-core/queue-service/hsqs/profiler"
 	"github.com/harness/harness-core/queue-service/hsqs/router"
 	"github.com/harness/harness-core/queue-service/hsqs/store/redis"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 
 	"github.com/spf13/cobra"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -65,6 +67,13 @@ var serverCmd = &cobra.Command{
 }
 
 func startServer(c *config.Config) {
+
+	if c.EnableProfiler {
+		err := profiler.Start(c)
+		if err != nil {
+			log.Warn(err.Error())
+		}
+	}
 
 	r := router.New(c)
 	r.GET("/swagger/*", echoSwagger.WrapHandler)

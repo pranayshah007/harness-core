@@ -16,6 +16,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HPersistence.upToOne;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import static software.wings.beans.Base.ACCOUNT_ID_KEY2;
 import static software.wings.common.VerificationConstants.DUMMY_HOST_NAME;
 import static software.wings.common.VerificationConstants.GA_PER_MINUTE_CV_STATES;
 import static software.wings.common.VerificationConstants.NON_HOST_PREVIOUS_ANALYSIS;
@@ -1238,5 +1239,10 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
                                .order(Sort.descending(LogDataRecord.BaseKeys.createdAt))
                                .get();
     return record == null ? Optional.empty() : Optional.of(record.getCreatedAt());
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(LogMLFeedbackRecord.class).filter(ACCOUNT_ID_KEY2, accountId));
   }
 }

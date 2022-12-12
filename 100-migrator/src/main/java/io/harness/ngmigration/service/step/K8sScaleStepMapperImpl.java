@@ -65,7 +65,6 @@ public class K8sScaleStepMapperImpl implements StepMapper {
                     .spec(spec)
                     .build())
             .workload(ParameterField.createValueField(state.getWorkload()))
-            .skipDryRun(ParameterField.createValueField(false))
             .skipSteadyStateCheck(ParameterField.createValueField(state.isSkipSteadyStateCheck()))
             .delegateSelectors(MigratorUtility.getDelegateSelectors(state.getDelegateSelectors()))
             .build();

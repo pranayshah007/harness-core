@@ -7,6 +7,7 @@
 
 package io.harness.service;
 
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.LUCAS;
 import static io.harness.rule.OwnerRule.NICOLAS;
 
@@ -24,6 +25,7 @@ import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import io.harness.service.impl.DelegateTokenServiceImpl;
 import io.harness.service.intfc.DelegateTokenService;
 
 import software.wings.WingsBaseTest;
@@ -46,6 +48,7 @@ public class DelegateTokenServiceTest extends WingsBaseTest {
 
   @Inject private HPersistence persistence;
   @Inject private DelegateTokenService delegateTokenService;
+  @Inject private DelegateTokenServiceImpl delegateTokenServiceImpl;
 
   @Before
   public void setUp() {
@@ -61,6 +64,18 @@ public class DelegateTokenServiceTest extends WingsBaseTest {
 
     DelegateTokenDetails retrievedToken = retrieveTokenFromDB(TEST_TOKEN_NAME);
     assertCreatedToken(retrievedToken);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testTokenDeleteByAccountId() {
+    delegateTokenService.createDelegateToken(TEST_ACCOUNT_ID, TEST_TOKEN_NAME);
+    DelegateTokenDetails retrievedToken = retrieveTokenFromDB(TEST_TOKEN_NAME);
+    assertCreatedToken(retrievedToken);
+    delegateTokenServiceImpl.deleteByAccountId(TEST_ACCOUNT_ID);
+    DelegateTokenDetails retrievedTokenAfterDelete = retrieveTokenFromDB(TEST_TOKEN_NAME);
+    assertThat(retrievedTokenAfterDelete).isNull();
   }
 
   @Test

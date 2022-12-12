@@ -26,7 +26,9 @@ import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
 import io.harness.ccm.budget.utils.BudgetUtils;
+import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.billing.Budget;
+import io.harness.ccm.currency.Currency;
 import io.harness.notification.Team;
 import io.harness.notification.dtos.NotificationChannelDTO;
 import io.harness.notification.dtos.NotificationChannelDTO.NotificationChannelDTOBuilder;
@@ -79,22 +81,32 @@ public class BudgetAlertsServiceImpl {
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Autowired private AccountShardService accountShardService;
   @Autowired private CloudBillingHelper cloudBillingHelper;
+  @Autowired private CEMetadataRecordDao ceMetadataRecordDao;
 
   private static final String BUDGET_MAIL_ERROR = "Budget alert email couldn't be sent";
   private static final String NG_PATH_CONST = "ng/";
   private static final String BUDGET_DETAILS_URL_FORMAT = "/account/%s/continuous-efficiency/budget/%s";
   private static final String BUDGET_DETAILS_URL_FORMAT_NG = "/account/%s/ce/budget/%s/%s";
   private static final String ACTUAL_COST_BUDGET = "cost";
+  private static final String SUBJECT_ACTUAL_COST_BUDGET = "Spent so far";
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
+  private static final String SUBJECT_FORECASTED_COST_BUDGET = "Forecasted cost";
+  private static final String DAY = "day";
+  private static final String WEEK = "week";
+  private static final String MONTH = "month";
+  private static final String QUARTER = "quarter";
+  private static final String YEAR = "year";
 
   public void sendBudgetAlerts() {
     List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
+      // [TODO]: Cache currency symbol for each account
+      Currency currency = getDestinationCurrency(accountId);
       budgets.forEach(budget -> {
         updateCGBudget(budget);
         try {
-          checkAndSendAlerts(budget);
+          checkAndSendAlerts(budget, currency);
         } catch (Exception e) {
           log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
         }
@@ -102,7 +114,7 @@ public class BudgetAlertsServiceImpl {
     });
   }
 
-  private void checkAndSendAlerts(Budget budget) {
+  private void checkAndSendAlerts(Budget budget, Currency currency) {
     checkNotNull(budget.getAlertThresholds());
     checkNotNull(budget.getAccountId());
 
@@ -123,7 +135,7 @@ public class BudgetAlertsServiceImpl {
         actualCost = budget.getBudgetMonthlyBreakdown().getActualMonthlyCost()[month];
       }
     }
-    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnActualCost, emailAddresses, actualCost);
+    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnActualCost, emailAddresses, actualCost, currency);
 
     // For sending alerts based on forecast cost
     AlertThreshold[] alertsBasedOnForecastCost =
@@ -136,11 +148,11 @@ public class BudgetAlertsServiceImpl {
         forecastCost = budget.getBudgetMonthlyBreakdown().getForecastMonthlyCost()[month];
       }
     }
-    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnForecastCost, emailAddresses, forecastCost);
+    checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnForecastCost, emailAddresses, forecastCost, currency);
   }
 
   private void checkAlertThresholdsAndSendAlerts(
-      Budget budget, AlertThreshold[] alertThresholds, List<String> emailAddresses, double cost) {
+      Budget budget, AlertThreshold[] alertThresholds, List<String> emailAddresses, double cost, Currency currency) {
     for (AlertThreshold alertThreshold : alertThresholds) {
       List<String> userGroupIds =
           Arrays.asList(Optional.ofNullable(alertThreshold.getUserGroupIds()).orElse(new String[0]));
@@ -174,9 +186,11 @@ public class BudgetAlertsServiceImpl {
         break;
       }
       String costType = ACTUAL_COST_BUDGET;
+      String subjectCostType = SUBJECT_ACTUAL_COST_BUDGET;
       try {
         if (alertThreshold.getBasedOn() == FORECASTED_COST) {
           costType = FORECASTED_COST_BUDGET;
+          subjectCostType = SUBJECT_FORECASTED_COST_BUDGET;
         }
         log.info("{} has been spent under the budget with id={} ", cost, budget.getUuid());
       } catch (Exception e) {
@@ -192,7 +206,7 @@ public class BudgetAlertsServiceImpl {
           log.error("Notification via slack not send : ", e);
         }
         sendBudgetAlertMail(budget.getAccountId(), emailAddresses, budget.getUuid(), budget.getName(), alertThreshold,
-            cost, costType, budget.isNgBudget());
+            cost, costType, budget.isNgBudget(), subjectCostType, getBudgetPeriodForEmailAlert(budget), currency);
         // insert in timescale table
         budgetTimescaleQueryHelper.insertAlertEntryInTable(data, budget.getAccountId());
         break;
@@ -206,12 +220,11 @@ public class BudgetAlertsServiceImpl {
       return;
     }
     String budgetUrl = buildAbsoluteUrl(budget.getAccountId(), budget.getUuid(), budget.getName(), budget.isNgBudget());
-    Map<String, String> templateData =
-        ImmutableMap.<String, String>builder()
-            .put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()))
-            .put("BUDGET_NAME", budget.getName())
-            .put("BUDGET_URL", budgetUrl)
-            .build();
+    Map<String, String> templateData = ImmutableMap.<String, String>builder()
+                                           .put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()))
+                                           .put("BUDGET_NAME", budget.getName())
+                                           .put("BUDGET_URL", budgetUrl)
+                                           .build();
     NotificationChannelDTOBuilder slackChannelBuilder = NotificationChannelDTO.builder()
                                                             .accountId(budget.getAccountId())
                                                             .templateData(templateData)
@@ -259,7 +272,8 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void sendBudgetAlertMail(String accountId, List<String> emailAddresses, String budgetId, String budgetName,
-      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget) {
+      AlertThreshold alertThreshold, double currentCost, String costType, boolean isNgBudget, String subjectCostType,
+      String period, Currency currency) {
     List<String> uniqueEmailAddresses = new ArrayList<>(new HashSet<>(emailAddresses));
 
     try {
@@ -268,9 +282,11 @@ public class BudgetAlertsServiceImpl {
       Map<String, String> templateModel = new HashMap<>();
       templateModel.put("url", budgetUrl);
       templateModel.put("BUDGET_NAME", budgetName);
-      templateModel.put("THRESHOLD_PERCENTAGE", String.format("%.1f", alertThreshold.getPercentage()));
-      templateModel.put("CURRENT_COST", String.format("%.2f", currentCost));
+      templateModel.put("THRESHOLD_PERCENTAGE", format("%.1f", alertThreshold.getPercentage()));
+      templateModel.put("CURRENT_COST", format("%s%s", currency.getSymbol(), format("%.2f", currentCost)));
       templateModel.put("COST_TYPE", costType);
+      templateModel.put("SUBJECT_COST_TYPE", subjectCostType);
+      templateModel.put("PERIOD", period);
 
       uniqueEmailAddresses.forEach(emailAddress -> {
         templateModel.put("name", emailAddress.substring(0, emailAddress.lastIndexOf('@')));
@@ -325,11 +341,12 @@ public class BudgetAlertsServiceImpl {
             && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
           int month = monthDifferenceStartAndCurrentTime(budget.getStartTime());
           if (month != -1) {
-            return budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount()[month] * alertThreshold.getPercentage()
-                / 100;
+            return BudgetUtils.getYearlyMonthWiseValues(
+                       budget.getBudgetMonthlyBreakdown().getBudgetMonthlyAmount())[month]
+                * alertThreshold.getPercentage() / BudgetUtils.HUNDRED;
           }
         }
-        return budget.getBudgetAmount() * alertThreshold.getPercentage() / 100;
+        return budget.getBudgetAmount() * alertThreshold.getPercentage() / BudgetUtils.HUNDRED;
       default:
         return 0;
     }
@@ -359,5 +376,35 @@ public class BudgetAlertsServiceImpl {
       return -1;
     }
     return monthDiff;
+  }
+
+  // We don't have monthly here as one of the period in cases
+  // We have placed it in default itself
+  private String getBudgetPeriodForEmailAlert(Budget budget) {
+    switch (budget.getPeriod()) {
+      case DAILY:
+        return DAY;
+      case WEEKLY:
+        return WEEK;
+      case QUARTERLY:
+        return QUARTER;
+      case YEARLY:
+        if (budget.getBudgetMonthlyBreakdown() != null
+            && budget.getBudgetMonthlyBreakdown().getBudgetBreakdown() == BudgetBreakdown.MONTHLY) {
+          return MONTH;
+        } else {
+          return YEAR;
+        }
+      default:
+        return MONTH;
+    }
+  }
+
+  private Currency getDestinationCurrency(String accountId) {
+    Currency currency = ceMetadataRecordDao.getDestinationCurrency(accountId);
+    if (Currency.NONE.equals(currency)) {
+      currency = Currency.USD;
+    }
+    return currency;
   }
 }

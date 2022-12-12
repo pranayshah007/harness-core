@@ -7,7 +7,6 @@
 
 package io.harness.accesscontrol;
 
-import static io.harness.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_ORGANIZATION_PERMISSION;
 import static io.harness.accesscontrol.AccessControlPermissions.VIEW_PROJECT_PERMISSION;
@@ -18,6 +17,7 @@ import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ACCOUNT;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.ORGANIZATION;
 import static io.harness.accesscontrol.scopes.harness.HarnessScopeLevel.PROJECT;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.authorization.AuthorizationServiceHeader.ACCESS_CONTROL_SERVICE;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_GROUP_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.DUMMY_TOPIC_NAME;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;

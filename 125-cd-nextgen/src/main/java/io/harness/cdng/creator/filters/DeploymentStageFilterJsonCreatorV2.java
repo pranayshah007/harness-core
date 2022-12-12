@@ -54,7 +54,6 @@ import io.harness.pms.yaml.YamlUtils;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -205,8 +204,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       Set<Entity> unsupportedEntities = env.getFilters()
                                             .getValue()
                                             .stream()
-                                            .map(FilterYaml::getOn)
-                                            .flatMap(EnumSet::stream)
+                                            .map(FilterYaml::getEntities)
+                                            .flatMap(Set::stream)
                                             .filter(e -> Entity.gitOpsClusters != e && Entity.infrastructures != e)
                                             .collect(Collectors.toSet());
       if (!unsupportedEntities.isEmpty()) {
@@ -214,15 +213,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
             format("Environment filters can only support [%s]. Please add the correct filters in stage [%s]",
                 HarnessStringUtils.join(",", Entity.infrastructures.name(), Entity.gitOpsClusters.name()),
                 YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-      }
-    }
-
-    if (!gitOpsEnabled) {
-      if (ParameterField.isNull(env.getInfrastructureDefinition())
-          && ParameterField.isNull(env.getInfrastructureDefinitions()) && ParameterField.isNull(env.getFilters())) {
-        throw new InvalidYamlRuntimeException(format(
-            "InfrastructureDefinition or InfrastructureDefinitions or filters must be specified for environment in stage [%s]",
-            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
       }
     }
 
@@ -297,20 +287,6 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
       throw new InvalidYamlRuntimeException(
           format("envGroupRef should be present in stage [%s]. Please add it and try again",
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-    if ((!envGroupYaml.getDeployToAll().isExpression() && !envGroupYaml.getDeployToAll().getValue())
-        && ParameterField.isNull(envGroupYaml.getFilters()) && ParameterField.isNull(envGroupYaml.getEnvironments())) {
-      throw new InvalidYamlRuntimeException(format(
-          "environments or deployToAll or filters should be present in environmentGroup yaml in the stage [%s]. Please add it and try again",
-          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
-    }
-
-    if (!envGroupYaml.getDeployToAll().isExpression() && envGroupYaml.getDeployToAll().getValue()
-        && (ParameterField.isNotNull(envGroupYaml.getFilters())
-            || ParameterField.isNotNull(envGroupYaml.getEnvironments()))) {
-      throw new InvalidYamlRuntimeException(format(
-          "environments or filters should not be present in environmentGroup yaml since deployToAll is set to true in the stage [%s]. Please add it and try again",
-          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
   }
 

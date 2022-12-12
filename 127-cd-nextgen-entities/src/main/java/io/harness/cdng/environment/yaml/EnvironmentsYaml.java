@@ -39,10 +39,9 @@ public class EnvironmentsYaml implements Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)
-  private String uuid;
+  String uuid;
 
-  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH, hidden = true)
+  @ApiModelProperty(dataType = SwaggerConstants.FILTER_YAML_LIST_CLASSPATH)
   @YamlSchemaTypes(runtime)
   ParameterField<List<FilterYaml>> filters;
 
@@ -56,7 +55,7 @@ public class EnvironmentsYaml implements Visitable {
   @Override
   public VisitableChildren getChildrenToWalk() {
     List<VisitableChild> children = new ArrayList<>();
-    if (!values.isExpression()) {
+    if (ParameterField.isNotNull(values) && !values.isExpression()) {
       for (EnvironmentYamlV2 environmentYamlV2 : values.getValue()) {
         children.add(VisitableChild.builder().value(environmentYamlV2).fieldName("values").build());
       }

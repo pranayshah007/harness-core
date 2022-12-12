@@ -171,6 +171,8 @@ public class JiraTaskTest extends CategoryTest {
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     JiraExecutionData executionData =
@@ -234,6 +236,8 @@ public class JiraTaskTest extends CategoryTest {
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
@@ -255,6 +259,8 @@ public class JiraTaskTest extends CategoryTest {
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
 
     spyJiraTask.run(new Object[] {taskParameters});
   }
@@ -270,6 +276,8 @@ public class JiraTaskTest extends CategoryTest {
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.CLOUD);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     doThrow(new JiraClientException("error"))
         .when(jiraNGClient)
         .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
@@ -290,6 +298,8 @@ public class JiraTaskTest extends CategoryTest {
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
     doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     doReturn(mock(JiraIssueNG.class))
         .when(jiraNGClient)
         .createIssue(any(), any(), anyMap(), anyBoolean(), anyBoolean(), anyBoolean());
@@ -325,6 +335,8 @@ public class JiraTaskTest extends CategoryTest {
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
     doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
     doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraInstanceData jiraInstanceData = new JiraInstanceData(JiraInstanceData.JiraDeploymentType.SERVER);
+    doReturn(jiraInstanceData).when(jiraNGClient).getInstanceData();
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .executionStatus(ExecutionStatus.SUCCESS)

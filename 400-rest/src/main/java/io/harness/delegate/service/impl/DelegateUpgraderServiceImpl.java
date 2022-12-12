@@ -21,21 +21,17 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import javax.validation.executable.ValidateOnExecution;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateUpgraderServiceImpl implements DelegateUpgraderService {
   private final DelegateVersionService delegateVersionService;
   private final HPersistence persistence;
-
-  @Inject
-  public DelegateUpgraderServiceImpl(DelegateVersionService delegateVersionService, HPersistence persistence) {
-    this.delegateVersionService = delegateVersionService;
-    this.persistence = persistence;
-  }
 
   @Override
   public UpgradeCheckResult getDelegateImageTag(

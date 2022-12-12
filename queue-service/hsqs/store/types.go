@@ -27,7 +27,7 @@ type RegisterTopicMetadata struct {
 type EnqueueRequest struct {
 	Topic        string `json:"topic"`
 	SubTopic     string `json:"subTopic"`
-	Payload      []byte `json:"payload"`
+	Payload      string `json:"payload"`
 	ProducerName string `json:"producerName"`
 }
 
@@ -59,7 +59,7 @@ type DequeueRequest struct {
 type DequeueResponse struct {
 	ItemID       string              `json:"itemId"`
 	Timestamp    int64               `json:"timeStamp"`
-	Payload      []byte              `json:"payload"`
+	Payload      string              `json:"payload"`
 	QueueKey     string              `json:"queueKey"`
 	ItemMetadata DequeueItemMetadata `json:"metadata"`
 }

@@ -9,8 +9,8 @@ package io.harness.gitsync.common.helper;
 
 import static io.harness.EntityType.CONNECTORS;
 import static io.harness.EntityType.PIPELINES;
+import static io.harness.EntityType.TEMPLATE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.EntityType;
 import io.harness.Microservice;
@@ -66,19 +66,20 @@ public class GitEnabledHelper {
 
   public void resetGitSyncSDKCache(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     List<String> errors = new ArrayList<>();
-    List<EntityType> supportedEntityTypes = Arrays.asList(CONNECTORS, PIPELINES);
+    List<EntityType> supportedEntityTypes = Arrays.asList(CONNECTORS, PIPELINES, TEMPLATE);
     entityTypeMicroserviceMap.forEach((entityType, msvc) -> {
       if (supportedEntityTypes.contains(entityType)) {
         GitToHarnessServiceGrpc.GitToHarnessServiceBlockingStub gitToHarnessServiceBlockingStub =
             gitToHarnessServiceGrpcClient.get(msvc);
-        ResetGitSyncSDKCacheResponse response =
-            gitToHarnessServiceBlockingStub.resetGitSyncSDKCache(ResetGitSyncSDKCacheRequest.newBuilder()
-                                                                     .setAccountIdentifier(accountIdentifier)
-                                                                     .setOrgIdentifier(orgIdentifier)
-                                                                     .setProjectIdentifier(projectIdentifier)
-                                                                     .build());
-        if (isNotEmpty(response.getError())) {
-          errors.add(response.getError());
+        try {
+          ResetGitSyncSDKCacheResponse response =
+              gitToHarnessServiceBlockingStub.resetGitSyncSDKCache(ResetGitSyncSDKCacheRequest.newBuilder()
+                                                                       .setAccountIdentifier(accountIdentifier)
+                                                                       .setOrgIdentifier(orgIdentifier)
+                                                                       .setProjectIdentifier(projectIdentifier)
+                                                                       .build());
+        } catch (Exception exception) {
+          errors.add(String.format("Faced error for entityType : %s : %s", entityType, exception.toString()));
         }
       }
     });

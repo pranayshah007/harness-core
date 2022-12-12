@@ -15,10 +15,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
+
+@NoArgsConstructor
 @ToString(callSuper = true, includeFieldNames = true)
 public class ReplaceOperation extends PatchOperation {
-  @JsonProperty private final JsonNode value;
+  @JsonProperty private JsonNode value;
 
   @JsonIgnore private ObjectMapper jsonObjectMapper = new ObjectMapper();
 

@@ -92,6 +92,8 @@ public class DelegateQueueTask implements Runnable {
     }
   }
 
+  // TODO Fix this iterator so that all managers work on different set of tasks
+
   @VisibleForTesting
   protected void rebroadcastUnassignedTasks() {
     // Re-broadcast queued tasks not picked up by any Delegate and not in process of validation
@@ -157,7 +159,7 @@ public class DelegateQueueTask implements Runnable {
         delegateTask = persistence.findAndModify(query, updateOperations, HPersistence.returnNewOptions);
         // update failed, means this was broadcast by some other manager
         if (delegateTask == null) {
-          log.info("Cannot find delegate task, update failed on broadcast");
+          log.debug("Cannot find delegate task, update failed on broadcast");
           continue;
         }
         delegateTask.setBroadcastToDelegateIds(broadcastToDelegates);

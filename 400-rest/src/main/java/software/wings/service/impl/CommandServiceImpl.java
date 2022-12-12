@@ -64,4 +64,9 @@ public class CommandServiceImpl implements CommandService {
     }
     return savedCommand;
   }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    wingsPersistence.delete(wingsPersistence.createQuery(Command.class).filter(CommandKeys.accountId, accountId));
+  }
 }

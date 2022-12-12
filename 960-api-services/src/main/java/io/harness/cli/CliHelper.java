@@ -80,6 +80,7 @@ public class CliHelper {
     ProcessResult processResult = processExecutor.execute();
     CommandExecutionStatus status = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
     return CliResponse.builder()
+        .command(command)
         .commandExecutionStatus(status)
         .output(processResult.outputUTF8())
         .error(errorLogs.toString().trim())

@@ -1236,6 +1236,18 @@ permissions:
     includedInAllRoles: false
     allowedScopeLevels:
       - account
+  - identifier: ccm_currencyPreference_view
+    name: View a CCM Currency Preference
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: ccm_currencyPreference_edit
+    name: Set or Edit Currency Preference
+    status: ACTIVE
+    includedInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: core_deploymentfreeze_manage
     name: Manage deployment freeze
     status: ACTIVE

@@ -12,19 +12,18 @@ spec:
     envGroupRef: wave_1
     filters:
       - type: tags
-        on:
+        entities:
           - environments
           - infrastructures
           - gitOpsClusters
         spec:
           matchType: all
           tags:
-            - key: foo
-              value: bar
-            - key: top
-              value: down
+            foo: bar
+            top: down
+            zee: ""
       - type: all
-        on:
+        entities:
           - environments
           - infrastructures
         spec: {}

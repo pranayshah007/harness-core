@@ -18,6 +18,10 @@ import io.harness.steps.barriers.beans.BarrierOutcome;
 import io.harness.steps.cf.FlagConfigurationStepParameters;
 import io.harness.steps.http.HttpOutcome;
 import io.harness.steps.jira.JiraIssueOutcome;
+import io.harness.steps.plugin.infrastructure.volumes.ContainerVolume;
+import io.harness.steps.plugin.infrastructure.volumes.EmptyDirYaml;
+import io.harness.steps.plugin.infrastructure.volumes.HostPathYaml;
+import io.harness.steps.plugin.infrastructure.volumes.PersistentVolumeClaimYaml;
 import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
@@ -48,5 +52,10 @@ public class OrchestrationStepsContractKryoRegistrar implements KryoRegistrar {
     kryo.register(HttpStepInfo.class, 8048);
     kryo.register(HttpOutcome.class, 12501);
     kryo.register(ShellScriptStepInfo.class, 8055);
+
+    kryo.register(ContainerVolume.class, 390100);
+    kryo.register(EmptyDirYaml.class, 390103);
+    kryo.register(HostPathYaml.class, 390101);
+    kryo.register(PersistentVolumeClaimYaml.class, 390102);
   }
 }

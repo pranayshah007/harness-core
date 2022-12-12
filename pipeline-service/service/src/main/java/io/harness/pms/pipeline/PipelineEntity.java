@@ -164,6 +164,7 @@ public class PipelineEntity
 
   /**
    * @deprecated Use {@link RecentExecutionInfo} from {@link PipelineMetadataV2}
+   * lastExecutionTs move out from this dto to first class in pipelineEntity for sort filter
    */
   @Deprecated ExecutionSummaryInfo executionSummaryInfo;
   int runSequence;

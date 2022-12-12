@@ -69,7 +69,7 @@ public class BarrierInstance implements PersistentEntity, UuidAware, PersistentR
   @FdIndex @NotNull protected String appId;
 
   private String name;
-  @FdIndex private String state;
+  private String state;
 
   private Long nextIteration;
 

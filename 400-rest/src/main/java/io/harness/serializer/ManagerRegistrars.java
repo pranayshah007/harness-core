@@ -35,6 +35,7 @@ import io.harness.serializer.morphia.ManagerMorphiaRegistrar;
 import io.harness.serializer.morphia.NgPersistenceMorphiaRegistrar;
 import io.harness.serializer.morphia.NotificationBeansMorphiaRegistrar;
 import io.harness.serializer.morphia.ProjectAndOrgMorphiaRegistrar;
+import io.harness.serializer.morphia.TaskDataV2Convertor;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -113,6 +114,7 @@ public class ManagerRegistrars {
       ImmutableSet.<Class<? extends TypeConverter>>builder()
           .addAll(PersistenceRegistrars.morphiaConverters)
           .addAll(DelegateTasksBeansRegistrars.morphiaConverters)
+          .add(TaskDataV2Convertor.class)
           .build();
 
   public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =

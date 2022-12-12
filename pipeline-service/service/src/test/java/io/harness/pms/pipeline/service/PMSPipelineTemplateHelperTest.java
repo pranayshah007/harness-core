@@ -8,6 +8,7 @@
 package io.harness.pms.pipeline.service;
 
 import static io.harness.exception.WingsException.USER;
+import static io.harness.gitcaching.GitCachingConstants.BOOLEAN_FALSE_VALUE;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.INDER;
 
@@ -94,12 +95,13 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(anyString(), anyString(), anyString(), any(), any(), any(), any(), any(), any(),
-            any(), any(), any(TemplateApplyRequestDTO.class));
+            any(), any(), any(), any(TemplateApplyRequestDTO.class));
     when(callRequest.execute())
         .thenReturn(Response.success(
             ResponseDTO.newResponse(TemplateMergeResponseDTO.builder().mergedPipelineYaml(givenYaml).build())));
     String resolveTemplateRefsInPipeline =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml)
+        pipelineTemplateHelper
+            .resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE)
             .getMergedPipelineYaml();
     assertThat(resolveTemplateRefsInPipeline).isEqualTo(givenYaml);
   }
@@ -115,14 +117,15 @@ public class PMSPipelineTemplateHelperTest extends CategoryTest {
     doReturn(callRequest)
         .when(templateResourceClient)
         .applyTemplatesOnGivenYamlV2(ACCOUNT_ID, ORG_ID, PROJECT_ID, null, null, null, null, null, null, null, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
+            "false", TemplateApplyRequestDTO.builder().originalEntityYaml(givenYaml).build());
     ValidateTemplateInputsResponseDTO validateTemplateInputsResponseDTO =
         ValidateTemplateInputsResponseDTO.builder().build();
     when(callRequest.execute())
         .thenThrow(new NGTemplateResolveExceptionV2(
             "Exception in resolving template refs in given yaml.", USER, validateTemplateInputsResponseDTO, null));
-    assertThatThrownBy(
-        () -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml))
+    assertThatThrownBy(()
+                           -> pipelineTemplateHelper.resolveTemplateRefsInPipeline(
+                               ACCOUNT_ID, ORG_ID, PROJECT_ID, givenYaml, BOOLEAN_FALSE_VALUE))
         .isInstanceOf(NGTemplateResolveExceptionV2.class)
         .hasMessage("Exception in resolving template refs in given yaml.");
   }

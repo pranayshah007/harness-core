@@ -42,7 +42,7 @@ import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
-import io.harness.delegate.events.DelegateGroupUpsertEvent;
+import io.harness.delegate.events.DelegateUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
 import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
@@ -56,6 +56,7 @@ import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
 import software.wings.service.impl.DelegateConnectionDao;
+import software.wings.service.intfc.ownership.OwnedByAccount;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -86,7 +87,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
-public class DelegateSetupServiceImpl implements DelegateSetupService {
+public class DelegateSetupServiceImpl implements DelegateSetupService, OwnedByAccount {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
   @Inject private DelegateConnectionDao delegateConnectionDao;
@@ -396,7 +397,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
   private DelegateGroupDetails buildDelegateGroupDetails(
       String accountId, DelegateGroup delegateGroup, List<Delegate> groupDelegates, String delegateGroupId) {
     if (groupDelegates == null) {
-      log.info("There are no delegates related to this delegate group.");
+      log.debug("There are no delegates related to this delegate group.");
       groupDelegates = emptyList();
     }
 
@@ -640,11 +641,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     DelegateGroup updatedDelegateGroup =
         persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-    outboxService.save(DelegateGroupUpsertEvent.builder()
+    outboxService.save(DelegateUpsertEvent.builder()
                            .accountIdentifier(accountId)
                            .orgIdentifier(orgId)
                            .projectIdentifier(projectId)
-                           .delegateGroupId(updatedDelegateGroup.getUuid())
+                           .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                            .delegateSetupDetails(DelegateSetupDetails.builder()
                                                      .identifier(updatedDelegateGroup.getIdentifier())
                                                      .tags(updatedDelegateGroup.getTags())
@@ -706,11 +707,11 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       DelegateGroup updatedDelegateGroup =
           persistence.findAndModify(updateQuery, updateOperations, HPersistence.returnNewOptions);
 
-      outboxService.save(DelegateGroupUpsertEvent.builder()
+      outboxService.save(DelegateUpsertEvent.builder()
                              .accountIdentifier(accountIdentifier)
                              .orgIdentifier(orgIdentifier)
                              .projectIdentifier(projectIdentifier)
-                             .delegateGroupId(updatedDelegateGroup.getUuid())
+                             .delegateGroupIdentifier(updatedDelegateGroup.getIdentifier())
                              .delegateSetupDetails(DelegateSetupDetails.builder()
                                                        .identifier(updatedDelegateGroup.getIdentifier())
                                                        .tags(updatedDelegateGroup.getTags())
@@ -890,5 +891,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       }
     }
     return implicitTags;
+  }
+
+  @Override
+  public void deleteByAccountId(String accountId) {
+    persistence.delete(persistence.createQuery(DelegateGroup.class).filter(DelegateGroupKeys.accountId, accountId));
   }
 }

@@ -18,10 +18,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.DeprecatedIntegrationTests;
 import io.harness.limits.ConfiguredLimit.ConfiguredLimitKeys;
 import io.harness.limits.Counter.CounterKeys;
+import io.harness.limits.checkers.LimitChecker;
 import io.harness.limits.configuration.LimitConfigurationService;
 import io.harness.limits.impl.model.RateLimit;
 import io.harness.limits.impl.model.StaticLimit;
-import io.harness.limits.lib.LimitChecker;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 

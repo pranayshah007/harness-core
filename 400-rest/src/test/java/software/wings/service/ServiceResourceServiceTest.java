@@ -17,6 +17,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.ANUBHAW;
+import static io.harness.rule.OwnerRule.BOOPESH;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GARVIT;
@@ -33,7 +34,6 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static software.wings.api.DeploymentType.KUBERNETES;
 import static software.wings.api.DeploymentType.PCF;
 import static software.wings.beans.Account.GLOBAL_ACCOUNT_ID;
-import static software.wings.beans.AppContainer.Builder.anAppContainer;
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.CommandCategory.Type.COMMANDS;
@@ -74,6 +74,7 @@ import static software.wings.beans.container.PcfServiceSpecification.PcfServiceS
 import static software.wings.beans.container.UserDataSpecification.UserDataSpecificationKeys;
 import static software.wings.common.TemplateConstants.HARNESS_GALLERY;
 import static software.wings.common.TemplateConstants.LATEST_TAG;
+import static software.wings.persistence.AppContainer.Builder.anAppContainer;
 import static software.wings.security.UserThreadLocal.userGuard;
 import static software.wings.service.intfc.ServiceVariableService.EncryptedFieldMode.OBTAIN_VALUE;
 import static software.wings.stencils.StencilCategory.CONTAINERS;
@@ -141,6 +142,7 @@ import io.harness.limits.ActionType;
 import io.harness.limits.LimitCheckerFactory;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
+import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;
 import io.harness.stream.BoundedInputStream;
 
@@ -199,6 +201,7 @@ import software.wings.dl.WingsPersistence;
 import software.wings.scheduler.BackgroundJobScheduler;
 import software.wings.security.UserThreadLocal;
 import software.wings.service.impl.AuditServiceHelper;
+import software.wings.service.impl.CommandServiceImpl;
 import software.wings.service.impl.ServiceResourceServiceImpl;
 import software.wings.service.impl.command.CommandHelper;
 import software.wings.service.impl.yaml.YamlChangeSetHelper;
@@ -327,6 +330,7 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
 
   @Inject @InjectMocks private CommandHelper commandHelper;
   @Inject @InjectMocks private ResourceLookupService resourceLookupService;
+  @Inject @InjectMocks private CommandServiceImpl commandServiceImpl;
 
   @Spy @InjectMocks private ServiceResourceServiceImpl spyServiceResourceService;
 
@@ -3295,5 +3299,17 @@ public class ServiceResourceServiceTest extends WingsBaseTest {
     persistence.save(service);
     persistence.save(service2);
     assertThat(spyServiceResourceService.getIdsWithArtifactFromManifest(APP_ID)).hasSize(1).containsExactly(SERVICE_ID);
+  }
+
+  @Test
+  @Owner(developers = BOOPESH)
+  @Category(UnitTests.class)
+  public void testShouldDeleteByAccountId() {
+    when(mockWingsPersistence.delete((Query<PersistentEntity>) any())).thenReturn(true);
+    Query<PersistentEntity> mockedQueryEntity = mock(Query.class);
+    when(mockWingsPersistence.createQuery(any())).thenReturn(mockedQueryEntity);
+    when(mockedQueryEntity.filter(anyString(), any())).thenReturn(mockedQueryEntity);
+    commandServiceImpl.deleteByAccountId(ACCOUNT_ID);
+    verify(mockWingsPersistence, times(1)).delete((Query<PersistentEntity>) any());
   }
 }

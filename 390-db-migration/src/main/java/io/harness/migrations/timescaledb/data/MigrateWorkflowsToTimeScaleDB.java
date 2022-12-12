@@ -17,8 +17,8 @@ import io.harness.timescaledb.TimeScaleDBService;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.beans.artifact.Artifact;
 import software.wings.dl.WingsPersistence;
+import software.wings.persistence.artifact.Artifact;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

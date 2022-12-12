@@ -34,32 +34,36 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(CDP)
 public class InlineStoreDownloadService implements FileStoreDownloadService {
   @Override
-  public void download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+  public DownloadResult download(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException {
-    downloadFiles(storeConfig, outputDirectory);
+    downloadFiles(storeConfig, outputDirectory, logCallback);
+    return DownloadResult.builder().rootDirectory(outputDirectory).build();
   }
 
   @Override
-  public List<String> fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
+  public FetchFilesResult fetchFiles(StoreDelegateConfig storeConfig, String accountId, String outputDirectory,
       LogCallback logCallback) throws IOException {
-    return downloadFiles(storeConfig, outputDirectory);
+    return downloadFiles(storeConfig, outputDirectory, logCallback);
   }
 
-  private List<String> downloadFiles(StoreDelegateConfig storeConfig, String outputDirectory) throws IOException {
+  private FetchFilesResult downloadFiles(
+      StoreDelegateConfig storeConfig, String outputDirectory, LogCallback logCallback) throws IOException {
     validateInlineStore(storeConfig);
     InlineStoreDelegateConfig inlineStoreConfig = (InlineStoreDelegateConfig) storeConfig;
 
     FileIo.createDirectoryIfDoesNotExist(outputDirectory);
     List<String> filePaths = new ArrayList<>();
+    String loggableOutputDirectory = getLoggablePath(outputDirectory);
     for (InlineFileConfig inlineFileConfig : inlineStoreConfig.getFiles()) {
       UUID uuid = UUID.randomUUID();
       String fileName = inlineFileConfig.getName().replace("${UUID}", uuid.toString());
+      logCallback.saveExecutionLog(format("Save inline file '%s' to '%s'", fileName, loggableOutputDirectory));
       Path filePath = Files.createFile(Paths.get(outputDirectory, fileName));
       Files.write(filePath, inlineFileConfig.getContent().getBytes());
       filePaths.add(filePath.toAbsolutePath().toString());
     }
 
-    return filePaths;
+    return FetchFilesResult.builder().files(filePaths).identifier(inlineStoreConfig.getIdentifier()).build();
   }
 
   private void validateInlineStore(StoreDelegateConfig storeConfig) {

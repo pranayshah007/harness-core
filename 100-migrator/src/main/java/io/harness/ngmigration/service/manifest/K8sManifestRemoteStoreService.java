@@ -28,7 +28,6 @@ import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.ngmigration.CgEntityId;
 import software.wings.ngmigration.CgEntityNode;
-import software.wings.ngmigration.NGMigrationEntityType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -47,10 +46,10 @@ public class K8sManifestRemoteStoreService implements NgManifestService {
       ManifestProvidedEntitySpec entitySpec, List<NGYamlFile> yamlFileList) {
     // TODO: get store from migrated connector entity
     GitFileConfig gitFileConfig = applicationManifest.getGitFileConfig();
-    NgEntityDetail connector =
-        migratedEntities
-            .get(CgEntityId.builder().id(gitFileConfig.getConnectorId()).type(NGMigrationEntityType.CONNECTOR).build())
-            .getNgEntityDetail();
+    NgEntityDetail connector = NgManifestFactory.getGitConnector(migratedEntities, applicationManifest);
+    if (connector == null) {
+      return Collections.emptyList();
+    }
 
     // Note: Special case handling for ECS task services
     if (StringUtils.isNotBlank(gitFileConfig.getServiceSpecFilePath())

@@ -202,7 +202,7 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
   public void testGetTemplate() {
     doReturn(Optional.of(entityWithMongoVersion))
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, TEMPLATE_IDENTIFIER, TEMPLATE_VERSION_LABEL, false, false);
     TemplateWithInputsResponse templateWithInputsResponse = new TemplateWithInputsResponse();
     TemplateResponse templateResponse = new TemplateResponse();
     templateResponse.setAccount(entity.getAccountId());
@@ -241,7 +241,8 @@ public class TemplateResourceApiUtilsTest extends CategoryTest {
     String incorrectTemplateIdentifier = "notTheIdentifierWeNeed";
     doReturn(Optional.empty())
         .when(templateService)
-        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false);
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, incorrectTemplateIdentifier, TEMPLATE_VERSION_LABEL, false,
+            false);
     assertThatThrownBy(
         ()
             -> templateResourceApiUtils.getTemplate(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,

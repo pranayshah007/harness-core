@@ -18,11 +18,14 @@ import lombok.Builder;
 
 @OwnedBy(HarnessTeam.GITOPS)
 public class FetchLinkedAppsStepParams implements GitOpsSpecParameters {
+  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
   @Builder(builderMethodName = "infoBuilder")
-  public FetchLinkedAppsStepParams() {}
+  public FetchLinkedAppsStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    this.delegateSelectors = delegateSelectors;
+  }
 
   @Override
   public ParameterField<List<TaskSelectorYaml>> getDelegateSelectors() {
-    return null;
+    return delegateSelectors;
   }
 }

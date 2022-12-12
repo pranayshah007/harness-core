@@ -65,7 +65,9 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
@@ -100,6 +102,7 @@ import io.harness.utils.YamlPipelineUtils;
 
 import com.google.inject.Inject;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -115,6 +118,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(CDP)
 public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTaskExecutableStep
     implements AsyncExecutableWithRbac<InfrastructureTaskExecutableStepV2Params> {
+  @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.INFRASTRUCTURE_TASKSTEP_V2.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -243,16 +247,12 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
                                                .build()));
 
     String infrastructureKind = infrastructureOutcome.getKind();
-    if (stageExecutionHelper.shouldSaveStageExecutionInfo(infrastructureKind)) {
-      ExecutionInfoKey executionInfoKey = ExecutionInfoKeyMapper.getExecutionInfoKey(
-          ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
-      stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
-          ambiance, executionInfoKey, infrastructureKind);
-      if (stageExecutionHelper.isRollbackArtifactRequiredPerInfrastructure(infrastructureKind)) {
-        stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
-            ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
-      }
-    }
+    ExecutionInfoKey executionInfoKey =
+        ExecutionInfoKeyMapper.getExecutionInfoKey(ambiance, environmentOutcome, serviceOutcome, infrastructureOutcome);
+    stageExecutionHelper.saveStageExecutionInfoAndPublishExecutionInfoKey(
+        ambiance, executionInfoKey, infrastructureKind);
+    stageExecutionHelper.addRollbackArtifactToStageOutcomeIfPresent(
+        ambiance, stepResponseBuilder, executionInfoKey, infrastructureKind);
 
     saveExecutionLog(
         logCallback, color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -281,9 +281,13 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
       log.warn("no principal found while executing the infrastructure step. skipping resource validation");
       return;
     }
-    final Set<EntityDetailProtoDTO> entityDetails =
+
+    Set<EntityDetailProtoDTO> entityDetailsProto =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infraSpec);
-    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    List<EntityDetail> entityDetails =
+        entityDetailProtoToRestMapper.createEntityDetailsDTO(new ArrayList<>(entityDetailsProto));
+
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails, true);
   }
 
   public void setInfraIdentifierAndName(Infrastructure infraSpec, InfrastructureConfig infrastructureConfig) {
@@ -304,6 +308,10 @@ public class InfrastructureTaskExecutableStepV2 extends AbstractInfrastructureTa
 
     final OutcomeSet outcomeSet = fetchRequiredOutcomes(ambiance);
     final EnvironmentOutcome environmentOutcome = outcomeSet.getEnvironmentOutcome();
+
+    saveExecutionLog(logCallback,
+        "Environment Name: " + environmentOutcome.getName() + " , Identifier: " + environmentOutcome.getIdentifier());
+
     final ServiceStepOutcome serviceOutcome = outcomeSet.getServiceStepOutcome();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 

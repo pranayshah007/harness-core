@@ -180,4 +180,5 @@ enum DataFetcherEnum {
   createApiKey
   updateApiKey
   deleteApiKey
+  frozenExecutionConnection
 }

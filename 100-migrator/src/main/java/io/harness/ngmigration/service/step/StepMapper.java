@@ -42,6 +42,10 @@ public interface StepMapper {
     return ParameterField.createValueField(Timeout.builder().timeoutString(timeoutString).build());
   }
 
+  default ParameterField<Timeout> getTimeout(State state) {
+    return MigratorUtility.getTimeout(state.getTimeoutMillis());
+  }
+
   default String getDescription(StepYaml stepYaml) {
     Map<String, Object> properties = getProperties(stepYaml);
     return properties.getOrDefault("description", "").toString();
@@ -70,17 +74,11 @@ public interface StepMapper {
     stepNode.setName(state.getName());
     if (stepNode instanceof PmsAbstractStepNode) {
       PmsAbstractStepNode pmsAbstractStepNode = (PmsAbstractStepNode) stepNode;
-      pmsAbstractStepNode.setTimeout(ParameterField.createValueField(
-          Timeout.builder()
-              .timeoutInMillis(state.getTimeoutMillis() == null ? DEFAULT_TIMEOUT_MILLI : state.getTimeoutMillis())
-              .build()));
+      pmsAbstractStepNode.setTimeout(getTimeout(state));
     }
     if (stepNode instanceof CdAbstractStepNode) {
       CdAbstractStepNode cdAbstractStepNode = (CdAbstractStepNode) stepNode;
-      cdAbstractStepNode.setTimeout(ParameterField.createValueField(
-          Timeout.builder()
-              .timeoutInMillis(state.getTimeoutMillis() == null ? DEFAULT_TIMEOUT_MILLI : state.getTimeoutMillis())
-              .build()));
+      cdAbstractStepNode.setTimeout(getTimeout(state));
     }
   }
 }

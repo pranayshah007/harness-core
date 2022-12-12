@@ -17,6 +17,7 @@ import io.harness.ccm.anomaly.entities.EntityType;
 import io.harness.ccm.anomaly.url.HarnessUrl;
 import io.harness.ccm.anomaly.utility.AnomalyUtility;
 import io.harness.ccm.commons.entities.anomaly.AnomalyData;
+import io.harness.ccm.currency.Currency;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 
@@ -41,14 +42,14 @@ import org.springframework.stereotype.Service;
 public class SlackMessageGenerator {
   @Autowired private BatchMainConfig mainConfiguration;
 
-  public List<LayoutBlock> generateDailyReport(List<AnomalyEntity> anomalies) {
+  public List<LayoutBlock> generateDailyReport(List<AnomalyEntity> anomalies, Currency currency) {
     List<LayoutBlock> listBlocks = new ArrayList<>();
     if (!anomalies.isEmpty()) {
       Integer size = anomalies.size();
       Instant date = anomalies.get(0).getAnomalyTime();
       String accountId = anomalies.get(0).getAccountId();
       listBlocks.add(getDailyHeader(size, date));
-      listBlocks.addAll(fromAnomaly(anomalies));
+      listBlocks.addAll(fromAnomaly(anomalies, currency));
       listBlocks.add(actionBar(size, accountId, date));
     } else {
       throw new InvalidArgumentsException("Anomalies list is empty cannot generate slack message");
@@ -93,7 +94,7 @@ public class SlackMessageGenerator {
     return SectionBlock.builder().text(plainText(content, true)).build();
   }
 
-  public List<LayoutBlock> fromAnomaly(List<AnomalyEntity> anomalies) {
+  public List<LayoutBlock> fromAnomaly(List<AnomalyEntity> anomalies, Currency currency) {
     List<LayoutBlock> listLayoutBlock = new ArrayList<>();
 
     String headerText;
@@ -112,7 +113,7 @@ public class SlackMessageGenerator {
       } else {
         count++;
       }
-      listLayoutBlock.add(fromAnomaly(anomaly));
+      listLayoutBlock.add(fromAnomaly(anomaly, currency));
     }
     return listLayoutBlock;
   }
@@ -212,7 +213,7 @@ public class SlackMessageGenerator {
     return templateString;
   }
 
-  public LayoutBlock fromAnomaly(AnomalyEntity anomaly) {
+  public LayoutBlock fromAnomaly(AnomalyEntity anomaly, Currency currency) {
     String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE}) ";
     templateString = addClusterInfo(templateString, anomaly);
     templateString = addNamespaceInfo(templateString, anomaly);
@@ -225,13 +226,13 @@ public class SlackMessageGenerator {
     templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
         + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*";
 
-    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomaly));
+    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomaly, currency));
     templateString = replace(templateString, AnomalyUtility.getURLMap(anomaly, mainConfiguration.getBaseUrl()));
     return SectionBlock.builder().text(MarkdownTextObject.builder().text(templateString).build()).build();
   }
 
-  public String getAnomalyDetailsTemplateString(
-      String accountId, String perspectiveId, String perspectiveName, AnomalyData anomaly) throws URISyntaxException {
+  public String getAnomalyDetailsTemplateString(String accountId, String perspectiveId, String perspectiveName,
+      AnomalyData anomaly, Currency currency) throws URISyntaxException {
     AnomalyEntity anomalyEntity = convertToAnomalyEntity(anomaly);
 
     String templateString = "${ANOMALY_COST}`* (+${ANOMALY_COST_PERCENTAGE})  ";
@@ -246,7 +247,7 @@ public class SlackMessageGenerator {
     templateString = templateString + "\n Total spend of *${" + AnomalyEntityKeys.actualCost
         + "}* detected. Would be typically at *${" + AnomalyEntityKeys.expectedCost + "}*\n\n";
 
-    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity));
+    templateString = " *`" + replace(templateString, AnomalyUtility.getEntityMap(anomalyEntity, currency));
     templateString = replace(templateString,
         AnomalyUtility.getNgURLMap(accountId, perspectiveId, perspectiveName, anomaly, mainConfiguration.getBaseUrl()));
     return templateString;

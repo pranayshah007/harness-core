@@ -45,7 +45,6 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.user.spring.UserMembershipRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -105,7 +104,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
         createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
       } else {
-        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope, true);
       }
       log.info(DEBUG_MESSAGE + "Created default user group {} at scope {}", userGroupIdentifier, scope);
       return userGroup;
@@ -194,12 +193,13 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
     }
   }
 
-  private void createRoleAssignmentsForAccount(String principalIdentifier, Scope scope) {
+  private void createRoleAssignmentsForAccount(
+      String principalIdentifier, Scope scope, boolean createAccountViewerRoleBinding) {
     createRoleAssignment(
         principalIdentifier, scope, true, ACCOUNT_BASIC_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     boolean isAccountBasicFeatureFlagEnabled =
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY);
-    if (!isAccountBasicFeatureFlagEnabled) {
+    if (!isAccountBasicFeatureFlagEnabled && createAccountViewerRoleBinding) {
       createRoleAssignment(
           principalIdentifier, scope, false, ACCOUNT_VIEWER_ROLE, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
     }
@@ -308,18 +308,14 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
 
   private void createRoleAssignmentAtScope(Scope scope) {
     Optional<List<RoleAssignmentResponseDTO>> optionalRoleAssignmentResponseDTO = getRoleAssignmentsAtScope(scope);
-    if (optionalRoleAssignmentResponseDTO.isPresent()) {
+    if (optionalRoleAssignmentResponseDTO.isPresent() && isEmpty(optionalRoleAssignmentResponseDTO.get())) {
       String userGroupIdentifier = getUserGroupIdentifier(scope);
       if (isNotEmpty(scope.getProjectIdentifier())) {
-        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
-          createRoleAssignmentForProject(userGroupIdentifier, scope);
-        }
+        createRoleAssignmentForProject(userGroupIdentifier, scope);
       } else if (isNotEmpty(scope.getOrgIdentifier())) {
-        if (isEmpty(optionalRoleAssignmentResponseDTO.get())) {
-          createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
-        }
-      } else if (optionalRoleAssignmentResponseDTO.get().size() != 2) {
-        createRoleAssignmentsForAccount(userGroupIdentifier, scope);
+        createRoleAssignmentsForOrganization(userGroupIdentifier, scope);
+      } else {
+        createRoleAssignmentsForAccount(userGroupIdentifier, scope, false);
       }
     }
   }
@@ -349,7 +345,7 @@ public class DefaultUserGroupServiceImpl implements DefaultUserGroupService {
   private RoleAssignmentFilterDTO getRoleAssignmentFilterDTOForAccountScope() {
     return RoleAssignmentFilterDTO.builder()
         .resourceGroupFilter(Collections.singleton(DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER))
-        .roleFilter(ImmutableSet.of(ACCOUNT_BASIC_ROLE, ACCOUNT_VIEWER_ROLE))
+        .roleFilter(Collections.singleton(ACCOUNT_BASIC_ROLE))
         .principalFilter(Collections.singleton(PrincipalDTO.builder()
                                                    .identifier(DEFAULT_ACCOUNT_LEVEL_USER_GROUP_IDENTIFIER)
                                                    .scopeLevel("account")
