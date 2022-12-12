@@ -72,6 +72,7 @@ import io.harness.manifest.ManifestCollectionResponseHandler;
 import io.harness.perpetualtask.connector.ConnectorHearbeatPublisher;
 import io.harness.perpetualtask.instancesync.InstanceSyncResponsePublisher;
 import io.harness.polling.client.PollingResourceClient;
+import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
@@ -138,6 +139,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
   private static final DelegateTaskService delegateTaskService = mock(DelegateTaskService.class);
   private static final InstanceSyncResponsePublisher instanceSyncResponsePublisher =
       mock(InstanceSyncResponsePublisher.class);
+  private static final DelegateCapacityManagementService delegateCapacityManagementService = mock(DelegateCapacityManagementService.class);
 
   static {
     artifactCollectionResponseHandler = mock(ArtifactCollectionResponseHandler.class);
@@ -165,7 +167,7 @@ public class DelegateAgentResourceTest extends CategoryTest {
               delegateRequestRateLimiter, subdomainUrlHelper, artifactCollectionResponseHandler,
               instanceSyncResponseHandler, manifestCollectionResponseHandler, connectorHearbeatPublisher,
               kryoSerializer, configurationController, featureFlagService, delegateTaskServiceClassic,
-              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService))
+              pollResourceClient, instanceSyncResponsePublisher, delegatePollingHeartbeatService, delegateCapacityManagementService))
           .instance(new AbstractBinder() {
             @Override
             protected void configure() {

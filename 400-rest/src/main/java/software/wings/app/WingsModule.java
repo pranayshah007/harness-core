@@ -114,6 +114,7 @@ import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.heartbeat.HeartbeatModule;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
+import io.harness.delegate.queueservice.DelegateTaskQueueService;
 import io.harness.delegate.queueservice.HQueueServiceClientFactory;
 import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
@@ -198,6 +199,9 @@ import io.harness.persistence.HPersistence;
 import io.harness.polling.client.PollResourceClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.queue.QueueController;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
+import io.harness.queueservice.infc.DelegateResourceCriteria;
+import io.harness.queueservice.infc.DelegateServiceQueue;
 import io.harness.redis.CompatibleFieldSerializerCodec;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
@@ -1049,6 +1053,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(MicrosoftTeamsNotificationService.class).to(MicrosoftTeamsNotificationServiceImpl.class);
     bind(EcsContainerService.class).to(EcsContainerServiceImpl.class);
     bind(AwsClusterService.class).to(AwsClusterServiceImpl.class);
+    bind(DelegateServiceQueue.class).to(DelegateTaskQueueService.class);
+    bind(DelegateQueueServiceConfig.class).toInstance(configuration.getQueueServiceConfig());
     bind(GkeClusterService.class).to(GkeClusterServiceImpl.class);
     try {
       bind(new TypeLiteral<DataStore<StoredCredential>>() {

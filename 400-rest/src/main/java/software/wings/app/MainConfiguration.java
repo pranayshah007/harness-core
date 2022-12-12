@@ -235,8 +235,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty(value = "cdTsDbRetentionPeriodMonths") private String cdTsDbRetentionPeriodMonths;
   @JsonProperty(value = "enableOpentelemetry") private Boolean enableOpentelemetry;
   @JsonProperty(value = "disableInstanceSyncIterator") private Boolean disableInstanceSyncIterator;
-  @JsonProperty("delegateQueueServiceConfig") private DelegateQueueServiceConfig delegateQueueClientConfig;
-
+  @JsonProperty("delegateQueueServiceConfig") private DelegateQueueServiceConfig queueServiceConfig;
   // If this flag is enabled event framework is utilized for wait engine notification mechanism
   @JsonProperty(value = "redisNotifyEvent") private boolean redisNotifyEvent;
 

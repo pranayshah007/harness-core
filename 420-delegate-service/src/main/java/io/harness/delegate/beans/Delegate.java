@@ -96,6 +96,7 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean polllingModeEnabled;
   private boolean proxy;
   private boolean ceEnabled;
+  private DelegateCapacity delegateCapacity;
 
   private List<String> supportedTaskTypes;
 
@@ -137,6 +138,8 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
   private boolean immutable;
 
   private boolean mtls;
+
+  @Transient private Integer numberOfTaskAssigned;
 
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {

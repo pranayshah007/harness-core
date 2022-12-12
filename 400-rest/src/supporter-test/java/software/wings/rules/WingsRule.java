@@ -64,6 +64,7 @@ import io.harness.observer.consumer.AbstractRemoteObserverModule;
 import io.harness.queue.QueueListener;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
+import io.harness.queueservice.config.DelegateQueueServiceConfig;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
@@ -354,6 +355,7 @@ public class WingsRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin 
                                             .build())
             .build());
 
+    configuration.setQueueServiceConfig(DelegateQueueServiceConfig.builder().topic("delegate-service").build());
     MarketPlaceConfig marketPlaceConfig =
         MarketPlaceConfig.builder().azureMarketplaceAccessKey("qwertyu").azureMarketplaceSecretKey("qwertyu").build();
     configuration.setMarketPlaceConfig(marketPlaceConfig);

@@ -56,6 +56,7 @@ import io.harness.common.NGTaskType;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
+import io.harness.delegate.beans.DelegateCapacity;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
@@ -93,6 +94,9 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.observer.Subject;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
+import io.harness.queueservice.ResourceBasedDelegateSelectionCheckForTask;
+import io.harness.queueservice.impl.OrderByTotalNumberOfTaskAssignedCriteria;
+import io.harness.queueservice.infc.DelegateCapacityManagementService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCache;
@@ -246,6 +250,9 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
   @InjectMocks @Inject private DelegateTaskServiceClassicImpl delegateTaskServiceClassic;
   @InjectMocks @Inject private DelegateTaskService delegateTaskService;
   @Inject @InjectMocks private AssignDelegateServiceImpl assignDelegateService;
+  @Inject @InjectMocks private ResourceBasedDelegateSelectionCheckForTask resourceBasedDelegateSelectionCheckForTask;
+  @Inject @InjectMocks private OrderByTotalNumberOfTaskAssignedCriteria orderByTotalNumberOfTaskAssignedCriteria;
+  @Inject @InjectMocks private DelegateCapacityManagementService delegateCapacityManagementService;
 
   @Inject private HPersistence persistence;
 
@@ -1328,6 +1335,24 @@ public class DelegateTaskProcessTest extends WingsBaseTest {
     delegateTaskServiceClassic.scheduleSyncTask(delegateTask);
     DelegateTask task = persistence.get(DelegateTask.class, delegateTask.getUuid());
     assertThat(task).isNull();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  @Description("Task Criteria mismatch with delegate, TaskType.AWS_IAM_TASK")
+  public void testResourceBasedTaskAssignment() throws ExecutionException {
+    String accountId = generateUuid();
+    Delegate delegate = createDelegate(accountId);
+    delegate.setNumberOfTaskAssigned(1);
+    delegate.setDelegateCapacity(DelegateCapacity.builder().maximumNumberOfBuilds(10).build());
+    persistence.save(delegate);
+    when(orderByTotalNumberOfTaskAssignedCriteria.getDelegateFromCache(accountId, delegate.getUuid())).thenReturn(delegate);
+    when(orderByTotalNumberOfTaskAssignedCriteria.getNumberOfTaskAssignedCache(accountId)).thenReturn(Arrays.asList(DelegateTask.builder().build()));
+    List<Delegate> eligibleDelegateIds = Collections.singletonList(delegate);
+    Optional<List<String>> delegateList = resourceBasedDelegateSelectionCheckForTask.perform(
+        eligibleDelegateIds, TaskType.INITIALIZATION_PHASE, accountId);
+    assertThat(delegateList.get().size() == 1);
   }
 
   private Delegate createDelegateWithScope(String accountId) {

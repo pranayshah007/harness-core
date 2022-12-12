@@ -14,6 +14,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DelegateTask;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateGroup;
@@ -117,6 +118,22 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+
+  private LoadingCache<String, List<DelegateTask>> numberOfDelegateTasksAssignedInAccountCache =
+          CacheBuilder.newBuilder()
+                  .maximumSize(10000)
+                  .expireAfterWrite(1, TimeUnit.MINUTES)
+                  .build(new CacheLoader<String, List<DelegateTask>>() {
+                    @Override
+                    public List<DelegateTask> load(@org.jetbrains.annotations.NotNull String accountId) {
+                      return persistence.createQuery(DelegateTask.class)
+                              .filter(DelegateTask.DelegateTaskKeys.accountId, accountId)
+                              .project(DelegateTask.DelegateTaskKeys.delegateId, true)
+                              .asList();
+                    }
+                  });
+
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -191,6 +208,16 @@ public class DelegateCacheImpl implements DelegateCache {
       log.warn("Unable to get supported task types from cache based on account id");
       return null;
     }
+  }
+
+  @Override
+  public List<DelegateTask> getCurrentlyAssignedTask(String accountId) {
+   try {
+     return numberOfDelegateTasksAssignedInAccountCache.get(accountId);
+   }catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+     log.warn("Unable to get supported task types from cache based on account id");
+     return null;
+   }
   }
 
   private Set<String> getIntersectionOfSupportedTaskTypes(@NotNull String accountId) {

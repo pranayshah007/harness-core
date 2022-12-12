@@ -21,7 +21,7 @@ public class HQueueServiceClientFactory implements Provider<HsqsServiceClient> {
 
   @Override
   public HsqsServiceClient get() {
-    String url = mainConfiguration.getDelegateQueueClientConfig().getQueueServiceConfig().getBaseUrl();
+    String url = mainConfiguration.getQueueServiceConfig().getQueueServiceConfig().getBaseUrl();
     OkHttpClient okHttpClient = getOkHttpClientBuilder()
                                     .connectTimeout(5, TimeUnit.SECONDS)
                                     .readTimeout(10, TimeUnit.SECONDS)

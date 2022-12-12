@@ -31,10 +31,8 @@ public class DelegateTaskQueueService implements DelegateServiceQueue<DelegateTa
   private ObjectMapper objectMapper;
 
   @Inject
-  public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient,
-      DelegateQueueServiceConfig delegateQueueServiceConfig, ObjectMapper objectMapper) {
+  public DelegateTaskQueueService(HsqsServiceClient hsqsServiceClient, ObjectMapper objectMapper) {
     this.hsqsServiceClient = hsqsServiceClient;
-    this.delegateQueueServiceConfig = delegateQueueServiceConfig;
     this.objectMapper = objectMapper;
   }
 
