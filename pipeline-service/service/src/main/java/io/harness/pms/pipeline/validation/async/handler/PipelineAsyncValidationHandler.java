@@ -67,7 +67,7 @@ public class PipelineAsyncValidationHandler implements Runnable {
     ValidationResult templateValidationResult;
     try {
       TemplateMergeResponseDTO templateMergeResponse =
-          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true);
+          pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, true, false);
       templateValidationResult =
           ValidationResult.builder()
               .templateInputsResponse(ValidateTemplateInputsResponseDTO.builder().validYaml(true).build())
