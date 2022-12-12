@@ -10,6 +10,9 @@ package io.harness.delegate.task.elastigroup;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 import static io.harness.spotinst.model.SpotInstConstants.CAPACITY;
 import static io.harness.spotinst.model.SpotInstConstants.CAPACITY_MAXIMUM_CONFIG_ELEMENT;
 import static io.harness.spotinst.model.SpotInstConstants.CAPACITY_MINIMUM_CONFIG_ELEMENT;
@@ -28,16 +31,19 @@ import static io.harness.spotinst.model.SpotInstConstants.LOAD_BALANCERS_CONFIG;
 import static io.harness.spotinst.model.SpotInstConstants.NAME_CONFIG_ELEMENT;
 import static io.harness.spotinst.model.SpotInstConstants.STAGE_ELASTI_GROUP_NAME_SUFFIX;
 import static io.harness.spotinst.model.SpotInstConstants.UNIT_INSTANCE;
+import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
+import io.harness.concurrent.HTimeLimiter;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
@@ -62,21 +68,28 @@ import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.spotinst.SpotInstHelperServiceDelegate;
 import io.harness.spotinst.model.ElastiGroup;
+import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupLoadBalancer;
 import io.harness.spotinst.model.ElastiGroupLoadBalancerConfig;
 
 import software.wings.beans.LogColor;
 
+import com.google.common.util.concurrent.ExecutionError;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.lang.reflect.Type;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Action;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
@@ -102,6 +115,8 @@ public class ElastigroupCommandTaskNGHelper {
   @Inject protected ElbV2Client elbV2Client;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
   @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
+
+  @Inject private TimeLimiter timeLimiter;
 
   public String generateFinalJson(
       ElastigroupSetupCommandRequest elastigroupSetupCommandRequest, String newElastiGroupName) throws Exception {
@@ -553,6 +568,66 @@ public class ElastigroupCommandTaskNGHelper {
         logCallback.saveExecutionLog(format("- %s", getElastigroupString(e)));
       });
     }
+  }
+
+  public void waitForSteadyState(ElastiGroup elastiGroup, String spotInstAccountId, String spotInstToken,
+      int steadyStateTimeOut, LogCallback lLogCallback) {
+    lLogCallback.saveExecutionLog(
+        format("Waiting for Elastigroup: %s to reach steady state", getElastigroupString(elastiGroup)));
+    try {
+      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOut), () -> {
+        while (true) {
+          if (allInstancesHealthy(
+                  spotInstToken, spotInstAccountId, elastiGroup, lLogCallback, elastiGroup.getCapacity().getTarget())) {
+            return true;
+          }
+          sleep(ofSeconds(20));
+        }
+      });
+    } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
+      String errorMessage = format("Exception while waiting for steady state for Elastigroup: %s. Error message: [%s]",
+          getElastigroupString(elastiGroup), e.getMessage());
+      lLogCallback.saveExecutionLog(errorMessage, ERROR);
+      throw new InvalidRequestException(errorMessage, e.getCause());
+    } catch (TimeoutException | InterruptedException e) {
+      String errorMessage =
+          format("Timed out while waiting for steady state for Elastigroup: %s", getElastigroupString(elastiGroup));
+      lLogCallback.saveExecutionLog(errorMessage, ERROR);
+      throw new InvalidRequestException(errorMessage, e);
+    } catch (Exception e) {
+      String errorMessage = format("Exception while waiting for steady state for Elastigroup: %s. Error message: [%s]",
+          getElastigroupString(elastiGroup), e.getMessage());
+      lLogCallback.saveExecutionLog(errorMessage, ERROR);
+      throw new InvalidRequestException(errorMessage, e);
+    }
+  }
+
+  private boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup,
+      LogCallback logCallback, int targetInstances) throws Exception {
+    List<ElastiGroupInstanceHealth> instanceHealths = spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
+        spotInstToken, spotInstAccountId, elastigroup.getId());
+    int currentTotalCount = isEmpty(instanceHealths) ? 0 : instanceHealths.size();
+    int currentHealthyCount = isEmpty(instanceHealths)
+        ? 0
+        : (int) instanceHealths.stream().filter(health -> "HEALTHY".equals(health.getHealthStatus())).count();
+    if (targetInstances == 0) {
+      if (currentTotalCount == 0) {
+        logCallback.saveExecutionLog(
+            format("Elastigroup: %s does not have any instances.", getElastigroupString(elastigroup)), INFO, SUCCESS);
+        return true;
+      } else {
+        logCallback.saveExecutionLog(format("Elastigroup: %s still has [%d] total and [%d] healthy instances",
+            getElastigroupString(elastigroup), currentTotalCount, currentHealthyCount));
+      }
+    } else {
+      logCallback.saveExecutionLog(format("Healthy: %d/%d", currentHealthyCount, targetInstances));
+      if (targetInstances == currentHealthyCount && targetInstances == currentTotalCount) {
+        logCallback.saveExecutionLog(
+            format("Elastigroup: %s reached steady state", getElastigroupString(elastigroup)), INFO, SUCCESS);
+        return true;
+      }
+    }
+    return false;
   }
 
   public static String getElastigroupString(ElastiGroup elastiGroup){
