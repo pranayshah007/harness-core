@@ -665,14 +665,16 @@ public class TasBlueGreenSetupTaskHandler extends CfCommandTaskNGHandler {
 
     PcfManifestsPackage pcfManifestsPackage = setupRequest.getPcfManifestsPackage();
     AtomicInteger varFileIndex = new AtomicInteger(0);
-    pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
-      File varsYamlFile =
-          pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
-      if (varsYamlFile != null) {
-        varFileIndex.incrementAndGet();
-        requestData.getPcfManifestFileData().getVarFiles().add(varsYamlFile);
-      }
-    });
+    if(pcfManifestsPackage.getVariableYmls() != null) {
+      pcfManifestsPackage.getVariableYmls().forEach(varFileYml -> {
+        File varsYamlFile =
+                pcfCommandTaskBaseHelper.createManifestVarsYamlFileLocally(requestData, varFileYml, varFileIndex.get());
+        if (varsYamlFile != null) {
+          varFileIndex.incrementAndGet();
+          requestData.getPcfManifestFileData().getVarFiles().add(varsYamlFile);
+        }
+      });
+    }
   }
 
   private void updateConfigWithRoutesIfRequired(
