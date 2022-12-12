@@ -7,15 +7,26 @@
 
 package io.harness.delegate.task.elastigroup;
 
-import com.google.common.util.concurrent.ExecutionError;
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.google.inject.Inject;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.task.elastigroup.ElastigroupCommandTaskNGHelper.getElastigroupString;
+import static io.harness.logging.CommandExecutionStatus.SUCCESS;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
+import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
+import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
+
+import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.aws.v2.ecs.ElbV2Client;
-import io.harness.concurrent.HTimeLimiter;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -31,6 +42,11 @@ import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
 import io.harness.spotinst.model.ElastiGroupInstanceHealth;
 import io.harness.spotinst.model.ElastiGroupRenameRequest;
+
+import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ActionTypeEnum;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeListenersRequest;
@@ -40,39 +56,13 @@ import software.amazon.awssdk.services.elasticloadbalancingv2.model.DescribeRule
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Listener;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.ModifyListenerRequest;
 import software.amazon.awssdk.services.elasticloadbalancingv2.model.Rule;
-import software.wings.service.intfc.aws.delegate.AwsElbHelperServiceDelegate;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.logging.CommandExecutionStatus.SUCCESS;
-import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MAX_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_MIN_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DEFAULT_ELASTIGROUP_TARGET_INSTANCES;
-import static io.harness.spotinst.model.SpotInstConstants.DELETE_NEW_ELASTI_GROUP;
-import static io.harness.spotinst.model.SpotInstConstants.SWAP_ROUTES_COMMAND_UNIT;
-import static io.harness.threading.Morpheus.sleep;
-import static java.lang.String.format;
-import static java.time.Duration.ofSeconds;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
 public class ElastigroupDeployTaskHelper {
   @Inject private SpotInstHelperServiceDelegate spotInstHelperServiceDelegate;
-  @Inject private AwsElbHelperServiceDelegate awsElbHelperServiceDelegate;
   @Inject private ElastigroupCommandTaskNGHelper elastigroupCommandTaskNGHelper;
   @Inject private ElbV2Client elbV2Client;
-  @Inject private TimeLimiter timeLimiter;
 
   public void scaleElastigroup(ElastiGroup elastigroup, String spotInstToken, String spotInstAccountId,
       int steadyStateTimeOut, ILogStreamingTaskClient logStreamingTaskClient, String scaleCommandUnit,
@@ -89,7 +79,8 @@ public class ElastigroupDeployTaskHelper {
     }
 
     updateElastigroup(spotInstToken, spotInstAccountId, elastigroup, scaleLogCallback);
-    waitForSteadyState(elastigroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
+    elastigroupCommandTaskNGHelper.waitForSteadyState(
+        elastigroup, spotInstAccountId, spotInstToken, steadyStateTimeOut, waitLogCallback);
   }
 
   public List<String> getAllEc2InstanceIdsOfElastigroup(
@@ -120,7 +111,7 @@ public class ElastigroupDeployTaskHelper {
         spotInstHelperServiceDelegate.getElastiGroupById(spotInstToken, spotInstAccountId, elastiGroup.getId());
 
     if (!elastigroupInitialOptional.isPresent()) {
-      String message = format("Did not find Elastigroup: [%s], Id: [%s]", elastiGroup.getName(), elastiGroup.getId());
+      String message = format("Did not find Elastigroup: %s", getElastigroupString(elastiGroup));
       log.error(message);
       logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
       throw new InvalidRequestException(message);
@@ -129,89 +120,21 @@ public class ElastigroupDeployTaskHelper {
     ElastiGroup elastigroupInitial = elastigroupInitialOptional.get();
     elastiGroup.setName(elastigroupInitial.getName());
 
-    logCallback.saveExecutionLog(
-        format("Current state of Elastigroup: [%s], Id: [%s], min: [%d], max: [%d], desired: [%d]",
-            elastigroupInitial.getName(), elastigroupInitial.getId(), elastigroupInitial.getCapacity().getMinimum(),
-            elastigroupInitial.getCapacity().getMaximum(), elastigroupInitial.getCapacity().getTarget()));
+    logCallback.saveExecutionLog(format("Current state of Elastigroup: %s, min: [%d], max: [%d], desired: [%d]",
+        getElastigroupString(elastigroupInitial), elastigroupInitial.getCapacity().getMinimum(),
+        elastigroupInitial.getCapacity().getMaximum(), elastigroupInitial.getCapacity().getTarget()));
 
     checkAndUpdateElastigroup(elastiGroup, logCallback);
 
-    logCallback.saveExecutionLog(format(
-        "Sending request to Spotinst to update Elastigroup: [%s], Id: [%s] with min: [%d], max: [%d] and target: [%d]",
-        elastiGroup.getName(), elastiGroup.getId(), elastiGroup.getCapacity().getMinimum(),
-        elastiGroup.getCapacity().getMaximum(), elastiGroup.getCapacity().getTarget()));
+    logCallback.saveExecutionLog(
+        format("Sending request to update Elastigroup: %s with min: [%d], max: [%d] and target: [%d]",
+            getElastigroupString(elastiGroup), elastiGroup.getCapacity().getMinimum(),
+            elastiGroup.getCapacity().getMaximum(), elastiGroup.getCapacity().getTarget()));
 
     spotInstHelperServiceDelegate.updateElastiGroupCapacity(
         spotInstToken, spotInstAccountId, elastiGroup.getId(), elastiGroup);
 
     logCallback.saveExecutionLog("Request Sent to update Elastigroup", INFO, SUCCESS);
-  }
-
-  private void waitForSteadyState(ElastiGroup elastiGroup, String spotInstAccountId, String spotInstToken,
-      int steadyStateTimeOut, LogCallback lLogCallback) {
-    lLogCallback.saveExecutionLog(format(
-        "Waiting for Elastigroup: [%s], Id: [%s] to reach steady state", elastiGroup.getName(), elastiGroup.getId()));
-    try {
-      HTimeLimiter.callInterruptible(timeLimiter, Duration.ofMinutes(steadyStateTimeOut), () -> {
-        while (true) {
-          if (allInstancesHealthy(
-                  spotInstToken, spotInstAccountId, elastiGroup, lLogCallback, elastiGroup.getCapacity().getTarget())) {
-            return true;
-          }
-          sleep(ofSeconds(20));
-        }
-      });
-    } catch (ExecutionException | UncheckedExecutionException | ExecutionError e) {
-      String errorMessage =
-          format("Exception while waiting for steady state for Elastigroup: [%s], Id: [%s]. Error message: [%s]",
-              elastiGroup.getName(), elastiGroup.getId(), e.getMessage());
-      lLogCallback.saveExecutionLog(errorMessage, ERROR);
-      throw new InvalidRequestException(errorMessage, e.getCause());
-    } catch (TimeoutException | InterruptedException e) {
-      String errorMessage = format("Timed out while waiting for steady state for Elastigroup: [%s], Id: [%s]",
-          elastiGroup.getName(), elastiGroup.getId());
-      lLogCallback.saveExecutionLog(errorMessage, ERROR);
-      throw new InvalidRequestException(errorMessage, e);
-    } catch (Exception e) {
-      String errorMessage =
-          format("Exception while waiting for steady state for Elastigroup: [%s], Id: [%s]. Error message: [%s]",
-              elastiGroup.getName(), elastiGroup.getId(), e.getMessage());
-      lLogCallback.saveExecutionLog(errorMessage, ERROR);
-      throw new InvalidRequestException(errorMessage, e);
-    }
-  }
-
-  private boolean allInstancesHealthy(String spotInstToken, String spotInstAccountId, ElastiGroup elastigroup,
-      LogCallback logCallback, int targetInstances) throws Exception {
-    List<ElastiGroupInstanceHealth> instanceHealths = spotInstHelperServiceDelegate.listElastiGroupInstancesHealth(
-        spotInstToken, spotInstAccountId, elastigroup.getId());
-    int currentTotalCount = isEmpty(instanceHealths) ? 0 : instanceHealths.size();
-    int currentHealthyCount = isEmpty(instanceHealths)
-        ? 0
-        : (int) instanceHealths.stream().filter(health -> "HEALTHY".equals(health.getHealthStatus())).count();
-    if (targetInstances == 0) {
-      if (currentTotalCount == 0) {
-        logCallback.saveExecutionLog(format("Elastigroup: [%s], Id: [%s] does not have any instances.",
-                                         elastigroup.getName(), elastigroup.getId()),
-            INFO, SUCCESS);
-        return true;
-      } else {
-        logCallback.saveExecutionLog(
-            format("Elastigroup: [%s], Id: [%s] still has [%d] total and [%d] healthy instances", elastigroup.getName(),
-                elastigroup.getId(), currentTotalCount, currentHealthyCount));
-      }
-    } else {
-      logCallback.saveExecutionLog(format(
-          "Desired instances: [%d], Total instances: [%d], Healthy instances: [%d] for Elastigroup: [%s], Id: [%s]",
-          targetInstances, currentTotalCount, currentHealthyCount, elastigroup.getName(), elastigroup.getId()));
-      if (targetInstances == currentHealthyCount && targetInstances == currentTotalCount) {
-        logCallback.saveExecutionLog(
-            format("Elastigroup: [%s], Id: [%s] reached steady state", elastigroup.getName(), elastigroup.getId()),
-            INFO, SUCCESS);
-        return true;
-      }
-    }
-    return false;
   }
 
   /**
@@ -237,9 +160,9 @@ public class ElastigroupDeployTaskHelper {
           capacity.setMaximum(target);
         }
       }
-      logCallback.saveExecutionLog(format("Modifying invalid request to Spotinst to update Elastigroup: [%s], Id: [%s] "
+      logCallback.saveExecutionLog(format("Modifying invalid request to Spotinst to update Elastigroup: %s "
               + "Original min: [%d], max: [%d] and target: [%d], Modified min: [%d], max: [%d] and target: [%d] ",
-          elastigroup.getName(), elastigroup.getId(), min, max, target, capacity.getMinimum(), capacity.getMaximum(),
+          getElastigroupString(elastigroup), min, max, target, capacity.getMinimum(), capacity.getMaximum(),
           capacity.getTarget()));
     }
   }
@@ -254,13 +177,11 @@ public class ElastigroupDeployTaskHelper {
       return;
     }
 
-    logCallback.saveExecutionLog(
-        format("Sending request to Spotinst to delete newly created Elastigroup: [%s], Id: [%s]", elastigroup.getName(),
-            elastigroup.getId()));
+    logCallback.saveExecutionLog(format(
+        "Sending request to Spotinst to delete newly created Elastigroup: %s", getElastigroupString(elastigroup)));
     spotInstHelperServiceDelegate.deleteElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId());
     logCallback.saveExecutionLog(
-        format("Elastigroup: [%s], Id: [%s] deleted successfully", elastigroup.getName(), elastigroup.getId()), INFO,
-        SUCCESS);
+        format("Elastigroup: %s deleted successfully", getElastigroupString(elastigroup)), INFO, SUCCESS);
   }
 
   public void renameElastigroup(ElastiGroup elastigroup, String newName, String spotInstAccountId, String spotInstToken,
@@ -273,8 +194,8 @@ public class ElastigroupDeployTaskHelper {
       return;
     }
 
-    logCallback.saveExecutionLog(format(
-        "Renaming old Elastigroup: [%s], Id: [%s] to name: [%s]", elastigroup.getId(), elastigroup.getName(), newName));
+    logCallback.saveExecutionLog(
+        format("Renaming old Elastigroup: %s to name: [%s]", getElastigroupString(elastigroup), newName));
     spotInstHelperServiceDelegate.updateElastiGroup(spotInstToken, spotInstAccountId, elastigroup.getId(),
         ElastiGroupRenameRequest.builder().name(newName).build());
     logCallback.saveExecutionLog("Successfully renamed Elastigroup", INFO, SUCCESS);

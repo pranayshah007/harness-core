@@ -62,7 +62,7 @@ public class ElastigroupStepUtils extends CDStepHelper {
       NGAccess ngAccess, List<String> scopedFilePathList, LogCallback logCallback) {
     List<String> fileContents = new ArrayList<>();
     if (isNotEmpty(scopedFilePathList)) {
-      logCallback.saveExecutionLog(format("File%s :", scopedFilePathList.size() > 1 ? "s" : ""));
+      logCallback.saveExecutionLog(format("File%s:", scopedFilePathList.size() > 1 ? "s" : ""));
       printFilesFetchedFromHarnessStore(scopedFilePathList, logCallback);
       for (String scopedFilePath : scopedFilePathList) {
         Optional<FileStoreNodeDTO> valuesFile = validateAndFetchFileFromHarnessStore(scopedFilePath, ngAccess);
