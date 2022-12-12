@@ -28,7 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("TasSwapRollbackStepNode")
 @RecasterAlias("io.harness.cdng.tas.TasSwapRollbackStepNode")
 public class TasSwapRollbackStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasSwapRollbackStepNode.StepType type = StepType.SWAP_ROLLBACK;
+  @JsonProperty("type") @NotNull TasSwapRollbackStepNode.StepType type = StepType.SwapRollback;
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   TasSwapRollbackStepInfo tasSwapRollbackStepInfo;
@@ -44,7 +44,7 @@ public class TasSwapRollbackStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    SWAP_ROLLBACK(StepSpecTypeConstants.SWAP_ROLLBACK);
+    SwapRollback(StepSpecTypeConstants.SWAP_ROLLBACK);
     @Getter String name;
     StepType(String name) {
       this.name = name;

@@ -35,7 +35,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("tasCommandStepNode")
 @RecasterAlias("io.harness.cdng.tas.TasCommandStepNode")
 public class TasCommandStepNode extends CdAbstractStepNode {
-  @JsonProperty("type") @NotNull TasCommandStepNode.StepType type = StepType.TANZU_COMMAND;
+  @JsonProperty("type") @NotNull TasCommandStepNode.StepType type = StepType.TanzuCommand;
   @NotNull
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
@@ -52,7 +52,7 @@ public class TasCommandStepNode extends CdAbstractStepNode {
   }
 
   enum StepType {
-    TANZU_COMMAND(StepSpecTypeConstants.TANZU_COMMAND);
+    TanzuCommand(StepSpecTypeConstants.TANZU_COMMAND);
     @Getter String name;
     StepType(String name) {
       this.name = name;
