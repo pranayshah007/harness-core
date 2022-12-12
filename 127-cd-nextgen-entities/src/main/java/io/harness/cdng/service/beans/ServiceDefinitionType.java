@@ -76,7 +76,7 @@ public enum ServiceDefinitionType {
 
   @JsonProperty(ServiceSpecType.ASG)
   ASG(ServiceSpecType.ASG,
-      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
+      Lists.newArrayList(ExecutionStrategyType.BASIC, ExecutionStrategyType.CANARY, ExecutionStrategyType.BLUE_GREEN,
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.ASG);
 

@@ -29,11 +29,11 @@ spec:
           timeout: 10m
           spec:
             newAppInstances:
-              type: Count
-              value: 2
-            oldAppInstances:
               type: Percentage
-              value: 10
+              value: 100
+            oldAppInstances:
+              type: Count
+              value: 0
     rollbackSteps:
       - step:
           name: "App Rollback"
