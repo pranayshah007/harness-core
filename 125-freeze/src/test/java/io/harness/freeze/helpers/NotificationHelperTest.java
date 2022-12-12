@@ -75,7 +75,7 @@ public class NotificationHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testsendNotification() throws IOException {
     when(notificationClient.sendNotificationAsync(any())).thenReturn(NotificationResultWithStatus.builder().build());
-    notificationHelper.sendNotification(freezeConfigEntity);
-    verify(notificationClient, times(7)).sendNotificationAsync(any());
+    notificationHelper.sendNotification(yaml, true, true, null, ACCOUNT_ID, "", "", false);
+    verify(notificationClient, times(6)).sendNotificationAsync(any());
   }
 }
