@@ -90,7 +90,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
     CfRollbackCommandResponseNG cfRollbackCommandResponseNG = CfRollbackCommandResponseNG.builder().build();
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG = (CfSwapRollbackCommandRequestNG) cfCommandRequestNG;
-    executionLogCallback.saveExecutionLog(color("--------- Starting Rollback deployment", White, Bold));
     File workingDirectory = null;
     List<CfServiceData> cfServiceDataUpdated = new ArrayList<>();
 
@@ -101,7 +100,7 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       CloudFoundryConfig cfConfig = tasNgConfigMapper.mapTasConfigWithDecryption(
           tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
-      executionLogCallback.saveExecutionLog(color("--------- Starting PCF Route Update\n", White, Bold));
+      executionLogCallback.saveExecutionLog(color("--------- Starting Swap Rollback Step\n", White, Bold));
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
           tasInfraConfig.getTasConnectorDTO(), tasInfraConfig.getEncryptionDataDetails());
 
@@ -151,12 +150,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
             cfRollbackCommandRequestNG, cfRequestConfig, pcfRouteUpdateConfigData);
       }
 
-      //      cfRollbackCommandResult.setUpdatedValues(updateValues);
-      //      executionLogCallback.saveExecutionLog(
-      //          "--------- PCF Route Update completed successfully", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      //      cfRollbackCommandResponseNG.setErrorMessage(StringUtils.EMPTY);
-      //      cfRollbackCommandResponseNG.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
-
       // Will be used if app autoscalar is configured
       CfAppAutoscalarRequestData autoscalarRequestData =
           CfAppAutoscalarRequestData.builder()
@@ -184,9 +177,6 @@ public class CfSwapRollbackCommandTaskHandlerNG extends CfCommandTaskNGHandler {
       // Enable autoscalar for older app, if it was disabled during deploy
       cfCommandTaskHelperNG.enableAutoscalerIfNeeded(upsizeList, autoscalarRequestData, executionLogCallback);
       executionLogCallback.saveExecutionLog("#---------- Upsize Application Successfully Completed", INFO, SUCCESS);
-
-      executionLogCallback =
-          tasTaskHelperBase.getLogCallback(iLogStreamingTaskClient, Downsize, true, commandUnitsProgress);
 
       // Downsizing
       cfCommandTaskHelperNG.downSizeListOfInstances(executionLogCallback, cfServiceDataUpdated, cfRequestConfig,
