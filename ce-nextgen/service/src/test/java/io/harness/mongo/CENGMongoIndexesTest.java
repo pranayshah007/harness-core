@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,6 +67,7 @@ public class CENGMongoIndexesTest extends CENGTestBase {
     try (InputStream in = getClass().getResourceAsStream("/mongo/indexes.txt")) {
       expectedIndexes = IOUtils.readLines(in, "UTF-8");
     }
+    Collections.sort(expectedIndexes);
     assertThat(indexes).isEqualTo(expectedIndexes);
   }
 }
