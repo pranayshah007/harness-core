@@ -117,22 +117,8 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
     String accountId = AmbianceUtils.getAccountId(ambiance);
     TasInfraConfig tasInfraConfig = getTasInfraConfig(ambiance);
 
-    OptionalSweepingOutput tasAppResizeDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
-        RefObjectUtils.getSweepingOutputRefObject(
-            tasSwapRollbackStepParameters.getTasResizeFqn() + "." + OutcomeExpressionConstants.TAS_APP_RESIZE_OUTCOME));
-
-    TasAppResizeDataOutcome tasAppResizeDataOutcome = (TasAppResizeDataOutcome) tasAppResizeDataOptional.getOutput();
-    List<CfServiceData> instanceData = new ArrayList<>();
-    if (tasAppResizeDataOutcome != null && tasAppResizeDataOutcome.getInstanceData() != null) {
-      tasAppResizeDataOutcome.getInstanceData().forEach(cfServiceData -> {
-        Integer temp = cfServiceData.getDesiredCount();
-        cfServiceData.setDesiredCount(cfServiceData.getPreviousCount());
-        cfServiceData.setPreviousCount(temp);
-        instanceData.add(cfServiceData);
-      });
-    }
-
     boolean swapRouteOccurred = false;
+    boolean downsizeOldApplication = false;
     OptionalSweepingOutput tasSwapRouteDataOptional = OptionalSweepingOutput.builder().found(false).build();
     if (!isNull(tasSwapRollbackStepParameters.getTasSwapRoutesFqn())) {
       tasSwapRouteDataOptional = executionSweepingOutputService.resolveOptional(ambiance,
@@ -144,6 +130,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
       TasSwapRouteDataOutcome tasSwapRouteDataOutcome =
           (io.harness.cdng.tas.beans.TasSwapRouteDataOutcome) tasSwapRouteDataOptional.getOutput();
       swapRouteOccurred = tasSwapRouteDataOutcome.isSwapRouteOccurred();
+      downsizeOldApplication = tasSwapRouteDataOutcome.isDownsizeOldApplication();
     }
 
     CfSwapRollbackCommandRequestNG cfRollbackCommandRequestNG =
@@ -156,6 +143,7 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .tasInfraConfig(tasInfraConfig)
             .cfCommandTypeNG(CfCommandTypeNG.SWAP_ROLLBACK)
             .timeoutIntervalInMin(tasSetupDataOutcome.getTimeoutIntervalInMinutes())
+            .downsizeOldApps(downsizeOldApplication)
             .swapRouteOccured(swapRouteOccurred)
             .useAppAutoscalar(tasSetupDataOutcome.isUseAppAutoscalar())
             .oldApplicationDetails(tasSetupDataOutcome.getOldApplicationDetails())
@@ -164,7 +152,6 @@ public class TasSwapRollbackStep extends TaskExecutableWithRollbackAndRbac<CfCom
             .routeMaps(tasSetupDataOutcome.getRouteMaps())
             .existingApplicationDetails(Collections.singletonList(
                 tasSetupDataOutcome.getExistingApplicationDetails().toCfAppSetupTimeDetails()))
-            .instanceData(instanceData)
             .upsizeInActiveApp(tasSwapRollbackStepParameters.getUpsizeInActiveApp().getValue())
             .build();
 

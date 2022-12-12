@@ -34,7 +34,6 @@ public class TasSwapRollbackBaseStepInfo {
   @JsonIgnore String tasBGSetupFqn;
   @JsonIgnore String tasBasicSetupFqn;
   @JsonIgnore String tasCanarySetupFqn;
-  @JsonIgnore String tasResizeFqn;
 
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
