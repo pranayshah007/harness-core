@@ -47,7 +47,9 @@ func New(config *config.Config) *echo.Echo {
 	if !envConfig.DisableAuth {
 		e.Use(middleware.JWTWithConfig(jwtConfig))
 	}
+
 	p := prometheus.NewPrometheus("echo", urlSkipperFunc)
+
 	p.Use(e)
 
 	return e
@@ -77,7 +79,7 @@ func getParseTokenFunc(token string, c echo.Context) (interface{}, error) {
 	return nil, errors.New("invalid token")
 }
 
-// skip swagger url's from JWT Auth
+// skip url's from JWT Auth
 func skipperFunc(c echo.Context) bool {
 	if strings.Contains(c.Request().URL.Path, "swagger") {
 		return true
@@ -85,9 +87,9 @@ func skipperFunc(c echo.Context) bool {
 		return true
 	} else if strings.Contains(c.Request().URL.Path, "metrics") {
 		return true
-	} else if strings.Contains(c.Request().URL.Path, "queue") {
-		return true
 	} else if strings.Contains(c.Request().URL.Path, "pprof") {
+		return true
+	} else if strings.Contains(c.Request().URL.Path, "graph") {
 		return true
 	}
 	return false
