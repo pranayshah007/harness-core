@@ -1771,7 +1771,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       boolean addSharedCostFromGroupBy) {
     if (isClusterPerspective) {
       return convertToEntityStatsDataForCluster(
-          result, costTrendData, startTimeForTrend, isUsedByTimeSeriesStats, skipRoundOff, groupBy);
+          result, costTrendData, startTimeForTrend, isUsedByTimeSeriesStats, skipRoundOff, groupBy, accountId);
     }
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();
@@ -1953,7 +1953,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
 
   private QLCEViewGridData convertToEntityStatsDataForCluster(TableResult result,
       Map<String, ViewCostData> costTrendData, long startTimeForTrend, boolean isUsedByTimeSeriesStats,
-      boolean skipRoundOff, List<QLCEViewGroupBy> groupBy) {
+      boolean skipRoundOff, List<QLCEViewGroupBy> groupBy, String accountId) {
     Schema schema = result.getSchema();
     FieldList fields = schema.getFields();
 
@@ -2035,7 +2035,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
     }
     if (isInstanceDetailsData && !isUsedByTimeSeriesStats) {
       return QLCEViewGridData.builder()
-          .data(instanceDetailsHelper.getInstanceDetails(entityStatsDataPoints, getInstanceType(instanceTypes)))
+          .data(instanceDetailsHelper.getInstanceDetails(
+              entityStatsDataPoints, getInstanceType(instanceTypes), accountId))
           .fields(fieldNames)
           .build();
     }
