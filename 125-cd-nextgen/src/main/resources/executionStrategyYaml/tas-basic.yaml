@@ -10,7 +10,7 @@ spec:
       - step:
           name: "Basic Setup Step"
           identifier: basicSetupStep
-          type: TasBasicAppSetup
+          type: BasicAppSetup
           timeout: 10m
           spec:
             instanceCount: FromManifest
@@ -19,7 +19,7 @@ spec:
       - step:
           name: "Deploy Step"
           identifier: deployStep
-          type: TasAppResize
+          type: AppResize
           timeout: 10m
           spec:
             newAppInstances:
@@ -33,6 +33,6 @@ spec:
       - step:
           name: "App Rollback"
           identifier: appRollback
-          type: TasRollback
+          type: AppRollback
           timeout: 10m
           spec: {}
