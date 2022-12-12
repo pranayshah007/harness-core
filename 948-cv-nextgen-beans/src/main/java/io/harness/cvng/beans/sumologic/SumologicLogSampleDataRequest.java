@@ -12,12 +12,12 @@ import io.harness.cvng.beans.DataCollectionRequestType;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
-import lombok.Value;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
-@Value
 @SuperBuilder
+@NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName("SUMOLOGIC_LOG_SAMPLE_DATA")
 @FieldNameConstants(innerTypeName = "SumologicSampleDataRequestKeys")
