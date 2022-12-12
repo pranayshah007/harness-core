@@ -30,5 +30,4 @@ public class DelegateSyncTaskResponse implements PersistentEntity {
   private byte[] responseData;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
-  private boolean usingKryoWithoutReference;
 }

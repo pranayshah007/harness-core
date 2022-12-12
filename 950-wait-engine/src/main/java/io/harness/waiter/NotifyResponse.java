@@ -53,5 +53,4 @@ public class NotifyResponse implements WaitEngineEntity, CreatedAtAccess {
   boolean error;
 
   @Default @FdTtlIndex @NonFinal @Wither Date validUntil = Date.from(OffsetDateTime.now().plus(TTL).toInstant());
-  private boolean usingKryoWithoutReference;
 }

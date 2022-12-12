@@ -98,9 +98,7 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
 
     assertThat(mongoCollection.countDocuments()).isEqualTo(1);
     assertThat(mongoCollection.find().first().keySet())
-        .containsExactlyInAnyOrder(ID_FIELD_NAME, DelegateSyncTaskResponseKeys.responseData,
-            DelegateAsyncTaskResponseKeys.usingKryoWithoutReference);
-    mongoCollection.drop();
+        .containsExactlyInAnyOrder(ID_FIELD_NAME, DelegateSyncTaskResponseKeys.responseData);
   }
 
   @Test
@@ -128,8 +126,7 @@ public class MongoDelegateCallbackServiceTest extends DelegateServiceTestBase {
 
     assertThat(mongoCollection.countDocuments()).isEqualTo(1);
     assertThat(mongoCollection.find().first().keySet())
-        .containsExactlyInAnyOrder(ID_FIELD_NAME, DelegateAsyncTaskResponseKeys.responseData,
-            DelegateAsyncTaskResponseKeys.processAfter, DelegateAsyncTaskResponseKeys.usingKryoWithoutReference);
-    mongoCollection.drop();
+        .containsExactlyInAnyOrder(
+            ID_FIELD_NAME, DelegateAsyncTaskResponseKeys.responseData, DelegateAsyncTaskResponseKeys.processAfter);
   }
 }

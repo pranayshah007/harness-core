@@ -30,7 +30,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.mongodb.DuplicateKeyException;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -55,7 +54,6 @@ public class WaitNotifyEngine {
 
   @Inject private PersistenceWrapper persistenceWrapper;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
   @Inject private NotifyQueuePublisherRegister publisherRegister;
 
   public String waitForAllOn(String publisherName, NotifyCallback notifyCallback, String... correlationIds) {
@@ -117,10 +115,6 @@ public class WaitNotifyEngine {
   }
 
   public void progressOn(String correlationId, ProgressData progressData) {
-    progressOn(correlationId, progressData, false);
-  }
-
-  public void progressOn(String correlationId, ProgressData progressData, boolean usingKryoWithoutReference) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
     if (log.isDebugEnabled()) {
@@ -128,15 +122,12 @@ public class WaitNotifyEngine {
     }
 
     try {
-      persistenceWrapper.save(
-          ProgressUpdate.builder()
-              .uuid(generateUuid())
-              .correlationId(correlationId)
-              .createdAt(currentTimeMillis())
-              .usingKryoWithoutReference(usingKryoWithoutReference)
-              .progressData(usingKryoWithoutReference ? referenceFalseKryoSerializer.asDeflatedBytes(progressData)
-                                                      : kryoSerializer.asDeflatedBytes(progressData))
-              .build());
+      persistenceWrapper.save(ProgressUpdate.builder()
+                                  .uuid(generateUuid())
+                                  .correlationId(correlationId)
+                                  .createdAt(currentTimeMillis())
+                                  .progressData(kryoSerializer.asDeflatedBytes(progressData))
+                                  .build());
     } catch (Exception exception) {
       log.error("Failed to notify for progress of type " + progressData.getClass().getSimpleName(), exception);
     }
@@ -159,7 +150,6 @@ public class WaitNotifyEngine {
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .usingKryoWithoutReference(false)
                                   .responseData(kryoSerializer.asDeflatedBytes(response))
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());

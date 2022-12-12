@@ -33,5 +33,4 @@ public class DelegateAsyncTaskResponse implements PersistentEntity {
   private Long holdUntil;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(24).toInstant());
-  private boolean usingKryoWithoutReference;
 }
